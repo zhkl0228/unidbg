@@ -1,8 +1,8 @@
 # emulator
 
-Allows you to partly emulate an Android native library.<br>
+Allows you to emulate an Android ARM32 and/or ARM64 native library.<br>
 
-This is an educational project to learn more about the ELF file format and [Unicorn](https://github.com/unicorn-engine/unicorn).
+This is an educational project to learn more about the ELF file format and ARM assembly.
 
 
 ## Usage
