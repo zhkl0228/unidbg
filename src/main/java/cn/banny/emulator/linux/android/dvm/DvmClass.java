@@ -99,7 +99,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
 
     final Map<String, UnicornPointer> nativesMap = new HashMap<>();
 
-    public Number callStaticJniMethod(Emulator emulator, String method, Object...args) {
+    UnicornPointer findNativeFunction(Emulator emulator, String method) {
         UnicornPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index != -1) {
@@ -119,9 +119,14 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         if (fnPtr == null) {
             throw new IllegalArgumentException("find method failed: " + method);
         }
+        return fnPtr;
+    }
+
+    public Number callStaticJniMethod(Emulator emulator, String method, Object...args) {
+        UnicornPointer fnPtr = findNativeFunction(emulator, method);
         List<Object> list = new ArrayList<>(10);
         list.add(vm.getJNIEnv());
-        list.add(this);
+        list.add(this.hashCode());
         if (args != null) {
             Collections.addAll(list, args);
         }
