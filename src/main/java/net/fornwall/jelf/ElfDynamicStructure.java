@@ -1,14 +1,10 @@
 package net.fornwall.jelf;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section
@@ -420,7 +416,9 @@ public class ElfDynamicStructure {
 	public Collection<MemoizedObject<ElfRelocation>> getRelocations() throws IOException {
         List<MemoizedObject<ElfRelocation>> list = new ArrayList<>();
 		if (androidRelocation != null) {
-			CollectionUtils.addAll(list, androidRelocation.getValue().iterator());
+			for (MemoizedObject<ElfRelocation> elfRelocationMemoizedObject : androidRelocation.getValue()) {
+				list.add(elfRelocationMemoizedObject);
+			}
 		}
         if (rel != null) {
             Collections.addAll(list, rel);
