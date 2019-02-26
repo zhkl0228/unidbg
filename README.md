@@ -24,3 +24,7 @@ Simple tests under src/test directory
 - [capstone](https://github.com/aquynh/capstone)
 - [HookZz](https://github.com/jmpews/HookZz)
 - [xHook](https://github.com/iqiyi/xHook)
+- [jelf](https://github.com/fornwall/jelf)
+- [AndroidNativeEmu](https://github.com/AeonLucid/AndroidNativeEmu)
+- [usercorn](https://github.com/lunixbochs/usercorn)
+- [idaemu](https://github.com/36hours/idaemu)
