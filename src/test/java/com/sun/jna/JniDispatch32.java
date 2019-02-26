@@ -45,7 +45,7 @@ public class JniDispatch32 extends AbstractJni {
         memory.setLibraryResolver(createLibraryResolver());
         memory.setCallInitFunction();
 
-        vm = emulator.createDalvikVM();
+        vm = emulator.createDalvikVM(null);
         vm.setJni(this);
         DalvikModule dm = vm.loadLibrary(new File("src/test/resources/example_binaries/armeabi-v7a/libjnidispatch.so"), false);
         dm.callJNI_OnLoad(emulator);

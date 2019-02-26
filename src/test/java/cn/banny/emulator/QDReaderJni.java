@@ -41,7 +41,7 @@ public class QDReaderJni extends AbstractJni {
         memory.setLibraryResolver(createLibraryResolver());
         memory.setCallInitFunction();
 
-        vm = new DalvikVM(emulator);
+        vm = emulator.createDalvikVM(null);
         vm.setJni(this);
         DalvikModule dm = vm.loadLibrary(new File("src/test/resources/example_binaries/armeabi-v7a/libd-lib.so"), false);
         dm.callJNI_OnLoad(emulator);

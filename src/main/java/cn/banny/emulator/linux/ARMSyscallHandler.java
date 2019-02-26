@@ -173,6 +173,7 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mprotect(u, emulator));
                         return;
                     case 126:
+                    case 175:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
                         return;
                     case 132:
@@ -197,6 +198,7 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
                         u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(u, emulator));
                         return;
                     case 168:
+                    case 336:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, poll(u, emulator));
                         return;
                     case 172:

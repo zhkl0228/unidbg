@@ -96,6 +96,9 @@ public interface Emulator extends Closeable, Disassembler {
 
     SyscallHandler getSyscallHandler();
 
-    VM createDalvikVM();
+    /**
+     * @param apkFile 可为null
+     */
+    VM createDalvikVM(File apkFile);
 
 }

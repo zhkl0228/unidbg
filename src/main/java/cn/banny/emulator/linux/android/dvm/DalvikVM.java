@@ -26,10 +26,6 @@ public class DalvikVM extends BaseVM implements VM {
     private final UnicornPointer _JavaVM;
     private final UnicornPointer _JNIEnv;
 
-    public DalvikVM(Emulator emulator) {
-        this(emulator, null);
-    }
-
     public DalvikVM(Emulator emulator, File apkFile) {
         super(emulator, apkFile);
 

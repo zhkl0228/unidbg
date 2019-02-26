@@ -252,7 +252,7 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     @Override
-    public VM createDalvikVM() {
-        return getPointerSize() == 4 ? new DalvikVM(this) : new DalvikVM64(this);
+    public VM createDalvikVM(File apkFile) {
+        return getPointerSize() == 4 ? new DalvikVM(this, apkFile) : new DalvikVM64(this, apkFile);
     }
 }
