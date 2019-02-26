@@ -14,9 +14,9 @@ Simple tests under src/test directory
 - Support JavaVM, JNIEnv.
 - Emulation of syscalls instruction.
 - Support ARM32 and ARM64 bit ELF.
-- Inline hook, thanks HookZz.
-- Import hoo, thanks xHook.
-- Support simple debugger.
+- Inline hook, thanks to HookZz.
+- Import hook, thanks to xHook.
+- Support simple debugger, trace code, memory read/write.
 
 ## Thanks
 - [unicorn](https://github.com/unicorn-engine/unicorn)

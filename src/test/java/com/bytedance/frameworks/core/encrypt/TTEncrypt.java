@@ -44,7 +44,7 @@ public class TTEncrypt {
         memory.setLibraryResolver(createLibraryResolver());
         memory.setCallInitFunction();
 
-        vm = new DalvikVM(emulator);
+        vm = emulator.createDalvikVM();
         DalvikModule dm = vm.loadLibrary(new File("src/test/resources/example_binaries/libttEncrypt.so"), false);
         dm.callJNI_OnLoad(emulator);
         module = dm.getModule();
