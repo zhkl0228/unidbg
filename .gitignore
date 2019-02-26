@@ -1,0 +1,6 @@
+/emulator.iml
+/.idea/
+/src/test/resources/unpack/*_unpacked.so
+/target/
+*.DS_Store
+**/dev/log
