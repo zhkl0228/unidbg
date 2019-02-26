@@ -795,7 +795,7 @@ public class DalvikVM extends BaseVM implements VM {
                     case JNI_COMMIT:
                         array.setValue(pointer.getByteArray(0, array.value.length));
                         break;
-                    case JNI_FALSE:
+                    case 0:
                         array.setValue(pointer.getByteArray(0, array.value.length));
                     case JNI_ABORT:
                         if (array.memoryBlock != null && array.memoryBlock.isSame(pointer)) {
@@ -878,6 +878,18 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                     dvmClass.nativesMap.put(methodName + signatureValue, (UnicornPointer) fnPtr);
                 }
+                return JNI_OK;
+            }
+        });
+
+        Pointer _GetJavaVM = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public int handle(Unicorn u, Emulator emulator) {
+                UnicornPointer vm = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetJavaVM vm=" + vm);
+                }
+                vm.setPointer(0, _JavaVM);
                 return JNI_OK;
             }
         });
@@ -967,6 +979,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x340, _SetByteArrayRegion);
         impl.setPointer(0x34c, _SetIntArrayRegion);
         impl.setPointer(0x35c, _RegisterNatives);
+        impl.setPointer(0x36c, _GetJavaVM);
         impl.setPointer(0x390, _ExceptionCheck);
         impl.setPointer(0x3a0, _GetObjectRefType);
 

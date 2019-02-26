@@ -78,10 +78,10 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, open(u, emulator));
                         return;
                     case 10888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
                         return;
                     case 11888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, execve(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, execve(emulator));
                         return;
                     case 19888:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
@@ -105,7 +105,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, dup(u, emulator));
                         return;
                     case 42888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, pipe(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, pipe(emulator));
                         return;
                     case 54888:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, ioctl(u, emulator));
@@ -127,9 +127,6 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
                         return;
                     case 67888:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
-                        return;
-                    case 78888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(u, emulator));
                         return;
                     case 80:
                         u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(u, emulator));
@@ -166,7 +163,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
                         }
                         return;
                     case 122888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, uname(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
                         return;
                     case 126888:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
@@ -190,10 +187,13 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, writev(u, emulator));
                         return;
                     case 162888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
                         return;
                     case 167:
                         u.reg_write(Arm64Const.UC_ARM64_REG_X0, prctl(u, emulator));
+                        return;
+                    case 169:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
                         return;
                     case 168888:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, poll(u, emulator));
@@ -202,13 +202,13 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, getcwd(u, emulator));
                         return;
                     case 186888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sigaltstack(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, sigaltstack(emulator));
                         return;
                     case 195888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
                         return;
                     case 196888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(emulator));
                         return;
                     case 199888: // getuid
                     case 200888: // getgid
@@ -257,7 +257,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, clock_gettime(u, emulator));
                         return;
                     case 266888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, statfs(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, statfs(emulator));
                         return;
                     case 268888:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(u));
@@ -331,14 +331,14 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return 0;
     }
 
-    private int unlink(Unicorn u, Emulator emulator) {
+    private int unlink(Emulator emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         String path = FilenameUtils.normalize(pathname.getString(0));
         log.info("unlink path=" + path);
         return 0;
     }
 
-    private int pipe(Unicorn u, Emulator emulator) {
+    private int pipe(Emulator emulator) {
         Pointer pipefd = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         if (log.isDebugEnabled()) {
             int readfd = pipefd.getInt(0);
@@ -349,7 +349,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return -1;
     }
 
-    private int sigaltstack(Unicorn u, Emulator emulator) {
+    private int sigaltstack(Emulator emulator) {
         Pointer ss = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer old_ss = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         if (log.isDebugEnabled()) {
@@ -595,7 +595,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return -1;
     }
 
-    private int execve(Unicorn u, Emulator emulator) {
+    private int execve(Emulator emulator) {
         Pointer filename = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer argv = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         Pointer envp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
@@ -669,7 +669,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return newfd;
     }
 
-    private int stat64(Unicorn u, Emulator emulator) {
+    private int stat64(Emulator emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         String path = FilenameUtils.normalize(pathname.getString(0));
@@ -679,7 +679,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return stat64(emulator, path, statbuf);
     }
 
-    private int lstat(Unicorn u, Emulator emulator) {
+    private int lstat(Emulator emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         String path = FilenameUtils.normalize(pathname.getString(0));
@@ -888,7 +888,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return -1;
     }
 
-    private int nanosleep(Unicorn u, Emulator emulator) {
+    private int nanosleep(Emulator emulator) {
         Pointer req = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer rem = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         int tv_sec = req.getInt(0);
@@ -1149,7 +1149,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return 0;
     }
 
-    private int uname(Unicorn u, Emulator emulator) {
+    private int uname(Emulator emulator) {
         Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         if (log.isDebugEnabled()) {
             log.debug("uname buf=" + buf);
@@ -1209,7 +1209,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return ret;
     }
 
-    private int statfs(Unicorn u, Emulator emulator) {
+    private int statfs(Emulator emulator) {
         Pointer pathPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         String path = pathPointer.getString(0);
@@ -1401,9 +1401,9 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
         return emulator.getMemory().mmap2(start, length, prot, flags, fd, offset);
     }
 
-    private int gettimeofday(Unicorn u, Emulator emulator) {
-        Pointer tv = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer tz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+    private int gettimeofday(Emulator emulator) {
+        Pointer tv = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+        Pointer tz = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
         if (log.isDebugEnabled()) {
             log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
         }
