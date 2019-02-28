@@ -38,3 +38,4 @@ Simple tests under src/test directory
 - [capstone](https://github.com/aquynh/capstone)
 - [idaemu](https://github.com/36hours/idaemu)
 - [jelf](https://github.com/fornwall/jelf)
+- [whale](https://github.com/asLody/whale)

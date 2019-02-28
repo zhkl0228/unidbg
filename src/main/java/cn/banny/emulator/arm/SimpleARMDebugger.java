@@ -14,6 +14,7 @@ import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
@@ -43,7 +44,7 @@ public class SimpleARMDebugger implements Debugger {
 
     @Override
     public void addBreakPoint(Module module, long offset) {
-        long address = (module == null ? offset : module.base + offset) & 0xfffffffeL;
+        long address = (module == null ? offset : module.base + offset);
         if (log.isDebugEnabled()) {
             log.debug("addBreakPoint address=0x" + Long.toHexString(address));
         }
@@ -91,15 +92,21 @@ public class SimpleARMDebugger implements Debugger {
     @Override
     public void debug(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        long address = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+        long address;
+        if (emulator.getPointerSize() == 4) {
+            address = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+        } else {
+            address = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+        }
         loop(emulator, unicorn, address, 0);
     }
 
     private int singleStep;
 
     private void loop(Emulator emulator, Unicorn u, long address, int size) {
+        final boolean isARM32 = emulator.getPointerSize() == 4;
         System.out.println("debugger break at: 0x" + Long.toHexString(address));
-        boolean thumb = ARM.isThumb(u);
+        boolean thumb = isARM32 && ARM.isThumb(u);
         long nextAddress = 0;
         try {
             emulator.showRegs();
@@ -163,21 +170,27 @@ public class SimpleARMDebugger implements Debugger {
 
                     int reg = -1;
                     String name = null;
-                    if (command.startsWith("mr") && command.length() == 3) {
+                    if (command.startsWith("mr") && command.length() == 3 && isARM32) {
                         char c = command.charAt(2);
                         if (c >= '0' && c <= '7') {
                             int r = c - '0';
                             reg = ArmConst.UC_ARM_REG_R0 + r;
                             name = "r" + r;
                         }
+                    } else if (command.startsWith("mx") && (command.length() == 3 || command.length() == 4) && !isARM32) {
+                        int idx = Integer.parseInt(command.substring(2));
+                        if (idx >= 0 && idx <= 28) {
+                            reg = Arm64Const.UC_ARM64_REG_X0 + idx;
+                            name = "x" + idx;
+                        }
                     } else if ("mfp".equals(command)) {
-                        reg = ArmConst.UC_ARM_REG_FP;
+                        reg = isARM32 ? ArmConst.UC_ARM_REG_FP : Arm64Const.UC_ARM64_REG_FP;
                         name = "fp";
                     } else if ("mip".equals(command)) {
-                        reg = ArmConst.UC_ARM_REG_IP;
+                        reg = isARM32 ? ArmConst.UC_ARM_REG_IP : Arm64Const.UC_ARM64_REG_IP0;
                         name = "ip";
                     } else if ("msp".equals(command)) {
-                        reg = ArmConst.UC_ARM_REG_SP;
+                        reg = isARM32 ? ArmConst.UC_ARM_REG_SP : Arm64Const.UC_ARM64_REG_SP;
                         name = "sp";
                     } else if (command.startsWith("m0x")) {
                         long addr = Long.parseLong(command.substring(3), 16);
@@ -199,7 +212,7 @@ public class SimpleARMDebugger implements Debugger {
                         continue;
                     }
                 }
-                if ("bt".equals(line)) {
+                if ("bt".equals(line) && isARM32) {
                     Memory memory = emulator.getMemory();
                     String maxLengthSoName = memory.getMaxLengthLibraryName();
                     boolean hasTrace = false;
@@ -250,13 +263,23 @@ public class SimpleARMDebugger implements Debugger {
                     }
                 }
                 if ("blr".equals(line)) { // break LR
-                    long addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                    long addr;
+                    if (isARM32) {
+                        addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                    } else {
+                        addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue();
+                    }
                     breakMap.put(addr, null);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr));
                     continue;
                 }
                 if ("r".equals(line)) {
-                    long addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+                    long addr;
+                    if (isARM32) {
+                        addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+                    } else {
+                        addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+                    }
                     if (breakMap.containsKey(addr)) {
                         breakMap.remove(addr);
                         System.out.println("Remove breakpoint: 0x" + Long.toHexString(addr));
@@ -264,7 +287,12 @@ public class SimpleARMDebugger implements Debugger {
                     continue;
                 }
                 if ("b".equals(line)) {
-                    long addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+                    long addr;
+                    if (isARM32) {
+                        addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+                    } else {
+                        addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+                    }
                     breakMap.put(addr, null);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr));
                     continue;
