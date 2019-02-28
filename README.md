@@ -8,6 +8,11 @@ This is an educational project to learn more about the ELF file format and ARM a
 ## Usage
 
 Simple tests under src/test directory
+- src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java
+- src/test/java/com/sun/jna/JniDispatch32.java
+- src/test/java/com/sun/jna/JniDispatch64.java
+- src/test/java/org/telegram/messenger/Utilities32.java
+- src/test/java/org/telegram/messenger/Utilities64.java
 
 ## Features
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.

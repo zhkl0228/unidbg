@@ -21,6 +21,7 @@ public interface Loader {
 
     byte[] unpack(File elfFile) throws IOException;
     Module findModuleByAddress(long address);
+    Module findModule(String soName);
 
     Module dlopen(String filename) throws IOException;
     Module dlopen(String filename, boolean calInit) throws IOException;

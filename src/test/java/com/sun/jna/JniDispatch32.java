@@ -7,7 +7,9 @@ import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.HookStatus;
 import cn.banny.emulator.hook.ReplaceCallback;
 import cn.banny.emulator.hook.hookzz.*;
+import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.xhook.IxHook;
+import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.hook.xhook.xHookImpl;
 import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.Symbol;
@@ -78,6 +80,16 @@ public class JniDispatch32 extends AbstractJni {
             }
         });
         xHook.refresh();
+
+        IWhale whale = Whale.getInstance(emulator);
+        Symbol free = emulator.getMemory().findModule("libc.so").findSymbolByName("free");
+        whale.WInlineHookFunction(free, new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Unicorn unicorn, long originFunction) {
+                System.out.println("WInlineHookFunction free=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0));
+                return HookStatus.RET(unicorn, originFunction);
+            }
+        });
 
         long start = System.currentTimeMillis();
         final int size = 0x20;

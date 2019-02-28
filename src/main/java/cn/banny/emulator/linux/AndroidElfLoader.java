@@ -657,6 +657,16 @@ public class AndroidElfLoader implements Memory, Loader {
         return null;
     }
 
+    @Override
+    public Module findModule(String soName) {
+        for (Module module : modules.values()) {
+            if (module.name.equals(soName)) {
+                return module;
+            }
+        }
+        return null;
+    }
+
     private ModuleSymbol resolveSymbol(long load_base, ElfSymbol symbol, Pointer relocationAddr, String soName, Collection<Module> neededLibraries, long offset) throws IOException {
         if (symbol == null) {
             return new ModuleSymbol(soName, load_base, symbol, relocationAddr, soName, offset);

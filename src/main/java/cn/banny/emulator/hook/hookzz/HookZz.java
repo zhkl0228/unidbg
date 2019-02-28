@@ -1,7 +1,8 @@
 package cn.banny.emulator.hook.hookzz;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.arm.*;
+import cn.banny.emulator.arm.Arm64Svc;
+import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.hook.BaseHook;
 import cn.banny.emulator.hook.ReplaceCallback;
 import cn.banny.emulator.linux.Module;
@@ -31,14 +32,14 @@ public class HookZz extends BaseHook implements IHookZz {
         return instance;
     }
 
-    private final Emulator emulator;
-
     private final Symbol zz_enable_arm_arm64_b_branch, zz_disable_arm_arm64_b_branch;
 
     private final Symbol zzReplace;
     private final Symbol zzWrap;
 
     private HookZz(Emulator emulator) throws IOException {
+        super(emulator);
+
         Module module = emulator.getMemory().load(resolveLibrary(emulator, "libhookzz.so"));
         zz_enable_arm_arm64_b_branch = module.findSymbolByName("zz_enable_arm_arm64_b_branch");
         zz_disable_arm_arm64_b_branch = module.findSymbolByName("zz_disable_arm_arm64_b_branch");
@@ -58,8 +59,6 @@ public class HookZz extends BaseHook implements IHookZz {
         if (zzWrap == null) {
             throw new IllegalStateException("zzWrap is null");
         }
-
-        this.emulator = emulator;
     }
 
     @Override
@@ -80,19 +79,8 @@ public class HookZz extends BaseHook implements IHookZz {
 
     @Override
     public void replace(long functionAddress, final ReplaceCallback callback) {
-        SvcMemory svcMemory = emulator.getSvcMemory();
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replaceCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmHook() {
-            @Override
-            protected HookStatus hook(Unicorn u, Emulator emulator) {
-                return callback.onCall(u, originCall.getInt(0) & 0xffffffffL);
-            }
-        } : new Arm64Hook() {
-            @Override
-            protected HookStatus hook(Unicorn u, Emulator emulator) {
-                return callback.onCall(u, originCall.getLong(0));
-            }
-        });
+        Pointer replaceCall = createReplacePointer(callback, originCall);
         int ret = zzReplace.call(emulator, functionAddress, replaceCall, originCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
