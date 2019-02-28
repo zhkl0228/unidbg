@@ -11,7 +11,7 @@ public class McToTest extends EmulatorTest {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
-        return new AndroidResolver(19, "libc.so", "libz.so", "libm.so", "libdl.so", "liblog.so", "libjavacore.so", "libnativehelper.so");
+        return new AndroidResolver(19);
     }
 
     public void testMcTo() throws Exception {
