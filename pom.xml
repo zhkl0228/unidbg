@@ -25,8 +25,9 @@
         <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.12.4</version>
                 <configuration>
-                    <argLine>-Djava.library.path=${dynamic.lib.location}</argLine>
+                    <argLine>-Djava.library.path=${dynamic.lib.location} -Djna.library.path=${dynamic.lib.location}</argLine>
                 </configuration>
             </plugin>
             <plugin>
