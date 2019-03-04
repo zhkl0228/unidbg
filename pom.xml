@@ -20,6 +20,12 @@
                 <dynamic.lib.location>prebuilt/osx64</dynamic.lib.location>
             </properties>
         </profile>
+        <profile>
+            <id>linux64</id>
+            <properties>
+                <dynamic.lib.location>prebuilt/linux64</dynamic.lib.location>
+            </properties>
+        </profile>
     </profiles>
     <build>
         <plugins>

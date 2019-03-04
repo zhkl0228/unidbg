@@ -204,7 +204,7 @@ public abstract class AbstractEmulator implements Emulator {
         try {
             closeInternal();
 
-            unicorn.close();
+            // unicorn.close(); // May cause crash
         } finally {
             closed = true;
         }
