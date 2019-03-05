@@ -26,6 +26,18 @@
                 <dynamic.lib.location>prebuilt/linux64</dynamic.lib.location>
             </properties>
         </profile>
+        <profile>
+            <id>win32</id>
+            <properties>
+                <dynamic.lib.location>prebuilt/win32</dynamic.lib.location>
+            </properties>
+        </profile>
+        <profile>
+            <id>win64</id>
+            <properties>
+                <dynamic.lib.location>prebuilt/win64</dynamic.lib.location>
+            </properties>
+        </profile>
     </profiles>
     <build>
         <plugins>
