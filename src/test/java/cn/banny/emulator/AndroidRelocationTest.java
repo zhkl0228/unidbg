@@ -35,7 +35,7 @@ public class AndroidRelocationTest extends TestCase {
                 case ARMEmulator.R_AARCH64_PREL16:
                     break;
                 default:
-                    log.warn("type=" + type + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=0x" + Long.toHexString(relocation.addend()) + ", symbol=" + relocation.sym());
+                    log.debug("type=" + type + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=0x" + Long.toHexString(relocation.addend()) + ", symbol=" + relocation.sym());
                     break;
             }
         }
@@ -57,7 +57,7 @@ public class AndroidRelocationTest extends TestCase {
                 case ARMEmulator.R_ARM_COPY:
                     break;
                 default:
-                    log.warn("type=" + type + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=0x" + Long.toHexString(relocation.addend()) + ", symbol=" + relocation.sym());
+                    log.debug("type=" + type + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=0x" + Long.toHexString(relocation.addend()) + ", symbol=" + relocation.sym());
                     break;
             }
         }
