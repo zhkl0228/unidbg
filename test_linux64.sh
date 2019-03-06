@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./mvnw --settings ./settings.xml test -Plinux64
+./mvnw test -Plinux64
