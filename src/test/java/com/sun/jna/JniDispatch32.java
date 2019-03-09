@@ -35,7 +35,7 @@ public class JniDispatch32 extends AbstractJni {
         return new AndroidARMEmulator("com.sun.jna");
     }
 
-    private ARMEmulator emulator;
+    private final ARMEmulator emulator;
     private final VM vm;
     private final Module module;
 

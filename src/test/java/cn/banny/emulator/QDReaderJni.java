@@ -30,7 +30,7 @@ public class QDReaderJni extends AbstractJni {
         return new AndroidARMEmulator("a.d.c");
     }
 
-    private ARMEmulator emulator;
+    private final ARMEmulator emulator;
     private final VM vm;
 
     private final DvmClass d;

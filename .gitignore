@@ -4,3 +4,5 @@
 /target/
 *.DS_Store
 **/dev/log
+/src/test/resources/example_binaries/stdout
+/src/test/resources/example_binaries/stderr

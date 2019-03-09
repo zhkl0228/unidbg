@@ -24,7 +24,7 @@ public class Utilities64 {
         return new AndroidARM64Emulator("org.telegram.messenger");
     }
 
-    private ARMEmulator emulator;
+    private final ARMEmulator emulator;
     private final VM vm;
 
     private final DvmClass Utilities;

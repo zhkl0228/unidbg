@@ -32,7 +32,7 @@ public class TTEncrypt {
         return new AndroidARMEmulator("com.qidian.dldl.official");
     }
 
-    private ARMEmulator emulator;
+    private final ARMEmulator emulator;
     private final VM vm;
     private final Module module;
 
