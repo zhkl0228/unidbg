@@ -101,7 +101,7 @@
         <dependency>
             <groupId>keystone</groupId>
             <artifactId>java-bindings</artifactId>
-            <version>0.9.1-1</version>
+            <version>0.9.1-2</version>
         </dependency>
         <dependency>
             <groupId>cn.banny</groupId>
