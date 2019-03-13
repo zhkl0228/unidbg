@@ -7,6 +7,9 @@ This is an educational project to learn more about the ELF file format and ARM a
 
 ## Usage
 
+VM options: -Djava.library.path=prebuilt/os -Djna.library.path=prebuilt/os  
+Where os may: linux64, win32, win64, osx64
+
 Simple tests under src/test directory
 - [src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java](https://github.com/zhkl0228/emulator/blob/master/src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java)  
 
