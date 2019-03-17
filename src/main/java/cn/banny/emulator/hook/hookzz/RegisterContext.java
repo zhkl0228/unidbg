@@ -8,4 +8,7 @@ public interface RegisterContext {
 
     Pointer getLrPointer();
 
+    void set(String key, Object value);
+    <T> T get(String key);
+
 }

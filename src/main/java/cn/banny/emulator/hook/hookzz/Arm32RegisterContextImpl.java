@@ -4,14 +4,16 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 
-public class Arm32RegisterContextImpl implements RegisterContext, Arm32RegisterContext {
+import java.util.Map;
+
+public class Arm32RegisterContextImpl extends RegisterContextImpl implements RegisterContext, Arm32RegisterContext {
 
     private final Pointer reg_ctx;
     private final Emulator emulator;
 
-    Arm32RegisterContextImpl(Emulator emulator) {
+    Arm32RegisterContextImpl(Emulator emulator, final Map<String, Object> context) {
+        super(context);
         this.reg_ctx = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0).share(8); // skip dummy
         this.emulator = emulator;
     }

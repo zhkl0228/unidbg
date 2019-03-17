@@ -14,6 +14,8 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HookZz extends BaseHook implements IHookZz {
 
@@ -101,29 +103,32 @@ public class HookZz extends BaseHook implements IHookZz {
     @Override
     public <T extends RegisterContext> void wrap(long functionAddress, final WrapCallback<T> callback) {
         SvcMemory svcMemory = emulator.getSvcMemory();
+        final Map<String, Object> context = new HashMap<>();
         Pointer preCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
             @Override
             public int handle(Unicorn u, Emulator emulator) {
-                callback.preCall(u, (T) new Arm32RegisterContextImpl(emulator), new ArmHookEntryInfo(emulator));
+                context.clear();
+                callback.preCall(u, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
             public int handle(Unicorn u, Emulator emulator) {
-                callback.preCall(u, (T) new Arm64RegisterContextImpl(emulator), new Arm64HookEntryInfo(emulator));
+                context.clear();
+                callback.preCall(u, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }
         });
         Pointer postCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
             @Override
             public int handle(Unicorn u, Emulator emulator) {
-                callback.postCall(u, (T) new Arm32RegisterContextImpl(emulator), new ArmHookEntryInfo(emulator));
+                callback.postCall(u, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
             public int handle(Unicorn u, Emulator emulator) {
-                callback.postCall(u, (T) new Arm64RegisterContextImpl(emulator), new Arm64HookEntryInfo(emulator));
+                callback.postCall(u, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }
         });
