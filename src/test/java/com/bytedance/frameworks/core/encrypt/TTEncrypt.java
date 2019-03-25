@@ -7,7 +7,7 @@ import cn.banny.emulator.arm.HookStatus;
 import cn.banny.emulator.hook.ReplaceCallback;
 import cn.banny.emulator.hook.hookzz.*;
 import cn.banny.emulator.hook.xhook.IxHook;
-import cn.banny.emulator.hook.xhook.xHookImpl;
+import cn.banny.emulator.hook.xhook.XHookImpl;
 import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.Symbol;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
@@ -103,7 +103,7 @@ public class TTEncrypt {
         });
         hookZz.disable_arm_arm64_b_branch();
 
-        IxHook xHook = xHookImpl.getInstance(emulator);
+        IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libttEncrypt.so", "strlen", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Unicorn unicorn, long originFunction) {

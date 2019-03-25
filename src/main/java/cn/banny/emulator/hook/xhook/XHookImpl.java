@@ -11,16 +11,16 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
-public class xHookImpl extends BaseHook implements IxHook {
+public class XHookImpl extends BaseHook implements IxHook {
 
-    private static final Log log = LogFactory.getLog(xHookImpl.class);
+    private static final Log log = LogFactory.getLog(XHookImpl.class);
 
     private static IxHook instance;
 
     public static IxHook getInstance(Emulator emulator) {
         if (instance == null) {
             try {
-                instance = new xHookImpl(emulator);
+                instance = new XHookImpl(emulator);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -31,7 +31,7 @@ public class xHookImpl extends BaseHook implements IxHook {
     private final Symbol xhook_register;
     private final Symbol xhook_refresh;
 
-    private xHookImpl(Emulator emulator) throws IOException {
+    private XHookImpl(Emulator emulator) throws IOException {
         super(emulator);
 
         Module module = emulator.getMemory().load(resolveLibrary(emulator, "libxhook.so"));

@@ -10,7 +10,7 @@ import cn.banny.emulator.hook.hookzz.*;
 import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.xhook.IxHook;
 import cn.banny.emulator.hook.whale.Whale;
-import cn.banny.emulator.hook.xhook.xHookImpl;
+import cn.banny.emulator.hook.xhook.XHookImpl;
 import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.Symbol;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
@@ -70,7 +70,7 @@ public class JniDispatch32 extends AbstractJni {
     }
 
     private void test() throws IOException {
-        IxHook xHook = xHookImpl.getInstance(emulator);
+        IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libjnidispatch.so", "malloc", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Unicorn unicorn, long originFunction) {

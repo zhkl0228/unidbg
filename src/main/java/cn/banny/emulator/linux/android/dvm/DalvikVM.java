@@ -16,6 +16,8 @@ import unicorn.UnicornException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -778,8 +780,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetStringLength string=" + string + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 String value = (String) string.getValue();
-                byte[] data = value.getBytes();
-                return data.length;
+                return value.length();
             }
         });
 
@@ -792,7 +793,12 @@ public class DalvikVM extends BaseVM implements VM {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 String value = string.getValue();
-                byte[] data = value.getBytes();
+                byte[] data = new byte[value.length() * 2];
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                for (char c : value.toCharArray()) {
+                    buffer.putChar(c);
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
