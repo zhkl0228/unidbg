@@ -770,6 +770,55 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetStringLength = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public int handle(Unicorn u, Emulator emulator) {
+                DvmObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetStringLength string=" + string + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                }
+                String value = (String) string.getValue();
+                byte[] data = value.getBytes();
+                return data.length;
+            }
+        });
+
+        Pointer _GetStringChars = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public int handle(Unicorn u, Emulator emulator) {
+                StringObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (isCopy != null) {
+                    isCopy.setInt(0, JNI_TRUE);
+                }
+                String value = string.getValue();
+                byte[] data = value.getBytes();
+                if (log.isDebugEnabled()) {
+                    log.debug("GetStringChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                }
+                MemoryBlock memoryBlock = emulator.getMemory().malloc(data.length);
+                memoryBlock.getPointer().write(0, data, 0, data.length);
+                string.memoryBlock = memoryBlock;
+                return (int) memoryBlock.getPointer().peer;
+            }
+        });
+
+        Pointer _ReleaseStringChars = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public int handle(Unicorn u, Emulator emulator) {
+                StringObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (log.isDebugEnabled()) {
+                    log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                }
+                if (string.memoryBlock != null && string.memoryBlock.isSame(pointer)) {
+                    string.memoryBlock.free();
+                    string.memoryBlock = null;
+                }
+                return 0;
+            }
+        });
+
         Pointer _NewStringUTF = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public int handle(Unicorn u, Emulator emulator) {
@@ -972,6 +1021,9 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x2c0, _NewByteArray);
         impl.setPointer(0x2cc, _NewIntArray);
         impl.setPointer(0x2e0, _GetByteArrayElements);
+        impl.setPointer(0x290, _GetStringLength);
+        impl.setPointer(0x294, _GetStringChars);
+        impl.setPointer(0x298, _ReleaseStringChars);
         impl.setPointer(0x29c, _NewStringUTF);
         impl.setPointer(0x2b4, _GetObjectArrayElement);
         impl.setPointer(0x300, _ReleaseByteArrayElements);
