@@ -46,15 +46,15 @@ public class ArmLD implements Dlfcn {
                 case "dlerror":
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public int handle(Unicorn u, Emulator emulator) {
+                        public int handle(Emulator emulator) {
                             return (int) error.peer;
                         }
                     }).peer;
                 case "dlclose":
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public int handle(Unicorn u, Emulator emulator) {
-                            long handle = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
+                        public int handle(Emulator emulator) {
+                            long handle = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
                             if (log.isDebugEnabled()) {
                                 log.debug("dlclose handle=0x" + Long.toHexString(handle));
                             }
@@ -81,9 +81,9 @@ public class ArmLD implements Dlfcn {
                             }
                         }
                         @Override
-                        public int handle(Unicorn u, Emulator emulator) {
+                        public int handle(Emulator emulator) {
                             Pointer filename = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            int flags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            int flags = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             if (log.isDebugEnabled()) {
                                 log.debug("dlopen filename=" + filename.getString(0) + ", flags=" + flags);
                             }
@@ -93,8 +93,8 @@ public class ArmLD implements Dlfcn {
                 case "dladdr":
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public int handle(Unicorn u, Emulator emulator) {
-                            long addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
+                        public int handle(Emulator emulator) {
+                            long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
                             Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
@@ -105,8 +105,8 @@ public class ArmLD implements Dlfcn {
                 case "dlsym":
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public int handle(Unicorn u, Emulator emulator) {
-                            long handle = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
+                        public int handle(Emulator emulator) {
+                            long handle = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
                             Pointer symbol = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
@@ -117,7 +117,7 @@ public class ArmLD implements Dlfcn {
                 case "dl_unwind_find_exidx":
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public int handle(Unicorn u, Emulator emulator) {
+                        public int handle(Emulator emulator) {
                             Pointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             Pointer pcount = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                             if (log.isDebugEnabled()) {

@@ -63,11 +63,11 @@ public class InlineHook {
                     }
                 }
                 @Override
-                public int handle(Unicorn u, Emulator emulator) {
+                public int handle(Emulator emulator) {
                     if (callback != null) {
-                        return callback.onHook(u, emulator);
+                        return callback.onHook(emulator);
                     }
-                    return ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                    return ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                 }
             });
         } finally {
@@ -114,11 +114,11 @@ public class InlineHook {
                     }
                 }
                 @Override
-                public int handle(Unicorn u, Emulator emulator) {
+                public int handle(Emulator emulator) {
                     if (callback != null) {
-                        return callback.onHook(u, emulator);
+                        return callback.onHook(emulator);
                     }
-                    return ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                    return ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                 }
             });
         } finally {

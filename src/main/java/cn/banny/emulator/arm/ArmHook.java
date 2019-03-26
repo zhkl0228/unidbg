@@ -34,7 +34,8 @@ public abstract class ArmHook extends ArmSvc {
     }
 
     @Override
-    public final int handle(Unicorn u, Emulator emulator) {
+    public final int handle(Emulator emulator) {
+        Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
             HookStatus status = hook(u, emulator);

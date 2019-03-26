@@ -10,7 +10,6 @@ import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import cn.banny.emulator.linux.android.dvm.*;
 import cn.banny.emulator.memory.Memory;
-import unicorn.Unicorn;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -66,8 +65,8 @@ public class QDReaderJni extends AbstractJni {
         IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libd-lib.so", "free", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Unicorn unicorn, long originFunction) {
-                return HookStatus.LR(unicorn, 0);
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                return HookStatus.LR(emulator.getUnicorn(), 0);
             }
         });
         xHook.refresh();

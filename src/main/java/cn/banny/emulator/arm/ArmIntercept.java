@@ -22,7 +22,6 @@ import java.util.List;
 /**
  * Use HookZz
  */
-@Deprecated
 public class ArmIntercept extends ArmSvc {
 
     private final Pointer pointer;
@@ -46,9 +45,10 @@ public class ArmIntercept extends ArmSvc {
     }
 
     @Override
-    public int handle(Unicorn u, Emulator emulator) {
+    public int handle(Emulator emulator) {
+        Unicorn u = emulator.getUnicorn();
         if (callback != null) {
-            callback.onIntercept(u, emulator);
+            callback.onIntercept(emulator);
         }
         eval(u, emulator);
         return ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();

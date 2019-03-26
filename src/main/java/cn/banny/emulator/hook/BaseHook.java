@@ -25,12 +25,12 @@ public abstract class BaseHook {
         return svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmHook() {
             @Override
             protected HookStatus hook(Unicorn u, Emulator emulator) {
-                return callback.onCall(u, backup.getInt(0) & 0xffffffffL);
+                return callback.onCall(emulator, backup.getInt(0) & 0xffffffffL);
             }
         } : new Arm64Hook() {
             @Override
             protected HookStatus hook(Unicorn u, Emulator emulator) {
-                return callback.onCall(u, backup.getLong(0));
+                return callback.onCall(emulator, backup.getLong(0));
             }
         });
     }

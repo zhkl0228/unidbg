@@ -1,5 +1,6 @@
 package cn.banny.emulator.linux.file;
 
+import cn.banny.emulator.Emulator;
 import cn.banny.emulator.linux.MemRegion;
 import cn.banny.emulator.linux.Module;
 import org.apache.commons.logging.Log;
@@ -60,4 +61,8 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
         return builder.toString().getBytes();
     }
 
+    @Override
+    public int ioctl(Emulator emulator, long request, long argp) {
+        return 0;
+    }
 }

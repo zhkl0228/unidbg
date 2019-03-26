@@ -35,7 +35,8 @@ public abstract class Arm64Hook extends Arm64Svc {
     }
 
     @Override
-    public final int handle(Unicorn u, Emulator emulator) {
+    public final int handle(Emulator emulator) {
+        Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
             HookStatus status = hook(u, emulator);

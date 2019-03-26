@@ -54,7 +54,7 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
             if (svcNumber != 0) {
                 Svc svc = svcMemory.getSvc(svcNumber);
                 if (svc != null) {
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, svc.handle(u, emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, svc.handle(emulator));
                     return;
                 }
                 u.emu_stop();

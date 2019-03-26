@@ -73,7 +73,8 @@ public class JniDispatch32 extends AbstractJni {
         IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libjnidispatch.so", "malloc", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Unicorn unicorn, long originFunction) {
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                Unicorn unicorn = emulator.getUnicorn();
                 int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                 System.out.println("malloc=" + size);
                 return HookStatus.RET(unicorn, originFunction);
@@ -85,9 +86,9 @@ public class JniDispatch32 extends AbstractJni {
         Symbol free = emulator.getMemory().findModule("libc.so").findSymbolByName("free");
         whale.WInlineHookFunction(free, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Unicorn unicorn, long originFunction) {
+            public HookStatus onCall(Emulator emulator, long originFunction) {
                 System.out.println("WInlineHookFunction free=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0));
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator.getUnicorn(), originFunction);
             }
         });
 
@@ -104,7 +105,7 @@ public class JniDispatch32 extends AbstractJni {
         Symbol newJavaString = module.findSymbolByName("newJavaString");
         hookZz.wrap(newJavaString, new WrapCallback<Arm32RegisterContext>() {
             @Override
-            public void preCall(Unicorn u, Arm32RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
                 Pointer value = ctx.getR1Pointer();
                 Pointer encoding = ctx.getR2Pointer();
                 System.out.println("newJavaString value=" + value.getString(0) + ", encoding=" + encoding.getString(0));

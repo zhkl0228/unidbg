@@ -54,7 +54,7 @@ public abstract class AbstractFileIO implements FileIO {
 
     @Override
     public int ioctl(Emulator emulator, long request, long argp) {
-        throw new AbstractMethodError();
+        throw new AbstractMethodError(getClass().getName() + ": request=0x" + Long.toHexString(request) + ", argp=0x" + Long.toHexString(argp));
     }
 
     @Override

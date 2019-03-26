@@ -11,7 +11,6 @@ import cn.banny.emulator.memory.SvcMemory;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -106,29 +105,29 @@ public class HookZz extends BaseHook implements IHookZz {
         final Map<String, Object> context = new HashMap<>();
         Pointer preCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
             @Override
-            public int handle(Unicorn u, Emulator emulator) {
+            public int handle(Emulator emulator) {
                 context.clear();
-                callback.preCall(u, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
+                callback.preCall(emulator, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
-            public int handle(Unicorn u, Emulator emulator) {
+            public int handle(Emulator emulator) {
                 context.clear();
-                callback.preCall(u, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
+                callback.preCall(emulator, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }
         });
         Pointer postCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
             @Override
-            public int handle(Unicorn u, Emulator emulator) {
-                callback.postCall(u, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
+            public int handle(Emulator emulator) {
+                callback.postCall(emulator, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
-            public int handle(Unicorn u, Emulator emulator) {
-                callback.postCall(u, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
+            public int handle(Emulator emulator) {
+                callback.postCall(emulator, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }
         });
