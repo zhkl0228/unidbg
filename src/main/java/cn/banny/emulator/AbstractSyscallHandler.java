@@ -29,7 +29,7 @@ public abstract class AbstractSyscallHandler implements SyscallHandler {
     }
 
     @Override
-    public final void addIOResolve(IOResolver resolver) {
+    public final void addIOResolver(IOResolver resolver) {
         if (!resolvers.contains(resolver)) {
             resolvers.add(0, resolver);
         }

@@ -13,7 +13,7 @@ public interface SyscallHandler extends InterruptHook {
     /**
      * 后面添加的优先级高
      */
-    void addIOResolve(IOResolver resolver);
+    void addIOResolver(IOResolver resolver);
 
     int open(Emulator emulator, String pathname, int oflags);
 

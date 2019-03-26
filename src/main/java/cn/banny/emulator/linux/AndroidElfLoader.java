@@ -208,7 +208,7 @@ public class AndroidElfLoader implements Memory, Loader {
     public void setLibraryResolver(LibraryResolver libraryResolver) {
         this.libraryResolver = libraryResolver;
 
-        syscallHandler.addIOResolve(libraryResolver);
+        syscallHandler.addIOResolver(libraryResolver);
 
         /*
          * 注意打开顺序很重要
