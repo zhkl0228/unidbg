@@ -243,6 +243,25 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallObjectMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public int handle(Emulator emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallObjectMethod object=" + object + ", jmethodID=" + jmethodID);
+                }
+                DvmObject dvmObject = getObject(object.peer);
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    return addObject(dvmMethod.callObjectMethod(dvmObject, emulator), false);
+                }
+            }
+        });
+
         Pointer _CallObjectMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public int handle(Emulator emulator) {
@@ -283,6 +302,25 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallIntMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public int handle(Emulator emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallIntMethod object=" + object + ", jmethodID=" + jmethodID);
+                }
+                DvmObject dvmObject = getObject(object.peer);
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    return dvmMethod.callIntMethod(dvmObject, emulator);
+                }
+            }
+        });
+
         Pointer _CallIntMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public int handle(Emulator emulator) {
@@ -299,6 +337,26 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     return dvmMethod.callIntMethodV(dvmObject, new VaList(DalvikVM64.this, va_list));
+                }
+            }
+        });
+
+        Pointer _CallVoidMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public int handle(Emulator emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallVoidMethod object=" + object + ", jmethodID=" + jmethodID);
+                }
+                DvmObject dvmObject = getObject(object.peer);
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    dvmMethod.callVoidMethod(dvmObject, emulator);
+                    return 0;
                 }
             }
         });
@@ -517,6 +575,25 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     return addObject(dvmMethod.callStaticObjectMethodV(new VaList(DalvikVM64.this, va_list)), false);
+                }
+            }
+        });
+
+        Pointer _CallStaticBooleanMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public int handle(Emulator emulator) {
+                UnicornPointer clazz = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                UnicornPointer va_list = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallStaticBooleanMethod clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmClass dvmClass = classMap.get(clazz.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    return dvmMethod.CallStaticBooleanMethod(emulator);
                 }
             }
         });
@@ -1002,9 +1079,12 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0xF8, _GetObjectClass);
         impl.setPointer(0x100, _IsInstanceOf);
         impl.setPointer(0x108, _GetMethodID);
+        impl.setPointer(0x110, _CallObjectMethod);
         impl.setPointer(0x118, _CallObjectMethodV);
         impl.setPointer(0x130, _CallBooleanMethodV);
+        impl.setPointer(0x188, _CallIntMethod);
         impl.setPointer(0x190, _CallIntMethodV);
+        impl.setPointer(0x1e8, _CallVoidMethod);
         impl.setPointer(0x2f0, _GetFieldID);
         impl.setPointer(0x2F8, _GetObjectField);
         impl.setPointer(0x300, _GetBooleanField);
@@ -1016,6 +1096,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x388, _GetStaticMethodID);
         impl.setPointer(0x390, _CallStaticObjectMethod);
         impl.setPointer(0x398, _CallStaticObjectMethodV);
+        impl.setPointer(0x3A8, _CallStaticBooleanMethod);
         impl.setPointer(0x3B0, _CallStaticBooleanMethodV);
         impl.setPointer(0x410, _CallStaticIntMethodV);
         impl.setPointer(0x428, _CallStaticLongMethodV);

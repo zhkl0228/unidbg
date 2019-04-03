@@ -55,6 +55,15 @@ class DvmMethod implements Hashable {
         return vm.jni.callStaticObjectMethodV(vm, dvmClass, signature, methodName, args, vaList);
     }
 
+    DvmObject callObjectMethod(DvmObject dvmObject, Emulator emulator) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callObjectMethod signature=" + signature);
+        }
+        BaseVM vm = dvmClass.vm;
+        return vm.jni.callObjectMethod(vm, dvmObject, signature, methodName, args, emulator);
+    }
+
     DvmObject callObjectMethodV(DvmObject dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
@@ -128,6 +137,24 @@ class DvmMethod implements Hashable {
         return dvmClass.vm.jni.callBooleanMethodV(dvmClass.vm, dvmObject, signature, methodName, args, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
+    int callIntMethod(DvmObject dvmObject, Emulator emulator) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callIntMethod signature=" + signature);
+        }
+        BaseVM vm = dvmClass.vm;
+        return vm.jni.callIntMethod(vm, dvmObject, signature, methodName, args, emulator);
+    }
+
+    void callVoidMethod(DvmObject dvmObject, Emulator emulator) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callVoidMethod signature=" + signature);
+        }
+        BaseVM vm = dvmClass.vm;
+        vm.jni.callVoidMethod(vm, dvmObject, signature, methodName, args, emulator);
+    }
+
     int callStaticIntMethodV(VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
@@ -142,6 +169,14 @@ class DvmMethod implements Hashable {
             log.debug("callStaticLongMethodV signature=" + signature);
         }
         return dvmClass.vm.jni.callStaticLongMethodV(signature, vaList);
+    }
+
+    int CallStaticBooleanMethod(Emulator emulator) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callStaticBooleanMethod signature=" + signature);
+        }
+        return dvmClass.vm.jni.callStaticBooleanMethod(signature, emulator) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callStaticBooleanMethodV() {

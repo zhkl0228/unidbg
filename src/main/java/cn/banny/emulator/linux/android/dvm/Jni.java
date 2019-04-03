@@ -10,15 +10,21 @@ public interface Jni {
 
     DvmObject getObjectField(VM vm, DvmObject dvmObject, String signature);
 
+    boolean callStaticBooleanMethod(String signature, Emulator emulator);
+
     boolean callStaticBooleanMethodV(String signature);
 
     int callStaticIntMethodV(String signature, VaList vaList);
+
+    DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator);
 
     DvmObject callObjectMethodV(VM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList);
 
     DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, Emulator emulator);
 
     DvmObject callStaticObjectMethodV(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VaList vaList);
+
+    int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator);
 
     int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList);
 
@@ -43,4 +49,6 @@ public interface Jni {
     void setLongField(BaseVM vm, DvmObject dvmObject, String signature, long value);
 
     void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value);
+
+    void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator);
 }

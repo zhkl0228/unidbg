@@ -20,6 +20,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public boolean callStaticBooleanMethod(String signature, Emulator emulator) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
     public boolean callStaticBooleanMethodV(String signature) {
         throw new AbstractMethodError(signature);
     }
@@ -101,6 +106,21 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
         throw new AbstractMethodError(signature);
     }
 }
