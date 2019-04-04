@@ -49,6 +49,16 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _Throw = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public int handle(Emulator emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                DvmObject dvmObject = getObject(object.peer);
+                log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getObjectType());
+                return 0;
+            }
+        });
+
         Pointer _ExceptionOccurred = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public int handle(Emulator emulator) {
@@ -1066,6 +1076,7 @@ public class DalvikVM extends BaseVM implements VM {
             impl.setInt(i, i);
         }
         impl.setPointer(0x18, _FindClass);
+        impl.setPointer(0x34, _Throw);
         impl.setPointer(0x3c, _ExceptionOccurred);
         impl.setPointer(0x44, _ExceptionClear);
         impl.setPointer(0x4c, _PushLocalFrame);
