@@ -177,7 +177,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.newObject(emulator);
+                    return dvmMethod.newObject(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
                 }
             }
         });
@@ -269,7 +269,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return addObject(dvmMethod.callObjectMethod(dvmObject, emulator), false);
+                    return addObject(dvmMethod.callObjectMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3)), false);
                 }
             }
         });
@@ -328,7 +328,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callIntMethod(dvmObject, emulator);
+                    return dvmMethod.callIntMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
                 }
             }
         });
@@ -367,7 +367,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    dvmMethod.callVoidMethod(dvmObject, emulator);
+                    dvmMethod.callVoidMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
                     return 0;
                 }
             }
@@ -567,7 +567,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return addObject(dvmMethod.callStaticObjectMethod(emulator), false);
+                    return addObject(dvmMethod.callStaticObjectMethod(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3)), false);
                 }
             }
         });
@@ -596,16 +596,15 @@ public class DalvikVM64 extends BaseVM implements VM {
             public int handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnicornPointer va_list = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticBooleanMethod clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallStaticBooleanMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.CallStaticBooleanMethod(emulator);
+                    return dvmMethod.CallStaticBooleanMethod(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
                 }
             }
         });

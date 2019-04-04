@@ -2,10 +2,12 @@ package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.linux.android.dvm.api.*;
+import cn.banny.emulator.linux.android.dvm.wrapper.DvmInteger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Locale;
 
@@ -23,13 +25,13 @@ class DvmMethod implements Hashable {
         this.args = args;
     }
 
-    DvmObject callStaticObjectMethod(Emulator emulator) {
+    DvmObject callStaticObjectMethod(VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("CallStaticObjectMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        return vm.jni.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, emulator);
+        return vm.jni.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, varArg);
     }
 
     DvmObject callStaticObjectMethodV(VaList vaList) {
@@ -55,13 +57,23 @@ class DvmMethod implements Hashable {
         return vm.jni.callStaticObjectMethodV(vm, dvmClass, signature, methodName, args, vaList);
     }
 
-    DvmObject callObjectMethod(DvmObject dvmObject, Emulator emulator) {
+    DvmObject callObjectMethod(DvmObject dvmObject, VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("callObjectMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        return vm.jni.callObjectMethod(vm, dvmObject, signature, methodName, args, emulator);
+        if ("java/lang/String->getBytes(Ljava/lang/String;)[B".equals(signature)) {
+            StringObject string = (StringObject) dvmObject;
+            StringObject encoding = varArg.getObject(0);
+            System.err.println("string=" + string.getValue() + ", encoding=" + encoding.getValue());
+            try {
+                return new ByteArray(string.getValue().getBytes(encoding.value));
+            } catch (UnsupportedEncodingException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        return vm.jni.callObjectMethod(vm, dvmObject, signature, methodName, args, varArg);
     }
 
     DvmObject callObjectMethodV(DvmObject dvmObject, VaList vaList) {
@@ -130,29 +142,32 @@ class DvmMethod implements Hashable {
         if (log.isDebugEnabled()) {
             log.debug("callBooleanMethodV signature=" + signature);
         }
-        switch (signature) {
-            case "java/util/Enumeration->hasMoreElements()Z":
-                return ((Enumeration) dvmObject).hasMoreElements() ? VM.JNI_TRUE : VM.JNI_FALSE;
+        if ("java/util/Enumeration->hasMoreElements()Z".equals(signature)) {
+            return ((Enumeration) dvmObject).hasMoreElements() ? VM.JNI_TRUE : VM.JNI_FALSE;
         }
         return dvmClass.vm.jni.callBooleanMethodV(dvmClass.vm, dvmObject, signature, methodName, args, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
-    int callIntMethod(DvmObject dvmObject, Emulator emulator) {
+    int callIntMethod(DvmObject dvmObject, VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("callIntMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        return vm.jni.callIntMethod(vm, dvmObject, signature, methodName, args, emulator);
+        if ("java/lang/Integer->intValue()I".equals(signature)) {
+            DvmInteger integer = (DvmInteger) dvmObject;
+            return integer.value;
+        }
+        return vm.jni.callIntMethod(vm, dvmObject, signature, methodName, args, varArg);
     }
 
-    void callVoidMethod(DvmObject dvmObject, Emulator emulator) {
+    void callVoidMethod(DvmObject dvmObject, VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("callVoidMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        vm.jni.callVoidMethod(vm, dvmObject, signature, methodName, args, emulator);
+        vm.jni.callVoidMethod(vm, dvmObject, signature, methodName, args, varArg);
     }
 
     int callStaticIntMethodV(VaList vaList) {
@@ -171,12 +186,12 @@ class DvmMethod implements Hashable {
         return dvmClass.vm.jni.callStaticLongMethodV(signature, vaList);
     }
 
-    int CallStaticBooleanMethod(Emulator emulator) {
+    int CallStaticBooleanMethod(VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("callStaticBooleanMethod signature=" + signature);
         }
-        return dvmClass.vm.jni.callStaticBooleanMethod(signature, emulator) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return dvmClass.vm.jni.callStaticBooleanMethod(signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callStaticBooleanMethodV() {
@@ -203,11 +218,11 @@ class DvmMethod implements Hashable {
         return dvmClass.vm.addObject(dvmClass.vm.jni.newObjectV(dvmClass, signature, vaList), false);
     }
 
-    int newObject(Emulator emulator) {
+    int newObject(VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("newObject signature=" + signature);
         }
-        return dvmClass.vm.addObject(dvmClass.vm.jni.newObject(dvmClass, signature, emulator), false);
+        return dvmClass.vm.addObject(dvmClass.vm.jni.newObject(dvmClass, signature, varArg), false);
     }
 }

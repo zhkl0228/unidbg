@@ -20,7 +20,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public boolean callStaticBooleanMethod(String signature, Emulator emulator) {
+    public boolean callStaticBooleanMethod(String signature, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
@@ -40,7 +40,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, Emulator emulator) {
+    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
@@ -85,7 +85,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public DvmObject newObject(DvmClass clazz, String signature, Emulator emulator) {
+    public DvmObject newObject(DvmClass clazz, String signature, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
@@ -110,17 +110,17 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 }

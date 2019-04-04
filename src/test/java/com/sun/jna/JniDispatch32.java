@@ -130,35 +130,31 @@ public class JniDispatch32 extends AbstractJni {
     }
 
     @Override
-    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, Emulator emulator) {
+    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VarArg varArg) {
         if ("java/lang/System->getProperty(Ljava/lang/String;)Ljava/lang/String;".equals(signature)) {
-            UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-            StringObject string = vm.getObject(pointer.toUIntPeer());
+            StringObject string = varArg.getObject(0);
             return new StringObject(vm, System.getProperty(string.getValue()));
         }
 
-        return super.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, emulator);
+        return super.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, varArg);
     }
 
     @Override
-    public DvmObject newObject(DvmClass clazz, String signature, Emulator emulator) {
+    public DvmObject newObject(DvmClass clazz, String signature, VarArg varArg) {
         switch (signature) {
             case "java/lang/String-><init>([B)V":
-                UnicornPointer arrayPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-                ByteArray array = vm.getObject(arrayPointer.toUIntPeer());
+                ByteArray array = varArg.getObject(0);
                 return new StringObject(vm, new String(array.getValue()));
             case "java/lang/String-><init>([BLjava/lang/String;)V":
-                arrayPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-                array = vm.getObject(arrayPointer.toUIntPeer());
-                UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP).getPointer(0);
-                StringObject string = vm.getObject(pointer.toUIntPeer());
+                array = varArg.getObject(0);
+                StringObject string = varArg.getObject(1);
                 try {
                     return new StringObject(vm, new String(array.getValue(), string.getValue()));
                 } catch (UnsupportedEncodingException e) {
                     throw new IllegalStateException(e);
                 }
         }
-        return super.newObject(clazz, signature, emulator);
+        return super.newObject(clazz, signature, varArg);
     }
 
     @Override

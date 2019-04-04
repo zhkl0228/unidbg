@@ -1,7 +1,6 @@
 package com.xunmeng.pinduoduo.secure;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.Emulator;
 import cn.banny.emulator.LibraryResolver;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.linux.Module;
@@ -9,9 +8,7 @@ import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import cn.banny.emulator.linux.android.dvm.*;
 import cn.banny.emulator.memory.Memory;
-import cn.banny.emulator.pointer.UnicornPointer;
 import org.apache.commons.codec.binary.Base64;
-import unicorn.ArmConst;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -95,7 +92,7 @@ public class DeviceNative extends AbstractJni {
     }
 
     @Override
-    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
         switch (signature) {
             case "android/content/Context->getSystemService(Ljava/lang/String;)Ljava/lang/Object;":
                 DvmClass clazz = vm.resolveClass("android/telephony/TelephonyManager");
@@ -136,14 +133,13 @@ public class DeviceNative extends AbstractJni {
                 return new ByteArray(data);
         }
 
-        return super.callObjectMethod(vm, dvmObject, signature, methodName, args, emulator);
+        return super.callObjectMethod(vm, dvmObject, signature, methodName, args, varArg);
     }
 
     @Override
-    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, Emulator emulator) {
+    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VarArg varArg) {
         if ("android/provider/Settings$Secure->getString(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;".equals(signature)) {
-            UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
-            StringObject key = vm.getObject(pointer.getPointer(0).toUIntPeer());
+            StringObject key = varArg.getObject(1);
 
             if (ANDROID_ID.equals(key.getValue())) {
                 return new StringObject(vm, "21ad4f5b0bc1b14b");
@@ -152,7 +148,7 @@ public class DeviceNative extends AbstractJni {
             }
         }
 
-        return super.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, emulator);
+        return super.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, varArg);
     }
 
     private static final int PHONE_TYPE_GSM = 1;
@@ -170,7 +166,7 @@ public class DeviceNative extends AbstractJni {
     private static final int DATA_ACTIVITY_NONE = 0x00000000;
 
     @Override
-    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
         switch (signature) {
             case "android/telephony/TelephonyManager->getPhoneType()I":
                 return PHONE_TYPE_GSM;
@@ -184,7 +180,7 @@ public class DeviceNative extends AbstractJni {
                 return DATA_ACTIVITY_NONE;
         }
 
-        return super.callIntMethod(vm, dvmObject, signature, methodName, args, emulator);
+        return super.callIntMethod(vm, dvmObject, signature, methodName, args, varArg);
     }
 
     @Override
@@ -197,24 +193,23 @@ public class DeviceNative extends AbstractJni {
     }
 
     @Override
-    public boolean callStaticBooleanMethod(String signature, Emulator emulator) {
+    public boolean callStaticBooleanMethod(String signature, VarArg varArg) {
         if ("android/os/Debug->isDebuggerConnected()Z".equals(signature)) {
             return false;
         }
 
-        return super.callStaticBooleanMethod(signature, emulator);
+        return super.callStaticBooleanMethod(signature, varArg);
     }
 
     @Override
-    public DvmObject newObject(DvmClass clazz, String signature, Emulator emulator) {
+    public DvmObject newObject(DvmClass clazz, String signature, VarArg varArg) {
         switch (signature) {
             case "java/lang/Throwable-><init>()V":
                 return clazz.newObject(null);
             case "java/io/ByteArrayOutputStream-><init>()V":
                 return clazz.newObject(new ByteArrayOutputStream());
             case "java/util/zip/GZIPOutputStream-><init>(Ljava/io/OutputStream;)V":
-                UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-                DvmObject obj = vm.getObject(pointer.toUIntPeer());
+                DvmObject obj = varArg.getObject(0);
                 OutputStream outputStream = (OutputStream) obj.getValue();
                 try {
                     return clazz.newObject(new GZIPOutputStream(outputStream));
@@ -223,16 +218,15 @@ public class DeviceNative extends AbstractJni {
                 }
         }
 
-        return super.newObject(clazz, signature, emulator);
+        return super.newObject(clazz, signature, varArg);
     }
 
     @Override
-    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, Emulator emulator) {
+    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
         switch (signature) {
             case "java/util/zip/GZIPOutputStream->write([B)V":
                 OutputStream outputStream = (OutputStream) dvmObject.getValue();
-                UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-                ByteArray array = vm.getObject(pointer.toUIntPeer());
+                ByteArray array = varArg.getObject(0);
                 // Inspector.inspect(array.getValue(), "java/util/zip/GZIPOutputStream->write outputStream=" + outputStream.getClass().getName());
                 try {
                     outputStream.write(array.getValue());
@@ -258,7 +252,7 @@ public class DeviceNative extends AbstractJni {
                 return;
         }
 
-        super.callVoidMethod(vm, dvmObject, signature, methodName, args, emulator);
+        super.callVoidMethod(vm, dvmObject, signature, methodName, args, varArg);
     }
 
     @Override
