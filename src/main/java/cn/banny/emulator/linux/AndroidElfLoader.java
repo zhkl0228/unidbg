@@ -308,6 +308,7 @@ public class AndroidElfLoader implements Memory, Loader {
         for (Module module : getLoadedModules()) {
             for (MemRegion memRegion : module.getRegions()) {
                 if (filename.equals(memRegion.getName())) {
+                    module.addReferenceCount();
                     return module;
                 }
             }
