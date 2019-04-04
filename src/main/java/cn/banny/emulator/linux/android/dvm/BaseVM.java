@@ -26,6 +26,8 @@ public abstract class BaseVM implements VM {
 
     Jni jni;
 
+    DvmObject<?> jthrowable;
+
     @Override
     public final void setJni(Jni jni) {
         this.jni = jni;

@@ -55,6 +55,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 DvmObject dvmObject = getObject(object.peer);
                 log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getObjectType());
+                jthrowable = dvmObject;
                 return 0;
             }
         });
@@ -65,7 +66,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionOccurred");
                 }
-                return JNI_NULL;
+                return jthrowable == null ? JNI_NULL : (int) (jthrowable.hashCode() & 0xffffffffL);
             }
         });
 
@@ -75,6 +76,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionClear");
                 }
+                jthrowable = null;
                 return 0;
             }
         });
