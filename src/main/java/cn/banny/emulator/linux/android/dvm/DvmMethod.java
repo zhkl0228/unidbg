@@ -1,6 +1,5 @@
 package cn.banny.emulator.linux.android.dvm;
 
-import cn.banny.emulator.Emulator;
 import cn.banny.emulator.linux.android.dvm.api.*;
 import cn.banny.emulator.linux.android.dvm.wrapper.DvmInteger;
 import org.apache.commons.logging.Log;
@@ -222,6 +221,20 @@ class DvmMethod implements Hashable {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("newObject signature=" + signature);
+        }
+        BaseVM vm = dvmClass.vm;
+        switch (signature) {
+            case "java/lang/String-><init>([B)V":
+                ByteArray array = varArg.getObject(0);
+                return dvmClass.vm.addObject(new StringObject(vm, new String(array.getValue())), false);
+            case "java/lang/String-><init>([BLjava/lang/String;)V":
+                array = varArg.getObject(0);
+                StringObject string = varArg.getObject(1);
+                try {
+                    return dvmClass.vm.addObject(new StringObject(vm, new String(array.getValue(), string.getValue())), false);
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalStateException(e);
+                }
         }
         return dvmClass.vm.addObject(dvmClass.vm.jni.newObject(dvmClass, signature, varArg), false);
     }

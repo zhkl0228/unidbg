@@ -8,8 +8,8 @@ import cn.banny.emulator.arm.HookStatus;
 import cn.banny.emulator.hook.ReplaceCallback;
 import cn.banny.emulator.hook.hookzz.*;
 import cn.banny.emulator.hook.whale.IWhale;
-import cn.banny.emulator.hook.xhook.IxHook;
 import cn.banny.emulator.hook.whale.Whale;
+import cn.banny.emulator.hook.xhook.IxHook;
 import cn.banny.emulator.hook.xhook.XHookImpl;
 import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.Symbol;
@@ -23,7 +23,6 @@ import unicorn.Unicorn;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 public class JniDispatch64 extends AbstractJni {
 
@@ -137,48 +136,5 @@ public class JniDispatch64 extends AbstractJni {
         }
 
         return super.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, varArg);
-    }
-
-    @Override
-    public DvmObject newObject(DvmClass clazz, String signature, VarArg varArg) {
-        switch (signature) {
-            case "java/lang/String-><init>([B)V":
-                ByteArray array = varArg.getObject(0);
-                return new StringObject(vm, new String(array.getValue()));
-            case "java/lang/String-><init>([BLjava/lang/String;)V":
-                array = varArg.getObject(0);
-                StringObject string = varArg.getObject(1);
-                try {
-                    return new StringObject(vm, new String(array.getValue(), string.getValue()));
-                } catch (UnsupportedEncodingException e) {
-                    throw new IllegalStateException(e);
-                }
-        }
-        return super.newObject(clazz, signature, varArg);
-    }
-
-    @Override
-    public DvmObject getStaticObjectField(VM vm, DvmClass dvmClass, String signature) {
-        switch (signature) {
-            case "java/lang/Void->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Void");
-            case "java/lang/Boolean->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Boolean");
-            case "java/lang/Byte->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Byte");
-            case "java/lang/Character->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Character");
-            case "java/lang/Short->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Short");
-            case "java/lang/Integer->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Integer");
-            case "java/lang/Long->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Long");
-            case "java/lang/Float->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Float");
-            case "java/lang/Double->TYPE:Ljava/lang/Class;":
-                return vm.resolveClass("java/lang/Double");
-        }
-        return super.getStaticObjectField(vm, dvmClass, signature);
     }
 }
