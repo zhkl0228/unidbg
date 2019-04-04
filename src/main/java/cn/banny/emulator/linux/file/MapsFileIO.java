@@ -50,7 +50,7 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
             for (int i = 0; i < 10; i++) {
                 builder.append(' ');
             }
-            builder.append(memRegion.name);
+            builder.append(memRegion.getName());
             builder.append('\n');
         }
         builder.append("ffff0000-ffff1000 r-xp 00000000 00:00 0          [vectors]");

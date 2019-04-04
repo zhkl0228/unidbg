@@ -690,7 +690,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
     }
 
     private int stat64(Emulator emulator, String pathname, Pointer statbuf) {
-        FileIO io = resolve(emulator.getWorkDir(), pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
         if (io != null) {
             return io.fstat(emulator, emulator.getUnicorn(), statbuf);
         }
@@ -1458,7 +1458,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
     }
 
     private int faccessat(Emulator emulator, String pathname) {
-        FileIO io = resolve(emulator.getWorkDir(), pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
         if (io != null) {
             return 0;
         }
@@ -1546,7 +1546,7 @@ public class ARM64SyscallHandler extends AbstractSyscallHandler implements Sysca
     public final int open(Emulator emulator, String pathname, int oflags) {
         int minFd = this.getMinFd();
 
-        FileIO io = resolve(emulator.getWorkDir(), pathname, oflags);
+        FileIO io = resolve(emulator, pathname, oflags);
         if (io != null) {
             this.fdMap.put(minFd, io);
             return minFd;

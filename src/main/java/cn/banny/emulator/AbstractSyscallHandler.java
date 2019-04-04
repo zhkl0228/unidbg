@@ -1,10 +1,13 @@
 package cn.banny.emulator;
 
 import cn.banny.emulator.linux.LinuxThread;
+import cn.banny.emulator.linux.MemRegion;
+import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.linux.file.ByteArrayFileIO;
 import cn.banny.emulator.linux.file.FileIO;
 import cn.banny.emulator.linux.file.IOResolver;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public abstract class AbstractSyscallHandler implements SyscallHandler {
@@ -35,11 +38,24 @@ public abstract class AbstractSyscallHandler implements SyscallHandler {
         }
     }
 
-    protected final FileIO resolve(File workDir, String pathname, int oflags) {
+    protected final FileIO resolve(Emulator emulator, String pathname, int oflags) {
         for (IOResolver resolver : resolvers) {
-            FileIO io = resolver.resolve(workDir, pathname, oflags);
+            FileIO io = resolver.resolve(emulator.getWorkDir(), pathname, oflags);
             if (io != null) {
                 return io;
+            }
+        }
+        if (pathname.endsWith(".so")) {
+            for (Module module : emulator.getMemory().getLoadedModules()) {
+                for (MemRegion memRegion : module.getRegions()) {
+                    if (pathname.equals(memRegion.getName())) {
+                        try {
+                            return new ByteArrayFileIO(oflags, pathname, memRegion.readLibrary());
+                        } catch (IOException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    }
+                }
             }
         }
         return null;

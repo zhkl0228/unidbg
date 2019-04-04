@@ -1,19 +1,31 @@
 package cn.banny.emulator.linux;
 
+import cn.banny.emulator.LibraryFile;
+
+import java.io.IOException;
+
 public class MemRegion implements Comparable<MemRegion> {
 
     public final long begin;
     public final long end;
     public final int perms;
-    public final String name;
+    private final LibraryFile libraryFile;
     public final long offset;
 
-    MemRegion(long begin, long end, int perms, String name, long offset) {
+    MemRegion(long begin, long end, int perms, LibraryFile libraryFile, long offset) {
         this.begin = begin;
         this.end = end;
         this.perms = perms;
-        this.name = name;
+        this.libraryFile = libraryFile;
         this.offset = offset;
+    }
+
+    public String getName() {
+        return libraryFile.getMapRegionName();
+    }
+
+    public byte[] readLibrary() throws IOException {
+        return libraryFile.readToByteArray();
     }
 
     @Override

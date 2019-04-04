@@ -305,6 +305,14 @@ public class AndroidElfLoader implements Memory, Loader {
             return loaded;
         }
 
+        for (Module module : getLoadedModules()) {
+            for (MemRegion memRegion : module.getRegions()) {
+                if (filename.equals(memRegion.getName())) {
+                    return module;
+                }
+            }
+        }
+
         LibraryFile file = libraryResolver == null ? null : libraryResolver.resolveLibrary(emulator, filename);
         if (file == null) {
             return null;
@@ -425,7 +433,7 @@ public class AndroidElfLoader implements Memory, Loader {
                     Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName());
                     unicorn.mem_write(begin, ph.getPtLoadData());
 
-                    regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile.getMapRegionName(), ph.virtual_address));
+                    regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
 
                     if (unpackHook != null && (prot & UnicornConst.UC_PROT_EXEC) != 0) { // unpack executable code
                         unicorn.hook_add(new WriteHook() {

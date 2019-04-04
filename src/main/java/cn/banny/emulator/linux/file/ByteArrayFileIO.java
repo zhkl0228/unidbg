@@ -78,6 +78,11 @@ public class ByteArrayFileIO extends AbstractFileIO {
     }
 
     @Override
+    public int ioctl(Emulator emulator, long request, long argp) {
+        return 0;
+    }
+
+    @Override
     public FileIO dup2() {
         throw new AbstractMethodError();
     }
