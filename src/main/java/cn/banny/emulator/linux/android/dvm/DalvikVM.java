@@ -1046,9 +1046,9 @@ public class DalvikVM extends BaseVM implements VM {
             @Override
             public int handle(Emulator emulator) {
                 if (log.isDebugEnabled()) {
-                    log.debug("ExceptionCheck");
+                    log.debug("ExceptionCheck jthrowable=" + jthrowable);
                 }
-                return JNI_FALSE;
+                return jthrowable == null ? JNI_FALSE : JNI_TRUE;
             }
         });
 
