@@ -1,9 +1,11 @@
 package cn.banny.emulator.arm;
 
+import capstone.Arm;
+import capstone.Arm_const;
 import capstone.Capstone;
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.memory.Memory;
 import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
@@ -504,21 +506,37 @@ public class ARM {
         sb.append(" ]").append(space);
         sb.append(String.format("0x%08x:" + space + "%s %s", ins.address, ins.mnemonic, ins.opStr));
 
-        if ("ldr".equals(ins.mnemonic)) {
-            Matcher matcher = LDR_PATTERN.matcher(ins.opStr);
-            if (matcher.find()) {
-                long addr = ins.address + Long.parseLong(matcher.group(1), 16);
-                addr += (thumb ? 4 : 8);
-                Pointer pointer = memory.pointer(addr & 0xfffffffffffffffcL);
-                int value = pointer.getInt(0);
-                sb.append(" => 0x").append(Long.toHexString(value & 0xffffffffL));
-                if (value < 0) {
-                    sb.append(" (-0x").append(Integer.toHexString(-value)).append(")");
+        Arm.OpInfo opInfo = (Arm.OpInfo) ins.operands;
+        if ("ldr".equals(ins.mnemonic) || "ldr.w".equals(ins.mnemonic)) {
+            Matcher matcher;
+
+            // ldr rx, [pc, #0xxx] or ldr.w rx, [pc, #0xxx] based capstone.setDetail(Capstone.CS_OPT_ON);
+            if (opInfo != null &&
+                    opInfo.op.length == 2 &&
+                    opInfo.op[0].type == Arm_const.ARM_OP_REG &&
+                    opInfo.op[1].type == Arm_const.ARM_OP_MEM) {
+                Arm.MemType mem = opInfo.op[1].value.mem;
+                if (mem.base == Arm_const.ARM_REG_PC && mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
+                    long addr = ins.address + mem.disp;
+                    appendAddrValue(sb, addr, thumb, memory);
                 }
+            } else if((matcher = LDR_PATTERN.matcher(ins.opStr)).find()) {
+                long addr = ins.address + Long.parseLong(matcher.group(1), 16);
+                appendAddrValue(sb, addr, thumb, memory);
             }
         }
 
         return sb.toString();
+    }
+
+    private static void appendAddrValue(StringBuilder sb, long addr, boolean thumb, Memory memory) {
+        addr += (thumb ? 4 : 8);
+        Pointer pointer = memory.pointer(addr & 0xfffffffffffffffcL);
+        int value = pointer.getInt(0);
+        sb.append(" => 0x").append(Long.toHexString(value & 0xffffffffL));
+        if (value < 0) {
+            sb.append(" (-0x").append(Integer.toHexString(-value)).append(")");
+        }
     }
 
 }

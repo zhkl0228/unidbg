@@ -42,7 +42,9 @@ public class AndroidARMEmulator extends AbstractARMEmulator implements ARMEmulat
         super(processName);
 
         this.capstoneArm = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
+        // this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
         this.capstoneThumb = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
+        // this.capstoneThumb.setDetail(Capstone.CS_OPT_ON);
 
         setupTraps();
     }
