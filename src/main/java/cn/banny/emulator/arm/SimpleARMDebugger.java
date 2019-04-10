@@ -44,7 +44,7 @@ public class SimpleARMDebugger implements Debugger {
 
     @Override
     public void addBreakPoint(Module module, long offset) {
-        long address = (module == null ? offset : module.base + offset);
+        long address = (module == null ? offset : module.base + offset) & (~1);
         if (log.isDebugEnabled()) {
             log.debug("addBreakPoint address=0x" + Long.toHexString(address));
         }

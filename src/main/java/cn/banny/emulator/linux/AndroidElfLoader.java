@@ -264,7 +264,7 @@ public class AndroidElfLoader implements Memory, Loader {
                 boolean forceCall = forceCallInit && m == module;
                 if (callInitFunction) {
                     m.callInitFunction(emulator, forceCall);
-                } else if(forceCall) {
+                } else if(forceCall || module.forceCallInit) {
                     m.callInitFunction(emulator, true);
                 }
                 m.initFunctionList.clear();

@@ -1198,10 +1198,9 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
 
     private void exit_group(Unicorn u) {
         int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("exit with code: " + status);
-        }
+        log.info("exit with code: " + status);
         u.emu_stop();
+        System.exit(status);
     }
 
     private int munmap(Unicorn u, Emulator emulator) {

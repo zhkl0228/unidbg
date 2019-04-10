@@ -222,4 +222,10 @@ public class Module {
                 ", name='" + name + '\'' +
                 '}';
     }
+
+    boolean forceCallInit;
+
+    public void setForceCallInit() {
+        this.forceCallInit = true;
+    }
 }
