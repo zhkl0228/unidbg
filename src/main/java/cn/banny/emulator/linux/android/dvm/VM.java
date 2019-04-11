@@ -1,5 +1,7 @@
 package cn.banny.emulator.linux.android.dvm;
 
+import cn.banny.emulator.Emulator;
+import cn.banny.emulator.linux.Module;
 import com.sun.jna.Pointer;
 
 import java.io.File;
@@ -38,4 +40,6 @@ public interface VM {
     DalvikModule loadLibrary(File elfFile, boolean forceCallInit) throws IOException;
 
     int addLocalObject(DvmObject object);
+
+    void callJNI_OnLoad(Emulator emulator, Module module) throws IOException;
 }

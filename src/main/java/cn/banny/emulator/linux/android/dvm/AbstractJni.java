@@ -1,7 +1,5 @@
 package cn.banny.emulator.linux.android.dvm;
 
-import cn.banny.emulator.Emulator;
-
 public abstract class AbstractJni implements Jni {
 
     @Override
@@ -121,6 +119,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public void callVoidMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 }

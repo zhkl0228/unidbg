@@ -51,4 +51,6 @@ public interface Jni {
     void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value);
 
     void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg);
+
+    void callVoidMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList);
 }

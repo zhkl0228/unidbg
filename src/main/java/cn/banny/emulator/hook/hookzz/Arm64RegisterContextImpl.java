@@ -50,4 +50,9 @@ public class Arm64RegisterContextImpl extends RegisterContextImpl implements Arm
     public Pointer getLrPointer() {
         return UnicornPointer.pointer(emulator, getLr());
     }
+
+    @Override
+    public Pointer getStackPointer() {
+        return reg_ctx.share(30 * 8 + 8 + 16 * 8);
+    }
 }

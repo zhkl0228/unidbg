@@ -8,6 +8,11 @@ public interface RegisterContext {
 
     Pointer getLrPointer();
 
+    /**
+     * SP
+     */
+    Pointer getStackPointer();
+
     void set(String key, Object value);
     <T> T get(String key);
 

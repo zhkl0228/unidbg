@@ -89,6 +89,11 @@ public class Arm32RegisterContextImpl extends RegisterContextImpl implements Reg
     }
 
     @Override
+    public Pointer getStackPointer() {
+        return reg_ctx.share(56);
+    }
+
+    @Override
     public Pointer getR0Pointer() {
         return UnicornPointer.pointer(emulator, getR0());
     }
