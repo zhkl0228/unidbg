@@ -1,6 +1,6 @@
 package cn.banny.emulator.hook.hookzz;
 
-import com.sun.jna.Pointer;
+import cn.banny.emulator.pointer.UnicornPointer;
 
 public interface Arm32RegisterContext extends RegisterContext {
 
@@ -30,30 +30,30 @@ public interface Arm32RegisterContext extends RegisterContext {
 
     long getR12();
 
-    Pointer getR0Pointer();
+    UnicornPointer getR0Pointer();
 
-    Pointer getR1Pointer();
+    UnicornPointer getR1Pointer();
 
-    Pointer getR2Pointer();
+    UnicornPointer getR2Pointer();
 
-    Pointer getR3Pointer();
+    UnicornPointer getR3Pointer();
 
-    Pointer getR4Pointer();
+    UnicornPointer getR4Pointer();
 
-    Pointer getR5Pointer();
+    UnicornPointer getR5Pointer();
 
-    Pointer getR6Pointer();
+    UnicornPointer getR6Pointer();
 
-    Pointer getR7Pointer();
+    UnicornPointer getR7Pointer();
 
-    Pointer getR8Pointer();
+    UnicornPointer getR8Pointer();
 
-    Pointer getR9Pointer();
+    UnicornPointer getR9Pointer();
 
-    Pointer getR10Pointer();
+    UnicornPointer getR10Pointer();
 
-    Pointer getR11Pointer();
+    UnicornPointer getR11Pointer();
 
-    Pointer getR12Pointer();
+    UnicornPointer getR12Pointer();
 
 }

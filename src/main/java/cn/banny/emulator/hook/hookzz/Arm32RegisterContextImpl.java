@@ -89,77 +89,77 @@ public class Arm32RegisterContextImpl extends RegisterContextImpl implements Reg
     }
 
     @Override
-    public Pointer getStackPointer() {
-        return reg_ctx.share(56);
+    public UnicornPointer getStackPointer() {
+        return (UnicornPointer) reg_ctx.share(56);
     }
 
     @Override
-    public Pointer getR0Pointer() {
+    public UnicornPointer getR0Pointer() {
         return UnicornPointer.pointer(emulator, getR0());
     }
 
     @Override
-    public Pointer getR1Pointer() {
+    public UnicornPointer getR1Pointer() {
         return UnicornPointer.pointer(emulator, getR1());
     }
 
     @Override
-    public Pointer getR2Pointer() {
+    public UnicornPointer getR2Pointer() {
         return UnicornPointer.pointer(emulator, getR2());
     }
 
     @Override
-    public Pointer getR3Pointer() {
+    public UnicornPointer getR3Pointer() {
         return UnicornPointer.pointer(emulator, getR3());
     }
 
     @Override
-    public Pointer getR4Pointer() {
+    public UnicornPointer getR4Pointer() {
         return UnicornPointer.pointer(emulator, getR4());
     }
 
     @Override
-    public Pointer getR5Pointer() {
+    public UnicornPointer getR5Pointer() {
         return UnicornPointer.pointer(emulator, getR5());
     }
 
     @Override
-    public Pointer getR6Pointer() {
+    public UnicornPointer getR6Pointer() {
         return UnicornPointer.pointer(emulator, getR6());
     }
 
     @Override
-    public Pointer getR7Pointer() {
+    public UnicornPointer getR7Pointer() {
         return UnicornPointer.pointer(emulator, getR7());
     }
 
     @Override
-    public Pointer getR8Pointer() {
+    public UnicornPointer getR8Pointer() {
         return UnicornPointer.pointer(emulator, getR8());
     }
 
     @Override
-    public Pointer getR9Pointer() {
+    public UnicornPointer getR9Pointer() {
         return UnicornPointer.pointer(emulator, getR9());
     }
 
     @Override
-    public Pointer getR10Pointer() {
+    public UnicornPointer getR10Pointer() {
         return UnicornPointer.pointer(emulator, getR10());
     }
 
     @Override
-    public Pointer getR11Pointer() {
+    public UnicornPointer getR11Pointer() {
         return UnicornPointer.pointer(emulator, getR11());
     }
 
     @Override
-    public Pointer getR12Pointer() {
+    public UnicornPointer getR12Pointer() {
         return UnicornPointer.pointer(emulator, getR12());
     }
 
     @Override
-    public Pointer getLrPointer() {
+    public UnicornPointer getLrPointer() {
         return UnicornPointer.pointer(emulator, getLr());
     }
 }

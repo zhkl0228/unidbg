@@ -1,15 +1,15 @@
 package cn.banny.emulator.hook.hookzz;
 
-import com.sun.jna.Pointer;
+import cn.banny.emulator.pointer.UnicornPointer;
 
 public interface Arm64RegisterContext extends RegisterContext {
 
     long getX(int index);
 
-    Pointer getXPointer(int index);
+    UnicornPointer getXPointer(int index);
 
     long getFp();
 
-    Pointer getFpPointer();
+    UnicornPointer getFpPointer();
 
 }

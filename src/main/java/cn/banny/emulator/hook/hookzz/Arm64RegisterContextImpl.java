@@ -27,7 +27,7 @@ public class Arm64RegisterContextImpl extends RegisterContextImpl implements Arm
     }
 
     @Override
-    public Pointer getXPointer(int index) {
+    public UnicornPointer getXPointer(int index) {
         return UnicornPointer.pointer(emulator, getX(index));
     }
 
@@ -37,7 +37,7 @@ public class Arm64RegisterContextImpl extends RegisterContextImpl implements Arm
     }
 
     @Override
-    public Pointer getFpPointer() {
+    public UnicornPointer getFpPointer() {
         return UnicornPointer.pointer(emulator, getFp());
     }
 
@@ -47,12 +47,12 @@ public class Arm64RegisterContextImpl extends RegisterContextImpl implements Arm
     }
 
     @Override
-    public Pointer getLrPointer() {
+    public UnicornPointer getLrPointer() {
         return UnicornPointer.pointer(emulator, getLr());
     }
 
     @Override
-    public Pointer getStackPointer() {
-        return reg_ctx.share(30 * 8 + 8 + 16 * 8);
+    public UnicornPointer getStackPointer() {
+        return (UnicornPointer) reg_ctx.share(30 * 8 + 8 + 16 * 8);
     }
 }
