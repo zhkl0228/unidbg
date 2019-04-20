@@ -1,15 +1,20 @@
 package cn.banny.emulator.arm;
 
+import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
-import cn.banny.emulator.memory.Memory;
-import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.linux.ARMSyscallHandler;
-import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.AndroidElfLoader;
+import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.android.ArmLD;
 import cn.banny.emulator.linux.file.FileIO;
+import cn.banny.emulator.memory.Memory;
+import cn.banny.emulator.memory.SvcMemory;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
@@ -20,13 +25,17 @@ import unicorn.UnicornConst;
 import java.io.File;
 import java.io.IOException;
 
-public abstract class AbstractARMEmulator extends AbstractEmulator {
+public abstract class AbstractARMEmulator extends AbstractEmulator implements ARMEmulator {
 
     private static final Log log = LogFactory.getLog(AbstractARMEmulator.class);
+
+    public static final long LR = 0xffff0000L;
 
     protected final Memory memory;
     private final ARMSyscallHandler syscallHandler;
     private final SvcMemory svcMemory;
+
+    private final Capstone capstoneArm, capstoneThumb;
 
     public AbstractARMEmulator(String processName) {
         super(UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM, processName);
@@ -49,6 +58,19 @@ public abstract class AbstractARMEmulator extends AbstractEmulator {
         this.memory.addHookListener(new ArmLD(unicorn, svcMemory));
 
         unicorn.hook_add(syscallHandler, this);
+
+        this.capstoneArm = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
+        // this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
+        this.capstoneThumb = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
+        // this.capstoneThumb.setDetail(Capstone.CS_OPT_ON);
+    }
+
+    @Override
+    protected final byte[] assemble(Iterable<String> assembly) {
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+            KeystoneEncoded encoded = keystone.assemble(assembly);
+            return encoded.getMachineCode();
+        }
     }
 
     private void enableVFP() {
@@ -68,6 +90,9 @@ public abstract class AbstractARMEmulator extends AbstractEmulator {
         for (FileIO io : syscallHandler.fdMap.values()) {
             io.close();
         }
+
+        capstoneThumb.close();
+        capstoneArm.close();
     }
 
     @Override
@@ -103,4 +128,71 @@ public abstract class AbstractARMEmulator extends AbstractEmulator {
     public final void showRegs(int... regs) {
         ARM.showRegs(unicorn, regs);
     }
+
+    @Override
+    public boolean printAssemble(long address, int size) {
+        printAssemble(disassemble(address, size, 0), address, ARM.isThumb(unicorn));
+        return true;
+    }
+
+    @Override
+    public Capstone.CsInsn[] disassemble(long address, int size, long count) {
+        boolean thumb = ARM.isThumb(unicorn);
+        byte[] code = unicorn.mem_read(address, size);
+        return thumb ? capstoneThumb.disasm(code, address, count) : capstoneArm.disasm(code, address, count);
+    }
+
+    @Override
+    public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb) {
+        return thumb ? capstoneThumb.disasm(code, address) : capstoneArm.disasm(code, address);
+    }
+
+    private void printAssemble(Capstone.CsInsn[] insns, long address, boolean thumb) {
+        StringBuilder sb = new StringBuilder();
+        for (Capstone.CsInsn ins : insns) {
+            sb.append("### Trace Instruction ");
+            sb.append(ARM.assembleDetail(memory, ins, address, thumb));
+            sb.append('\n');
+            address += ins.size;
+        }
+        System.out.print(sb.toString());
+    }
+
+    @Override
+    public Number[] eFunc(long begin, Number... arguments) {
+        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+        final Arguments args = ARM.initArgs(this, arguments);
+        return eFunc(begin, args, LR);
+    }
+
+    @Override
+    public void eInit(long begin) {
+        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+        emulate(begin, LR, timeout, false);
+    }
+
+    @Override
+    public Number eEntry(long begin, long sp) {
+        memory.setStackPoint(sp);
+        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+        return emulate(begin, LR, timeout, true);
+    }
+
+    @Override
+    public Unicorn eBlock(long begin, long until) {
+        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+        emulate(begin, until, traceInstruction ? 0 : timeout, true);
+        return unicorn;
+    }
+
+    @Override
+    public int getPointerSize() {
+        return 4;
+    }
+
+    @Override
+    public int getPageAlign() {
+        return PAGE_ALIGN;
+    }
+
 }

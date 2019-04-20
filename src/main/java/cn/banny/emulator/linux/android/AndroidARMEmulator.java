@@ -1,18 +1,12 @@
 package cn.banny.emulator.linux.android;
 
-import capstone.Capstone;
-import cn.banny.emulator.arm.ARM;
-import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.AbstractARMEmulator;
-import cn.banny.emulator.arm.Arguments;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.nio.ByteBuffer;
@@ -23,12 +17,9 @@ import java.util.Arrays;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public class AndroidARMEmulator extends AbstractARMEmulator implements ARMEmulator {
+public class AndroidARMEmulator extends AbstractARMEmulator {
 
     private static final Log log = LogFactory.getLog(AndroidARMEmulator.class);
-
-    private final Capstone capstoneArm, capstoneThumb;
-    public static final long LR = 0xffff0000L;
 
     public AndroidARMEmulator() {
         this(null);
@@ -37,20 +28,7 @@ public class AndroidARMEmulator extends AbstractARMEmulator implements ARMEmulat
     public AndroidARMEmulator(String processName) {
         super(processName);
 
-        this.capstoneArm = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
-        // this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
-        this.capstoneThumb = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
-        // this.capstoneThumb.setDetail(Capstone.CS_OPT_ON);
-
         setupTraps();
-    }
-
-    @Override
-    protected byte[] assemble(Iterable<String> assembly) {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            KeystoneEncoded encoded = keystone.assemble(assembly);
-            return encoded.getMachineCode();
-        }
     }
 
     /**
@@ -95,80 +73,6 @@ public class AndroidARMEmulator extends AbstractARMEmulator implements ARMEmulat
                 }
             }
         }
-    }
-
-    @Override
-    public boolean printAssemble(long address, int size) {
-        printAssemble(disassemble(address, size, 0), address, ARM.isThumb(unicorn));
-        return true;
-    }
-
-    @Override
-    public Capstone.CsInsn[] disassemble(long address, int size, long count) {
-        boolean thumb = ARM.isThumb(unicorn);
-        byte[] code = unicorn.mem_read(address, size);
-        return thumb ? capstoneThumb.disasm(code, address, count) : capstoneArm.disasm(code, address, count);
-    }
-
-    @Override
-    public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb) {
-        return thumb ? capstoneThumb.disasm(code, address) : capstoneArm.disasm(code, address);
-    }
-
-    private void printAssemble(Capstone.CsInsn[] insns, long address, boolean thumb) {
-        StringBuilder sb = new StringBuilder();
-        for (Capstone.CsInsn ins : insns) {
-            sb.append("### Trace Instruction ");
-            sb.append(ARM.assembleDetail(memory, ins, address, thumb));
-            sb.append('\n');
-            address += ins.size;
-        }
-        System.out.print(sb.toString());
-    }
-
-    @Override
-    protected void closeInternal() {
-        super.closeInternal();
-
-        capstoneThumb.close();
-        capstoneArm.close();
-    }
-
-    @Override
-    public int getPointerSize() {
-        return 4;
-    }
-
-    @Override
-    public int getPageAlign() {
-        return PAGE_ALIGN;
-    }
-
-    @Override
-    public Number[] eFunc(long begin, Number... arguments) {
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        final Arguments args = ARM.initArgs(this, arguments);
-        return eFunc(begin, args, LR);
-    }
-
-    @Override
-    public void eInit(long begin) {
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        emulate(begin, LR, timeout, false);
-    }
-
-    @Override
-    public Number eEntry(long begin, long sp) {
-        memory.setStackPoint(sp);
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        return emulate(begin, LR, timeout, true);
-    }
-
-    @Override
-    public Unicorn eBlock(long begin, long until) {
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        emulate(begin, until, traceInstruction ? 0 : timeout, true);
-        return unicorn;
     }
 
 }
