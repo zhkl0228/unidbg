@@ -5,21 +5,15 @@ import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.AbstractARM64Emulator;
 import cn.banny.emulator.arm.Arguments;
-import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * android arm emulator
@@ -27,8 +21,6 @@ import java.util.List;
  */
 
 public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEmulator {
-
-    private static final Log log = LogFactory.getLog(AndroidARM64Emulator.class);
 
     private final Capstone capstoneArm64;
     private static final long LR = 0xffffffffffff0000L;
@@ -119,31 +111,9 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
 
     @Override
     public Number[] eFunc(long begin, Number... arguments) {
-        int i = 0;
-        int[] regArgs = ARM.getRegArgs(this);
-        final Arguments args = new Arguments(this.memory, arguments);
-
-        List<Number> list = new ArrayList<>();
-        if (args.args != null) {
-            Collections.addAll(list, args.args);
-        }
-        while (!list.isEmpty() && i < regArgs.length) {
-            unicorn.reg_write(regArgs[i], list.remove(0));
-            i++;
-        }
-        Collections.reverse(list);
-        while (!list.isEmpty()) {
-            Number number = list.remove(0);
-            Pointer pointer = memory.allocateStack(4);
-            assert pointer != null;
-            pointer.setInt(0, number.intValue());
-        }
-
         unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
-        final List<Number> numbers = new ArrayList<>(10);
-        numbers.add(emulate(begin, LR, timeout, true));
-        numbers.addAll(args.pointers);
-        return numbers.toArray(new Number[0]);
+        final Arguments args = ARM.initArgs(this, arguments);
+        return eFunc(begin, args, LR);
     }
 
     @Override
@@ -164,16 +134,6 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
         unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
         emulate(begin, until, traceInstruction ? 0 : timeout, true);
         return unicorn;
-    }
-
-    @Override
-    public void showRegs() {
-        this.showRegs((int[]) null);
-    }
-
-    @Override
-    public void showRegs(int... regs) {
-        ARM.showRegs64(unicorn, regs);
     }
 
 }

@@ -13,6 +13,9 @@ import unicorn.Unicorn;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -537,6 +540,32 @@ public class ARM {
         if (value < 0) {
             sb.append(" (-0x").append(Integer.toHexString(-value)).append(")");
         }
+    }
+
+    public static Arguments initArgs(Emulator emulator, Number... arguments) {
+        Unicorn unicorn = emulator.getUnicorn();
+        Memory memory = emulator.getMemory();
+
+        int i = 0;
+        int[] regArgs = ARM.getRegArgs(emulator);
+        final Arguments args = new Arguments(memory, arguments);
+
+        List<Number> list = new ArrayList<>();
+        if (args.args != null) {
+            Collections.addAll(list, args.args);
+        }
+        while (!list.isEmpty() && i < regArgs.length) {
+            unicorn.reg_write(regArgs[i], list.remove(0));
+            i++;
+        }
+        Collections.reverse(list);
+        while (!list.isEmpty()) {
+            Number number = list.remove(0);
+            Pointer pointer = memory.allocateStack(4);
+            assert pointer != null;
+            pointer.setInt(0, number.intValue());
+        }
+        return args;
     }
 
 }

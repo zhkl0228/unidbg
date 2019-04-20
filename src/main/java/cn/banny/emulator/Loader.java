@@ -19,7 +19,9 @@ public interface Loader {
     Module load(LibraryFile libraryFile) throws IOException;
     Module load(LibraryFile libraryFile, boolean forceCallInit) throws IOException;
 
+    @Deprecated
     byte[] unpack(File elfFile) throws IOException;
+
     Module findModuleByAddress(long address);
     Module findModule(String soName);
 

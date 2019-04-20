@@ -92,4 +92,14 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator {
     public SyscallHandler getSyscallHandler() {
         return syscallHandler;
     }
+
+    @Override
+    public final void showRegs() {
+        this.showRegs((int[]) null);
+    }
+
+    @Override
+    public final void showRegs(int... regs) {
+        ARM.showRegs64(unicorn, regs);
+    }
 }
