@@ -3,6 +3,7 @@ package com.bytedance.frameworks.core.encrypt;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.LibraryResolver;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.HookStatus;
@@ -10,7 +11,6 @@ import cn.banny.emulator.hook.ReplaceCallback;
 import cn.banny.emulator.hook.hookzz.*;
 import cn.banny.emulator.hook.xhook.IxHook;
 import cn.banny.emulator.hook.xhook.XHookImpl;
-import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import cn.banny.emulator.linux.android.dvm.ByteArray;
@@ -38,7 +38,7 @@ public class TTEncrypt {
 
     private final ARMEmulator emulator;
     private final VM vm;
-    private final LinuxModule module;
+    private final Module module;
 
     private final DvmClass TTEncryptUtils;
 

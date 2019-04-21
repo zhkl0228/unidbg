@@ -73,7 +73,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    protected final Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
+    public final Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
         ElfSymbol elfSymbol = dynsym.getELFSymbolByName(name);
         if (elfSymbol != null && !elfSymbol.isUndef()) {
             return new LinuxSymbol(this, elfSymbol);

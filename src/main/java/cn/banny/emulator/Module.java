@@ -35,7 +35,7 @@ public abstract class Module {
         return findSymbolByName(name, true);
     }
 
-    protected abstract Symbol findSymbolByName(String name, boolean withDependencies) throws IOException;
+    public abstract Symbol findSymbolByName(String name, boolean withDependencies) throws IOException;
 
     private int referenceCount;
 

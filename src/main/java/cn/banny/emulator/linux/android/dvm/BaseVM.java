@@ -190,7 +190,7 @@ public abstract class BaseVM implements VM {
     }
 
     @Override
-    public void callJNI_OnLoad(Emulator emulator, LinuxModule module) throws IOException {
+    public void callJNI_OnLoad(Emulator emulator, Module module) throws IOException {
         new DalvikModule(this, module).callJNI_OnLoad(emulator);
     }
 }

@@ -2,8 +2,8 @@ package com.xunmeng.pinduoduo.secure;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.LibraryResolver;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.arm.ARMEmulator;
-import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import cn.banny.emulator.linux.android.dvm.*;
@@ -29,7 +29,7 @@ public class DeviceNative extends AbstractJni {
 
     private final ARMEmulator emulator;
     private final VM vm;
-    private final LinuxModule module;
+    private final Module module;
 
     private final DvmClass DeviceNative;
 
