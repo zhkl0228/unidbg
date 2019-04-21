@@ -1,12 +1,12 @@
 package cn.banny.emulator.hook.hookzz;
 
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.Arm64Svc;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.hook.BaseHook;
 import cn.banny.emulator.hook.ReplaceCallback;
-import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.memory.SvcMemory;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -41,7 +41,7 @@ public class HookZz extends BaseHook implements IHookZz {
     private HookZz(Emulator emulator) throws IOException {
         super(emulator);
 
-        LinuxModule module = (LinuxModule) emulator.getMemory().load(resolveLibrary(emulator, "libhookzz.so"));
+        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libhookzz.so"));
         zz_enable_arm_arm64_b_branch = module.findSymbolByName("zz_enable_arm_arm64_b_branch");
         zz_disable_arm_arm64_b_branch = module.findSymbolByName("zz_disable_arm_arm64_b_branch");
         zzReplace = module.findSymbolByName("ZzReplace");

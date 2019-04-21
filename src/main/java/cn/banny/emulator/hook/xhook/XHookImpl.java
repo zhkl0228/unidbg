@@ -1,10 +1,10 @@
 package cn.banny.emulator.hook.xhook;
 
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.hook.BaseHook;
 import cn.banny.emulator.hook.ReplaceCallback;
-import cn.banny.emulator.linux.LinuxModule;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,7 +34,7 @@ public class XHookImpl extends BaseHook implements IxHook {
     private XHookImpl(Emulator emulator) throws IOException {
         super(emulator);
 
-        LinuxModule module = (LinuxModule) emulator.getMemory().load(resolveLibrary(emulator, "libxhook.so"));
+        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libxhook.so"));
         xhook_register = module.findSymbolByName("xhook_register");
         xhook_refresh = module.findSymbolByName("xhook_refresh");
         log.debug("xhook_register=" + xhook_register + ", xhook_refresh=" + xhook_refresh);
