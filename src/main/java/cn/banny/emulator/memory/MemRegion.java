@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux;
+package cn.banny.emulator.memory;
 
 import cn.banny.emulator.LibraryFile;
 
@@ -12,7 +12,7 @@ public class MemRegion implements Comparable<MemRegion> {
     private final LibraryFile libraryFile;
     public final long offset;
 
-    MemRegion(long begin, long end, int perms, LibraryFile libraryFile, long offset) {
+    public MemRegion(long begin, long end, int perms, LibraryFile libraryFile, long offset) {
         this.begin = begin;
         this.end = end;
         this.perms = perms;

@@ -1,6 +1,5 @@
 package cn.banny.emulator;
 
-import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.utils.Hex;
 import unicorn.ArmConst;

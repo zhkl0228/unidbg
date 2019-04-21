@@ -1,5 +1,6 @@
 package cn.banny.emulator.linux.file;
 
+import cn.banny.emulator.file.FileIO;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

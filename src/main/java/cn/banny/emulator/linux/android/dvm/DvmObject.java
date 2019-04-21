@@ -1,7 +1,7 @@
 package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.pointer.UnicornPointer;
 import unicorn.UnicornException;
 
@@ -39,7 +39,7 @@ public class DvmObject<T> implements Hashable {
         if (args != null) {
             Collections.addAll(list, args);
         }
-        return Module.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
+        return LinuxModule.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
     }
 
     @Override

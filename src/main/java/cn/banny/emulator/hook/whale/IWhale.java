@@ -1,7 +1,7 @@
 package cn.banny.emulator.hook.whale;
 
+import cn.banny.emulator.Symbol;
 import cn.banny.emulator.hook.ReplaceCallback;
-import cn.banny.emulator.linux.Symbol;
 
 public interface IWhale {
 

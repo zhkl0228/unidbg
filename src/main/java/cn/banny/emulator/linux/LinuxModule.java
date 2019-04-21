@@ -1,11 +1,10 @@
 package cn.banny.emulator.linux;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.ByteArrayNumber;
-import cn.banny.emulator.Emulator;
-import cn.banny.emulator.memory.Memory;
-import cn.banny.emulator.StringNumber;
+import cn.banny.emulator.*;
 import cn.banny.emulator.linux.android.dvm.Hashable;
+import cn.banny.emulator.memory.MemRegion;
+import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
@@ -17,24 +16,19 @@ import unicorn.Unicorn;
 import java.io.IOException;
 import java.util.*;
 
-public class Module {
+public class LinuxModule extends Module {
 
-    private static final Log log = LogFactory.getLog(Module.class);
+    private static final Log log = LogFactory.getLog(LinuxModule.class);
 
-    public final long base;
-    public final long size;
     private final SymbolLocator dynsym;
-    public final String name;
     private final List<ModuleSymbol> unresolvedSymbol;
     public final List<InitFunction> initFunctionList;
-    private final Map<String, Module> neededLibraries;
+    private final Map<String, LinuxModule> neededLibraries;
     private final List<MemRegion> regions;
 
-    public Module(long base, long size, String name, SymbolLocator dynsym,
-                  List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions) {
-        this.base = base;
-        this.size = size;
-        this.name = name;
+    public LinuxModule(long base, long size, String name, SymbolLocator dynsym,
+                       List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, LinuxModule> neededLibraries, List<MemRegion> regions) {
+        super(name, base, size);
 
         this.dynsym = dynsym;
         this.unresolvedSymbol = unresolvedSymbol;
@@ -78,18 +72,15 @@ public class Module {
         return regions;
     }
 
-    public Symbol findSymbolByName(String name) throws IOException {
-        return findSymbolByName(name, true);
-    }
-
-    private Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
+    @Override
+    protected final Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
         ElfSymbol elfSymbol = dynsym.getELFSymbolByName(name);
         if (elfSymbol != null && !elfSymbol.isUndef()) {
-            return new Symbol(this, elfSymbol);
+            return new LinuxSymbol(this, elfSymbol);
         }
 
         if (withDependencies) {
-            for (Module module : neededLibraries.values()) {
+            for (LinuxModule module : neededLibraries.values()) {
                 Symbol symbol = module.findSymbolByName(name, true);
                 if (symbol != null) {
                     return symbol;
@@ -155,18 +146,7 @@ public class Module {
         return emulator.eEntry(base + entryPoint, kernelArgumentBlock.peer).intValue();
     }
 
-    public Number[] callFunction(Emulator emulator, String symbolName, Object... args) throws IOException {
-        Symbol symbol = findSymbolByName(symbolName, false);
-        if (symbol == null) {
-            throw new IllegalStateException("find symbol failed: " + symbolName);
-        }
-        if (symbol.elfSymbol.isUndef()) {
-            throw new IllegalStateException(symbolName + " is NOT defined");
-        }
-
-        return symbol.call(emulator, args);
-    }
-
+    @Override
     public Number[] callFunction(Emulator emulator, long offset, Object... args) {
         return emulateFunction(emulator, base + offset, args);
     }
@@ -194,38 +174,22 @@ public class Module {
         return emulator.eFunc(address, list.toArray(new Number[0]));
     }
 
-    Collection<Module> getNeededLibraries() {
+    Collection<LinuxModule> getNeededLibraries() {
         return neededLibraries.values();
     }
 
-    public Module getDependencyModule(String name) {
+    public LinuxModule getDependencyModule(String name) {
         return neededLibraries.get(name);
-    }
-
-    private int referenceCount;
-
-    void addReferenceCount() {
-        referenceCount++;
-    }
-
-    int decrementReferenceCount() {
-        return --referenceCount;
     }
 
     final Map<String, Long> hookMap = new HashMap<>();
 
     @Override
     public String toString() {
-        return "Module{" +
+        return "LinuxModule{" +
                 "base=0x" + Long.toHexString(base) +
                 ", size=" + size +
                 ", name='" + name + '\'' +
                 '}';
-    }
-
-    boolean forceCallInit;
-
-    public void setForceCallInit() {
-        this.forceCallInit = true;
     }
 }

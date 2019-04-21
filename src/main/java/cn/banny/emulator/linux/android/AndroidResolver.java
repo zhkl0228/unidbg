@@ -3,6 +3,7 @@ package cn.banny.emulator.linux.android;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.LibraryFile;
 import cn.banny.emulator.LibraryResolver;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.IO;
 import cn.banny.emulator.linux.file.*;
 import org.apache.commons.io.FileUtils;

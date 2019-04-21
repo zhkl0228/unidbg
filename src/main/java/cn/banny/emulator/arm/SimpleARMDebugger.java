@@ -3,11 +3,12 @@ package cn.banny.emulator.arm;
 import capstone.Capstone;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.memory.Memory;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.debugger.DebugListener;
 import cn.banny.emulator.debugger.Debugger;
+import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.utils.Hex;
 import com.sun.jna.Pointer;
@@ -27,10 +28,10 @@ public class SimpleARMDebugger implements Debugger {
 
     private static final Log log = LogFactory.getLog(SimpleARMDebugger.class);
 
-    private final Map<Long, Module> breakMap = new HashMap<>();
+    private final Map<Long, LinuxModule> breakMap = new HashMap<>();
 
     @Override
-    public void addBreakPoint(Module module, String symbol) {
+    public void addBreakPoint(LinuxModule module, String symbol) {
         try {
             ElfSymbol elfSymbol = module.getELFSymbolByName(symbol);
             if (elfSymbol == null) {
@@ -43,7 +44,7 @@ public class SimpleARMDebugger implements Debugger {
     }
 
     @Override
-    public void addBreakPoint(Module module, long offset) {
+    public void addBreakPoint(LinuxModule module, long offset) {
         long address = (module == null ? offset : module.base + offset) & (~1);
         if (log.isDebugEnabled()) {
             log.debug("addBreakPoint address=0x" + Long.toHexString(address));

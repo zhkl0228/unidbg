@@ -1,10 +1,9 @@
 package cn.banny.emulator;
 
 import cn.banny.emulator.linux.LinuxThread;
-import cn.banny.emulator.linux.MemRegion;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.linux.file.ByteArrayFileIO;
-import cn.banny.emulator.linux.file.FileIO;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.file.IOResolver;
 
 import java.io.IOException;

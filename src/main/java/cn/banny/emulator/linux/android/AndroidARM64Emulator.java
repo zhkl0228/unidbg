@@ -1,7 +1,10 @@
 package cn.banny.emulator.linux.android;
 
+import cn.banny.emulator.AbstractSyscallHandler;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.AbstractARM64Emulator;
+import cn.banny.emulator.linux.AndroidElfLoader;
+import cn.banny.emulator.memory.Memory;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -25,6 +28,11 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
         super(processName);
 
         setupTraps();
+    }
+
+    @Override
+    protected Memory createMemory(AbstractSyscallHandler syscallHandler) {
+        return new AndroidElfLoader(this, syscallHandler);
     }
 
     /**

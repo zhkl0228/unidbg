@@ -1,7 +1,7 @@
 package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.linux.LinuxModule;
 import net.fornwall.jelf.ElfSymbol;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -13,14 +13,14 @@ public class DalvikModule {
     private static final Log log = LogFactory.getLog(DalvikModule.class);
 
     private final BaseVM vm;
-    private final Module module;
+    private final LinuxModule module;
 
-    DalvikModule(BaseVM vm, Module module) {
+    DalvikModule(BaseVM vm, LinuxModule module) {
         this.vm = vm;
         this.module = module;
     }
 
-    public Module getModule() {
+    public LinuxModule getModule() {
         return module;
     }
 

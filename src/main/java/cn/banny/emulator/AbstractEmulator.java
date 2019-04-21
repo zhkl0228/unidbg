@@ -57,6 +57,8 @@ public abstract class AbstractEmulator implements Emulator {
         this.pid = Integer.parseInt(pid);
     }
 
+    protected  abstract Memory createMemory(AbstractSyscallHandler syscallHandler);
+
     @Override
     public void runAsm(String... asm) {
         byte[] shellCode = assemble(Arrays.asList(asm));

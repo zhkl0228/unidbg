@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux.file;
+package cn.banny.emulator.file;
 
 import cn.banny.emulator.Emulator;
 import com.sun.jna.Pointer;

@@ -2,13 +2,12 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.linux.ARM64SyscallHandler;
-import cn.banny.emulator.linux.AndroidElfLoader;
-import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.android.ArmLD;
-import cn.banny.emulator.linux.file.FileIO;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import keystone.Keystone;
@@ -53,7 +52,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
         this.syscallHandler = new ARM64SyscallHandler(svcMemory);
 
         enableVFP();
-        this.memory = new AndroidElfLoader(unicorn, this, syscallHandler);
+        this.memory = createMemory(syscallHandler);
         this.memory.addHookListener(new ArmLD(unicorn, svcMemory));
 
         unicorn.hook_add(syscallHandler, this);

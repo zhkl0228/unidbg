@@ -1,10 +1,9 @@
 package cn.banny.emulator;
 
+import cn.banny.emulator.linux.LinuxEmulator;
+import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
-import cn.banny.emulator.linux.LinuxEmulator;
-import cn.banny.emulator.linux.Module;
-import cn.banny.emulator.linux.ModuleListener;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
@@ -37,8 +36,8 @@ class RunExecutable {
                 }
             }
 
-            Module module = emulator.loadLibrary(executable);
-            Module libc = module.getDependencyModule("libc");
+            LinuxModule module = (LinuxModule) emulator.loadLibrary(executable);
+            LinuxModule libc = module.getDependencyModule("libc");
             ElfSymbol environ = libc.getELFSymbolByName("environ");
             if (environ != null) {
                 Pointer pointer = UnicornPointer.pointer(emulator, libc.base + environ.value);

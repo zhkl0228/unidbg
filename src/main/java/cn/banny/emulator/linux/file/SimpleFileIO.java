@@ -3,6 +3,8 @@ package cn.banny.emulator.linux.file;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.arm.ARM;
+import cn.banny.emulator.file.AbstractFileIO;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
@@ -143,7 +145,7 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    byte[] getMmapData(int offset, int length) throws IOException {
+    protected byte[] getMmapData(int offset, int length) throws IOException {
         randomAccessFile.seek(offset);
         ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
         byte[] buf = new byte[10240];

@@ -3,8 +3,6 @@ package cn.banny.emulator;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
-import cn.banny.emulator.linux.Module;
-import cn.banny.emulator.linux.Symbol;
 import cn.banny.emulator.pointer.UnicornPointer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;

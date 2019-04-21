@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux.file;
+package cn.banny.emulator.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
@@ -17,10 +17,10 @@ public abstract class AbstractFileIO implements FileIO {
 
     private static final int FD_CLOEXEC = 1;
 
-    int op;
-    int oflags;
+    protected int op;
+    protected int oflags;
 
-    AbstractFileIO(int oflags) {
+    protected AbstractFileIO(int oflags) {
         this.oflags = oflags;
     }
 
@@ -116,7 +116,7 @@ public abstract class AbstractFileIO implements FileIO {
         return (int) addr;
     }
 
-    byte[] getMmapData(int offset, int length) throws IOException {
+    protected byte[] getMmapData(int offset, int length) throws IOException {
         throw new AbstractMethodError(getClass().getName());
     }
 

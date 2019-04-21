@@ -2,6 +2,8 @@ package cn.banny.emulator.linux.file;
 
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.arm.ARM;
+import cn.banny.emulator.file.AbstractFileIO;
+import cn.banny.emulator.file.FileIO;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -67,7 +69,7 @@ public class ByteArrayFileIO extends AbstractFileIO {
     }
 
     @Override
-    byte[] getMmapData(int offset, int length) {
+    protected byte[] getMmapData(int offset, int length) {
         if (offset == 0 && length == bytes.length) {
             return bytes;
         } else {

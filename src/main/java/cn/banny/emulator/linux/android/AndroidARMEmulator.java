@@ -1,6 +1,9 @@
 package cn.banny.emulator.linux.android;
 
+import cn.banny.emulator.AbstractSyscallHandler;
 import cn.banny.emulator.arm.AbstractARMEmulator;
+import cn.banny.emulator.linux.AndroidElfLoader;
+import cn.banny.emulator.memory.Memory;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -29,6 +32,11 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
         super(processName);
 
         setupTraps();
+    }
+
+    @Override
+    protected Memory createMemory(AbstractSyscallHandler syscallHandler) {
+        return new AndroidElfLoader(this, syscallHandler);
     }
 
     /**

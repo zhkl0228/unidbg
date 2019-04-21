@@ -1,7 +1,6 @@
 package cn.banny.emulator;
 
 import cn.banny.emulator.debugger.Debugger;
-import cn.banny.emulator.linux.Module;
 import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;

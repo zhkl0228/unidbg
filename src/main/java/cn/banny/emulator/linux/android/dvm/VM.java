@@ -1,7 +1,7 @@
 package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.linux.LinuxModule;
 import com.sun.jna.Pointer;
 
 import java.io.File;
@@ -41,5 +41,5 @@ public interface VM {
 
     int addLocalObject(DvmObject object);
 
-    void callJNI_OnLoad(Emulator emulator, Module module) throws IOException;
+    void callJNI_OnLoad(Emulator emulator, LinuxModule module) throws IOException;
 }

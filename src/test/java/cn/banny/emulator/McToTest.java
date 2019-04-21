@@ -1,7 +1,7 @@
 package cn.banny.emulator;
 
 import cn.banny.emulator.arm.ARM;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import unicorn.Unicorn;
 

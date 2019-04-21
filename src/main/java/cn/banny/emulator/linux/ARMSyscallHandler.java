@@ -4,6 +4,7 @@ import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.*;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ARMEmulator;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.file.*;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;

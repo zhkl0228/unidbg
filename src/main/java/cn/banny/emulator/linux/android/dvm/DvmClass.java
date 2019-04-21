@@ -1,7 +1,8 @@
 package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.Module;
+import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.pointer.UnicornPointer;
 import net.fornwall.jelf.ElfSymbol;
 import org.apache.commons.logging.Log;
@@ -106,7 +107,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
             try {
                 String symbolName = "Java_" + getClassName().replace('/', '_') + "_" + method.substring(0, index);
                 for (Module module : emulator.getMemory().getLoadedModules()) {
-                    ElfSymbol symbol = module.getELFSymbolByName(symbolName);
+                    ElfSymbol symbol = ((LinuxModule) module).getELFSymbolByName(symbolName);
                     if (symbol != null) {
                         fnPtr = UnicornPointer.pointer(emulator, module.base + symbol.value);
                         break;
@@ -130,7 +131,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         if (args != null) {
             Collections.addAll(list, args);
         }
-        return Module.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
+        return LinuxModule.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
     }
 
 }

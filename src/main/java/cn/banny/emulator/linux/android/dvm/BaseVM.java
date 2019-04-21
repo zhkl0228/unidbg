@@ -2,7 +2,8 @@ package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.LibraryFile;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.Module;
+import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.ElfLibraryFile;
 import net.dongliu.apk.parser.ApkFile;
 import org.apache.commons.io.IOUtils;
@@ -153,7 +154,7 @@ public abstract class BaseVM implements VM {
             }
 
             Module module = emulator.getMemory().load(new ApkLibraryFile(apkFile, soName, libData), forceCallInit);
-            return new DalvikModule(this, module);
+            return new DalvikModule(this, (LinuxModule) module);
         } finally {
             IOUtils.closeQuietly(apkFile);
         }
@@ -164,7 +165,7 @@ public abstract class BaseVM implements VM {
         emulator.setWorkDir(elfFile.getParentFile());
 
         Module module = emulator.getMemory().load(new ElfLibraryFile(elfFile), forceCallInit);
-        return new DalvikModule(this, module);
+        return new DalvikModule(this, (LinuxModule) module);
     }
 
     @Override
@@ -189,7 +190,7 @@ public abstract class BaseVM implements VM {
     }
 
     @Override
-    public void callJNI_OnLoad(Emulator emulator, Module module) throws IOException {
+    public void callJNI_OnLoad(Emulator emulator, LinuxModule module) throws IOException {
         new DalvikModule(this, module).callJNI_OnLoad(emulator);
     }
 }

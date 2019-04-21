@@ -1,10 +1,11 @@
 package cn.banny.emulator.linux.android;
 
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.Module;
+import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.linux.InitFunction;
-import cn.banny.emulator.linux.Module;
-import cn.banny.emulator.linux.Symbol;
+import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.dlfcn.Dlfcn;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
@@ -152,7 +153,8 @@ public class ArmLD implements Dlfcn {
                 pointer = pointer.share(-4); // NULL-terminated
                 pointer.setInt(0, 0);
 
-                for (Module m : memory.getLoadedModules()) {
+                for (Module md : memory.getLoadedModules()) {
+                    LinuxModule m = (LinuxModule) md;
                     if (!m.getUnresolvedSymbol().isEmpty()) {
                         continue;
                     }

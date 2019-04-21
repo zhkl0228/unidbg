@@ -1,8 +1,9 @@
 package cn.banny.emulator.linux.file;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.linux.MemRegion;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.Module;
+import cn.banny.emulator.file.FileIO;
+import cn.banny.emulator.memory.MemRegion;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.UnicornConst;

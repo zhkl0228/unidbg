@@ -2,6 +2,7 @@ package cn.banny.emulator.linux.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.LinuxEmulator;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;

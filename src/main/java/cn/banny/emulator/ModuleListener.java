@@ -1,6 +1,4 @@
-package cn.banny.emulator.linux;
-
-import cn.banny.emulator.Emulator;
+package cn.banny.emulator;
 
 public interface ModuleListener {
 

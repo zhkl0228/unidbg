@@ -4,7 +4,7 @@ import capstone.Arm;
 import capstone.Arm_const;
 import capstone.Capstone;
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.linux.Module;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.memory.Memory;
 import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
