@@ -15,17 +15,17 @@ public class XHookImpl extends BaseHook implements IxHook {
 
     private static final Log log = LogFactory.getLog(XHookImpl.class);
 
-    private static IxHook instance;
-
     public static IxHook getInstance(Emulator emulator) {
-        if (instance == null) {
+        IxHook ixHook = emulator.get(XHookImpl.class.getName());
+        if (ixHook == null) {
             try {
-                instance = new XHookImpl(emulator);
+                ixHook = new XHookImpl(emulator);
+                emulator.set(XHookImpl.class.getName(), ixHook);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         }
-        return instance;
+        return ixHook;
     }
 
     private final Symbol xhook_register;

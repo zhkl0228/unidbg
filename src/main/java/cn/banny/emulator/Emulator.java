@@ -15,7 +15,7 @@ import java.io.IOException;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public interface Emulator extends Closeable, Disassembler {
+public interface Emulator extends Closeable, Disassembler, ValuePair {
 
     int getPointerSize();
 

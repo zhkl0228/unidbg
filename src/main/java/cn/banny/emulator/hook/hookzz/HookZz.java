@@ -20,17 +20,17 @@ public class HookZz extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(HookZz.class);
 
-    private static HookZz instance;
-
     public static HookZz getInstance(Emulator emulator) {
-        if (instance == null) {
+        HookZz hookZz = emulator.get(HookZz.class.getName());
+        if (hookZz == null) {
             try {
-                instance = new HookZz(emulator);
+                hookZz = new HookZz(emulator);
+                emulator.set(HookZz.class.getName(), hookZz);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         }
-        return instance;
+        return hookZz;
     }
 
     private final Symbol zz_enable_arm_arm64_b_branch, zz_disable_arm_arm64_b_branch;

@@ -1,8 +1,9 @@
 package cn.banny.emulator.hook.hookzz;
 
+import cn.banny.emulator.ValuePair;
 import cn.banny.emulator.pointer.UnicornPointer;
 
-public interface RegisterContext {
+public interface RegisterContext extends ValuePair {
 
     long getLr();
 
@@ -12,8 +13,5 @@ public interface RegisterContext {
      * SP
      */
     UnicornPointer getStackPointer();
-
-    void set(String key, Object value);
-    <T> T get(String key);
 
 }
