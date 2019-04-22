@@ -37,7 +37,7 @@ class RunExecutable {
             }
 
             LinuxModule module = (LinuxModule) emulator.loadLibrary(executable);
-            LinuxModule libc = module.getDependencyModule("libc");
+            LinuxModule libc = (LinuxModule) module.getDependencyModule("libc");
             ElfSymbol environ = libc.getELFSymbolByName("environ");
             if (environ != null) {
                 Pointer pointer = UnicornPointer.pointer(emulator, libc.base + environ.value);

@@ -163,7 +163,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         for (LinuxModule m : modules.values()) {
             for (Iterator<ModuleSymbol> iterator = m.getUnresolvedSymbol().iterator(); iterator.hasNext(); ) {
                 ModuleSymbol moduleSymbol = iterator.next();
-                ModuleSymbol resolved = moduleSymbol.resolve(modules.values(), true, hookListeners, emulator.getSvcMemory());
+                ModuleSymbol resolved = moduleSymbol.resolve(new HashSet<Module>(modules.values()), true, hookListeners, emulator.getSvcMemory());
                 if (resolved != null) {
                     log.debug("[" + moduleSymbol.soName + "]" + moduleSymbol.symbol.getName() + " symbol resolved to " + resolved.toSoName);
                     resolved.relocation(emulator);
@@ -343,7 +343,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
         final String soName = dynamicStructure.getSOName(libraryFile.getName());
 
-        Map<String, LinuxModule> neededLibraries = new HashMap<>();
+        Map<String, Module> neededLibraries = new HashMap<>();
         for (String neededLibrary : dynamicStructure.getNeededLibraries()) {
             log.debug(soName + " need dependency " + neededLibrary);
 
@@ -493,12 +493,6 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
         LinuxModule module = new LinuxModule(load_base, bound_high - bound_low, soName, dynsym, list, initFunctionList, neededLibraries, regions);
         if ("libc.so".equals(soName)) { // libc
-            /*ElfSymbol __bionic_brk = module.getELFSymbolByName("__bionic_brk");
-            if (__bionic_brk != null) {
-                unicorn.mem_write(module.base + __bionic_brk.value, ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt((int) HEAP_BASE).array());
-                brk = HEAP_BASE;
-            }*/
-
             ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
             if (__thread_entry != null) {
                 this.__thread_entry = module.base + __thread_entry.value;
@@ -547,7 +541,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         return null;
     }
 
-    private ModuleSymbol resolveSymbol(long load_base, ElfSymbol symbol, Pointer relocationAddr, String soName, Collection<LinuxModule> neededLibraries, long offset) throws IOException {
+    private ModuleSymbol resolveSymbol(long load_base, ElfSymbol symbol, Pointer relocationAddr, String soName, Collection<Module> neededLibraries, long offset) throws IOException {
         if (symbol == null) {
             return new ModuleSymbol(soName, load_base, symbol, relocationAddr, soName, offset);
         }
@@ -563,16 +557,6 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
 
         return new ModuleSymbol(soName, load_base, symbol, relocationAddr, null, offset).resolve(neededLibraries, false, hookListeners, emulator.getSvcMemory());
-    }
-
-    private Alignment mem_map(long address, long size, int prot, String libraryName) {
-        Alignment alignment = emulator.align(address, size);
-
-        log.debug("[" + libraryName + "]0x" + Long.toHexString(alignment.address) + " - 0x" + Long.toHexString(alignment.address + alignment.size) + ", size=0x" + Long.toHexString(alignment.size));
-
-        unicorn.mem_map(alignment.address, alignment.size, prot);
-        memoryMap.put(alignment.address, (int) alignment.size);
-        return alignment;
     }
 
     private int get_segment_protection(int flags) {

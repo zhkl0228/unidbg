@@ -233,4 +233,14 @@ public abstract class AbstractLoader implements Memory, Loader {
         return malloc(length, true);
     }
 
+    protected final Alignment mem_map(long address, long size, int prot, String libraryName) {
+        Alignment alignment = emulator.align(address, size);
+
+        log.debug("[" + libraryName + "]0x" + Long.toHexString(alignment.address) + " - 0x" + Long.toHexString(alignment.address + alignment.size) + ", size=0x" + Long.toHexString(alignment.size));
+
+        unicorn.mem_map(alignment.address, alignment.size, prot);
+        memoryMap.put(alignment.address, (int) alignment.size);
+        return alignment;
+    }
+
 }

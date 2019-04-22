@@ -11,7 +11,6 @@ import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.SymbolLocator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.util.*;
@@ -23,25 +22,14 @@ public class LinuxModule extends Module {
     private final SymbolLocator dynsym;
     private final List<ModuleSymbol> unresolvedSymbol;
     public final List<InitFunction> initFunctionList;
-    private final Map<String, LinuxModule> neededLibraries;
-    private final List<MemRegion> regions;
 
     public LinuxModule(long base, long size, String name, SymbolLocator dynsym,
-                       List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, LinuxModule> neededLibraries, List<MemRegion> regions) {
-        super(name, base, size);
+                       List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions) {
+        super(name, base, size, neededLibraries, regions);
 
         this.dynsym = dynsym;
         this.unresolvedSymbol = unresolvedSymbol;
         this.initFunctionList = initFunctionList;
-
-        this.neededLibraries = neededLibraries;
-        this.regions = regions;
-    }
-
-    void unload(Unicorn unicorn) {
-        for (MemRegion region : regions) {
-            unicorn.mem_unmap(region.begin, region.end - region.begin);
-        }
     }
 
     private long entryPoint;
@@ -68,10 +56,6 @@ public class LinuxModule extends Module {
         return unresolvedSymbol;
     }
 
-    public List<MemRegion> getRegions() {
-        return regions;
-    }
-
     @Override
     public final Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
         ElfSymbol elfSymbol = dynsym.getELFSymbolByName(name);
@@ -80,7 +64,7 @@ public class LinuxModule extends Module {
         }
 
         if (withDependencies) {
-            for (LinuxModule module : neededLibraries.values()) {
+            for (Module module : neededLibraries.values()) {
                 Symbol symbol = module.findSymbolByName(name, true);
                 if (symbol != null) {
                     return symbol;
@@ -172,14 +156,6 @@ public class LinuxModule extends Module {
             }
         }
         return emulator.eFunc(address, list.toArray(new Number[0]));
-    }
-
-    Collection<LinuxModule> getNeededLibraries() {
-        return neededLibraries.values();
-    }
-
-    public LinuxModule getDependencyModule(String name) {
-        return neededLibraries.get(name);
     }
 
     final Map<String, Long> hookMap = new HashMap<>();
