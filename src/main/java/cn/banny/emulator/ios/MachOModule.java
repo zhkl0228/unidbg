@@ -86,4 +86,10 @@ public class MachOModule extends Module {
         return null;
     }
 
+    @Override
+    public String toString() {
+        return "MachOModule{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }

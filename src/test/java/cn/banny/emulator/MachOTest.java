@@ -68,7 +68,7 @@ public class MachOTest extends TestCase {
     }
 
     public void testFileFormat32() throws Exception {
-        FileChannel channel = FileChannel.open(new File("src/test/resources/example_binaries/libsubstrate_armv7.dylib").toPath(), StandardOpenOption.READ);
+        FileChannel channel = FileChannel.open(new File("src/main/resources/ios/6.1/usr/lib/libSystem.B.dylib").toPath(), StandardOpenOption.READ);
         ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
 
         MachO machO = new MachO(new ByteBufferKaitaiStream(buffer));
@@ -105,8 +105,8 @@ public class MachOTest extends TestCase {
                     break;
                 case VERSION_MIN_IPHONEOS:
                     MachO.VersionMinCommand versionMinCommand = (MachO.VersionMinCommand) command.body();
-                    System.out.println("version_p1=" + versionMinCommand.version().p1() + ", version_minor=" + versionMinCommand.version().minor() + ", version_major=" + versionMinCommand.version().major() + ", version_release=" + versionMinCommand.version().release());
-                    System.out.println("sdk_p1=" + versionMinCommand.sdk().p1() + ", sdk_minor=" + versionMinCommand.sdk().minor() + ", sdk_major=" + versionMinCommand.sdk().major() + ", sdk_release=" + versionMinCommand.sdk().release());
+                    System.out.println("version=" + versionMinCommand.version().major() + '.' + versionMinCommand.version().minor() + '.' + versionMinCommand.version().release());
+                    System.out.println("sdk=" + versionMinCommand.sdk().major() + '.' + versionMinCommand.sdk().minor() + '.' + versionMinCommand.sdk().release());
                     break;
                 case CODE_SIGNATURE:
                     MachO.CodeSignatureCommand codeSignatureCommand = (MachO.CodeSignatureCommand) command.body();
@@ -117,6 +117,7 @@ public class MachOTest extends TestCase {
                     break;
                 case LOAD_DYLIB:
                 case ID_DYLIB:
+                case REEXPORT_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     System.out.println("dylibCommand name=" + dylibCommand.name() + ", nameOffset=" + dylibCommand.nameOffset() + ", timestamp=" + dylibCommand.timestamp() + ", currentVersion=" + dylibCommand.currentVersion() + ", compatibilityVersion=" + dylibCommand.compatibilityVersion() + ", type=" + command.type());
                     break;

@@ -224,9 +224,18 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         long load_size = bound_high;
         MachOModule module = new MachOModule(dyId, load_base, load_size, neededLibraries, regions, symtabCommand, buffer);
 
-        exportModule(dyId, module, bound_high, load_size);
+        modules.put(dyId, module);
         for (MachO.DylibCommand dylibCommand : exportDylibs) {
-            exportModule(dylibCommand.name(), module, bound_high, load_size);
+            Module replace;
+            if ((replace = modules.put(FilenameUtils.getName(dylibCommand.name()), module)) != null) {
+                log.warn("Replace module: " + dylibCommand.name() + ", replace=" + replace);
+            }
+        }
+        if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
+            maxDylibName = dyId;
+        }
+        if (bound_high > maxSizeOfDylib) {
+            maxSizeOfDylib = load_size;
         }
 
         log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -235,16 +244,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         return module;
-    }
-
-    private void exportModule(String dyId, Module module, long bound_high, long load_size) {
-        modules.put(dyId, module);
-        if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
-            maxDylibName = dyId;
-        }
-        if (bound_high > maxSizeOfDylib) {
-            maxSizeOfDylib = load_size;
-        }
     }
 
     private String maxDylibName;
