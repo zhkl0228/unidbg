@@ -9,7 +9,7 @@ public class SubstrateTest extends EmulatorTest {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
-        return new DarwinResolver();
+        return new DarwinResolver("6.1");
     }
 
     @Override

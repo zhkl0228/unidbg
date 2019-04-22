@@ -1,6 +1,4 @@
-package cn.banny.emulator.linux.file;
-
-import cn.banny.emulator.file.FileIO;
+package cn.banny.emulator.file;
 
 import java.io.File;
 

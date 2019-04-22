@@ -90,7 +90,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         long start = System.currentTimeMillis();
-        long bound_low = 0;
         long bound_high = 0;
         String dyId = libraryFile.getName();
         boolean compressed = false;
@@ -105,9 +104,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if ("__PAGEZERO".equals(segmentCommand.segname())) {
                         break;
                     }
-                    if (bound_low > segmentCommand.vmaddr()) {
-                        bound_low = segmentCommand.vmaddr();
-                    }
                     long high = segmentCommand.vmaddr() + segmentCommand.vmsize();
                     if (bound_high < high) {
                         bound_high = high;
@@ -117,9 +113,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
                     if ("__PAGEZERO".equals(segmentCommand64.segname())) {
                         break;
-                    }
-                    if (bound_low > segmentCommand64.vmaddr()) {
-                        bound_low = segmentCommand64.vmaddr();
                     }
                     high = segmentCommand64.vmaddr() + segmentCommand64.vmsize();
                     if (bound_high < high) {
@@ -132,7 +125,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     dyId = FilenameUtils.getName(dylib);
                     break;
                 case LOAD_DYLIB:
+                case LOAD_UPWARD_DYLIB:
                 case SYMTAB:
+                case REEXPORT_DYLIB:
                     break;
                 case ENCRYPTION_INFO:
                 case ENCRYPTION_INFO_64:
@@ -145,12 +140,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         final long baseAlign = emulator.getPageAlign();
         final long load_base = ((mmapBaseAddress - 1) / baseAlign + 1) * baseAlign;
-        long size = emulator.align(0, bound_high - bound_low).size;
+        long size = emulator.align(0, bound_high).size;
         mmapBaseAddress = load_base + size;
 
         final List<String> neededList = new ArrayList<>();
         final List<MemRegion> regions = new ArrayList<>(5);
         MachO.SymtabCommand symtabCommand = null;
+        final List<MachO.DylibCommand> exportDylibs = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT:
@@ -186,23 +182,27 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand64.vmaddr()));
                     break;
                 case LOAD_DYLIB:
+                case LOAD_UPWARD_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     neededList.add(dylibCommand.name());
                     break;
                 case SYMTAB:
                     symtabCommand = (MachO.SymtabCommand) command.body();
                     break;
+                case REEXPORT_DYLIB:
+                    exportDylibs.add((MachO.DylibCommand) command.body());
+                    break;
             }
         }
         if (log.isDebugEnabled()) {
-            log.debug("load dyId=" + dyId + ", bound_low=0x" + Long.toHexString(bound_low) + ", bound_high=0x" + Long.toHexString(bound_high) + ", compressed=" + compressed + ", regions=" + regions);
+            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", compressed=" + compressed + ", regions=" + regions);
         }
 
         Map<String, Module> neededLibraries = new HashMap<>();
         for (String neededLibrary : neededList) {
             log.debug(dyId + " need dependency " + neededLibrary);
 
-            Module loaded = modules.get(neededLibrary);
+            Module loaded = modules.get(FilenameUtils.getName(neededLibrary));
             if (loaded != null) {
                 loaded.addReferenceCount();
                 neededLibraries.put(FilenameUtils.getBaseName(loaded.name), loaded);
@@ -221,22 +221,30 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        long load_size = bound_high - bound_low;
+        long load_size = bound_high;
         MachOModule module = new MachOModule(dyId, load_base, load_size, neededLibraries, regions, symtabCommand, buffer);
 
-        modules.put(dyId, module);
-        if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
-            maxDylibName = dyId;
+        exportModule(dyId, module, bound_high, load_size);
+        for (MachO.DylibCommand dylibCommand : exportDylibs) {
+            exportModule(dylibCommand.name(), module, bound_high, load_size);
         }
-        if (bound_high - bound_low > maxSizeOfDylib) {
-            maxSizeOfDylib = load_size;
-        }
+
         log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
         if (moduleListener != null) {
             moduleListener.onLoaded(emulator, module);
         }
 
         return module;
+    }
+
+    private void exportModule(String dyId, Module module, long bound_high, long load_size) {
+        modules.put(dyId, module);
+        if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
+            maxDylibName = dyId;
+        }
+        if (bound_high > maxSizeOfDylib) {
+            maxSizeOfDylib = load_size;
+        }
     }
 
     private String maxDylibName;

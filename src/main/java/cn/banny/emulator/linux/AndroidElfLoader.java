@@ -273,15 +273,10 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
 
         long start = System.currentTimeMillis();
-        long bound_low = 0;
         long bound_high = 0;
         for (int i = 0; i < elfFile.num_ph; i++) {
             ElfSegment ph = elfFile.getProgramHeader(i);
             if (ph.type == ElfSegment.PT_LOAD && ph.mem_size > 0) {
-                if (bound_low > ph.virtual_address) {
-                    bound_low = ph.virtual_address;
-                }
-
                 long high = ph.virtual_address + ph.mem_size;
 
                 if (bound_high < high) {
@@ -294,7 +289,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
         final long baseAlign = emulator.getPageAlign();
         final long load_base = ((mmapBaseAddress - 1) / baseAlign + 1) * baseAlign;
-        long size = emulator.align(0, bound_high - bound_low).size;
+        long size = emulator.align(0, bound_high).size;
         mmapBaseAddress = load_base + size;
 
         final List<cn.banny.emulator.memory.MemRegion> regions = new ArrayList<>(5);
@@ -491,7 +486,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         if (dynsym == null) {
             throw new IllegalStateException("dynsym is null");
         }
-        LinuxModule module = new LinuxModule(load_base, bound_high - bound_low, soName, dynsym, list, initFunctionList, neededLibraries, regions);
+        LinuxModule module = new LinuxModule(load_base, bound_high, soName, dynsym, list, initFunctionList, neededLibraries, regions);
         if ("libc.so".equals(soName)) { // libc
             ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
             if (__thread_entry != null) {
@@ -505,8 +500,8 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         if (maxSoName == null || soName.length() > maxSoName.length()) {
             maxSoName = soName;
         }
-        if (bound_high - bound_low > maxSizeOfSo) {
-            maxSizeOfSo = bound_high - bound_low;
+        if (bound_high > maxSizeOfSo) {
+            maxSizeOfSo = bound_high;
         }
         module.setEntryPoint(elfFile.entry_point);
         log.debug("Load library " + soName + " offset=" + (System.currentTimeMillis() - start) + "ms" + ", entry_point=0x" + Long.toHexString(elfFile.entry_point));
