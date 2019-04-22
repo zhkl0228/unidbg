@@ -24,6 +24,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     MachOLoader(Emulator emulator, AbstractSyscallHandler syscallHandler) {
         super(emulator, syscallHandler);
+
+        // init stack
+        final long stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
+        unicorn.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+
+        setStackPoint(STACK_BASE);
+        this.setErrno(0);
     }
 
     @Override
@@ -41,15 +48,26 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         MachO.MagicType magic = machO.magic();
         switch (magic) {
             case FAT_BE:
+                Map<Long, MachO.FatArch> archMap = new HashMap<>();
                 for (MachO.FatArch arch : machO.fatHeader().fatArchs()) {
                     if ((arch.cputype() == MachO.CpuType.ARM && emulator.getPointerSize() == 4) || (arch.cputype() == MachO.CpuType.ARM64 && emulator.getPointerSize() == 8)) {
-                        buffer.limit((int) (arch.offset() + arch.size()));
-                        buffer.position((int) arch.offset());
-                        log.debug("loadFatArch=" + arch.cputype() + ", cpuSubType=" + arch.cpusubtype());
-                        return loadInternal(libraryFile, unpackHook, buffer.slice());
+                        archMap.put(arch.cpusubtype(), arch);
                     }
                 }
-                throw new UnsupportedOperationException("find arch failed");
+                MachO.FatArch arch = archMap.get(CPU_SUBTYPE_ARM_V7); // 优化加载armv7
+                if (arch == null) {
+                    Iterator<MachO.FatArch> iterator = archMap.values().iterator();
+                    if (iterator.hasNext()) {
+                        arch = iterator.next();
+                    }
+                }
+                if (arch != null) {
+                    buffer.limit((int) (arch.offset() + arch.size()));
+                    buffer.position((int) arch.offset());
+                    log.debug("loadFatArch=" + arch.cputype() + ", cpuSubType=" + arch.cpusubtype());
+                    return loadInternal(libraryFile, unpackHook, buffer.slice());
+                }
+                throw new IllegalArgumentException("find arch failed");
             case MACHO_LE_X86: // ARM
                 if (machO.header().cputype() != MachO.CpuType.ARM) {
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
@@ -60,7 +78,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
                 }
             default:
-                throw new UnsupportedOperationException("magic=" + machO);
+                throw new UnsupportedOperationException("magic=" + magic);
         }
 
         switch (machO.header().filetype()) {
@@ -71,6 +89,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 throw new UnsupportedOperationException("fileType=" + machO.header().filetype());
         }
 
+        long start = System.currentTimeMillis();
         long bound_low = 0;
         long bound_high = 0;
         String dyId = libraryFile.getName();
@@ -83,6 +102,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                        break;
+                    }
                     if (bound_low > segmentCommand.vmaddr()) {
                         bound_low = segmentCommand.vmaddr();
                     }
@@ -93,6 +115,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                        break;
+                    }
                     if (bound_low > segmentCommand64.vmaddr()) {
                         bound_low = segmentCommand64.vmaddr();
                     }
@@ -103,9 +128,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
-                    dyId = dylibCommand.name();
+                    String dylib = dylibCommand.name();
+                    dyId = FilenameUtils.getName(dylib);
                     break;
                 case LOAD_DYLIB:
+                case SYMTAB:
                     break;
                 case ENCRYPTION_INFO:
                 case ENCRYPTION_INFO_64:
@@ -123,10 +150,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         final List<String> neededList = new ArrayList<>();
         final List<MemRegion> regions = new ArrayList<>(5);
+        MachO.SymtabCommand symtabCommand = null;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                        break;
+                    }
                     int prot = get_segment_protection(segmentCommand.initprot());
                     if (prot == UnicornConst.UC_PROT_NONE) {
                         prot = UnicornConst.UC_PROT_ALL;
@@ -140,6 +171,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                        break;
+                    }
                     prot = get_segment_protection(segmentCommand64.initprot());
                     if (prot == UnicornConst.UC_PROT_NONE) {
                         prot = UnicornConst.UC_PROT_ALL;
@@ -154,6 +188,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 case LOAD_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     neededList.add(dylibCommand.name());
+                    break;
+                case SYMTAB:
+                    symtabCommand = (MachO.SymtabCommand) command.body();
                     break;
             }
         }
@@ -184,8 +221,26 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        throw new UnsupportedOperationException();
+        long load_size = bound_high - bound_low;
+        MachOModule module = new MachOModule(dyId, load_base, load_size, neededLibraries, regions, symtabCommand, buffer);
+
+        modules.put(dyId, module);
+        if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
+            maxDylibName = dyId;
+        }
+        if (bound_high - bound_low > maxSizeOfDylib) {
+            maxSizeOfDylib = load_size;
+        }
+        log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
+        if (moduleListener != null) {
+            moduleListener.onLoaded(emulator, module);
+        }
+
+        return module;
     }
+
+    private String maxDylibName;
+    private long maxSizeOfDylib;
 
     private void write_mem(int offset, int size, long begin, ByteBuffer buffer) {
         if (size > 0) {
@@ -237,16 +292,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     @Override
-    public Module findModuleByAddress(long address) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Module findModule(String soName) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Module dlopen(String filename) throws IOException {
         throw new UnsupportedOperationException();
     }
@@ -268,17 +313,17 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     @Override
     public Collection<Module> getLoadedModules() {
-        throw new UnsupportedOperationException();
+        return modules.values();
     }
 
     @Override
     public String getMaxLengthLibraryName() {
-        throw new UnsupportedOperationException();
+        return maxDylibName;
     }
 
     @Override
     public long getMaxSizeOfLibrary() {
-        throw new UnsupportedOperationException();
+        return maxSizeOfDylib;
     }
 
     @Override

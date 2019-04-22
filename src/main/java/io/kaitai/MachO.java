@@ -3990,20 +3990,20 @@ public class MachO extends KaitaiStruct {
             public MachO _root() { return _root; }
             public MachO.SymtabCommand _parent() { return _parent; }
         }
-        public static class Nlist64 extends KaitaiStruct {
-            public static Nlist64 fromFile(String fileName) throws IOException {
-                return new Nlist64(new ByteBufferKaitaiStream(fileName));
+        public static class Nlist extends KaitaiStruct {
+            public static Nlist fromFile(String fileName) throws IOException {
+                return new Nlist(new ByteBufferKaitaiStream(fileName));
             }
 
-            public Nlist64(KaitaiStream _io) {
+            public Nlist(KaitaiStream _io) {
                 this(_io, null, null);
             }
 
-            public Nlist64(KaitaiStream _io, MachO.SymtabCommand _parent) {
+            public Nlist(KaitaiStream _io, MachO.SymtabCommand _parent) {
                 this(_io, _parent, null);
             }
 
-            public Nlist64(KaitaiStream _io, MachO.SymtabCommand _parent, MachO _root) {
+            public Nlist(KaitaiStream _io, MachO.SymtabCommand _parent, MachO _root) {
                 super(_io);
                 this._parent = _parent;
                 this._root = _root;
@@ -4014,33 +4014,55 @@ public class MachO extends KaitaiStruct {
                 this.type = this._io.readU1();
                 this.sect = this._io.readU1();
                 this.desc = this._io.readU2le();
-                this.value = this._io.readU8le();
+                {
+                    MagicType on = _root.magic();
+                    if (on != null) {
+                        switch (_root.magic()) {
+                        case MACHO_BE_X64: {
+                            this.value = this._io.readU8le();
+                            break;
+                        }
+                        case MACHO_LE_X64: {
+                            this.value = this._io.readU8le();
+                            break;
+                        }
+                        case MACHO_BE_X86: {
+                            this.value = (long) (this._io.readU4le());
+                            break;
+                        }
+                        case MACHO_LE_X86: {
+                            this.value = (long) (this._io.readU4le());
+                            break;
+                        }
+                        }
+                    }
+                }
             }
             private long un;
             private int type;
             private int sect;
             private int desc;
-            private long value;
+            private Long value;
             private MachO _root;
             private MachO.SymtabCommand _parent;
             public long un() { return un; }
             public int type() { return type; }
             public int sect() { return sect; }
             public int desc() { return desc; }
-            public long value() { return value; }
+            public Long value() { return value; }
             public MachO _root() { return _root; }
             public MachO.SymtabCommand _parent() { return _parent; }
         }
-        private ArrayList<Nlist64> symbols;
-        public ArrayList<Nlist64> symbols() {
+        private ArrayList<Nlist> symbols;
+        public ArrayList<Nlist> symbols() {
             if (this.symbols != null)
                 return this.symbols;
             KaitaiStream io = _root._io();
             long _pos = io.pos();
             io.seek(symOff());
-            symbols = new ArrayList<Nlist64>(((Number) (nSyms())).intValue());
+            symbols = new ArrayList<Nlist>(((Number) (nSyms())).intValue());
             for (int i = 0; i < nSyms(); i++) {
-                this.symbols.add(new Nlist64(io, this, _root));
+                this.symbols.add(new Nlist(io, this, _root));
             }
             io.seek(_pos);
             return this.symbols;

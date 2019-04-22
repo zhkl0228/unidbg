@@ -521,26 +521,6 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     private String maxSoName;
     private long maxSizeOfSo;
 
-    @Override
-    public LinuxModule findModuleByAddress(long address) {
-        for (LinuxModule module : modules.values()) {
-            if (address >= module.base && address < module.base + module.size) {
-                return module;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public LinuxModule findModule(String soName) {
-        for (LinuxModule module : modules.values()) {
-            if (module.name.equals(soName)) {
-                return module;
-            }
-        }
-        return null;
-    }
-
     private ModuleSymbol resolveSymbol(long load_base, ElfSymbol symbol, Pointer relocationAddr, String soName, Collection<Module> neededLibraries, long offset) throws IOException {
         if (symbol == null) {
             return new ModuleSymbol(soName, load_base, symbol, relocationAddr, soName, offset);

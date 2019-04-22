@@ -64,12 +64,7 @@ public class LinuxModule extends Module {
         }
 
         if (withDependencies) {
-            for (Module module : neededLibraries.values()) {
-                Symbol symbol = module.findSymbolByName(name, true);
-                if (symbol != null) {
-                    return symbol;
-                }
-            }
+            return findDependencySymbolByName(name);
         }
         return null;
     }

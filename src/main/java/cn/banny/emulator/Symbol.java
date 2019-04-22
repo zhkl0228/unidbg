@@ -5,6 +5,12 @@ import com.sun.jna.Pointer;
 
 public abstract class Symbol {
 
+    private final String name;
+
+    public Symbol(String name) {
+        this.name = name;
+    }
+
     public abstract Number[] call(Emulator emulator, Object... args);
 
     public  abstract long getAddress();
@@ -15,4 +21,7 @@ public abstract class Symbol {
         return UnicornPointer.pointer(emulator, getAddress());
     }
 
+    public String getName() {
+        return name;
+    }
 }

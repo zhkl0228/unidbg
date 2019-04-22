@@ -796,7 +796,7 @@ types:
       symbols:
         io: _root._io
         pos: sym_off
-        type: nlist_64
+        type: nlist
         repeat: expr
         repeat-expr: n_syms
       strs:
@@ -815,7 +815,7 @@ types:
             encoding: ascii
             repeat: until
             repeat-until: _ == ""
-      nlist_64:
+      nlist:
         seq:
           - id: un
             type: u4
@@ -826,7 +826,13 @@ types:
           - id: desc
             type: u2
           - id: value
-            type: u8
+            type:
+              switch-on: _root.magic
+              cases:
+                'magic_type::macho_be_x64': u8
+                'magic_type::macho_le_x64': u8
+                'magic_type::macho_be_x86': u4
+                'magic_type::macho_le_x86': u4
         -webide-representation: "un={un} type={type} sect={sect} desc={desc} value={value}"
   dysymtab_command:
     seq:

@@ -2,10 +2,10 @@ package cn.banny.emulator;
 
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ARMEmulator;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.linux.LinuxEmulator;
 import cn.banny.emulator.linux.android.ElfLibraryFile;
-import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -241,6 +241,26 @@ public abstract class AbstractLoader implements Memory, Loader {
         unicorn.mem_map(alignment.address, alignment.size, prot);
         memoryMap.put(alignment.address, (int) alignment.size);
         return alignment;
+    }
+
+    @Override
+    public final Module findModuleByAddress(long address) {
+        for (Module module : getLoadedModules()) {
+            if (address >= module.base && address < module.base + module.size) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public final Module findModule(String soName) {
+        for (Module module : getLoadedModules()) {
+            if (module.name.equals(soName)) {
+                return module;
+            }
+        }
+        return null;
     }
 
 }
