@@ -6,6 +6,8 @@ import io.kaitai.MachO;
 
 public class MachOSymbol extends Symbol {
 
+    private static final int N_ARM_THUMB_DEF = 0x8;
+
     private final MachOModule module;
     private final MachO.SymtabCommand.Nlist nlist;
 
@@ -18,12 +20,17 @@ public class MachOSymbol extends Symbol {
 
     @Override
     public Number[] call(Emulator emulator, Object... args) {
-        return module.callFunction(emulator, nlist.value(), args);
+        return module.callFunction(emulator, getValue(), args);
     }
 
     @Override
     public long getAddress() {
-        return module.base + nlist.value();
+        return module.base + getValue();
+    }
+
+    private long getValue() {
+        boolean isThumb = nlist.desc() == N_ARM_THUMB_DEF;
+        return nlist.value() + (isThumb ? 1 : 0);
     }
 
     @Override
