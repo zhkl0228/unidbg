@@ -15,6 +15,8 @@ public abstract class Symbol {
 
     public  abstract long getAddress();
 
+    public abstract long getValue();
+
     public abstract boolean isUndef();
 
     public Pointer createPointer(Emulator emulator) {
@@ -22,6 +24,11 @@ public abstract class Symbol {
     }
 
     public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
         return name;
     }
 }

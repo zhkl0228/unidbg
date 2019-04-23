@@ -12,20 +12,56 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class MachOModule extends Module {
 
-    private static final Log log = LogFactory.getLog(MachOModule.class);
-
+    final MachO machO;
     private final MachO.SymtabCommand symtabCommand;
+    final MachO.DysymtabCommand dysymtabCommand;
     private final ByteBuffer buffer;
+    final List<NeedLibrary> lazyLoadNeededList;
+    final Map<String, Module> upwardLibraries;
 
-    MachOModule(String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions, MachO.SymtabCommand symtabCommand, ByteBuffer buffer) {
+    private final Map<String, MachOSymbol> symbolMap = new HashMap<>();
+
+    MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
+                MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
+                List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries) {
         super(name, base, size, neededLibraries, regions);
+        this.machO = machO;
         this.symtabCommand = symtabCommand;
+        this.dysymtabCommand = dysymtabCommand;
         this.buffer = buffer;
+        this.lazyLoadNeededList = lazyLoadNeededList;
+        this.upwardLibraries = upwardLibraries;
+
+        if (symtabCommand != null) {
+            buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
+            buffer.position((int) symtabCommand.strOff());
+            ByteBuffer strBuffer = buffer.slice();
+            ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(strBuffer);
+            for (MachO.SymtabCommand.Nlist nlist : symtabCommand.symbols()) {
+                if (nlist.sect() == NO_SECT || nlist.un() == 0) {
+                    continue;
+                }
+
+                strBuffer.position((int) nlist.un());
+                String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+                Log log = LogFactory.getLog(name);
+                if (log.isDebugEnabled()) {
+                    log.debug("nlist64 un=0x" + Long.toHexString(nlist.un()) + ", name=" + name + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", sect=" + nlist.sect() + ", desc=" + nlist.desc() + ", value=0x" + Long.toHexString(nlist.value()));
+                }
+
+                symbolMap.put(symbolName, new MachOSymbol(this, nlist, symbolName));
+            }
+        }
+    }
+
+    final Map<String, Module> neededLibraries() {
+        return neededLibraries;
     }
 
     @Override
@@ -54,30 +90,25 @@ public class MachOModule extends Module {
         return emulator.eFunc(address, list.toArray(new Number[0]));
     }
 
+    MachOSymbol getSymbolByIndex(int index) {
+        buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
+        buffer.position((int) symtabCommand.strOff());
+        ByteBuffer strBuffer = buffer.slice();
+        ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(strBuffer);
+
+        MachO.SymtabCommand.Nlist nlist = symtabCommand.symbols().get(index);
+        strBuffer.position((int) nlist.un());
+        String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+        return new MachOSymbol(this, nlist, symbolName);
+    }
+
     private static final int NO_SECT = 0;
 
     @Override
     public Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
-        if (symtabCommand != null) {
-            buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
-            buffer.position((int) symtabCommand.strOff());
-            ByteBuffer strBuffer = buffer.slice();
-            ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(strBuffer);
-            for (MachO.SymtabCommand.Nlist nlist : symtabCommand.symbols()) {
-                if (nlist.sect() == NO_SECT || nlist.un() == 0) {
-                    continue;
-                }
-
-                strBuffer.position((int) nlist.un());
-                String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
-                if (log.isDebugEnabled()) {
-                    log.debug("nlist64 un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", sect=" + nlist.sect() + ", desc=" + nlist.desc() + ", value=0x" + Long.toHexString(nlist.value()));
-                }
-
-                if (symbolName.equals(name)) {
-                    return new MachOSymbol(this, nlist, symbolName);
-                }
-            }
+        Symbol symbol = symbolMap.get(name);
+        if (symbol != null) {
+            return symbol;
         }
 
         if (withDependencies) {

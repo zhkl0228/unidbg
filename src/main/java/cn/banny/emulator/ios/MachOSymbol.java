@@ -28,7 +28,8 @@ public class MachOSymbol extends Symbol {
         return module.base + getValue();
     }
 
-    private long getValue() {
+    @Override
+    public long getValue() {
         boolean isThumb = nlist.desc() == N_ARM_THUMB_DEF;
         return nlist.value() + (isThumb ? 1 : 0);
     }

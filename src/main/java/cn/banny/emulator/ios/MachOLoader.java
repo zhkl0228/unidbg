@@ -4,6 +4,7 @@ import cn.banny.emulator.*;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
+import cn.banny.emulator.pointer.UnicornPointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;
@@ -35,15 +36,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     @Override
     protected Module loadInternal(LibraryFile libraryFile, WriteHook unpackHook, boolean forceCallInit) throws IOException {
-        return loadInternal(libraryFile, unpackHook);
+        return loadInternalPhase(libraryFile, unpackHook, true);
     }
 
-    private Module loadInternal(LibraryFile libraryFile, WriteHook unpackHook) throws IOException {
+    private MachOModule loadInternalPhase(LibraryFile libraryFile, WriteHook unpackHook, boolean loadNeeded) throws IOException {
         ByteBuffer buffer = ByteBuffer.wrap(libraryFile.readToByteArray());
-        return loadInternal(libraryFile, unpackHook, buffer);
+        return loadInternal(libraryFile, unpackHook, buffer, loadNeeded);
     }
 
-    private Module loadInternal(LibraryFile libraryFile, final WriteHook unpackHook, ByteBuffer buffer) throws IOException {
+    private MachOModule loadInternal(LibraryFile libraryFile, final WriteHook unpackHook, ByteBuffer buffer, boolean loadNeeded) throws IOException {
         MachO machO = new MachO(new ByteBufferKaitaiStream(buffer));
         MachO.MagicType magic = machO.magic();
         switch (magic) {
@@ -65,7 +66,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     buffer.limit((int) (arch.offset() + arch.size()));
                     buffer.position((int) arch.offset());
                     log.debug("loadFatArch=" + arch.cputype() + ", cpuSubType=" + arch.cpusubtype());
-                    return loadInternal(libraryFile, unpackHook, buffer.slice());
+                    return loadInternal(libraryFile, unpackHook, buffer.slice(), loadNeeded);
                 }
                 throw new IllegalArgumentException("find arch failed");
             case MACHO_LE_X86: // ARM
@@ -128,6 +129,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 case LOAD_UPWARD_DYLIB:
                 case SYMTAB:
                 case REEXPORT_DYLIB:
+                case DYSYMTAB:
                     break;
                 case ENCRYPTION_INFO:
                 case ENCRYPTION_INFO_64:
@@ -143,10 +145,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         long size = emulator.align(0, bound_high).size;
         mmapBaseAddress = load_base + size;
 
-        final List<String> neededList = new ArrayList<>();
+        final List<NeedLibrary> neededList = new ArrayList<>();
         final List<MemRegion> regions = new ArrayList<>(5);
-        MachO.SymtabCommand symtabCommand = null;
         final List<MachO.DylibCommand> exportDylibs = new ArrayList<>();
+        MachO.SymtabCommand symtabCommand = null;
+        MachO.DysymtabCommand dysymtabCommand = null;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT:
@@ -182,12 +185,18 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand64.vmaddr()));
                     break;
                 case LOAD_DYLIB:
-                case LOAD_UPWARD_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
-                    neededList.add(dylibCommand.name());
+                    neededList.add(new NeedLibrary(dylibCommand.name(), false));
+                    break;
+                case LOAD_UPWARD_DYLIB:
+                    dylibCommand = (MachO.DylibCommand) command.body();
+                    neededList.add(new NeedLibrary(dylibCommand.name(), true));
                     break;
                 case SYMTAB:
                     symtabCommand = (MachO.SymtabCommand) command.body();
+                    break;
+                case DYSYMTAB:
+                    dysymtabCommand = (MachO.DysymtabCommand) command.body();
                     break;
                 case REEXPORT_DYLIB:
                     exportDylibs.add((MachO.DylibCommand) command.body());
@@ -195,14 +204,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
         if (log.isDebugEnabled()) {
-            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", compressed=" + compressed + ", regions=" + regions);
+            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", compressed=" + compressed + ", loadNeeded=" + loadNeeded + ", regions=" + regions);
         }
 
-        Map<String, Module> neededLibraries = new HashMap<>();
-        for (String neededLibrary : neededList) {
-            log.debug(dyId + " need dependency " + neededLibrary);
+        Map<String, MachOModule> neededLibraries = new HashMap<>();
+        for (MachO.DylibCommand dylibCommand : exportDylibs) {
+            String neededLibrary = dylibCommand.name();
+            log.debug(dyId + " need export dependency " + neededLibrary);
 
-            Module loaded = modules.get(FilenameUtils.getName(neededLibrary));
+            MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
             if (loaded != null) {
                 loaded.addReferenceCount();
                 neededLibraries.put(FilenameUtils.getBaseName(loaded.name), loaded);
@@ -213,24 +223,82 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
             }
             if (neededLibraryFile != null) {
-                Module needed = loadInternal(neededLibraryFile, null);
+                MachOModule needed = loadInternalPhase(neededLibraryFile, null, false);
                 needed.addReferenceCount();
                 neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
             } else {
-                log.info(dyId + " load dependency " + neededLibrary + " failed");
+                log.debug(dyId + " load export dependency " + neededLibrary + " failed");
             }
         }
+        for (MachOModule export : neededLibraries.values()) {
+            for (Iterator<NeedLibrary> iterator = export.lazyLoadNeededList.iterator(); iterator.hasNext(); ) {
+                NeedLibrary library = iterator.next();
+                String neededLibrary = library.path;
+                iterator.remove();
 
+                String name = FilenameUtils.getName(neededLibrary);
+                MachOModule loaded = modules.get(name);
+                if (loaded != null) {
+                    if (library.upward) {
+                        export.upwardLibraries.put(name, loaded);
+                    } else {
+                        export.neededLibraries().put(name, loaded);
+                    }
+                }
+            }
+
+            bindIndirectSymbolPointers(export);
+        }
+
+        Map<String, Module> upwardLibraries = new HashMap<>();
+        final List<NeedLibrary> lazyLoadNeededList;
+        if (loadNeeded) {
+            lazyLoadNeededList = Collections.emptyList();
+            for (NeedLibrary library : neededList) {
+                String neededLibrary = library.path;
+                log.debug(dyId + " need dependency " + neededLibrary);
+
+                MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
+                if (loaded != null) {
+                    loaded.addReferenceCount();
+                    neededLibraries.put(FilenameUtils.getBaseName(loaded.name), loaded);
+                    continue;
+                }
+                LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, neededLibrary);
+                if (libraryResolver != null && neededLibraryFile == null) {
+                    neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
+                }
+                if (neededLibraryFile != null) {
+                    MachOModule needed = loadInternalPhase(neededLibraryFile, null, loadNeeded);
+                    needed.addReferenceCount();
+                    if (library.upward) {
+                        upwardLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
+                    } else {
+                        neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
+                    }
+                } else {
+                    log.info(dyId + " load dependency " + neededLibrary + " failed");
+                }
+            }
+        } else {
+            lazyLoadNeededList = neededList;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
+        }
         long load_size = bound_high;
-        MachOModule module = new MachOModule(dyId, load_base, load_size, neededLibraries, regions, symtabCommand, buffer);
+        MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries);
+
+        if (loadNeeded) {
+            if (log.isDebugEnabled()) {
+                log.debug("Begin bind dyId=" + dyId + ", base=0x" + Long.toHexString(load_base));
+            }
+            bindIndirectSymbolPointers(module);
+        }
 
         modules.put(dyId, module);
-        for (MachO.DylibCommand dylibCommand : exportDylibs) {
-            Module replace;
-            if ((replace = modules.put(FilenameUtils.getName(dylibCommand.name()), module)) != null) {
-                log.warn("Replace module: " + dylibCommand.name() + ", replace=" + replace);
-            }
-        }
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
             maxDylibName = dyId;
         }
@@ -246,6 +314,84 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return module;
     }
 
+    private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
+        MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
+        if (dysymtabCommand == null) {
+            return;
+        }
+        List<Long> indirectTable = dysymtabCommand.indirectSymbols();
+
+        for (MachO.LoadCommand command : module.machO.loadCommands()) {
+            switch (command.type()) {
+                case SEGMENT:
+                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                        long type = section.flags() & SECTION_TYPE;
+                        long elementCount = section.size() / emulator.getPointerSize();
+
+                        if (type != S_NON_LAZY_SYMBOL_POINTERS && type != S_LAZY_SYMBOL_POINTERS) {
+                            continue;
+                        }
+
+                        long ptrToBind = section.addr();
+                        int indirectTableOffset = (int) section.reserved1();
+                        for (int i = 0; i < elementCount; i++, ptrToBind += emulator.getPointerSize()) {
+                            long symbolIndex = indirectTable.get(indirectTableOffset + i);
+                            if (symbolIndex == INDIRECT_SYMBOL_ABS) {
+                                continue; // do nothing since already has absolute address
+                            }
+                            if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
+                                continue;
+                            }
+
+                            MachOSymbol sym = module.getSymbolByIndex((int) symbolIndex);
+                            if (sym == null) {
+                                log.warn("bindIndirectSymbolPointers sym is null");
+                                continue;
+                            }
+
+                            Symbol replace = module.findSymbolByName(sym.getName(), false);
+                            if (replace == null) {
+                                for (Module needed : module.getNeededLibraries()) {
+                                    replace = needed.findSymbolByName(sym.getName(), true);
+                                    if (replace != null) {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (replace == null) {
+                                for (Module needed : module.upwardLibraries.values()) {
+                                    replace = needed.findSymbolByName(sym.getName(), false);
+                                    if (replace != null) {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (replace == null) {
+                                log.warn("bindIndirectSymbolPointers failed symbolIndex=0x" + Long.toHexString(symbolIndex) + ", name=" + module.name + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
+                            } else {
+                                UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
+                                if (pointer == null) {
+                                    throw new IllegalStateException("pointer=" + pointer);
+                                }
+                                if (emulator.getPointerSize() == 4) {
+                                    pointer.setInt(0, (int) replace.getAddress());
+                                } else if(emulator.getPointerSize() == 8) {
+                                    pointer.setLong(0, replace.getAddress());
+                                } else {
+                                    throw new IllegalStateException();
+                                }
+                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind) + ", replace0x=" + Long.toHexString(replace.getAddress()));
+                            }
+                        }
+                    }
+                    break;
+                case SEGMENT_64:
+                    throw new UnsupportedOperationException("bindIndirectSymbolPointers");
+            }
+        }
+    }
+
     private String maxDylibName;
     private long maxSizeOfDylib;
 
@@ -259,7 +405,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
     }
 
-    private final Map<String, Module> modules = new LinkedHashMap<>();
+    private final Map<String, MachOModule> modules = new LinkedHashMap<>();
 
     private int get_segment_protection(MachO.VmProt vmProt) {
         int prot = Unicorn.UC_PROT_NONE;
@@ -320,7 +466,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     @Override
     public Collection<Module> getLoadedModules() {
-        return modules.values();
+        return new HashSet<Module>(modules.values());
     }
 
     @Override

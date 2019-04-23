@@ -24,12 +24,16 @@ public class LinuxSymbol extends Symbol {
 
     @Override
     public Number[] call(Emulator emulator, Object... args) {
-        return module.callFunction(emulator, elfSymbol.value, args);
+        return module.callFunction(emulator, getValue(), args);
     }
 
     @Override
     public long getAddress() {
-        return module.base + elfSymbol.value;
+        return module.base + getValue();
     }
 
+    @Override
+    public long getValue() {
+        return elfSymbol.value;
+    }
 }

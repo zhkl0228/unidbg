@@ -42,7 +42,7 @@ public class ARM {
         showRegs(unicorn, ARM.THUMB_REGS);
     }
 
-    public static void showRegs(Unicorn unicorn, int[] regs) {
+    static void showRegs(Unicorn unicorn, int[] regs) {
         if (regs == null || regs.length < 1) {
             regs = ARM.getAllRegisters(isThumb(unicorn));
         }
@@ -430,7 +430,7 @@ public class ARM {
             Arm64Const.UC_ARM64_REG_NZCV
     };
 
-    public static int[] getRegArgs(Emulator emulator) {
+    private static int[] getRegArgs(Emulator emulator) {
         return emulator.getPointerSize() == 4 ? ARM_ARG_REGS : ARM64_ARG_REGS;
     }
 
