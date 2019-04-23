@@ -207,7 +207,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", compressed=" + compressed + ", loadNeeded=" + loadNeeded + ", regions=" + regions);
         }
 
-        Map<String, MachOModule> neededLibraries = new HashMap<>();
+        Map<String, MachOModule> exportModules = new HashMap<>();
         for (MachO.DylibCommand dylibCommand : exportDylibs) {
             String neededLibrary = dylibCommand.name();
             log.debug(dyId + " need export dependency " + neededLibrary);
@@ -215,7 +215,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
             if (loaded != null) {
                 loaded.addReferenceCount();
-                neededLibraries.put(FilenameUtils.getBaseName(loaded.name), loaded);
+                exportModules.put(FilenameUtils.getBaseName(loaded.name), loaded);
                 continue;
             }
             LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, neededLibrary);
@@ -225,31 +225,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             if (neededLibraryFile != null) {
                 MachOModule needed = loadInternalPhase(neededLibraryFile, null, false);
                 needed.addReferenceCount();
-                neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
+                exportModules.put(FilenameUtils.getBaseName(needed.name), needed);
             } else {
                 log.debug(dyId + " load export dependency " + neededLibrary + " failed");
             }
         }
-        for (MachOModule export : neededLibraries.values()) {
-            for (Iterator<NeedLibrary> iterator = export.lazyLoadNeededList.iterator(); iterator.hasNext(); ) {
-                NeedLibrary library = iterator.next();
-                String neededLibrary = library.path;
-                iterator.remove();
 
-                String name = FilenameUtils.getName(neededLibrary);
-                MachOModule loaded = modules.get(name);
-                if (loaded != null) {
-                    if (library.upward) {
-                        export.upwardLibraries.put(name, loaded);
-                    } else {
-                        export.neededLibraries().put(name, loaded);
-                    }
-                }
-            }
-
-            bindIndirectSymbolPointers(export);
-        }
-
+        Map<String, MachOModule> neededLibraries = new HashMap<>();
         Map<String, Module> upwardLibraries = new HashMap<>();
         final List<NeedLibrary> lazyLoadNeededList;
         if (loadNeeded) {
@@ -289,7 +271,32 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         long load_size = bound_high;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries);
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules);
+        modules.put(dyId, module);
+
+        for (MachOModule export : modules.values()) {
+            boolean dirty = false;
+            for (Iterator<NeedLibrary> iterator = export.lazyLoadNeededList.iterator(); iterator.hasNext(); ) {
+                NeedLibrary library = iterator.next();
+                String neededLibrary = library.path;
+
+                String name = FilenameUtils.getName(neededLibrary);
+                MachOModule loaded = modules.get(name);
+                if (loaded != null) {
+                    if (library.upward) {
+                        export.upwardLibraries.put(name, loaded);
+                    } else {
+                        export.neededLibraries().put(name, loaded);
+                    }
+                    iterator.remove();
+                    dirty = true;
+                }
+            }
+
+            if (dirty && export.lazyLoadNeededList.isEmpty()) {
+                bindIndirectSymbolPointers(export);
+            }
+        }
 
         if (loadNeeded) {
             if (log.isDebugEnabled()) {
@@ -298,7 +305,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             bindIndirectSymbolPointers(module);
         }
 
-        modules.put(dyId, module);
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
             maxDylibName = dyId;
         }
@@ -381,7 +387,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 } else {
                                     throw new IllegalStateException();
                                 }
-                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind) + ", replace0x=" + Long.toHexString(replace.getAddress()));
+                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", name=" + module.name + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind) + ", replace0x=" + Long.toHexString(replace.getAddress()));
                             }
                         }
                     }

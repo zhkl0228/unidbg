@@ -24,12 +24,13 @@ public class MachOModule extends Module {
     private final ByteBuffer buffer;
     final List<NeedLibrary> lazyLoadNeededList;
     final Map<String, Module> upwardLibraries;
+    final Map<String, MachOModule> exportModules;
 
     private final Map<String, MachOSymbol> symbolMap = new HashMap<>();
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
-                List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries) {
+                List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -37,6 +38,7 @@ public class MachOModule extends Module {
         this.buffer = buffer;
         this.lazyLoadNeededList = lazyLoadNeededList;
         this.upwardLibraries = upwardLibraries;
+        this.exportModules = exportModules;
 
         if (symtabCommand != null) {
             buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
@@ -109,6 +111,13 @@ public class MachOModule extends Module {
         Symbol symbol = symbolMap.get(name);
         if (symbol != null) {
             return symbol;
+        }
+
+        for (Module module : exportModules.values()) {
+            symbol = module.findSymbolByName(name, false);
+            if (symbol != null) {
+                return symbol;
+            }
         }
 
         if (withDependencies) {
