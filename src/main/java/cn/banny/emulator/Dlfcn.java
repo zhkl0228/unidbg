@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux.dlfcn;
+package cn.banny.emulator;
 
 import cn.banny.emulator.hook.HookListener;
 

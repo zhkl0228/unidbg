@@ -1,9 +1,11 @@
 package cn.banny.emulator.ios;
 
 import cn.banny.emulator.*;
+import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
+import cn.banny.emulator.memory.MemoryBlockImpl;
 import cn.banny.emulator.pointer.UnicornPointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
@@ -36,7 +38,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     @Override
     protected Module loadInternal(LibraryFile libraryFile, WriteHook unpackHook, boolean forceCallInit) throws IOException {
-        Module module = loadInternalPhase(libraryFile, unpackHook, true);
+        Module module = loadInternalPhase(libraryFile, true);
         for (MachOModule export : modules.values()) {
             if (!export.lazyLoadNeededList.isEmpty()) {
                 log.info("Export module resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
@@ -49,12 +51,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return module;
     }
 
-    private MachOModule loadInternalPhase(LibraryFile libraryFile, WriteHook unpackHook, boolean loadNeeded) throws IOException {
+    private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded) throws IOException {
         ByteBuffer buffer = ByteBuffer.wrap(libraryFile.readToByteArray());
-        return loadInternal(libraryFile, unpackHook, buffer, loadNeeded);
+        return loadInternalPhase(libraryFile, buffer, loadNeeded);
     }
 
-    private MachOModule loadInternal(LibraryFile libraryFile, final WriteHook unpackHook, ByteBuffer buffer, boolean loadNeeded) throws IOException {
+    private MachOModule loadInternalPhase(LibraryFile libraryFile, ByteBuffer buffer, boolean loadNeeded) throws IOException {
         MachO machO = new MachO(new ByteBufferKaitaiStream(buffer));
         MachO.MagicType magic = machO.magic();
         switch (magic) {
@@ -76,7 +78,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     buffer.limit((int) (arch.offset() + arch.size()));
                     buffer.position((int) arch.offset());
                     log.debug("loadFatArch=" + arch.cputype() + ", cpuSubType=" + arch.cpusubtype());
-                    return loadInternal(libraryFile, unpackHook, buffer.slice(), loadNeeded);
+                    return loadInternalPhase(libraryFile, buffer.slice(), loadNeeded);
                 }
                 throw new IllegalArgumentException("find arch failed");
             case MACHO_LE_X86: // ARM
@@ -103,6 +105,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         long start = System.currentTimeMillis();
         long bound_high = 0;
         String dyId = libraryFile.getName();
+        String dylibPath = libraryFile.getName();
         boolean compressed = false;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -132,8 +135,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
-                    String dylib = dylibCommand.name();
-                    dyId = FilenameUtils.getName(dylib);
+                    dylibPath = dylibCommand.name();
+                    dyId = FilenameUtils.getName(dylibPath);
                     break;
                 case LOAD_DYLIB:
                 case LOAD_UPWARD_DYLIB:
@@ -233,7 +236,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
             }
             if (neededLibraryFile != null) {
-                MachOModule needed = loadInternalPhase(neededLibraryFile, null, false);
+                MachOModule needed = loadInternalPhase(neededLibraryFile, false);
                 needed.addReferenceCount();
                 exportModules.put(FilenameUtils.getBaseName(needed.name), needed);
             } else {
@@ -261,7 +264,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
                 }
                 if (neededLibraryFile != null) {
-                    MachOModule needed = loadInternalPhase(neededLibraryFile, null, loadNeeded);
+                    MachOModule needed = loadInternalPhase(neededLibraryFile, loadNeeded);
                     needed.addReferenceCount();
                     if (library.upward) {
                         upwardLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
@@ -281,7 +284,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         long load_size = bound_high;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules);
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath);
         modules.put(dyId, module);
 
         for (MachOModule export : modules.values()) {
@@ -355,7 +358,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                             }
 
                             Symbol replace = module.findSymbolByName(sym.getName(), true);
-                            if (replace == null) {
+                            long address = replace == null ? 0L : replace.getAddress();
+                            for (HookListener listener : hookListeners) {
+                                long hook = listener.hook(emulator.getSvcMemory(), replace == null ? module.name : replace.getModuleName(), sym.getName(), address);
+                                if (hook > 0) {
+                                    address = hook;
+                                    break;
+                                }
+                            }
+
+                            if (address == 0L) {
                                 log.warn("bindIndirectSymbolPointers failed module=" + module.name + ", sym=" + sym);
                             } else {
                                 UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
@@ -363,9 +375,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                     throw new IllegalStateException("pointer=" + pointer);
                                 }
                                 if (emulator.getPointerSize() == 4) {
-                                    pointer.setInt(0, (int) replace.getAddress());
+                                    pointer.setInt(0, (int) address);
                                 } else if(emulator.getPointerSize() == 8) {
-                                    pointer.setLong(0, replace.getAddress());
+                                    pointer.setLong(0, address);
                                 } else {
                                     throw new IllegalStateException();
                                 }
@@ -375,7 +387,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     }
                     break;
                 case SEGMENT_64:
-                    throw new UnsupportedOperationException("bindIndirectSymbolPointers");
+                    throw new UnsupportedOperationException("bindIndirectSymbolPointers SEGMENT_64");
             }
         }
     }
@@ -404,17 +416,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     @Override
-    public int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public int brk(long address) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public MemoryBlock malloc(int length, boolean runtime) {
+        if (runtime) {
+            return MemoryBlockImpl.alloc(this, length);
+        }
+
         throw new UnsupportedOperationException();
     }
 
@@ -423,7 +434,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     @Override
-    public File dumpHeap() throws IOException {
+    public File dumpHeap() {
         throw new UnsupportedOperationException();
     }
 
@@ -433,12 +444,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     @Override
-    public Module dlopen(String filename) throws IOException {
+    public Module dlopen(String filename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Module dlopen(String filename, boolean calInit) throws IOException {
+    public Module dlopen(String filename, boolean calInit) {
         throw new UnsupportedOperationException();
     }
 
@@ -448,13 +459,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     @Override
-    public Symbol dlsym(long handle, String symbol) throws IOException {
+    public Symbol dlsym(long handle, String symbol) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Collection<Module> getLoadedModules() {
-        return new HashSet<Module>(modules.values());
+        return new ArrayList<Module>(modules.values());
     }
 
     @Override

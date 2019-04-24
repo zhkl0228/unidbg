@@ -4,13 +4,18 @@ import cn.banny.emulator.AbstractSyscallHandler;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.AbstractARM64Emulator;
 import cn.banny.emulator.linux.AndroidElfLoader;
+import cn.banny.emulator.linux.android.dvm.DalvikVM64;
+import cn.banny.emulator.linux.android.dvm.VM;
+import cn.banny.emulator.Dlfcn;
 import cn.banny.emulator.memory.Memory;
+import cn.banny.emulator.memory.SvcMemory;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.UnicornConst;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 
 /**
@@ -33,6 +38,16 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
     @Override
     protected Memory createMemory(AbstractSyscallHandler syscallHandler) {
         return new AndroidElfLoader(this, syscallHandler);
+    }
+
+    @Override
+    protected Dlfcn createDyld(SvcMemory svcMemory) {
+        return new ArmLD(unicorn, svcMemory);
+    }
+
+    @Override
+    public VM createDalvikVM(File apkFile) {
+        return new DalvikVM64(this, apkFile);
     }
 
     /**

@@ -27,6 +27,8 @@ public abstract class Symbol {
         return name;
     }
 
+    public abstract String getModuleName();
+
     @Override
     public String toString() {
         return name;

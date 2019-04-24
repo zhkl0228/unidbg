@@ -47,4 +47,8 @@ class IndirectSymbol extends Symbol {
         return true;
     }
 
+    @Override
+    public String getModuleName() {
+        return module.name;
+    }
 }

@@ -2,12 +2,10 @@ package cn.banny.emulator;
 
 import cn.banny.emulator.arm.Arguments;
 import cn.banny.emulator.debugger.Debugger;
-import cn.banny.emulator.linux.android.dvm.DalvikVM;
-import cn.banny.emulator.linux.android.dvm.DalvikVM64;
-import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.memory.MemoryBlockImpl;
+import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -53,6 +51,8 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     protected  abstract Memory createMemory(AbstractSyscallHandler syscallHandler);
+
+    protected abstract Dlfcn createDyld(SvcMemory svcMemory);
 
     @Override
     public void runAsm(String... asm) {
@@ -250,11 +250,6 @@ public abstract class AbstractEmulator implements Emulator {
     @Override
     public File getWorkDir() {
         return workDir;
-    }
-
-    @Override
-    public VM createDalvikVM(File apkFile) {
-        return getPointerSize() == 4 ? new DalvikVM(this, apkFile) : new DalvikVM64(this, apkFile);
     }
 
     protected final Number[] eFunc(long begin, Arguments args, long lr) {

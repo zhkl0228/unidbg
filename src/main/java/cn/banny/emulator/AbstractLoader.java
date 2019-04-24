@@ -34,7 +34,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 
     protected long sp;
     protected long mmapBaseAddress;
-    protected final Map<Long, Integer> memoryMap = new TreeMap<>();
+    private final Map<Long, Integer> memoryMap = new TreeMap<>();
 
     public AbstractLoader(Emulator emulator, AbstractSyscallHandler syscallHandler) {
         this.unicorn = emulator.getUnicorn();
@@ -50,6 +50,66 @@ public abstract class AbstractLoader implements Memory, Loader {
         UnicornPointer pointer = UnicornPointer.pointer(emulator, mmap2(0, aligned, prot, 0, -1, 0) & 0xffffffffL);
         assert pointer != null;
         return pointer.setSize(aligned);
+    }
+
+//    private static final int MAP_SHARED =	0x01;		/* Share changes */
+//    private static final int MAP_PRIVATE =	0x02;		/* Changes are private */
+//    private static final int MAP_TYPE =	0x0f;		/* Mask for type of mapping */
+//    private static final int MAP_FIXED =	0x10;		/* Interpret addr exactly */
+//    private static final int MAP_ANONYMOUS =	0x20;		/* don't use a file */
+
+    private long allocateMapAddress(int length) {
+        Map.Entry<Long, Integer> lastEntry = null;
+        for (Map.Entry<Long, Integer> entry : memoryMap.entrySet()) {
+            if (lastEntry == null) {
+                lastEntry = entry;
+            } else {
+                long mmapAddress = lastEntry.getKey() + lastEntry.getValue();
+                if (mmapAddress + length <= entry.getKey()) {
+                    return mmapAddress;
+                } else {
+                    lastEntry = entry;
+                }
+            }
+        }
+        if (lastEntry != null) {
+            long mmapAddress = lastEntry.getKey() + lastEntry.getValue();
+            if (mmapAddress < mmapBaseAddress) {
+                log.debug("allocateMapAddress mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", mmapAddress=0x" + Long.toHexString(mmapAddress));
+                mmapBaseAddress = mmapAddress;
+            }
+        }
+
+        long addr = mmapBaseAddress;
+        mmapBaseAddress += length;
+        return addr;
+    }
+
+    private static final int MAP_ANONYMOUS = 0x20;
+
+    @Override
+    public final int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
+        int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
+
+        if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd == -1 && offset == 0)) {
+            long addr = allocateMapAddress(aligned);
+            log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
+            unicorn.mem_map(addr, aligned, prot);
+            memoryMap.put(addr, aligned);
+            return (int) addr;
+        }
+        try {
+            FileIO file;
+            if (start == 0 && fd >= 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
+                long addr = allocateMapAddress(aligned);
+                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+
+        throw new AbstractMethodError("mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset);
     }
 
     @Override

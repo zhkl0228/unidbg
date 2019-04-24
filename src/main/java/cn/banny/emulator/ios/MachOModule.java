@@ -2,6 +2,7 @@ package cn.banny.emulator.ios;
 
 import cn.banny.emulator.*;
 import cn.banny.emulator.memory.MemRegion;
+import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
@@ -27,7 +28,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     final List<NeedLibrary> lazyLoadNeededList;
     final Map<String, Module> upwardLibraries;
     private final Map<String, MachOModule> exportModules;
-    final boolean isExportLibrary;
+    private final String path;
 
     boolean indirectSymbolBound;
 
@@ -35,7 +36,8 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
-                List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules) {
+                List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
+                String path) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -44,7 +46,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.lazyLoadNeededList = lazyLoadNeededList;
         this.upwardLibraries = upwardLibraries;
         this.exportModules = exportModules;
-        this.isExportLibrary = !lazyLoadNeededList.isEmpty();
+        this.path = path;
 
         if (symtabCommand != null) {
             buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
@@ -167,4 +169,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     public String toString() {
         return name;
     }
+
+    MemoryBlock nameBlock;
+
 }

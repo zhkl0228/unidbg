@@ -3,7 +3,11 @@ package cn.banny.emulator.linux.android;
 import cn.banny.emulator.AbstractSyscallHandler;
 import cn.banny.emulator.arm.AbstractARMEmulator;
 import cn.banny.emulator.linux.AndroidElfLoader;
+import cn.banny.emulator.linux.android.dvm.DalvikVM;
+import cn.banny.emulator.linux.android.dvm.VM;
+import cn.banny.emulator.Dlfcn;
 import cn.banny.emulator.memory.Memory;
+import cn.banny.emulator.memory.SvcMemory;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -12,6 +16,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.UnicornConst;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -37,6 +42,16 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     @Override
     protected Memory createMemory(AbstractSyscallHandler syscallHandler) {
         return new AndroidElfLoader(this, syscallHandler);
+    }
+
+    @Override
+    protected Dlfcn createDyld(SvcMemory svcMemory) {
+        return new ArmLD(unicorn, svcMemory);
+    }
+
+    @Override
+    public VM createDalvikVM(File apkFile) {
+        return new DalvikVM(this, apkFile);
     }
 
     /**

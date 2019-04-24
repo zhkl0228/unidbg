@@ -39,4 +39,8 @@ public class MachOSymbol extends Symbol {
         return false;
     }
 
+    @Override
+    public String getModuleName() {
+        return module.name;
+    }
 }

@@ -36,4 +36,9 @@ public class LinuxSymbol extends Symbol {
     public long getValue() {
         return elfSymbol.value;
     }
+
+    @Override
+    public String getModuleName() {
+        return module.name;
+    }
 }

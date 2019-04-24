@@ -26,9 +26,17 @@ public class SubstrateTest extends EmulatorTest {
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
         emulator.traceCode();
-        Number[] numbers = symbol.call(emulator, "/system/lib/libc.so");
+        // emulator.attach().addBreakPoint(module, 0x00b608L);
+        Number[] numbers = symbol.call(emulator, "CydiaSubstrate");
         long ret = numbers[0].intValue() & 0xffffffffL;
         System.err.println("eFunc ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    public static void main(String[] args) throws Exception {
+        SubstrateTest test = new SubstrateTest();
+        test.setUp();
+        test.testMS();
+        test.tearDown();
     }
 
 }
