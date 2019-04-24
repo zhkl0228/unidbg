@@ -3,7 +3,7 @@ package cn.banny.emulator.arm;
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
 import cn.banny.emulator.Module;
-import cn.banny.emulator.SyscallHandler;
+import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.ARMSyscallHandler;
@@ -22,6 +22,7 @@ import unicorn.UnicornConst;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public abstract class AbstractARMEmulator extends AbstractEmulator implements ARMEmulator {
 
@@ -61,6 +62,22 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
         // this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
         this.capstoneThumb = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
         // this.capstoneThumb.setDetail(Capstone.CS_OPT_ON);
+
+        setupTraps();
+    }
+
+    protected void setupTraps() {
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+            unicorn.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+            KeystoneEncoded encoded = keystone.assemble("mov pc, #0");
+            byte[] b0 = encoded.getMachineCode();
+            ByteBuffer buffer = ByteBuffer.allocate(0x10000);
+            // write "mov pc, #0" to all kernel trap addresses so they will throw exception
+            for (int i = 0; i < 0x10000; i += 4) {
+                buffer.put(b0);
+            }
+            unicorn.mem_write(LR, buffer.array());
+        }
     }
 
     @Override

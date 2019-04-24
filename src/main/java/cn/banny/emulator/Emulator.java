@@ -4,6 +4,9 @@ import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
+import cn.banny.emulator.spi.Disassembler;
+import cn.banny.emulator.spi.SyscallHandler;
+import cn.banny.emulator.spi.ValuePair;
 import unicorn.Unicorn;
 
 import java.io.Closeable;

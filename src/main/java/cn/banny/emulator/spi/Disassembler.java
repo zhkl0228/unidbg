@@ -1,4 +1,4 @@
-package cn.banny.emulator;
+package cn.banny.emulator.spi;
 
 import capstone.Capstone;
 

@@ -1,6 +1,6 @@
 package cn.banny.emulator.memory;
 
-import cn.banny.emulator.Loader;
+import cn.banny.emulator.spi.Loader;
 import cn.banny.emulator.linux.IO;
 import cn.banny.emulator.pointer.UnicornPointer;
 

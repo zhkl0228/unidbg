@@ -1,5 +1,6 @@
-package cn.banny.emulator;
+package cn.banny.emulator.spi;
 
+import cn.banny.emulator.Emulator;
 import cn.banny.emulator.file.IOResolver;
 import unicorn.InterruptHook;
 

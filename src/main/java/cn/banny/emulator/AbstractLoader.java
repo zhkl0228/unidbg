@@ -9,6 +9,8 @@ import cn.banny.emulator.linux.android.ElfLibraryFile;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.LibraryFile;
+import cn.banny.emulator.spi.Loader;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;

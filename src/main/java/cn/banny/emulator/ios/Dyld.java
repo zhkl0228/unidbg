@@ -1,6 +1,6 @@
 package cn.banny.emulator.ios;
 
-import cn.banny.emulator.Dlfcn;
+import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.arm.ArmSvc;

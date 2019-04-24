@@ -1,6 +1,6 @@
 package cn.banny.emulator.memory;
 
-import cn.banny.emulator.LibraryFile;
+import cn.banny.emulator.spi.LibraryFile;
 
 import java.io.IOException;
 

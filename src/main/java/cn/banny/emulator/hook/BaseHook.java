@@ -1,7 +1,7 @@
 package cn.banny.emulator.hook;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.LibraryFile;
+import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.arm.Arm64Hook;
 import cn.banny.emulator.arm.ArmHook;
 import cn.banny.emulator.arm.HookStatus;

@@ -1,11 +1,11 @@
 package cn.banny.emulator.linux.android;
 
 import cn.banny.emulator.AbstractSyscallHandler;
+import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.arm.AbstractARMEmulator;
 import cn.banny.emulator.linux.AndroidElfLoader;
 import cn.banny.emulator.linux.android.dvm.DalvikVM;
 import cn.banny.emulator.linux.android.dvm.VM;
-import cn.banny.emulator.Dlfcn;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import keystone.Keystone;
@@ -14,10 +14,8 @@ import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.UnicornConst;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -35,8 +33,6 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
 
     public AndroidARMEmulator(String processName) {
         super(processName);
-
-        setupTraps();
     }
 
     @Override
@@ -57,19 +53,12 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     /**
      * https://github.com/lunixbochs/usercorn/blob/master/go/arch/arm/linux.go
      */
-    private void setupTraps() {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            unicorn.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
-            KeystoneEncoded encoded = keystone.assemble("mov pc, #0");
-            byte[] b0 = encoded.getMachineCode();
-            ByteBuffer buffer = ByteBuffer.allocate(0x10000);
-            // write "mov pc, #0" to all kernel trap addresses so they will throw exception
-            for (int i = 0; i < 0x10000; i += 4) {
-                buffer.put(b0);
-            }
-            unicorn.mem_write(LR, buffer.array());
+    @Override
+    protected final void setupTraps() {
+        super.setupTraps();
 
-            encoded = keystone.assemble("bx lr", 0xffff0fa0);
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+            KeystoneEncoded encoded = keystone.assemble("bx lr", 0xffff0fa0);
             byte[] __kuser_memory_barrier = encoded.getMachineCode();
 
             encoded = keystone.assemble(Arrays.asList(

@@ -7,6 +7,8 @@ import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.memory.MemoryBlockImpl;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.LibraryFile;
+import cn.banny.emulator.spi.Loader;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;

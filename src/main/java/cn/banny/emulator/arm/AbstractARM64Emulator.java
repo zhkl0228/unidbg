@@ -3,7 +3,7 @@ package cn.banny.emulator.arm;
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
 import cn.banny.emulator.Module;
-import cn.banny.emulator.SyscallHandler;
+import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.ARM64SyscallHandler;

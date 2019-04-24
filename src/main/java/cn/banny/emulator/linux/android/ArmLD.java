@@ -6,7 +6,7 @@ import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.linux.InitFunction;
 import cn.banny.emulator.linux.LinuxModule;
-import cn.banny.emulator.Dlfcn;
+import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;

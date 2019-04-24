@@ -6,7 +6,7 @@ import cn.banny.emulator.arm.AbstractARM64Emulator;
 import cn.banny.emulator.linux.AndroidElfLoader;
 import cn.banny.emulator.linux.android.dvm.DalvikVM64;
 import cn.banny.emulator.linux.android.dvm.VM;
-import cn.banny.emulator.Dlfcn;
+import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import keystone.Keystone;

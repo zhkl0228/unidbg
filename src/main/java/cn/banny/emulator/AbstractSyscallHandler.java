@@ -5,6 +5,7 @@ import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.linux.file.ByteArrayFileIO;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.file.IOResolver;
+import cn.banny.emulator.spi.SyscallHandler;
 
 import java.io.IOException;
 import java.util.*;

@@ -1,4 +1,6 @@
-package cn.banny.emulator;
+package cn.banny.emulator.spi;
+
+import cn.banny.emulator.Emulator;
 
 import java.io.IOException;
 

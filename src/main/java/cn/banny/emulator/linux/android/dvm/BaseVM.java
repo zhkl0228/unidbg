@@ -1,7 +1,7 @@
 package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.LibraryFile;
+import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.ElfLibraryFile;

@@ -8,6 +8,7 @@ import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.linux.file.*;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.SyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
