@@ -5,6 +5,7 @@ import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.spi.Disassembler;
+import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.spi.ValuePair;
 import unicorn.Unicorn;
@@ -12,6 +13,7 @@ import unicorn.Unicorn;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * cpu emulator
@@ -102,5 +104,9 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      * @param apkFile 可为null
      */
     VM createDalvikVM(File apkFile);
+
+    String getLibraryExtension();
+    String getLibraryPath();
+    LibraryFile createURLibraryFile(URL url, String libName);
 
 }

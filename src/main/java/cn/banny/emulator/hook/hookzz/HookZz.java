@@ -41,11 +41,12 @@ public class HookZz extends BaseHook implements IHookZz {
     private HookZz(Emulator emulator) throws IOException {
         super(emulator);
 
-        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libhookzz.so"));
-        zz_enable_arm_arm64_b_branch = module.findSymbolByName("zz_enable_arm_arm64_b_branch");
-        zz_disable_arm_arm64_b_branch = module.findSymbolByName("zz_disable_arm_arm64_b_branch");
-        zzReplace = module.findSymbolByName("ZzReplace");
-        zzWrap = module.findSymbolByName("ZzWrap");
+        boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
+        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libhookzz"));
+        zz_enable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_enable_arm_arm64_b_branch" : "zz_enable_arm_arm64_b_branch");
+        zz_disable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_disable_arm_arm64_b_branch" : "zz_disable_arm_arm64_b_branch");
+        zzReplace = module.findSymbolByName(isIOS ? "_ZzReplace" : "ZzReplace");
+        zzWrap = module.findSymbolByName(isIOS ? "_ZzWrap" : "ZzWrap");
         log.debug("zzReplace=" + zzReplace + ", zzWrap=" + zzWrap);
 
         if (zz_enable_arm_arm64_b_branch == null) {

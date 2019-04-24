@@ -35,7 +35,7 @@ public class URLibraryFile implements LibraryFile {
         if (version == null) {
             return null;
         }
-        return DarwinResolver.resolveLibrary(emulator, dylibName, version);
+        return DarwinResolver.resolveLibrary(dylibName, version);
     }
 
     @Override

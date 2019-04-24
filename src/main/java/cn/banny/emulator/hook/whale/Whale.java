@@ -33,9 +33,10 @@ public class Whale extends BaseHook implements IWhale {
     private Whale(Emulator emulator) throws IOException {
         super(emulator);
 
-        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libwhale.so"));
-        WInlineHookFunction = module.findSymbolByName("WInlineHookFunction");
-        WImportHookFunction = module.findSymbolByName("WImportHookFunction");
+        boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
+        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libwhale"));
+        WInlineHookFunction = module.findSymbolByName(isIOS ? "_WInlineHookFunction" : "WInlineHookFunction");
+        WImportHookFunction = module.findSymbolByName(isIOS ? "_WImportHookFunction" : "WImportHookFunction");
         log.debug("WInlineHookFunction=" + WInlineHookFunction + ", WImportHookFunction=" + WImportHookFunction);
 
         if (WInlineHookFunction == null) {

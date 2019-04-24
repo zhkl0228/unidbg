@@ -9,6 +9,7 @@ import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
+import cn.banny.emulator.spi.LibraryFile;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -16,6 +17,7 @@ import keystone.KeystoneMode;
 import unicorn.UnicornConst;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.ByteBuffer;
 
 /**
@@ -66,4 +68,18 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
         }
     }
 
+    @Override
+    public String getLibraryExtension() {
+        return ".so";
+    }
+
+    @Override
+    public String getLibraryPath() {
+        return "/android/lib/arm64-v8a/";
+    }
+
+    @Override
+    public LibraryFile createURLibraryFile(URL url, String libName) {
+        return new URLibraryFile(url, libName, -1);
+    }
 }

@@ -8,6 +8,7 @@ import cn.banny.emulator.linux.android.dvm.DalvikVM;
 import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
+import cn.banny.emulator.spi.LibraryFile;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -16,6 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Arrays;
 
 /**
@@ -87,4 +89,18 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
         }
     }
 
+    @Override
+    public String getLibraryExtension() {
+        return ".so";
+    }
+
+    @Override
+    public String getLibraryPath() {
+        return "/android/lib/armeabi-v7a/";
+    }
+
+    @Override
+    public LibraryFile createURLibraryFile(URL url, String libName) {
+        return new URLibraryFile(url, libName, -1);
+    }
 }

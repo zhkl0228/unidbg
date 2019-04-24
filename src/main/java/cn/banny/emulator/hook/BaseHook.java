@@ -1,12 +1,12 @@
 package cn.banny.emulator.hook;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.arm.Arm64Hook;
 import cn.banny.emulator.arm.ArmHook;
 import cn.banny.emulator.arm.HookStatus;
 import cn.banny.emulator.linux.android.URLibraryFile;
 import cn.banny.emulator.memory.SvcMemory;
+import cn.banny.emulator.spi.LibraryFile;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -35,13 +35,12 @@ public abstract class BaseHook {
         });
     }
 
-    protected static LibraryFile resolveLibrary(Emulator emulator, String soName) {
-        final String abi = emulator.getPointerSize() == 4 ? "armeabi-v7a" : "arm64-v8a";
-        URL url = BaseHook.class.getResource("/android/lib/" + abi + "/" + soName);
+    protected static LibraryFile resolveLibrary(Emulator emulator, String libName) {
+        URL url = BaseHook.class.getResource(emulator.getLibraryPath() + libName + emulator.getLibraryExtension());
         if (url == null) {
-            throw new IllegalStateException("resolve library failed: " + soName);
+            throw new IllegalStateException("resolve library failed: " + libName);
         }
-        return new URLibraryFile(url, soName, -1);
+        return new URLibraryFile(url, libName, -1);
     }
 
 }

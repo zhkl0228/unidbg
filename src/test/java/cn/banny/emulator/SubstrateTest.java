@@ -1,5 +1,7 @@
 package cn.banny.emulator;
 
+import cn.banny.emulator.hook.hookzz.HookZz;
+import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.ios.DarwinARMEmulator;
 import cn.banny.emulator.ios.DarwinResolver;
 
@@ -22,6 +24,10 @@ public class SubstrateTest extends EmulatorTest {
         emulator.getMemory().setCallInitFunction();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
+
+        Whale.getInstance(emulator);
+        HookZz.getInstance(emulator);
+
         start = System.currentTimeMillis();
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
@@ -29,7 +35,7 @@ public class SubstrateTest extends EmulatorTest {
         // emulator.attach().addBreakPoint(module, 0x00b608L);
         Number[] numbers = symbol.call(emulator, "CydiaSubstrate");
         long ret = numbers[0].intValue() & 0xffffffffL;
-        System.err.println("eFunc ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        System.err.println("_MSGetImageByName ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void main(String[] args) throws Exception {

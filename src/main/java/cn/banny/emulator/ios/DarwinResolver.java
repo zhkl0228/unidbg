@@ -19,10 +19,10 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
 
     @Override
     public LibraryFile resolveLibrary(Emulator emulator, String libraryName) {
-        return resolveLibrary(emulator, libraryName, version);
+        return resolveLibrary(libraryName, version);
     }
 
-    static LibraryFile resolveLibrary(Emulator emulator, String libraryName, String version) {
+    static LibraryFile resolveLibrary(String libraryName, String version) {
         String name = "/ios/" + version + libraryName.replace('+', 'p');
         URL url = DarwinResolver.class.getResource(name);
         if (url != null) {

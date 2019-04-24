@@ -34,7 +34,7 @@ public class XHookImpl extends BaseHook implements IxHook {
     private XHookImpl(Emulator emulator) throws IOException {
         super(emulator);
 
-        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libxhook.so"));
+        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libxhook"));
         xhook_register = module.findSymbolByName("xhook_register");
         xhook_refresh = module.findSymbolByName("xhook_refresh");
         log.debug("xhook_register=" + xhook_register + ", xhook_refresh=" + xhook_refresh);

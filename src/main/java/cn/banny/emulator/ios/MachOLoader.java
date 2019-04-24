@@ -148,7 +148,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case ENCRYPTION_INFO:
                 case ENCRYPTION_INFO_64:
-                    throw new UnsupportedOperationException("Encrypted file");
+                    MachO.EncryptionInfoCommand encryptionInfoCommand = (MachO.EncryptionInfoCommand) command.body();
+                    if (encryptionInfoCommand.cryptid() != 0) {
+                        throw new UnsupportedOperationException("Encrypted file");
+                    }
                 default:
                     log.debug("loadCommand=" + command.type());
                     break;
