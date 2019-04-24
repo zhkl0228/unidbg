@@ -36,7 +36,17 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     @Override
     protected Module loadInternal(LibraryFile libraryFile, WriteHook unpackHook, boolean forceCallInit) throws IOException {
-        return loadInternalPhase(libraryFile, unpackHook, true);
+        Module module = loadInternalPhase(libraryFile, unpackHook, true);
+        for (MachOModule export : modules.values()) {
+            if (!export.lazyLoadNeededList.isEmpty()) {
+                log.info("Export module resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
+            }
+        }
+        for (MachOModule m : modules.values()) {
+            bindIndirectSymbolPointers(m);
+        }
+
+        return module;
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, WriteHook unpackHook, boolean loadNeeded) throws IOException {
@@ -207,7 +217,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", compressed=" + compressed + ", loadNeeded=" + loadNeeded + ", regions=" + regions);
         }
 
-        Map<String, MachOModule> exportModules = new HashMap<>();
+        Map<String, MachOModule> exportModules = new LinkedHashMap<>();
         for (MachO.DylibCommand dylibCommand : exportDylibs) {
             String neededLibrary = dylibCommand.name();
             log.debug(dyId + " need export dependency " + neededLibrary);
@@ -231,8 +241,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        Map<String, MachOModule> neededLibraries = new HashMap<>();
-        Map<String, Module> upwardLibraries = new HashMap<>();
+        Map<String, MachOModule> neededLibraries = new LinkedHashMap<>();
+        Map<String, Module> upwardLibraries = new LinkedHashMap<>();
         final List<NeedLibrary> lazyLoadNeededList;
         if (loadNeeded) {
             lazyLoadNeededList = Collections.emptyList();
@@ -275,7 +285,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         modules.put(dyId, module);
 
         for (MachOModule export : modules.values()) {
-            boolean dirty = false;
             for (Iterator<NeedLibrary> iterator = export.lazyLoadNeededList.iterator(); iterator.hasNext(); ) {
                 NeedLibrary library = iterator.next();
                 String neededLibrary = library.path;
@@ -289,20 +298,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         export.neededLibraries().put(name, loaded);
                     }
                     iterator.remove();
-                    dirty = true;
                 }
             }
-
-            if (dirty && export.lazyLoadNeededList.isEmpty()) {
-                bindIndirectSymbolPointers(export);
-            }
-        }
-
-        if (loadNeeded) {
-            if (log.isDebugEnabled()) {
-                log.debug("Begin bind dyId=" + dyId + ", base=0x" + Long.toHexString(load_base));
-            }
-            bindIndirectSymbolPointers(module);
         }
 
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
@@ -322,9 +319,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
         MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
-        if (dysymtabCommand == null) {
+        if (dysymtabCommand == null || module.indirectSymbolBound) {
             return;
         }
+        module.indirectSymbolBound = true;
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
 
         for (MachO.LoadCommand command : module.machO.loadCommands()) {
@@ -356,25 +354,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 continue;
                             }
 
-                            Symbol replace = module.findSymbolByName(sym.getName(), false);
+                            Symbol replace = module.findSymbolByName(sym.getName(), true);
                             if (replace == null) {
-                                for (Module needed : module.getNeededLibraries()) {
-                                    replace = needed.findSymbolByName(sym.getName(), true);
-                                    if (replace != null) {
-                                        break;
-                                    }
-                                }
-                            }
-                            if (replace == null) {
-                                for (Module needed : module.upwardLibraries.values()) {
-                                    replace = needed.findSymbolByName(sym.getName(), false);
-                                    if (replace != null) {
-                                        break;
-                                    }
-                                }
-                            }
-                            if (replace == null) {
-                                log.warn("bindIndirectSymbolPointers failed symbolIndex=0x" + Long.toHexString(symbolIndex) + ", name=" + module.name + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
+                                log.warn("bindIndirectSymbolPointers failed module=" + module.name + ", sym=" + sym);
                             } else {
                                 UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
                                 if (pointer == null) {

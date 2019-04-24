@@ -16,7 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MachOModule extends Module {
+public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
+
+    private static final Log log = LogFactory.getLog(MachOModule.class);
 
     final MachO machO;
     private final MachO.SymtabCommand symtabCommand;
@@ -24,9 +26,12 @@ public class MachOModule extends Module {
     private final ByteBuffer buffer;
     final List<NeedLibrary> lazyLoadNeededList;
     final Map<String, Module> upwardLibraries;
-    final Map<String, MachOModule> exportModules;
+    private final Map<String, MachOModule> exportModules;
+    final boolean isExportLibrary;
 
-    private final Map<String, MachOSymbol> symbolMap = new HashMap<>();
+    boolean indirectSymbolBound;
+
+    private final Map<String, Symbol> symbolMap = new HashMap<>();
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
@@ -39,6 +44,7 @@ public class MachOModule extends Module {
         this.lazyLoadNeededList = lazyLoadNeededList;
         this.upwardLibraries = upwardLibraries;
         this.exportModules = exportModules;
+        this.isExportLibrary = !lazyLoadNeededList.isEmpty();
 
         if (symtabCommand != null) {
             buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
@@ -46,18 +52,28 @@ public class MachOModule extends Module {
             ByteBuffer strBuffer = buffer.slice();
             ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(strBuffer);
             for (MachO.SymtabCommand.Nlist nlist : symtabCommand.symbols()) {
-                if (nlist.sect() == NO_SECT || nlist.un() == 0) {
+                int type = nlist.type() & N_TYPE;
+                if (nlist.un() == 0) {
                     continue;
                 }
 
                 strBuffer.position((int) nlist.un());
                 String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
-                Log log = LogFactory.getLog(name);
-                if (log.isDebugEnabled()) {
-                    log.debug("nlist64 un=0x" + Long.toHexString(nlist.un()) + ", name=" + name + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", sect=" + nlist.sect() + ", desc=" + nlist.desc() + ", value=0x" + Long.toHexString(nlist.value()));
-                }
+                if (type == N_SECT && (nlist.type() & N_STAB) == 0) {
+                    Log log = LogFactory.getLog(name);
+                    if (log.isDebugEnabled()) {
+                        log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", name=" + name + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", sect=" + nlist.sect() + ", desc=" + nlist.desc() + ", value=0x" + Long.toHexString(nlist.value()));
+                    }
 
-                symbolMap.put(symbolName, new MachOSymbol(this, nlist, symbolName));
+                    symbolMap.put(symbolName, new MachOSymbol(this, nlist, symbolName));
+                } else if (type == N_INDR) {
+                    strBuffer.position(nlist.value().intValue());
+                    String indirectSymbol = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+                    if (!symbolName.equals(indirectSymbol)) {
+                        log.debug("nlist indirect name=" + name + ", symbolName=" + symbolName + ", indirectSymbol=" + indirectSymbol);
+                        symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol));
+                    }
+                }
             }
         }
     }
@@ -104,10 +120,24 @@ public class MachOModule extends Module {
         return new MachOSymbol(this, nlist, symbolName);
     }
 
-    private static final int NO_SECT = 0;
-
     @Override
     public Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
+        Symbol symbol = findSymbolByNameInternal(name, withDependencies);
+        if (symbol != null) {
+            if (symbol instanceof IndirectSymbol) {
+                IndirectSymbol indirectSymbol = (IndirectSymbol) symbol;
+                symbol = indirectSymbol.resolveSymbol();
+                if (symbol == null) {
+                    log.warn("Resolve indirect symbol failed: name=" + this.name + ", symbolName=" + name + ", indirectSymbol=" + indirectSymbol.symbol + ", neededLibraries=" + neededLibraries.values());
+                }
+            }
+            return symbol;
+        } else {
+            return null;
+        }
+    }
+
+    private Symbol findSymbolByNameInternal(String name, boolean withDependencies) throws IOException {
         Symbol symbol = symbolMap.get(name);
         if (symbol != null) {
             return symbol;
@@ -121,6 +151,13 @@ public class MachOModule extends Module {
         }
 
         if (withDependencies) {
+            for (Module module : upwardLibraries.values()) {
+                symbol = module.findSymbolByName(name, false);
+                if (symbol != null) {
+                    return symbol;
+                }
+            }
+
             return findDependencySymbolByName(name);
         }
         return null;
@@ -128,8 +165,6 @@ public class MachOModule extends Module {
 
     @Override
     public String toString() {
-        return "MachOModule{" +
-                "name='" + name + '\'' +
-                '}';
+        return name;
     }
 }
