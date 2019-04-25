@@ -4,12 +4,12 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
-import cn.banny.emulator.linux.InitFunction;
 import cn.banny.emulator.linux.LinuxModule;
-import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.Dlfcn;
+import cn.banny.emulator.spi.InitFunction;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -31,7 +31,7 @@ public class ArmLD implements Dlfcn {
 
     private Unicorn unicorn;
 
-    public ArmLD(Unicorn unicorn, SvcMemory svcMemory) {
+    ArmLD(Unicorn unicorn, SvcMemory svcMemory) {
         this.unicorn = unicorn;
 
         error = svcMemory.allocate(0x40);

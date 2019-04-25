@@ -41,4 +41,9 @@ public class URLibraryFile implements LibraryFile {
     public byte[] readToByteArray() throws IOException {
         return IOUtils.toByteArray(url);
     }
+
+    @Override
+    public String getPath() {
+        return "/system/lib";
+    }
 }

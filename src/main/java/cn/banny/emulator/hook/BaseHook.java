@@ -40,7 +40,9 @@ public abstract class BaseHook {
         if (url == null) {
             throw new IllegalStateException("resolve library failed: " + libName);
         }
-        return new URLibraryFile(url, libName, -1);
+
+        boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
+        return isIOS ? new cn.banny.emulator.ios.URLibraryFile(url, libName, null) : new URLibraryFile(url, libName, -1);
     }
 
 }

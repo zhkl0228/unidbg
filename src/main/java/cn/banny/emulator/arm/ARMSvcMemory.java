@@ -4,8 +4,7 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Svc;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import cn.banny.emulator.spi.SyscallHandler;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
@@ -13,8 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ARMSvcMemory implements SvcMemory {
-
-    private static final Log log = LogFactory.getLog(SvcMemory.class);
 
     private UnicornPointer base;
 
@@ -48,9 +45,15 @@ public class ARMSvcMemory implements SvcMemory {
     public UnicornPointer registerSvc(Svc svc) {
         final int number;
         if (svc instanceof ThumbSvc) {
-            number = ++thumbSvcNumber;
+            if (++thumbSvcNumber == SyscallHandler.IOS_SYS_CALL_NUM) {
+                thumbSvcNumber++;
+            }
+            number = thumbSvcNumber;
         } else if (svc instanceof ArmSvc || svc instanceof Arm64Svc) {
-            number = ++armSvcNumber;
+            if (++armSvcNumber == SyscallHandler.IOS_SYS_CALL_NUM) {
+                armSvcNumber++;
+            }
+            number = armSvcNumber;
         } else {
             throw new IllegalStateException();
         }

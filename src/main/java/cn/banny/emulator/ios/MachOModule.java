@@ -4,6 +4,7 @@ import cn.banny.emulator.*;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.InitFunction;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.logging.Log;
@@ -11,6 +12,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,8 +21,6 @@ import java.util.Map;
 
 public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
 
-    private static final Log log = LogFactory.getLog(MachOModule.class);
-
     final MachO machO;
     private final MachO.SymtabCommand symtabCommand;
     final MachO.DysymtabCommand dysymtabCommand;
@@ -28,16 +28,20 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     final List<NeedLibrary> lazyLoadNeededList;
     final Map<String, Module> upwardLibraries;
     private final Map<String, MachOModule> exportModules;
-    private final String path;
+    final String path;
+
+    private final List<InitFunction> initFunctionList;
 
     boolean indirectSymbolBound;
 
     private final Map<String, Symbol> symbolMap = new HashMap<>();
 
+    private final Log log;
+
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
-                String path) {
+                String path, Emulator emulator) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -48,6 +52,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.exportModules = exportModules;
         this.path = path;
 
+        log = LogFactory.getLog("cn.banny.emulator.ios." + name);
         if (symtabCommand != null) {
             buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
             buffer.position((int) symtabCommand.strOff());
@@ -62,7 +67,6 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                 strBuffer.position((int) nlist.un());
                 String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
                 if (type == N_SECT && (nlist.type() & N_STAB) == 0) {
-                    Log log = LogFactory.getLog(name);
                     if (log.isDebugEnabled()) {
                         log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", name=" + name + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", sect=" + nlist.sect() + ", desc=" + nlist.desc() + ", value=0x" + Long.toHexString(nlist.value()));
                     }
@@ -78,6 +82,47 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                 }
             }
         }
+
+        initFunctionList = parseInitFunction(machO, buffer.duplicate(), base, name, emulator);
+    }
+
+    void callInitFunction(Emulator emulator) {
+        while (!initFunctionList.isEmpty()) {
+            InitFunction initFunction = initFunctionList.remove(0);
+            initFunction.call(emulator);
+        }
+    }
+
+    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, long load_base, String libName, Emulator emulator) {
+        List<InitFunction> initFunctionList = new ArrayList<>();
+        for (MachO.LoadCommand command : machO.loadCommands()) {
+            switch (command.type()) {
+                case SEGMENT:
+                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                        long type = section.flags() & SECTION_TYPE;
+                        if (type != S_MOD_INIT_FUNC_POINTERS) {
+                            continue;
+                        }
+
+                        long elementCount = section.size() / emulator.getPointerSize();
+                        long[] addresses = new long[(int) elementCount];
+                        buffer.order(ByteOrder.LITTLE_ENDIAN);
+                        buffer.limit((int) (section.offset() + section.size()));
+                        buffer.position((int) section.offset());
+                        for (int i = 0; i < addresses.length; i++) {
+                            long address = emulator.getPointerSize() == 4 ? buffer.getInt() : buffer.getLong();
+                            log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
+                            addresses[i] = address;
+                        }
+                        initFunctionList.add(new MachOModuleInit(load_base, libName, addresses));
+                    }
+                    break;
+                case SEGMENT_64:
+                    throw new UnsupportedOperationException("parseInitFunction SEGMENT_64");
+            }
+        }
+        return initFunctionList;
     }
 
     final Map<String, Module> neededLibraries() {
@@ -170,6 +215,6 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         return name;
     }
 
-    MemoryBlock nameBlock;
+    MemoryBlock pathBlock;
 
 }

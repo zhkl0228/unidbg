@@ -7,16 +7,16 @@ import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.memory.MemoryBlockImpl;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.Loader;
+import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
-import unicorn.WriteHook;
+import unicorn.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +35,20 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         unicorn.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
 
         setStackPoint(STACK_BASE);
+        initializeTLS();
         this.setErrno(0);
+    }
+
+    private void initializeTLS() {
+        final UnicornPointer tls = allocateStack(0x80 * 4); // tls size
+        assert tls != null;
+
+        if (emulator.getPointerSize() == 4) {
+            unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
+        } else {
+            unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
+        }
+        log.debug("initializeTLS tls=" + tls);
     }
 
     @Override
@@ -48,6 +61,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         for (MachOModule m : modules.values()) {
             bindIndirectSymbolPointers(m);
+        }
+        if (callInitFunction) {
+            for (MachOModule m : modules.values()) {
+                m.callInitFunction(emulator);
+            }
         }
 
         return module;
@@ -69,7 +87,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         archMap.put(arch.cpusubtype(), arch);
                     }
                 }
-                MachO.FatArch arch = archMap.get(CPU_SUBTYPE_ARM_V7); // 优化加载armv7
+                MachO.FatArch arch = archMap.get(CPU_SUBTYPE_ARM_V7); // 优先加载armv7
                 if (arch == null) {
                     Iterator<MachO.FatArch> iterator = archMap.values().iterator();
                     if (iterator.hasNext()) {
@@ -92,6 +110,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 if (machO.header().cputype() != MachO.CpuType.ARM64) {
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
                 }
+                break;
             default:
                 throw new UnsupportedOperationException("magic=" + magic);
         }
@@ -117,8 +136,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
-                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                    if (segmentCommand.filesize() > segmentCommand.vmsize()) {
+                        throw new IllegalStateException(String.format("malformed mach-o image: segment load command %s filesize is larger than vmsize", command.type()));
+                    }
+
+                    if (segmentCommand.vmsize() == 0) {
                         break;
+                    }
+                    if (segmentCommand.vmsize() < segmentCommand.filesize()) {
+                        throw new IllegalStateException(String.format("malformed mach-o image: segment %s has vmsize < filesize", command.type()));
                     }
                     long high = segmentCommand.vmaddr() + segmentCommand.vmsize();
                     if (bound_high < high) {
@@ -127,8 +153,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
-                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                    if (segmentCommand64.filesize() > segmentCommand64.vmsize()) {
+                        throw new IllegalStateException(String.format("malformed mach-o image: segment load command %s filesize is larger than vmsize", command.type()));
+                    }
+
+                    if (segmentCommand64.vmsize() == 0) {
                         break;
+                    }
+                    if (segmentCommand64.vmsize() < segmentCommand64.filesize()) {
+                        throw new IllegalStateException(String.format("malformed mach-o image: segment %s has vmsize < filesize", command.type()));
                     }
                     high = segmentCommand64.vmaddr() + segmentCommand64.vmsize();
                     if (bound_high < high) {
@@ -137,13 +170,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
-                    dylibPath = dylibCommand.name();
+                    dylibPath = dylibCommand.name().replace("@rpath", libraryFile.getPath());
                     dyId = FilenameUtils.getName(dylibPath);
                     break;
                 case LOAD_DYLIB:
+                // case LOAD_WEAK_DYLIB:
+                case REEXPORT_DYLIB:
                 case LOAD_UPWARD_DYLIB:
                 case SYMTAB:
-                case REEXPORT_DYLIB:
                 case DYSYMTAB:
                     break;
                 case ENCRYPTION_INFO:
@@ -152,8 +186,20 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if (encryptionInfoCommand.cryptid() != 0) {
                         throw new UnsupportedOperationException("Encrypted file");
                     }
+                    break;
+                case UUID:
+                case VERSION_MIN_IPHONEOS:
+                case FUNCTION_STARTS:
+                case DATA_IN_CODE:
+                case CODE_SIGNATURE:
+                case SOURCE_VERSION:
+                case SEGMENT_SPLIT_INFO:
+                case DYLIB_CODE_SIGN_DRS:
+                case SUB_FRAMEWORK:
+                case RPATH:
+                    break;
                 default:
-                    log.debug("loadCommand=" + command.type());
+                    log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
                     break;
             }
         }
@@ -172,7 +218,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             switch (command.type()) {
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
-                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                    if (segmentCommand.vmsize() == 0) {
                         break;
                     }
                     int prot = get_segment_protection(segmentCommand.initprot());
@@ -188,7 +234,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
-                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                    if (segmentCommand64.vmsize() == 0) {
                         break;
                     }
                     prot = get_segment_protection(segmentCommand64.initprot());
@@ -221,6 +267,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
             }
         }
+        Log log = LogFactory.getLog("cn.banny.emulator.ios." + dyId);
         if (log.isDebugEnabled()) {
             log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", compressed=" + compressed + ", loadNeeded=" + loadNeeded + ", regions=" + regions);
         }
@@ -289,7 +336,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         long load_size = bound_high;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath);
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator);
         modules.put(dyId, module);
 
         for (MachOModule export : modules.values()) {
@@ -332,6 +379,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         module.indirectSymbolBound = true;
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
+        Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 
         for (MachO.LoadCommand command : module.machO.loadCommands()) {
             switch (command.type()) {
@@ -353,6 +401,17 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 continue; // do nothing since already has absolute address
                             }
                             if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
+                                UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
+                                if (pointer == null) {
+                                    throw new IllegalStateException("pointer=" + pointer);
+                                }
+                                Pointer newPointer = pointer.getPointer(0);
+                                if (newPointer == null) {
+                                    newPointer = UnicornPointer.pointer(emulator, module.base);
+                                } else {
+                                    newPointer = newPointer.share(module.base);
+                                }
+                                pointer.setPointer(0, newPointer);
                                 continue;
                             }
 
@@ -379,13 +438,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 if (pointer == null) {
                                     throw new IllegalStateException("pointer=" + pointer);
                                 }
-                                if (emulator.getPointerSize() == 4) {
-                                    pointer.setInt(0, (int) address);
-                                } else if(emulator.getPointerSize() == 8) {
-                                    pointer.setLong(0, address);
-                                } else {
-                                    throw new IllegalStateException();
-                                }
+                                pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
                                 log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", name=" + module.name + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind) + ", replace0x=" + Long.toHexString(replace.getAddress()));
                             }
                         }

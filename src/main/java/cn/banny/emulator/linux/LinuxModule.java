@@ -6,6 +6,7 @@ import cn.banny.emulator.linux.android.dvm.Hashable;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.InitFunction;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.SymbolLocator;

@@ -10,6 +10,8 @@ import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.memory.MemoryBlockImpl;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.spi.AbstractLoader;
+import cn.banny.emulator.spi.InitFunction;
 import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.Loader;
 import com.sun.jna.Pointer;
@@ -471,14 +473,14 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
             ElfInitArray preInitArray = dynamicStructure.getPreInitArray();
             ElfInitArray initArray = dynamicStructure.getInitArray();
 
-            initFunctionList.add(new InitFunction(load_base, soName, init));
+            initFunctionList.add(new LinuxInitFunction(load_base, soName, init));
 
             if (preInitArray != null) {
-                initFunctionList.add(new InitFunction(load_base, soName, preInitArray));
+                initFunctionList.add(new LinuxInitFunction(load_base, soName, preInitArray));
             }
 
             if (initArray != null) {
-                initFunctionList.add(new InitFunction(load_base, soName, initArray));
+                initFunctionList.add(new LinuxInitFunction(load_base, soName, initArray));
             }
         }
 

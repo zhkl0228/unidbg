@@ -14,7 +14,7 @@ public class URLibraryFile implements LibraryFile {
     private final String path;
     private final String version;
 
-    URLibraryFile(URL url, String path, String version) {
+    public URLibraryFile(URL url, String path, String version) {
         this.url = url;
         this.path = path;
         this.version = version;
@@ -42,4 +42,10 @@ public class URLibraryFile implements LibraryFile {
     public byte[] readToByteArray() throws IOException {
         return IOUtils.toByteArray(url);
     }
+
+    @Override
+    public String getPath() {
+        return "/usr/lib";
+    }
+
 }

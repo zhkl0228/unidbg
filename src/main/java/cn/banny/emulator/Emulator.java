@@ -47,9 +47,9 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
 
     void runAsm(String...asm);
 
-    Number[] eFunc(long begin, Number... args);
+    Number[] eFunc(long begin, Number... arguments);
 
-    void eInit(long begin);
+    void eInit(long begin, Number... arguments);
 
     Number eEntry(long begin, long sp);
 

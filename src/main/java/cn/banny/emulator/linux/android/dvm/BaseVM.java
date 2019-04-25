@@ -133,6 +133,10 @@ public abstract class BaseVM implements VM {
         public byte[] readToByteArray() {
             return soData;
         }
+        @Override
+        public String getPath() {
+            return "/data/app-lib/" + packageName + "-1";
+        }
     }
 
     abstract byte[] findLibrary(ApkFile apkFile, String soName) throws IOException;

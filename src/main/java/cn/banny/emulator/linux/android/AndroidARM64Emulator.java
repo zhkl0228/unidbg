@@ -3,6 +3,7 @@ package cn.banny.emulator.linux.android;
 import cn.banny.emulator.AbstractSyscallHandler;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.AbstractARM64Emulator;
+import cn.banny.emulator.linux.ARM64SyscallHandler;
 import cn.banny.emulator.linux.AndroidElfLoader;
 import cn.banny.emulator.linux.android.dvm.DalvikVM64;
 import cn.banny.emulator.linux.android.dvm.VM;
@@ -45,6 +46,11 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
     @Override
     protected Dlfcn createDyld(SvcMemory svcMemory) {
         return new ArmLD(unicorn, svcMemory);
+    }
+
+    @Override
+    protected AbstractSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
+        return new ARM64SyscallHandler(svcMemory);
     }
 
     @Override

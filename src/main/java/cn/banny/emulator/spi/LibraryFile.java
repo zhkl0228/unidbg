@@ -14,4 +14,6 @@ public interface LibraryFile {
 
     byte[] readToByteArray() throws IOException;
 
+    String getPath();
+
 }

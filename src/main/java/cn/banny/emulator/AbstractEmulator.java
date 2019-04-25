@@ -55,6 +55,8 @@ public abstract class AbstractEmulator implements Emulator {
 
     protected abstract Dlfcn createDyld(SvcMemory svcMemory);
 
+    protected abstract AbstractSyscallHandler createSyscallHandler(SvcMemory svcMemory);
+
     @Override
     public void runAsm(String... asm) {
         byte[] shellCode = assemble(Arrays.asList(asm));
@@ -253,9 +255,9 @@ public abstract class AbstractEmulator implements Emulator {
         return workDir;
     }
 
-    protected final Number[] eFunc(long begin, Arguments args, long lr) {
+    protected final Number[] eFunc(long begin, Arguments args, long lr, boolean entry) {
         final List<Number> numbers = new ArrayList<>(10);
-        numbers.add(emulate(begin, lr, timeout, true));
+        numbers.add(emulate(begin, lr, timeout, entry));
         numbers.addAll(args.pointers);
         return numbers.toArray(new Number[0]);
     }

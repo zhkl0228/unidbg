@@ -39,17 +39,17 @@ public class Dyld implements Dlfcn {
                     public int handle(Emulator emulator) {
                         int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                         MachOModule module = (MachOModule) loader.getLoadedModules().toArray(new Module[0])[image_index];
-                        if (module.nameBlock == null) {
-                            byte[] name = module.name.getBytes();
-                            module.nameBlock = loader.malloc(name.length + 1, true);
-                            module.nameBlock.getPointer().write(0, name, 0, name.length);
-                            module.nameBlock.getPointer().setByte(name.length, (byte) 0);
+                        if (module.pathBlock == null) {
+                            byte[] path = module.path.getBytes();
+                            module.pathBlock = loader.malloc(path.length + 1, true);
+                            module.pathBlock.getPointer().write(0, path, 0, path.length);
+                            module.pathBlock.getPointer().setByte(path.length, (byte) 0);
                         }
-                        return (int) module.nameBlock.getPointer().peer;
+                        return (int) module.pathBlock.getPointer().peer;
                     }
                 }).peer;
             }
-            if ("__dyld_get_image_header".equals(symbolName)) {
+            if ("__dyld_get_image_header".equals(symbolName) || "__dyld_get_image_vmaddr_slide".equals(symbolName)) {
                 return svcMemory.registerSvc(new ArmSvc() {
                     @Override
                     public int handle(Emulator emulator) {

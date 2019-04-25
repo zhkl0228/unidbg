@@ -36,4 +36,8 @@ public class ElfLibraryFile implements LibraryFile {
         return FileUtils.readFileToByteArray(elfFile);
     }
 
+    @Override
+    public String getPath() {
+        return "/system/lib";
+    }
 }

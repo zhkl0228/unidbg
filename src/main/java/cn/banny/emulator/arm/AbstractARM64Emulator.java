@@ -2,6 +2,7 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
+import cn.banny.emulator.AbstractSyscallHandler;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;
@@ -28,7 +29,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     private static final Log log = LogFactory.getLog(AbstractARM64Emulator.class);
 
     protected final Memory memory;
-    private final ARM64SyscallHandler syscallHandler;
+    private final AbstractSyscallHandler syscallHandler;
     private final SvcMemory svcMemory;
 
     private final Capstone capstoneArm64;
@@ -48,7 +49,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
         }, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED | UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED | UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, null);
 
         this.svcMemory = new ARMSvcMemory(unicorn, 0xfffffffffffe0000L, 0x10000, this);
-        this.syscallHandler = new ARM64SyscallHandler(svcMemory);
+        this.syscallHandler = createSyscallHandler(svcMemory);
 
         enableVFP();
         this.memory = createMemory(syscallHandler);
@@ -166,13 +167,14 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     public Number[] eFunc(long begin, Number... arguments) {
         unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
         final Arguments args = ARM.initArgs(this, arguments);
-        return eFunc(begin, args, LR);
+        return eFunc(begin, args, LR, true);
     }
 
     @Override
-    public void eInit(long begin) {
+    public void eInit(long begin, Number... arguments) {
         unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
-        emulate(begin, LR, timeout, false);
+        final Arguments args = ARM.initArgs(this, arguments);
+        eFunc(begin, args, LR, false);
     }
 
     @Override

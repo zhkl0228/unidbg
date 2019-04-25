@@ -1,6 +1,7 @@
 package cn.banny.emulator.linux.android;
 
 import cn.banny.emulator.AbstractSyscallHandler;
+import cn.banny.emulator.linux.ARMSyscallHandler;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.arm.AbstractARMEmulator;
 import cn.banny.emulator.linux.AndroidElfLoader;
@@ -45,6 +46,11 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     @Override
     protected Dlfcn createDyld(SvcMemory svcMemory) {
         return new ArmLD(unicorn, svcMemory);
+    }
+
+    @Override
+    protected AbstractSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
+        return new ARMSyscallHandler(svcMemory);
     }
 
     @Override
