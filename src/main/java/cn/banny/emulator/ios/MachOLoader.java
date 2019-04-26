@@ -124,7 +124,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         long start = System.currentTimeMillis();
-        long bound_high = 0;
+        long size = 0;
         String dyId = libraryFile.getName();
         String dylibPath = libraryFile.getName();
         boolean compressed = false;
@@ -136,8 +136,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                        break;
+                    }
                     if (segmentCommand.filesize() > segmentCommand.vmsize()) {
                         throw new IllegalStateException(String.format("malformed mach-o image: segment load command %s filesize is larger than vmsize", command.type()));
+                    }
+                    if(segmentCommand.vmaddr() % emulator.getPageAlign() != 0 || (segmentCommand.vmaddr() + segmentCommand.vmsize()) % emulator.getPageAlign() != 0) {
+                        throw new IllegalArgumentException("vmaddr not page aligned");
                     }
 
                     if (segmentCommand.vmsize() == 0) {
@@ -147,14 +153,20 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         throw new IllegalStateException(String.format("malformed mach-o image: segment %s has vmsize < filesize", command.type()));
                     }
                     long high = segmentCommand.vmaddr() + segmentCommand.vmsize();
-                    if (bound_high < high) {
-                        bound_high = high;
+                    if (size < high) {
+                        size = high;
                     }
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                        break;
+                    }
                     if (segmentCommand64.filesize() > segmentCommand64.vmsize()) {
                         throw new IllegalStateException(String.format("malformed mach-o image: segment load command %s filesize is larger than vmsize", command.type()));
+                    }
+                    if(segmentCommand64.vmaddr() % emulator.getPageAlign() != 0 || (segmentCommand64.vmaddr() + segmentCommand64.vmsize()) % emulator.getPageAlign() != 0) {
+                        throw new IllegalArgumentException("vmaddr or vmsize not page aligned");
                     }
 
                     if (segmentCommand64.vmsize() == 0) {
@@ -164,8 +176,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         throw new IllegalStateException(String.format("malformed mach-o image: segment %s has vmsize < filesize", command.type()));
                     }
                     high = segmentCommand64.vmaddr() + segmentCommand64.vmsize();
-                    if (bound_high < high) {
-                        bound_high = high;
+                    if (size < high) {
+                        size = high;
                     }
                     break;
                 case ID_DYLIB:
@@ -204,9 +216,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        final long baseAlign = emulator.getPageAlign();
-        final long load_base = ((mmapBaseAddress - 1) / baseAlign + 1) * baseAlign;
-        long size = emulator.align(0, bound_high).size;
+        final long load_base = mmapBaseAddress;
         mmapBaseAddress = load_base + size;
 
         final List<NeedLibrary> neededList = new ArrayList<>();
@@ -334,7 +344,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (log.isDebugEnabled()) {
             log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
         }
-        long load_size = bound_high;
+        long load_size = size;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator);
         modules.put(dyId, module);
@@ -360,7 +370,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
             maxDylibName = dyId;
         }
-        if (bound_high > maxSizeOfDylib) {
+        if (size > maxSizeOfDylib) {
             maxSizeOfDylib = load_size;
         }
 
@@ -421,6 +431,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 continue;
                             }
 
+                            boolean isWeakRef = (sym.nlist.desc() & N_WEAK_REF) != 0;
                             Symbol replace = module.findSymbolByName(sym.getName(), true);
                             long address = replace == null ? 0L : replace.getAddress();
                             for (HookListener listener : hookListeners) {
@@ -431,15 +442,20 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 }
                             }
 
+                            UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
+                            if (pointer == null) {
+                                throw new IllegalStateException("pointer=" + pointer);
+                            }
                             if (address == 0L) {
-                                log.warn("bindIndirectSymbolPointers failed module=" + module.name + ", sym=" + sym);
-                            } else {
-                                UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
-                                if (pointer == null) {
-                                    throw new IllegalStateException("pointer=" + pointer);
+                                if (isWeakRef) {
+                                    log.info("bindIndirectSymbolPointers sym=" + sym + ", isWeakRef=" + isWeakRef);
+                                    pointer.setPointer(0, null);
+                                } else {
+                                    log.warn("bindIndirectSymbolPointers failed sym=" + sym);
                                 }
+                            } else {
                                 pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
-                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", name=" + module.name + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind) + ", replace0x=" + Long.toHexString(replace.getAddress()));
+                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind) + ", replace0x=" + Long.toHexString(replace.getAddress()));
                             }
                         }
                     }
@@ -457,9 +473,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (size > 0) {
             buffer.limit(offset + size);
             buffer.position(offset);
-            byte[] loadData = new byte[size];
-            buffer.get(loadData);
-            unicorn.mem_write(begin, loadData);
+            byte[] data = new byte[size];
+            buffer.get(data);
+            unicorn.mem_write(begin, data);
         }
     }
 

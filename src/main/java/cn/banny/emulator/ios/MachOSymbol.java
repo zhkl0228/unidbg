@@ -4,12 +4,10 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Symbol;
 import io.kaitai.MachO;
 
-public class MachOSymbol extends Symbol {
-
-    private static final int N_ARM_THUMB_DEF = 0x8;
+public class MachOSymbol extends Symbol implements cn.banny.emulator.ios.MachO {
 
     private final MachOModule module;
-    private final MachO.SymtabCommand.Nlist nlist;
+    final MachO.SymtabCommand.Nlist nlist;
 
     MachOSymbol(MachOModule module, MachO.SymtabCommand.Nlist nlist, String name) {
         super(name);

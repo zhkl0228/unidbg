@@ -64,11 +64,13 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                     continue;
                 }
 
+                boolean isWeakDef = (nlist.desc() & N_WEAK_DEF) != 0;
+                boolean isThumb = (nlist.desc() & N_ARM_THUMB_DEF) != 0;
                 strBuffer.position((int) nlist.un());
                 String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
                 if (type == N_SECT && (nlist.type() & N_STAB) == 0) {
                     if (log.isDebugEnabled()) {
-                        log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", name=" + name + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", sect=" + nlist.sect() + ", desc=" + nlist.desc() + ", value=0x" + Long.toHexString(nlist.value()));
+                        log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", value=0x" + Long.toHexString(nlist.value()));
                     }
 
                     symbolMap.put(symbolName, new MachOSymbol(this, nlist, symbolName));
@@ -76,7 +78,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                     strBuffer.position(nlist.value().intValue());
                     String indirectSymbol = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
                     if (!symbolName.equals(indirectSymbol)) {
-                        log.debug("nlist indirect name=" + name + ", symbolName=" + symbolName + ", indirectSymbol=" + indirectSymbol);
+                        log.debug("nlist indirect symbolName=" + symbolName + ", indirectSymbol=" + indirectSymbol);
                         symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol));
                     }
                 }
