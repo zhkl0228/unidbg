@@ -389,7 +389,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
             assert relocationAddr != null;
 
             if (relocation.isAndroid()) {
-                Log log = LogFactory.getLog(soName);
+                Log log = LogFactory.getLog("cn.banny.emulator.linux." + soName);
                 log.debug("symbol=" + symbol + ", type=" + type + ", relocationAddr=" + relocationAddr + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=" + relocation.addend());
             }
 
