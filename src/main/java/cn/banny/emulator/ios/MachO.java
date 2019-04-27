@@ -24,4 +24,6 @@ interface MachO {
     int N_WEAK_REF = 0x0040; /* symbol is weak referenced */
     int N_WEAK_DEF = 0x0080; /* coalesed symbol is a weak definition */
 
+    int ARM_RELOC_VANILLA = 0; /* generic relocation as discribed above */
+
 }

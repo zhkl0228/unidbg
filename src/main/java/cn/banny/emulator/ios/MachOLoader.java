@@ -21,6 +21,7 @@ import unicorn.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
 
 public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.banny.emulator.ios.MachO {
@@ -127,12 +128,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         long size = 0;
         String dyId = libraryFile.getName();
         String dylibPath = libraryFile.getName();
-        boolean compressed = false;
+        MachO.DyldInfoCommand dyldInfoCommand = null;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case DYLD_INFO:
                 case DYLD_INFO_ONLY:
-                    compressed = true;
+                    dyldInfoCommand = (MachO.DyldInfoCommand) command.body();
                     break;
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
@@ -278,8 +279,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + dyId);
-        if (log.isDebugEnabled()) {
-            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", compressed=" + compressed + ", loadNeeded=" + loadNeeded + ", regions=" + regions);
+        if (log.isDebugEnabled() || MachOLoader.log.isDebugEnabled()) {
+            String msg = "load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", dyldInfoCommand=" + dyldInfoCommand + ", loadNeeded=" + loadNeeded + ", regions=" + regions;
+            if (log.isDebugEnabled()) {
+                log.debug(msg);
+            } else {
+                MachOLoader.log.debug(msg);
+            }
         }
 
         Map<String, MachOModule> exportModules = new LinkedHashMap<>();
@@ -341,8 +347,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             lazyLoadNeededList = neededList;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
+        if (log.isDebugEnabled() || MachOLoader.log.isDebugEnabled()) {
+            String msg = "load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries;
+            if (log.isDebugEnabled()) {
+                log.debug(msg);
+            } else {
+                MachOLoader.log.debug(msg);
+            }
         }
         long load_size = size;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
@@ -382,6 +393,45 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return module;
     }
 
+    private void bindLocalRelocations(MachOModule module) {
+        MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
+        ByteBuffer buffer = module.buffer;
+        buffer.limit((int) (dysymtabCommand.locRelOff() + dysymtabCommand.nLocRel() * 8));
+        buffer.position((int) dysymtabCommand.locRelOff());
+        ByteBuffer slice = buffer.slice();
+        slice.order(ByteOrder.LITTLE_ENDIAN);
+
+        Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
+
+        for (int i = 0; i < dysymtabCommand.nLocRel(); i++) {
+            int r_address = slice.getInt();
+            int value = slice.getInt();
+            int r_scattered = (r_address >> 31) & 1;
+            int r_symbolnum = value & 0xffffff;
+            int r_pcrel = (value >> 24) & 1;
+            int r_length = (value >> 25) & 3;
+            int r_extern = (value >> 27) & 1;
+            int r_type = value >> 28;
+            if (r_pcrel != 0 || r_extern != 0 || r_scattered != 0 ||
+                    r_length != (emulator.getPointerSize() == 8 ? 3 : 2) ||
+                    r_type != ARM_RELOC_VANILLA) {
+                throw new IllegalStateException("Unexpected relocation found.");
+            }
+
+            buffer.limit(r_address + emulator.getPointerSize());
+            buffer.position(r_address);
+            long target = emulator.getPointerSize() == 8 ? buffer.getLong() : buffer.getInt();
+            Pointer pointer = UnicornPointer.pointer(emulator, module.base + r_address);
+            if (pointer == null) {
+                throw new IllegalStateException();
+            }
+            pointer.setPointer(0, UnicornPointer.pointer(emulator, module.base + target));
+            if (log.isDebugEnabled()) {
+                log.debug("bindLocalRelocations r_address=0x" + Integer.toHexString(r_address) + ", r_symbolnum=0x" + Integer.toHexString(r_symbolnum) + ", target=0x" + Long.toHexString(target));
+            }
+        }
+    }
+
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
         MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
         if (dysymtabCommand == null || module.indirectSymbolBound) {
@@ -390,6 +440,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         module.indirectSymbolBound = true;
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
+
+        bindLocalRelocations(module);
 
         for (MachO.LoadCommand command : module.machO.loadCommands()) {
             switch (command.type()) {

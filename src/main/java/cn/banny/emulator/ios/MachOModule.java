@@ -24,7 +24,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     final MachO machO;
     private final MachO.SymtabCommand symtabCommand;
     final MachO.DysymtabCommand dysymtabCommand;
-    private final ByteBuffer buffer;
+    final ByteBuffer buffer;
     final List<NeedLibrary> lazyLoadNeededList;
     final Map<String, Module> upwardLibraries;
     private final Map<String, MachOModule> exportModules;
