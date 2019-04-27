@@ -26,4 +26,7 @@ interface MachO {
 
     int ARM_RELOC_VANILLA = 0; /* generic relocation as discribed above */
 
+    int EXPORT_SYMBOL_FLAGS_REEXPORT = 0x08;
+    int EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER = 0x10;
+
 }

@@ -339,28 +339,28 @@ types:
         if: "b1 & 0x80 != 0"
       - id: b3
         type: u1
-        if: "b2 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0"
       - id: b4
         type: u1
-        if: "b3 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0 and b3 & 0x80 != 0"
       - id: b5
         type: u1
-        if: "b4 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0 and b3 & 0x80 != 0 and b4 & 0x80 != 0"
       - id: b6
         type: u1
-        if: "b5 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0 and b3 & 0x80 != 0 and b4 & 0x80 != 0 and b5 & 0x80 != 0"
       - id: b7
         type: u1
-        if: "b6 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0 and b3 & 0x80 != 0 and b4 & 0x80 != 0 and b5 & 0x80 != 0 and b6 & 0x80 != 0"
       - id: b8
         type: u1
-        if: "b7 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0 and b3 & 0x80 != 0 and b4 & 0x80 != 0 and b5 & 0x80 != 0 and b6 & 0x80 != 0 and b7 & 0x80 != 0"
       - id: b9
         type: u1
-        if: "b8 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0 and b3 & 0x80 != 0 and b4 & 0x80 != 0 and b5 & 0x80 != 0 and b6 & 0x80 != 0 and b7 & 0x80 != 0 and b8 & 0x80 != 0"
       - id: b10
         type: u1
-        if: "b9 & 0x80 != 0"
+        if: "b1 & 0x80 != 0 and b2 & 0x80 != 0 and b3 & 0x80 != 0 and b4 & 0x80 != 0 and b5 & 0x80 != 0 and b6 & 0x80 != 0 and b7 & 0x80 != 0 and b8 & 0x80 != 0 and b9 & 0x80 != 0"
     instances:
       value:
         value: >
