@@ -408,30 +408,23 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 
         for (int i = 0; i < dysymtabCommand.nLocRel(); i++) {
-            int r_address = slice.getInt();
-            int value = slice.getInt();
-            int r_scattered = (r_address >> 31) & 1;
-            int r_symbolnum = value & 0xffffff;
-            int r_pcrel = (value >> 24) & 1;
-            int r_length = (value >> 25) & 3;
-            int r_extern = (value >> 27) & 1;
-            int r_type = value >> 28;
-            if (r_pcrel != 0 || r_extern != 0 || r_scattered != 0 ||
-                    r_length != (emulator.getPointerSize() == 8 ? 3 : 2) ||
-                    r_type != ARM_RELOC_VANILLA) {
+            Relocation relocation = Relocation.create(slice);
+            if (relocation.pcRel || relocation.extern || relocation.scattered ||
+                    relocation.length != (emulator.getPointerSize() == 8 ? 3 : 2) ||
+                    relocation.type != ARM_RELOC_VANILLA) {
                 throw new IllegalStateException("Unexpected relocation found.");
             }
 
-            buffer.limit(r_address + emulator.getPointerSize());
-            buffer.position(r_address);
+            buffer.limit(relocation.address + emulator.getPointerSize());
+            buffer.position(relocation.address);
             long target = emulator.getPointerSize() == 8 ? buffer.getLong() : buffer.getInt();
-            Pointer pointer = UnicornPointer.pointer(emulator, module.base + r_address);
+            Pointer pointer = UnicornPointer.pointer(emulator, module.base + relocation.address);
             if (pointer == null) {
                 throw new IllegalStateException();
             }
             pointer.setPointer(0, UnicornPointer.pointer(emulator, module.base + target));
             if (log.isDebugEnabled()) {
-                log.debug("bindLocalRelocations r_address=0x" + Integer.toHexString(r_address) + ", r_symbolnum=0x" + Integer.toHexString(r_symbolnum) + ", target=0x" + Long.toHexString(target));
+                log.debug("bindLocalRelocations address=0x" + Integer.toHexString(relocation.address) + ", symbolNum=0x" + Integer.toHexString(relocation.symbolNum) + ", target=0x" + Long.toHexString(target));
             }
         }
     }
@@ -451,44 +444,42 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 
         for (int i = 0; i < dysymtabCommand.nExtRel(); i++) {
-            int r_address = slice.getInt();
-            int value = slice.getInt();
-            int r_scattered = (r_address >> 31) & 1;
-            int r_symbolnum = value & 0xffffff;
-            int r_pcrel = (value >> 24) & 1;
-            int r_length = (value >> 25) & 3;
-            int r_extern = (value >> 27) & 1;
-            int r_type = value >> 28;
-            if (r_pcrel != 0 || r_extern != 1 || r_scattered != 0 ||
-                    r_length != (emulator.getPointerSize() == 8 ? 3 : 2) ||
-                    r_type != ARM_RELOC_VANILLA) {
+            Relocation relocation = Relocation.create(slice);
+            if (relocation.pcRel || !relocation.extern || relocation.scattered ||
+                    relocation.length != (emulator.getPointerSize() == 8 ? 3 : 2) ||
+                    relocation.type != ARM_RELOC_VANILLA) {
                 throw new IllegalStateException("Unexpected relocation found.");
             }
 
-            MachOSymbol symbol = module.getSymbolByIndex(r_symbolnum);
-            Pointer pointer = UnicornPointer.pointer(emulator, module.base + r_address);
+            MachOSymbol symbol = module.getSymbolByIndex(relocation.symbolNum);
+            Pointer pointer = UnicornPointer.pointer(emulator, module.base + relocation.address);
             if (pointer == null) {
                 throw new IllegalStateException();
             }
 
             boolean isWeakRef = (symbol.nlist.desc() & N_WEAK_REF) != 0;
-            Symbol replace = module.findSymbolByName(symbol.getName(), true);
-            long address = replace == null ? 0L : replace.getAddress();
-            for (HookListener listener : hookListeners) {
-                long hook = listener.hook(emulator.getSvcMemory(), replace == null ? module.name : replace.getModuleName(), symbol.getName(), address);
-                if (hook > 0) {
-                    address = hook;
-                    break;
-                }
-            }
+            long address = resolveSymbol(module, symbol);
 
             if (address == 0L) {
                 log.warn("bindExternalRelocations failed symbol=" + symbol + ", isWeakRef=" + isWeakRef);
             } else {
                 pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
-                log.debug("bindExternalRelocations r_address=0x" + Long.toHexString(r_address) + ", r_symbolnum=0x" + Integer.toHexString(r_symbolnum) + ", symbolName=" + symbol.getName() + ", replace=" + replace);
+                log.debug("bindExternalRelocations address=0x" + Long.toHexString(relocation.address) + ", symbolNum=0x" + Integer.toHexString(relocation.symbolNum) + ", symbolName=" + symbol.getName());
             }
         }
+    }
+
+    private long resolveSymbol(Module module, Symbol symbol) throws IOException {
+        Symbol replace = module.findSymbolByName(symbol.getName(), true);
+        long address = replace == null ? 0L : replace.getAddress();
+        for (HookListener listener : hookListeners) {
+            long hook = listener.hook(emulator.getSvcMemory(), replace == null ? module.name : replace.getModuleName(), symbol.getName(), address);
+            if (hook > 0) {
+                address = hook;
+                break;
+            }
+        }
+        return address;
     }
 
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
@@ -543,15 +534,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                             }
 
                             boolean isWeakRef = (sym.nlist.desc() & N_WEAK_REF) != 0;
-                            Symbol replace = module.findSymbolByName(sym.getName(), true);
-                            long address = replace == null ? 0L : replace.getAddress();
-                            for (HookListener listener : hookListeners) {
-                                long hook = listener.hook(emulator.getSvcMemory(), replace == null ? module.name : replace.getModuleName(), sym.getName(), address);
-                                if (hook > 0) {
-                                    address = hook;
-                                    break;
-                                }
-                            }
+                            long address = resolveSymbol(module, sym);
 
                             UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
                             if (pointer == null) {
@@ -566,7 +549,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 }
                             } else {
                                 pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
-                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind) + ", replace0x=" + Long.toHexString(replace.getAddress()));
+                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
                             }
                         }
                     }

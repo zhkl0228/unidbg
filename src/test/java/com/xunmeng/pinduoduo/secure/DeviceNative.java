@@ -4,9 +4,12 @@ import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.LibraryResolver;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.arm.ARMEmulator;
+import cn.banny.emulator.file.FileIO;
+import cn.banny.emulator.file.IOResolver;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import cn.banny.emulator.linux.android.dvm.*;
+import cn.banny.emulator.linux.file.ByteArrayFileIO;
 import cn.banny.emulator.memory.Memory;
 import org.apache.commons.codec.binary.Base64;
 
@@ -17,7 +20,7 @@ import java.io.OutputStream;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
-public class DeviceNative extends AbstractJni {
+public class DeviceNative extends AbstractJni implements IOResolver {
 
     private static LibraryResolver createLibraryResolver() {
         return new AndroidResolver(23);
@@ -35,6 +38,7 @@ public class DeviceNative extends AbstractJni {
 
     private DeviceNative() throws IOException {
         emulator = createARMEmulator();
+        emulator.getSyscallHandler().addIOResolver(this);
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
         memory.setCallInitFunction();
@@ -67,7 +71,6 @@ public class DeviceNative extends AbstractJni {
         emulator.traceRead(0xbffff6bcL, 0xbffff6bcL + 16);
         emulator.traceWrite(0xbffff6ccL, 0xbffff6ccL + 16);*/
 
-        System.out.println(UUID.randomUUID().toString());
         long start = System.currentTimeMillis();
         Number ret = DeviceNative.callStaticJniMethod(emulator, "info2(Landroid/content/Context;J)Ljava/lang/String;", vm.resolveClass("android/content/Context").newObject(null), 1554297323913L);
         long hash = ret.intValue() & 0xffffffffL;
@@ -278,5 +281,17 @@ public class DeviceNative extends AbstractJni {
         }
 
         return super.callObjectMethodV(vm, dvmObject, signature, methodName, args, vaList);
+    }
+
+    @Override
+    public FileIO resolve(File workDir, String pathname, int oflags) {
+        if (("/proc/" + emulator.getPid() + "/status").equals(pathname)) {
+            return new ByteArrayFileIO(oflags, pathname, "TracerPid:\t0\n".getBytes());
+        }
+        if ("/proc/version".equals(pathname)) {
+            return new ByteArrayFileIO(oflags, pathname, "Linux version 3.4.0-cyanogenmod+ (zhkl0228@ubuntu) (gcc version 4.7 (GCC) ) #17 SMP PREEMPT Tue Mar 15 18:23:47 CST 2016\n".getBytes());
+        }
+
+        return null;
     }
 }

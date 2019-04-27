@@ -1,10 +1,9 @@
 package cn.banny.emulator.linux.android.dvm;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.Module;
-import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.ElfLibraryFile;
+import cn.banny.emulator.spi.LibraryFile;
 import net.dongliu.apk.parser.ApkFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -158,7 +157,7 @@ public abstract class BaseVM implements VM {
             }
 
             Module module = emulator.getMemory().load(new ApkLibraryFile(apkFile, soName, libData), forceCallInit);
-            return new DalvikModule(this, (LinuxModule) module);
+            return new DalvikModule(this, module);
         } finally {
             IOUtils.closeQuietly(apkFile);
         }
@@ -169,7 +168,7 @@ public abstract class BaseVM implements VM {
         emulator.setWorkDir(elfFile.getParentFile());
 
         Module module = emulator.getMemory().load(new ElfLibraryFile(elfFile), forceCallInit);
-        return new DalvikModule(this, (LinuxModule) module);
+        return new DalvikModule(this, module);
     }
 
     @Override

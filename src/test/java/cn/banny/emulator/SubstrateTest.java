@@ -40,7 +40,7 @@ public class SubstrateTest extends EmulatorTest {
         assertNotNull(symbol);
         start = System.currentTimeMillis();
         // emulator.traceCode();
-        numbers = symbol.call(emulator, numbers[0].intValue(), "_MSGetImageByName");
+        numbers = symbol.call(emulator, ret, "_MSGetImageByName");
         ret = numbers[0].intValue() & 0xffffffffL;
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
