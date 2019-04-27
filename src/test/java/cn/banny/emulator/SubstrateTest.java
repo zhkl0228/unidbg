@@ -1,9 +1,15 @@
 package cn.banny.emulator;
 
+import cn.banny.emulator.arm.HookStatus;
+import cn.banny.emulator.hook.ReplaceCallback;
 import cn.banny.emulator.hook.hookzz.HookZz;
+import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.ios.DarwinARMEmulator;
 import cn.banny.emulator.ios.DarwinResolver;
+import cn.banny.emulator.pointer.UnicornPointer;
+import com.sun.jna.Pointer;
+import unicorn.ArmConst;
 
 import java.io.File;
 
@@ -25,7 +31,18 @@ public class SubstrateTest extends EmulatorTest {
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        Whale.getInstance(emulator);
+        IWhale whale = Whale.getInstance(emulator);
+        emulator.traceCode();
+        whale.WImportHookFunction("_strcmp", "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate", new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                Pointer pointer1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                Pointer pointer2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0));
+                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+            }
+        });
+
         HookZz.getInstance(emulator);
 
         start = System.currentTimeMillis();

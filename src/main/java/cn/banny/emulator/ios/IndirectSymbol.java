@@ -27,28 +27,41 @@ class IndirectSymbol extends Symbol {
         return actualSymbol;
     }
 
+    private Symbol checkSymbol() {
+        try {
+            Symbol symbol = resolveSymbol();
+            if (symbol == null) {
+                throw new IllegalStateException("symbol is null");
+            }
+            return symbol;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     @Override
     public Number[] call(Emulator emulator, Object... args) {
-        throw new UnsupportedOperationException();
+        return checkSymbol().call(emulator, args);
     }
 
     @Override
     public long getAddress() {
-        return 0;
+        return checkSymbol().getAddress();
     }
 
     @Override
     public long getValue() {
-        return 0;
+        return checkSymbol().getValue();
     }
 
     @Override
     public boolean isUndef() {
-        return true;
+        return checkSymbol().isUndef();
     }
 
     @Override
     public String getModuleName() {
-        return module.name;
+        return checkSymbol().getModuleName();
     }
+
 }

@@ -2,10 +2,8 @@ package cn.banny.emulator.ios;
 
 import cn.banny.emulator.*;
 import cn.banny.emulator.hook.HookListener;
+import cn.banny.emulator.memory.*;
 import cn.banny.emulator.memory.MemRegion;
-import cn.banny.emulator.memory.Memory;
-import cn.banny.emulator.memory.MemoryBlock;
-import cn.banny.emulator.memory.MemoryBlockImpl;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.LibraryFile;
@@ -133,6 +131,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             switch (command.type()) {
                 case DYLD_INFO:
                 case DYLD_INFO_ONLY:
+                    if (dyldInfoCommand != null) {
+                        throw new IllegalStateException("dyldInfoCommand=" + dyldInfoCommand);
+                    }
                     dyldInfoCommand = (MachO.DyldInfoCommand) command.body();
                     break;
                 case SEGMENT:
@@ -377,6 +378,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 }
             }
         }
+        if ("libsystem_malloc.dylib".equals(dyId)) {
+            malloc = module.findSymbolByName("_malloc");
+        }
 
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
             maxDylibName = dyId;
@@ -590,13 +594,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         throw new UnsupportedOperationException();
     }
 
+    private Symbol malloc;
+
     @Override
     public MemoryBlock malloc(int length, boolean runtime) {
         if (runtime) {
             return MemoryBlockImpl.alloc(this, length);
+        } else {
+            return MemoryAllocBlock.malloc(emulator, malloc, length);
         }
-
-        throw new UnsupportedOperationException();
     }
 
     @Override

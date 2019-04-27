@@ -6,9 +6,7 @@ import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.linux.android.ElfLibraryFile;
 import cn.banny.emulator.memory.MemRegion;
-import cn.banny.emulator.memory.Memory;
-import cn.banny.emulator.memory.MemoryBlock;
-import cn.banny.emulator.memory.MemoryBlockImpl;
+import cn.banny.emulator.memory.*;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.InitFunction;
@@ -548,25 +546,9 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     public MemoryBlock malloc(int length, boolean runtime) {
         if (runtime) {
             return MemoryBlockImpl.alloc(this, length);
+        } else {
+            return MemoryAllocBlock.malloc(emulator, malloc, length);
         }
-
-        long address = malloc.call(emulator, length)[0].intValue() & 0xffffffffL;
-        final UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
-        assert pointer != null;
-        return new MemoryBlock() {
-            @Override
-            public UnicornPointer getPointer() {
-                return pointer;
-            }
-            @Override
-            public boolean isSame(Pointer p) {
-                return pointer.equals(p);
-            }
-            @Override
-            public void free() {
-                throw new UnsupportedOperationException();
-            }
-        };
     }
 
     private long brk;
