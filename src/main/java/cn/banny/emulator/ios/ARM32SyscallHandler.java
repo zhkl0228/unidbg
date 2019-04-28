@@ -120,6 +120,7 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
     private int bsdthread_register(Emulator emulator) {
         // TODO: implement
+        log.debug("bsdthread_register");
         Unicorn unicorn = emulator.getUnicorn();
         Cpsr.getArm(unicorn).setCarry(false);
         return 0;
@@ -127,11 +128,13 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
     private int semaphore_signal_trap(Emulator emulator) {
         // TODO: implement
+        log.debug("semaphore_signal_trap");
         return 0;
     }
 
     private int thread_selfid(Emulator emulator) {
         // TODO: implement
+        log.debug("thread_selfid");
         Unicorn unicorn = emulator.getUnicorn();
         Cpsr.getArm(unicorn).setCarry(false);
         return 0;
@@ -139,11 +142,13 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
     private int sysctl(Emulator emulator) {
         // TODO: implement
+        log.debug("sysctl");
         return 0;
     }
 
     private int _kernelrpc_mach_port_deallocate_trap(Emulator emulator) {
         // TODO: implement
+        log.debug("_kernelrpc_mach_port_deallocate_trap");
         return 0;
     }
 
@@ -244,10 +249,12 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
     }
 
     private int host_self_trap() {
+        log.debug("host_self_trap");
         return 2;
     }
 
     private int thread_self_trap() {
+        log.debug("thread_self_trap");
         return 3;
     }
 
