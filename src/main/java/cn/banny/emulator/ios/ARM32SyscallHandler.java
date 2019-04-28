@@ -5,6 +5,7 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.StopEmulatorException;
 import cn.banny.emulator.Svc;
 import cn.banny.emulator.arm.ARM;
+import cn.banny.emulator.linux.LinuxEmulator;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.SyscallHandler;
@@ -63,10 +64,16 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
             if (intno == 2) {
                 switch (NR) {
                     case -26: // mach_port_t mach_reply_port(...)
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, 4);
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, mach_reply_port());
                         return;
                     case -28: // mach_port_name_t task_self_trap(void)
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, 1);
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, task_self_trap());
+                        return;
+                    case -31:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, mach_msg_trap(emulator));
+                        return;
+                    case 48:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
                         return;
                     default:
                         break;
@@ -87,6 +94,31 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int mach_msg_trap(Emulator emulator) {
+        throw new UnicornException();
+    }
+
+    private int task_self_trap() {
+        log.debug("task_self_trap");
+        return 1;
+    }
+
+    private int mach_reply_port() {
+        log.debug("mach_reply_port");
+        return 4;
+    }
+
+    private int sigprocmask(Unicorn u, Emulator emulator) {
+        int how = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer set = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        Pointer oldset = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        if (log.isDebugEnabled()) {
+            log.debug("sigprocmask how=" + how + ", set=" + set + ", oldset=" + oldset);
+        }
+        emulator.getMemory().setErrno(LinuxEmulator.EINVAL);
+        return -1;
     }
 
     @Override

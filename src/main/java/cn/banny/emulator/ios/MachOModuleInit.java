@@ -25,9 +25,11 @@ class MachOModuleInit extends InitFunction {
             log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
             if ("libc++.1.dylib".equals(libName)) {
                 // emulator.attach().addBreakPoint(null, load_base + 0x001ad5);
-                emulator.traceCode();
+                // emulator.traceCode();
             }
             // emulator.attach().addBreakPoint(null, 0x401d68d8);
+            // emulator.attach().addBreakPoint(null, 0x401d68cc);
+            emulator.traceCode();
             long start = System.currentTimeMillis();
             callModInit(emulator, load_base + addr, 0, null, null, null, null);
             if (log.isDebugEnabled()) {
@@ -44,7 +46,7 @@ class MachOModuleInit extends InitFunction {
         list.add(envp == null ? 0 : envp.peer);
         list.add(apple == null ? 0 : apple.peer);
         list.add(vars == null ? 0 : vars.peer);
-        emulator.eInit(address, list.toArray(new Number[0]));
+        emulator.eFunc(address, list.toArray(new Number[0]));
     }
 
 }

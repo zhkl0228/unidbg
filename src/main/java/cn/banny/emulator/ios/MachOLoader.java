@@ -564,12 +564,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             throw new IllegalStateException();
         }
         Pointer newPointer = pointer.getPointer(0);
-        log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", old=" + newPointer);
+        Pointer old = newPointer;
         if (newPointer == null) {
             newPointer = UnicornPointer.pointer(emulator, module.base);
         } else {
             newPointer = newPointer.share(module.base);
         }
+        log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", old=" + old + ", new=" + newPointer);
         switch (type) {
             case REBASE_TYPE_POINTER:
             case REBASE_TYPE_TEXT_ABSOLUTE32:
@@ -671,98 +672,101 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
         MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
-        if (dysymtabCommand == null || module.indirectSymbolBound) {
+        if (module.indirectSymbolBound) {
             return;
         }
         module.indirectSymbolBound = true;
+
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 
-        bindLocalRelocations(module);
+        MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
+        if (dyldInfoCommand == null) {
+            bindLocalRelocations(module);
 
-        for (MachO.LoadCommand command : module.machO.loadCommands()) {
-            switch (command.type()) {
-                case SEGMENT:
-                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
-                    for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
-                        long type = section.flags() & SECTION_TYPE;
-                        long elementCount = section.size() / emulator.getPointerSize();
+            for (MachO.LoadCommand command : module.machO.loadCommands()) {
+                switch (command.type()) {
+                    case SEGMENT:
+                        MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                        for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                            long type = section.flags() & SECTION_TYPE;
+                            long elementCount = section.size() / emulator.getPointerSize();
 
-                        if (type != S_NON_LAZY_SYMBOL_POINTERS && type != S_LAZY_SYMBOL_POINTERS) {
-                            continue;
-                        }
-
-                        long ptrToBind = section.addr();
-                        int indirectTableOffset = (int) section.reserved1();
-                        for (int i = 0; i < elementCount; i++, ptrToBind += emulator.getPointerSize()) {
-                            long symbolIndex = indirectTable.get(indirectTableOffset + i);
-                            if (symbolIndex == INDIRECT_SYMBOL_ABS) {
-                                continue; // do nothing since already has absolute address
+                            if (type != S_NON_LAZY_SYMBOL_POINTERS && type != S_LAZY_SYMBOL_POINTERS) {
+                                continue;
                             }
-                            if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
+
+                            long ptrToBind = section.addr();
+                            int indirectTableOffset = (int) section.reserved1();
+                            for (int i = 0; i < elementCount; i++, ptrToBind += emulator.getPointerSize()) {
+                                long symbolIndex = indirectTable.get(indirectTableOffset + i);
+                                if (symbolIndex == INDIRECT_SYMBOL_ABS) {
+                                    continue; // do nothing since already has absolute address
+                                }
+                                if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
+                                    UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
+                                    if (pointer == null) {
+                                        throw new IllegalStateException("pointer=" + pointer);
+                                    }
+                                    Pointer newPointer = pointer.getPointer(0);
+                                    if (newPointer == null) {
+                                        newPointer = UnicornPointer.pointer(emulator, module.base);
+                                    } else {
+                                        newPointer = newPointer.share(module.base);
+                                    }
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("bindIndirectSymbolPointers pointer=" + pointer + ", newPointer=" + newPointer);
+                                    }
+                                    pointer.setPointer(0, newPointer);
+                                    continue;
+                                }
+
+                                MachOSymbol sym = module.getSymbolByIndex((int) symbolIndex);
+                                if (sym == null) {
+                                    log.warn("bindIndirectSymbolPointers sym is null");
+                                    continue;
+                                }
+
+                                boolean isWeakRef = (sym.nlist.desc() & N_WEAK_REF) != 0;
+                                long address = resolveSymbol(module, sym);
+
                                 UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
                                 if (pointer == null) {
                                     throw new IllegalStateException("pointer=" + pointer);
                                 }
-                                Pointer newPointer = pointer.getPointer(0);
-                                if (newPointer == null) {
-                                    newPointer = UnicornPointer.pointer(emulator, module.base);
+                                if (address == 0L) {
+                                    if (isWeakRef) {
+                                        log.info("bindIndirectSymbolPointers sym=" + sym + ", isWeakRef=" + isWeakRef);
+                                        pointer.setPointer(0, null);
+                                    } else {
+                                        log.warn("bindIndirectSymbolPointers failed sym=" + sym);
+                                    }
                                 } else {
-                                    newPointer = newPointer.share(module.base);
+                                    pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
+                                    log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
                                 }
-                                pointer.setPointer(0, newPointer);
-                                continue;
-                            }
-
-                            MachOSymbol sym = module.getSymbolByIndex((int) symbolIndex);
-                            if (sym == null) {
-                                log.warn("bindIndirectSymbolPointers sym is null");
-                                continue;
-                            }
-
-                            boolean isWeakRef = (sym.nlist.desc() & N_WEAK_REF) != 0;
-                            long address = resolveSymbol(module, sym);
-
-                            UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
-                            if (pointer == null) {
-                                throw new IllegalStateException("pointer=" + pointer);
-                            }
-                            if (address == 0L) {
-                                if (isWeakRef) {
-                                    log.info("bindIndirectSymbolPointers sym=" + sym + ", isWeakRef=" + isWeakRef);
-                                    pointer.setPointer(0, null);
-                                } else {
-                                    log.warn("bindIndirectSymbolPointers failed sym=" + sym);
-                                }
-                            } else {
-                                pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
-                                log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
                             }
                         }
-                    }
-                    break;
-                case SEGMENT_64:
-                    throw new UnsupportedOperationException("bindIndirectSymbolPointers SEGMENT_64");
+                        break;
+                    case SEGMENT_64:
+                        throw new UnsupportedOperationException("bindIndirectSymbolPointers SEGMENT_64");
+                }
             }
-        }
 
-        bindExternalRelocations(module);
-
-        MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
-        if (dyldInfoCommand == null) {
-            return;
-        }
-        if (dyldInfoCommand.bindSize() > 0) {
-            ByteBuffer buffer = module.buffer.duplicate();
-            buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
-            buffer.position((int) dyldInfoCommand.bindOff());
-            eachBind(log, buffer.slice(), module, false);
-        }
-        if (dyldInfoCommand.lazyBindSize() > 0) {
-            ByteBuffer buffer = module.buffer.duplicate();
-            buffer.limit((int) (dyldInfoCommand.lazyBindOff() + dyldInfoCommand.lazyBindSize()));
-            buffer.position((int) dyldInfoCommand.lazyBindOff());
-            eachBind(log, buffer.slice(), module, true);
+            bindExternalRelocations(module);
+        } else {
+            if (dyldInfoCommand.bindSize() > 0) {
+                ByteBuffer buffer = module.buffer.duplicate();
+                buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
+                buffer.position((int) dyldInfoCommand.bindOff());
+                eachBind(log, buffer.slice(), module, false);
+            }
+            if (dyldInfoCommand.lazyBindSize() > 0) {
+                ByteBuffer buffer = module.buffer.duplicate();
+                buffer.limit((int) (dyldInfoCommand.lazyBindOff() + dyldInfoCommand.lazyBindSize()));
+                buffer.position((int) dyldInfoCommand.lazyBindOff());
+                eachBind(log, buffer.slice(), module, true);
+            }
         }
     }
 
