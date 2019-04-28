@@ -231,7 +231,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             switch (command.type()) {
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    long begin = load_base + segmentCommand.vmaddr();
                     if (segmentCommand.vmsize() == 0) {
+                        regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand.vmaddr()));
                         break;
                     }
                     int prot = get_segment_protection(segmentCommand.initprot());
@@ -239,7 +241,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         prot = UnicornConst.UC_PROT_ALL;
                     }
 
-                    long begin = load_base + segmentCommand.vmaddr();
                     Alignment alignment = this.mem_map(begin, segmentCommand.vmsize(), prot, dyId);
                     write_mem((int) segmentCommand.fileoff(), (int) segmentCommand.filesize(), begin, buffer);
 
@@ -247,7 +248,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    begin = load_base + segmentCommand64.vmaddr();
                     if (segmentCommand64.vmsize() == 0) {
+                        regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand64.vmaddr()));
                         break;
                     }
                     prot = get_segment_protection(segmentCommand64.initprot());
@@ -255,7 +258,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         prot = UnicornConst.UC_PROT_ALL;
                     }
 
-                    begin = load_base + segmentCommand64.vmaddr();
                     alignment = this.mem_map(begin, segmentCommand64.vmsize(), prot, dyId);
                     write_mem((int) segmentCommand64.fileoff(), (int) segmentCommand64.filesize(), begin, buffer);
 
@@ -404,8 +406,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     private void processExportNode(Log log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset) {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-
         int terminalSize = Utils.readULEB128(buffer).intValue();
 
         if (terminalSize != 0) {
@@ -460,11 +460,118 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private void processDyldInfo(MachOModule module, MachO.DyldInfoCommand dyldInfoCommand) {
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 
+        if (dyldInfoCommand.rebaseSize() > 0) {
+            ByteBuffer buffer = module.buffer.duplicate();
+            buffer.limit((int) (dyldInfoCommand.rebaseOff() + dyldInfoCommand.rebaseSize()));
+            buffer.position((int) dyldInfoCommand.rebaseOff());
+            rebase(log, buffer.slice(), module);
+        }
+
         if (dyldInfoCommand.exportSize() > 0) {
             ByteBuffer buffer = module.buffer.duplicate();
             buffer.limit((int) (dyldInfoCommand.exportOff() + dyldInfoCommand.exportSize()));
             buffer.position((int) dyldInfoCommand.exportOff());
             processExportNode(log, buffer.slice(), new byte[4000], 0);
+        }
+    }
+
+    private void rebase(Log log, ByteBuffer buffer, MachOModule module) {
+        final List<MemRegion> regions = module.getRegions();
+        int type = 0;
+        int segmentIndex;
+        long address = module.base;
+        long segmentEndAddress = module.base + module.size;
+        int count;
+        int skip;
+        boolean done = false;
+        while (!done && buffer.hasRemaining()) {
+            int b = buffer.get() & 0xff;
+            int immediate = b & REBASE_IMMEDIATE_MASK;
+            int opcode = b & REBASE_OPCODE_MASK;
+            switch (opcode) {
+                case REBASE_OPCODE_DONE:
+                    done = true;
+                    break;
+                case REBASE_OPCODE_SET_TYPE_IMM:
+                    type = immediate;
+                    break;
+                case REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+                    segmentIndex = immediate;
+                    if (segmentIndex >= regions.size()) {
+                        throw new IllegalStateException(String.format("REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has segment %d which is too large (0..%d)", segmentIndex, regions.size() - 1));
+                    }
+                    MemRegion region = regions.get(segmentIndex);
+                    address = region.begin + Utils.readULEB128(buffer).longValue();
+                    segmentEndAddress = region.end;
+                    break;
+                case REBASE_OPCODE_ADD_ADDR_ULEB:
+                    address += Utils.readULEB128(buffer).longValue();
+                    break;
+                case REBASE_OPCODE_ADD_ADDR_IMM_SCALED:
+                    address += (immediate * emulator.getPointerSize());
+                    break;
+                case REBASE_OPCODE_DO_REBASE_IMM_TIMES:
+                    for (int i = 0; i < immediate; i++) {
+                        if (address >= segmentEndAddress) {
+                            throw new IllegalStateException();
+                        }
+                        rebaseAt(log, type, address, module);
+                        address += emulator.getPointerSize();
+                    }
+                    break;
+                case REBASE_OPCODE_DO_REBASE_ULEB_TIMES:
+                    count = Utils.readULEB128(buffer).intValue();
+                    for (int i = 0; i < count; i++) {
+                        if (address >= segmentEndAddress) {
+                            throw new IllegalStateException();
+                        }
+                        rebaseAt(log, type, address, module);
+                        address += emulator.getPointerSize();
+                    }
+                    break;
+                case REBASE_OPCODE_DO_REBASE_ADD_ADDR_ULEB:
+                    if (address >= segmentEndAddress) {
+                        throw new IllegalStateException();
+                    }
+                    rebaseAt(log, type, address, module);
+                    address += (Utils.readULEB128(buffer).longValue() + emulator.getPointerSize());
+                    break;
+                case REBASE_OPCODE_DO_REBASE_ULEB_TIMES_SKIPPING_ULEB:
+                    count = Utils.readULEB128(buffer).intValue();
+                    skip = Utils.readULEB128(buffer).intValue();
+                    for (int i = 0; i < count; i++) {
+                        if (address >= segmentEndAddress) {
+                            throw new IllegalStateException();
+                        }
+                        rebaseAt(log, type, address, module);
+                        address += (skip + emulator.getPointerSize());
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException("bad rebase opcode=0x" + Integer.toHexString(opcode));
+            }
+        }
+    }
+
+    private void rebaseAt(Log log, int type, long address, Module module) {
+        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        if (pointer == null) {
+            throw new IllegalStateException();
+        }
+        Pointer newPointer = pointer.getPointer(0);
+        log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", newPointer=" + newPointer);
+        if (newPointer == null) {
+            newPointer = UnicornPointer.pointer(emulator, module.base);
+        } else {
+            newPointer = newPointer.share(module.base);
+        }
+        switch (type) {
+            case REBASE_TYPE_POINTER:
+            case REBASE_TYPE_TEXT_ABSOLUTE32:
+                pointer.setPointer(0, newPointer);
+                break;
+            default:
+                throw new IllegalStateException("bad rebase type " + type);
         }
     }
 
