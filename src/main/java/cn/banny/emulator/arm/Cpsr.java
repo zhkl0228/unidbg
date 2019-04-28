@@ -4,7 +4,7 @@ import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
-class Cpsr {
+public class Cpsr {
 
     private static boolean hasBit(int value, int offset) {
         return ((value >> offset) & 1) == 1;
@@ -22,7 +22,7 @@ class Cpsr {
         unicorn.reg_write(regId, value);
     }
 
-    static Cpsr getArm(Unicorn unicorn) {
+    public static Cpsr getArm(Unicorn unicorn) {
         return new Cpsr(unicorn, ArmConst.UC_ARM_REG_CPSR);
     }
 
@@ -83,7 +83,7 @@ class Cpsr {
         return hasBit(value, CARRY_BIT);
     }
 
-    void setCarry(boolean on) {
+    public void setCarry(boolean on) {
         if (on) {
             setBit(CARRY_BIT);
         } else {
