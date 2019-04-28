@@ -2,8 +2,8 @@ package cn.banny.emulator.ios;
 
 import cn.banny.emulator.*;
 import cn.banny.emulator.hook.HookListener;
-import cn.banny.emulator.memory.*;
 import cn.banny.emulator.memory.MemRegion;
+import cn.banny.emulator.memory.*;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.LibraryFile;
@@ -361,7 +361,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         long load_size = size;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator);
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand);
         modules.put(dyId, module);
 
         for (MachOModule export : modules.values()) {
@@ -382,9 +382,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        if (dyldInfoCommand != null) {
-            processDyldInfo(module, dyldInfoCommand);
-        }
+        processDyldInfo(module);
 
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
@@ -405,7 +403,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return module;
     }
 
-    private void processExportNode(Log log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset) {
+    private void processExportNode(Log log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset, MachOModule module) throws IOException {
         int terminalSize = Utils.readULEB128(buffer).intValue();
 
         if (terminalSize != 0) {
@@ -432,8 +430,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 }
                 importName = null;
             }
-            if (log.isDebugEnabled()) {
-                log.debug("processExportNode terminalSize=" + terminalSize + ", symbolName=" + new String(cummulativeString, 0, curStrOffset) + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName);
+            String symbolName = new String(cummulativeString, 0, curStrOffset);
+            if (!module.symbolMap.containsKey(symbolName) && module.findSymbolByName(symbolName, true) == null) {
+                log.info("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName);
+                module.symbolMap.put(symbolName, new ExportSymbol(symbolName, address, module));
             }
             buffer.reset();
             buffer.position(buffer.position() + terminalSize);
@@ -453,11 +453,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
             ByteBuffer duplicate = buffer.duplicate();
             duplicate.position(childNodeOffset);
-            processExportNode(log, duplicate, cummulativeString, curStrOffset+edgeStrLen);
+            processExportNode(log, duplicate, cummulativeString, curStrOffset+edgeStrLen, module);
         }
     }
 
-    private void processDyldInfo(MachOModule module, MachO.DyldInfoCommand dyldInfoCommand) {
+    private void processDyldInfo(MachOModule module) throws IOException {
+        MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
+        if (dyldInfoCommand == null) {
+            return;
+        }
+
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 
         if (dyldInfoCommand.rebaseSize() > 0) {
@@ -471,7 +476,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             ByteBuffer buffer = module.buffer.duplicate();
             buffer.limit((int) (dyldInfoCommand.exportOff() + dyldInfoCommand.exportSize()));
             buffer.position((int) dyldInfoCommand.exportOff());
-            processExportNode(log, buffer.slice(), new byte[4000], 0);
+            processExportNode(log, buffer.slice(), new byte[4000], 0, module);
         }
     }
 
@@ -559,7 +564,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             throw new IllegalStateException();
         }
         Pointer newPointer = pointer.getPointer(0);
-        log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", newPointer=" + newPointer);
+        log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", old=" + newPointer);
         if (newPointer == null) {
             newPointer = UnicornPointer.pointer(emulator, module.base);
         } else {
@@ -742,6 +747,155 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         bindExternalRelocations(module);
+
+        MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
+        if (dyldInfoCommand == null) {
+            return;
+        }
+        if (dyldInfoCommand.bindSize() > 0) {
+            ByteBuffer buffer = module.buffer.duplicate();
+            buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
+            buffer.position((int) dyldInfoCommand.bindOff());
+            eachBind(log, buffer.slice(), module, false);
+        }
+        if (dyldInfoCommand.lazyBindSize() > 0) {
+            ByteBuffer buffer = module.buffer.duplicate();
+            buffer.limit((int) (dyldInfoCommand.lazyBindOff() + dyldInfoCommand.lazyBindSize()));
+            buffer.position((int) dyldInfoCommand.lazyBindOff());
+            eachBind(log, buffer.slice(), module, true);
+        }
+    }
+
+    private void eachBind(Log log, ByteBuffer buffer, MachOModule module, boolean lazy) throws IOException {
+        final List<MemRegion> regions = module.getRegions();
+        int type = lazy ? BIND_TYPE_POINTER : 0;
+        int segmentIndex;
+        long address = module.base;
+        long segmentEndAddress = address + module.size;
+        String symbolName = null;
+        int symbolFlags = 0;
+        long libraryOrdinal = 0;
+        long addend = 0;
+        int count;
+        int skip;
+        boolean done = false;
+        while (!done && buffer.hasRemaining()) {
+            int b = buffer.get() & 0xff;
+            int immediate = b & BIND_IMMEDIATE_MASK;
+            int opcode = b & BIND_OPCODE_MASK;
+            switch (opcode) {
+                case BIND_OPCODE_DONE:
+                    if (!lazy) {
+                        done = true;
+                    }
+                    break;
+                case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+                    libraryOrdinal = immediate;
+                    break;
+                case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+                    libraryOrdinal = Utils.readULEB128(buffer).intValue();
+                    break;
+                case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+                    // the special ordinals are negative numbers
+                    if ( immediate == 0 )
+                        libraryOrdinal = 0;
+                    else {
+                        libraryOrdinal = BIND_OPCODE_MASK | immediate;
+                    }
+                    break;
+                case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    while ((b = buffer.get()) != 0) {
+                        baos.write(b);
+                    }
+                    symbolName = baos.toString();
+                    symbolFlags = immediate;
+                    break;
+                case BIND_OPCODE_SET_TYPE_IMM:
+                    type = immediate;
+                    break;
+                case BIND_OPCODE_SET_ADDEND_SLEB:
+                    addend = Utils.readULEB128(buffer).longValue();
+                    break;
+                case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+                    segmentIndex = immediate;
+                    if (segmentIndex >= regions.size()) {
+                        throw new IllegalStateException(String.format("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has segment %d which is too large (0..%d)", segmentIndex, regions.size() - 1));
+                    }
+                    MemRegion region = regions.get(segmentIndex);
+                    address = region.begin + Utils.readULEB128(buffer).longValue();
+                    segmentEndAddress = region.end;
+                    break;
+                case BIND_OPCODE_ADD_ADDR_ULEB:
+                    address += Utils.readULEB128(buffer).longValue();
+                    break;
+                case BIND_OPCODE_DO_BIND:
+                    if (address >= segmentEndAddress) {
+                        throw new IllegalStateException();
+                    }
+                    doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
+                    address += emulator.getPointerSize();
+                    break;
+                case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+                    if (address >= segmentEndAddress) {
+                        throw new IllegalStateException();
+                    }
+                    doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
+                    address += (Utils.readULEB128(buffer).longValue() + emulator.getPointerSize());
+                    break;
+                case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+                    if (address >= segmentEndAddress) {
+                        throw new IllegalStateException();
+                    }
+                    doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
+                    address += (immediate*emulator.getPointerSize() + emulator.getPointerSize());
+                    break;
+                case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+                    count = Utils.readULEB128(buffer).intValue();
+                    skip = Utils.readULEB128(buffer).intValue();
+                    for (int i = 0; i < count; i++) {
+                        if (address >= segmentEndAddress) {
+                            throw new IllegalStateException();
+                        }
+                        doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
+                        address += (skip + emulator.getPointerSize());
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException(String.format("bad bind opcode 0x%s in bind info", Integer.toHexString(opcode)));
+            }
+        }
+    }
+
+    private void doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy) throws IOException {
+        Symbol symbol = module.findSymbolByName(symbolName, true);
+        if (symbol == null) {
+            log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries);
+            return;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("doBindAt libraryOrdinal=" + libraryOrdinal + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol);
+        }
+        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        if (pointer == null) {
+            throw new IllegalStateException();
+        }
+        Pointer newPointer = UnicornPointer.pointer(emulator, symbol.getAddress());
+        if (newPointer == null) {
+            newPointer = UnicornPointer.pointer(emulator, addend);
+        } else {
+            newPointer = newPointer.share(addend);
+        }
+        switch (type) {
+            case BIND_TYPE_POINTER:
+                pointer.setPointer(0, newPointer);
+                break;
+            case BIND_TYPE_TEXT_ABSOLUTE32:
+                pointer.setInt(0, (int) (symbol.getAddress() + addend));
+                break;
+            default:
+                throw new IllegalStateException("bad bind type " + type);
+        }
     }
 
     private String maxDylibName;

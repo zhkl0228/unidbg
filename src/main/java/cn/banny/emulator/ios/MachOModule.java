@@ -29,19 +29,20 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     final Map<String, Module> upwardLibraries;
     private final Map<String, MachOModule> exportModules;
     final String path;
+    final MachO.DyldInfoCommand dyldInfoCommand;
 
     private final List<InitFunction> initFunctionList;
 
     boolean indirectSymbolBound;
 
-    private final Map<String, Symbol> symbolMap = new HashMap<>();
+    final Map<String, Symbol> symbolMap = new HashMap<>();
 
     private final Log log;
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
-                String path, Emulator emulator) {
+                String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -51,6 +52,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.upwardLibraries = upwardLibraries;
         this.exportModules = exportModules;
         this.path = path;
+        this.dyldInfoCommand = dyldInfoCommand;
 
         log = LogFactory.getLog("cn.banny.emulator.ios." + name);
         if (symtabCommand != null) {
@@ -214,7 +216,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
 
     @Override
     public String toString() {
-        return name;
+        return path;
     }
 
     MemoryBlock pathBlock;
