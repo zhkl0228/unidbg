@@ -70,7 +70,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                 boolean isThumb = (nlist.desc() & N_ARM_THUMB_DEF) != 0;
                 strBuffer.position((int) nlist.un());
                 String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
-                if (type == N_SECT && (nlist.type() & N_STAB) == 0) {
+                if ((type == N_SECT || type == N_ABS) && (nlist.type() & N_STAB) == 0) {
                     if (log.isDebugEnabled()) {
                         log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", value=0x" + Long.toHexString(nlist.value()));
                     }

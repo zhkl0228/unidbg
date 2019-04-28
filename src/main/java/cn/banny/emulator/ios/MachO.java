@@ -16,9 +16,10 @@ interface MachO {
     int NO_SECT = 0;
     int N_TYPE = 0x0e;
     int N_STAB = 0xe0;
-    int N_UNDF = 0;
-    int N_SECT = 0xe;
-    int N_INDR = 0xa;
+    int N_UNDF = 0; /* undefined, n_sect == NO_SECT */
+    int N_ABS = 0x2; /* absolute, n_sect == NO_SECT */
+    int N_SECT = 0xe; /* defined in section number n_sect */
+    int N_INDR = 0xa; /* indirect */
 
     int N_ARM_THUMB_DEF = 0x8; /* symbol is a Thumb function (ARM) */
     int N_WEAK_REF = 0x0040; /* symbol is weak referenced */

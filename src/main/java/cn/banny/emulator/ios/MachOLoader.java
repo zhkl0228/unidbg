@@ -430,10 +430,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 }
                 importName = null;
             }
-            String symbolName = new String(cummulativeString, 0, curStrOffset);
-            if (!module.symbolMap.containsKey(symbolName) && module.findSymbolByName(symbolName, true) == null) {
-                log.info("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName);
-                module.symbolMap.put(symbolName, new ExportSymbol(symbolName, address, module));
+            if (log.isDebugEnabled()) {
+                String symbolName = new String(cummulativeString, 0, curStrOffset);
+                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName);
             }
             buffer.reset();
             buffer.position(buffer.position() + terminalSize);
