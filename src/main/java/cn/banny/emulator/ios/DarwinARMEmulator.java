@@ -1,6 +1,6 @@
 package cn.banny.emulator.ios;
 
-import cn.banny.emulator.AbstractSyscallHandler;
+import cn.banny.emulator.UnixSyscallHandler;
 import cn.banny.emulator.arm.AbstractARMEmulator;
 import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.memory.Memory;
@@ -22,7 +22,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected Memory createMemory(AbstractSyscallHandler syscallHandler) {
+    protected Memory createMemory(UnixSyscallHandler syscallHandler) {
         return new MachOLoader(this, syscallHandler);
     }
 
@@ -32,7 +32,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected AbstractSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
+    protected UnixSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
         return new ARM32SyscallHandler(svcMemory);
     }
 

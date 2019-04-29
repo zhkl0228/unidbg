@@ -1,11 +1,12 @@
 package cn.banny.emulator.ios;
 
-import cn.banny.emulator.AbstractSyscallHandler;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.StopEmulatorException;
 import cn.banny.emulator.Svc;
+import cn.banny.emulator.UnixSyscallHandler;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.Cpsr;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.ios.struct.*;
 import cn.banny.emulator.linux.LinuxEmulator;
 import cn.banny.emulator.memory.SvcMemory;
@@ -21,7 +22,7 @@ import unicorn.UnicornException;
 /**
  * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
  */
-public class ARM32SyscallHandler extends AbstractSyscallHandler implements SyscallHandler, DarwinSyscall {
+public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHandler, DarwinSyscall {
 
     private static final Log log = LogFactory.getLog(ARM32SyscallHandler.class);
 
@@ -72,7 +73,7 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_vm_map_trap(emulator));
                         return;
                     case -18:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_deallocate_trap(emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_deallocate_trap());
                         return;
                     case -26: // mach_port_t mach_reply_port(...)
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mach_reply_port());
@@ -96,10 +97,10 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
                         return;
                     case 116:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
                         return;
                     case 202:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl());
                         return;
                     case 366:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, bsdthread_register(emulator));
@@ -117,7 +118,7 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
                         u.reg_write(ArmConst.UC_ARM_REG_R0, close_NOCANCEL(emulator));
                         return;
                     case 0x80000000:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap());
                         return;
                     default:
                         break;
@@ -140,42 +141,6 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         }
     }
 
-    private int close_NOCANCEL(Emulator emulator) {
-        // TODO: implement
-        log.debug("close_NOCANCEL");
-        return 0;
-    }
-
-    private int read_NOCANCEL(Emulator emulator) {
-        // TODO: implement
-        log.debug("read_NOCANCEL");
-        return 0;
-    }
-
-    private int getpid(Emulator emulator) {
-        // TODO: implement
-        log.debug("getpid");
-        return 0;
-    }
-
-    private int gettimeofday(Unicorn u, Emulator emulator) {
-        // TODO: implement
-        log.debug("gettimeofday");
-        return 0;
-    }
-
-    private int mach_absolute_time(Emulator emulator) {
-        // TODO: implement
-        log.debug("mach_absolute_time");
-        return 0;
-    }
-
-    private int open_NOCANCEL(Emulator emulator) {
-        // TODO: implement
-        log.debug("open_NOCANCEL");
-        return 0;
-    }
-
     private int bsdthread_register(Emulator emulator) {
         // TODO: implement
         log.debug("bsdthread_register");
@@ -184,9 +149,21 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         return 0;
     }
 
-    private int semaphore_signal_trap(Emulator emulator) {
+    private int semaphore_signal_trap() {
         // TODO: implement
         log.debug("semaphore_signal_trap");
+        return 0;
+    }
+
+    private int sysctl() {
+        // TODO: implement
+        log.debug("sysctl");
+        return 0;
+    }
+
+    private int _kernelrpc_mach_port_deallocate_trap() {
+        // TODO: implement
+        log.debug("_kernelrpc_mach_port_deallocate_trap");
         return 0;
     }
 
@@ -196,18 +173,6 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         Unicorn unicorn = emulator.getUnicorn();
         Cpsr.getArm(unicorn).setCarry(false);
         return 1;
-    }
-
-    private int sysctl(Emulator emulator) {
-        // TODO: implement
-        log.debug("sysctl");
-        return 0;
-    }
-
-    private int _kernelrpc_mach_port_deallocate_trap(Emulator emulator) {
-        // TODO: implement
-        log.debug("_kernelrpc_mach_port_deallocate_trap");
-        return 0;
     }
 
     // https://github.com/lunixbochs/usercorn/blob/master/go/kernel/mach/ports.go
@@ -420,16 +385,69 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         int how = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer set = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         Pointer oldset = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        if (log.isDebugEnabled()) {
-            log.debug("sigprocmask how=" + how + ", set=" + set + ", oldset=" + oldset);
-        }
-        emulator.getMemory().setErrno(LinuxEmulator.EINVAL);
-        return -1;
+        return sigprocmask(emulator, how, set, oldset);
     }
 
-    @Override
-    public int open(Emulator emulator, String pathname, int oflags) {
-        log.info("open pathname=" + pathname);
-        return 0;
+    private int gettimeofday(Emulator emulator) {
+        Pointer tv = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        Pointer tz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        return gettimeofday(tv, tz);
     }
+
+    private int mach_absolute_time(Emulator emulator) {
+        long nanoTime = System.nanoTime();
+        log.debug("mach_absolute_time nanoTime=" + nanoTime);
+        emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (nanoTime >> 32));
+        return (int) (nanoTime);
+    }
+
+    private int close_NOCANCEL(Emulator emulator) {
+        Unicorn u = emulator.getUnicorn();
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        if (log.isDebugEnabled()) {
+            log.debug("close_NOCANCEL fd=" + fd);
+        }
+
+        FileIO file = fdMap.remove(fd);
+        if (file != null) {
+            file.close();
+            return 0;
+        } else {
+            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            return -1;
+        }
+    }
+
+    private int read_NOCANCEL(Emulator emulator) {
+        Unicorn u = emulator.getUnicorn();
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        if (log.isDebugEnabled()) {
+            log.debug("read_NOCANCEL fd=" + fd + ", buffer=" + buffer + ", count=" + count);
+        }
+        return read(emulator, fd, buffer, count);
+    }
+
+    private int open_NOCANCEL(Emulator emulator) {
+        Unicorn u = emulator.getUnicorn();
+        Pointer pathname_p = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        String pathname = pathname_p.getString(0);
+        int fd = open(emulator, pathname, oflags);
+        if (fd == -1) {
+            log.info("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+        } else if (log.isDebugEnabled()) {
+            log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", fd=" + fd);
+        }
+        return fd;
+    }
+
+    private int getpid(Emulator emulator) {
+        int pid = emulator.getPid();
+        log.debug("getpid pid=" + pid);
+        return pid;
+    }
+
 }

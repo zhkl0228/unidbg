@@ -1,7 +1,10 @@
 package cn.banny.emulator.linux;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.*;
+import cn.banny.emulator.Emulator;
+import cn.banny.emulator.StopEmulatorException;
+import cn.banny.emulator.Svc;
+import cn.banny.emulator.UnixSyscallHandler;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.file.FileIO;
@@ -18,14 +21,17 @@ import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static unicorn.ArmConst.UC_ARM_REG_C13_C0_3;
 
 /**
  * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
  */
-public class ARMSyscallHandler extends AbstractSyscallHandler implements SyscallHandler {
+public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHandler {
 
     private static final Log log = LogFactory.getLog(ARMSyscallHandler.class);
 
@@ -866,11 +872,7 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
         int how = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer set = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         Pointer oldset = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        if (log.isDebugEnabled()) {
-            log.debug("sigprocmask how=" + how + ", set=" + set + ", oldset=" + oldset);
-        }
-        emulator.getMemory().setErrno(LinuxEmulator.EINVAL);
-        return -1;
+        return sigprocmask(emulator, how, set, oldset);
     }
 
     private int lgetxattr(Unicorn u, Emulator emulator) {
@@ -1411,41 +1413,7 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
     private int gettimeofday(Emulator emulator) {
         Pointer tv = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer tz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        if (log.isDebugEnabled()) {
-            log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
-        }
-
-        if (log.isDebugEnabled()) {
-            byte[] before = tv.getByteArray(0, 8);
-            Inspector.inspect(before, "gettimeofday tv");
-        }
-        if (tz != null && log.isDebugEnabled()) {
-            byte[] before = tz.getByteArray(0, 8);
-            Inspector.inspect(before, "gettimeofday tz");
-        }
-
-        long currentTimeMillis = System.currentTimeMillis();
-        long tv_sec = currentTimeMillis / 1000;
-        long tv_usec = (currentTimeMillis % 1000) * 1000;
-        tv.setInt(0, (int) tv_sec);
-        tv.setInt(4, (int) tv_usec);
-
-        if (tz != null) {
-            Calendar calendar = Calendar.getInstance();
-            int tz_minuteswest = -(calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / (60 * 1000);
-            tz.setInt(0, tz_minuteswest);
-            tz.setInt(4, 0); // tz_dsttime
-        }
-
-        if (log.isDebugEnabled()) {
-            byte[] after = tv.getByteArray(0, 8);
-            Inspector.inspect(after, "gettimeofday tv after tv_sec=" + tv_sec + ", tv_usec=" + tv_usec);
-        }
-        if (tz != null && log.isDebugEnabled()) {
-            byte[] after = tz.getByteArray(0, 8);
-            Inspector.inspect(after, "gettimeofday tz after");
-        }
-        return 0;
+        return gettimeofday(tv, tz);
     }
 
     private int faccessat(Unicorn u, Emulator emulator) {
@@ -1547,42 +1515,6 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
             log.info("open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
         }
         return fd;
-    }
-
-    @Override
-    public final int open(Emulator emulator, String pathname, int oflags) {
-        int minFd = this.getMinFd();
-
-        FileIO io = resolve(emulator, pathname, oflags);
-        if (io != null) {
-            this.fdMap.put(minFd, io);
-            return minFd;
-        }
-
-        if ("/dev/tty".equals(pathname)) {
-            io = new NullFileIO(pathname);
-            this.fdMap.put(minFd, io);
-            return minFd;
-        }
-
-        if ("/proc/self/maps".equals(pathname) || ("/proc/" + emulator.getPid() + "/maps").equals(pathname)) {
-            io = new MapsFileIO(oflags, pathname, emulator.getMemory().getLoadedModules());
-            this.fdMap.put(minFd, io);
-            return minFd;
-        }
-        FileIO driverIO = DriverFileIO.create(oflags, pathname);
-        if (driverIO != null) {
-            this.fdMap.put(minFd, driverIO);
-            return minFd;
-        }
-        if (IO.STDIN.equals(pathname)) {
-            io = new Stdin(oflags);
-            this.fdMap.put(minFd, io);
-            return minFd;
-        }
-
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
-        return -1;
     }
 
     private int ftruncate(Unicorn u) {
@@ -1706,16 +1638,7 @@ public class ARMSyscallHandler extends AbstractSyscallHandler implements Syscall
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("read fd=" + fd + ", buffer=" + buffer + ", count=" + count);
-        }
-
-        FileIO file = fdMap.get(fd);
-        if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
-            return -1;
-        }
-        return file.read(u, buffer, count);
+        return read(emulator, fd, buffer, count);
     }
 
     private int dup2(Unicorn u, Emulator emulator) {

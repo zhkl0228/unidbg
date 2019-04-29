@@ -32,7 +32,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
     private Symbol malloc;
 
-    public AndroidElfLoader(Emulator emulator, AbstractSyscallHandler syscallHandler) {
+    public AndroidElfLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
         super(emulator, syscallHandler);
 
         // init stack

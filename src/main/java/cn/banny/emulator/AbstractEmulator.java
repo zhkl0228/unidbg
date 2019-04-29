@@ -51,11 +51,11 @@ public abstract class AbstractEmulator implements Emulator {
         this.pid = Integer.parseInt(pid);
     }
 
-    protected  abstract Memory createMemory(AbstractSyscallHandler syscallHandler);
+    protected  abstract Memory createMemory(UnixSyscallHandler syscallHandler);
 
     protected abstract Dlfcn createDyld(SvcMemory svcMemory);
 
-    protected abstract AbstractSyscallHandler createSyscallHandler(SvcMemory svcMemory);
+    protected abstract UnixSyscallHandler createSyscallHandler(SvcMemory svcMemory);
 
     @Override
     public void runAsm(String... asm) {

@@ -31,13 +31,13 @@ public abstract class AbstractLoader implements Memory, Loader {
 
     protected final Unicorn unicorn;
     protected final Emulator emulator;
-    protected final AbstractSyscallHandler syscallHandler;
+    protected final UnixSyscallHandler syscallHandler;
 
     protected long sp;
     protected long mmapBaseAddress;
     private final Map<Long, Integer> memoryMap = new TreeMap<>();
 
-    public AbstractLoader(Emulator emulator, AbstractSyscallHandler syscallHandler) {
+    public AbstractLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
         this.unicorn = emulator.getUnicorn();
         this.emulator = emulator;
         this.syscallHandler = syscallHandler;

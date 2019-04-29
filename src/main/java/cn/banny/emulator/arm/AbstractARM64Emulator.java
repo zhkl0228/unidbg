@@ -2,12 +2,11 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
-import cn.banny.emulator.AbstractSyscallHandler;
+import cn.banny.emulator.UnixSyscallHandler;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.linux.ARM64SyscallHandler;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import keystone.Keystone;
@@ -29,7 +28,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     private static final Log log = LogFactory.getLog(AbstractARM64Emulator.class);
 
     protected final Memory memory;
-    private final AbstractSyscallHandler syscallHandler;
+    private final UnixSyscallHandler syscallHandler;
     private final SvcMemory svcMemory;
 
     private final Capstone capstoneArm64;

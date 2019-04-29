@@ -2,12 +2,11 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
-import cn.banny.emulator.AbstractSyscallHandler;
+import cn.banny.emulator.UnixSyscallHandler;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.linux.ARMSyscallHandler;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import keystone.Keystone;
@@ -32,7 +31,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
     public static final long LR = 0xffff0000L;
 
     protected final Memory memory;
-    private final AbstractSyscallHandler syscallHandler;
+    private final UnixSyscallHandler syscallHandler;
     private final SvcMemory svcMemory;
 
     private final Capstone capstoneArm, capstoneThumb;

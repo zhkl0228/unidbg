@@ -1,6 +1,6 @@
 package cn.banny.emulator.linux.android;
 
-import cn.banny.emulator.AbstractSyscallHandler;
+import cn.banny.emulator.UnixSyscallHandler;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.AbstractARM64Emulator;
 import cn.banny.emulator.linux.ARM64SyscallHandler;
@@ -39,7 +39,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
     }
 
     @Override
-    protected Memory createMemory(AbstractSyscallHandler syscallHandler) {
+    protected Memory createMemory(UnixSyscallHandler syscallHandler) {
         return new AndroidElfLoader(this, syscallHandler);
     }
 
@@ -49,7 +49,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
     }
 
     @Override
-    protected AbstractSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
+    protected UnixSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
         return new ARM64SyscallHandler(svcMemory);
     }
 

@@ -27,7 +27,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private static final Log log = LogFactory.getLog(MachOLoader.class);
 
-    MachOLoader(Emulator emulator, AbstractSyscallHandler syscallHandler) {
+    MachOLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
         super(emulator, syscallHandler);
 
         // init stack
@@ -414,7 +414,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return module;
     }
 
-    private void processExportNode(Log log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset, MachOModule module) throws IOException {
+    private void processExportNode(Log log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset) {
         int terminalSize = Utils.readULEB128(buffer).intValue();
 
         if (terminalSize != 0) {
@@ -463,11 +463,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
             ByteBuffer duplicate = buffer.duplicate();
             duplicate.position(childNodeOffset);
-            processExportNode(log, duplicate, cummulativeString, curStrOffset+edgeStrLen, module);
+            processExportNode(log, duplicate, cummulativeString, curStrOffset+edgeStrLen);
         }
     }
 
-    private void processDyldInfo(MachOModule module) throws IOException {
+    private void processDyldInfo(MachOModule module) {
         MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
         if (dyldInfoCommand == null) {
             return;
@@ -486,7 +486,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             ByteBuffer buffer = module.buffer.duplicate();
             buffer.limit((int) (dyldInfoCommand.exportOff() + dyldInfoCommand.exportSize()));
             buffer.position((int) dyldInfoCommand.exportOff());
-            processExportNode(log, buffer.slice(), new byte[4000], 0, module);
+            processExportNode(log, buffer.slice(), new byte[4000], 0);
         }
     }
 
