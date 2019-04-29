@@ -22,9 +22,6 @@ public class Dyld implements Dlfcn {
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, long old) {
-        if ("_dyld_get_program_sdk_version".equals(symbolName)) {
-            System.err.println("_dyld_get_program_sdk_version=" + libraryName);
-        }
         if ("libdyld.dylib".equals(libraryName)) {
             if (log.isDebugEnabled()) {
                 log.debug("hook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);

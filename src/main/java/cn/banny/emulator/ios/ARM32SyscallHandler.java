@@ -65,6 +65,9 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
             if (intno == 2) {
                 switch (NR) {
+                    case -3:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, mach_absolute_time(emulator));
+                        return;
                     case -15:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_vm_map_trap(emulator));
                         return;
@@ -86,8 +89,14 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
                     case -31:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mach_msg_trap(emulator));
                         return;
+                    case 20:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, getpid(emulator));
+                        return;
                     case 48:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
+                        return;
+                    case 116:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(u, emulator));
                         return;
                     case 202:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
@@ -97,6 +106,15 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
                         return;
                     case 372:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, thread_selfid(emulator));
+                        return;
+                    case 396:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, read_NOCANCEL(emulator));
+                        return;
+                    case 398:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, open_NOCANCEL(emulator));
+                        return;
+                    case 399:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, close_NOCANCEL(emulator));
                         return;
                     case 0x80000000:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
@@ -122,23 +140,39 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         }
     }
 
-    private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        long size = (r3 << 32) | r2;
-        int r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        long r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-        long mask = (r5 << 32) | r4;
-        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=" + size + ", mask=" + mask + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection);
-        }
-        UnicornPointer pointer = emulator.getMemory().mmap((int) size, cur_protection);
-        address.setPointer(0, pointer);
+    private int close_NOCANCEL(Emulator emulator) {
+        // TODO: implement
+        log.debug("close_NOCANCEL");
+        return 0;
+    }
+
+    private int read_NOCANCEL(Emulator emulator) {
+        // TODO: implement
+        log.debug("read_NOCANCEL");
+        return 0;
+    }
+
+    private int getpid(Emulator emulator) {
+        // TODO: implement
+        log.debug("getpid");
+        return 0;
+    }
+
+    private int gettimeofday(Unicorn u, Emulator emulator) {
+        // TODO: implement
+        log.debug("gettimeofday");
+        return 0;
+    }
+
+    private int mach_absolute_time(Emulator emulator) {
+        // TODO: implement
+        log.debug("mach_absolute_time");
+        return 0;
+    }
+
+    private int open_NOCANCEL(Emulator emulator) {
+        // TODO: implement
+        log.debug("open_NOCANCEL");
         return 0;
     }
 
@@ -336,6 +370,26 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         }
 
         throw new UnicornException();
+    }
+
+    private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
+        Unicorn unicorn = emulator.getUnicorn();
+        int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        long size = (r3 << 32) | r2;
+        int r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        long r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+        long mask = (r5 << 32) | r4;
+        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=" + size + ", mask=" + mask + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection);
+        }
+        UnicornPointer pointer = emulator.getMemory().mmap((int) size, cur_protection);
+        address.setPointer(0, pointer);
+        return 0;
     }
 
     private static final int BOOTSTRAP_PORT = 11;
