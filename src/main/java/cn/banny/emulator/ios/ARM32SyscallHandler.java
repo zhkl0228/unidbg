@@ -156,12 +156,12 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         return 0;
     }
 
+    // https://github.com/lunixbochs/usercorn/blob/master/go/kernel/mach/thread.go
     private int thread_selfid(Emulator emulator) {
-        // TODO: implement
         log.debug("thread_selfid");
         Unicorn unicorn = emulator.getUnicorn();
         Cpsr.getArm(unicorn).setCarry(false);
-        return 0;
+        return 1;
     }
 
     private int sysctl(Emulator emulator) {
@@ -176,6 +176,7 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         return 0;
     }
 
+    // https://github.com/lunixbochs/usercorn/blob/master/go/kernel/mach/ports.go
     private int mach_msg_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
         UnicornPointer msg = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
@@ -269,6 +270,66 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
                         return MACH_MSG_SUCCESS;
                 }
             }
+            case 206: // host_get_clock_service
+            {
+                HostGetClockServiceRequest args = new HostGetClockServiceRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("host_get_clock_service args=" + args);
+                }
+
+                HostGetClockServiceReply reply = new HostGetClockServiceReply(request);
+                reply.unpack();
+
+                header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.clock_server.name = CLOCK_SERVER_PORT; // I just chose 13 randomly here
+                reply.clock_server.pad1 = 0;
+                reply.clock_server.pad2 = 0;
+                reply.clock_server.disposition = 17; // meaning?
+                reply.clock_server.type = MACH_MSG_PORT_DESCRIPTOR;
+                reply.pack();
+                if (log.isDebugEnabled()) {
+                    log.debug("host_get_clock_service reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3418: // semaphore_create
+            {
+                SemaphoreCreateRequest args = new SemaphoreCreateRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("semaphore_create args=" + args);
+                }
+
+                SemaphoreCreateReply reply = new SemaphoreCreateReply(request);
+                reply.unpack();
+
+                header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.semaphore.name = SEMAPHORE_PORT; // I just chose 14 randomly here
+                reply.semaphore.pad1 = 0;
+                reply.semaphore.pad2 = 0;
+                reply.semaphore.disposition = 17; // meaning?
+                reply.semaphore.type = MACH_MSG_PORT_DESCRIPTOR;
+                reply.pack();
+                if (log.isDebugEnabled()) {
+                    log.debug("semaphore_create reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size());
                 break;
@@ -278,6 +339,8 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
     }
 
     private static final int BOOTSTRAP_PORT = 11;
+    private static final int CLOCK_SERVER_PORT = 13;
+    private static final int SEMAPHORE_PORT = 14;
 
     private int task_self_trap() {
         log.debug("task_self_trap");

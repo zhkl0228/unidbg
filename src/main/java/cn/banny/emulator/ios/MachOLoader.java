@@ -75,6 +75,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return module;
     }
 
+    MachO.VersionMinCommand sdkVersion;
+
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded) throws IOException {
         ByteBuffer buffer = ByteBuffer.wrap(libraryFile.readToByteArray());
         return loadInternalPhase(libraryFile, buffer, loadNeeded);
@@ -207,7 +209,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     }
                     break;
                 case UUID:
-                case VERSION_MIN_IPHONEOS:
                 case FUNCTION_STARTS:
                 case DATA_IN_CODE:
                 case CODE_SIGNATURE:
@@ -216,6 +217,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 case DYLIB_CODE_SIGN_DRS:
                 case SUB_FRAMEWORK:
                 case RPATH:
+                case VERSION_MIN_IPHONEOS:
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
@@ -283,6 +285,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case REEXPORT_DYLIB:
                     exportDylibs.add((MachO.DylibCommand) command.body());
+                    break;
+                case VERSION_MIN_IPHONEOS:
+                    if ("libSystem.B.dylib".equals(dyId)) {
+                        sdkVersion = (MachO.VersionMinCommand) command.body();
+                    }
                     break;
             }
         }
@@ -724,14 +731,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                     continue;
                                 }
 
-                                MachOSymbol sym = module.getSymbolByIndex((int) symbolIndex);
-                                if (sym == null) {
-                                    log.warn("bindIndirectSymbolPointers sym is null");
+                                MachOSymbol symbol = module.getSymbolByIndex((int) symbolIndex);
+                                if (symbol == null) {
+                                    log.warn("bindIndirectSymbolPointers symbol is null");
                                     continue;
                                 }
 
-                                boolean isWeakRef = (sym.nlist.desc() & N_WEAK_REF) != 0;
-                                long address = resolveSymbol(module, sym);
+                                boolean isWeakRef = (symbol.nlist.desc() & N_WEAK_REF) != 0;
+                                long address = resolveSymbol(module, symbol);
 
                                 UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
                                 if (pointer == null) {
@@ -739,14 +746,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 }
                                 if (address == 0L) {
                                     if (isWeakRef) {
-                                        log.info("bindIndirectSymbolPointers sym=" + sym + ", isWeakRef=" + isWeakRef);
+                                        log.info("bindIndirectSymbolPointers symbol=" + symbol + ", isWeakRef=" + isWeakRef);
                                         pointer.setPointer(0, null);
                                     } else {
-                                        log.warn("bindIndirectSymbolPointers failed sym=" + sym);
+                                        log.warn("bindIndirectSymbolPointers failed symbol=" + symbol);
                                     }
                                 } else {
                                     pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
-                                    log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", sym=" + sym + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
+                                    log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", symbol=" + symbol + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
                                 }
                             }
                         }
@@ -887,7 +894,17 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (pointer == null) {
             throw new IllegalStateException();
         }
-        Pointer newPointer = UnicornPointer.pointer(emulator, symbol.getAddress());
+
+        long bindAt = symbol.getAddress();
+        for (HookListener listener : hookListeners) {
+            long hook = listener.hook(emulator.getSvcMemory(), symbol.getModuleName(), symbol.getName(), bindAt);
+            if (hook > 0) {
+                bindAt = hook;
+                break;
+            }
+        }
+
+        Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
         if (newPointer == null) {
             newPointer = UnicornPointer.pointer(emulator, addend);
         } else {
