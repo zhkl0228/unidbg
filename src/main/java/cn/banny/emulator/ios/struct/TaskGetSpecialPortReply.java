@@ -13,11 +13,11 @@ public class TaskGetSpecialPortReply extends UnicornStructure {
     }
 
     public MachMsgBody body;
-    public MachMsgPortDescriptor specialPort;
+    public MachMsgPortDescriptor port;
 
     @Override
     protected List<String> getFieldOrder() {
-        return Arrays.asList("body", "specialPort");
+        return Arrays.asList("body", "port");
     }
 
 }

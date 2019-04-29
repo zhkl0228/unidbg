@@ -123,15 +123,22 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
     }
 
     private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
-        // TODO: implement
         Unicorn unicorn = emulator.getUnicorn();
         int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        long address = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue() & 0xffffffffL;
-        int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        int mask = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-        log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=" + size + ", mask=" + mask + ", flags=" + flags + ", cur_protection=" + cur_protection);
+        Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        long size = (r3 << 32) | r2;
+        int r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        long r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+        long mask = (r5 << 32) | r4;
+        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=" + size + ", mask=" + mask + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection);
+        }
+        UnicornPointer pointer = emulator.getMemory().mmap((int) size, cur_protection);
+        address.setPointer(0, pointer);
         return 0;
     }
 
@@ -187,7 +194,7 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
             log.debug("mach_msg_trap msg=" + msg + ", option=0x" + Integer.toHexString(option) + ", send_size=" + send_size + ", rcv_size=" + rcv_size + ", rcv_name=" + rcv_name + ", timeout=" + timeout + ", notify=" + notify + ", header=" + header);
         }
 
-        final Pointer request = msg.share(0x18);
+        final Pointer request = msg.share(header.size());
 
         switch (header.msgh_id) {
             case 3409: // task_get_special_port
@@ -200,8 +207,7 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
                 switch (args.which) {
                     case TASK_BOOTSTRAP_PORT:
-                        Pointer msgBody = msg.share(0x18);
-                        TaskGetSpecialPortReply reply = new TaskGetSpecialPortReply(msgBody);
+                        TaskGetSpecialPortReply reply = new TaskGetSpecialPortReply(request);
                         reply.unpack();
 
                         header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
@@ -212,11 +218,11 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
                         header.pack();
 
                         reply.body.msgh_descriptor_count = 1;
-                        reply.specialPort.name = BOOTSTRAP_PORT; // I just chose 11 randomly here
-                        reply.specialPort.pad1 = 0;
-                        reply.specialPort.pad2 = 0;
-                        reply.specialPort.disposition = 17; // meaning?
-                        reply.specialPort.type = MACH_MSG_PORT_DESCRIPTOR;
+                        reply.port.name = BOOTSTRAP_PORT; // I just chose 11 randomly here
+                        reply.port.pad1 = 0;
+                        reply.port.pad2 = 0;
+                        reply.port.disposition = 17; // meaning?
+                        reply.port.type = MACH_MSG_PORT_DESCRIPTOR;
                         reply.pack();
                         if (log.isDebugEnabled()) {
                             log.debug("task_get_special_port reply=" + reply);
@@ -235,8 +241,7 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
                 switch (args.flavor) {
                     case HOST_PRIORITY_INFO:
-                        Pointer msgBody = msg.share(0x18);
-                        HostInfoReply reply = new HostInfoReply(msgBody);
+                        HostInfoReply reply = new HostInfoReply(request);
                         reply.unpack();
 
                         header.msgh_bits &= 0xff;

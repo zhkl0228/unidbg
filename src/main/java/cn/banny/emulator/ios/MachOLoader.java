@@ -39,9 +39,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         this.setErrno(0);
     }
 
+    private UnicornPointer vars;
+
     private void initializeTLS() {
         final UnicornPointer tls = allocateStack(0x80 * 4); // tls size
         assert tls != null;
+
+        vars = allocateStack(emulator.getPointerSize() * 5);
 
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
@@ -361,7 +365,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         long load_size = size;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, null);
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars);
         modules.put(dyId, module);
 
         for (MachOModule export : modules.values()) {
