@@ -30,9 +30,9 @@ class MachOModuleInit extends InitFunction {
     public void call(Emulator emulator) {
         for (long addr : addresses) {
             log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
-            // emulator.attach().addBreakPoint(null, 0x402979aa);
-            // emulator.attach().addBreakPoint(null, 0x401d566a);
-            emulator.traceCode();
+//          emulator.attach().addBreakPoint(null, 0x402979aa);
+//          emulator.attach().addBreakPoint(null, 0x4030116c);
+//            emulator.traceCode();
             long start = System.currentTimeMillis();
             callModInit(emulator, load_base + addr, 0, null, envp, apple, vars);
             if (log.isDebugEnabled()) {

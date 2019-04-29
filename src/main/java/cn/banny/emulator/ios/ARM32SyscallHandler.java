@@ -108,6 +108,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 372:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, thread_selfid(emulator));
                         return;
+                    case 381:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms());
+                        return;
                     case 396:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, read_NOCANCEL(emulator));
                         return;
@@ -139,6 +142,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int sandbox_ms() {
+        // TODO: implement
+        log.debug("sandbox_ms");
+        return 0;
     }
 
     private int bsdthread_register(Emulator emulator) {

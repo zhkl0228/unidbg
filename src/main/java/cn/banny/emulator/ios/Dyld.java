@@ -1,10 +1,12 @@
 package cn.banny.emulator.ios;
 
+import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.memory.SvcMemory;
+import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -71,6 +73,54 @@ public class Dyld implements Dlfcn {
                             MachO.Version sdk = sdkVersion.sdk();
                             return (sdk.p1() << 24) | (sdk.minor() << 16) | (sdk.major() << 8) | sdk.release();
                         }
+                    }
+                }).peer;
+            }
+
+            /*
+             * _dyld_register_func_for_add_image registers the specified function to be
+             * called when a new image is added (a bundle or a dynamic shared library) to
+             * the program.  When this function is first registered it is called for once
+             * for each image that is currently part of the program.
+             */
+            if ("__dyld_register_func_for_add_image".equals(symbolName)) {
+                return svcMemory.registerSvc(new ArmSvc() {
+                    @Override
+                    public int handle(Emulator emulator) {
+                        Pointer callback = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                        if (log.isDebugEnabled()) {
+                            log.debug("__dyld_register_func_for_add_image callback=" + callback);
+                        }
+                        return 0;
+                    }
+                }).peer;
+            }
+
+            /*
+             * _dyld_register_func_for_remove_image registers the specified function to be
+             * called when an image is removed (a bundle or a dynamic shared library) from
+             * the program.
+             */
+            if ("__dyld_register_func_for_remove_image".equals(symbolName)) {
+                return svcMemory.registerSvc(new ArmSvc() {
+                    @Override
+                    public int handle(Emulator emulator) {
+                        Pointer callback = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                        if (log.isDebugEnabled()) {
+                            log.debug("__dyld_register_func_for_remove_image callback=" + callback);
+                        }
+                        return 0;
+                    }
+                }).peer;
+            }
+
+            // TODO call tlv_initializer()
+            if ("__dyld_initializer".equals(symbolName)) {
+                return svcMemory.registerSvc(new ArmSvc() {
+                    @Override
+                    public int handle(Emulator emulator) {
+                        log.debug("__dyld_initializer");
+                        return 0;
                     }
                 }).peer;
             }

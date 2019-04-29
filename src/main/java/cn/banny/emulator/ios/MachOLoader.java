@@ -42,17 +42,20 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private UnicornPointer vars;
 
     private void initializeTLS() {
+        vars = allocateStack(emulator.getPointerSize() * 5);
+
+        final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
+
         final UnicornPointer tls = allocateStack(0x80 * 4); // tls size
         assert tls != null;
-
-        vars = allocateStack(emulator.getPointerSize() * 5);
+        tls.setPointer(0, thread);
 
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
-        log.debug("initializeTLS tls=" + tls);
+        log.debug("initializeTLS tls=" + tls + ", thread=" + thread);
     }
 
     @Override
