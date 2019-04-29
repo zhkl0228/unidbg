@@ -6,6 +6,7 @@ import cn.banny.emulator.StopEmulatorException;
 import cn.banny.emulator.Svc;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.Cpsr;
+import cn.banny.emulator.ios.struct.*;
 import cn.banny.emulator.linux.LinuxEmulator;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -64,6 +65,9 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
             if (intno == 2) {
                 switch (NR) {
+                    case -15:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_vm_map_trap(emulator));
+                        return;
                     case -18:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_deallocate_trap(emulator));
                         return;
@@ -118,6 +122,19 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
         }
     }
 
+    private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
+        // TODO: implement
+        Unicorn unicorn = emulator.getUnicorn();
+        int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        long address = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue() & 0xffffffffL;
+        int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        int mask = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+        log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=" + size + ", mask=" + mask + ", flags=" + flags + ", cur_protection=" + cur_protection);
+        return 0;
+    }
+
     private int bsdthread_register(Emulator emulator) {
         // TODO: implement
         log.debug("bsdthread_register");
@@ -154,87 +171,101 @@ public class ARM32SyscallHandler extends AbstractSyscallHandler implements Sysca
 
     private int mach_msg_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        Pointer msg = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        UnicornPointer msg = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int option = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int send_size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         int rcv_size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
         int rcv_name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
         int timeout = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
         int notify = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+
+        msg.setSize(rcv_size);
+
+        final MachMsgHeader header = new MachMsgHeader(msg);
+        header.unpack();
         if (log.isDebugEnabled()) {
-            log.debug("mach_msg_trap msg=" + msg + ", option=0x" + Integer.toHexString(option) + ", send_size=" + send_size + ", rcv_size=" + rcv_size + ", rcv_name=" + rcv_name + ", timeout=" + timeout + ", notify=" + notify);
+            log.debug("mach_msg_trap msg=" + msg + ", option=0x" + Integer.toHexString(option) + ", send_size=" + send_size + ", rcv_size=" + rcv_size + ", rcv_name=" + rcv_name + ", timeout=" + timeout + ", notify=" + notify + ", header=" + header);
         }
 
-        int msgh_bits = msg.getInt(0);
-        int msgh_size = msg.getInt(4);
-        int msgh_remote_port = msg.getInt(8);
-        int msgh_local_port = msg.getInt(0xc);
-        int msgh_voucher_port = msg.getInt(0x10);
-        int msgh_id = msg.getInt(0x14);
         final Pointer request = msg.share(0x18);
 
-        switch (msgh_id) {
+        switch (header.msgh_id) {
             case 3409: // task_get_special_port
-                int mig_vers = request.getByte(0) & 0xff;
-                int if_vers = request.getByte(1) & 0xff;
-                int reserved1 = request.getByte(2) & 0xff;
-                int mig_encoding = request.getByte(3) & 0xff;
-                int int_rep = request.getByte(4) & 0xff;
-                int char_rep = request.getByte(5) & 0xff;
-                int float_rep = request.getByte(6) & 0xff;
-                int reserved2 = request.getByte(7) & 0xff;
-                int which = request.getInt(8);
-                log.debug("task_get_special_port mig_vers=" + mig_vers + ", if_vers=" + if_vers + ", reserved1=" + reserved1 + ", mig_encoding=" + mig_encoding + ", int_rep=" + int_rep + ", char_rep=" + char_rep + ", float_rep=" + float_rep + ", reserved2=" + reserved2 + ", which=" + which);
+            {
+                TaskGetSpecialPortRequest args = new TaskGetSpecialPortRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("task_get_special_port request=" + args);
+                }
 
-                switch (which) {
+                switch (args.which) {
                     case TASK_BOOTSTRAP_PORT:
-                        msg.setInt(0, (msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX);
-                        msg.setInt(4, 40);
-                        msg.setInt(8, msgh_local_port);
-                        msg.setInt(0xc, 0);
-                        msg.setInt(0x14, msgh_id + 100); // reply Id always equals reqId+100
-
                         Pointer msgBody = msg.share(0x18);
-                        msgBody.setInt(0, 1); // msgh_descriptor_count
+                        TaskGetSpecialPortReply reply = new TaskGetSpecialPortReply(msgBody);
+                        reply.unpack();
 
-                        Pointer reply = msgBody.share(4); // mach_msg_port_descriptor_t
-                        reply.setInt(0, BOOTSTRAP_PORT); // I just chose 11 randomly here
-                        reply.setInt(4, 0); // pad1
-                        reply.setShort(8, (short) 0); // pad2
-                        reply.setByte(10, (byte) 17); // disposition meaning?
-                        reply.setByte(11, (byte) MACH_MSG_PORT_DESCRIPTOR);
+                        header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+                        header.msgh_size = header.size() + reply.size();
+                        header.msgh_remote_port = header.msgh_local_port;
+                        header.msgh_local_port = 0;
+                        header.msgh_id += 100; // reply Id always equals reqId+100
+                        header.pack();
+
+                        reply.body.msgh_descriptor_count = 1;
+                        reply.specialPort.name = BOOTSTRAP_PORT; // I just chose 11 randomly here
+                        reply.specialPort.pad1 = 0;
+                        reply.specialPort.pad2 = 0;
+                        reply.specialPort.disposition = 17; // meaning?
+                        reply.specialPort.type = MACH_MSG_PORT_DESCRIPTOR;
+                        reply.pack();
+                        if (log.isDebugEnabled()) {
+                            log.debug("task_get_special_port reply=" + reply);
+                        }
+
                         return MACH_MSG_SUCCESS;
                 }
+            }
             case 200: // host_info
-                int flavor = request.getInt(8);
-                int host_info_out = request.getInt(0xc);
-                log.debug("host_info flavor=" + flavor + ", host_info_out=" + host_info_out);
+            {
+                HostInfoRequest args = new HostInfoRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("host_info args=" + args);
+                }
 
-                switch (flavor) {
+                switch (args.flavor) {
                     case HOST_PRIORITY_INFO:
-                        msg.setInt(0, msgh_bits & 0xff);
-                        msg.setInt(4, 72);
-                        msg.setInt(8, msgh_local_port);
-                        msg.setInt(0xc, 0);
-                        msg.setInt(0x14, msgh_id + 100); // reply Id always equals reqId+100
-
                         Pointer msgBody = msg.share(0x18);
-                        msgBody.write(0, request.getByteArray(0, 8), 0, 8); // NDR
-                        msgBody.setInt(8, 0); // RetCode success
-                        msgBody.setInt(0xc, host_info_out); // host_info_outCnt
+                        HostInfoReply reply = new HostInfoReply(msgBody);
+                        reply.unpack();
 
-                        msgBody.setInt(0x10, 0); // kernel_priority
-                        msgBody.setInt(0x14, 0); // system_priority
-                        msgBody.setInt(0x18, 0); // server_priority
-                        msgBody.setInt(0x1c, 0); // user_priority
-                        msgBody.setInt(0x20, 0); // depress_priority
-                        msgBody.setInt(0x24, 10); // idle_priority
-                        msgBody.setInt(0x28, 10); // minimum_priority
-                        msgBody.setInt(0x2c, -10); // maximum_priority
+                        header.msgh_bits &= 0xff;
+                        header.msgh_size = header.size() + reply.size();
+                        header.msgh_remote_port = header.msgh_local_port;
+                        header.msgh_local_port = 0;
+                        header.msgh_id += 100; // reply Id always equals reqId+100
+                        header.pack();
+
+                        reply.NDR = args.NDR;
+                        reply.retCode = 0; // success
+                        reply.host_info_out.kernel_priority = 0;
+                        reply.host_info_out.system_priority = 0;
+                        reply.host_info_out.server_priority = 0;
+                        reply.host_info_out.user_priority = 0;
+                        reply.host_info_out.depress_priority = 0;
+                        reply.host_info_out.idle_priority = 0;
+                        reply.host_info_out.minimum_priority = 10;
+                        reply.host_info_out.maximum_priority = -10;
+                        reply.pack();
+
+                        if (log.isDebugEnabled()) {
+                            log.debug("host_info reply=" + reply);
+                        }
                         return MACH_MSG_SUCCESS;
                 }
+            }
             default:
-                log.warn("mach_msg_trap_header msgh_bits=" + msgh_bits + ", msgh_size=" + msgh_size + ", msgh_remote_port=" + msgh_remote_port + ", msgh_local_port=" + msgh_local_port + ", msgh_voucher_port=" + msgh_voucher_port + ", msgh_id=" + msgh_id);
+                log.warn("mach_msg_trap header=" + header + ", size=" + header.size());
                 break;
         }
 

@@ -35,14 +35,14 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
 
     boolean indirectSymbolBound;
 
-    final Map<String, Symbol> symbolMap = new HashMap<>();
+    private final Map<String, Symbol> symbolMap = new HashMap<>();
 
     private final Log log;
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
-                String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand) {
+                String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -53,6 +53,9 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.exportModules = exportModules;
         this.path = path;
         this.dyldInfoCommand = dyldInfoCommand;
+        this.envp = envp;
+        this.apple = apple;
+        this.vars = vars;
 
         log = LogFactory.getLog("cn.banny.emulator.ios." + name);
         if (symtabCommand != null) {
@@ -119,7 +122,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                             log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
                             addresses[i] = address;
                         }
-                        initFunctionList.add(new MachOModuleInit(load_base, libName, addresses));
+                        initFunctionList.add(new MachOModuleInit(load_base, libName, envp, apple, vars, addresses));
                     }
                     break;
                 case SEGMENT_64:
@@ -128,6 +131,10 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         }
         return initFunctionList;
     }
+
+    private final UnicornPointer envp;
+    private final UnicornPointer apple;
+    private final UnicornPointer vars;
 
     final Map<String, Module> neededLibraries() {
         return neededLibraries;
