@@ -72,7 +72,7 @@ public class ArmLD implements Dlfcn {
                                         "svc #0x" + Integer.toHexString(svcNumber),
                                         "pop {r7}", // manipulated stack in dlopen
                                         "cmp r7, #0",
-                                        "subne lr, pc, #16",
+                                        "subne lr, pc, #16", // jump to pop {r7}
                                         "bxne r7", // call init array
                                         "pop {r0, r4-r7, pc}")); // with return address
                                 byte[] code = encoded.getMachineCode();

@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux.file;
+package cn.banny.emulator.unix.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
@@ -34,7 +34,7 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    int connect_ipv6(Pointer addr, int addrlen) {
+    protected int connect_ipv6(Pointer addr, int addrlen) {
         if (log.isDebugEnabled()) {
             byte[] data = addr.getByteArray(0, addrlen);
             Inspector.inspect(data, "addr");
@@ -58,7 +58,7 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    int connect_ipv4(Pointer addr, int addrlen) {
+    protected int connect_ipv4(Pointer addr, int addrlen) {
         if (log.isDebugEnabled()) {
             byte[] data = addr.getByteArray(0, addrlen);
             Inspector.inspect(data, "addr");
@@ -82,7 +82,7 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    InetSocketAddress getLocalSocketAddress() {
+    protected InetSocketAddress getLocalSocketAddress() {
         return (InetSocketAddress) datagramSocket.getLocalSocketAddress();
     }
 
@@ -128,27 +128,27 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    void setKeepAlive(int keepAlive) {
+    protected void setKeepAlive(int keepAlive) {
         throw new AbstractMethodError();
     }
 
     @Override
-    void setSocketRecvBuf(int recvBuf) {
+    protected void setSocketRecvBuf(int recvBuf) {
         throw new AbstractMethodError();
     }
 
     @Override
-    void setReuseAddress(int reuseAddress) {
+    protected void setReuseAddress(int reuseAddress) {
         throw new AbstractMethodError();
     }
 
     @Override
-    void setTcpNoDelay(int tcpNoDelay) {
+    protected void setTcpNoDelay(int tcpNoDelay) {
         throw new AbstractMethodError();
     }
 
     @Override
-    int getTcpNoDelay() {
+    protected int getTcpNoDelay() {
         throw new AbstractMethodError();
     }
 }

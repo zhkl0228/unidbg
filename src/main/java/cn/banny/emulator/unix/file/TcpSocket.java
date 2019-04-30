@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux.file;
+package cn.banny.emulator.unix.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
@@ -80,7 +80,7 @@ public class TcpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    int connect_ipv4(Pointer addr, int addrlen) {
+    protected int connect_ipv4(Pointer addr, int addrlen) {
         if (log.isDebugEnabled()) {
             byte[] data = addr.getByteArray(0, addrlen);
             Inspector.inspect(data, "addr");
@@ -106,7 +106,7 @@ public class TcpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    int connect_ipv6(Pointer addr, int addrlen) {
+    protected int connect_ipv6(Pointer addr, int addrlen) {
         if (log.isDebugEnabled()) {
             byte[] data = addr.getByteArray(0, addrlen);
             Inspector.inspect(data, "addr");
@@ -143,32 +143,32 @@ public class TcpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    InetSocketAddress getLocalSocketAddress() {
+    protected InetSocketAddress getLocalSocketAddress() {
         return (InetSocketAddress) socket.getLocalSocketAddress();
     }
 
     @Override
-    void setKeepAlive(int keepAlive) throws SocketException {
+    protected void setKeepAlive(int keepAlive) throws SocketException {
         socket.setKeepAlive(keepAlive != 0);
     }
 
     @Override
-    void setSocketRecvBuf(int recvBuf) throws SocketException {
+    protected void setSocketRecvBuf(int recvBuf) throws SocketException {
         socket.setReceiveBufferSize(recvBuf);
     }
 
     @Override
-    void setReuseAddress(int reuseAddress) throws SocketException {
+    protected void setReuseAddress(int reuseAddress) throws SocketException {
         socket.setReuseAddress(reuseAddress != 0);
     }
 
     @Override
-    void setTcpNoDelay(int tcpNoDelay) throws SocketException {
+    protected void setTcpNoDelay(int tcpNoDelay) throws SocketException {
         socket.setTcpNoDelay(tcpNoDelay != 0);
     }
 
     @Override
-    int getTcpNoDelay() throws SocketException {
+    protected int getTcpNoDelay() throws SocketException {
         return socket.getTcpNoDelay() ? 1 : 0;
     }
 

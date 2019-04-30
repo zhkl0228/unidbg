@@ -1,58 +1,26 @@
 package cn.banny.emulator.linux.file;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.unix.UnixEmulator;
-import com.sun.jna.Pointer;
+import cn.banny.emulator.unix.file.LocalUdpSocket;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.*;
-import java.net.InetSocketAddress;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public class LocalUdpSocket extends SocketIO implements FileIO {
+public class LocalAndroidUdpSocket extends LocalUdpSocket {
 
-    private static final Log log = LogFactory.getLog(LocalUdpSocket.class);
+    private static final Log log = LogFactory.getLog(LocalAndroidUdpSocket.class);
 
-    private interface UdpHandler {
-        void handle(byte[] request) throws IOException;
-    }
-
-    private final Emulator emulator;
-
-    public LocalUdpSocket(Emulator emulator) {
-        this.emulator = emulator;
-    }
-
-    private UdpHandler handler;
-
-    @Override
-    public void close() {
-        handler = null;
+    public LocalAndroidUdpSocket(Emulator emulator) {
+        super(emulator);
     }
 
     @Override
-    public int write(byte[] data) {
-        try {
-            handler.handle(data);
-            return data.length;
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    @Override
-    public int connect(Pointer addr, int addrlen) {
-        short sa_family = addr.getShort(0);
-        if (sa_family != AF_LOCAL) {
-            throw new UnsupportedOperationException("sa_family=" + sa_family);
-        }
-
-        String path = addr.getString(2);
-        log.debug("connect sa_family=" + sa_family + ", path=" + path);
-
+    protected int connect(String path) {
         switch (path) {
             case "/dev/socket/logdw":
                 handler = new UdpHandler() {
@@ -164,46 +132,6 @@ public class LocalUdpSocket extends SocketIO implements FileIO {
 
         emulator.getMemory().setErrno(UnixEmulator.EPERM);
         return -1;
-    }
-
-    @Override
-    int getTcpNoDelay() {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    void setTcpNoDelay(int tcpNoDelay) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    void setReuseAddress(int reuseAddress) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    void setKeepAlive(int keepAlive) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    void setSocketRecvBuf(int recvBuf) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    InetSocketAddress getLocalSocketAddress() {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    int connect_ipv6(Pointer addr, int addrlen) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    int connect_ipv4(Pointer addr, int addrlen) {
-        throw new AbstractMethodError();
     }
 
 }

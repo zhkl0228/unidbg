@@ -43,7 +43,21 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private UnicornPointer vars;
 
     private void initializeTLS() {
+        final Pointer environ = allocateStack(emulator.getPointerSize());
+        assert environ != null;
+        environ.setPointer(0, null);
+
+        Pointer _NSGetEnviron = allocateStack(emulator.getPointerSize());
+        _NSGetEnviron.setPointer(0, environ);
+
+        final Pointer programName = writeStackString(emulator.getProcessName());
+        Pointer _NSGetProgname = allocateStack(emulator.getPointerSize());
+        _NSGetProgname.setPointer(0, programName);
+
         vars = allocateStack(emulator.getPointerSize() * 5);
+        vars.setPointer(0, null); // _NSGetMachExecuteHeader
+        vars.setPointer(0xc, _NSGetEnviron);
+        vars.setPointer(0x10, _NSGetProgname);
 
         final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
 
@@ -56,7 +70,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
-        log.debug("initializeTLS tls=" + tls + ", thread=" + thread);
+        log.debug("initializeTLS tls=" + tls + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars);
     }
 
     @Override
@@ -377,6 +391,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         long load_size = size;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars);
+        if (modules.isEmpty()) { // first module
+            vars.setPointer(0, UnicornPointer.pointer(emulator, module.base)); // _NSGetMachExecuteHeader
+        }
         modules.put(dyId, module);
 
         for (MachOModule export : modules.values()) {
@@ -1028,5 +1045,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     public boolean hasThread(int threadId) {
         throw new UnsupportedOperationException();
     }
+
+    final List<UnicornPointer> addImageCallbacks = new ArrayList<>();
 
 }

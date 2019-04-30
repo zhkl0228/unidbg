@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux.file;
+package cn.banny.emulator.unix.file;
 
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.file.AbstractFileIO;
@@ -27,7 +27,7 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
 
     private static final int IPPROTO_IP = 0;
     public static final int IPPROTO_ICMP = 1;
-    static final int IPPROTO_TCP = 6;
+    protected static final int IPPROTO_TCP = 6;
 
     private static final int SOL_SOCKET = 1;
 
@@ -44,7 +44,7 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
     private static final int TCP_NODELAY = 1;
     private static final int TCP_MAXSEG = 2;
 
-    SocketIO() {
+    protected SocketIO() {
         super(O_RDWR);
     }
 
@@ -75,7 +75,7 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
         return super.getsockopt(level, optname, optval, optlen);
     }
 
-    abstract int getTcpNoDelay() throws SocketException;
+    protected abstract int getTcpNoDelay() throws SocketException;
 
     @Override
     public int setsockopt(int level, int optname, Pointer optval, int optlen) {
@@ -136,13 +136,13 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
         return 0;
     }
 
-    abstract void setTcpNoDelay(int tcpNoDelay) throws SocketException;
+    protected abstract void setTcpNoDelay(int tcpNoDelay) throws SocketException;
 
-    abstract void setReuseAddress(int reuseAddress) throws SocketException;
+    protected abstract void setReuseAddress(int reuseAddress) throws SocketException;
 
-    abstract void setKeepAlive(int keepAlive) throws SocketException;
+    protected abstract void setKeepAlive(int keepAlive) throws SocketException;
 
-    abstract void setSocketRecvBuf(int recvBuf) throws SocketException;
+    protected abstract void setSocketRecvBuf(int recvBuf) throws SocketException;
 
     @Override
     public int getsockname(Pointer addr, Pointer addrlen) {
@@ -155,7 +155,7 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
         return 0;
     }
 
-    abstract InetSocketAddress getLocalSocketAddress();
+    protected abstract InetSocketAddress getLocalSocketAddress();
 
     @Override
     public int connect(Pointer addr, int addrlen) {
@@ -168,9 +168,9 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
         }
     }
 
-    abstract int connect_ipv6(Pointer addr, int addrlen);
+    protected abstract int connect_ipv6(Pointer addr, int addrlen);
 
-    abstract int connect_ipv4(Pointer addr, int addrlen);
+    protected abstract int connect_ipv4(Pointer addr, int addrlen);
 
     @Override
     public int recvfrom(Unicorn unicorn, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {

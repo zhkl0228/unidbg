@@ -14,6 +14,9 @@ import cn.banny.emulator.linux.file.*;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.SyscallHandler;
+import cn.banny.emulator.unix.file.SocketIO;
+import cn.banny.emulator.unix.file.TcpSocket;
+import cn.banny.emulator.unix.file.UdpSocket;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
@@ -1127,7 +1130,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                         return fd;
                     case SocketIO.SOCK_DGRAM:
                         fd = getMinFd();
-                        fdMap.put(fd, new LocalUdpSocket(emulator));
+                        fdMap.put(fd, new LocalAndroidUdpSocket(emulator));
                         return fd;
                     default:
                         emulator.getMemory().setErrno(UnixEmulator.EACCES);
