@@ -8,6 +8,7 @@ import cn.banny.emulator.memory.MemoryBlockImpl;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

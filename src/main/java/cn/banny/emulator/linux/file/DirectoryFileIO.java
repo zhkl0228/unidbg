@@ -3,7 +3,7 @@ package cn.banny.emulator.linux.file;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.file.AbstractFileIO;
-import cn.banny.emulator.linux.IO;
+import cn.banny.emulator.unix.IO;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 

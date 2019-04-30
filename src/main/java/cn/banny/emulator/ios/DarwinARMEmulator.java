@@ -1,6 +1,6 @@
 package cn.banny.emulator.ios;
 
-import cn.banny.emulator.UnixSyscallHandler;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.arm.AbstractARMEmulator;
 import cn.banny.emulator.linux.android.dvm.VM;
 import cn.banny.emulator.memory.Memory;

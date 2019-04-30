@@ -1,6 +1,6 @@
 package cn.banny.emulator;
 
-import cn.banny.emulator.linux.LinuxEmulator;
+import cn.banny.emulator.unix.UnixEmulator;
 import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
@@ -47,12 +47,12 @@ class RunExecutable {
             Number __errno = libc.callFunction(emulator, "__errno")[0];
             Pointer pointer = UnicornPointer.pointer(emulator, __errno.intValue() & 0xffffffffL);
             assert pointer != null;
-            emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
             int value = pointer.getInt(0);
-            assert value == LinuxEmulator.EACCES;
+            assert value == UnixEmulator.EACCES;
 
             // emulator.traceCode();
-            Pointer strerror = UnicornPointer.pointer(emulator, libc.callFunction(emulator, "strerror", LinuxEmulator.ECONNREFUSED)[0].intValue() & 0xffffffffL);
+            Pointer strerror = UnicornPointer.pointer(emulator, libc.callFunction(emulator, "strerror", UnixEmulator.ECONNREFUSED)[0].intValue() & 0xffffffffL);
             assert strerror != null;
             System.out.println(strerror.getString(0));
 

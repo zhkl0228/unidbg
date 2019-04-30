@@ -5,11 +5,12 @@ import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.hook.HookListener;
-import cn.banny.emulator.linux.LinuxEmulator;
+import cn.banny.emulator.unix.UnixEmulator;
 import cn.banny.emulator.linux.android.ElfLibraryFile;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -156,7 +157,7 @@ public abstract class AbstractLoader implements Memory, Loader {
     @Override
     public final int mprotect(long address, int length, int prot) {
         if (address % ARMEmulator.PAGE_ALIGN != 0) {
-            setErrno(LinuxEmulator.EINVAL);
+            setErrno(UnixEmulator.EINVAL);
             return -1;
         }
 

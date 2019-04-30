@@ -2,7 +2,7 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
-import cn.banny.emulator.UnixSyscallHandler;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.debugger.Debugger;

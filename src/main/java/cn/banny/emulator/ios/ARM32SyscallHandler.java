@@ -3,12 +3,12 @@ package cn.banny.emulator.ios;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.StopEmulatorException;
 import cn.banny.emulator.Svc;
-import cn.banny.emulator.UnixSyscallHandler;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.Cpsr;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.ios.struct.*;
-import cn.banny.emulator.linux.LinuxEmulator;
+import cn.banny.emulator.unix.UnixEmulator;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.SyscallHandler;
@@ -422,7 +422,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             file.close();
             return 0;
         } else {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
     }

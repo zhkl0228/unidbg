@@ -1,5 +1,6 @@
-package cn.banny.emulator.pointer;
+package cn.banny.emulator.unix.struct;
 
+import cn.banny.emulator.pointer.UnicornStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;

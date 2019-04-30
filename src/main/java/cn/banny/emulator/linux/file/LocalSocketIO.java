@@ -3,7 +3,7 @@ package cn.banny.emulator.linux.file;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.linux.LinuxEmulator;
+import cn.banny.emulator.unix.UnixEmulator;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -239,7 +239,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
                 return 0;
         }
 
-        emulator.getMemory().setErrno(LinuxEmulator.EPERM);
+        emulator.getMemory().setErrno(UnixEmulator.EPERM);
         return -1;
     }
 

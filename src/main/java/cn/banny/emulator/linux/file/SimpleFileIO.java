@@ -5,7 +5,7 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.file.AbstractFileIO;
 import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.linux.IO;
+import cn.banny.emulator.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;

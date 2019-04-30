@@ -4,7 +4,9 @@ import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.StopEmulatorException;
 import cn.banny.emulator.Svc;
-import cn.banny.emulator.UnixSyscallHandler;
+import cn.banny.emulator.unix.IO;
+import cn.banny.emulator.unix.UnixEmulator;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.file.FileIO;
@@ -359,7 +361,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             int writefd = pipefd.getInt(4);
             log.debug("pipe readfd=" + readfd + ", writefd=" + writefd);
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EFAULT);
+        emulator.getMemory().setErrno(UnixEmulator.EFAULT);
         return -1;
     }
 
@@ -393,7 +395,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
     private int fork(Emulator emulator) {
         log.debug("fork");
-        emulator.getMemory().setErrno(LinuxEmulator.ENOSYS);
+        emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
     }
 
@@ -558,7 +560,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug("bionic_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", pid=" + pid + ", tls=" + tls + ", ctid=" + ctid + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EAGAIN);
+        emulator.getMemory().setErrno(UnixEmulator.EAGAIN);
         throw new AbstractMethodError();
     }
 
@@ -592,7 +594,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO io = fdMap.get(fd);
         if (io == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         } else {
             return io.llseek(offset_high, offset_low, result, whence);
@@ -605,7 +607,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug("access pathname=" + pathname.getString(0) + ", mode=" + mode);
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
 
@@ -628,7 +630,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             }
             log.debug("execve filename=" + filename.getString(0) + ", args=" + args + ", env=" + env);
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
 
@@ -657,7 +659,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO io = fdMap.get(sockfd);
         if (io == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return io.shutdown(how);
@@ -668,7 +670,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO io = fdMap.get(oldfd);
         if (io == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         if (log.isDebugEnabled()) {
@@ -709,7 +711,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             return io.fstat(emulator, emulator.getUnicorn(), statbuf);
         }
 
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
 
@@ -732,7 +734,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             }
         }
         if (exceptfds != null) {
-            emulator.getMemory().setErrno(LinuxEmulator.ENOMEM);
+            emulator.getMemory().setErrno(UnixEmulator.ENOMEM);
             return -1;
         }
         if (writefds != null) {
@@ -778,7 +780,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO io = fdMap.get(sockfd);
         if (io == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
 
@@ -854,7 +856,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug("mkdir pathname=" + pathname.getString(0) + ", mode=" + mode);
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
 
@@ -894,7 +896,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug("reboot magic=" + magic + ", magic2=" + magic2 + ", cmd=" + cmd + ", arg=" + arg);
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EPERM);
+        emulator.getMemory().setErrno(UnixEmulator.EPERM);
         return -1;
     }
 
@@ -1007,7 +1009,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         }
         FileIO file = fdMap.get(sockfd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.recvfrom(u, buf, len, flags, src_addr, addrlen);
@@ -1027,7 +1029,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         }
         FileIO file = fdMap.get(sockfd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.sendto(data, flags, dest_addr, addrlen);
@@ -1044,7 +1046,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(sockfd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.connect(addr, addrlen);
@@ -1059,7 +1061,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         }
         FileIO file = fdMap.get(sockfd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.getsockname(addr, addrlen);
@@ -1077,7 +1079,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(sockfd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.getsockopt(level, optname, optval, optlen);
@@ -1095,7 +1097,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(sockfd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.setsockopt(level, optname, optval, optlen);
@@ -1128,7 +1130,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                         fdMap.put(fd, new LocalUdpSocket(emulator));
                         return fd;
                     default:
-                        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+                        emulator.getMemory().setErrno(UnixEmulator.EACCES);
                         return -1;
                 }
             case SocketIO.AF_INET:
@@ -1299,7 +1301,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.fcntl(cmd, arg);
@@ -1320,7 +1322,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
 
@@ -1438,7 +1440,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             return 0;
         }
 
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
 
@@ -1459,7 +1461,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             }
 
             log.warn("fstatat64 dirfd=" + dirfd + ", pathname=" + path + ", statbuf=" + statbuf + ", flags=" + flags);
-            emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
             return -1;
         }
     }
@@ -1472,7 +1474,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug("mkdirat dirfd=" + dirfd + ", pathname=" + pathname + ", mode=" + Integer.toHexString(mode));
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
 
@@ -1497,7 +1499,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             }
 
             log.warn("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
-            emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
             return -1;
         }
     }
@@ -1536,7 +1538,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int whence = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         int pos = file.lseek(offset, whence);
@@ -1557,7 +1559,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             file.close();
             return 0;
         } else {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
     }
@@ -1572,7 +1574,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO io = fdMap.get(fd);
         if (io == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         } else {
             return io.getdents64(dirp, count);
@@ -1588,7 +1590,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         if (log.isDebugEnabled()) {
@@ -1607,12 +1609,12 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         int ret = file.ioctl(emulator, request, argp);
         if (ret == -1) {
-            emulator.getMemory().setErrno(LinuxEmulator.ENOTTY);
+            emulator.getMemory().setErrno(UnixEmulator.ENOTTY);
         }
         return ret;
     }
@@ -1628,7 +1630,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.write(data);
@@ -1650,7 +1652,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         FileIO old = fdMap.get(oldfd);
         if (old == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
 

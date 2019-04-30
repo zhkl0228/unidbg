@@ -8,6 +8,7 @@ import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.Loader;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;

@@ -1,4 +1,4 @@
-package cn.banny.emulator.linux;
+package cn.banny.emulator.unix;
 
 public interface IO {
 

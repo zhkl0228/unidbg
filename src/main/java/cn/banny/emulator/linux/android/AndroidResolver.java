@@ -5,7 +5,7 @@ import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.LibraryResolver;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.file.IOResolver;
-import cn.banny.emulator.linux.IO;
+import cn.banny.emulator.unix.IO;
 import cn.banny.emulator.linux.file.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;

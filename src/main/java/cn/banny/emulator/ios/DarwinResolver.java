@@ -1,7 +1,7 @@
 package cn.banny.emulator.ios;
 
 import cn.banny.emulator.Emulator;
-import cn.banny.emulator.linux.IO;
+import cn.banny.emulator.unix.IO;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import cn.banny.emulator.linux.file.DirectoryFileIO;
 import cn.banny.emulator.linux.file.SimpleFileIO;

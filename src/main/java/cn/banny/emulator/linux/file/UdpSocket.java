@@ -3,7 +3,7 @@ package cn.banny.emulator.linux.file;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.linux.LinuxEmulator;
+import cn.banny.emulator.unix.UnixEmulator;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,7 +52,7 @@ public class UdpSocket extends SocketIO implements FileIO {
             return 0;
         } catch (IOException e) {
             log.debug("connect ipv6 failed", e);
-            emulator.getMemory().setErrno(LinuxEmulator.ECONNREFUSED);
+            emulator.getMemory().setErrno(UnixEmulator.ECONNREFUSED);
             return -1;
         }
     }
@@ -76,7 +76,7 @@ public class UdpSocket extends SocketIO implements FileIO {
             return 0;
         } catch (IOException e) {
             log.debug("connect ipv4 failed", e);
-            emulator.getMemory().setErrno(LinuxEmulator.ECONNREFUSED);
+            emulator.getMemory().setErrno(UnixEmulator.ECONNREFUSED);
             return -1;
         }
     }
@@ -122,7 +122,7 @@ public class UdpSocket extends SocketIO implements FileIO {
             throw new UnsupportedOperationException("address=" + address);
         } catch (IOException e) {
             log.debug("sendto failed", e);
-            emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
             return -1;
         }
     }

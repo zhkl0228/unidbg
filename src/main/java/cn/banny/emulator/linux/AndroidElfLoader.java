@@ -12,6 +12,7 @@ import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.InitFunction;
 import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.Loader;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.*;
 import org.apache.commons.io.FileUtils;

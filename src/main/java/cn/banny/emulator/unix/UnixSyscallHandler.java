@@ -1,15 +1,15 @@
-package cn.banny.emulator;
+package cn.banny.emulator.unix;
 
 import cn.banny.auxiliary.Inspector;
+import cn.banny.emulator.Emulator;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.file.IOResolver;
-import cn.banny.emulator.linux.IO;
-import cn.banny.emulator.linux.LinuxEmulator;
 import cn.banny.emulator.linux.LinuxThread;
 import cn.banny.emulator.linux.file.*;
 import cn.banny.emulator.memory.MemRegion;
-import cn.banny.emulator.pointer.TimeVal;
-import cn.banny.emulator.pointer.TimeZone;
+import cn.banny.emulator.unix.struct.TimeVal;
+import cn.banny.emulator.unix.struct.TimeZone;
 import cn.banny.emulator.spi.SyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -96,7 +96,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         if (tz != null) {
             Calendar calendar = Calendar.getInstance();
             int tz_minuteswest = -(calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / (60 * 1000);
-            cn.banny.emulator.pointer.TimeZone timeZone = new TimeZone(tz);
+            TimeZone timeZone = new TimeZone(tz);
             timeZone.tz_minuteswest = tz_minuteswest;
             timeZone.tz_dsttime = 0;
             timeZone.pack();
@@ -117,7 +117,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("sigprocmask how=" + how + ", set=" + set + ", oldset=" + oldset);
         }
-        emulator.getMemory().setErrno(LinuxEmulator.EINVAL);
+        emulator.getMemory().setErrno(UnixEmulator.EINVAL);
         return -1;
     }
 
@@ -128,7 +128,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
 
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            emulator.getMemory().setErrno(LinuxEmulator.EBADF);
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         return file.read(emulator.getUnicorn(), buffer, count);
@@ -166,7 +166,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
             return minFd;
         }
 
-        emulator.getMemory().setErrno(LinuxEmulator.EACCES);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
 

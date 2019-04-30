@@ -1,6 +1,6 @@
 package cn.banny.emulator.linux.android;
 
-import cn.banny.emulator.UnixSyscallHandler;
+import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.linux.ARMSyscallHandler;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.arm.AbstractARMEmulator;
