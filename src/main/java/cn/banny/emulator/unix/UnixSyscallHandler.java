@@ -8,9 +8,9 @@ import cn.banny.emulator.file.IOResolver;
 import cn.banny.emulator.linux.LinuxThread;
 import cn.banny.emulator.linux.file.*;
 import cn.banny.emulator.memory.MemRegion;
+import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.unix.struct.TimeVal;
 import cn.banny.emulator.unix.struct.TimeZone;
-import cn.banny.emulator.spi.SyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -168,6 +168,104 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
 
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
+    }
+
+    protected final int fcntl(Emulator emulator, int fd, int cmd, int arg) {
+        if (log.isDebugEnabled()) {
+            log.debug("fcntl fd=" + fd + ", cmd=" + cmd + ", arg=" + arg);
+        }
+
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        return file.fcntl(cmd, arg);
+    }
+
+    private final Map<Integer, byte[]> sigMap = new HashMap<>();
+
+    private static final int SIGHUP = 1;
+    private static final int SIGINT = 2;
+    private static final int SIGQUIT = 3;
+    private static final int SIGILL = 4;
+    private static final int SIGABRT = 6;
+    private static final int SIGSEGV = 11;
+    private static final int SIGPIPE = 13;
+    private static final int SIGALRM = 14;
+    private static final int SIGTERM = 15;
+    private static final int SIGCHLD = 17;
+    private static final int SIGTSTP = 20;
+    private static final int SIGTTIN = 21;
+    private static final int SIGTTOU = 22;
+    private static final int SIGWINCH = 28;
+
+    protected final int sigaction(int signum, Pointer act, Pointer oldact) {
+        String prefix = "Unknown";
+        if (signum > 32) {
+            signum -= 32;
+            prefix = "Real-time";
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("sigaction signum=" + signum + ", act=" + act + ", oldact=" + oldact + ", prefix=" + prefix);
+        }
+
+        final int ACT_SIZE = 16;
+        if (oldact != null) {
+            byte[] lastAct = sigMap.get(signum);
+            byte[] data = lastAct == null ? new byte[ACT_SIZE] : lastAct;
+            oldact.write(0, data, 0, data.length);
+        }
+
+        switch (signum) {
+            case SIGHUP:
+            case SIGINT:
+            case SIGQUIT:
+            case SIGILL:
+            case SIGABRT:
+            case SIGSEGV:
+            case SIGPIPE:
+            case SIGALRM:
+            case SIGTERM:
+            case SIGCHLD:
+            case SIGTSTP:
+            case SIGTTIN:
+            case SIGTTOU:
+            case SIGWINCH:
+                if (act != null) {
+                    sigMap.put(signum, act.getByteArray(0, ACT_SIZE));
+                }
+                return 0;
+        }
+
+        throw new UnsupportedOperationException("signum=" + signum);
+    }
+
+    protected final int connect(Emulator emulator, int sockfd, Pointer addr, int addrlen) {
+        if (log.isDebugEnabled()) {
+            byte[] data = addr.getByteArray(0, addrlen);
+            Inspector.inspect(data, "connect sockfd=" + sockfd + ", addr=" + addr + ", addrlen=" + addrlen);
+        }
+
+        FileIO file = fdMap.get(sockfd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        return file.connect(addr, addrlen);
+    }
+
+    protected final int sendto(Emulator emulator, int sockfd, Pointer buf, int len, int flags, Pointer dest_addr, int addrlen) {
+        byte[] data = buf.getByteArray(0, len);
+        if (log.isDebugEnabled()) {
+            Inspector.inspect(data, "sendto sockfd=" + sockfd + ", buf=" + buf + ", flags=" + flags + ", dest_addr=" + dest_addr + ", addrlen=" + addrlen);
+        }
+        FileIO file = fdMap.get(sockfd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        return file.sendto(data, flags, dest_addr, addrlen);
     }
 
 }

@@ -963,66 +963,12 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         return 0;
     }
 
-    private final Map<Integer, byte[]> sigMap = new HashMap<>();
-
-    private static final int SIGHUP = 1;
-    private static final int SIGINT = 2;
-    private static final int SIGQUIT = 3;
-    private static final int SIGILL = 4;
-    private static final int SIGABRT = 6;
-    private static final int SIGSEGV = 11;
-    private static final int SIGPIPE = 13;
-    private static final int SIGALRM = 14;
-    private static final int SIGTERM = 15;
-    private static final int SIGCHLD = 17;
-    private static final int SIGTSTP = 20;
-    private static final int SIGTTIN = 21;
-    private static final int SIGTTOU = 22;
-    private static final int SIGWINCH = 28;
-
     private int sigaction(Unicorn u, Emulator emulator) {
         int signum = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer act = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         Pointer oldact = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
 
-        String prefix = "Unknown";
-        if (signum > 32) {
-            signum -= 32;
-            prefix = "Real-time";
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("sigaction signum=" + signum + ", act=" + act + ", oldact=" + oldact + ", prefix=" + prefix);
-        }
-
-        final int ACT_SIZE = 16;
-        if (oldact != null) {
-            byte[] lastAct = sigMap.get(signum);
-            byte[] data = lastAct == null ? new byte[ACT_SIZE] : lastAct;
-            oldact.write(0, data, 0, data.length);
-        }
-
-        switch (signum) {
-            case SIGHUP:
-            case SIGINT:
-            case SIGQUIT:
-            case SIGILL:
-            case SIGABRT:
-            case SIGSEGV:
-            case SIGPIPE:
-            case SIGALRM:
-            case SIGTERM:
-            case SIGCHLD:
-            case SIGTSTP:
-            case SIGTTIN:
-            case SIGTTOU:
-            case SIGWINCH:
-                if (act != null) {
-                    sigMap.put(signum, act.getByteArray(0, ACT_SIZE));
-                }
-                return 0;
-        }
-
-        throw new UnsupportedOperationException("signum=" + signum);
+        return sigaction(signum, act, oldact);
     }
 
     private int recvfrom(Unicorn u, Emulator emulator) {
@@ -1052,33 +998,14 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         Pointer dest_addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
         int addrlen = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
 
-        byte[] data = buf.getByteArray(0, len);
-        if (log.isDebugEnabled()) {
-            Inspector.inspect(data, "sendto sockfd=" + sockfd + ", buf=" + buf + ", flags=" + flags + ", dest_addr=" + dest_addr + ", addrlen=" + addrlen);
-        }
-        FileIO file = fdMap.get(sockfd);
-        if (file == null) {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
-        return file.sendto(data, flags, dest_addr, addrlen);
+        return sendto(emulator, sockfd, buf, len, flags, dest_addr, addrlen);
     }
 
     private int connect(Unicorn u, Emulator emulator) {
         int sockfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         int addrlen = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        if (log.isDebugEnabled()) {
-            byte[] data = addr.getByteArray(0, addrlen);
-            Inspector.inspect(data, "connect sockfd=" + sockfd + ", addr=" + addr + ", addrlen=" + addrlen);
-        }
-
-        FileIO file = fdMap.get(sockfd);
-        if (file == null) {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
-        return file.connect(addr, addrlen);
+        return connect(emulator, sockfd, addr, addrlen);
     }
 
     private int getsockname(Unicorn u, Emulator emulator) {
@@ -1324,16 +1251,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         int cmd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("fcntl fd=" + fd + ", cmd=" + cmd + ", arg=" + arg);
-        }
-
-        FileIO file = fdMap.get(fd);
-        if (file == null) {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
-        return file.fcntl(cmd, arg);
+        return fcntl(emulator, fd, cmd, arg);
     }
 
     private int writev(Unicorn u, Emulator emulator) {

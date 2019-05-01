@@ -43,7 +43,7 @@ public abstract class LocalUdpSocket extends SocketIO implements FileIO {
     protected abstract int connect(String path);
 
     @Override
-    public final int connect(Pointer addr, int addrlen) {
+    public int connect(Pointer addr, int addrlen) {
         short sa_family = addr.getShort(0);
         if (sa_family != AF_LOCAL) {
             throw new UnsupportedOperationException("sa_family=" + sa_family);

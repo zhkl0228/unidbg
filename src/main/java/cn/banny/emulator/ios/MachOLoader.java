@@ -388,6 +388,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 MachOLoader.log.debug(msg);
             }
         }
+
         long load_size = size;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars);
@@ -414,7 +415,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        processDyldInfo(module);
+        processRebase(log, module);
 
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
@@ -435,79 +436,17 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return module;
     }
 
-    private void processExportNode(Log log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset) {
-        int terminalSize = Utils.readULEB128(buffer).intValue();
-
-        if (terminalSize != 0) {
-            buffer.mark();
-            int flags = Utils.readULEB128(buffer).intValue();
-            long address;
-            long other;
-            String importName;
-            if ((flags & EXPORT_SYMBOL_FLAGS_REEXPORT) != 0) {
-                address = 0;
-                other = Utils.readULEB128(buffer).longValue();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte b;
-                while ((b = buffer.get()) != 0) {
-                    baos.write(b);
-                }
-                importName = baos.toString();
-            } else {
-                address = Utils.readULEB128(buffer).longValue();
-                if((flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER) != 0) {
-                    other = Utils.readULEB128(buffer).longValue();
-                } else {
-                    other = 0;
-                }
-                importName = null;
-            }
-            if (log.isDebugEnabled()) {
-                String symbolName = new String(cummulativeString, 0, curStrOffset);
-                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName);
-            }
-            buffer.reset();
-            buffer.position(buffer.position() + terminalSize);
-        }
-
-        int childrenCount = buffer.get() & 0xff;
-        for (int i = 0; i < childrenCount; i++) {
-            int edgeStrLen = 0;
-            byte b;
-            while ((b = buffer.get()) != 0) {
-                cummulativeString[curStrOffset+edgeStrLen] = b;
-                ++edgeStrLen;
-            }
-            cummulativeString[curStrOffset+edgeStrLen] = 0;
-
-            int childNodeOffset = Utils.readULEB128(buffer).intValue();
-
-            ByteBuffer duplicate = buffer.duplicate();
-            duplicate.position(childNodeOffset);
-            processExportNode(log, duplicate, cummulativeString, curStrOffset+edgeStrLen);
-        }
-    }
-
-    private void processDyldInfo(MachOModule module) {
+    private void processRebase(Log log, MachOModule module) {
         MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
         if (dyldInfoCommand == null) {
             return;
         }
-
-        Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 
         if (dyldInfoCommand.rebaseSize() > 0) {
             ByteBuffer buffer = module.buffer.duplicate();
             buffer.limit((int) (dyldInfoCommand.rebaseOff() + dyldInfoCommand.rebaseSize()));
             buffer.position((int) dyldInfoCommand.rebaseOff());
             rebase(log, buffer.slice(), module);
-        }
-
-        if (dyldInfoCommand.exportSize() > 0) {
-            ByteBuffer buffer = module.buffer.duplicate();
-            buffer.limit((int) (dyldInfoCommand.exportOff() + dyldInfoCommand.exportSize()));
-            buffer.position((int) dyldInfoCommand.exportOff());
-            processExportNode(log, buffer.slice(), new byte[4000], 0);
         }
     }
 

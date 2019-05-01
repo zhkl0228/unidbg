@@ -10,14 +10,12 @@ import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
 
@@ -58,6 +56,8 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.vars = vars;
 
         log = LogFactory.getLog("cn.banny.emulator.ios." + name);
+        final Collection<String> exportSymbols = processExportNode(log, dyldInfoCommand, buffer);
+
         if (symtabCommand != null) {
             buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
             buffer.position((int) symtabCommand.strOff());
@@ -74,11 +74,17 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                 strBuffer.position((int) nlist.un());
                 String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
                 if ((type == N_SECT || type == N_ABS) && (nlist.type() & N_STAB) == 0) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", value=0x" + Long.toHexString(nlist.value()));
-                    }
+                    if (exportSymbols.isEmpty() || exportSymbols.contains(symbolName)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", value=0x" + Long.toHexString(nlist.value()));
+                        }
 
-                    symbolMap.put(symbolName, new MachOSymbol(this, nlist, symbolName));
+                        symbolMap.put(symbolName, new MachOSymbol(this, nlist, symbolName));
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("nlist FILTER un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", value=0x" + Long.toHexString(nlist.value()));
+                        }
+                    }
                 } else if (type == N_INDR) {
                     strBuffer.position(nlist.value().intValue());
                     String indirectSymbol = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
@@ -98,6 +104,75 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
             InitFunction initFunction = initFunctionList.remove(0);
             initFunction.call(emulator);
         }
+    }
+
+    private void processExportNode(Log log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset, Set<String> set) {
+        int terminalSize = Utils.readULEB128(buffer).intValue();
+
+        if (terminalSize != 0) {
+            buffer.mark();
+            int flags = Utils.readULEB128(buffer).intValue();
+            long address;
+            long other;
+            String importName;
+            if ((flags & EXPORT_SYMBOL_FLAGS_REEXPORT) != 0) {
+                address = 0;
+                other = Utils.readULEB128(buffer).longValue();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte b;
+                while ((b = buffer.get()) != 0) {
+                    baos.write(b);
+                }
+                importName = baos.toString();
+            } else {
+                address = Utils.readULEB128(buffer).longValue();
+                if((flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER) != 0) {
+                    other = Utils.readULEB128(buffer).longValue();
+                } else {
+                    other = 0;
+                }
+                importName = null;
+            }
+            String symbolName = new String(cummulativeString, 0, curStrOffset);
+            set.add(symbolName);
+            if (log.isDebugEnabled()) {
+                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName);
+            }
+            buffer.reset();
+            buffer.position(buffer.position() + terminalSize);
+        }
+
+        int childrenCount = buffer.get() & 0xff;
+        for (int i = 0; i < childrenCount; i++) {
+            int edgeStrLen = 0;
+            byte b;
+            while ((b = buffer.get()) != 0) {
+                cummulativeString[curStrOffset+edgeStrLen] = b;
+                ++edgeStrLen;
+            }
+            cummulativeString[curStrOffset+edgeStrLen] = 0;
+
+            int childNodeOffset = Utils.readULEB128(buffer).intValue();
+
+            ByteBuffer duplicate = buffer.duplicate();
+            duplicate.position(childNodeOffset);
+            processExportNode(log, duplicate, cummulativeString, curStrOffset+edgeStrLen, set);
+        }
+    }
+
+    private Collection<String> processExportNode(Log log, MachO.DyldInfoCommand dyldInfoCommand, ByteBuffer buffer) {
+        if (dyldInfoCommand == null) {
+            return Collections.emptyList();
+        }
+
+        Set<String> set = new HashSet<>();
+        if (dyldInfoCommand.exportSize() > 0) {
+            buffer = buffer.duplicate();
+            buffer.limit((int) (dyldInfoCommand.exportOff() + dyldInfoCommand.exportSize()));
+            buffer.position((int) dyldInfoCommand.exportOff());
+            processExportNode(log, buffer.slice(), new byte[4000], 0, set);
+        }
+        return set;
     }
 
     private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, long load_base, String libName, Emulator emulator) {
