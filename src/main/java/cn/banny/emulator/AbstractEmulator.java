@@ -193,7 +193,7 @@ public abstract class AbstractEmulator implements Emulator {
                 IOUtils.closeQuietly(this);
                 throw e;
             } else {
-                log.info("emulate exception: " + e.getMessage());
+                log.warn("emulate exception: " + e.getMessage());
                 return -1;
             }
         } finally {

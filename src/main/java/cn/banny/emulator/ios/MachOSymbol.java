@@ -28,7 +28,7 @@ public class MachOSymbol extends Symbol implements cn.banny.emulator.ios.MachO {
 
     @Override
     public long getValue() {
-        boolean isThumb = nlist.desc() == N_ARM_THUMB_DEF;
+        boolean isThumb = (nlist.desc() & N_ARM_THUMB_DEF) != 0;
         return nlist.value() + (isThumb ? 1 : 0);
     }
 

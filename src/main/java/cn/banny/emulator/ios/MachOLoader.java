@@ -844,11 +844,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private void doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy) throws IOException {
         Symbol symbol = module.findSymbolByName(symbolName, true);
         if (symbol == null) {
-            log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries);
+            log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries + ", libraryOrdinal=" + libraryOrdinal);
             return;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("doBindAt libraryOrdinal=" + libraryOrdinal + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol);
         }
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
@@ -862,6 +859,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 bindAt = hook;
                 break;
             }
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("doBindAt 0x=" + Long.toHexString(bindAt) + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol);
         }
 
         Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
