@@ -278,6 +278,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     case 268:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(u));
                         return;
+                    case 269:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, utimes(emulator));
+                        return;
                     case 281:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, socket(u, emulator));
                         return;
@@ -317,6 +320,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     case 334:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
                         return;
+                    case 348:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
+                        return;
                     case 0xf0002:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, cacheflush(u, emulator));
                         return;
@@ -340,6 +346,26 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int utimes(Emulator emulator) {
+        Pointer filename = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        Pointer times = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        if (log.isDebugEnabled()) {
+            log.debug("utimes filename=" + filename.getString(0) + ", times=" + times);
+        }
+        return 0;
+    }
+
+    private int utimensat(Unicorn u, Emulator emulator) {
+        int dirfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        Pointer times = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        int flags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        if (log.isDebugEnabled()) {
+            log.debug("utimensat dirfd=" + dirfd + ", pathname=" + pathname.getString(0) + ", times=" + times + ", flags=" + flags);
+        }
+        return 0;
     }
 
     private int fsync(Unicorn u) {

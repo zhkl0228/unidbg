@@ -187,10 +187,15 @@ public abstract class AbstractEmulator implements Emulator {
                 return -1;
             }
 
-            e.printStackTrace();
-            attach().debug(this);
-            IOUtils.closeQuietly(this);
-            throw e;
+            if (log.isDebugEnabled()) {
+                e.printStackTrace();
+                attach().debug(this);
+                IOUtils.closeQuietly(this);
+                throw e;
+            } else {
+                log.warn("emulate failed", e);
+                return -1;
+            }
         } finally {
             if (entry) {
                 unicorn.hook_del(readHook);
