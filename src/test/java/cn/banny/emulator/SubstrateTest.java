@@ -27,7 +27,7 @@ public class SubstrateTest extends EmulatorTest {
 
     public void testMS() throws Exception {
         long start = System.currentTimeMillis();
-//        emulator.getMemory().setCallInitFunction();
+        emulator.getMemory().setCallInitFunction();
         // emulator.attach().addBreakPoint(null, 0x40237a30);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");

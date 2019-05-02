@@ -9,7 +9,7 @@ import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.arm.Cpsr;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.ios.file.LocalDarwinUdpSocket;
-import cn.banny.emulator.ios.struct.*;
+import cn.banny.emulator.ios.struct.kernel.*;
 import cn.banny.emulator.memory.MemoryMap;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;

@@ -1,4 +1,4 @@
-package cn.banny.emulator.ios.struct;
+package cn.banny.emulator.ios.struct.kernel;
 
 import cn.banny.emulator.pointer.UnicornStructure;
 import com.sun.jna.Pointer;

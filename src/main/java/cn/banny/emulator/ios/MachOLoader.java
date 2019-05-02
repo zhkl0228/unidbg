@@ -6,6 +6,8 @@ import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.hook.HookListener;
+import cn.banny.emulator.ios.struct.objc.ClassRO;
+import cn.banny.emulator.ios.struct.objc.ObjcClass;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.*;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -72,12 +74,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         Pointer locale = allocateStack(emulator.getPointerSize());
 
+        Pointer gap = allocateStack(emulator.getPointerSize());
+
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
-        log.debug("initializeTLS tls=" + tls + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale);
+        log.debug("initializeTLS tls=" + tls + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", gap=" + gap);
     }
 
     @Override
@@ -91,6 +95,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         for (MachOModule m : modules.values()) {
             bindIndirectSymbolPointers(m);
             setupLazyPointerHandler(m);
+            realizeAllClasses(m);
         }
         if (callInitFunction) {
             for (MachOModule m : modules.values()) {
@@ -686,6 +691,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private Pointer dyldFuncLookup;
 
     private void setupLazyPointerHandler(MachOModule module) {
+        if (module.lazyPointerProcessed) {
+            return;
+        }
+        module.lazyPointerProcessed = true;
+
         for (MachO.LoadCommand command : module.machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT:
@@ -726,13 +736,54 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
     }
 
+    private void realizeAllClasses(MachOModule module) {
+        if (module.classesRealized) {
+            return;
+        }
+        module.classesRealized = true;
+
+        Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
+        for (MachO.LoadCommand command : module.machO.loadCommands()) {
+            switch (command.type()) {
+                case SEGMENT:
+                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    if ("__DATA".equals(segmentCommand.segname())) {
+                        for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                            if ("__objc_classlist".equals(section.sectName())) {
+                                ByteBuffer buffer = module.buffer.duplicate();
+                                buffer.limit((int) (section.offset() + section.size()));
+                                buffer.position((int) section.offset());
+                                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                                long elementCount = section.size() / emulator.getPointerSize();
+                                for (int i = 0; i < elementCount; i++) {
+                                    int classRef = buffer.getInt();
+                                    Pointer pointer = UnicornPointer.pointer(emulator, module.base + classRef);
+                                    ObjcClass objcClass = new ObjcClass(pointer);
+                                    objcClass.unpack();
+                                    ClassRO classRO = new ClassRO(UnicornPointer.pointer(emulator, objcClass.data));
+                                    classRO.unpack();
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("realizeAllClasses classRef=0x" + Integer.toHexString(classRef) + ", pointer=" + pointer + ", name=" + UnicornPointer.pointer(emulator, classRO.name).getString(0) + ", objcClass=" + objcClass);
+                                    }
+                                    // realizeClass();
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case SEGMENT_64:
+                    throw new UnsupportedOperationException("realizeAllClasses SEGMENT_64");
+            }
+        }
+    }
+
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
-        MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
         if (module.indirectSymbolBound) {
             return;
         }
         module.indirectSymbolBound = true;
 
+        MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
 

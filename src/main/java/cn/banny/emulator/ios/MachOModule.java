@@ -32,6 +32,8 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     private final List<InitFunction> initFunctionList;
 
     boolean indirectSymbolBound;
+    boolean lazyPointerProcessed;
+    boolean classesRealized;
 
     private final Map<String, Symbol> symbolMap = new HashMap<>();
 
