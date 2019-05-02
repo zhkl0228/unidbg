@@ -2,6 +2,7 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
+import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.spi.SyscallHandler;
@@ -34,6 +35,8 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     private final Capstone capstoneArm64;
     protected static final long LR = 0xffffffffffff0000L;
 
+    private final Dlfcn dlfcn;
+
     public AbstractARM64Emulator(String processName) {
         super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName);
 
@@ -52,11 +55,17 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
 
         enableVFP();
         this.memory = createMemory(syscallHandler);
-        this.memory.addHookListener(createDyld(svcMemory));
+        this.dlfcn = createDyld(svcMemory);
+        this.memory.addHookListener(dlfcn);
 
         unicorn.hook_add(syscallHandler, this);
 
         this.capstoneArm64 = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+    }
+
+    @Override
+    public Dlfcn getDlfcn() {
+        return dlfcn;
     }
 
     @Override

@@ -154,7 +154,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         u.reg_write(ArmConst.UC_ARM_REG_R0, thread_selfid());
                         return;
                     case 381:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms());
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms(emulator));
                         return;
                     case 396:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, read_NOCANCEL(emulator));
@@ -209,9 +209,13 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int sandbox_ms() {
+    private int sandbox_ms(Emulator emulator) {
         // TODO: implement
-        log.info("sandbox_ms");
+        Unicorn unicorn = emulator.getUnicorn();
+        Pointer policyName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        int call = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        Pointer args = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        log.info("sandbox_ms policyName=" + policyName.getString(0) + ", call=" + call + ", args=" + args);
         return 0;
     }
 

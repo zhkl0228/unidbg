@@ -1,6 +1,7 @@
 package cn.banny.emulator.ios;
 
 import cn.banny.emulator.*;
+import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.*;
@@ -83,6 +84,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         for (MachOModule m : modules.values()) {
             bindIndirectSymbolPointers(m);
+            setupLazyPointerHandler(m);
         }
         if (callInitFunction) {
             for (MachOModule m : modules.values()) {
@@ -255,6 +257,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             switch (command.type()) {
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                        checkSection(dyId, segmentCommand.segname(), section.sectName());
+                    }
+
                     long begin = load_base + segmentCommand.vmaddr();
                     if (segmentCommand.vmsize() == 0) {
                         regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand.vmaddr()));
@@ -272,6 +278,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
+                        checkSection(dyId, segmentCommand64.segname(), section.sectName());
+                    }
+
                     begin = load_base + segmentCommand64.vmaddr();
                     if (segmentCommand64.vmsize() == 0) {
                         regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand64.vmaddr()));
@@ -434,6 +444,39 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         return module;
+    }
+
+    private void checkSection(String dyId, String segName, String sectName) {
+        switch (sectName) {
+            case "__text":
+            case "__mod_init_func":
+            case "__cstring":
+            case "__nl_symbol_ptr":
+            case "__la_symbol_ptr":
+            case "__picsymbolstub4":
+            case "__stub_helper":
+            case "__const":
+            case "__data":
+            case "__bss":
+            case "__common":
+            case "__gcc_except_tab":
+            case "__constrw":
+            case "__dyld":
+            case "__dof_magmalloc":
+            case "__dof_plockstat":
+            case "__dof_objc_runt":
+            case "__symbolstub1":
+            case "__lazy_symbol":
+                break;
+            default:
+                boolean isObjc = sectName.startsWith("__objc_");
+                if (isObjc) {
+                    log.debug("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
+                } else {
+                    log.info("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
+                }
+                break;
+        }
     }
 
     private void processRebase(Log log, MachOModule module) {
@@ -638,6 +681,50 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
         return address;
+    }
+
+    private Pointer dyldLazyBinder;
+    private Pointer dyldFuncLookup;
+
+    private void setupLazyPointerHandler(MachOModule module) {
+        for (MachO.LoadCommand command : module.machO.loadCommands()) {
+            switch (command.type()) {
+                case SEGMENT:
+                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    if ("__DATA".equals(segmentCommand.segname())) {
+                        for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                            if ("__dyld".equals(section.sectName())) {
+                                Pointer dd = UnicornPointer.pointer(emulator, module.base + section.addr());
+                                if (dyldLazyBinder == null) {
+                                    dyldLazyBinder = emulator.getSvcMemory().registerSvc(new ArmSvc() {
+                                        @Override
+                                        public int handle(Emulator emulator) {
+                                            return ((Dyld) emulator.getDlfcn())._stub_binding_helper();
+                                        }
+                                    });
+                                }
+                                if (dyldFuncLookup == null) {
+                                    dyldFuncLookup = emulator.getSvcMemory().registerSvc(new ArmSvc() {
+                                        @Override
+                                        public int handle(Emulator emulator) {
+                                            String name = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0).getString(0);
+                                            Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                                            return ((Dyld) emulator.getDlfcn())._dyld_func_lookup(emulator, name, address);
+                                        }
+                                    });
+                                }
+                                if (dd != null) {
+                                    dd.setPointer(0, dyldLazyBinder);
+                                    dd.setPointer(emulator.getPointerSize(), dyldFuncLookup);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case SEGMENT_64:
+                    throw new UnsupportedOperationException("setupLazyPointerHandler SEGMENT_64");
+            }
+        }
     }
 
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
