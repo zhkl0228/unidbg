@@ -70,12 +70,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         assert tls != null;
         tls.setPointer(0, thread);
 
+        Pointer locale = allocateStack(emulator.getPointerSize());
+
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
-        log.debug("initializeTLS tls=" + tls + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars);
+        log.debug("initializeTLS tls=" + tls + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale);
     }
 
     @Override

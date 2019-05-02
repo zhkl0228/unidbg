@@ -183,7 +183,7 @@ public abstract class AbstractEmulator implements Emulator {
             return (Number) unicorn.reg_read(getPointerSize() == 4 ? ArmConst.UC_ARM_REG_R0 : Arm64Const.UC_ARM64_REG_X0);
         } catch (RuntimeException e) {
             if (!entry && e instanceof UnicornException) {
-                log.warn("emulate failed", e);
+                log.warn("emulate 0x" + Long.toHexString(begin) + " failed", e);
                 return -1;
             }
 
@@ -193,7 +193,7 @@ public abstract class AbstractEmulator implements Emulator {
                 IOUtils.closeQuietly(this);
                 throw e;
             } else {
-                log.warn("emulate exception: " + e.getMessage());
+                log.warn("emulate 0x" + Long.toHexString(begin) + " exception: " + e.getMessage());
                 return -1;
             }
         } finally {
@@ -202,7 +202,7 @@ public abstract class AbstractEmulator implements Emulator {
                 unicorn.hook_del(writeHook);
             }
             unicorn.hook_del(codeHook);
-            log.debug("emulate finish");
+            log.debug("emulate 0x" + Long.toHexString(begin) + " finish");
         }
     }
 

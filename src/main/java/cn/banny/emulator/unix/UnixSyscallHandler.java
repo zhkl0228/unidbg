@@ -268,4 +268,34 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return file.sendto(data, flags, dest_addr, addrlen);
     }
 
+    protected final int fstat(Emulator emulator, int fd, Pointer stat) {
+        if (log.isDebugEnabled()) {
+            log.debug("fstat fd=" + fd + ", stat=" + stat);
+        }
+
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("fstat file=" + file + ", stat=" + stat);
+        }
+        return file.fstat(emulator, emulator.getUnicorn(), stat);
+    }
+
+    protected final int write(Emulator emulator, int fd, Pointer buffer, int count) {
+        byte[] data = buffer.getByteArray(0, count);
+        if (log.isDebugEnabled()) {
+            Inspector.inspect(data, "write fd=" + fd + ", buffer=" + buffer + ", count=" + count);
+        }
+
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        return file.write(data);
+    }
+
 }

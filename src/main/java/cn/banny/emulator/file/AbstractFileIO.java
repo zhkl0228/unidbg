@@ -2,6 +2,7 @@ package cn.banny.emulator.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.memory.MemoryMap;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -108,10 +109,10 @@ public abstract class AbstractFileIO implements FileIO {
     }
 
     @Override
-    public final int mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, Integer> memoryMap) throws IOException {
+    public final int mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, MemoryMap> memoryMap) throws IOException {
         byte[] data = getMmapData(offset, length);
         unicorn.mem_map(addr, aligned, prot);
-        memoryMap.put(addr, aligned);
+        memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
         unicorn.mem_write(addr, data);
         return (int) addr;
     }

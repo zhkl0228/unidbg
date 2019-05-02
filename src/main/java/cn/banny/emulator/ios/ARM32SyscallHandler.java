@@ -10,6 +10,7 @@ import cn.banny.emulator.arm.Cpsr;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.ios.file.LocalDarwinUdpSocket;
 import cn.banny.emulator.ios.struct.*;
+import cn.banny.emulator.memory.MemoryMap;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.SyscallHandler;
@@ -120,6 +121,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 48:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
                         return;
+                    case 73:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, munmap(u, emulator));
+                        return;
                     case 74:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mprotect(u, emulator));
                         return;
@@ -138,14 +142,20 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 133:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sendto(u, emulator));
                         return;
+                    case 194:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, getrlimit(u, emulator));
+                        return;
                     case 197:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mmap(u, emulator));
                         return;
                     case 202:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl());
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
                         return;
                     case 329:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
+                        return;
+                    case 339:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
                         return;
                     case 366:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, bsdthread_register(emulator));
@@ -158,6 +168,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         return;
                     case 396:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, read_NOCANCEL(emulator));
+                        return;
+                    case 397:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, write_NOCANCEL(emulator));
                         return;
                     case 398:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, open_NOCANCEL(emulator));
@@ -190,6 +203,28 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int write_NOCANCEL(Emulator emulator) {
+        Unicorn u = emulator.getUnicorn();
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        return write(emulator, fd, buffer, count);
+    }
+
+    private int fstat(Unicorn u, Emulator emulator) {
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        return fstat(emulator, fd, stat);
+    }
+
+    private int getrlimit(Unicorn u, Emulator emulator) {
+        // TODO: implement
+        int resource = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer rlp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        log.info("getrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp);
+        return 0;
     }
 
     private int semwait_signal_nocancel() {
@@ -231,10 +266,97 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int sysctl() {
-        // TODO: implement
-        log.info("sysctl");
-        return 0;
+    private int munmap(Unicorn u, Emulator emulator) {
+        long timeInMillis = System.currentTimeMillis();
+        long start = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
+        int length = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        int ret = emulator.getMemory().munmap(start, length);
+        if (log.isDebugEnabled()) {
+            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", ret=" + ret + ", offset=" + (System.currentTimeMillis() - timeInMillis));
+        }
+        return ret;
+    }
+
+    private static final int CTL_UNSPEC = 0;
+    private static final int CTL_KERN = 1;
+    private static final int CTL_HW = 6;
+
+    private static final int KERN_OSRELEASE = 2;
+
+    private static final int HW_PAGESIZE = 7;
+
+    private static final int KERN_USRSTACK32 = 35;
+
+    private int sysctl(Emulator emulator) {
+        Unicorn unicorn = emulator.getUnicorn();
+        Pointer name = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        int namelen = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        Pointer bufferSize = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
+        Pointer set0 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
+        int set1 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+
+        int top = name.getInt(0);
+        switch (top) {
+            case CTL_UNSPEC:
+                int action = name.getInt(4);
+                if (action == 3) {
+                    String sub = set0.getString(0);
+                    if (log.isDebugEnabled()) {
+                        log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub);
+                    }
+                    if ("kern.osrelease".equals(sub)) {
+                        buffer.setInt(0, CTL_KERN);
+                        buffer.setInt(4, KERN_OSRELEASE);
+                        bufferSize.setInt(0, 8);
+                        return 0;
+                    }
+                    return 1;
+                }
+                log.info("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);
+                break;
+            case CTL_KERN:
+                action = name.getInt(4);
+                String msg = "sysctl CTL_KERN action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
+                switch (action) {
+                    case KERN_USRSTACK32:
+                        log.debug(msg);
+                        return 1;
+                    case KERN_OSRELEASE:
+                        log.debug(msg);
+                        String osRelease = "7.1.2";
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, osRelease.length() + 1);
+                        }
+                        if (buffer != null) {
+                            buffer.setString(0, osRelease);
+                        }
+                        return 0;
+                    default:
+                        log.info(msg);
+                        break;
+                }
+                break;
+            case CTL_HW:
+                action = name.getInt(4);
+                msg = "sysctl CTL_HW action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
+                if (action == HW_PAGESIZE) {
+                    log.debug(msg);
+                    if (bufferSize != null) {
+                        bufferSize.setInt(0, 4);
+                    }
+                    if (buffer != null) {
+                        buffer.setInt(0, emulator.getPageAlign());
+                    }
+                    return 0;
+                }
+                log.info(msg);
+                break;
+            default:
+                log.info("sysctl top=" + name.getInt(0) + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);
+                break;
+        }
+        return 1;
     }
 
     private int _kernelrpc_mach_vm_deallocate_trap(Emulator emulator) {
@@ -263,11 +385,11 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long size = r2 | (r3 << 32);
         int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
 
-        if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", size=" + size + ", flags=" + flags);
-        }
         UnicornPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
         address.setPointer(0, pointer);
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", size=" + size + ", flags=" + flags + ", pointer=" + pointer);
+        }
         return 0;
     }
 
@@ -441,6 +563,52 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 3822: // vm_region_recurse_64
+            {
+                VmRegionRecurse64Request args = new VmRegionRecurse64Request(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region_recurse_64 args=" + args);
+                }
+
+                VmRegionRecurse64Reply reply = new VmRegionRecurse64Reply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                MemoryMap memoryMap = null;
+                for (MemoryMap mm : emulator.getMemory().getMemoryMap()) {
+                    if (args.address >= mm.base && args.address < mm.base + mm.size) {
+                        memoryMap = mm;
+                        break;
+                    }
+                }
+
+                if (memoryMap == null) {
+                    break;
+                }
+
+                reply.NDR = args.NDR;
+                reply.retCode = 0; // success
+                reply.address = (int) memoryMap.base;
+                reply.size = memoryMap.size;
+                reply.infoCnt = args.infoCnt;
+                reply.nestingDepth = args.nestingDepth;
+                reply.info.protection = memoryMap.prot;
+                reply.info.max_protection = memoryMap.prot;
+                reply.info.inheritance = memoryMap.prot;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region_recurse_64 reply=" + reply + ", memoryMap=" + memoryMap);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size());
                 break;
@@ -605,9 +773,14 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
         int offset = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue() << MMAP2_SHIFT;
 
+        int tag = fd >>> 24;
+        if (tag != 0) {
+            fd = -1;
+        }
+
         boolean warning = length >= 0x10000000;
         if (log.isDebugEnabled() || warning) {
-            String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset;
+            String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag;
             if (warning) {
                 log.warn(msg);
             } else {

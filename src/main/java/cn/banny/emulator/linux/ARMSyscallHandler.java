@@ -1531,19 +1531,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     private int fstat(Unicorn u, Emulator emulator) {
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        if (log.isDebugEnabled()) {
-            log.debug("fstat fd=" + fd + ", stat=" + stat);
-        }
-
-        FileIO file = fdMap.get(fd);
-        if (file == null) {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("fstat file=" + file + ", stat=" + stat);
-        }
-        return file.fstat(emulator, u, stat);
+        return fstat(emulator, fd, stat);
     }
 
     private int ioctl(Unicorn u, Emulator emulator) {
@@ -1570,17 +1558,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        byte[] data = buffer.getByteArray(0, count);
-        if (log.isDebugEnabled()) {
-            Inspector.inspect(data, "write fd=" + fd + ", buffer=" + buffer + ", count=" + count);
-        }
-
-        FileIO file = fdMap.get(fd);
-        if (file == null) {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
-        return file.write(data);
+        return write(emulator, fd, buffer, count);
     }
 
     private int read(Unicorn u, Emulator emulator) {

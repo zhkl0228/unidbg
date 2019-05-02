@@ -1,6 +1,7 @@
 package cn.banny.emulator.file;
 
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.memory.MemoryMap;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -53,7 +54,7 @@ public interface FileIO {
 
     int getsockname(Pointer addr, Pointer addrlen);
 
-    int mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, Integer> memoryMap) throws IOException;
+    int mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, MemoryMap> memoryMap) throws IOException;
 
     int llseek(long offset_high, long offset_low, Pointer result, int whence);
 

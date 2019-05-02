@@ -6,6 +6,7 @@ import cn.banny.emulator.pointer.UnicornPointer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 
 public interface Memory extends IO, Loader {
 
@@ -39,5 +40,7 @@ public interface Memory extends IO, Loader {
 
     File dumpHeap() throws IOException;
     File dumpStack() throws IOException;
+
+    Collection<MemoryMap> getMemoryMap();
 
 }
