@@ -65,4 +65,6 @@ interface MachO {
     int BIND_TYPE_TEXT_ABSOLUTE32 = 2;
     int BIND_TYPE_TEXT_PCREL32 = 3;
 
+    int RTLD_DEFAULT = -2;
+
 }

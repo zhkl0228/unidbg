@@ -1,6 +1,9 @@
 package cn.banny.emulator.ios;
 
-import cn.banny.emulator.*;
+import cn.banny.emulator.Alignment;
+import cn.banny.emulator.Emulator;
+import cn.banny.emulator.Module;
+import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.memory.MemRegion;
@@ -42,13 +45,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     private UnicornPointer vars;
+    UnicornPointer _NSGetEnviron;
 
     private void initializeTLS() {
         final Pointer environ = allocateStack(emulator.getPointerSize());
         assert environ != null;
         environ.setPointer(0, null);
 
-        Pointer _NSGetEnviron = allocateStack(emulator.getPointerSize());
+        _NSGetEnviron = allocateStack(emulator.getPointerSize());
         _NSGetEnviron.setPointer(0, environ);
 
         final Pointer programName = writeStackString(emulator.getProcessName());
@@ -94,8 +98,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         return module;
     }
-
-    MachO.VersionMinCommand sdkVersion;
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded) throws IOException {
         ByteBuffer buffer = ByteBuffer.wrap(libraryFile.readToByteArray());
@@ -313,11 +315,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case REEXPORT_DYLIB:
                     exportDylibs.add((MachO.DylibCommand) command.body());
-                    break;
-                case VERSION_MIN_IPHONEOS:
-                    if ("libSystem.B.dylib".equals(dyId)) {
-                        sdkVersion = (MachO.VersionMinCommand) command.body();
-                    }
                     break;
             }
         }
@@ -1038,9 +1035,24 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         throw new UnsupportedOperationException();
     }
 
+
     @Override
-    public Symbol dlsym(long handle, String symbol) {
-        throw new UnsupportedOperationException();
+    public Symbol dlsym(long handle, String symbolName) throws IOException {
+        for (Module module : modules.values()) {
+            if (module.base == handle) {
+                return module.findSymbolByName(symbolName, false);
+            }
+        }
+        if (handle == RTLD_DEFAULT) {
+            for (Module module : modules.values()) {
+                Symbol symbol = module.findSymbolByName(symbolName, false);
+                if (symbol != null) {
+                    return symbol;
+                }
+            }
+        }
+        log.warn("dlsym failed: handle=" + handle + ", symbolName=" + symbolName);
+        return null;
     }
 
     @Override

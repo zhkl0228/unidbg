@@ -28,7 +28,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
 
     @Override
     protected Dlfcn createDyld(SvcMemory svcMemory) {
-        return new Dyld((MachOLoader) memory);
+        return new Dyld((MachOLoader) memory, svcMemory);
     }
 
     @Override

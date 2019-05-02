@@ -2,12 +2,13 @@ package cn.banny.emulator.ios;
 
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
+import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
+import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
 import com.sun.jna.Pointer;
-import io.kaitai.MachO;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -17,6 +18,7 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 public class Dyld implements Dlfcn {
@@ -25,8 +27,14 @@ public class Dyld implements Dlfcn {
 
     private final MachOLoader loader;
 
-    public Dyld(MachOLoader loader) {
+    private final UnicornPointer error;
+
+    public Dyld(MachOLoader loader, SvcMemory svcMemory) {
         this.loader = loader;
+
+        error = svcMemory.allocate(0x40);
+        assert error != null;
+        error.setMemory(0, 0x40, (byte) 0);
     }
 
     private long _OSAtomicCompareAndSwap32Barrier;
@@ -36,7 +44,6 @@ public class Dyld implements Dlfcn {
     private Pointer __dyld_get_image_name;
     private Pointer __dyld_get_image_header;
     private Pointer __dyld_get_image_slide;
-    private long _dyld_get_program_sdk_version;
     private Pointer __dyld_register_func_for_add_image;
     private Pointer __dyld_register_func_for_remove_image;
     private Pointer __dyld_register_thread_helpers;
@@ -46,9 +53,27 @@ public class Dyld implements Dlfcn {
         return 0;
     }
 
+    private Pointer __dyld_dlsym;
+
     int _dyld_func_lookup(Emulator emulator, String name, Pointer address) {
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
+            case "__dyld_dlsym":
+                if (__dyld_dlsym == null) {
+                    __dyld_dlsym = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            long handle = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
+                            Pointer symbol = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
+                            }
+                            return dlsym(emulator.getMemory(), (int) handle, symbol.getString(0));
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_dlsym);
+                return 1;
             case "__dyld_get_image_name":
                 if (__dyld_get_image_name == null) {
                     __dyld_get_image_name = svcMemory.registerSvc(new ArmSvc() {
@@ -221,8 +246,40 @@ public class Dyld implements Dlfcn {
         return 0;
     }
 
+    private long __NSGetEnviron;
+    private long __NSGetMachExecuteHeader;
+
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        if ("libsystem_c.dylib".equals(libraryName)) {
+            if ("__NSGetEnviron".equals(symbolName)) {
+                if (__NSGetEnviron == 0) {
+                    __NSGetEnviron = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            return (int) loader._NSGetEnviron.peer;
+                        }
+                    }).peer;
+                }
+                return __NSGetEnviron;
+            }
+            if ("__NSGetMachExecuteHeader".equals(symbolName)) {
+                if (__NSGetMachExecuteHeader == 0) {
+                    __NSGetMachExecuteHeader = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            Module module = loader.findModule("libSystem.B.dylib");
+                            if (module == null) {
+                                throw new NullPointerException();
+                            }
+                            return (int) module.base;
+                        }
+                    }).peer;
+                }
+                return __NSGetMachExecuteHeader;
+            }
+        }
+
         if ("libsystem_platform.dylib".equals(libraryName)) {
             if ("_OSAtomicCompareAndSwap32Barrier".equals(symbolName)) {
                 if (_OSAtomicCompareAndSwap32Barrier == 0) {
@@ -283,7 +340,7 @@ public class Dyld implements Dlfcn {
             if (log.isDebugEnabled()) {
                 log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
             }
-            if ("_dyld_get_program_sdk_version".equals(symbolName)) {
+            /*if ("_dyld_get_program_sdk_version".equals(symbolName)) {
                 if (_dyld_get_program_sdk_version == 0) {
                     _dyld_get_program_sdk_version = svcMemory.registerSvc(new ArmSvc() {
                         @Override
@@ -299,9 +356,22 @@ public class Dyld implements Dlfcn {
                     }).peer;
                 }
                 return _dyld_get_program_sdk_version;
-            }
+            }*/
         }
         return 0;
+    }
+
+    private int dlsym(Memory memory, long handle, String symbolName) {
+        try {
+            Symbol symbol = memory.dlsym(handle, symbolName);
+            if (symbol == null) {
+                this.error.setString(0, "Find symbol " + symbol + " failed");
+                return 0;
+            }
+            return (int) symbol.getAddress();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
 }

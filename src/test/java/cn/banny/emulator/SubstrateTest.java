@@ -27,19 +27,19 @@ public class SubstrateTest extends EmulatorTest {
 
     public void testMS() throws Exception {
         long start = System.currentTimeMillis();
-        emulator.getMemory().setCallInitFunction();
+        // emulator.getMemory().setCallInitFunction();
         // emulator.attach().addBreakPoint(null, 0x40237a30);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
 
         IWhale whale = Whale.getInstance(emulator);
-        // emulator.traceCode();
+//        emulator.traceCode();
         whale.WImportHookFunction("_strcmp", "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 Pointer pointer1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 Pointer pointer2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0));
+                System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0) + ", originFunction=0x" + Long.toHexString(originFunction));
                 return HookStatus.RET(emulator.getUnicorn(), originFunction);
             }
         });
@@ -50,6 +50,7 @@ public class SubstrateTest extends EmulatorTest {
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
         // emulator.attach().addBreakPoint(module, 0x00b608L);
+//        emulator.traceCode();
         Number[] numbers = symbol.call(emulator, "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
         long ret = numbers[0].intValue() & 0xffffffffL;
         System.err.println("_MSGetImageByName ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
