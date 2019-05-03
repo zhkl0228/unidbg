@@ -54,10 +54,25 @@ public class Dyld implements Dlfcn {
     }
 
     private Pointer __dyld_dlsym;
+    private Pointer __dyld_dladdr;
 
     int _dyld_func_lookup(Emulator emulator, String name, Pointer address) {
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
+            case "__dyld_dladdr":
+                if (__dyld_dladdr == null) {
+                    __dyld_dladdr = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
+                            Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            log.info("__dyld_dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
+                            return 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_dladdr);
+                return 1;
             case "__dyld_dlsym":
                 if (__dyld_dlsym == null) {
                     __dyld_dlsym = svcMemory.registerSvc(new ArmSvc() {

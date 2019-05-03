@@ -97,9 +97,7 @@ public class ArmLD implements Dlfcn {
                         public int handle(Emulator emulator) {
                             long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
                             Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
-                            }
+                            log.info("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
                             throw new UnsupportedOperationException();
                         }
                     }).peer;

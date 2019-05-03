@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * class_ro_t
  */
-public class ClassRO extends UnicornStructure {
+public class ClassRO extends UnicornStructure implements Objc {
 
     public ClassRO(Pointer p) {
         super(p);
@@ -29,5 +29,13 @@ public class ClassRO extends UnicornStructure {
     @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("flags", "instanceStart", "instanceSize", "ivarLayout", "name", "baseMethods", "baseProtocols", "ivars", "weakIvarLayout", "baseProperties");
+    }
+
+    public boolean isFuture() {
+        return (flags & RO_FUTURE) != 0;
+    }
+
+    public boolean isMetaClass() {
+        return (flags & RO_META) != 0;
     }
 }

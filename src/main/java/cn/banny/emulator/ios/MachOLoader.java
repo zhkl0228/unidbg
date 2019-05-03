@@ -7,10 +7,13 @@ import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.ios.struct.objc.ClassRO;
+import cn.banny.emulator.ios.struct.objc.ClassRW;
+import cn.banny.emulator.ios.struct.objc.Objc;
 import cn.banny.emulator.ios.struct.objc.ObjcClass;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.*;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.pointer.UnicornStructure;
 import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.Loader;
@@ -755,17 +758,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 buffer.position((int) section.offset());
                                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                                 long elementCount = section.size() / emulator.getPointerSize();
+                                int classRWSize = UnicornStructure.calculateSize(ClassRW.class);
+                                Pointer mmap = mmap((int) (elementCount * classRWSize), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
                                 for (int i = 0; i < elementCount; i++) {
                                     int classRef = buffer.getInt();
                                     Pointer pointer = UnicornPointer.pointer(emulator, module.base + classRef);
                                     ObjcClass objcClass = new ObjcClass(pointer);
                                     objcClass.unpack();
-                                    ClassRO classRO = new ClassRO(objcClass.data);
-                                    classRO.unpack();
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("realizeAllClasses classRef=0x" + Integer.toHexString(classRef) + ", pointer=" + pointer + ", className=" + classRO.name.getString(0) + ", objcClass=" + objcClass);
-                                    }
-                                    // realizeClass();
+                                    realizeClass(log, objcClass, mmap);
+                                    mmap = mmap.share(classRWSize);
                                 }
                             }
                         }
@@ -775,6 +776,44 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     throw new UnsupportedOperationException("realizeAllClasses SEGMENT_64");
             }
         }
+    }
+
+    private void realizeClass(Log log, ObjcClass cls, Pointer memory) {
+        ClassRW rw = new ClassRW(cls.data);
+        rw.unpack();
+        if (rw.isRealized()) {
+            return;
+        }
+
+        ClassRO ro = new ClassRO(cls.data);
+        ro.unpack();
+        if (log.isDebugEnabled()) {
+            log.debug("realizeClass className=" + ro.name.getString(0) + ", cls=" + cls);
+        }
+
+        if (ro.isFuture()) {
+            rw = new ClassRW(cls.data);
+            ro = new ClassRO(rw.ro);
+            rw.changeFlags(Objc.RW_REALIZED | Objc.RW_REALIZING, Objc.RO_FUTURE);
+        } else {
+            rw = new ClassRW(memory);
+            rw.ro = cls.data;
+            rw.flags = Objc.RW_REALIZED | Objc.RW_REALIZING;
+            cls.setData(rw);
+        }
+
+        rw.version = ro.isMetaClass() ? 7 : 0; // old runtime went up to 6
+
+        // Connect this class to its superclass's subclass lists
+        // TODO addSubclass
+
+        // Attach categories
+        // TODO methodizeClass
+
+        // TODO addRealizedClass and addRealizedMetaclass
+
+        rw.pack();
+        cls.pack();
     }
 
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {

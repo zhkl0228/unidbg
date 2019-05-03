@@ -31,7 +31,7 @@ class MachOModuleInit extends InitFunction {
         for (long addr : addresses) {
             log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
 //            emulator.attach().addBreakPoint(null, 0x400d60e0);
-            emulator.attach().addBreakPoint(null, 0x4030117e);
+//            emulator.attach().addBreakPoint(null, 0x4030117e);
             if ("libSystem.B.dylib".equals(libName)) {
 //                emulator.traceCode();
             }

@@ -26,4 +26,8 @@ public class ObjcClass extends UnicornStructure {
         return Arrays.asList("metaClass", "superClass", "cache", "vtable", "data");
     }
 
+    public void setData(ClassRW classRW) {
+        data = classRW.getPointer();
+    }
+
 }

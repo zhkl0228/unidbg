@@ -38,7 +38,10 @@ public abstract class AbstractEmulator implements Emulator {
 
     protected long timeout = DEFAULT_TIMEOUT;
 
-    public static int POINTER_SIZE = Native.POINTER_SIZE;
+    public static final ThreadLocal<Integer> POINTER_SIZE = new ThreadLocal<>();
+    static {
+        POINTER_SIZE.set(Native.POINTER_SIZE);
+    }
 
     public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName) {
         super();
@@ -54,7 +57,7 @@ public abstract class AbstractEmulator implements Emulator {
         String pid = name.split("@")[0];
         this.pid = Integer.parseInt(pid);
 
-        POINTER_SIZE = getPointerSize();
+        POINTER_SIZE.set(getPointerSize());
     }
 
     protected  abstract Memory createMemory(UnixSyscallHandler syscallHandler);
@@ -169,7 +172,7 @@ public abstract class AbstractEmulator implements Emulator {
      */
     protected final Number emulate(long begin, long until, long timeout, boolean entry) {
         try {
-            POINTER_SIZE = getPointerSize();
+            POINTER_SIZE.set(getPointerSize());
 
             if (entry) {
                 if (traceMemoryRead) {

@@ -90,6 +90,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case -18:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_deallocate_trap(emulator));
                         return;
+                    case -19:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_mod_refs_trap(emulator));
+                        return;
+                    case -24:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_construct_trap(emulator));
+                        return;
                     case -26: // mach_port_t mach_reply_port(...)
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mach_reply_port());
                         return;
@@ -227,6 +233,30 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
+    private int _kernelrpc_mach_port_mod_refs_trap(Emulator emulator) {
+        // TODO: implement
+        Unicorn unicorn = emulator.getUnicorn();
+        int task = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        int name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        int right = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        int delta = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        log.info("_kernelrpc_mach_port_mod_refs_trap task=" + task + ", name=" + name + ", right=" + right + ", delta=" + delta);
+        return 0;
+    }
+
+    private int _kernelrpc_mach_port_construct_trap(Emulator emulator) {
+        // TODO: implement
+        Unicorn unicorn = emulator.getUnicorn();
+        int task = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer options = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        long context = r2 | (r3 << 32);
+        Pointer name = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
+        log.info("_kernelrpc_mach_port_construct_trap task=" + task + ", options=" + options + ", context=0x" + Long.toHexString(context) + ", name=" + name);
+        return 0;
+    }
+
     private int semwait_signal_nocancel() {
         // TODO: implement
         log.info("semwait_signal_nocancel");
@@ -282,6 +312,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private static final int CTL_HW = 6;
 
     private static final int KERN_OSRELEASE = 2;
+    private static final int KERN_OSVERSION = 65;
 
     private static final int HW_PAGESIZE = 7;
 
@@ -330,6 +361,16 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         }
                         if (buffer != null) {
                             buffer.setString(0, osRelease);
+                        }
+                        return 0;
+                    case KERN_OSVERSION:
+                        log.debug(msg);
+                        String osVersion = "9A127";
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, osVersion.length() + 1);
+                        }
+                        if (buffer != null) {
+                            buffer.setString(0, osVersion);
                         }
                         return 0;
                     default:
@@ -614,7 +655,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 break;
         }
 
-        throw new UnicornException();
+        return -1;
     }
 
     private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
