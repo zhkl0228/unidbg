@@ -9,6 +9,7 @@ import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.unix.UnixSyscallHandler;
+import com.sun.jna.Native;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,6 +38,8 @@ public abstract class AbstractEmulator implements Emulator {
 
     protected long timeout = DEFAULT_TIMEOUT;
 
+    public static int POINTER_SIZE = Native.POINTER_SIZE;
+
     public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName) {
         super();
 
@@ -50,6 +53,8 @@ public abstract class AbstractEmulator implements Emulator {
         String name = ManagementFactory.getRuntimeMXBean().getName();
         String pid = name.split("@")[0];
         this.pid = Integer.parseInt(pid);
+
+        POINTER_SIZE = getPointerSize();
     }
 
     protected  abstract Memory createMemory(UnixSyscallHandler syscallHandler);
@@ -164,6 +169,8 @@ public abstract class AbstractEmulator implements Emulator {
      */
     protected final Number emulate(long begin, long until, long timeout, boolean entry) {
         try {
+            POINTER_SIZE = getPointerSize();
+
             if (entry) {
                 if (traceMemoryRead) {
                     traceMemoryRead = false;

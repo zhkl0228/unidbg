@@ -18,13 +18,13 @@ public class ClassRO extends UnicornStructure {
     public int flags;
     public int instanceStart;
     public int instanceSize;
-    public int ivarLayout;
-    public int name;
-    public int baseMethods;
-    public int baseProtocols;
-    public int ivars;
-    public int weakIvarLayout;
-    public int baseProperties;
+    public Pointer ivarLayout;
+    public Pointer name;
+    public Pointer baseMethods;
+    public Pointer baseProtocols;
+    public Pointer ivars;
+    public Pointer weakIvarLayout;
+    public Pointer baseProperties;
 
     @Override
     protected List<String> getFieldOrder() {

@@ -760,10 +760,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                     Pointer pointer = UnicornPointer.pointer(emulator, module.base + classRef);
                                     ObjcClass objcClass = new ObjcClass(pointer);
                                     objcClass.unpack();
-                                    ClassRO classRO = new ClassRO(UnicornPointer.pointer(emulator, objcClass.data));
+                                    ClassRO classRO = new ClassRO(objcClass.data);
                                     classRO.unpack();
                                     if (log.isDebugEnabled()) {
-                                        log.debug("realizeAllClasses classRef=0x" + Integer.toHexString(classRef) + ", pointer=" + pointer + ", name=" + UnicornPointer.pointer(emulator, classRO.name).getString(0) + ", objcClass=" + objcClass);
+                                        log.debug("realizeAllClasses classRef=0x" + Integer.toHexString(classRef) + ", pointer=" + pointer + ", className=" + classRO.name.getString(0) + ", objcClass=" + objcClass);
                                     }
                                     // realizeClass();
                                 }
