@@ -3,6 +3,7 @@ package cn.banny.emulator.ios;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
+import cn.banny.emulator.arm.AbstractARMEmulator;
 import cn.banny.emulator.arm.ArmHook;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.arm.HookStatus;
@@ -380,6 +381,7 @@ public class Dyld implements Dlfcn {
 
     private long __NSGetEnviron;
     private long __NSGetMachExecuteHeader;
+    private long _abort;
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
@@ -394,6 +396,19 @@ public class Dyld implements Dlfcn {
                     }).peer;
                 }
                 return __NSGetEnviron;
+            }
+            if ("_abort".equals(symbolName)) {
+                if (_abort == 0) {
+                    _abort = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            System.err.println("abort");
+                            emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_LR, AbstractARMEmulator.LR);
+                            return 0;
+                        }
+                    }).peer;
+                }
+                return _abort;
             }
             if ("__NSGetMachExecuteHeader".equals(symbolName)) {
                 if (__NSGetMachExecuteHeader == 0) {
@@ -452,6 +467,22 @@ public class Dyld implements Dlfcn {
                 }
                 return _free;
             }
+            if ("_malloc".equals(symbolName)) {
+                if (_malloc == 0) {
+                    _malloc = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            log.info("_malloc size=" + size);
+                            u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + size);
+                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                            emulator.attach().addBreakPoint(null, lr);*/
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _malloc;
+            }
             if ("_realloc".equals(symbolName)) {
                 if (_realloc == 0) {
                     _realloc = svcMemory.registerSvc(new ArmHook() {
@@ -460,6 +491,7 @@ public class Dyld implements Dlfcn {
                             Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             log.info("_realloc pointer=" + pointer + ", size=" + size);
+                            u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + size);
                             /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
                             emulator.attach().addBreakPoint(null, lr);*/
                             return HookStatus.RET(u, old);
@@ -492,7 +524,9 @@ public class Dyld implements Dlfcn {
         return 0;
     }
 
-    private long _free, _realloc;
+    private static final int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
+
+    private long _free, _realloc, _malloc;
     private long _pthread_getname_np;
 
     private int dlsym(Memory memory, long handle, String symbolName) {

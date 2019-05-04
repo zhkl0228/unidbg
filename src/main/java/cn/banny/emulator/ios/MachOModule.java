@@ -232,7 +232,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         return emulateFunction(emulator, base + offset, args);
     }
 
-    private static Number[] emulateFunction(Emulator emulator, long address, Object... args) {
+    public static Number[] emulateFunction(Emulator emulator, long address, Object... args) {
         List<Number> list = new ArrayList<>(args.length);
         for (Object arg : args) {
             if (arg instanceof String) {

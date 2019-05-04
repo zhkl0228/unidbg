@@ -8,10 +8,13 @@ import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.ios.DarwinARMEmulator;
 import cn.banny.emulator.ios.DarwinResolver;
+import cn.banny.emulator.ios.MachOModule;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import unicorn.ArmConst;
 
 import java.io.File;
@@ -31,14 +34,52 @@ public class SubstrateTest extends EmulatorTest {
 
     public void testMS() throws Exception {
         long start = System.currentTimeMillis();
-//        emulator.getMemory().setCallInitFunction();
-        // emulator.attach().addBreakPoint(null, 0x40237a30);
+        emulator.getMemory().setCallInitFunction();
+//         emulator.attach().addBreakPoint(null, 0x4023802C);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
 
         IWhale whale = Whale.getInstance(emulator);
 
-        MemoryBlock memoryBlock = emulator.getMemory().malloc(0x40, false);
+//        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+
+//        emulator.attach().addBreakPoint(null, 0x40232a6c);
+
+        Symbol malloc_num_zones = module.findSymbolByName("_malloc_num_zones");
+        assertNotNull(malloc_num_zones);
+        System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0));
+        Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
+        Symbol malloc_size = module.findSymbolByName("_malloc_size");
+        Symbol malloc_create_zone = module.findSymbolByName("_malloc_create_zone");
+        Symbol malloc_create_legacy_default_zone = module.findSymbolByName("_malloc_create_legacy_default_zone");
+        Symbol create_scalable_zone = module.findSymbolByName("_create_scalable_zone");
+        assertNotNull(malloc_default_zone);
+        Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
+        assertNotNull(zone);
+        /*zone = UnicornPointer.pointer(emulator, malloc_create_zone.call(emulator, 0, 0)[0].intValue());
+        assertNotNull(zone);*/
+//        emulator.traceCode();
+        /*zone = UnicornPointer.pointer(emulator, malloc_create_legacy_default_zone.call(emulator)[0].intValue());
+        assertNotNull(zone);*/
+        /*zone = UnicornPointer.pointer(emulator, create_scalable_zone.call(emulator, 0, 0)[0].intValue());
+        assertNotNull(zone);*/
+        Pointer malloc = zone.getPointer(0xc);
+        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 0x3c00 + 1)[0].intValue());
+        assertNotNull(block);
+        Pointer sizeFun = zone.getPointer(0x8);
+        int size = MachOModule.emulateFunction(emulator, ((UnicornPointer) sizeFun).peer, zone, block)[0].intValue();
+        int mSize = malloc_size.call(emulator, block)[0].intValue();
+        System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0) + ", version=" + zone.getInt(0x34) + ", free_definite_size=" + zone.getPointer(0x3c));
+
+        System.err.println("malloc_default_zone=" + malloc_default_zone + ", zone=" + zone + ", malloc=" + malloc +
+                ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize);
+
+        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
+
+//        emulator.attach().addBreakPoint(null, 0x40235d2a);
+//        emulator.traceCode();
+
+        MemoryBlock memoryBlock = emulator.getMemory().malloc(0x1fd00, false);
         UnicornPointer memory = memoryBlock.getPointer();
         Symbol _snprintf = module.findSymbolByName("_snprintf", true);
         assertNotNull(_snprintf);
@@ -57,8 +98,7 @@ public class SubstrateTest extends EmulatorTest {
         if (Arrays.equals(before, after)) {
             throw new AssertionFailedError();
         }
-        emulator.traceCode();
-        emulator.attach().addBreakPoint(null, 0x40234be8);
+//        emulator.attach().addBreakPoint(null, 0x40234c1e);
         memoryBlock.free(false);
 
         start = System.currentTimeMillis();

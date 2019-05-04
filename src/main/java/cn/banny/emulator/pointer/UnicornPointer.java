@@ -2,6 +2,8 @@ package cn.banny.emulator.pointer;
 
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.InvalidMemoryAccessException;
+import cn.banny.emulator.Module;
+import cn.banny.emulator.memory.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
@@ -392,7 +394,9 @@ public class UnicornPointer extends Pointer {
 
     @Override
     public String toString() {
-        return "unicorn@0x" + Long.toHexString(peer);
+        Memory memory = emulator == null ? null : emulator.getMemory();
+        Module module = memory == null ? null : memory.findModuleByAddress(peer);
+        return "unicorn@0x" + Long.toHexString(peer) + (module == null ? "" : ("[" + module.name + "]0x" + Long.toHexString(peer - module.base)));
     }
 
     @Override
