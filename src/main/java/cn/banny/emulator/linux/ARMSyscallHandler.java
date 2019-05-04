@@ -734,16 +734,6 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         return stat64(emulator, path, statbuf);
     }
 
-    private int stat64(Emulator emulator, String pathname, Pointer statbuf) {
-        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
-        if (io != null) {
-            return io.fstat(emulator, emulator.getUnicorn(), statbuf);
-        }
-
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
-        return -1;
-    }
-
     private int newselect(Unicorn u, Emulator emulator) {
         int nfds = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer readfds = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);

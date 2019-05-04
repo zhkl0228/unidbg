@@ -298,4 +298,14 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return file.write(data);
     }
 
+    protected final int stat64(Emulator emulator, String pathname, Pointer statbuf) {
+        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        if (io != null) {
+            return io.fstat(emulator, emulator.getUnicorn(), statbuf);
+        }
+
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
+    }
+
 }

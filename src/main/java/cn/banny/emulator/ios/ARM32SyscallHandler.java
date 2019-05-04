@@ -2,6 +2,7 @@ package cn.banny.emulator.ios;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.Module;
 import cn.banny.emulator.StopEmulatorException;
 import cn.banny.emulator.Svc;
 import cn.banny.emulator.arm.ARM;
@@ -20,6 +21,7 @@ import cn.banny.emulator.unix.file.SocketIO;
 import cn.banny.emulator.unix.file.TcpSocket;
 import cn.banny.emulator.unix.file.UdpSocket;
 import com.sun.jna.Pointer;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
@@ -46,7 +48,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     public void hook(Unicorn u, int intno, Object user) {
         Emulator emulator = (Emulator) user;
 
-        Pointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
+        UnicornPointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
         final int svcNumber;
         if (ARM.isThumb(u)) {
             svcNumber = pc.getShort(-2) & 0xff;
@@ -166,6 +168,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 336:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, proc_info(emulator));
                         return;
+                    case 338:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
+                        return;
                     case 339:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
                         return;
@@ -210,11 +215,22 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             exception = e;
         }
 
-        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
+        Module module = emulator.getMemory().findModuleByAddress(pc.peer);
+        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall + (module == null ? "" : (", module=" + module + ", address=0x" + Long.toHexString(pc.peer - module.base))), exception);
 
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int stat64(Emulator emulator) {
+        Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        String path = FilenameUtils.normalize(pathname.getString(0));
+        if (log.isDebugEnabled()) {
+            log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf);
+        }
+        return stat64(emulator, path, statbuf);
     }
 
     private int write_NOCANCEL(Emulator emulator) {

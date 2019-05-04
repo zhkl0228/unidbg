@@ -383,37 +383,6 @@ public class Dyld implements Dlfcn {
                 }
                 return _free;
             }
-            if ("_malloc".equals(symbolName)) {
-                if (_malloc == 0) {
-                    _malloc = svcMemory.registerSvc(new ArmHook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            log.info("_malloc size=" + size);
-                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
-                            emulator.attach().addBreakPoint(null, lr);*/
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _malloc;
-            }
-            if ("_calloc".equals(symbolName)) {
-                if (_calloc == 0) {
-                    _calloc = svcMemory.registerSvc(new ArmHook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-                            log.info("_calloc count=" + count + ", size=" + size);
-                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
-                            emulator.attach().addBreakPoint(null, lr);*/
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _calloc;
-            }
             if ("_realloc".equals(symbolName)) {
                 if (_realloc == 0) {
                     _realloc = svcMemory.registerSvc(new ArmHook() {
@@ -454,7 +423,7 @@ public class Dyld implements Dlfcn {
         return 0;
     }
 
-    private long _free, _malloc, _calloc, _realloc;
+    private long _free, _realloc;
     private long _pthread_getname_np;
 
     private int dlsym(Memory memory, long handle, String symbolName) {
