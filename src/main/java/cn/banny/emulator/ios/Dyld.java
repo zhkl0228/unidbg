@@ -7,6 +7,7 @@ import cn.banny.emulator.arm.ArmHook;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.arm.HookStatus;
 import cn.banny.emulator.ios.struct.DlInfo;
+import cn.banny.emulator.ios.struct.DyldImageInfo;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -124,24 +125,6 @@ public class Dyld implements Dlfcn {
                     });
                 }
                 address.setPointer(0, __dyld_dlsym);
-                return 1;
-            case "__dyld_dyld_register_image_state_change_handler":
-                if (__dyld_dyld_register_image_state_change_handler == null) {
-                    __dyld_dyld_register_image_state_change_handler = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            Unicorn unicorn = emulator.getUnicorn();
-                            int state = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            int batch = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-                            Pointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_dyld_register_image_state_change_handler state=" + state + ", batch=" + batch + ", handler=" + handler);
-                            }
-                            return 0;
-                        }
-                    });
-                }
-                address.setPointer(0, __dyld_dyld_register_image_state_change_handler);
                 return 1;
             case "__dyld_get_image_name":
                 if (__dyld_get_image_name == null) {
@@ -286,6 +269,8 @@ public class Dyld implements Dlfcn {
 
                                         if (log.isDebugEnabled()) {
                                             log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(md.base));
+                                        } else if (Dyld.log.isDebugEnabled()) {
+                                            Dyld.log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(md.base));
                                         }
                                         pointer = pointer.share(-4); // callback
                                         pointer.setPointer(0, callback);
@@ -301,12 +286,96 @@ public class Dyld implements Dlfcn {
                 }
                 address.setPointer(0, __dyld_register_func_for_add_image);
                 return 1;
+            case "__dyld_dyld_register_image_state_change_handler":
+                if (__dyld_dyld_register_image_state_change_handler == null) {
+                    __dyld_dyld_register_image_state_change_handler = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                                        "push {r4-r7, lr}",
+                                        "svc #0x" + Integer.toHexString(svcNumber),
+                                        "pop {r7}", // manipulated stack in dlopen
+                                        "cmp r7, #0",
+                                        "subne lr, pc, #16", // jump to pop {r7}
+                                        "popne {r0-r2}", // const char* (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
+                                        "bxne r7", // call init array
+                                        "pop {r0, r4-r7, pc}")); // with return address
+                                byte[] code = encoded.getMachineCode();
+                                UnicornPointer pointer = svcMemory.allocate(code.length);
+                                pointer.write(0, code, 0, code.length);
+                                return pointer;
+                            }
+                        }
+                        @Override
+                        public int handle(Emulator emulator) {
+                            Unicorn unicorn = emulator.getUnicorn();
+                            int state = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            int batch = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            Pointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                            DyldImageInfo[] imageInfos;
+                            if (batch == 1) {
+                                imageInfos = registerImageStateBatchChangeHandler(state, handler);
+                            } else {
+                                imageInfos = registerImageStateSingleChangeHandler(state, handler);
+                            }
+
+                            Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+                            try {
+                                pointer = pointer.share(-4); // return value
+                                pointer.setInt(0, 0);
+
+                                pointer = pointer.share(-4); // NULL-terminated
+                                pointer.setInt(0, 0);
+
+                                if (handler != null) {
+                                    // (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
+                                    pointer = pointer.share(-4);
+                                    pointer.setPointer(0, imageInfos.length == 0 ? null : imageInfos[0].getPointer());
+                                    pointer = pointer.share(-4);
+                                    pointer.setInt(0, imageInfos.length);
+                                    pointer = pointer.share(-4);
+                                    pointer.setInt(0, state);
+
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("PushImageHandlerFunction: " + handler);
+                                    }
+                                    pointer = pointer.share(-4); // handler
+                                    pointer.setPointer(0, handler);
+                                }
+
+                                return 0;
+                            } finally {
+                                unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) pointer).peer);
+                            }
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_dyld_register_image_state_change_handler);
+                return 1;
             default:
                 log.info("_dyld_func_lookup name=" + name + ", address=" + address);
                 break;
         }
         address.setPointer(0, null);
         return 0;
+    }
+
+    private static final int dyld_image_state_bound = 40;
+    private static final int dyld_image_state_dependents_initialized = 45; // Only single notification for this
+
+    private DyldImageInfo[] registerImageStateBatchChangeHandler(int state, Pointer handler) {
+        if (log.isDebugEnabled()) {
+            log.debug("registerImageStateBatchChangeHandler state=" + state + ", handler=" + handler);
+        }
+        return new DyldImageInfo[0]; // TODO implement
+    }
+
+    private DyldImageInfo[] registerImageStateSingleChangeHandler(int state, Pointer handler) {
+        if (log.isDebugEnabled()) {
+            log.debug("registerImageStateSingleChangeHandler state=" + state + ", handler=" + handler);
+        }
+        return new DyldImageInfo[0]; // TODO implement
     }
 
     private long __NSGetEnviron;

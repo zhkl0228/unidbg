@@ -34,7 +34,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
     private static final Log log = LogFactory.getLog(AndroidElfLoader.class);
 
-    private Symbol malloc;
+    private Symbol malloc, free;
 
     public AndroidElfLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
         super(emulator, syscallHandler);
@@ -499,6 +499,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
             }
 
             malloc = module.findSymbolByName("malloc");
+            free = module.findSymbolByName("free");
         }
 
         modules.put(soName, module);
@@ -552,7 +553,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         if (runtime) {
             return MemoryBlockImpl.alloc(this, length);
         } else {
-            return MemoryAllocBlock.malloc(emulator, malloc, length);
+            return MemoryAllocBlock.malloc(emulator, malloc, free, length);
         }
     }
 

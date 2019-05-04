@@ -80,7 +80,7 @@ public abstract class AbstractEmulator implements Emulator {
         try {
             emulate(pointer.peer, pointer.peer + shellCode.length, 0, false);
         } finally {
-            block.free();
+            block.free(false);
         }
     }
 

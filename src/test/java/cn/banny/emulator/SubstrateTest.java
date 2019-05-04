@@ -8,6 +8,7 @@ import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.ios.DarwinARMEmulator;
 import cn.banny.emulator.ios.DarwinResolver;
+import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
@@ -30,31 +31,35 @@ public class SubstrateTest extends EmulatorTest {
 
     public void testMS() throws Exception {
         long start = System.currentTimeMillis();
-        emulator.getMemory().setCallInitFunction();
+//        emulator.getMemory().setCallInitFunction();
         // emulator.attach().addBreakPoint(null, 0x40237a30);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
 
         IWhale whale = Whale.getInstance(emulator);
 
-        UnicornPointer memoryBlock = emulator.getMemory().malloc(0x40, false).getPointer();
+        MemoryBlock memoryBlock = emulator.getMemory().malloc(0x40, false);
+        UnicornPointer memory = memoryBlock.getPointer();
         Symbol _snprintf = module.findSymbolByName("_snprintf", true);
         assertNotNull(_snprintf);
 
-        byte[] before = memoryBlock.getByteArray(0, 0x40);
-        Inspector.inspect(before, "Before memoryBlock=" + memoryBlock);
+        byte[] before = memory.getByteArray(0, 0x40);
+        Inspector.inspect(before, "Before memory=" + memory);
 //        emulator.traceCode();
-//        emulator.traceWrite(memoryBlock.peer, memoryBlock.peer + 0x40);
+//        emulator.traceWrite(memory.peer, memory.peer + 0x40);
 //        emulator.traceWrite();
         String fmt = "Test snprintf=%p\n";
 //        emulator.traceRead(0xbffff9b8L, 0xbffff9b8L + fmt.length() + 1);
 //        emulator.attach().addBreakPoint(null, 0x401622c2);
-        _snprintf.call(emulator, memoryBlock, 0x40, fmt, memoryBlock);
-        byte[] after = memoryBlock.getByteArray(0, 0x40);
+        _snprintf.call(emulator, memory, 0x40, fmt, memory);
+        byte[] after = memory.getByteArray(0, 0x40);
         Inspector.inspect(after, "After");
         if (Arrays.equals(before, after)) {
             throw new AssertionFailedError();
         }
+        emulator.traceCode();
+        emulator.attach().addBreakPoint(null, 0x40234be8);
+        memoryBlock.free(false);
 
         start = System.currentTimeMillis();
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
@@ -62,6 +67,7 @@ public class SubstrateTest extends EmulatorTest {
 
 //        emulator.traceRead();
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
+//        emulator.traceCode();
         IHookZz hookZz = HookZz.getInstance(emulator);
 
         /*whale.WImportHookFunction("_malloc", "libhookzz.dylib", new ReplaceCallback() {

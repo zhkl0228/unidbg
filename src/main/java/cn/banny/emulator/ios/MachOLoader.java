@@ -98,7 +98,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         for (MachOModule m : modules.values()) {
             bindIndirectSymbolPointers(m);
             setupLazyPointerHandler(m);
-            realizeAllClasses(m);
+            // realizeAllClasses(m);
         }
         if (callInitFunction) {
             for (MachOModule m : modules.values()) {
@@ -436,6 +436,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
+            free = module.findSymbolByName("_free");
         }
 
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
@@ -1087,14 +1088,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         throw new UnsupportedOperationException();
     }
 
-    private Symbol malloc;
+    private Symbol malloc, free;
 
     @Override
     public MemoryBlock malloc(int length, boolean runtime) {
         if (runtime) {
             return MemoryBlockImpl.alloc(this, length);
         } else {
-            return MemoryAllocBlock.malloc(emulator, malloc, length);
+            return MemoryAllocBlock.malloc(emulator, malloc, free, length);
         }
     }
 

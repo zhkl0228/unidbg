@@ -809,7 +809,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("ReleaseStringUTFChars string=" + string + ", pointer=" + pointer + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 if (string.memoryBlock != null && string.memoryBlock.isSame(pointer)) {
-                    string.memoryBlock.free();
+                    string.memoryBlock.free(true);
                     string.memoryBlock = null;
                 }
                 return 0;
@@ -927,7 +927,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 if (string.memoryBlock != null && string.memoryBlock.isSame(pointer)) {
-                    string.memoryBlock.free();
+                    string.memoryBlock.free(true);
                     string.memoryBlock = null;
                 }
                 return 0;
@@ -963,7 +963,7 @@ public class DalvikVM extends BaseVM implements VM {
                         array.setValue(pointer.getByteArray(0, array.value.length));
                     case JNI_ABORT:
                         if (array.memoryBlock != null && array.memoryBlock.isSame(pointer)) {
-                            array.memoryBlock.free();
+                            array.memoryBlock.free(true);
                             array.memoryBlock = null;
                         }
                         break;

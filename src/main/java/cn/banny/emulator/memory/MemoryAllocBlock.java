@@ -7,16 +7,20 @@ import com.sun.jna.Pointer;
 
 public class MemoryAllocBlock implements MemoryBlock {
 
-    public static MemoryBlock malloc(Emulator emulator, Symbol malloc, int length) {
+    public static MemoryBlock malloc(Emulator emulator, Symbol malloc, Symbol free, int length) {
         long address = malloc.call(emulator, length)[0].intValue() & 0xffffffffL;
         final UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
-        return new MemoryAllocBlock(pointer);
+        return new MemoryAllocBlock(pointer, emulator, free);
     }
 
     private final UnicornPointer pointer;
+    private final Emulator emulator;
+    private final Symbol free;
 
-    private MemoryAllocBlock(UnicornPointer pointer) {
+    private MemoryAllocBlock(UnicornPointer pointer, Emulator emulator, Symbol free) {
         this.pointer = pointer;
+        this.emulator = emulator;
+        this.free = free;
     }
 
     @Override
@@ -30,8 +34,12 @@ public class MemoryAllocBlock implements MemoryBlock {
     }
 
     @Override
-    public void free() {
-        throw new UnsupportedOperationException();
+    public void free(boolean runtime) {
+        if (runtime || free == null) {
+            throw new UnsupportedOperationException();
+        }
+
+        free.call(emulator, pointer);
     }
     
 }
