@@ -376,8 +376,8 @@ public class Dyld implements Dlfcn {
                             log.info("_free pointer=" + pointer);
                             /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
                             emulator.attach().addBreakPoint(null, lr);*/
-                            return HookStatus.LR(u, 0);
-//                            return HookStatus.RET(u, old);
+//                            return HookStatus.LR(u, 0);
+                            return HookStatus.RET(u, old);
                         }
                     }).peer;
                 }
@@ -441,8 +441,11 @@ public class Dyld implements Dlfcn {
 
     private String threadName = "main";
 
-    void pthread_setname_np(String name) {
-        threadName = name;
+    void pthread_setname_np(String threadName) {
+        this.threadName = threadName;
+        if (log.isDebugEnabled()) {
+            log.debug("pthread_setname_np=" + threadName);
+        }
     }
 
 }

@@ -120,6 +120,8 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         u.reg_write(ArmConst.UC_ARM_REG_R0, getpid(emulator));
                         return;
                     case 24: // getuid
+                    case 25: // geteuid
+                    case 43: // getegid
                     case 47: // getgid
                         u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
                         return;
@@ -174,6 +176,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 339:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
                         return;
+                    case 357:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(u, emulator));
+                        return;
                     case 366:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, bsdthread_register(emulator));
                         return;
@@ -197,6 +202,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         return;
                     case 423:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal_nocancel());
+                        return;
+                    case 428:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, audit_session_self());
                         return;
                     case 0x80000000:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap());
@@ -279,6 +287,15 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
+    private int getaudit_addr(Unicorn u, Emulator emulator) {
+        Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        if (log.isDebugEnabled()) {
+            log.debug("getaudit_addr=" + addr + ", size=" + size);
+        }
+        return 0;
+    }
+
     private static final int PROC_INFO_CALL_SETCONTROL = 0x5;
     private static final int PROC_SELFSET_THREADNAME = 2;
 
@@ -296,7 +313,6 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         String msg = "proc_info callNum=" + callNum + ", pid=" + pid + ", flavor=" + flavor + ", arg=" + arg + ", buffer=" + buffer + ", bufferSize=" + bufferSize;
         if (PROC_INFO_CALL_SETCONTROL == callNum && PROC_SELFSET_THREADNAME == flavor) {
             String threadName = buffer.getString(0);
-            log.info("pthread_setname_np=" + threadName);
             log.debug(msg);
             ((Dyld) emulator.getDlfcn()).pthread_setname_np(threadName);
             return 0;
@@ -704,6 +720,35 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 3414: // task_get_exception_ports
+            {
+                TaskGetExceptionPortsRequest args = new TaskGetExceptionPortsRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("task_get_exception_ports args=" + args);
+                }
+
+                TaskGetExceptionPortsReply reply = new TaskGetExceptionPortsReply(request);
+                reply.unpack();
+
+                header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                args.NDR.mig_vers = 0x20;
+                reply.NDR = args.NDR;
+                reply.retCode = 0;
+                reply.header = new int[32];
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("task_get_exception_ports reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size());
                 break;
@@ -754,6 +799,11 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private int mach_reply_port() {
         log.debug("mach_reply_port");
         return 4;
+    }
+
+    private int audit_session_self() {
+        log.debug("audit_session_self");
+        return 5;
     }
 
     private int sigprocmask(Unicorn u, Emulator emulator) {

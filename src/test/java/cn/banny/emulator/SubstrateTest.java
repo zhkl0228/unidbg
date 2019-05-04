@@ -3,6 +3,7 @@ package cn.banny.emulator;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.arm.HookStatus;
 import cn.banny.emulator.hook.ReplaceCallback;
+import cn.banny.emulator.hook.hookzz.*;
 import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.ios.DarwinARMEmulator;
@@ -11,7 +12,6 @@ import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.io.File;
 import java.util.Arrays;
@@ -62,7 +62,7 @@ public class SubstrateTest extends EmulatorTest {
 
 //        emulator.traceRead();
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
-//        IHookZz hookZz = HookZz.getInstance(emulator);
+        IHookZz hookZz = HookZz.getInstance(emulator);
 
         /*whale.WImportHookFunction("_malloc", "libhookzz.dylib", new ReplaceCallback() {
             @Override
@@ -73,16 +73,6 @@ public class SubstrateTest extends EmulatorTest {
                 return HookStatus.RET(unicorn, originFunction);
             }
         });*/
-
-        whale.WImportHookFunction("_free", "libhookzz.dylib", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                System.out.println("free pointer=" + pointer);
-                return HookStatus.RET(unicorn, originFunction);
-            }
-        });
 
         /*whale.WInlineHookFunction(symbol, new ReplaceCallback() {
             @Override
@@ -105,7 +95,7 @@ public class SubstrateTest extends EmulatorTest {
         });
 
 //        emulator.traceCode();
-        /*hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
+        hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
             @Override
             public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("preCall _MSGetImageByName=" + ctx.getR0Pointer().getString(0));
@@ -115,7 +105,7 @@ public class SubstrateTest extends EmulatorTest {
                 super.postCall(emulator, ctx, info);
                 System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0()));
             }
-        });*/
+        });
 
         // emulator.attach().addBreakPoint(module, 0x00b608L);
 //        emulator.traceCode();
