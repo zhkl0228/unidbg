@@ -379,24 +379,12 @@ public class Dyld implements Dlfcn {
         return new DyldImageInfo[0]; // TODO implement
     }
 
-    private long __NSGetEnviron;
     private long __NSGetMachExecuteHeader;
     private long _abort;
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
         if ("libsystem_c.dylib".equals(libraryName)) {
-            if ("__NSGetEnviron".equals(symbolName)) {
-                if (__NSGetEnviron == 0) { // TODO check
-                    __NSGetEnviron = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            return (int) loader._NSGetEnviron.peer;
-                        }
-                    }).peer;
-                }
-                return __NSGetEnviron;
-            }
             if ("_abort".equals(symbolName)) {
                 if (_abort == 0) {
                     _abort = svcMemory.registerSvc(new ArmSvc() {
@@ -425,47 +413,9 @@ public class Dyld implements Dlfcn {
                 }
                 return __NSGetMachExecuteHeader;
             }
-        } else if ("libdyld.dylib".equals(libraryName)) {
-            if (log.isDebugEnabled()) {
-                log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
-            }
-            /*if ("_dyld_get_program_sdk_version".equals(symbolName)) {
-                if (_dyld_get_program_sdk_version == 0) {
-                    _dyld_get_program_sdk_version = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            MachO.VersionMinCommand sdkVersion = loader.sdkVersion;
-                            if (sdkVersion == null) {
-                                return 0;
-                            } else {
-                                MachO.Version sdk = sdkVersion.sdk();
-                                return (sdk.p1() << 24) | (sdk.minor() << 16) | (sdk.major() << 8) | sdk.release();
-                            }
-                        }
-                    }).peer;
-                }
-                return _dyld_get_program_sdk_version;
-            }*/
         } else if ("libsystem_malloc.dylib".equals(libraryName)) {
             if (log.isDebugEnabled()) {
                 log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
-            }
-
-            if ("_free".equals(symbolName)) {
-                if (_free == 0) {
-                    _free = svcMemory.registerSvc(new ArmHook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            log.info("_free pointer=" + pointer);
-                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
-                            emulator.attach().addBreakPoint(null, lr);*/
-//                            return HookStatus.LR(u, 0);
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _free;
             }
             if ("_malloc".equals(symbolName)) {
                 if (_malloc == 0) {
@@ -473,15 +423,35 @@ public class Dyld implements Dlfcn {
                         @Override
                         protected HookStatus hook(Unicorn u, Emulator emulator) {
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            log.info("_malloc size=" + size);
-                            u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + size);
-                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
-                            emulator.attach().addBreakPoint(null, lr);*/
+                            if (size <= LARGE_THRESHOLD) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Fake _malloc size=" + size);
+                                }
+                                u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + size);
+                            }
                             return HookStatus.RET(u, old);
                         }
                     }).peer;
                 }
                 return _malloc;
+            }
+            if ("_valloc".equals(symbolName)) {
+                if (_valloc == 0) {
+                    _valloc = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            if (size <= LARGE_THRESHOLD) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Fake _valloc size=" + size);
+                                }
+                                u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + size);
+                            }
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _valloc;
             }
             if ("_realloc".equals(symbolName)) {
                 if (_realloc == 0) {
@@ -490,15 +460,56 @@ public class Dyld implements Dlfcn {
                         protected HookStatus hook(Unicorn u, Emulator emulator) {
                             Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-                            log.info("_realloc pointer=" + pointer + ", size=" + size);
-                            u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + size);
-                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
-                            emulator.attach().addBreakPoint(null, lr);*/
+                            if (size <= LARGE_THRESHOLD) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Fake _realloc size pointer=" + pointer + ", size=" + size);
+                                }
+                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + size);
+                            }
                             return HookStatus.RET(u, old);
                         }
                     }).peer;
                 }
                 return _realloc;
+            }
+            if ("_calloc".equals(symbolName)) {
+                if (_calloc == 0) {
+                    _calloc = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            if (count * size <= LARGE_THRESHOLD) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Fake _calloc count=" + count + ", size=" + size);
+                                }
+                                u.reg_write(ArmConst.UC_ARM_REG_R0, 1);
+                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + count * size);
+                            }
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _calloc;
+            }
+            if ("_malloc_zone_malloc".equals(symbolName)) {
+                if (_malloc_zone_malloc == 0) {
+                    _malloc_zone_malloc = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            Pointer zone = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            if (size <= LARGE_THRESHOLD) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Fake _malloc_zone_malloc zone=" + zone + ", size=" + size);
+                                }
+                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + size);
+                            }
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _malloc_zone_malloc;
             }
         } else if ("libsystem_pthread.dylib".equals(libraryName)) {
             if ("_pthread_getname_np".equals(symbolName)) {
@@ -526,7 +537,8 @@ public class Dyld implements Dlfcn {
 
     private static final int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
 
-    private long _free, _realloc, _malloc;
+    private long _realloc, _malloc, _calloc, _valloc;
+    private long _malloc_zone_malloc;
     private long _pthread_getname_np;
 
     private int dlsym(Memory memory, long handle, String symbolName) {

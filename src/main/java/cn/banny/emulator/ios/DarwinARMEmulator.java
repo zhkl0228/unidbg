@@ -30,10 +30,34 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     protected void setupTraps() {
         super.setupTraps();
 
-        long _COMM_PAGE_MEMORY_SIZE = ((getPointerSize() == 4 ? _COMM_PAGE32_BASE_ADDRESS : _COMM_PAGE64_BASE_ADDRESS) +0x038);	// uint64_t max memory size */
+        long _COMM_PAGE_MEMORY_SIZE = ((getPointerSize() == 4 ? _COMM_PAGE32_BASE_ADDRESS : _COMM_PAGE64_BASE_ADDRESS)+0x038);	// uint64_t max memory size */
         Pointer commPageMemorySize = UnicornPointer.pointer(this, _COMM_PAGE_MEMORY_SIZE);
         if (commPageMemorySize != null) {
             commPageMemorySize.setLong(0, 0);
+        }
+
+        long _COMM_PAGE_NCPUS = ((getPointerSize() == 4 ? _COMM_PAGE32_BASE_ADDRESS : _COMM_PAGE64_BASE_ADDRESS)+0x022);	// uint8_t number of configured CPUs
+        Pointer commPageNCpus = UnicornPointer.pointer(this, _COMM_PAGE_NCPUS);
+        if (commPageNCpus != null) {
+            commPageNCpus.setByte(0, (byte) 1);
+        }
+
+        long _COMM_PAGE_ACTIVE_CPUS = ((getPointerSize() == 4 ? _COMM_PAGE32_BASE_ADDRESS : _COMM_PAGE64_BASE_ADDRESS)+0x034);	// uint8_t number of active CPUs (hw.activecpu)
+        Pointer commPageActiveCpus = UnicornPointer.pointer(this, _COMM_PAGE_ACTIVE_CPUS);
+        if (commPageActiveCpus != null) {
+            commPageActiveCpus.setByte(0, (byte) 1);
+        }
+
+        long _COMM_PAGE_PHYSICAL_CPUS = ((getPointerSize() == 4 ? _COMM_PAGE32_BASE_ADDRESS : _COMM_PAGE64_BASE_ADDRESS)+0x035);	// uint8_t number of physical CPUs (hw.physicalcpu_max)
+        Pointer commPagePhysicalCpus = UnicornPointer.pointer(this, _COMM_PAGE_PHYSICAL_CPUS);
+        if (commPagePhysicalCpus != null) {
+            commPagePhysicalCpus.setByte(0, (byte) 1);
+        }
+
+        long _COMM_PAGE_LOGICAL_CPUS = ((getPointerSize() == 4 ? _COMM_PAGE32_BASE_ADDRESS : _COMM_PAGE64_BASE_ADDRESS)+0x036);	// uint8_t number of logical CPUs (hw.logicalcpu_max)
+        Pointer commPageLogicalCpus = UnicornPointer.pointer(this, _COMM_PAGE_LOGICAL_CPUS);
+        if (commPageLogicalCpus != null) {
+            commPageLogicalCpus.setByte(0, (byte) 1);
         }
     }
 

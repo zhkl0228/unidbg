@@ -487,6 +487,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
+    private static final int VM_FLAGS_ANYWHERE = 0x0001;
+    private static final int VM_MEMORY_MALLOC = 0x1000000;
+
     private int _kernelrpc_mach_vm_allocate_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
         int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
@@ -495,11 +498,14 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
         long size = r2 | (r3 << 32);
         int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        boolean anywhere = (flags & VM_FLAGS_ANYWHERE) != 0;
+        boolean malloc = (flags & VM_MEMORY_MALLOC) != 0;
 
+        Pointer value = address.getPointer(0);
         UnicornPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
         address.setPointer(0, pointer);
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer);
+            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
         }
         return 0;
     }
