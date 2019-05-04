@@ -74,6 +74,11 @@ public class LinuxModule extends Module {
         return dynsym.getELFSymbolByName(name);
     }
 
+    @Override
+    public Symbol findNearestSymbolByAddress(long addr) {
+        throw new UnsupportedOperationException();
+    }
+
     public int callEntry(Emulator emulator, Object... args) {
         if (entryPoint <= 0) {
             throw new IllegalStateException("Invalid entry point");

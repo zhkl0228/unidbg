@@ -101,7 +101,7 @@ public abstract class AbstractLoader implements Memory, Loader {
     public final int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
 
-        if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd == -1 && offset == 0)) {
+        if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
             long addr = allocateMapAddress(aligned);
             log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
             unicorn.mem_map(addr, aligned, prot);
@@ -110,7 +110,7 @@ public abstract class AbstractLoader implements Memory, Loader {
         }
         try {
             FileIO file;
-            if (start == 0 && fd >= 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
+            if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
                 long addr = allocateMapAddress(aligned);
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);

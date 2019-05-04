@@ -3,7 +3,10 @@ package cn.banny.emulator.ios;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
+import cn.banny.emulator.arm.ArmHook;
 import cn.banny.emulator.arm.ArmSvc;
+import cn.banny.emulator.arm.HookStatus;
+import cn.banny.emulator.ios.struct.DlInfo;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -37,9 +40,6 @@ public class Dyld implements Dlfcn {
         error.setMemory(0, 0x40, (byte) 0);
     }
 
-    private long _OSAtomicCompareAndSwap32Barrier;
-    private long _OSAtomicCompareAndSwap64Barrier;
-
     private Pointer __dyld_image_count;
     private Pointer __dyld_get_image_name;
     private Pointer __dyld_get_image_header;
@@ -47,6 +47,7 @@ public class Dyld implements Dlfcn {
     private Pointer __dyld_register_func_for_add_image;
     private Pointer __dyld_register_func_for_remove_image;
     private Pointer __dyld_register_thread_helpers;
+    private Pointer __dyld_dyld_register_image_state_change_handler;
 
     int _stub_binding_helper() {
         log.info("dyldLazyBinder");
@@ -55,6 +56,7 @@ public class Dyld implements Dlfcn {
 
     private Pointer __dyld_dlsym;
     private Pointer __dyld_dladdr;
+    private long _os_trace_redirect_func;
 
     int _dyld_func_lookup(Emulator emulator, String name, Pointer address) {
         final SvcMemory svcMemory = emulator.getSvcMemory();
@@ -66,8 +68,25 @@ public class Dyld implements Dlfcn {
                         public int handle(Emulator emulator) {
                             long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
                             Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                            log.info("__dyld_dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
-                            return 0;
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
+                            }
+                            MachOModule module = (MachOModule) loader.findModuleByAddress(addr);
+                            if (module == null) {
+                                return 0;
+                            }
+
+                            MachOSymbol symbol = (MachOSymbol) module.findNearestSymbolByAddress(addr);
+
+                            DlInfo dlInfo = new DlInfo(info);
+                            dlInfo.dli_fname = module.createPathMemoryBlock(loader).getPointer();
+                            dlInfo.dli_fbase = UnicornPointer.pointer(emulator, module.base);
+                            if (symbol != null) {
+                                dlInfo.dli_sname = symbol.createNameMemoryBlock(loader).getPointer();
+                                dlInfo.dli_saddr = UnicornPointer.pointer(emulator, symbol.getAddress());
+                            }
+                            dlInfo.pack();
+                            return 1;
                         }
                     });
                 }
@@ -83,11 +102,46 @@ public class Dyld implements Dlfcn {
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
                             }
-                            return dlsym(emulator.getMemory(), (int) handle, symbol.getString(0));
+
+                            String symbolName = symbol.getString(0);
+                            if ((int) handle == MachO.RTLD_MAIN_ONLY && "_os_trace_redirect_func".equals(symbolName)) {
+                                if (_os_trace_redirect_func == 0) {
+                                    _os_trace_redirect_func = svcMemory.registerSvc(new ArmSvc() {
+                                        @Override
+                                        public int handle(Emulator emulator) {
+                                            Pointer msg = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+//                                            Inspector.inspect(msg.getByteArray(0, 16), "_os_trace_redirect_func msg=" + msg);
+                                            System.err.println("_os_trace_redirect_func msg=" + msg.getString(0));
+                                            return 1;
+                                        }
+                                    }).peer;
+                                }
+                                return (int) _os_trace_redirect_func;
+                            }
+
+                            return dlsym(emulator.getMemory(), (int) handle, symbolName);
                         }
                     });
                 }
                 address.setPointer(0, __dyld_dlsym);
+                return 1;
+            case "__dyld_dyld_register_image_state_change_handler":
+                if (__dyld_dyld_register_image_state_change_handler == null) {
+                    __dyld_dyld_register_image_state_change_handler = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            Unicorn unicorn = emulator.getUnicorn();
+                            int state = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            int batch = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            Pointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_dyld_register_image_state_change_handler state=" + state + ", batch=" + batch + ", handler=" + handler);
+                            }
+                            return 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_dyld_register_image_state_change_handler);
                 return 1;
             case "__dyld_get_image_name":
                 if (__dyld_get_image_name == null) {
@@ -96,13 +150,7 @@ public class Dyld implements Dlfcn {
                         public int handle(Emulator emulator) {
                             int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             MachOModule module = (MachOModule) loader.getLoadedModules().toArray(new Module[0])[image_index];
-                            if (module.pathBlock == null) {
-                                byte[] path = module.path.getBytes();
-                                module.pathBlock = loader.malloc(path.length + 1, true);
-                                module.pathBlock.getPointer().write(0, path, 0, path.length);
-                                module.pathBlock.getPointer().setByte(path.length, (byte) 0);
-                            }
-                            return (int) module.pathBlock.getPointer().peer;
+                            return (int) module.createPathMemoryBlock(loader).getPointer().peer;
                         }
                     });
                 }
@@ -268,7 +316,7 @@ public class Dyld implements Dlfcn {
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
         if ("libsystem_c.dylib".equals(libraryName)) {
             if ("__NSGetEnviron".equals(symbolName)) {
-                if (__NSGetEnviron == 0) {
+                if (__NSGetEnviron == 0) { // TODO check
                     __NSGetEnviron = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public int handle(Emulator emulator) {
@@ -293,64 +341,6 @@ public class Dyld implements Dlfcn {
                 }
                 return __NSGetMachExecuteHeader;
             }
-        }
-
-        if ("libsystem_platform.dylib".equals(libraryName)) {
-            if ("_OSAtomicCompareAndSwap32Barrier".equals(symbolName)) {
-                if (_OSAtomicCompareAndSwap32Barrier == 0) {
-                    _OSAtomicCompareAndSwap32Barrier = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            Unicorn unicorn = emulator.getUnicorn();
-                            int oldValue = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            int newValue = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-                            Pointer theValue = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-                            if (log.isDebugEnabled()) {
-                                log.debug("_OSAtomicCompareAndSwap32Barrier oldValue=0x" + Integer.toHexString(oldValue) + ", newValue=0x" + Integer.toHexString(newValue) + ", theValue=" + theValue + ", value=0x" + theValue.getInt(0));
-                            }
-                            if (theValue.getInt(0) == oldValue) {
-                                theValue.setInt(0, newValue);
-                                return 1;
-                            } else {
-                                return 0;
-                            }
-                        }
-                    }).peer;
-                }
-                return _OSAtomicCompareAndSwap32Barrier;
-            }
-
-            if ("_OSAtomicCompareAndSwap64Barrier".equals(symbolName)) {
-                if (_OSAtomicCompareAndSwap64Barrier == 0) {
-                    _OSAtomicCompareAndSwap64Barrier = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            Unicorn unicorn = emulator.getUnicorn();
-                            int r0 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            long r1 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-                            long oldValue = r0 | (r1 << 32);
-                            int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-                            long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-                            long newValue = r2 | (r3 << 32);
-                            Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
-                            Pointer theValue = sp.getPointer(0);
-                            if (log.isDebugEnabled()) {
-                                log.debug("_OSAtomicCompareAndSwap64Barrier oldValue=0x" + Long.toHexString(oldValue) +
-                                        ", newValue=0x" + Long.toHexString(newValue) +
-                                        ", theValue=" + theValue +
-                                        ", value=0x" + Long.toHexString(theValue.getLong(0)));
-                            }
-                            if (theValue.getLong(0) == oldValue) {
-                                theValue.setLong(0, newValue);
-                                return 1;
-                            } else {
-                                return 0;
-                            }
-                        }
-                    }).peer;
-                }
-                return _OSAtomicCompareAndSwap64Barrier;
-            }
         } else if ("libdyld.dylib".equals(libraryName)) {
             if (log.isDebugEnabled()) {
                 log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
@@ -372,9 +362,100 @@ public class Dyld implements Dlfcn {
                 }
                 return _dyld_get_program_sdk_version;
             }*/
+        } else if ("libsystem_malloc.dylib".equals(libraryName)) {
+            if (log.isDebugEnabled()) {
+                log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
+            }
+
+            if ("_free".equals(symbolName)) {
+                if (_free == 0) {
+                    _free = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            log.info("_free pointer=" + pointer);
+                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                            emulator.attach().addBreakPoint(null, lr);*/
+                            return HookStatus.LR(u, 0);
+//                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _free;
+            }
+            if ("_malloc".equals(symbolName)) {
+                if (_malloc == 0) {
+                    _malloc = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            log.info("_malloc size=" + size);
+                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                            emulator.attach().addBreakPoint(null, lr);*/
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _malloc;
+            }
+            if ("_calloc".equals(symbolName)) {
+                if (_calloc == 0) {
+                    _calloc = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            log.info("_calloc count=" + count + ", size=" + size);
+                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                            emulator.attach().addBreakPoint(null, lr);*/
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _calloc;
+            }
+            if ("_realloc".equals(symbolName)) {
+                if (_realloc == 0) {
+                    _realloc = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            log.info("_realloc pointer=" + pointer + ", size=" + size);
+                            /*long lr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                            emulator.attach().addBreakPoint(null, lr);*/
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _realloc;
+            }
+        } else if ("libsystem_pthread.dylib".equals(libraryName)) {
+            if ("_pthread_getname_np".equals(symbolName)) {
+                if (_pthread_getname_np == 0) {
+                    _pthread_getname_np = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            Pointer thread = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            Pointer threadName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                            if (log.isDebugEnabled()) {
+                                log.debug("_pthread_getname_np thread=" + thread + ", threadName=" + threadName + ", len=" + len);
+                            }
+                            byte[] data = Arrays.copyOf(Dyld.this.threadName.getBytes(), len);
+                            threadName.write(0, data, 0, data.length);
+                            return HookStatus.LR(u, 0);
+                        }
+                    }).peer;
+                }
+                return _pthread_getname_np;
+            }
         }
         return 0;
     }
+
+    private long _free, _malloc, _calloc, _realloc;
+    private long _pthread_getname_np;
 
     private int dlsym(Memory memory, long handle, String symbolName) {
         try {
@@ -387,6 +468,12 @@ public class Dyld implements Dlfcn {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private String threadName = "main";
+
+    void pthread_setname_np(String name) {
+        threadName = name;
     }
 
 }

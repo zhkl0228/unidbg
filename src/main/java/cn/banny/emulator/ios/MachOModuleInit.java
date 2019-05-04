@@ -28,10 +28,11 @@ class MachOModuleInit extends InitFunction {
      * initializer(int argc, const char* argv[], const char* envp[], const char* apple[], const struct ProgramVars* vars)
      */
     public void call(Emulator emulator) {
+//        emulator.traceCode();
         for (long addr : addresses) {
             log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
-//            emulator.attach().addBreakPoint(null, 0x400d60e0);
-//            emulator.attach().addBreakPoint(null, 0x4030117e);
+//            emulator.attach().addBreakPoint(null, 0x4012be50);
+//            emulator.attach().addBreakPoint(null, 0x4012bdd0);
             if ("libSystem.B.dylib".equals(libName)) {
 //                emulator.traceCode();
             }

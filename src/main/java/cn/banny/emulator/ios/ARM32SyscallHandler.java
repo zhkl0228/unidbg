@@ -157,8 +157,14 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 202:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
                         return;
+                    case 327:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, issetugid());
+                        return;
                     case 329:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
+                        return;
+                    case 336:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, proc_info(emulator));
                         return;
                     case 339:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
@@ -257,6 +263,33 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
+    private static final int PROC_INFO_CALL_SETCONTROL = 0x5;
+    private static final int PROC_SELFSET_THREADNAME = 2;
+
+    private int proc_info(Emulator emulator) {
+        Unicorn unicorn = emulator.getUnicorn();
+        int callNum = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        int pid = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        int flavor = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        int r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        long r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        long arg = r3 | (r4 << 32);
+        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R5);
+        int bufferSize = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+
+        String msg = "proc_info callNum=" + callNum + ", pid=" + pid + ", flavor=" + flavor + ", arg=" + arg + ", buffer=" + buffer + ", bufferSize=" + bufferSize;
+        if (PROC_INFO_CALL_SETCONTROL == callNum && PROC_SELFSET_THREADNAME == flavor) {
+            String threadName = buffer.getString(0);
+            log.info("pthread_setname_np=" + threadName);
+            log.debug(msg);
+            ((Dyld) emulator.getDlfcn()).pthread_setname_np(threadName);
+            return 0;
+        } else {
+            log.info(msg);
+            return 1;
+        }
+    }
+
     private int semwait_signal_nocancel() {
         // TODO: implement
         log.info("semwait_signal_nocancel");
@@ -281,6 +314,11 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int call = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         Pointer args = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
         log.info("sandbox_ms policyName=" + policyName.getString(0) + ", call=" + call + ", args=" + args);
+        return 0;
+    }
+
+    private int issetugid() {
+        log.debug("issetugid");
         return 0;
     }
 
@@ -429,7 +467,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         UnicornPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
         address.setPointer(0, pointer);
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", size=" + size + ", flags=" + flags + ", pointer=" + pointer);
+            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer);
         }
         return 0;
     }
@@ -670,11 +708,11 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long mask = (r5 << 32) | r4;
         int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
         int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=" + size + ", mask=" + mask + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection);
-        }
         UnicornPointer pointer = emulator.getMemory().mmap((int) size, cur_protection);
         address.setPointer(0, pointer);
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer);
+        }
         return 0;
     }
 

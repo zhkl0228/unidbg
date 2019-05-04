@@ -8,31 +8,33 @@ class ExportSymbol extends Symbol {
 
     private final long address;
     private final Module module;
+    final long other;
 
-    ExportSymbol(String name, long address, Module module) {
+    ExportSymbol(String name, long address, Module module, long other) {
         super(name);
         this.address = address;
         this.module = module;
+        this.other = other;
     }
 
     @Override
     public Number[] call(Emulator emulator, Object... args) {
-        throw new UnsupportedOperationException();
+        return module.callFunction(emulator, getValue(), args);
     }
 
     @Override
     public long getAddress() {
-        return address;
+        return module.base + getValue();
     }
 
     @Override
     public long getValue() {
-        throw new UnsupportedOperationException();
+        return address;
     }
 
     @Override
     public boolean isUndef() {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     @Override

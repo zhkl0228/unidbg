@@ -1038,7 +1038,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("doBindAt 0x=" + Long.toHexString(bindAt) + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol);
+            log.debug("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol);
         }
 
         Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
