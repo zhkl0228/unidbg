@@ -10,6 +10,7 @@ import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.unix.UnixSyscallHandler;
 import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -171,6 +172,8 @@ public abstract class AbstractEmulator implements Emulator {
      * @param timeout  Duration to emulate the code (in microseconds). When this value is 0, we will emulate the code in infinite time, until the code is finished.
      */
     protected final Number emulate(long begin, long until, long timeout, boolean entry) {
+        final Pointer pointer = UnicornPointer.pointer(this, begin);
+        long start = 0;
         try {
             POINTER_SIZE.set(getPointerSize());
 
@@ -189,11 +192,13 @@ public abstract class AbstractEmulator implements Emulator {
                 codeHook.initialize(traceInstructionBegin, traceInstructionEnd);
                 unicorn.hook_add(codeHook, traceInstructionBegin, traceInstructionEnd, this);
             }
+            log.debug("emulate " + pointer + " started sp=" + getStackPointer());
+            start = System.currentTimeMillis();
             unicorn.emu_start(begin, until, timeout, (long) 0);
             return (Number) unicorn.reg_read(getPointerSize() == 4 ? ArmConst.UC_ARM_REG_R0 : Arm64Const.UC_ARM64_REG_X0);
         } catch (RuntimeException e) {
             if (!entry && e instanceof UnicornException) {
-                log.warn("emulate 0x" + Long.toHexString(begin) + " failed", e);
+                log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);
                 return -1;
             }
 
@@ -203,7 +208,7 @@ public abstract class AbstractEmulator implements Emulator {
                 IOUtils.closeQuietly(this);
                 throw e;
             } else {
-                log.warn("emulate 0x" + Long.toHexString(begin) + " exception: " + e.getMessage());
+                log.warn("emulate " + pointer + " exception sp=" + getStackPointer() + ", msg=" + e.getMessage() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
                 return -1;
             }
         } finally {
@@ -212,9 +217,11 @@ public abstract class AbstractEmulator implements Emulator {
                 unicorn.hook_del(writeHook);
             }
             unicorn.hook_del(codeHook);
-            log.debug("emulate 0x" + Long.toHexString(begin) + " finish");
+            log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
     }
+
+    protected abstract Pointer getStackPointer();
 
     private boolean closed;
 

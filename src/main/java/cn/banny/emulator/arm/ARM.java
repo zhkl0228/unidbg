@@ -442,7 +442,7 @@ public class ARM {
         return ARM64_REGS;
     }
 
-    private static final int ALIGN_SIZE_BASE = 4;
+    private static final int ALIGN_SIZE_BASE = 8;
 
     public static int alignSize(int size) {
         return (int) alignSize(size, ALIGN_SIZE_BASE);

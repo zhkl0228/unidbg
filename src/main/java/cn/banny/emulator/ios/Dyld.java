@@ -571,10 +571,7 @@ public class Dyld implements Dlfcn {
                         protected HookStatus hook(Unicorn u, Emulator emulator) {
                             UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             if ((pointer.peer & (emulator.getPageAlign() - 1)) != 0) {
-                                if (log.isDebugEnabled()) {
-                                    log.info("Fake _free pointer=" + pointer);
-                                }
-                                return HookStatus.LR(u, 0);
+                                log.info("_free pointer=" + pointer);
                             }
                             return HookStatus.RET(u, old);
                         }

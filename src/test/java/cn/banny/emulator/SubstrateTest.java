@@ -17,6 +17,7 @@ import junit.framework.AssertionFailedError;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import unicorn.ArmConst;
+import unicorn.Unicorn;
 
 import java.io.File;
 import java.util.Arrays;
@@ -42,6 +43,17 @@ public class SubstrateTest extends EmulatorTest {
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+
+        IWhale whale = Whale.getInstance(emulator);
+        whale.WImportHookFunction("_malloc", new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                Unicorn unicorn = emulator.getUnicorn();
+                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                System.err.println("IWhale hook _malloc size=" + size);
+                return HookStatus.RET(unicorn, originFunction);
+            }
+        });
 
 //        emulator.attach().addBreakPoint(null, 0x40232a6c);
 
@@ -73,8 +85,36 @@ public class SubstrateTest extends EmulatorTest {
                 ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize);
 
         Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
-
         free.call(emulator, block);
+
+        IHookZz hookZz = HookZz.getInstance(emulator);
+        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
+        hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                Unicorn unicorn = emulator.getUnicorn();
+                Pointer zone = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                System.err.println("_malloc_zone_malloc zone=" + zone + ", size=" + size);
+                return HookStatus.RET(unicorn, originFunction);
+            }
+        });
+
+        Symbol symbol = module.findSymbolByName("_MSGetImageByName");
+        assertNotNull(symbol);
+
+//        emulator.traceCode();
+        /*hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
+            @Override
+            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
+                System.err.println("preCall _MSGetImageByName=" + ctx.getR0Pointer().getString(0));
+            }
+            @Override
+            public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
+                super.postCall(emulator, ctx, info);
+                System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0()));
+            }
+        });*/
 
 //        emulator.attach().addBreakPoint(null, 0x40235d2a);
 //        emulator.traceCode();
@@ -102,56 +142,28 @@ public class SubstrateTest extends EmulatorTest {
         memoryBlock.free(false);
 
         start = System.currentTimeMillis();
-        Symbol symbol = module.findSymbolByName("_MSGetImageByName");
-        assertNotNull(symbol);
 
 //        emulator.traceRead();
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
 //        emulator.traceCode();
-        IHookZz hookZz = HookZz.getInstance(emulator);
-
-        IWhale whale = Whale.getInstance(emulator);
-
-        /*whale.WImportHookFunction("_malloc", "libhookzz.dylib", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                System.out.println("malloc size=" + size);
-                return HookStatus.RET(unicorn, originFunction);
-            }
-        });*/
 
         /*whale.WInlineHookFunction(symbol, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 Unicorn unicorn = emulator.getUnicorn();
                 Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                System.err.println("preCall _MSGetImageByName=" + pointer.getString(0));
+                System.err.println("onCall _MSGetImageByName=" + pointer.getString(0) + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
                 return HookStatus.RET(unicorn, originFunction);
             }
         });*/
 
-        whale.WImportHookFunction("_strcmp", "CydiaSubstrate", new ReplaceCallback() {
+        whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 Pointer pointer1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 Pointer pointer2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0) + ", originFunction=0x" + Long.toHexString(originFunction));
                 return HookStatus.RET(emulator.getUnicorn(), originFunction);
-            }
-        });
-
-//        emulator.traceCode();
-        hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
-            @Override
-            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                System.err.println("preCall _MSGetImageByName=" + ctx.getR0Pointer().getString(0));
-            }
-            @Override
-            public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                super.postCall(emulator, ctx, info);
-                System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0()));
             }
         });
 

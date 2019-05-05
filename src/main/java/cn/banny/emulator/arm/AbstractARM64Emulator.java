@@ -2,6 +2,7 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
+import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.Module;
@@ -10,6 +11,7 @@ import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
+import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -197,5 +199,10 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
         unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
         emulate(begin, until, traceInstruction ? 0 : timeout, true);
         return unicorn;
+    }
+
+    @Override
+    protected Pointer getStackPointer() {
+        return UnicornPointer.register(this, Arm64Const.UC_ARM64_REG_SP);
     }
 }

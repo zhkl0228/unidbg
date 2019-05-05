@@ -2,6 +2,7 @@ package cn.banny.emulator.arm;
 
 import capstone.Capstone;
 import cn.banny.emulator.AbstractEmulator;
+import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.unix.UnixSyscallHandler;
 import cn.banny.emulator.Module;
@@ -10,6 +11,7 @@ import cn.banny.emulator.debugger.Debugger;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
+import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -220,4 +222,8 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
         return PAGE_ALIGN;
     }
 
+    @Override
+    protected Pointer getStackPointer() {
+        return UnicornPointer.register(this, ArmConst.UC_ARM_REG_SP);
+    }
 }

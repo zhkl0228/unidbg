@@ -265,7 +265,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int type = resource & (RLIMIT_POSIX_FLAG - 1);
         if (type == RLIMIT_NOFILE) {
             if (log.isDebugEnabled()) {
-                log.info("getrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp + ", posix=" + posix + ", type=" + type);
+                log.debug("getrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp + ", posix=" + posix + ", type=" + type);
             }
             RLimit rLimit = new RLimit(rlp);
             rLimit.rlim_cur = 128;
