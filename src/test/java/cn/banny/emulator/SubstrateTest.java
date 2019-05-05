@@ -8,6 +8,7 @@ import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.ios.DarwinARMEmulator;
 import cn.banny.emulator.ios.DarwinResolver;
+import cn.banny.emulator.ios.MachO;
 import cn.banny.emulator.ios.MachOModule;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -40,8 +41,6 @@ public class SubstrateTest extends EmulatorTest {
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        IWhale whale = Whale.getInstance(emulator);
-
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 
 //        emulator.attach().addBreakPoint(null, 0x40232a6c);
@@ -52,20 +51,18 @@ public class SubstrateTest extends EmulatorTest {
         Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
         Symbol malloc_size = module.findSymbolByName("_malloc_size");
         Symbol malloc_create_zone = module.findSymbolByName("_malloc_create_zone");
-        Symbol malloc_create_legacy_default_zone = module.findSymbolByName("_malloc_create_legacy_default_zone");
         Symbol create_scalable_zone = module.findSymbolByName("_create_scalable_zone");
+        Symbol free = module.findSymbolByName("_free");
         assertNotNull(malloc_default_zone);
         Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
         assertNotNull(zone);
-        /*zone = UnicornPointer.pointer(emulator, malloc_create_zone.call(emulator, 0, 0)[0].intValue());
-        assertNotNull(zone);*/
+        zone = UnicornPointer.pointer(emulator, malloc_create_zone.call(emulator, 0, 0)[0].intValue());
+        assertNotNull(zone);
 //        emulator.traceCode();
-        /*zone = UnicornPointer.pointer(emulator, malloc_create_legacy_default_zone.call(emulator)[0].intValue());
-        assertNotNull(zone);*/
-        /*zone = UnicornPointer.pointer(emulator, create_scalable_zone.call(emulator, 0, 0)[0].intValue());
-        assertNotNull(zone);*/
+        zone = UnicornPointer.pointer(emulator, create_scalable_zone.call(emulator, 0, 0)[0].intValue());
+        assertNotNull(zone);
         Pointer malloc = zone.getPointer(0xc);
-        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 0x3c00 + 1)[0].intValue());
+        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 0x40)[0].intValue());
         assertNotNull(block);
         Pointer sizeFun = zone.getPointer(0x8);
         int size = MachOModule.emulateFunction(emulator, ((UnicornPointer) sizeFun).peer, zone, block)[0].intValue();
@@ -77,10 +74,12 @@ public class SubstrateTest extends EmulatorTest {
 
         Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
 
+        free.call(emulator, block);
+
 //        emulator.attach().addBreakPoint(null, 0x40235d2a);
 //        emulator.traceCode();
 
-        MemoryBlock memoryBlock = emulator.getMemory().malloc(0x1fd00, false);
+        MemoryBlock memoryBlock = emulator.getMemory().malloc(MachO.LARGE_THRESHOLD + 1, false);
         UnicornPointer memory = memoryBlock.getPointer();
         Symbol _snprintf = module.findSymbolByName("_snprintf", true);
         assertNotNull(_snprintf);
@@ -110,6 +109,8 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
 //        emulator.traceCode();
         IHookZz hookZz = HookZz.getInstance(emulator);
+
+        IWhale whale = Whale.getInstance(emulator);
 
         /*whale.WImportHookFunction("_malloc", "libhookzz.dylib", new ReplaceCallback() {
             @Override

@@ -47,8 +47,6 @@ class MachOModuleInit extends InitFunction {
                 log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
 //            emulator.attach().addBreakPoint(null, 0x401d6be6);
 //            emulator.attach().addBreakPoint(null, 0x402fb538);
-                if ("libSystem.B.dylib".equals(libName)) {
-                }
                 long start = System.currentTimeMillis();
                 callModInit(emulator, load_base + addr, 0, null, envp, apple, vars);
                 if (log.isDebugEnabled()) {
@@ -57,6 +55,9 @@ class MachOModuleInit extends InitFunction {
             }
         } finally {
             if (header != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Restore backupFileType=" + backupFileType + ", oldType=" + header.getInt(0xc));
+                }
                 header.setInt(0xc, backupFileType);
             }
         }

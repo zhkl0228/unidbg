@@ -14,6 +14,7 @@ import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.pointer.UnicornStructure;
 import cn.banny.emulator.spi.Dlfcn;
+import cn.banny.emulator.spi.InitFunction;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -28,6 +29,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static cn.banny.emulator.ios.MachO.LARGE_THRESHOLD;
 
 public class Dyld implements Dlfcn {
 
@@ -377,7 +380,7 @@ public class Dyld implements Dlfcn {
                                     pointer.setInt(0, state);
 
                                     if (log.isDebugEnabled()) {
-                                        log.debug("PushImageHandlerFunction: " + handler);
+                                        log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length);
                                     }
                                     pointer = pointer.share(-4); // handler
                                     pointer.setPointer(0, handler);
@@ -442,24 +445,24 @@ public class Dyld implements Dlfcn {
                 pointer = pointer.share(-4); // NULL-terminated
                 pointer.setInt(0, 0);
 
-                /*for (Module md : memory.getLoadedModules()) {
-                    MachOModule m = (MachOModule) md;
-                    if (m.hasUnresolvedSymbol()) {
+                for (Module m : memory.getLoadedModules()) {
+                    MachOModule mm = (MachOModule) m;
+                    if (mm.hasUnresolvedSymbol()) {
                         continue;
                     }
-                    for (InitFunction initFunction : m.initFunctionList) {
+                    for (InitFunction initFunction : mm.initFunctionList) {
                         if (initFunction.addresses != null) {
                             for (long addr : initFunction.addresses) {
                                 if (addr != 0 && addr != -1) {
-                                    log.debug("[" + m.name + "]PushModInitFunction: 0x" + Long.toHexString(addr));
+                                    log.debug("[" + mm.name + "]PushModInitFunction: 0x" + Long.toHexString(addr));
                                     pointer = pointer.share(-4); // init array
-                                    pointer.setInt(0, (int) (m.base + addr));
+                                    pointer.setInt(0, (int) (mm.base + addr));
                                 }
                             }
                         }
                     }
-                    m.initFunctionList.clear();
-                }*/
+                    mm.initFunctionList.clear();
+                }
 
                 return (int) module.base;
             }
@@ -553,8 +556,13 @@ public class Dyld implements Dlfcn {
                 return __NSGetMachExecuteHeader;
             }
         } else if ("libsystem_malloc.dylib".equals(libraryName)) {
-            if (log.isDebugEnabled()) {
-                log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
+            {
+                Log log = LogFactory.getLog("cn.banny.emulator.ios." + libraryName);
+                if (log.isDebugEnabled()) {
+                    log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
+                } else if (Dyld.log.isDebugEnabled()) {
+                    Dyld.log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
+                }
             }
             /*if ("_free".equals(symbolName)) {
                 if (_free == 0) {
@@ -584,7 +592,7 @@ public class Dyld implements Dlfcn {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc size=" + size);
                                 }
-                                u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -602,7 +610,7 @@ public class Dyld implements Dlfcn {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _valloc size=" + size);
                                 }
-                                u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -621,7 +629,7 @@ public class Dyld implements Dlfcn {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _realloc pointer=" + pointer + ", size=" + size);
                                 }
-                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -641,7 +649,7 @@ public class Dyld implements Dlfcn {
                                     log.debug("Fake _calloc count=" + count + ", size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R0, 1);
-                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + count * size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -660,7 +668,7 @@ public class Dyld implements Dlfcn {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc_zone_malloc zone=" + zone + ", size=" + size);
                                 }
-                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -681,7 +689,7 @@ public class Dyld implements Dlfcn {
                                     log.debug("Fake _malloc_zone_calloc zone=" + zone + ", count=" + count + ", size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R1, 1);
-                                u.reg_write(ArmConst.UC_ARM_REG_R2, LARGE_THRESHOLD + count * size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R2, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -701,7 +709,7 @@ public class Dyld implements Dlfcn {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc_zone_realloc zone=" + zone + ", pointer=" + pointer + ", size=" + size);
                                 }
-                                u.reg_write(ArmConst.UC_ARM_REG_R2, LARGE_THRESHOLD + size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R2, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -720,7 +728,7 @@ public class Dyld implements Dlfcn {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc_zone_valloc zone=" + zone + ", size=" + size);
                                 }
-                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + size);
+                                u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
                             }
                             return HookStatus.RET(u, old);
                         }
@@ -751,8 +759,6 @@ public class Dyld implements Dlfcn {
         }
         return 0;
     }
-
-    private static final int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
 
 //    private long _free;
     private long _realloc, _malloc, _calloc, _valloc;

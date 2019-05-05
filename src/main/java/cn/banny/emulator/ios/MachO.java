@@ -1,6 +1,6 @@
 package cn.banny.emulator.ios;
 
-interface MachO {
+public interface MachO {
 
     long CPU_SUBTYPE_ARM_V7 = 9;
 
@@ -67,5 +67,7 @@ interface MachO {
 
     int RTLD_DEFAULT = -2;
     int RTLD_MAIN_ONLY = -5;
+
+    int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
 
 }

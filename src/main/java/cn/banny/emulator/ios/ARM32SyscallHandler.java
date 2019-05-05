@@ -255,12 +255,27 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return fstat(emulator, fd, stat);
     }
 
+    private static final int RLIMIT_NOFILE = 8;		/* number of open files */
+    private static final int RLIMIT_POSIX_FLAG = 0x1000;	/* Set bit for strict POSIX */
+
     private int getrlimit(Unicorn u, Emulator emulator) {
-        // TODO: implement
         int resource = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer rlp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        log.info("getrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp);
-        return 0;
+        boolean posix = (resource & RLIMIT_POSIX_FLAG) != 0;
+        int type = resource & (RLIMIT_POSIX_FLAG - 1);
+        if (type == RLIMIT_NOFILE) {
+            if (log.isDebugEnabled()) {
+                log.info("getrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp + ", posix=" + posix + ", type=" + type);
+            }
+            RLimit rLimit = new RLimit(rlp);
+            rLimit.rlim_cur = 128;
+            rLimit.rlim_max = 256;
+            rLimit.pack();
+            return 0;
+        } else {
+            log.info("getrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp + ", posix=" + posix + ", type=" + type);
+        }
+        return 1;
     }
 
     private int _kernelrpc_mach_port_mod_refs_trap(Emulator emulator) {

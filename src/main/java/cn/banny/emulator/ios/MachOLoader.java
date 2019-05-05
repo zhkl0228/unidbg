@@ -52,9 +52,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private UnicornPointer vars;
 
     private void initializeTLS() {
-        final Pointer environ = allocateStack(emulator.getPointerSize());
+        final Pointer environ = allocateStack(emulator.getPointerSize() * 2);
         assert environ != null;
-        environ.setPointer(0, null);
+        final Pointer MallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
+        environ.setPointer(0, MallocCorruptionAbort);
+        environ.setPointer(emulator.getPointerSize(), null);
 
         UnicornPointer _NSGetEnviron = allocateStack(emulator.getPointerSize());
         _NSGetEnviron.setPointer(0, environ);
