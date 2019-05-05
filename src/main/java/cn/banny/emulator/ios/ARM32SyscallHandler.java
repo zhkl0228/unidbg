@@ -496,9 +496,39 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long size = r3 | (r4 << 32);
 
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_deallocate_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=" + size);
+            log.debug("_kernelrpc_mach_vm_deallocate_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
+        } else {
+            Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
+            if (log.isDebugEnabled()) {
+                log.debug("_kernelrpc_mach_vm_deallocate_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+            }
         }
         emulator.getMemory().munmap(address, (int) size);
+        return 0;
+    }
+
+    private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
+        Unicorn unicorn = emulator.getUnicorn();
+        int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        long size = (r3 << 32) | r2;
+        int r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        long r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+        long mask = (r5 << 32) | r4;
+        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
+        UnicornPointer pointer = emulator.getMemory().mmap((int) size, cur_protection);
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer);
+        } else {
+            Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
+            if (log.isDebugEnabled()) {
+                log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + address.getPointer(0) + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer);
+            }
+        }
+        address.setPointer(0, pointer);
         return 0;
     }
 
@@ -521,6 +551,11 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         address.setPointer(0, pointer);
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
+        } else {
+            Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
+            if (log.isDebugEnabled()) {
+                log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
+            }
         }
         return 0;
     }
@@ -778,26 +813,6 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return -1;
     }
 
-    private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        long size = (r3 << 32) | r2;
-        int r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        long r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-        long mask = (r5 << 32) | r4;
-        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
-        UnicornPointer pointer = emulator.getMemory().mmap((int) size, cur_protection);
-        address.setPointer(0, pointer);
-        if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer);
-        }
-        return 0;
-    }
-
     private static final int BOOTSTRAP_PORT = 11;
     private static final int CLOCK_SERVER_PORT = 13;
     private static final int SEMAPHORE_PORT = 14;
@@ -945,15 +960,21 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
 
         boolean warning = length >= 0x10000000;
+        int base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, offset);
+        String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag;
         if (log.isDebugEnabled() || warning) {
-            String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag;
             if (warning) {
                 log.warn(msg);
             } else {
                 log.debug(msg);
             }
+        } else {
+            Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
+            if (log.isDebugEnabled()) {
+                log.debug(msg + ", base=0x" + Integer.toHexString(base));
+            }
         }
-        return emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, offset);
+        return base;
     }
 
     private int socket(Unicorn u, Emulator emulator) {

@@ -246,7 +246,7 @@ public class Dyld implements Dlfcn {
                         public int handle(Emulator emulator) {
                             UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             log.debug("__dyld_get_image_slide mh=" + mh);
-                            return (int) mh.peer;
+                            return 0;
                         }
                     });
                 }
@@ -557,7 +557,7 @@ public class Dyld implements Dlfcn {
             }
         } else if ("libsystem_malloc.dylib".equals(libraryName)) {
             {
-                Log log = LogFactory.getLog("cn.banny.emulator.ios." + libraryName);
+                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                 if (log.isDebugEnabled()) {
                     log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
                 } else if (Dyld.log.isDebugEnabled()) {
@@ -586,8 +586,11 @@ public class Dyld implements Dlfcn {
                         protected HookStatus hook(Unicorn u, Emulator emulator) {
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             if (size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _malloc size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + 1);
                             }
@@ -604,8 +607,11 @@ public class Dyld implements Dlfcn {
                         protected HookStatus hook(Unicorn u, Emulator emulator) {
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             if (size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _valloc size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _valloc size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R0, LARGE_THRESHOLD + 1);
                             }
@@ -623,8 +629,11 @@ public class Dyld implements Dlfcn {
                             Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             if (size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _realloc pointer=" + pointer + ", size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _realloc pointer=" + pointer + ", size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
                             }
@@ -642,8 +651,11 @@ public class Dyld implements Dlfcn {
                             int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             if (count * size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _calloc count=" + count + ", size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _calloc count=" + count + ", size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R0, 1);
                                 u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
@@ -662,8 +674,11 @@ public class Dyld implements Dlfcn {
                             Pointer zone = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             if (size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc_zone_malloc zone=" + zone + ", size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _malloc_zone_malloc zone=" + zone + ", size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
                             }
@@ -682,8 +697,11 @@ public class Dyld implements Dlfcn {
                             int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
                             if (count * size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc_zone_calloc zone=" + zone + ", count=" + count + ", size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _malloc_zone_calloc zone=" + zone + ", count=" + count + ", size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R1, 1);
                                 u.reg_write(ArmConst.UC_ARM_REG_R2, LARGE_THRESHOLD + 1);
@@ -722,8 +740,11 @@ public class Dyld implements Dlfcn {
                             Pointer zone = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             if (size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
                                 if (log.isDebugEnabled()) {
                                     log.debug("Fake _malloc_zone_valloc zone=" + zone + ", size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _malloc_zone_valloc zone=" + zone + ", size=" + size);
                                 }
                                 u.reg_write(ArmConst.UC_ARM_REG_R1, LARGE_THRESHOLD + 1);
                             }

@@ -51,6 +51,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private UnicornPointer vars;
 
+    private static final int __TSD_THREAD_SELF = 0;
+
     private void initializeTLS() {
         final Pointer environ = allocateStack(emulator.getPointerSize() * 2);
         assert environ != null;
@@ -74,7 +76,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         final UnicornPointer tls = allocateStack(0x80 * 4); // tls size
         assert tls != null;
-        tls.setPointer(0, thread);
+        tls.setPointer(__TSD_THREAD_SELF * emulator.getPointerSize(), thread);
 
         Pointer locale = allocateStack(emulator.getPointerSize());
 
@@ -253,6 +255,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 case SUB_FRAMEWORK:
                 case RPATH:
                 case VERSION_MIN_IPHONEOS:
+                case LOAD_DYLINKER:
+                case MAIN:
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
@@ -268,6 +272,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         final List<MachO.DylibCommand> exportDylibs = new ArrayList<>();
         MachO.SymtabCommand symtabCommand = null;
         MachO.DysymtabCommand dysymtabCommand = null;
+        MachO.EntryPointCommand entryPointCommand = null;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT:
@@ -328,6 +333,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case REEXPORT_DYLIB:
                     exportDylibs.add((MachO.DylibCommand) command.body());
+                    break;
+                case MAIN:
+                    entryPointCommand = (MachO.EntryPointCommand) command.body();
                     break;
             }
         }
@@ -440,6 +448,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
             free = module.findSymbolByName("_free");
+        }
+
+        if (entryPointCommand != null) {
+            module.setEntryPoint(entryPointCommand.entryOff());
         }
 
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {

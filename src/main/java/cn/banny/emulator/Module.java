@@ -95,4 +95,12 @@ public abstract class Module {
         return neededLibraries.get(name);
     }
 
+    protected long entryPoint;
+
+    public void setEntryPoint(long entryPoint) {
+        this.entryPoint = entryPoint;
+    }
+
+    public  abstract int callEntry(Emulator emulator, Object... args);
+
 }

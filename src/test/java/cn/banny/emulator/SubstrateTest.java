@@ -37,15 +37,18 @@ public class SubstrateTest extends EmulatorTest {
     public void testMS() throws Exception {
         long start = System.currentTimeMillis();
         emulator.getMemory().setCallInitFunction();
-//        emulator.attach().addBreakPoint(null, 0x40234d69);
+//        emulator.attach().addBreakPoint(null, 0x401D4C0C);
 //        emulator.traceCode();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
-        System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
+
+        Pointer thread = UnicornPointer.pointer(emulator, 0xbffffbb4L);
+        assertNotNull(thread);
+        Inspector.inspect(thread.getByteArray(0, 16), "load offset=" + (System.currentTimeMillis() - start) + "ms, thread=" + thread);
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 
         IWhale whale = Whale.getInstance(emulator);
-        whale.WImportHookFunction("_malloc", new ReplaceCallback() {
+        /*whale.WImportHookFunction("_malloc", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 Unicorn unicorn = emulator.getUnicorn();
@@ -53,7 +56,7 @@ public class SubstrateTest extends EmulatorTest {
                 System.err.println("IWhale hook _malloc size=" + size);
                 return HookStatus.RET(unicorn, originFunction);
             }
-        });
+        });*/
 
 //        emulator.attach().addBreakPoint(null, 0x40232a6c);
 
@@ -68,13 +71,13 @@ public class SubstrateTest extends EmulatorTest {
         assertNotNull(malloc_default_zone);
         Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
         assertNotNull(zone);
-        zone = UnicornPointer.pointer(emulator, malloc_create_zone.call(emulator, 0, 0)[0].intValue());
-        assertNotNull(zone);
+        /*zone = UnicornPointer.pointer(emulator, malloc_create_zone.call(emulator, 0, 0)[0].intValue());
+        assertNotNull(zone);*/
 //        emulator.traceCode();
-        zone = UnicornPointer.pointer(emulator, create_scalable_zone.call(emulator, 0, 0)[0].intValue());
-        assertNotNull(zone);
+        /*zone = UnicornPointer.pointer(emulator, create_scalable_zone.call(emulator, 0, 0)[0].intValue());
+        assertNotNull(zone);*/
         Pointer malloc = zone.getPointer(0xc);
-        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 0x40)[0].intValue());
+        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 0x80)[0].intValue());
         assertNotNull(block);
         Pointer sizeFun = zone.getPointer(0x8);
         int size = MachOModule.emulateFunction(emulator, ((UnicornPointer) sizeFun).peer, zone, block)[0].intValue();
@@ -89,6 +92,7 @@ public class SubstrateTest extends EmulatorTest {
 
         IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
+//        emulator.traceCode();
         hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -104,7 +108,7 @@ public class SubstrateTest extends EmulatorTest {
         assertNotNull(symbol);
 
 //        emulator.traceCode();
-        /*hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
+        hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
             @Override
             public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("preCall _MSGetImageByName=" + ctx.getR0Pointer().getString(0));
@@ -114,7 +118,7 @@ public class SubstrateTest extends EmulatorTest {
                 super.postCall(emulator, ctx, info);
                 System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0()));
             }
-        });*/
+        });
 
 //        emulator.attach().addBreakPoint(null, 0x40235d2a);
 //        emulator.traceCode();

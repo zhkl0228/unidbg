@@ -39,7 +39,11 @@ class MachOModuleInit extends InitFunction {
             header = UnicornPointer.pointer(emulator, loader.NSGetMachExecuteHeader().base);
             if (header != null) {
                 backupFileType = header.getInt(0xc);
-                header.setInt(0xc, (int) MachO.FileType.EXECUTE.id()); // mock execute file
+                if (backupFileType == MachO.FileType.EXECUTE.id()) {
+                    header = null;
+                } else {
+                    header.setInt(0xc, (int) MachO.FileType.EXECUTE.id()); // mock execute file
+                }
             }
         }
         try {

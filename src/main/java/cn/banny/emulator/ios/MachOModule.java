@@ -1,10 +1,13 @@
 package cn.banny.emulator.ios;
 
+import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.*;
 import cn.banny.emulator.memory.MemRegion;
+import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.InitFunction;
+import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.logging.Log;
@@ -109,6 +112,59 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                 }
             }
         }
+    }
+
+    @Override
+    public int callEntry(Emulator emulator, Object... args) {
+        if (entryPoint <= 0) {
+            throw new IllegalStateException("Invalid entry point");
+        }
+
+        Memory memory = emulator.getMemory();
+        final UnicornPointer stack = memory.allocateStack(0);
+
+        int argc = 0;
+        List<Pointer> argv = new ArrayList<>();
+
+        argv.add(memory.writeStackString(emulator.getProcessName()));
+        argc++;
+
+        for (int i = 0; args != null && i < args.length; i++) {
+            String arg = String.valueOf(args[i]);
+            argv.add(memory.writeStackString(arg));
+            argc++;
+        }
+
+        Pointer auxvPointer = memory.allocateStack(4);
+        assert auxvPointer != null;
+        auxvPointer.setPointer(0, null);
+
+        Pointer envPointer = memory.allocateStack(4);
+        assert envPointer != null;
+        envPointer.setPointer(0, null);
+
+        Pointer pointer = memory.allocateStack(4);
+        assert pointer != null;
+        pointer.setPointer(0, null); // NULL-terminated argv
+
+        Collections.reverse(argv);
+        for (Pointer arg : argv) {
+            pointer = memory.allocateStack(4);
+            assert pointer != null;
+            pointer.setPointer(0, arg);
+        }
+
+        UnicornPointer kernelArgumentBlock = memory.allocateStack(4);
+        assert kernelArgumentBlock != null;
+        kernelArgumentBlock.setInt(0, argc);
+
+        if (log.isDebugEnabled()) {
+            UnicornPointer sp = memory.allocateStack(0);
+            byte[] data = sp.getByteArray(0, (int) (stack.peer - sp.peer));
+            Inspector.inspect(data, "kernelArgumentBlock=" + kernelArgumentBlock + ", envPointer=" + envPointer + ", auxvPointer=" + auxvPointer);
+        }
+
+        return emulator.eEntry(base + entryPoint, kernelArgumentBlock.peer).intValue();
     }
 
     void callInitFunction(Emulator emulator) {
