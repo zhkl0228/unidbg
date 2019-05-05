@@ -218,6 +218,10 @@ public class UnicornPointer extends Pointer {
 
     @Override
     public byte[] getByteArray(long offset, int arraySize) {
+        if (size > 0 && offset + arraySize > size) {
+            throw new InvalidMemoryAccessException();
+        }
+
         return unicorn.mem_read(peer + offset, arraySize);
     }
 
@@ -268,6 +272,10 @@ public class UnicornPointer extends Pointer {
 
             if (baos.size() > 0x10000) { // 64k
                 throw new IllegalStateException("buffer overflow");
+            }
+
+            if (size > 0 && offset + baos.size() > size) {
+                throw new InvalidMemoryAccessException();
             }
         }
 
@@ -380,7 +388,7 @@ public class UnicornPointer extends Pointer {
 
         UnicornPointer pointer = new UnicornPointer(emulator, peer + offset, pointerSize);
         if (size > 0) {
-            if (offset >= size) {
+            if (offset > size) {
                 throw new InvalidMemoryAccessException();
             }
 

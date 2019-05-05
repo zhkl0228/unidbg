@@ -3,6 +3,8 @@ package cn.banny.emulator.ios;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.InitFunction;
+import com.sun.jna.Pointer;
+import io.kaitai.MachO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -13,12 +15,14 @@ class MachOModuleInit extends InitFunction {
 
     private static final Log log = LogFactory.getLog(MachOModuleInit.class);
 
+    private final MachOLoader loader;
     private final UnicornPointer envp;
     private final UnicornPointer apple;
     private final UnicornPointer vars;
 
-    MachOModuleInit(long load_base, String libName, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars, long... addresses) {
-        super(load_base, libName, addresses);
+    MachOModuleInit(MachOLoader loader, MachOModule module, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars, long... addresses) {
+        super(module.base, module.name, addresses);
+        this.loader = loader;
         this.envp = envp;
         this.apple = apple;
         this.vars = vars;
@@ -29,17 +33,31 @@ class MachOModuleInit extends InitFunction {
      */
     public void call(Emulator emulator) {
 //        emulator.traceCode();
-        for (long addr : addresses) {
-            log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
-//            emulator.attach().addBreakPoint(null, 0x401d6be6);
-            emulator.attach().addBreakPoint(null, 0x402fb538);
-            if ("libSystem.B.dylib".equals(libName)) {
-//                emulator.traceCode();
+        Pointer header = null;
+        int backupFileType = (int) MachO.FileType.DYLIB.id();
+        if ("libSystem.B.dylib".equals(libName)) {
+            header = UnicornPointer.pointer(emulator, loader.NSGetMachExecuteHeader().base);
+            if (header != null) {
+                backupFileType = header.getInt(0xc);
+                header.setInt(0xc, (int) MachO.FileType.EXECUTE.id()); // mock execute file
             }
-            long start = System.currentTimeMillis();
-            callModInit(emulator, load_base + addr, 0, null, envp, apple, vars);
-            if (log.isDebugEnabled()) {
-                System.err.println("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
+        try {
+            for (long addr : addresses) {
+                log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
+//            emulator.attach().addBreakPoint(null, 0x401d6be6);
+//            emulator.attach().addBreakPoint(null, 0x402fb538);
+                if ("libSystem.B.dylib".equals(libName)) {
+                }
+                long start = System.currentTimeMillis();
+                callModInit(emulator, load_base + addr, 0, null, envp, apple, vars);
+                if (log.isDebugEnabled()) {
+                    System.err.println("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+                }
+            }
+        } finally {
+            if (header != null) {
+                header.setInt(0xc, backupFileType);
             }
         }
     }

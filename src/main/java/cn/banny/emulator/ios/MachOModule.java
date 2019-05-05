@@ -2,8 +2,7 @@ package cn.banny.emulator.ios;
 
 import cn.banny.emulator.*;
 import cn.banny.emulator.memory.MemRegion;
-import cn.banny.emulator.memory.Memory;
-import cn.banny.emulator.memory.MemoryBlock;
+import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.InitFunction;
 import io.kaitai.MachO;
@@ -30,7 +29,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     private final String path;
     final MachO.DyldInfoCommand dyldInfoCommand;
 
-    private final List<InitFunction> initFunctionList;
+    final List<InitFunction> initFunctionList;
 
     boolean indirectSymbolBound;
     boolean lazyPointerProcessed;
@@ -43,7 +42,8 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
-                String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars) {
+                String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
+                MachOLoader loader) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -59,7 +59,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.vars = vars;
 
         this.log = LogFactory.getLog("cn.banny.emulator.ios." + name);
-        this.initFunctionList = parseInitFunction(machO, buffer.duplicate(), base, name, emulator);
+        this.initFunctionList = parseInitFunction(machO, buffer.duplicate(), base, name, emulator, loader);
 
         final Map<String, ExportSymbol> exportSymbols = processExportNode(log, dyldInfoCommand, buffer);
 
@@ -187,7 +187,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         return map;
     }
 
-    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, long load_base, String libName, Emulator emulator) {
+    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, long load_base, String libName, Emulator emulator, MachOLoader loader) {
         List<InitFunction> initFunctionList = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -209,7 +209,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                             log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
                             addresses[i] = address;
                         }
-                        initFunctionList.add(new MachOModuleInit(load_base, libName, envp, apple, vars, addresses));
+                        initFunctionList.add(new MachOModuleInit(loader, this, envp, apple, vars, addresses));
                     }
                     break;
                 case SEGMENT_64:
@@ -329,16 +329,23 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         return path;
     }
 
-    private MemoryBlock pathBlock;
+    private UnicornPointer pathPointer;
 
-    MemoryBlock createPathMemoryBlock(Memory memory) {
-        if (this.pathBlock == null) {
+    UnicornPointer createPathMemory(SvcMemory svcMemory) {
+        if (this.pathPointer == null) {
             byte[] path = this.path.getBytes();
-            this.pathBlock = memory.malloc(path.length + 1, true);
-            this.pathBlock.getPointer().write(0, path, 0, path.length);
-            this.pathBlock.getPointer().setByte(path.length, (byte) 0);
+            this.pathPointer = svcMemory.allocate(path.length + 1);
+            this.pathPointer.write(0, path, 0, path.length);
+            this.pathPointer.setByte(path.length, (byte) 0);
         }
-        return this.pathBlock;
+        return this.pathPointer;
     }
+
+    boolean hasUnresolvedSymbol() {
+        return !allSymbolBond || !allLazySymbolBond;
+    }
+
+    boolean allSymbolBond;
+    boolean allLazySymbolBond;
 
 }
