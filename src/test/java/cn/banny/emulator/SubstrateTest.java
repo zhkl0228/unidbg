@@ -65,17 +65,10 @@ public class SubstrateTest extends EmulatorTest {
         System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0));
         Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
         Symbol malloc_size = module.findSymbolByName("_malloc_size");
-        Symbol malloc_create_zone = module.findSymbolByName("_malloc_create_zone");
-        Symbol create_scalable_zone = module.findSymbolByName("_create_scalable_zone");
         Symbol free = module.findSymbolByName("_free");
         assertNotNull(malloc_default_zone);
         Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
         assertNotNull(zone);
-        /*zone = UnicornPointer.pointer(emulator, malloc_create_zone.call(emulator, 0, 0)[0].intValue());
-        assertNotNull(zone);*/
-//        emulator.traceCode();
-        /*zone = UnicornPointer.pointer(emulator, create_scalable_zone.call(emulator, 0, 0)[0].intValue());
-        assertNotNull(zone);*/
         Pointer malloc = zone.getPointer(0xc);
         Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 0x80)[0].intValue());
         assertNotNull(block);

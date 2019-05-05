@@ -3,6 +3,7 @@ package cn.banny.emulator.linux.file;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.file.AbstractFileIO;
+import cn.banny.emulator.file.StatStructure;
 import cn.banny.emulator.unix.IO;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
@@ -15,7 +16,7 @@ public class DirectoryFileIO extends AbstractFileIO {
     public static class DirectoryEntry {
         private final boolean isFile;
         private final String name;
-        public DirectoryEntry(boolean isFile, String name) {
+        DirectoryEntry(boolean isFile, String name) {
             this.isFile = isFile;
             this.name = name;
         }
@@ -61,6 +62,17 @@ public class DirectoryFileIO extends AbstractFileIO {
         }
 
         return read;
+    }
+
+    @Override
+    public int fstat(StatStructure stat) {
+        stat.st_mode = IO.S_IFDIR | 0x777;
+        stat.st_dev = 0;
+        stat.st_size = 0;
+        stat.st_blksize = 0;
+        stat.st_ino = 0;
+        stat.pack();
+        return 0;
     }
 
     @Override

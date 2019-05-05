@@ -12,9 +12,11 @@ import cn.banny.emulator.spi.SyscallHandler;
 import cn.banny.emulator.unix.struct.TimeVal;
 import cn.banny.emulator.unix.struct.TimeZone;
 import com.sun.jna.Pointer;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -67,6 +69,9 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
                     }
                 }
             }
+        }
+        if ("/tmp".equals(pathname) || "/tmp/".equals(pathname)) {
+            return new DirectoryFileIO(oflags, pathname);
         }
         return null;
     }
@@ -162,6 +167,14 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         }
         if (IO.STDIN.equals(pathname)) {
             io = new Stdin(oflags);
+            this.fdMap.put(minFd, io);
+            return minFd;
+        }
+
+        String fileName = FilenameUtils.getName(pathname);
+        String dir = FilenameUtils.getFullPath(pathname);
+        if ("/tmp/".equals(dir)) {
+            io = new SimpleFileIO(oflags, new File("target", fileName), pathname);
             this.fdMap.put(minFd, io);
             return minFd;
         }
@@ -298,7 +311,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return file.write(data);
     }
 
-    protected final int stat64(Emulator emulator, String pathname, Pointer statbuf) {
+    protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
         FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
         if (io != null) {
             return io.fstat(emulator, emulator.getUnicorn(), statbuf);

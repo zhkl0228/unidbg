@@ -29,6 +29,7 @@ public interface FileIO {
     int read(Unicorn unicorn, Pointer buffer, int count);
 
     int fstat(Emulator emulator, Unicorn unicorn, Pointer stat);
+    int fstat(StatStructure stat);
 
     int fcntl(int cmd, int arg);
 

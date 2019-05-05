@@ -125,6 +125,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 47: // getgid
                         u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
                         return;
+                    case 33:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, access(u, emulator));
+                        return;
                     case 46:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
                         return;
@@ -231,6 +234,30 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
     }
 
+    private int access(Unicorn u, Emulator emulator) {
+        Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        String path = pathname.getString(0);
+        if (log.isDebugEnabled()) {
+            log.debug("access pathname=" + path + ", mode=" + mode);
+        }
+        int ret = faccessat(emulator, path);
+        if (ret == -1) {
+            log.info("access pathname=" + path + ", mode=" + mode);
+        }
+        return ret;
+    }
+
+    private int faccessat(Emulator emulator, String pathname) {
+        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        if (io != null) {
+            return 0;
+        }
+
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
+    }
+
     private int stat64(Emulator emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
@@ -239,6 +266,17 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf);
         }
         return stat64(emulator, path, statbuf);
+    }
+
+    @Override
+    protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
+        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        if (io != null) {
+            return io.fstat(new Stat(statbuf));
+        }
+
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
     }
 
     private int write_NOCANCEL(Emulator emulator) {
@@ -392,16 +430,17 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return ret;
     }
 
-    private static final int CTL_UNSPEC = 0;
-    private static final int CTL_KERN = 1;
-    private static final int CTL_HW = 6;
+    private static final int CTL_UNSPEC = 0; /* unused */
+    private static final int CTL_KERN = 1; /* "high kernel": proc, limits */
+    private static final int CTL_HW = 6; /* generic cpu/io */
 
-    private static final int KERN_OSRELEASE = 2;
-    private static final int KERN_OSVERSION = 65;
+    private static final int KERN_OSRELEASE = 2; /* string: system release */
+    private static final int KERN_ARGMAX = 8; /* int: max arguments to exec */
+    private static final int KERN_USRSTACK32 = 35; /* int: address of USRSTACK */
+    private static final int KERN_PROCARGS2 = 49;
+    private static final int KERN_OSVERSION = 65; /* for build number i.e. 9A127 */
 
-    private static final int HW_PAGESIZE = 7;
-
-    private static final int KERN_USRSTACK32 = 35;
+    private static final int HW_PAGESIZE = 7; /* int: software page size */
 
     private int sysctl(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
@@ -436,6 +475,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 String msg = "sysctl CTL_KERN action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 switch (action) {
                     case KERN_USRSTACK32:
+                    case KERN_PROCARGS2:
                         log.debug(msg);
                         return 1;
                     case KERN_OSRELEASE:
@@ -447,6 +487,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         if (buffer != null) {
                             buffer.setString(0, osRelease);
                         }
+                        return 0;
+                    case KERN_ARGMAX:
+                        bufferSize.setInt(0, 4);
+                        buffer.setInt(0, 128);
                         return 0;
                     case KERN_OSVERSION:
                         log.debug(msg);
