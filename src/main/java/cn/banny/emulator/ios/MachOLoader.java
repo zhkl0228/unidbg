@@ -58,7 +58,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         assert environ != null;
         final Pointer MallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
         environ.setPointer(0, MallocCorruptionAbort);
-        final Pointer MallocStackLogging = writeStackString("MallocStackLogging=malloc");
+        final Pointer MallocStackLogging = writeStackString("MallocStackLogging=ALL");
         environ.setPointer(emulator.getPointerSize(), MallocStackLogging);
         environ.setPointer(emulator.getPointerSize() * 2, null);
 
@@ -452,8 +452,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
             free = module.findSymbolByName("_free");
-
-            malloc_logger = module.findSymbolByName("_malloc_logger");
         }
 
         if (entryPointCommand != null) {
@@ -474,8 +472,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         return module;
     }
-
-    private Symbol malloc_logger;
 
     private void checkSection(String dyId, String segName, String sectName) {
         switch (sectName) {
@@ -1263,30 +1259,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private void setExecuteModule(Module module) {
         if (executeModule == null) {
             executeModule = module;
-
-            if (malloc_logger != null && emulator.getPointerSize() == 4) {
-                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
-                if (log.isDebugEnabled()) {
-                    Pointer pointer = malloc_logger.createPointer(emulator);
-                    log.debug("set malloc_logger old=" + pointer.getPointer(0));
-                    pointer.setPointer(0, emulator.getSvcMemory().registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            Unicorn unicorn = emulator.getUnicorn();
-                            int type = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            Pointer arg1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                            Pointer arg2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-                            Pointer arg3 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-                            Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
-                            Pointer result = sp.getPointer(0);
-                            int num_hot_frames_to_skip = sp.getInt(emulator.getPointerSize());
-                            System.err.println("malloc_logger type=" + type + ", arg1=" + arg1 + ", arg2=" + arg2 + ", arg3=" + arg3 + ", result=" + result + ", num_hot_frames_to_skip=" + num_hot_frames_to_skip);
-                            return 0;
-                        }
-                    }));
-                }
-                malloc_logger = null;
-            }
         }
     }
 

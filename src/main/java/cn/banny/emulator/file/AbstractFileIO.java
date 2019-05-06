@@ -2,6 +2,7 @@ package cn.banny.emulator.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.ios.struct.kernel.StatFS;
 import cn.banny.emulator.memory.MemoryMap;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
@@ -153,6 +154,11 @@ public abstract class AbstractFileIO implements FileIO {
 
     @Override
     public int fstat(StatStructure stat) {
+        throw new AbstractMethodError(getClass().getName());
+    }
+
+    @Override
+    public int fstatfs(StatFS statFS) {
         throw new AbstractMethodError(getClass().getName());
     }
 

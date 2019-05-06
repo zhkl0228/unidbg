@@ -1,6 +1,7 @@
 package cn.banny.emulator.file;
 
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.ios.struct.kernel.StatFS;
 import cn.banny.emulator.memory.MemoryMap;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
@@ -62,4 +63,6 @@ public interface FileIO {
     int getdents64(Pointer dirp, int count);
 
     int recvfrom(Unicorn unicorn, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen);
+
+    int fstatfs(StatFS statFS);
 }

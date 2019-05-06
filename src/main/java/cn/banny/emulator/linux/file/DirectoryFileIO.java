@@ -4,6 +4,7 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.file.AbstractFileIO;
 import cn.banny.emulator.file.StatStructure;
+import cn.banny.emulator.ios.struct.kernel.StatFS;
 import cn.banny.emulator.unix.IO;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
@@ -65,9 +66,14 @@ public class DirectoryFileIO extends AbstractFileIO {
     }
 
     @Override
+    public int fstatfs(StatFS statFS) {
+        return 0;
+    }
+
+    @Override
     public int fstat(StatStructure stat) {
-        stat.st_mode = IO.S_IFDIR | 0x777;
         stat.st_dev = 0;
+        stat.st_mode = IO.S_IFDIR | 0x777;
         stat.st_size = 0;
         stat.st_blksize = 0;
         stat.st_ino = 0;

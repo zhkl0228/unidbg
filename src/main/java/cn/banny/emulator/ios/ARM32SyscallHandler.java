@@ -179,6 +179,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 339:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
                         return;
+                    case 344:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, getdirentries64(u, emulator));
+                        return;
+                    case 346:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, fstatfs64(u, emulator));
+                        return;
                     case 357:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(u, emulator));
                         return;
@@ -232,6 +238,32 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int getdirentries64(Unicorn u, Emulator emulator) {
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int bufSize = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        Pointer basep = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
+        if (log.isDebugEnabled()) {
+            log.debug("getdirentries64 fd=" + fd + ", buf=" + buf + ", bufSize=" + bufSize + ", basep=" + basep);
+        }
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
+    }
+
+    private int fstatfs64(Unicorn u, Emulator emulator) {
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        if (log.isDebugEnabled()) {
+            log.debug("fstatfs64 fd=" + fd + ", buf=" + buf);
+        }
+        FileIO io = fdMap.get(fd);
+        if (io != null) {
+            return io.fstatfs(new StatFS(buf));
+        }
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
     }
 
     private int access(Unicorn u, Emulator emulator) {

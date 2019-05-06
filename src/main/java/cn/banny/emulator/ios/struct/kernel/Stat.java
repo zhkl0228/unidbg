@@ -12,12 +12,11 @@ public class Stat extends StatStructure {
         super(p);
     }
 
-    public int[] gap1 = new int[12];
-    public int[] gap2 = new int[3];
-
     @Override
     protected List<String> getFieldOrder() {
-        return Arrays.asList("st_dev", "st_mode", "st_ino", "gap1", "st_size", "gap2", "st_blksize");
+        return Arrays.asList("st_dev", "st_mode", "st_nlink", "st_ino", "st_uid", "st_gid", "st_rdev",
+                "st_atimespec", "st_mtimespec", "st_ctimespec", "st_birthtimespec",
+                "st_size", "st_blocks", "st_blksize", "st_flags", "st_gen");
     }
 
 }
