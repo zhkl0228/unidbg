@@ -6,14 +6,9 @@ import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.hook.HookListener;
-import cn.banny.emulator.ios.struct.objc.ClassRO;
-import cn.banny.emulator.ios.struct.objc.ClassRW;
-import cn.banny.emulator.ios.struct.objc.Objc;
-import cn.banny.emulator.ios.struct.objc.ObjcClass;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.*;
 import cn.banny.emulator.pointer.UnicornPointer;
-import cn.banny.emulator.pointer.UnicornStructure;
 import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.Loader;
@@ -58,7 +53,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         assert environ != null;
         final Pointer MallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
         environ.setPointer(0, MallocCorruptionAbort);
-        final Pointer MallocStackLogging = writeStackString("MallocStackLogging=ALL");
+        final Pointer MallocStackLogging = writeStackString("MallocStackLogging=YES");
         environ.setPointer(emulator.getPointerSize(), MallocStackLogging);
         environ.setPointer(emulator.getPointerSize() * 2, null);
 
@@ -760,83 +755,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     throw new UnsupportedOperationException("setupLazyPointerHandler SEGMENT_64");
             }
         }
-    }
-
-    private void realizeAllClasses(MachOModule module) {
-        if (module.classesRealized) {
-            return;
-        }
-        module.classesRealized = true;
-
-        Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
-        for (MachO.LoadCommand command : module.machO.loadCommands()) {
-            switch (command.type()) {
-                case SEGMENT:
-                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
-                    if ("__DATA".equals(segmentCommand.segname())) {
-                        for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
-                            if ("__objc_classlist".equals(section.sectName())) {
-                                ByteBuffer buffer = module.buffer.duplicate();
-                                buffer.limit((int) (section.offset() + section.size()));
-                                buffer.position((int) section.offset());
-                                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                                long elementCount = section.size() / emulator.getPointerSize();
-                                int classRWSize = UnicornStructure.calculateSize(ClassRW.class);
-                                Pointer mmap = mmap((int) (elementCount * classRWSize), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
-                                for (int i = 0; i < elementCount; i++) {
-                                    int classRef = buffer.getInt();
-                                    Pointer pointer = UnicornPointer.pointer(emulator, module.base + classRef);
-                                    ObjcClass objcClass = new ObjcClass(pointer);
-                                    objcClass.unpack();
-                                    realizeClass(log, objcClass, mmap);
-                                    mmap = mmap.share(classRWSize);
-                                }
-                            }
-                        }
-                    }
-                    break;
-                case SEGMENT_64:
-                    throw new UnsupportedOperationException("realizeAllClasses SEGMENT_64");
-            }
-        }
-    }
-
-    private void realizeClass(Log log, ObjcClass cls, Pointer memory) {
-        ClassRW rw = new ClassRW(cls.data);
-        rw.unpack();
-        if (rw.isRealized()) {
-            return;
-        }
-
-        ClassRO ro = new ClassRO(cls.data);
-        ro.unpack();
-        if (log.isDebugEnabled()) {
-            log.debug("realizeClass className=" + ro.name.getString(0) + ", cls=" + cls);
-        }
-
-        if (ro.isFuture()) {
-            rw = new ClassRW(cls.data);
-            ro = new ClassRO(rw.ro);
-            rw.changeFlags(Objc.RW_REALIZED | Objc.RW_REALIZING, Objc.RO_FUTURE);
-        } else {
-            rw = new ClassRW(memory);
-            rw.ro = cls.data;
-            rw.flags = Objc.RW_REALIZED | Objc.RW_REALIZING;
-            cls.setData(rw);
-        }
-
-        rw.version = ro.isMetaClass() ? 7 : 0; // old runtime went up to 6
-
-        // Connect this class to its superclass's subclass lists
-        // TODO addSubclass
-
-        // Attach categories
-        // TODO methodizeClass
-
-        // TODO addRealizedClass and addRealizedMetaclass
-
-        rw.pack();
-        cls.pack();
     }
 
     private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
