@@ -17,7 +17,7 @@ public class DirectoryFileIO extends AbstractFileIO {
     public static class DirectoryEntry {
         private final boolean isFile;
         private final String name;
-        DirectoryEntry(boolean isFile, String name) {
+        public DirectoryEntry(boolean isFile, String name) {
             this.isFile = isFile;
             this.name = name;
         }
