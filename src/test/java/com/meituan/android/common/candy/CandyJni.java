@@ -19,6 +19,8 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -123,6 +125,7 @@ public class CandyJni extends AbstractJni implements IOResolver {
 
     private void getCandyDataWithKey() {
         vm.setJni(this);
+        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
 
         byte[] data = "HelloWorld".getBytes();
         String key = "candyKey";

@@ -75,6 +75,7 @@ public abstract class AbstractEmulator implements Emulator {
             throw new IllegalStateException("run asm failed");
         }
 
+        long spBackup = getMemory().getStackPoint();
         MemoryBlock block = MemoryBlockImpl.allocExecutable(getMemory(), shellCode.length);
         UnicornPointer pointer = block.getPointer();
         pointer.write(0, shellCode, 0, shellCode.length);
@@ -82,6 +83,7 @@ public abstract class AbstractEmulator implements Emulator {
             emulate(pointer.peer, pointer.peer + shellCode.length, 0, false);
         } finally {
             block.free(false);
+            getMemory().setStackPoint(spBackup);
         }
     }
 

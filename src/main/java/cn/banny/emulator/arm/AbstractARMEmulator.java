@@ -186,30 +186,50 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
 
     @Override
     public Number[] eFunc(long begin, Number... arguments) {
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        final Arguments args = ARM.initArgs(this, arguments);
-        return eFunc(begin, args, LR, true);
+        long spBackup = memory.getStackPoint();
+        try {
+            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            final Arguments args = ARM.initArgs(this, arguments);
+            return eFunc(begin, args, LR, true);
+        } finally {
+            memory.setStackPoint(spBackup);
+        }
     }
 
     @Override
     public void eInit(long begin, Number... arguments) {
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        final Arguments args = ARM.initArgs(this, arguments);
-        eFunc(begin, args, LR, false);
+        long spBackup = memory.getStackPoint();
+        try {
+            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            final Arguments args = ARM.initArgs(this, arguments);
+            eFunc(begin, args, LR, false);
+        } finally {
+            memory.setStackPoint(spBackup);
+        }
     }
 
     @Override
     public Number eEntry(long begin, long sp) {
-        memory.setStackPoint(sp);
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        return emulate(begin, LR, timeout, true);
+        long spBackup = memory.getStackPoint();
+        try {
+            memory.setStackPoint(sp);
+            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            return emulate(begin, LR, timeout, true);
+        } finally {
+            memory.setStackPoint(spBackup);
+        }
     }
 
     @Override
     public Unicorn eBlock(long begin, long until) {
-        unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-        emulate(begin, until, traceInstruction ? 0 : timeout, true);
-        return unicorn;
+        long spBackup = memory.getStackPoint();
+        try {
+            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            emulate(begin, until, traceInstruction ? 0 : timeout, true);
+            return unicorn;
+        } finally {
+            memory.setStackPoint(spBackup);
+        }
     }
 
     @Override

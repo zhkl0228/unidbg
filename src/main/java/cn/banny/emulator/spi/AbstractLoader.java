@@ -264,6 +264,11 @@ public abstract class AbstractLoader implements Memory, Loader {
         }
     }
 
+    @Override
+    public long getStackPoint() {
+        return sp;
+    }
+
     protected ModuleListener moduleListener;
 
     @Override
