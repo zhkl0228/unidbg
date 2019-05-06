@@ -173,6 +173,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 202:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
                         return;
+                    case 305:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
+                        return;
                     case 327:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, issetugid());
                         return;
@@ -247,6 +250,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int psynch_cvwait(Emulator emulator) {
+        // TODO: implement
+        log.info("psynch_cvwait");
+        return 0;
     }
 
     private int close(Unicorn u, Emulator emulator) {
@@ -402,18 +411,18 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int _kernelrpc_mach_port_mod_refs_trap(Emulator emulator) {
-        // TODO: implement
         Unicorn unicorn = emulator.getUnicorn();
         int task = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         int name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int right = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         int delta = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        log.info("_kernelrpc_mach_port_mod_refs_trap task=" + task + ", name=" + name + ", right=" + right + ", delta=" + delta);
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_port_mod_refs_trap task=" + task + ", name=" + name + ", right=" + right + ", delta=" + delta);
+        }
         return 0;
     }
 
     private int _kernelrpc_mach_port_construct_trap(Emulator emulator) {
-        // TODO: implement
         Unicorn unicorn = emulator.getUnicorn();
         int task = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer options = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
@@ -421,7 +430,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
         long context = r2 | (r3 << 32);
         Pointer name = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
-        log.info("_kernelrpc_mach_port_construct_trap task=" + task + ", options=" + options + ", context=0x" + Long.toHexString(context) + ", name=" + name);
+        if (log.isDebugEnabled()) {
+            MachPortOptions portOptions = new MachPortOptions(options);
+            portOptions.unpack();
+            log.debug("_kernelrpc_mach_port_construct_trap task=" + task + ", options=" + options + ", context=0x" + Long.toHexString(context) + ", name=" + name + ", portOptions=" + portOptions);
+        }
+        name.setInt(0, 0x88);
         return 0;
     }
 
@@ -632,7 +646,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 log.debug("_kernelrpc_mach_vm_deallocate_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
             }
         }
-        emulator.getMemory().munmap(address, (int) size);
+        if (size > 0) {
+            emulator.getMemory().munmap(address, (int) size);
+        }
         return 0;
     }
 
@@ -783,6 +799,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
                         reply.NDR = args.NDR;
                         reply.retCode = 0; // success
+                        reply.host_info_outCnt = 8;
                         reply.host_info_out.kernel_priority = 0;
                         reply.host_info_out.system_priority = 0;
                         reply.host_info_out.server_priority = 0;
@@ -910,7 +927,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 TaskGetExceptionPortsRequest args = new TaskGetExceptionPortsRequest(request);
                 args.unpack();
                 if (log.isDebugEnabled()) {
-                    log.debug("task_get_exception_ports args=" + args);
+                    log.debug("task_get_exception_ports args=" + args + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
 
                 TaskGetExceptionPortsReply reply = new TaskGetExceptionPortsReply(request);
@@ -927,6 +944,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 reply.NDR = args.NDR;
                 reply.retCode = 0;
                 reply.header = new int[32];
+                reply.reserved = new byte[0x100];
                 reply.pack();
 
                 if (log.isDebugEnabled()) {
@@ -934,8 +952,32 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 3404: // mach_ports_lookup
+            {
+                MachPortsLookupReply reply = new MachPortsLookupReply(request);
+                reply.unpack();
+
+                header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+                header.msgh_size = 52;
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 1;
+                reply.outPort = request;
+                reply.ret = 0;
+                reply.mask = 0x2110000;
+                reply.cnt = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("mach_ports_lookup reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             default:
-                log.warn("mach_msg_trap header=" + header + ", size=" + header.size());
+                log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 break;
         }
 

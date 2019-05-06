@@ -16,11 +16,11 @@ public class TaskGetExceptionPortsReply extends UnicornStructure {
     public int retCode;
     public int[] header = new int[32];
     public int masksCnt;
-    public byte[] gap = new byte[0x100];
+    public byte[] reserved = new byte[0x100];
 
     @Override
     protected List<String> getFieldOrder() {
-        return Arrays.asList("NDR", "retCode", "header", "masksCnt", "gap");
+        return Arrays.asList("NDR", "retCode", "header", "masksCnt", "reserved");
     }
 
 }

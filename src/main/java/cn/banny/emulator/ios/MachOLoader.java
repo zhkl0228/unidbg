@@ -49,13 +49,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     private UnicornPointer vars;
 
     private static final int __TSD_THREAD_SELF = 0;
+//    private static final int __PTK_FRAMEWORK_OBJC_KEY5 = 0x2d;
 
     private void initializeTLS() {
         final Pointer environ = allocateStack(emulator.getPointerSize() * 3);
         assert environ != null;
         final Pointer MallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
         environ.setPointer(0, MallocCorruptionAbort);
-        final Pointer MallocStackLogging = writeStackString("MallocStackLogging=YES");
+        final Pointer MallocStackLogging = writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
         environ.setPointer(emulator.getPointerSize(), MallocStackLogging);
         environ.setPointer(emulator.getPointerSize() * 2, null);
 
@@ -71,9 +72,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         vars.setPointer(0xc, _NSGetEnviron);
         vars.setPointer(0x10, _NSGetProgname);
 
-        final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
+        final Pointer thread = allocateStack(0x1000); // reserve space for pthread_internal_t
 
-        final UnicornPointer tls = allocateStack(0x80 * 4); // tls size
+        /* 0xa4必须固定，否则初始化objc会失败 */
+        final UnicornPointer tls = (UnicornPointer) thread.share(0xa4); // tls size
         assert tls != null;
         tls.setPointer(__TSD_THREAD_SELF * emulator.getPointerSize(), thread);
 

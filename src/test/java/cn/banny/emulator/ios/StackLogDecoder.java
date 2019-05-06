@@ -16,7 +16,7 @@ public class StackLogDecoder {
     private static final int stack_logging_type_mapped_file_or_shared_mem = 128;
 
     public static void main(String[] args) throws IOException {
-        File stackLog = new File("target/stack-logs.73879.4062f000.emulator.blO3XW.index");
+        File stackLog = new File("target/stack-logs.77153.4057c000.emulator.EVe3O7.index");
         FileInputStream inputStream = new FileInputStream(stackLog);
         FileChannel channel = inputStream.getChannel();
         MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, stackLog.length());

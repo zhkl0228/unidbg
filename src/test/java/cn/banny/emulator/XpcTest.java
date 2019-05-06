@@ -20,6 +20,8 @@ public class XpcTest extends EmulatorTest {
     }
 
     public void testXpc() throws Exception {
+//        emulator.attach().addBreakPoint(null, 0x403b7dfc);
+//        emulator.traceCode();
         emulator.getMemory().setCallInitFunction();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/xpc"));
 
@@ -32,6 +34,13 @@ public class XpcTest extends EmulatorTest {
 //        emulator.traceCode();
         int ret = module.callEntry(emulator);
         System.err.println("xpc ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    public static void main(String[] args) throws Exception {
+        XpcTest test = new XpcTest();
+        test.setUp();
+        test.testXpc();
+        test.tearDown();
     }
 
 }
