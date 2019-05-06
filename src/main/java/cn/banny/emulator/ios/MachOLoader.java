@@ -4,7 +4,9 @@ import cn.banny.emulator.Alignment;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
+import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ArmSvc;
+import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.*;
@@ -1184,5 +1186,59 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     Module NSGetMachExecuteHeader() {
         return executeModule;
+    }
+
+    private static final int MAP_FILE = 0x0000; /* map from file (default) */
+    private static final int MAP_SHARED = 0x0001; /* [MF|SHM] share changes */
+    private static final int MAP_PRIVATE = 0x0002; /* [MF|SHM] changes are private */
+    private static final int MAP_FIXED = 0x0010; /* [MF|SHM] interpret addr exactly */
+    private static final int MAP_ANONYMOUS = 0x1000; /* allocated from memory, swap space */
+
+    @Override
+    public int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
+        int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
+
+        if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
+            long addr = allocateMapAddress(aligned);
+            log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
+            unicorn.mem_map(addr, aligned, prot);
+            memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
+            return (int) addr;
+        }
+        try {
+            FileIO file;
+            if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
+                long addr = allocateMapAddress(aligned);
+                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
+            }
+
+            if ((flags & MAP_FIXED) != 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug("mmap2 MAP_FIXED start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=" + prot + ", fd=" + fd + ", offset=0x" + Long.toHexString(offset));
+                }
+
+                MemoryMap mapped = null;
+                for (MemoryMap map : memoryMap.values()) {
+                    if (start >= map.base && start < map.base + map.size) {
+                        mapped = map;
+                    }
+                }
+
+                long addr = start;
+                if (mapped != null) {
+                    addr = allocateMapAddress(aligned);
+                }
+
+                FileIO io = syscallHandler.fdMap.get(fd);
+                if (io != null) {
+                    return io.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+
+        throw new AbstractMethodError("mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset);
     }
 }

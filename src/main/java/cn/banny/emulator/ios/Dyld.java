@@ -754,6 +754,29 @@ public class Dyld implements Dlfcn {
                 }
                 return _malloc_zone_valloc;
             }
+            if ("_malloc_zone_memalign".equals(symbolName)) {
+                if (_malloc_zone_memalign == 0) {
+                    _malloc_zone_memalign = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            Pointer zone = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            int alignment = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                            if (size <= LARGE_THRESHOLD) {
+                                Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Fake _malloc_zone_memalign zone=" + zone + ", alignment=" + alignment + ", size=" + size);
+                                } else if (Dyld.log.isDebugEnabled()) {
+                                    Dyld.log.debug("Fake _malloc_zone_memalign zone=" + zone + ", alignment=" + alignment + ", size=" + size);
+                                }
+                                u.reg_write(ArmConst.UC_ARM_REG_R2, LARGE_THRESHOLD + 1);
+                            }
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _malloc_zone_memalign;
+            }
         } else if ("libsystem_pthread.dylib".equals(libraryName)) {
             if ("_pthread_getname_np".equals(symbolName)) {
                 if (_pthread_getname_np == 0) {
@@ -780,7 +803,7 @@ public class Dyld implements Dlfcn {
 
 //    private long _free;
     private long _realloc, _malloc, _calloc, _valloc;
-    private long _malloc_zone_malloc, _malloc_zone_calloc, _malloc_zone_realloc, _malloc_zone_valloc;
+    private long _malloc_zone_malloc, _malloc_zone_calloc, _malloc_zone_realloc, _malloc_zone_valloc, _malloc_zone_memalign;
     private long _pthread_getname_np;
 
     private int dlsym(Memory memory, long handle, String symbolName) {

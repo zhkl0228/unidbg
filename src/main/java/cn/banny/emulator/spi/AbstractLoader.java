@@ -37,7 +37,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 
     protected long sp;
     protected long mmapBaseAddress;
-    private final Map<Long, MemoryMap> memoryMap = new TreeMap<>();
+    protected final Map<Long, MemoryMap> memoryMap = new TreeMap<>();
 
     public AbstractLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
         this.unicorn = emulator.getUnicorn();
@@ -66,7 +66,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 //    private static final int MAP_FIXED =	0x10;		/* Interpret addr exactly */
 //    private static final int MAP_ANONYMOUS =	0x20;		/* don't use a file */
 
-    private long allocateMapAddress(int length) {
+    protected final long allocateMapAddress(int length) {
         Map.Entry<Long, MemoryMap> lastEntry = null;
         for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
             if (lastEntry == null) {
@@ -98,7 +98,7 @@ public abstract class AbstractLoader implements Memory, Loader {
     private static final int MAP_ANONYMOUS = 0x20;
 
     @Override
-    public final int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
+    public int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
 
         if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {

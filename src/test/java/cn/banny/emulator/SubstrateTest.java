@@ -14,8 +14,6 @@ import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
@@ -70,7 +68,7 @@ public class SubstrateTest extends EmulatorTest {
         Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
         assertNotNull(zone);
         Pointer malloc = zone.getPointer(0xc);
-        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 0x80)[0].intValue());
+        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, MachO.LARGE_THRESHOLD + 1)[0].intValue());
         assertNotNull(block);
         Pointer sizeFun = zone.getPointer(0x8);
         int size = MachOModule.emulateFunction(emulator, ((UnicornPointer) sizeFun).peer, zone, block)[0].intValue();
@@ -80,7 +78,7 @@ public class SubstrateTest extends EmulatorTest {
         System.err.println("malloc_default_zone=" + malloc_default_zone + ", zone=" + zone + ", malloc=" + malloc +
                 ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize);
 
-        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
         free.call(emulator, block);
 
         IHookZz hookZz = HookZz.getInstance(emulator);

@@ -12,10 +12,11 @@ import java.util.Map;
 
 public abstract class AbstractFileIO implements FileIO {
 
-    private static final int F_GETFD = 1;
-    private static final int F_SETFD = 2;
-    private static final int F_GETFL = 3;
-    private static final int F_SETFL = 4;
+    private static final int F_GETFD = 1; /* get file descriptor flags */
+    private static final int F_SETFD = 2; /* set file descriptor flags */
+    private static final int F_GETFL = 3; /* get file status flags */
+    private static final int F_SETFL = 4; /* set file status flags */
+    private static final int F_ADDFILESIGS = 61; /* add signature from same file (used by dyld for shared libs) */
 
     private static final int FD_CLOEXEC = 1;
 
@@ -50,8 +51,10 @@ public abstract class AbstractFileIO implements FileIO {
                     oflags |= O_NONBLOCK;
                 }
                 return 0;
+            case F_ADDFILESIGS:
+                return 0;
         }
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override

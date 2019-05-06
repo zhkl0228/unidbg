@@ -116,6 +116,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 4:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
                         return;
+                    case 6:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, close(u, emulator));
+                        return;
+                    case 10:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
+                        return;
                     case 20:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, getpid(emulator));
                         return;
@@ -160,6 +166,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         return;
                     case 197:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mmap(u, emulator));
+                        return;
+                    case 199:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
                         return;
                     case 202:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
@@ -238,6 +247,50 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int close(Unicorn u, Emulator emulator) {
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        if (log.isDebugEnabled()) {
+            log.debug("close fd=" + fd);
+        }
+
+        FileIO file = fdMap.remove(fd);
+        if (file != null) {
+            file.close();
+            return 0;
+        } else {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+    }
+
+    private int lseek(Unicorn u, Emulator emulator) {
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        int r1 = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        long r2 = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        long offset = r1 | (r2 << 32);
+        int whence = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("lseek fd=" + fd + ", offset=" + offset + ", whence=" + whence);
+            }
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        int pos = file.lseek((int) offset, whence);
+        if (log.isDebugEnabled()) {
+            log.debug("lseek fd=" + fd + ", offset=" + offset + ", whence=" + whence + ", pos=" + pos);
+        }
+        return pos;
+    }
+
+    private int unlink(Emulator emulator) {
+        Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        String path = FilenameUtils.normalize(pathname.getString(0));
+        log.info("unlink path=" + path);
+        return 0;
     }
 
     private int getdirentries64(Unicorn u, Emulator emulator) {
@@ -1020,15 +1073,15 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return fcntl(emulator, fd, cmd, arg);
     }
 
-    private static final int MMAP2_SHIFT = 12;
-
     private int mmap(Unicorn u, Emulator emulator) {
         UnicornPointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int length = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int prot = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         int flags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        int offset = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue() << MMAP2_SHIFT;
+        int r5 = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+        long r6 = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+        long offset = r5 | (r6 << 32);
 
         int tag = fd >>> 24;
         if (tag != 0) {
@@ -1036,7 +1089,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
 
         boolean warning = length >= 0x10000000;
-        int base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, offset);
+        int base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, (int) offset);
         String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag;
         if (log.isDebugEnabled() || warning) {
             if (warning) {
