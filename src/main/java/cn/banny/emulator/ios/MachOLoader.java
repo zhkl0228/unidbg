@@ -169,6 +169,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                 throw new UnsupportedOperationException("fileType=" + machO.header().filetype());
         }
 
+        final boolean isExecutable = machO.header().filetype() == MachO.FileType.EXECUTE;
+        final boolean isPositionIndependent = (machO.header().flags() & MH_PIE) != 0;
+
         long start = System.currentTimeMillis();
         long size = 0;
         String dyId = libraryFile.getName();
@@ -267,9 +270,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        final long load_base = mmapBaseAddress;
+        boolean loadFixPosition = isExecutable && !isPositionIndependent;
+        final long load_base = loadFixPosition ? 0 : mmapBaseAddress;
         long machHeader = -1;
-        mmapBaseAddress = load_base + size;
+        if (!loadFixPosition) {
+            mmapBaseAddress = load_base + size;
+        }
 
         final List<NeedLibrary> neededList = new ArrayList<>();
         final List<MemRegion> regions = new ArrayList<>(5);
@@ -497,6 +503,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             case "__dof_plockstat":
             case "__dof_objc_runt":
             case "__symbolstub1":
+            case "__symbol_stub4":
             case "__lazy_symbol":
                 break;
             default:

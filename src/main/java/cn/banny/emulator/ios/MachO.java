@@ -4,6 +4,8 @@ public interface MachO {
 
     long CPU_SUBTYPE_ARM_V7 = 9;
 
+    int MH_PIE = 0x200000;
+
     int SECTION_TYPE = 0x000000ff;
     int S_ZEROFILL = 0x1;
     int S_NON_LAZY_SYMBOL_POINTERS = 0x6;

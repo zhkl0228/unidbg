@@ -113,7 +113,7 @@ public class Dyld implements Dlfcn {
                         public int handle(Emulator emulator) {
                             UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             log.debug("__dyld_get_image_slide mh=" + mh);
-                            return (int) mh.peer;
+                            return mh == null ? 0 : (int) mh.peer;
                         }
                     });
                 }
