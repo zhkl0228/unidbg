@@ -11,7 +11,7 @@ import unicorn.InterruptHook;
 
 public interface SyscallHandler extends InterruptHook {
 
-    int IOS_SYS_CALL_NUM = 0x80;
+    int DARWIN_SWI_SYSCALL = 0x80;
 
     /**
      * 后面添加的优先级高

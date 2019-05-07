@@ -34,9 +34,10 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
 
     final List<InitFunction> initFunctionList;
 
+    final long machHeader;
+
     boolean indirectSymbolBound;
     boolean lazyPointerProcessed;
-    boolean classesRealized;
 
     private final Map<String, Symbol> symbolMap = new HashMap<>();
 
@@ -46,7 +47,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
                 String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
-                MachOLoader loader) {
+                MachOLoader loader, long machHeader) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -60,9 +61,10 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.envp = envp;
         this.apple = apple;
         this.vars = vars;
+        this.machHeader = machHeader;
 
         this.log = LogFactory.getLog("cn.banny.emulator.ios." + name);
-        this.initFunctionList = parseInitFunction(machO, buffer.duplicate(), base, name, emulator, loader);
+        this.initFunctionList = parseInitFunction(machO, buffer.duplicate(), name, emulator, loader);
 
         final Map<String, ExportSymbol> exportSymbols = processExportNode(log, dyldInfoCommand, buffer);
 
@@ -243,7 +245,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         return map;
     }
 
-    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, long load_base, String libName, Emulator emulator, MachOLoader loader) {
+    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, String libName, Emulator emulator, MachOLoader loader) {
         List<InitFunction> initFunctionList = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {

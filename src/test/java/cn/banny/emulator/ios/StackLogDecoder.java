@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
+// https://github.com/3ign0n/iOS-malloc-stack-log-decoder
 public class StackLogDecoder {
 
     private static final int MALLOC_LOG_TYPE_ALLOCATE = 2; /* malloc, realloc, etc... */
@@ -16,7 +17,7 @@ public class StackLogDecoder {
     private static final int stack_logging_type_mapped_file_or_shared_mem = 128;
 
     public static void main(String[] args) throws IOException {
-        File stackLog = new File("target/stack-logs.77153.4057c000.emulator.EVe3O7.index");
+        File stackLog = new File("target/stack-logs.78490.2000.emulator.zcmkle.index");
         FileInputStream inputStream = new FileInputStream(stackLog);
         FileChannel channel = inputStream.getChannel();
         MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, stackLog.length());

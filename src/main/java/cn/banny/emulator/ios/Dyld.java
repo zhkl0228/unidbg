@@ -51,6 +51,7 @@ public class Dyld implements Dlfcn {
     private Pointer __dyld_image_count;
     private Pointer __dyld_get_image_name;
     private Pointer __dyld_get_image_header;
+    private Pointer __dyld_get_image_vmaddr_slide;
     private Pointer __dyld_get_image_slide;
     private Pointer __dyld_register_func_for_add_image;
     private Pointer __dyld_register_func_for_remove_image;
@@ -71,6 +72,82 @@ public class Dyld implements Dlfcn {
     int _dyld_func_lookup(Emulator emulator, String name, Pointer address) {
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
+            case "__dyld_get_image_name":
+                if (__dyld_get_image_name == null) {
+                    __dyld_get_image_name = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            if (image_index < 0 || image_index >= modules.length) {
+                                return 0;
+                            }
+                            MachOModule module = (MachOModule) modules[image_index];
+                            return (int) module.createPathMemory(svcMemory).peer;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_get_image_name);
+                return 1;
+            case "__dyld_get_image_header":
+                if (__dyld_get_image_header == null) {
+                    __dyld_get_image_header = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            if (image_index < 0 || image_index >= modules.length) {
+                                return 0;
+                            }
+                            MachOModule module = (MachOModule) modules[image_index];
+                            return (int) module.machHeader;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_get_image_header);
+                return 1;
+            case "__dyld_get_image_slide":
+                if (__dyld_get_image_slide == null) {
+                    __dyld_get_image_slide = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            log.debug("__dyld_get_image_slide mh=" + mh);
+                            return 0; // TODO check with __dyld_get_image_vmaddr_slide
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_get_image_slide);
+                return 1;
+            case "__dyld_get_image_vmaddr_slide":
+                if (__dyld_get_image_vmaddr_slide == null) {
+                    __dyld_get_image_vmaddr_slide = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            log.debug("__dyld_get_image_vmaddr_slide index=" + image_index);
+                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            if (image_index < 0 || image_index >= modules.length) {
+                                return 0;
+                            }
+                            MachOModule module = (MachOModule) modules[image_index];
+                            return (int) module.base; // TODO check with vmaddr rebase
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_get_image_vmaddr_slide);
+                return 1;
+            case "__dyld_image_count":
+                if (__dyld_image_count == null) {
+                    __dyld_image_count = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            return loader.getLoadedModules().size();
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_image_count);
+                return 1;
             case "__dyld_dlopen":
                 if (__dyld_dlopen == null) {
                     __dyld_dlopen = svcMemory.registerSvc(new ArmSvc() {
@@ -168,51 +245,13 @@ public class Dyld implements Dlfcn {
                 }
                 address.setPointer(0, __dyld_dlsym);
                 return 1;
-            case "__dyld_get_image_name":
-                if (__dyld_get_image_name == null) {
-                    __dyld_get_image_name = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            MachOModule module = (MachOModule) loader.getLoadedModules().toArray(new Module[0])[image_index];
-                            return (int) module.createPathMemory(svcMemory).peer;
-                        }
-                    });
-                }
-                address.setPointer(0, __dyld_get_image_name);
-                return 1;
-            case "__dyld_get_image_header":
-            case "__dyld_get_image_vmaddr_slide":
-                if (__dyld_get_image_header == null) {
-                    __dyld_get_image_header = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            MachOModule module = (MachOModule) loader.getLoadedModules().toArray(new Module[0])[image_index];
-                            return (int) module.base;
-                        }
-                    });
-                }
-                address.setPointer(0, __dyld_get_image_header);
-                return 1;
-            case "__dyld_image_count":
-                if (__dyld_image_count == null) {
-                    __dyld_image_count = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            return loader.getLoadedModules().size();
-                        }
-                    });
-                }
-                address.setPointer(0, __dyld_image_count);
-                return 1;
             case "__dyld_register_thread_helpers":
                 if (__dyld_register_thread_helpers == null) {
                     __dyld_register_thread_helpers = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public int handle(Emulator emulator) {
                             Pointer helpers = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            log.debug("registerThreadHelpers helpers=" + helpers);
+                            log.info("registerThreadHelpers helpers=" + helpers);
                             return 0;
                         }
                     });
@@ -238,19 +277,6 @@ public class Dyld implements Dlfcn {
                     });
                 }
                 address.setPointer(0, __dyld_register_func_for_remove_image);
-                return 1;
-            case "__dyld_get_image_slide":
-                if (__dyld_get_image_slide == null) {
-                    __dyld_get_image_slide = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            log.debug("__dyld_get_image_slide mh=" + mh);
-                            return 0;
-                        }
-                    });
-                }
-                address.setPointer(0, __dyld_get_image_slide);
                 return 1;
             case "__dyld_register_func_for_add_image":
                 /*
@@ -522,7 +548,7 @@ public class Dyld implements Dlfcn {
         return generateDyldImageInfo(emulator);
     }
 
-    private long __NSGetMachExecuteHeader;
+//    private long __NSGetMachExecuteHeader;
     private long _abort;
 
     @Override
@@ -541,7 +567,7 @@ public class Dyld implements Dlfcn {
                 }
                 return _abort;
             }
-            if ("__NSGetMachExecuteHeader".equals(symbolName)) {
+            /*if ("__NSGetMachExecuteHeader".equals(symbolName)) {
                 if (__NSGetMachExecuteHeader == 0) {
                     __NSGetMachExecuteHeader = svcMemory.registerSvc(new ArmSvc() {
                         @Override
@@ -559,7 +585,7 @@ public class Dyld implements Dlfcn {
                     }).peer;
                 }
                 return __NSGetMachExecuteHeader;
-            }
+            }*/
         } else if ("libsystem_malloc.dylib".equals(libraryName)) {
             {
                 Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");

@@ -66,7 +66,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 //    private static final int MAP_FIXED =	0x10;		/* Interpret addr exactly */
 //    private static final int MAP_ANONYMOUS =	0x20;		/* don't use a file */
 
-    protected final long allocateMapAddress(int length) {
+    protected final long allocateMapAddress(long length) {
         Map.Entry<Long, MemoryMap> lastEntry = null;
         for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
             if (lastEntry == null) {

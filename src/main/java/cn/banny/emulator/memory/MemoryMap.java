@@ -3,10 +3,10 @@ package cn.banny.emulator.memory;
 public class MemoryMap {
 
     public final long base;
-    public final int size;
+    public final long size;
     public final int prot;
 
-    public MemoryMap(long base, int size, int prot) {
+    public MemoryMap(long base, long size, int prot) {
         this.base = base;
         this.size = size;
         this.prot = prot;

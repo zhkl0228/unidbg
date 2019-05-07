@@ -1,10 +1,9 @@
 package cn.banny.emulator.ios;
 
 import cn.banny.emulator.Emulator;
+import cn.banny.emulator.ios.struct.MachHeader;
 import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.InitFunction;
-import com.sun.jna.Pointer;
-import io.kaitai.MachO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -33,17 +32,15 @@ class MachOModuleInit extends InitFunction {
      */
     public void call(Emulator emulator) {
 //        emulator.traceCode();
-        Pointer header = null;
-        int backupFileType = (int) MachO.FileType.DYLIB.id();
+        MachHeader header = null;
         if ("libSystem.B.dylib".equals(libName)) {
-            header = UnicornPointer.pointer(emulator, loader.NSGetMachExecuteHeader().base);
-            if (header != null) {
-                backupFileType = header.getInt(0xc);
-                if (backupFileType == MachO.FileType.EXECUTE.id()) {
-                    header = null;
-                } else {
-                    header.setInt(0xc, (int) MachO.FileType.EXECUTE.id()); // mock execute file
-                }
+            MachOModule execute = loader.NSGetMachExecuteHeader();
+            header = new MachHeader(UnicornPointer.pointer(emulator, execute.machHeader));
+            if (log.isDebugEnabled()) {
+                log.debug("setExecutable execute=" + execute + ", header=" + header);
+            }
+            if (!header.setExecutable()) {
+                header = null;
             }
         }
         try {
@@ -59,10 +56,7 @@ class MachOModuleInit extends InitFunction {
             }
         } finally {
             if (header != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Restore backupFileType=" + backupFileType + ", oldType=" + header.getInt(0xc));
-                }
-                header.setInt(0xc, backupFileType);
+                header.resetFileType();
             }
         }
     }

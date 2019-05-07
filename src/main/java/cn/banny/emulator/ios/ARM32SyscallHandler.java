@@ -60,7 +60,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         String syscall = null;
         Throwable exception = null;
         try {
-            if (svcNumber != IOS_SYS_CALL_NUM) {
+            if (svcNumber != DARWIN_SWI_SYSCALL) {
                 Svc svc = svcMemory.getSvc(svcNumber);
                 if (svc != null) {
                     u.reg_write(ArmConst.UC_ARM_REG_R0, svc.handle(emulator));
@@ -664,13 +664,23 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long mask = (r5 << 32) | r4;
         int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
         int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
-        UnicornPointer pointer = emulator.getMemory().mmap((int) size, cur_protection);
+        boolean anywhere = (flags & VM_FLAGS_ANYWHERE) != 0;
+        boolean malloc = (flags & VM_MEMORY_MALLOC) != 0;
+
+        Pointer value = address.getPointer(0);
+        UnicornPointer pointer;
+        if (malloc && value != null) {
+            MachOLoader loader = (MachOLoader) emulator.getMemory();
+            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size));
+        } else {
+            pointer = emulator.getMemory().mmap((int) size, cur_protection);
+        }
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer);
+            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
         } else {
             Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + address.getPointer(0) + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer);
+                log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
             }
         }
         address.setPointer(0, pointer);
@@ -692,7 +702,13 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         boolean malloc = (flags & VM_MEMORY_MALLOC) != 0;
 
         Pointer value = address.getPointer(0);
-        UnicornPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+        UnicornPointer pointer;
+        if (malloc && value != null) {
+            MachOLoader loader = (MachOLoader) emulator.getMemory();
+            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size));
+        } else {
+            pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+        }
         address.setPointer(0, pointer);
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
@@ -909,7 +925,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 reply.NDR = args.NDR;
                 reply.retCode = 0; // success
                 reply.address = (int) memoryMap.base;
-                reply.size = memoryMap.size;
+                reply.size = (int) memoryMap.size;
                 reply.infoCnt = args.infoCnt;
                 reply.nestingDepth = args.nestingDepth;
                 reply.info.protection = memoryMap.prot;

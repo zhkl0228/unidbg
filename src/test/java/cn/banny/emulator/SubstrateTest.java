@@ -14,6 +14,8 @@ import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
@@ -31,6 +33,8 @@ public class SubstrateTest extends EmulatorTest {
     protected Emulator createARMEmulator() {
         return new DarwinARMEmulator();
     }
+
+    private static final int _IONBF = 2; /* setvbuf should set unbuffered */
 
     public void testMS() throws Exception {
         long start = System.currentTimeMillis();
@@ -58,6 +62,12 @@ public class SubstrateTest extends EmulatorTest {
 
 //        emulator.attach().addBreakPoint(null, 0x40232a6c);
 
+        Symbol ___stdoutp = module.findSymbolByName("___stdoutp");
+        Symbol ___stderrp = module.findSymbolByName("___stderrp");
+        Symbol _setvbuf = module.findSymbolByName("_setvbuf");
+        _setvbuf.call(emulator, ___stdoutp.createPointer(emulator).getPointer(0), 0, _IONBF, 0);
+        _setvbuf.call(emulator, ___stderrp.createPointer(emulator).getPointer(0), 0, _IONBF, 0);
+
         Symbol malloc_num_zones = module.findSymbolByName("_malloc_num_zones");
         assertNotNull(malloc_num_zones);
         System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0));
@@ -78,7 +88,6 @@ public class SubstrateTest extends EmulatorTest {
         System.err.println("malloc_default_zone=" + malloc_default_zone + ", zone=" + zone + ", malloc=" + malloc +
                 ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize);
 
-//        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
         free.call(emulator, block);
 
         IHookZz hookZz = HookZz.getInstance(emulator);
@@ -152,6 +161,8 @@ public class SubstrateTest extends EmulatorTest {
             }
         });*/
 
+        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
+//        emulator.traceCode();
         whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {

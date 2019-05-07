@@ -45,12 +45,12 @@ public class ARMSvcMemory implements SvcMemory {
     public UnicornPointer registerSvc(Svc svc) {
         final int number;
         if (svc instanceof ThumbSvc) {
-            if (++thumbSvcNumber == SyscallHandler.IOS_SYS_CALL_NUM) {
+            if (++thumbSvcNumber == SyscallHandler.DARWIN_SWI_SYSCALL) {
                 thumbSvcNumber++;
             }
             number = thumbSvcNumber;
         } else if (svc instanceof ArmSvc || svc instanceof Arm64Svc) {
-            if (++armSvcNumber == SyscallHandler.IOS_SYS_CALL_NUM) {
+            if (++armSvcNumber == SyscallHandler.DARWIN_SWI_SYSCALL) {
                 armSvcNumber++;
             }
             number = armSvcNumber;
