@@ -19,9 +19,15 @@ import java.net.URL;
 
 public class DarwinResolver implements LibraryResolver, IOResolver {
 
+    static final String LIB_VERSION = "7.1";
+
     private final String version;
 
-    public DarwinResolver(String version) {
+    public DarwinResolver() {
+        this(LIB_VERSION);
+    }
+
+    private DarwinResolver(String version) {
         this.version = version;
     }
 

@@ -18,13 +18,15 @@ class MachOModuleInit extends InitFunction {
     private final UnicornPointer envp;
     private final UnicornPointer apple;
     private final UnicornPointer vars;
+    private final boolean isModInit;
 
-    MachOModuleInit(MachOLoader loader, MachOModule module, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars, long... addresses) {
+    MachOModuleInit(MachOLoader loader, MachOModule module, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars, boolean isModInit, long... addresses) {
         super(module.base, module.name, addresses);
         this.loader = loader;
         this.envp = envp;
         this.apple = apple;
         this.vars = vars;
+        this.isModInit = isModInit;
     }
 
     /**
@@ -45,13 +47,21 @@ class MachOModuleInit extends InitFunction {
         }
         try {
             for (long addr : addresses) {
-                log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
+                if (isModInit) {
+                    log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
+                } else {
+                    log.debug("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(addr));
+                }
 //            emulator.attach().addBreakPoint(null, 0x401d6be6);
 //            emulator.attach().addBreakPoint(null, 0x402fb538);
                 long start = System.currentTimeMillis();
                 callModInit(emulator, load_base + addr, 0, null, envp, apple, vars);
                 if (log.isDebugEnabled()) {
-                    System.err.println("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+                    if (isModInit) {
+                        System.err.println("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+                    } else {
+                        System.err.println("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(addr) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+                    }
                 }
             }
         } finally {

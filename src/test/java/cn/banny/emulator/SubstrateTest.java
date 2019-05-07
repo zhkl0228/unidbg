@@ -26,15 +26,13 @@ public class SubstrateTest extends EmulatorTest {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
-        return new DarwinResolver("7.1");
+        return new DarwinResolver();
     }
 
     @Override
     protected Emulator createARMEmulator() {
         return new DarwinARMEmulator();
     }
-
-    private static final int _IONBF = 2; /* setvbuf should set unbuffered */
 
     public void testMS() throws Exception {
         emulator.getMemory().setCallInitFunction();
@@ -57,11 +55,11 @@ public class SubstrateTest extends EmulatorTest {
 
 //        emulator.attach().addBreakPoint(null, 0x40232a6c);
 
-        Symbol ___stdoutp = module.findSymbolByName("___stdoutp");
+        /*Symbol ___stdoutp = module.findSymbolByName("___stdoutp");
         Symbol ___stderrp = module.findSymbolByName("___stderrp");
         Symbol _setvbuf = module.findSymbolByName("_setvbuf");
-        _setvbuf.call(emulator, ___stdoutp.createPointer(emulator).getPointer(0), 0, _IONBF, 0);
-        _setvbuf.call(emulator, ___stderrp.createPointer(emulator).getPointer(0), 0, _IONBF, 0);
+        _setvbuf.call(emulator, ___stdoutp.createPointer(emulator).getPointer(0), 0, MachO._IONBF, 0);
+        _setvbuf.call(emulator, ___stderrp.createPointer(emulator).getPointer(0), 0, MachO._IONBF, 0);*/
 
         Symbol malloc_num_zones = module.findSymbolByName("_malloc_num_zones");
         assertNotNull(malloc_num_zones);

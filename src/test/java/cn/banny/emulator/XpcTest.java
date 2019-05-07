@@ -12,7 +12,7 @@ public class XpcTest extends EmulatorTest {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
-        return new DarwinResolver("7.1");
+        return new DarwinResolver();
     }
 
     @Override

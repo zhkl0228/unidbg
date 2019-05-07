@@ -70,6 +70,8 @@ public interface MachO {
     int RTLD_DEFAULT = -2;
     int RTLD_MAIN_ONLY = -5;
 
+    int _IONBF = 2; /* setvbuf should set unbuffered */
+
     int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
 
 }
