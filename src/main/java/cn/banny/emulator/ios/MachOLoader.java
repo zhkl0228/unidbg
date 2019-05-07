@@ -56,7 +56,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         assert environ != null;
         final Pointer MallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
         environ.setPointer(0, MallocCorruptionAbort);
-        final Pointer MallocStackLogging = writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
+        final Pointer MallocStackLogging = null;//writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
         environ.setPointer(emulator.getPointerSize(), MallocStackLogging);
         environ.setPointer(emulator.getPointerSize() * 2, null);
 
@@ -452,30 +452,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         processRebase(log, module);
-
-        // TODO check with __dyld_get_image_vmaddr_slide
-        /*if (emulator.getPointerSize() == 4) {
-            Pointer pointer = UnicornPointer.pointer(emulator, machHeader);
-            assert pointer != null;
-            MachHeader header = new MachHeader(pointer);
-            Pointer loadPointer = pointer.share(header.size());
-            for (int i = 0; i < header.ncmds; i++) {
-                LoadCommand loadCommand = new LoadCommand(loadPointer);
-                loadCommand.unpack();
-                if (loadCommand.type == MachO.LoadCommandType.SEGMENT.id()) {
-                    MachoSegmentCommand segmentCommand = new MachoSegmentCommand(loadPointer);
-                    segmentCommand.unpack();
-                    if (MachOLoader.log.isDebugEnabled()) {
-                        MachOLoader.log.debug("loadCommand SEGMENT size=" + loadCommand.size + ", libName=" + dyId + ", vmaddr=0x" + Integer.toHexString(segmentCommand.vmaddr) + ", header=" + pointer + ", segmentName=" + new String(segmentCommand.segname).trim());
-                    }
-                    segmentCommand.vmaddr += load_base;
-                    segmentCommand.pack();
-                }
-                loadPointer = loadPointer.share(loadCommand.size);
-            }
-        } else {
-            throw new UnsupportedOperationException();
-        }*/
 
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");

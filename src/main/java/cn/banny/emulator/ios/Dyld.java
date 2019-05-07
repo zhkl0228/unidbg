@@ -113,7 +113,7 @@ public class Dyld implements Dlfcn {
                         public int handle(Emulator emulator) {
                             UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             log.debug("__dyld_get_image_slide mh=" + mh);
-                            return 0; // TODO check with __dyld_get_image_vmaddr_slide
+                            return (int) mh.peer;
                         }
                     });
                 }
@@ -131,7 +131,7 @@ public class Dyld implements Dlfcn {
                                 return 0;
                             }
                             MachOModule module = (MachOModule) modules[image_index];
-                            return (int) module.base; // TODO check with vmaddr rebase
+                            return (int) module.machHeader;
                         }
                     });
                 }

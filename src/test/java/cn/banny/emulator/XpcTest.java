@@ -42,7 +42,7 @@ public class XpcTest extends EmulatorTest {
             System.out.println("Test block=" + blocks[i].getPointer());
         }
 //        emulator.traceCode();
-        emulator.attach().addBreakPoint(null, 0x40415dd2);
+//        emulator.attach().addBreakPoint(null, 0x40415dd2);
         for (MemoryBlock block : blocks) {
             block.free(false);
         }

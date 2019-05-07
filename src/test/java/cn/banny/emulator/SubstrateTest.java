@@ -37,15 +37,10 @@ public class SubstrateTest extends EmulatorTest {
     private static final int _IONBF = 2; /* setvbuf should set unbuffered */
 
     public void testMS() throws Exception {
-        long start = System.currentTimeMillis();
         emulator.getMemory().setCallInitFunction();
 //        emulator.attach().addBreakPoint(null, 0x4041fd50);
 //        emulator.traceCode();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
-
-        Pointer thread = UnicornPointer.pointer(emulator, 0xbffffbb4L);
-        assertNotNull(thread);
-        Inspector.inspect(thread.getByteArray(0, 16), "load offset=" + (System.currentTimeMillis() - start) + "ms, thread=" + thread);
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 
@@ -78,7 +73,7 @@ public class SubstrateTest extends EmulatorTest {
         Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
         assertNotNull(zone);
         Pointer malloc = zone.getPointer(0xc);
-        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, MachO.LARGE_THRESHOLD + 1)[0].intValue());
+        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 1)[0].intValue());
         assertNotNull(block);
         Pointer sizeFun = zone.getPointer(0x8);
         int size = MachOModule.emulateFunction(emulator, ((UnicornPointer) sizeFun).peer, zone, block)[0].intValue();
@@ -145,7 +140,7 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x40234c1e);
         memoryBlock.free(false);
 
-        start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
 
 //        emulator.traceRead();
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
