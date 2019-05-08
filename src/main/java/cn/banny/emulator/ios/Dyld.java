@@ -249,8 +249,11 @@ public class Dyld implements Dlfcn {
                     __dyld_register_thread_helpers = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public int handle(Emulator emulator) {
+                            // the table passed to dyld containing thread helpers
                             Pointer helpers = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            log.info("registerThreadHelpers helpers=" + helpers);
+                            if (log.isDebugEnabled()) {
+                                log.debug("registerThreadHelpers helpers=" + helpers);
+                            }
                             return 0;
                         }
                     });

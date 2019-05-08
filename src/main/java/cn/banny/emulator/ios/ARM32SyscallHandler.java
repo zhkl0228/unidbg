@@ -228,7 +228,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         u.reg_write(ArmConst.UC_ARM_REG_R0, audit_session_self());
                         return;
                     case 0x80000000:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap());
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
                         return;
                     default:
                         break;
@@ -492,12 +492,13 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int sandbox_ms(Emulator emulator) {
-        // TODO: implement
         Unicorn unicorn = emulator.getUnicorn();
         Pointer policyName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int call = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         Pointer args = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        log.info("sandbox_ms policyName=" + policyName.getString(0) + ", call=" + call + ", args=" + args);
+        if (log.isDebugEnabled()) {
+            log.debug("sandbox_ms policyName=" + policyName.getString(0) + ", call=" + call + ", args=" + args);
+        }
         return 0;
     }
 
@@ -507,14 +508,26 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int bsdthread_register(Emulator emulator) {
-        // TODO: implement
-        log.info("bsdthread_register");
+        Unicorn unicorn = emulator.getUnicorn();
+        UnicornPointer thread_start = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        UnicornPointer start_wqthread = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int PTHREAD_SIZE = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        UnicornPointer data = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
+        int dataSize = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        int r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+        long r6 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+        long offset = r5 | (r6 << 32);
+        if (log.isDebugEnabled()) {
+            log.debug("bsdthread_register thread_start=" + thread_start + ", start_wqthread=" + start_wqthread + ", PTHREAD_SIZE=" + PTHREAD_SIZE + ", data=" + data + ", dataSize=" + dataSize + ", offset=0x" + Long.toHexString(offset));
+        }
         return 0;
     }
 
-    private int semaphore_signal_trap() {
-        // TODO: implement
-        log.info("semaphore_signal_trap");
+    private int semaphore_signal_trap(Emulator emulator) {
+        Pointer sema = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+        if (log.isDebugEnabled()) {
+            log.debug("semaphore_signal_trap sema=" + sema);
+        }
         return 0;
     }
 
