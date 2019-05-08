@@ -7,8 +7,7 @@ import cn.banny.emulator.arm.AbstractARMEmulator;
 import cn.banny.emulator.arm.ArmHook;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.arm.HookStatus;
-import cn.banny.emulator.ios.struct.DlInfo;
-import cn.banny.emulator.ios.struct.DyldImageInfo;
+import cn.banny.emulator.ios.struct.*;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -113,7 +112,7 @@ public class Dyld implements Dlfcn {
                         public int handle(Emulator emulator) {
                             UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             log.debug("__dyld_get_image_slide mh=" + mh);
-                            return mh == null ? 0 : (int) mh.peer;
+                            return mh == null ? 0 : computeSlide(emulator, mh.peer);
                         }
                     });
                 }
@@ -131,7 +130,7 @@ public class Dyld implements Dlfcn {
                                 return 0;
                             }
                             MachOModule module = (MachOModule) modules[image_index];
-                            return (int) module.machHeader;
+                            return computeSlide(emulator, module.machHeader);
                         }
                     });
                 }
@@ -447,6 +446,31 @@ public class Dyld implements Dlfcn {
         }
         address.setPointer(0, null);
         return 0;
+    }
+
+    private int computeSlide(Emulator emulator, long machHeader) {
+        if (emulator.getPointerSize() == 4) {
+            Pointer pointer = UnicornPointer.pointer(emulator, machHeader);
+            assert pointer != null;
+            MachHeader header = new MachHeader(pointer);
+            Pointer loadPointer = pointer.share(header.size());
+            for (int i = 0; i < header.ncmds; i++) {
+                LoadCommand loadCommand = new LoadCommand(loadPointer);
+                loadCommand.unpack();
+                if (loadCommand.type == io.kaitai.MachO.LoadCommandType.SEGMENT.id()) {
+                    MachoSegmentCommand segmentCommand = new MachoSegmentCommand(loadPointer);
+                    segmentCommand.unpack();
+
+                    if ("__TEXT".equals(new String(segmentCommand.segname).trim())) {
+                        return (int) (machHeader - segmentCommand.vmaddr);
+                    }
+                }
+                loadPointer = loadPointer.share(loadCommand.size);
+            }
+            return 0;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private int dlopen(Memory memory, String path, Emulator emulator) {
