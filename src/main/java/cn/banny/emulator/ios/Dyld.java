@@ -458,7 +458,7 @@ public class Dyld implements Dlfcn {
                 LoadCommand loadCommand = new LoadCommand(loadPointer);
                 loadCommand.unpack();
                 if (loadCommand.type == io.kaitai.MachO.LoadCommandType.SEGMENT.id()) {
-                    MachoSegmentCommand segmentCommand = new MachoSegmentCommand(loadPointer);
+                    SegmentCommand segmentCommand = new SegmentCommand(loadPointer);
                     segmentCommand.unpack();
 
                     if ("__TEXT".equals(new String(segmentCommand.segname).trim())) {

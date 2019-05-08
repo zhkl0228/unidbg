@@ -72,6 +72,12 @@ public interface MachO {
 
     int _IONBF = 2; /* setvbuf should set unbuffered */
 
+    int MAP_FILE = 0x0000; /* map from file (default) */
+    int MAP_SHARED = 0x0001; /* [MF|SHM] share changes */
+    int MAP_PRIVATE = 0x0002; /* [MF|SHM] changes are private */
+    int MAP_FIXED = 0x0010; /* [MF|SHM] interpret addr exactly */
+    int MAP_ANONYMOUS = 0x1000; /* allocated from memory, swap space */
+
     int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
 
 }

@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MachoSegmentCommand extends LoadCommand {
+public class SegmentCommand extends LoadCommand {
 
-    public MachoSegmentCommand(Pointer p) {
+    public SegmentCommand(Pointer p) {
         super(p);
     }
 

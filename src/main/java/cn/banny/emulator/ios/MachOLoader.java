@@ -1234,16 +1234,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private MachOModule executableModule;
 
-    MachOModule NSGetMachExecuteHeader() {
-        return executableModule;
-    }
-
-    private static final int MAP_FILE = 0x0000; /* map from file (default) */
-    private static final int MAP_SHARED = 0x0001; /* [MF|SHM] share changes */
-    private static final int MAP_PRIVATE = 0x0002; /* [MF|SHM] changes are private */
-    private static final int MAP_FIXED = 0x0010; /* [MF|SHM] interpret addr exactly */
-    private static final int MAP_ANONYMOUS = 0x1000; /* allocated from memory, swap space */
-
     final long allocate(long address, long size) {
         MemoryMap mapped = null;
         for (MemoryMap map : memoryMap.values()) {
