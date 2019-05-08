@@ -48,7 +48,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
                 String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
-                MachOLoader loader, long machHeader) {
+                long machHeader) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -65,8 +65,8 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         this.machHeader = machHeader;
 
         this.log = LogFactory.getLog("cn.banny.emulator.ios." + name);
-        this.routines = parseRoutines(machO, loader);
-        this.initFunctionList = parseInitFunction(machO, buffer.duplicate(), name, emulator, loader);
+        this.routines = parseRoutines(machO);
+        this.initFunctionList = parseInitFunction(machO, buffer.duplicate(), name, emulator);
 
         final Map<String, ExportSymbol> exportSymbols = processExportNode(log, dyldInfoCommand, buffer);
 
@@ -254,7 +254,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         return map;
     }
 
-    private List<InitFunction> parseRoutines(MachO machO, MachOLoader loader) {
+    private List<InitFunction> parseRoutines(MachO machO) {
         List<InitFunction> routines = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -264,7 +264,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                     if (log.isDebugEnabled()) {
                         log.debug("parseRoutines address=" + address);
                     }
-                    routines.add(new MachOModuleInit(loader, this, envp, apple, vars, false, address));
+                    routines.add(new MachOModuleInit(this, envp, apple, vars, false, address));
                     break;
                 case ROUTINES_64:
                     throw new UnsupportedOperationException();
@@ -273,7 +273,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
         return routines;
     }
 
-    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, String libName, Emulator emulator, MachOLoader loader) {
+    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, String libName, Emulator emulator) {
         List<InitFunction> initFunctionList = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -295,7 +295,7 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
                             log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
                             addresses[i] = address;
                         }
-                        initFunctionList.add(new MachOModuleInit(loader, this, envp, apple, vars, true, addresses));
+                        initFunctionList.add(new MachOModuleInit(this, envp, apple, vars, true, addresses));
                     }
                     break;
                 case SEGMENT_64:

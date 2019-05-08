@@ -286,10 +286,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        boolean loadFixPosition = isExecutable && !isPositionIndependent;
-        final long load_base = loadFixPosition ? 0 : mmapBaseAddress;
+        final long load_base = isExecutable ? 0 : mmapBaseAddress;
         long machHeader = -1;
-        if (!loadFixPosition) {
+        if (!isExecutable) {
             mmapBaseAddress = load_base + size;
         }
 
@@ -373,7 +372,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + dyId);
         if (log.isDebugEnabled() || MachOLoader.log.isDebugEnabled()) {
-            String msg = "load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", dyldInfoCommand=" + dyldInfoCommand + ", loadNeeded=" + loadNeeded + ", regions=" + regions;
+            String msg = "load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", dyldInfoCommand=" + dyldInfoCommand + ", loadNeeded=" + loadNeeded + ", regions=" + regions + ", isPositionIndependent=" + isPositionIndependent;
             if (log.isDebugEnabled()) {
                 log.debug(msg);
             } else {
@@ -452,7 +451,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         long load_size = size;
         MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars, this, machHeader);
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars, machHeader);
         modules.put(dyId, module);
 
         if (isExecutable) {
