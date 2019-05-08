@@ -1228,7 +1228,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (executableModule == null) {
             executableModule = module;
 
-            vars.setPointer(0, UnicornPointer.pointer(emulator, module.base)); // _NSGetMachExecuteHeader
+            vars.setPointer(0, UnicornPointer.pointer(emulator, module.machHeader)); // _NSGetMachExecuteHeader
         }
     }
 

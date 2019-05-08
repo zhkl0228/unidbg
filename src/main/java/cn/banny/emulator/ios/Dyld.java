@@ -199,7 +199,7 @@ public class Dyld implements Dlfcn {
 
                             DlInfo dlInfo = new DlInfo(info);
                             dlInfo.dli_fname = module.createPathMemory(svcMemory);
-                            dlInfo.dli_fbase = UnicornPointer.pointer(emulator, module.base);
+                            dlInfo.dli_fbase = UnicornPointer.pointer(emulator, module.machHeader);
                             if (symbol != null) {
                                 dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
                                 dlInfo.dli_saddr = UnicornPointer.pointer(emulator, symbol.getAddress());
@@ -359,9 +359,9 @@ public class Dyld implements Dlfcn {
                                         pointer.setInt(0, computeSlide(emulator, mm.machHeader));
 
                                         if (log.isDebugEnabled()) {
-                                            log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(md.base));
+                                            log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader));
                                         } else if (Dyld.log.isDebugEnabled()) {
-                                            Dyld.log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(md.base));
+                                            Dyld.log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader));
                                         }
                                         pointer = pointer.share(-4); // callback
                                         pointer.setPointer(0, callback);
