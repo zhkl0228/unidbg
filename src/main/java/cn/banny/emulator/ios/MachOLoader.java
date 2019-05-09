@@ -8,9 +8,11 @@ import cn.banny.emulator.arm.ARM;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.hook.HookListener;
+import cn.banny.emulator.ios.struct.DyldImageInfo;
 import cn.banny.emulator.memory.MemRegion;
 import cn.banny.emulator.memory.*;
 import cn.banny.emulator.pointer.UnicornPointer;
+import cn.banny.emulator.pointer.UnicornStructure;
 import cn.banny.emulator.spi.AbstractLoader;
 import cn.banny.emulator.spi.LibraryFile;
 import cn.banny.emulator.spi.Loader;
@@ -113,6 +115,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             bindIndirectSymbolPointers(m);
             setupLazyPointerHandler(m);
         }
+
+        notifySingle(Dyld.dyld_image_state_bound, module);
+        notifySingle(Dyld.dyld_image_state_dependents_initialized, module);
 
         for (MachOModule m : modules.values()) {
             m.callRoutines(emulator);
@@ -503,6 +508,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     private void checkSection(String dyId, String segName, String sectName) {
+        // __OBJC need fNotifyObjC = true
         switch (sectName) {
             case "__text":
             case "__mod_init_func":
@@ -1223,6 +1229,45 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     final List<UnicornPointer> addImageCallbacks = new ArrayList<>();
+    final List<UnicornPointer> boundHandlers = new ArrayList<>();
+    final List<UnicornPointer> initializedHandlers = new ArrayList<>();
+
+    private void notifySingle(int state, MachOModule module) {
+        int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
+        Pointer pointer = emulator.getSvcMemory().allocate(elementSize);
+        DyldImageInfo info = new DyldImageInfo(pointer);
+        info.imageFilePath = module.createPathMemory(emulator.getSvcMemory());
+        info.imageLoadAddress = UnicornPointer.pointer(emulator, module.machHeader);
+        info.imageFileModDate = 0;
+        info.pack();
+        switch (state) {
+            case Dyld.dyld_image_state_bound:
+                int slide = Dyld.computeSlide(emulator, module.machHeader);
+                for (UnicornPointer callback : addImageCallbacks) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("notifySingle callback=" + callback);
+                    }
+                    MachOModule.emulateFunction(emulator, callback.peer, module.machHeader, slide);
+                }
+                for (UnicornPointer handler : boundHandlers) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("notifySingle state=" + state + ", handler=" + handler);
+                    }
+                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                }
+                break;
+            case Dyld.dyld_image_state_dependents_initialized:
+                for (UnicornPointer handler : initializedHandlers) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("notifySingle state=" + state + ", handler=" + handler);
+                    }
+                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException("state=" + state);
+        }
+    }
 
     private void setExecuteModule(MachOModule module) {
         if (executableModule == null) {

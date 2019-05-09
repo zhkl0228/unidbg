@@ -118,12 +118,11 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
 
     @Override
     public DvmObject getObjectField(VM vm, DvmObject dvmObject, String signature) {
-        switch (signature) {
-            case "android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;":
-                String packageName = (String) dvmObject.getValue();
-                System.err.println("PackageInfo signatures packageName=" + packageName);
-                DvmObject sig = vm.resolveClass("android/content/pm/Signature").newObject(null);
-                return new ArrayObject(sig);
+        if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature)) {
+            String packageName = (String) dvmObject.getValue();
+            System.err.println("PackageInfo signatures packageName=" + packageName);
+            DvmObject sig = vm.resolveClass("android/content/pm/Signature").newObject(null);
+            return new ArrayObject(sig);
         }
         return super.getObjectField(vm, dvmObject, signature);
     }

@@ -403,7 +403,7 @@ public class Dyld implements Dlfcn {
                             Unicorn unicorn = emulator.getUnicorn();
                             int state = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             int batch = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-                            Pointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                            UnicornPointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                             DyldImageInfo[] imageInfos;
                             if (batch == 1) {
                                 imageInfos = registerImageStateBatchChangeHandler(state, handler, emulator);
@@ -452,7 +452,7 @@ public class Dyld implements Dlfcn {
         return 0;
     }
 
-    private int computeSlide(Emulator emulator, long machHeader) {
+    static int computeSlide(Emulator emulator, long machHeader) {
         if (emulator.getPointerSize() == 4) {
             Pointer pointer = UnicornPointer.pointer(emulator, machHeader);
             assert pointer != null;
@@ -541,11 +541,11 @@ public class Dyld implements Dlfcn {
         }
     }
 
-    private static final int dyld_image_state_bound = 40;
-    private static final int dyld_image_state_dependents_initialized = 45; // Only single notification for this
+    static final int dyld_image_state_bound = 40;
+    static final int dyld_image_state_dependents_initialized = 45; // Only single notification for this
     private static final int dyld_image_state_terminated = 60; // Only single notification for this
 
-    private DyldImageInfo[] registerImageStateBatchChangeHandler(int state, Pointer handler, Emulator emulator) {
+    private DyldImageInfo[] registerImageStateBatchChangeHandler(int state, UnicornPointer handler, Emulator emulator) {
         if (log.isDebugEnabled()) {
             log.debug("registerImageStateBatchChangeHandler state=" + state + ", handler=" + handler);
         }
@@ -554,6 +554,10 @@ public class Dyld implements Dlfcn {
             throw new UnsupportedOperationException("state=" + state);
         }
 
+        if (loader.boundHandlers.contains(handler)) {
+            return null;
+        }
+        loader.boundHandlers.add(handler);
         return generateDyldImageInfo(emulator);
     }
 
@@ -574,7 +578,7 @@ public class Dyld implements Dlfcn {
         return list.toArray(new DyldImageInfo[0]);
     }
 
-    private DyldImageInfo[] registerImageStateSingleChangeHandler(int state, Pointer handler, Emulator emulator) {
+    private DyldImageInfo[] registerImageStateSingleChangeHandler(int state, UnicornPointer handler, Emulator emulator) {
         if (log.isDebugEnabled()) {
             log.debug("registerImageStateSingleChangeHandler state=" + state + ", handler=" + handler);
         }
@@ -587,10 +591,13 @@ public class Dyld implements Dlfcn {
             throw new UnsupportedOperationException("state=" + state);
         }
 
+        if (loader.initializedHandlers.contains(handler)) {
+            return null;
+        }
+        loader.initializedHandlers.add(handler);
         return generateDyldImageInfo(emulator);
     }
 
-//    private long __NSGetMachExecuteHeader;
     private long _abort;
 
     @Override
@@ -609,25 +616,6 @@ public class Dyld implements Dlfcn {
                 }
                 return _abort;
             }
-            /*if ("__NSGetMachExecuteHeader".equals(symbolName)) {
-                if (__NSGetMachExecuteHeader == 0) {
-                    __NSGetMachExecuteHeader = svcMemory.registerSvc(new ArmSvc() {
-                        @Override
-                        public int handle(Emulator emulator) {
-                            Module module = loader.NSGetMachExecuteHeader();
-                            if (log.isDebugEnabled()) {
-                                log.debug("__NSGetMachExecuteHeader module=" + module);
-                            }
-                            if (module == null) {
-                                throw new NullPointerException();
-                            } else {
-                                return (int) module.base;
-                            }
-                        }
-                    }).peer;
-                }
-                return __NSGetMachExecuteHeader;
-            }*/
         } else if ("libsystem_malloc.dylib".equals(libraryName)) {
             {
                 Log log = LogFactory.getLog("cn.banny.emulator.ios.malloc");
