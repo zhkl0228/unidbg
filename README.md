@@ -36,6 +36,10 @@ Simple tests under src/test directory
 - Import hook, thanks to xHook.
 - Support simple debugger, instruction trace, memory read/write trace.
 
+## TODO
+- Working iOS emulation.
+- ~~Support iOS objc.~~
+
 ## Thanks
 - [unicorn](https://github.com/unicorn-engine/unicorn)
 - [HookZz](https://github.com/jmpews/HookZz)
@@ -47,3 +51,4 @@ Simple tests under src/test directory
 - [idaemu](https://github.com/36hours/idaemu)
 - [jelf](https://github.com/fornwall/jelf)
 - [whale](https://github.com/asLody/whale)
+- [kaitai_struct](https://github.com/kaitai-io/kaitai_struct)

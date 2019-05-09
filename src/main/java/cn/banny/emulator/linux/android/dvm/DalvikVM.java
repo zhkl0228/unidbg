@@ -164,6 +164,17 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _EnsureLocalCapacity = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public int handle(Emulator emulator) {
+                int capacity = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("EnsureLocalCapacity capacity=" + capacity);
+                }
+                return 0;
+            }
+        });
+
         Pointer _NewObject = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public int handle(Emulator emulator) {
@@ -1106,6 +1117,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x5C, _DeleteLocalRef);
         impl.setPointer(0x60, _IsSameObject);
         impl.setPointer(0x64, _NewLocalRef);
+        impl.setPointer(0x68, _EnsureLocalCapacity);
         impl.setPointer(0x70, _NewObject);
         impl.setPointer(0x74, _NewObjectV);
         impl.setPointer(0x7c, _GetObjectClass);
