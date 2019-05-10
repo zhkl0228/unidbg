@@ -35,7 +35,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     private final SvcMemory svcMemory;
 
     private final Capstone capstoneArm64;
-    protected static final long LR = 0xffffffffffff0000L;
+    protected static final long LR = 0xfffff0000L;
 
     private final Dlfcn dlfcn;
 

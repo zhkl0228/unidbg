@@ -42,6 +42,7 @@ public class XpcTest extends EmulatorTest {
 
         long start = System.currentTimeMillis();
 //        emulator.traceCode();
+//        emulator.attach().addBreakPoint(null, 0x0000b794);
         int ret = module.callEntry(emulator);
         System.err.println("testXpc ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 

@@ -322,6 +322,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             mmapBaseAddress = load_base + size;
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("start map dyid=" + dyId + ", base=0x" + Long.toHexString(load_base));
+        }
+
         final List<NeedLibrary> neededList = new ArrayList<>();
         final List<MemRegion> regions = new ArrayList<>(5);
         final List<MachO.DylibCommand> exportDylibs = new ArrayList<>();
@@ -332,11 +336,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             switch (command.type()) {
                 case SEGMENT:
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    long begin = load_base + segmentCommand.vmaddr();
+                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                        regions.add(new MemRegion(begin, begin + segmentCommand.vmsize(), 0, libraryFile, segmentCommand.vmaddr()));
+                        break;
+                    }
+
                     for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
                         checkSection(dyId, segmentCommand.segname(), section.sectName());
                     }
 
-                    long begin = load_base + segmentCommand.vmaddr();
                     if (segmentCommand.vmsize() == 0) {
                         regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand.vmaddr()));
                         break;
@@ -356,11 +365,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    begin = load_base + segmentCommand64.vmaddr();
+                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                        regions.add(new MemRegion(begin, begin + segmentCommand64.vmsize(), 0, libraryFile, segmentCommand64.vmaddr()));
+                        break;
+                    }
+
                     for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
                         checkSection(dyId, segmentCommand64.segname(), section.sectName());
                     }
 
-                    begin = load_base + segmentCommand64.vmaddr();
                     if (segmentCommand64.vmsize() == 0) {
                         regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand64.vmaddr()));
                         break;
@@ -401,13 +415,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + dyId);
-        if (log.isDebugEnabled() || MachOLoader.log.isDebugEnabled()) {
-            String msg = "load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", dyldInfoCommand=" + dyldInfoCommand + ", loadNeeded=" + loadNeeded + ", regions=" + regions + ", isPositionIndependent=" + isPositionIndependent;
-            if (log.isDebugEnabled()) {
-                log.debug(msg);
-            } else {
-                MachOLoader.log.debug(msg);
-            }
+        if (!log.isDebugEnabled()) {
+            log = MachOLoader.log;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", dyldInfoCommand=" + dyldInfoCommand + ", loadNeeded=" + loadNeeded + ", regions=" + regions + ", isPositionIndependent=" + isPositionIndependent);
         }
 
         Map<String, MachOModule> exportModules = new LinkedHashMap<>();
@@ -470,13 +482,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             lazyLoadNeededList = neededList;
         }
 
-        if (log.isDebugEnabled() || MachOLoader.log.isDebugEnabled()) {
-            String msg = "load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries;
-            if (log.isDebugEnabled()) {
-                log.debug(msg);
-            } else {
-                MachOLoader.log.debug(msg);
-            }
+        if (log.isDebugEnabled()) {
+            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
         }
 
         long load_size = size;
@@ -846,6 +853,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
         Log log = LogFactory.getLog("cn.banny.emulator.ios." + module.name);
+        if (!log.isDebugEnabled()) {
+            log = MachOLoader.log;
+        }
 
         MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
         if (dyldInfoCommand == null) {
@@ -1064,7 +1074,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol);
+            log.debug("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol + ", libName=" + module.name);
         }
 
         Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);

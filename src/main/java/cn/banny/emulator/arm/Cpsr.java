@@ -26,7 +26,7 @@ public class Cpsr {
         return new Cpsr(unicorn, ArmConst.UC_ARM_REG_CPSR);
     }
 
-    static Cpsr getArm64(Unicorn unicorn) {
+    public static Cpsr getArm64(Unicorn unicorn) {
         return new Cpsr(unicorn, Arm64Const.UC_ARM64_REG_NZCV);
     }
 
