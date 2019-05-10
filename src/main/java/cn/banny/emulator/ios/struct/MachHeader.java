@@ -11,7 +11,6 @@ public class MachHeader extends UnicornStructure {
 
     public MachHeader(Pointer p) {
         super(p);
-        this.unpack();
     }
 
     public int magic;

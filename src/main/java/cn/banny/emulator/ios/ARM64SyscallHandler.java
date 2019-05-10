@@ -48,7 +48,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         UnicornPointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
         final int svcNumber = (pc.getInt(-4) >> 5) & 0xffff;
 
-        int NR = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X8)).intValue();
+        int NR = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X16)).intValue();
         String syscall = null;
         Throwable exception = null;
         try {
@@ -59,7 +59,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     return;
                 }
                 u.emu_stop();
-                throw new IllegalStateException("svc number: " + svcNumber);
+                throw new UnicornException("svc number: " + svcNumber);
             }
 
             if (log.isDebugEnabled()) {
@@ -72,17 +72,17 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case -3888:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mach_absolute_time(emulator));
                         return;
-                    case -1088:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_vm_allocate_trap(emulator));
+                    case -10:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_allocate_trap(emulator));
                         return;
                     case -1288:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_vm_deallocate_trap(emulator));
                         return;
-                    case -1588:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_vm_map_trap(emulator));
+                    case -15:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_map_trap(emulator));
                         return;
-                    case -1888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_deallocate_trap(emulator));
+                    case -18:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_deallocate_trap(emulator));
                         return;
                     case -1988:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_mod_refs_trap(emulator));
@@ -90,20 +90,20 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case -2488:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_construct_trap(emulator));
                         return;
-                    case -2688: // mach_port_t mach_reply_port(...)
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mach_reply_port());
+                    case -26: // mach_port_t mach_reply_port(...)
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_reply_port());
                         return;
-                    case -2788:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, thread_self_trap());
+                    case -27:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, thread_self_trap());
                         return;
-                    case -2888: // mach_port_name_t task_self_trap(void)
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, task_self_trap());
+                    case -28: // mach_port_name_t task_self_trap(void)
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, task_self_trap());
                         return;
-                    case -2988:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, host_self_trap());
+                    case -29:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, host_self_trap());
                         return;
-                    case -3188:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mach_msg_trap(emulator));
+                    case -31:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_msg_trap(emulator));
                         return;
                     case -6188:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, thread_switch(emulator));
@@ -138,8 +138,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 7388:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, munmap(u, emulator));
                         return;
-                    case 7488:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mprotect(u, emulator));
+                    case 74:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, mprotect(u, emulator));
                         return;
                     case 9288:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fcntl(u, emulator));
@@ -165,14 +165,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 19988:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
                         return;
-                    case 20288:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
+                    case 202:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator));
                         return;
                     case 30588:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
                         return;
-                    case 32788:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, issetugid());
+                    case 327:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
                         return;
                     case 32988:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
@@ -195,26 +195,26 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 35788:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(u, emulator));
                         return;
-                    case 36688:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, bsdthread_register(emulator));
+                    case 366:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, bsdthread_register(emulator));
                         return;
-                    case 37288:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, thread_selfid());
+                    case 372:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, thread_selfid());
                         return;
                     case 38188:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms(emulator));
                         return;
-                    case 39688:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, read_NOCANCEL(emulator));
+                    case 396:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, read_NOCANCEL(emulator));
                         return;
                     case 39788:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, write_NOCANCEL(emulator));
                         return;
-                    case 39888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, open_NOCANCEL(emulator));
+                    case 398:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, open_NOCANCEL(emulator));
                         return;
-                    case 39988:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, close_NOCANCEL(emulator));
+                    case 399:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, close_NOCANCEL(emulator));
                         return;
                     case 42388:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal_nocancel());
@@ -224,6 +224,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         return;
                     case 0x80000008:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
+                        return;
+                    case 0x80000000:
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_set_self(emulator));
                         return;
                     default:
                         break;
@@ -245,6 +248,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int pthread_set_self(Emulator emulator) {
+        // TODO: implement
+        Pointer self = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+        log.info("pthread_set_self=" + self);
+        return 0;
     }
 
     private int thread_switch(Emulator emulator) {
@@ -514,14 +524,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int bsdthread_register(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        UnicornPointer thread_start = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        UnicornPointer start_wqthread = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int PTHREAD_SIZE = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        UnicornPointer data = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        int dataSize = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        int r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-        long r6 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-        long offset = r5 | (r6 << 32);
+        UnicornPointer thread_start = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+        UnicornPointer start_wqthread = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+        int PTHREAD_SIZE = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
+        UnicornPointer data = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+        int dataSize = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X4)).intValue();
+        long offset = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).longValue();
         if (log.isDebugEnabled()) {
             log.debug("bsdthread_register thread_start=" + thread_start + ", start_wqthread=" + start_wqthread + ", PTHREAD_SIZE=" + PTHREAD_SIZE + ", data=" + data + ", dataSize=" + dataSize + ", offset=0x" + Long.toHexString(offset));
         }
@@ -564,12 +572,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int sysctl(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        Pointer name = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int namelen = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        Pointer bufferSize = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        Pointer set0 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
-        int set1 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+        Pointer name = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+        int namelen = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
+        Pointer buffer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+        Pointer bufferSize = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+        Pointer set0 = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
+        int set1 = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).intValue();
 
         int top = name.getInt(0);
         switch (top) {
@@ -685,16 +693,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        long size = (r3 << 32) | r2;
-        int r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        long r5 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-        long mask = (r5 << 32) | r4;
-        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-        int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
+        int target = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
+        Pointer address = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+        long size = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X2)).longValue();
+        long mask = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X3)).longValue();
+        int flags = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X4)).intValue();
+        int cur_protection = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).intValue();
         boolean anywhere = (flags & VM_FLAGS_ANYWHERE) != 0;
         boolean malloc = (flags & VM_MEMORY_MALLOC) != 0;
 
@@ -723,12 +727,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int _kernelrpc_mach_vm_allocate_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        int target = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        long r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        long size = r2 | (r3 << 32);
-        int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+        int target = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
+        Pointer address = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+        long size = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X2)).longValue();
+        int flags = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X3)).intValue();
         boolean anywhere = (flags & VM_FLAGS_ANYWHERE) != 0;
         boolean malloc = (flags & VM_MEMORY_MALLOC) != 0;
 
@@ -754,8 +756,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int _kernelrpc_mach_port_deallocate_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        int task = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        int task = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
+        int name = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_port_deallocate_trap task=" + task + ", name=" + name);
         }
@@ -771,13 +773,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     // https://github.com/lunixbochs/usercorn/blob/master/go/kernel/mach/ports.go
     private int mach_msg_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
-        UnicornPointer msg = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int option = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int send_size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        int rcv_size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        int rcv_name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        int timeout = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-        int notify = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+        UnicornPointer msg = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+        int option = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
+        int send_size = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
+        int rcv_size = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X3)).intValue();
+        int rcv_name = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X4)).intValue();
+        int timeout = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).intValue();
+        int notify = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X6)).intValue();
 
         msg.setSize(rcv_size);
 
@@ -1082,7 +1084,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int close_NOCANCEL(Emulator emulator) {
         Unicorn u = emulator.getUnicorn();
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        int fd = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
         if (log.isDebugEnabled()) {
             log.debug("close_NOCANCEL fd=" + fd);
         }
@@ -1099,9 +1101,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int read_NOCANCEL(Emulator emulator) {
         Unicorn u = emulator.getUnicorn();
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        int fd = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
+        Pointer buffer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+        int count = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
         if (log.isDebugEnabled()) {
             log.debug("read_NOCANCEL fd=" + fd + ", buffer=" + buffer + ", count=" + count);
         }
@@ -1110,9 +1112,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int open_NOCANCEL(Emulator emulator) {
         Unicorn u = emulator.getUnicorn();
-        Pointer pathname_p = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        Pointer pathname_p = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+        int oflags = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
+        int mode = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
         String pathname = pathname_p.getString(0);
         int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
@@ -1258,9 +1260,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int mprotect(Unicorn u, Emulator emulator) {
-        long address = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
-        long length = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int prot = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        long address = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
+        long length = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).longValue();
+        int prot = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
         long alignedAddress = address / ARMEmulator.PAGE_ALIGN * ARMEmulator.PAGE_ALIGN; // >> 12 << 12;
         long offset = address - alignedAddress;
 

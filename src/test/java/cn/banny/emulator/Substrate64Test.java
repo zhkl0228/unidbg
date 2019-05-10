@@ -37,7 +37,7 @@ public class Substrate64Test extends EmulatorTest {
     public void testMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
-//        emulator.attach().addBreakPoint(null, 0x4097855c);
+//        emulator.attach().addBreakPoint(null, 0x404c3398);
 //        emulator.traceCode();
 //        loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));

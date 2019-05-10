@@ -79,7 +79,7 @@ public interface MachO {
     int MAP_ANONYMOUS = 0x1000; /* allocated from memory, swap space */
 
     long _COMM_PAGE32_BASE_ADDRESS = (0xffff4000L);
-    long _COMM_PAGE64_BASE_ADDRESS = (0x0000000fffffc000L) /* In TTBR0 */;
+    long _COMM_PAGE64_BASE_ADDRESS = (0xffffff80001fc000L) /* In TTBR0 */;
 
     int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
 

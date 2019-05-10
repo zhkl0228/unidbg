@@ -5,6 +5,7 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.ARM;
+import cn.banny.emulator.arm.Arm64Svc;
 import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.file.FileIO;
 import cn.banny.emulator.hook.HookListener;
@@ -116,7 +117,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
         } else {
-            unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tsd.peer);
+            unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDRRO_EL0, tsd.peer);
         }
         log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", gap=" + gap + ", errno=" + errno);
     }
@@ -577,6 +578,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             case "__dof_Cocoa_Aut":
             case "__dof_cache":
                 break;
+            case "__stubs":
+            case "__unwind_info":
+            case "__got":
+            case "__eh_frame":
+                break;
             default:
                 boolean isObjc = sectName.startsWith("__objc_");
                 if (isObjc) {
@@ -839,7 +845,37 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     }
                     break;
                 case SEGMENT_64:
-                    throw new UnsupportedOperationException("setupLazyPointerHandler SEGMENT_64");
+                    MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    if ("__DATA".equals(segmentCommand64.segname())) {
+                        for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
+                            if ("__dyld".equals(section.sectName())) {
+                                Pointer dd = UnicornPointer.pointer(emulator, module.base + section.addr());
+                                if (dyldLazyBinder == null) {
+                                    dyldLazyBinder = emulator.getSvcMemory().registerSvc(new Arm64Svc() {
+                                        @Override
+                                        public int handle(Emulator emulator) {
+                                            return ((Dyld) emulator.getDlfcn())._stub_binding_helper();
+                                        }
+                                    });
+                                }
+                                if (dyldFuncLookup == null) {
+                                    dyldFuncLookup = emulator.getSvcMemory().registerSvc(new Arm64Svc() {
+                                        @Override
+                                        public int handle(Emulator emulator) {
+                                            String name = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0).getString(0);
+                                            Pointer address = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                                            return ((Dyld) emulator.getDlfcn())._dyld_func_lookup(emulator, name, address);
+                                        }
+                                    });
+                                }
+                                if (dd != null) {
+                                    dd.setPointer(0, dyldLazyBinder);
+                                    dd.setPointer(emulator.getPointerSize(), dyldFuncLookup);
+                                }
+                            }
+                        }
+                    }
+                    break;
             }
         }
     }

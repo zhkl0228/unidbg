@@ -35,7 +35,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     private final SvcMemory svcMemory;
 
     private final Capstone capstoneArm64;
-    protected static final long LR = 0xfffff0000L;
+    protected static final long LR = 0xffffff80001f0000L;
 
     private final Dlfcn dlfcn;
 
@@ -52,7 +52,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
             }
         }, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED | UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED | UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, null);
 
-        this.svcMemory = new ARMSvcMemory(unicorn, 0xfffffffffffe0000L, 0x10000, this);
+        this.svcMemory = new ARMSvcMemory(unicorn, 0xffffe0000L, 0x10000, this);
         this.syscallHandler = createSyscallHandler(svcMemory);
 
         enableVFP();
