@@ -57,6 +57,7 @@ public class Dyld implements Dlfcn {
     private Pointer __dyld_register_thread_helpers;
     private Pointer __dyld_dyld_register_image_state_change_handler;
     private Pointer __dyld_image_path_containing_address;
+    private Pointer __dyld__NSGetExecutablePath;
 
     int _stub_binding_helper() {
         log.info("dyldLazyBinder");
@@ -71,6 +72,23 @@ public class Dyld implements Dlfcn {
     int _dyld_func_lookup(Emulator emulator, String name, Pointer address) {
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
+            case "__dyld__NSGetExecutablePath":
+                if (__dyld__NSGetExecutablePath == null) {
+                    __dyld__NSGetExecutablePath = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            int bufSize = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld__NSGetExecutablePath buf=" + buf + ", bufSize=" + bufSize);
+                            }
+                            buf.setString(0, emulator.getProcessName());
+                            return 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld__NSGetExecutablePath);
+                return 1;
             case "__dyld_get_image_name":
                 if (__dyld_get_image_name == null) {
                     __dyld_get_image_name = svcMemory.registerSvc(new ArmSvc() {

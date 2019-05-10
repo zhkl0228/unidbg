@@ -561,11 +561,14 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private static final int KERN_OSRELEASE = 2; /* string: system release */
     private static final int KERN_ARGMAX = 8; /* int: max arguments to exec */
+    private static final int KERN_PROC = 14; /* struct: process entries */
     private static final int KERN_USRSTACK32 = 35; /* int: address of USRSTACK */
     private static final int KERN_PROCARGS2 = 49;
     private static final int KERN_OSVERSION = 65; /* for build number i.e. 9A127 */
 
     private static final int HW_PAGESIZE = 7; /* int: software page size */
+
+    private static final int KERN_PROC_PID = 1; /* by process id */
 
     private int sysctl(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
@@ -617,6 +620,16 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         bufferSize.setInt(0, 4);
                         buffer.setInt(0, 128);
                         return 0;
+                    case KERN_PROC:
+                        int subType = name.getInt(8);
+                        if (subType == KERN_PROC_PID) {
+                            int pid = name.getInt(0xc);
+                            log.info(msg + ", subType=" + subType + ", pid=" + pid);
+//                            emulator.attach().debug(emulator);
+                            return 1;
+                        }
+                        log.info(msg + ", subType=" + subType);
+                        break;
                     case KERN_OSVERSION:
                         log.debug(msg);
                         String osVersion = "9A127";

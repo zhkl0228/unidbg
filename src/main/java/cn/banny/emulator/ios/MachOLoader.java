@@ -336,10 +336,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         checkSection(dyId, segmentCommand.segname(), section.sectName());
                     }
 
-                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
-                        continue;
-                    }
-
                     long begin = load_base + segmentCommand.vmaddr();
                     if (segmentCommand.vmsize() == 0) {
                         regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand.vmaddr()));
@@ -362,10 +358,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
                     for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
                         checkSection(dyId, segmentCommand64.segname(), section.sectName());
-                    }
-
-                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
-                        continue;
                     }
 
                     begin = load_base + segmentCommand64.vmaddr();

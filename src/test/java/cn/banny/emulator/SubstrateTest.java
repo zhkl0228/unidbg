@@ -37,9 +37,9 @@ public class SubstrateTest extends EmulatorTest {
     public void testMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
-        emulator.attach().addBreakPoint(null, 0x4097855c);
+//        emulator.attach().addBreakPoint(null, 0x4097855c);
 //        emulator.traceCode();
-        loader.setObjcRuntime(true);
+//        loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
