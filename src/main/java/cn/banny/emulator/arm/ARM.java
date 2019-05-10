@@ -43,8 +43,9 @@ public class ARM {
     }
 
     static void showRegs(Unicorn unicorn, int[] regs) {
+        boolean thumb = isThumb(unicorn);
         if (regs == null || regs.length < 1) {
-            regs = ARM.getAllRegisters(isThumb(unicorn));
+            regs = ARM.getAllRegisters(thumb);
         }
         StringBuilder builder = new StringBuilder();
         builder.append(">>>");
@@ -106,15 +107,15 @@ public class ARM {
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r8=0x%x", value));
                     break;
-                case ArmConst.UC_ARM_REG_R9:
+                case ArmConst.UC_ARM_REG_R9: // UC_ARM_REG_SB
                     number = (Number) unicorn.reg_read(reg);
                     value = number.intValue();
-                    builder.append(String.format(Locale.US, " r9=0x%x", value));
+                    builder.append(String.format(Locale.US, thumb ? " sb=0x%x" : " r9=0x%x", value));
                     break;
-                case ArmConst.UC_ARM_REG_R10:
+                case ArmConst.UC_ARM_REG_R10: // UC_ARM_REG_SL
                     number = (Number) unicorn.reg_read(reg);
                     value = number.intValue();
-                    builder.append(String.format(Locale.US, " r10=0x%x", value));
+                    builder.append(String.format(Locale.US, thumb ? " sl=0x%x" : " r10=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_FP:
                     number = (Number) unicorn.reg_read(reg);
@@ -362,6 +363,8 @@ public class ARM {
             ArmConst.UC_ARM_REG_R5,
             ArmConst.UC_ARM_REG_R6,
             ArmConst.UC_ARM_REG_R7,
+            ArmConst.UC_ARM_REG_SB,
+            ArmConst.UC_ARM_REG_SL,
 
             ArmConst.UC_ARM_REG_FP,
             ArmConst.UC_ARM_REG_IP,

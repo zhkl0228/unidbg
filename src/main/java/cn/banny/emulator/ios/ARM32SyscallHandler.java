@@ -113,6 +113,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case -31:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mach_msg_trap(emulator));
                         return;
+                    case -61:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, thread_switch(emulator));
+                        return;
                     case 4:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
                         return;
@@ -250,6 +253,16 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int thread_switch(Emulator emulator) {
+        // TODO: implement
+        Unicorn unicorn = emulator.getUnicorn();
+        int thread_name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        int option = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        int option_time = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        log.info("thread_switch thread_name=" + thread_name + ", option=" + option + ", option_time=" + option_time);
+        return 0;
     }
 
     private int psynch_cvwait(Emulator emulator) {

@@ -518,7 +518,7 @@ public class Dyld implements Dlfcn {
                     mm.initFunctionList.clear();
                 }
 
-                for (Module m : memory.getLoadedModules()) {
+                /*for (Module m : memory.getLoadedModules()) {
                     MachOModule mm = (MachOModule) m;
                     for (InitFunction routine : mm.routines) {
                         for (long addr : routine.addresses) {
@@ -530,7 +530,7 @@ public class Dyld implements Dlfcn {
                         }
                     }
                     mm.routines.clear();
-                }
+                }*/
 
                 return (int) module.base;
             }

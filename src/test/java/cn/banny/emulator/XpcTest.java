@@ -45,16 +45,13 @@ public class XpcTest extends EmulatorTest {
         int ret = module.callEntry(emulator);
         System.err.println("testXpc ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        MemoryBlock[] blocks = new MemoryBlock[0x40];
-        for (int i = 0; i < blocks.length; i++) {
-            blocks[i] = emulator.getMemory().malloc(1, false);
-            System.out.println("Test block=" + blocks[i].getPointer());
-        }
 //        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x40415dd2);
-        for (MemoryBlock block : blocks) {
-            block.free(false);
-        }
+//        emulator.attach().addBreakPoint(null, 0x4041ba6c);
+        MemoryBlock block = emulator.getMemory().malloc(1, false);
+        System.out.println("block=" + block.getPointer());
+//        emulator.traceCode();
+//        emulator.attach().addBreakPoint(null, 0x4041ddac);
+        block.free(false);
     }
 
     public static void main(String[] args) throws Exception {

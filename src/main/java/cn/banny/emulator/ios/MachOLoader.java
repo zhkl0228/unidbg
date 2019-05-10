@@ -37,12 +37,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private static final Log log = LogFactory.getLog(MachOLoader.class);
 
-    private final boolean objcRuntime;
+    private boolean objcRuntime;
 
-    MachOLoader(Emulator emulator, UnixSyscallHandler syscallHandler, boolean objcRuntime) {
+    MachOLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
         super(emulator, syscallHandler);
-
-        this.objcRuntime = objcRuntime;
 
         // init stack
         final long stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
@@ -53,9 +51,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         this.setErrno(0);
     }
 
+    public void setObjcRuntime(boolean objcRuntime) {
+        this.objcRuntime = objcRuntime;
+    }
+
     private UnicornPointer vars;
+    private Pointer errno;
 
     private static final int __TSD_THREAD_SELF = 0;
+    private static final int __TSD_ERRNO = 1;
+    private static final int __TSD_MIG_REPLY = 2;
 //    private static final int __PTK_FRAMEWORK_OBJC_KEY5 = 0x2d;
 
     private void initializeTSD() {
@@ -74,28 +79,46 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         Pointer _NSGetProgname = allocateStack(emulator.getPointerSize());
         _NSGetProgname.setPointer(0, programName);
 
+        Pointer _NSGetArgc = allocateStack(emulator.getPointerSize());
+        _NSGetArgc.setInt(0, 1);
+
+        Pointer args = allocateStack(emulator.getPointerSize());
+        args.setPointer(0, programName);
+        Pointer _NSGetArgv = allocateStack(emulator.getPointerSize());
+        _NSGetArgv.setPointer(0, args);
+
         vars = allocateStack(emulator.getPointerSize() * 5);
         vars.setPointer(0, null); // _NSGetMachExecuteHeader
-        vars.setPointer(0xc, _NSGetEnviron);
-        vars.setPointer(0x10, _NSGetProgname);
+        vars.setPointer(emulator.getPointerSize(), _NSGetArgc);
+        vars.setPointer(2 * emulator.getPointerSize(), _NSGetArgv);
+        vars.setPointer(3 * emulator.getPointerSize(), _NSGetEnviron);
+        vars.setPointer(4 * emulator.getPointerSize(), _NSGetProgname);
 
-        final Pointer thread = allocateStack(0x1000); // reserve space for pthread_internal_t
+        errno = allocateStack(4);
+
+        final UnicornPointer thread = allocateStack(0x1000); // reserve space for pthread_internal_t
 
         /* 0xa4必须固定，否则初始化objc会失败 */
         final UnicornPointer tsd = (UnicornPointer) thread.share(0xa4); // tsd size
         assert tsd != null;
         tsd.setPointer(__TSD_THREAD_SELF * emulator.getPointerSize(), thread);
+        tsd.setPointer(__TSD_ERRNO * emulator.getPointerSize(), errno);
+        tsd.setPointer(__TSD_MIG_REPLY * emulator.getPointerSize(), null);
 
         Pointer locale = allocateStack(emulator.getPointerSize());
 
         Pointer gap = allocateStack(emulator.getPointerSize());
+
+        /*emulator.traceWrite(thread.peer, thread.peer + 0x1000);
+        emulator.attach().addBreakPoint(null, 0x4041c740);
+        log.info("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", gap=" + gap + ", errno=" + errno);*/
 
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tsd.peer);
         }
-        log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", gap=" + gap);
+        log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", gap=" + gap + ", errno=" + errno);
     }
 
     @Override
@@ -119,12 +142,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         notifySingle(Dyld.dyld_image_state_bound, module);
         notifySingle(Dyld.dyld_image_state_dependents_initialized, module);
 
-        for (MachOModule m : modules.values()) {
-            m.callRoutines(emulator);
-        }
         if (callInitFunction || forceCallInit) {
             for (MachOModule m : modules.values()) {
                 m.callInitFunction(emulator);
+            }
+
+            for (MachOModule m : modules.values()) {
+                m.callRoutines(emulator);
             }
         }
 
@@ -189,6 +213,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (checkBootstrap && !isExecutable && executableModule == null) {
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
             Module bootstrap = loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
+//            emulator.traceCode();
             bootstrap.callEntry(emulator);
         }
 
@@ -311,6 +336,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         checkSection(dyId, segmentCommand.segname(), section.sectName());
                     }
 
+                    if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                        continue;
+                    }
+
                     long begin = load_base + segmentCommand.vmaddr();
                     if (segmentCommand.vmsize() == 0) {
                         regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand.vmaddr()));
@@ -333,6 +362,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
                     for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
                         checkSection(dyId, segmentCommand64.segname(), section.sectName());
+                    }
+
+                    if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                        continue;
                     }
 
                     begin = load_base + segmentCommand64.vmaddr();
@@ -1102,6 +1135,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     @Override
     public void setErrno(int errno) {
+        this.errno.setInt(0, errno);
     }
 
     @Override
@@ -1161,11 +1195,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         if (callInit) {
             for (MachOModule m : modules.values()) {
-                m.callRoutines(emulator);
+                m.callInitFunction(emulator);
             }
 
             for (MachOModule m : modules.values()) {
-                m.callInitFunction(emulator);
+                m.callRoutines(emulator);
             }
         }
 
@@ -1279,7 +1313,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private MachOModule executableModule;
 
+    private static final int TINY_BASE = 0xe2000;
+
     final long allocate(long address, long size) {
+        if (address < TINY_BASE) {
+            address = TINY_BASE;
+        }
+
         MemoryMap mapped = null;
         for (MemoryMap map : memoryMap.values()) {
             if (address >= map.base && address < map.base + map.size) {
@@ -1287,7 +1327,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
         if (mapped != null) {
-            address = allocateMapAddress(size);
+            address = allocateMapAddress(address, size);
         }
         int prot = UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE;
         unicorn.mem_map(address, size,prot );
@@ -1300,7 +1340,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
 
         if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
-            long addr = allocateMapAddress(aligned);
+            long addr = allocateMapAddress(0, aligned);
             log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
             unicorn.mem_map(addr, aligned, prot);
             memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
@@ -1309,7 +1349,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         try {
             FileIO file;
             if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
-                long addr = allocateMapAddress(aligned);
+                long addr = allocateMapAddress(0, aligned);
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
             }
@@ -1328,7 +1368,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
                 long addr = start;
                 if (mapped != null) {
-                    addr = allocateMapAddress(aligned);
+                    addr = allocateMapAddress(0, aligned);
                 }
 
                 FileIO io = syscallHandler.fdMap.get(fd);

@@ -8,7 +8,7 @@ import cn.banny.emulator.hook.whale.IWhale;
 import cn.banny.emulator.hook.whale.Whale;
 import cn.banny.emulator.ios.DarwinARMEmulator;
 import cn.banny.emulator.ios.DarwinResolver;
-import cn.banny.emulator.ios.MachO;
+import cn.banny.emulator.ios.MachOLoader;
 import cn.banny.emulator.ios.MachOModule;
 import cn.banny.emulator.memory.MemoryBlock;
 import cn.banny.emulator.pointer.UnicornPointer;
@@ -31,13 +31,15 @@ public class SubstrateTest extends EmulatorTest {
 
     @Override
     protected Emulator createARMEmulator() {
-        return new DarwinARMEmulator();
+        return new DarwinARMEmulator("com.substrate.test");
     }
 
     public void testMS() throws Exception {
-        emulator.getMemory().setCallInitFunction();
-//        emulator.attach().addBreakPoint(null, 0x4041fd50);
+        MachOLoader loader = (MachOLoader) emulator.getMemory();
+        loader.setCallInitFunction();
+        emulator.attach().addBreakPoint(null, 0x4097855c);
 //        emulator.traceCode();
+        loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
@@ -116,7 +118,7 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x40235d2a);
 //        emulator.traceCode();
 
-        MemoryBlock memoryBlock = emulator.getMemory().malloc(MachO.LARGE_THRESHOLD + 1, false);
+        MemoryBlock memoryBlock = emulator.getMemory().malloc(0x40, false);
         UnicornPointer memory = memoryBlock.getPointer();
         Symbol _snprintf = module.findSymbolByName("_snprintf", true);
         assertNotNull(_snprintf);

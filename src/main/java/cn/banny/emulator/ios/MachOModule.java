@@ -172,10 +172,10 @@ public class MachOModule extends Module implements cn.banny.emulator.ios.MachO {
     }
 
     void callRoutines(Emulator emulator) {
-        while (!routines.isEmpty()) {
+        /*while (!routines.isEmpty()) {
             InitFunction initFunction = routines.remove(0);
             initFunction.call(emulator);
-        }
+        }*/
     }
 
     void callInitFunction(Emulator emulator) {

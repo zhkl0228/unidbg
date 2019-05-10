@@ -1,4 +1,4 @@
-/emulator.iml
+/*.iml
 /.idea/
 /src/test/resources/unpack/*_unpacked.so
 /target/

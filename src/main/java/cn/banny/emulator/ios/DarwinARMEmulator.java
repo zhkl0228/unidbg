@@ -18,20 +18,12 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     private static final long _COMM_PAGE32_BASE_ADDRESS = (0xffff4000L);
     private static final long _COMM_PAGE64_BASE_ADDRESS = (0x0000000fffffc000L) /* In TTBR0 */;
 
-    private final boolean objcRuntime;
-
     public DarwinARMEmulator() {
-        this(false);
+        this(null);
     }
 
-    public DarwinARMEmulator(boolean objcRuntime) {
-        this(null, objcRuntime);
-    }
-
-    public DarwinARMEmulator(String processName, boolean objcRuntime) {
+    public DarwinARMEmulator(String processName) {
         super(processName);
-
-        this.objcRuntime = objcRuntime;
     }
 
     @Override
@@ -71,7 +63,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
 
     @Override
     protected Memory createMemory(UnixSyscallHandler syscallHandler) {
-        return new MachOLoader(this, syscallHandler, objcRuntime);
+        return new MachOLoader(this, syscallHandler);
     }
 
     @Override

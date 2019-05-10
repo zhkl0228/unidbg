@@ -66,7 +66,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 //    private static final int MAP_FIXED =	0x10;		/* Interpret addr exactly */
 //    private static final int MAP_ANONYMOUS =	0x20;		/* don't use a file */
 
-    protected final long allocateMapAddress(long length) {
+    protected final long allocateMapAddress(long startAddr, long length) {
         Map.Entry<Long, MemoryMap> lastEntry = null;
         for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
             if (lastEntry == null) {
@@ -74,7 +74,7 @@ public abstract class AbstractLoader implements Memory, Loader {
             } else {
                 MemoryMap map = lastEntry.getValue();
                 long mmapAddress = map.base + map.size;
-                if (mmapAddress + length <= entry.getKey()) {
+                if (mmapAddress + length <= entry.getKey() && mmapAddress >= startAddr) {
                     return mmapAddress;
                 } else {
                     lastEntry = entry;
@@ -102,7 +102,7 @@ public abstract class AbstractLoader implements Memory, Loader {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
 
         if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
-            long addr = allocateMapAddress(aligned);
+            long addr = allocateMapAddress(0, aligned);
             log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
             unicorn.mem_map(addr, aligned, prot);
             memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
@@ -111,7 +111,7 @@ public abstract class AbstractLoader implements Memory, Loader {
         try {
             FileIO file;
             if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
-                long addr = allocateMapAddress(aligned);
+                long addr = allocateMapAddress(0, aligned);
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
             }
