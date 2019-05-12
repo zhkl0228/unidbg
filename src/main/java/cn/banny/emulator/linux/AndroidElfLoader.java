@@ -98,20 +98,24 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         assert programNamePointer != null;
         programNamePointer.setPointer(0, programName);
 
-        final Pointer vector = allocateStack(0x100);
-        assert vector != null;
-        vector.setInt(0, 25); // AT_RANDOM is a pointer to 16 bytes of randomness on the stack.
-        vector.setPointer(4, __stack_chk_guard);
+        final Pointer auxv = allocateStack(0x100);
+        assert auxv != null;
+        if (emulator.getPointerSize() == 4) {
+            auxv.setInt(0, 25); // AT_RANDOM is a pointer to 16 bytes of randomness on the stack.
+        } else {
+            auxv.setLong(0, 25); // AT_RANDOM is a pointer to 16 bytes of randomness on the stack.
+        }
+        auxv.setPointer(emulator.getPointerSize(), __stack_chk_guard);
 
-        final Pointer environ = allocateStack(4);
+        final Pointer environ = allocateStack(emulator.getPointerSize());
         assert environ != null;
         environ.setInt(0, 0);
 
         final Pointer argv = allocateStack(0x100);
         assert argv != null;
-        argv.setPointer(4, programNamePointer);
-        argv.setPointer(8, environ);
-        argv.setPointer(0xc, vector);
+        argv.setPointer(emulator.getPointerSize(), programNamePointer);
+        argv.setPointer(2 * emulator.getPointerSize(), environ);
+        argv.setPointer(3 * emulator.getPointerSize(), auxv);
 
         final UnicornPointer tls = allocateStack(0x80 * 4); // tls size
         assert tls != null;
@@ -124,7 +128,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
-        log.debug("initializeTLS tls=" + tls + ", argv=" + argv + ", vector=" + vector + ", thread=" + thread + ", environ=" + environ);
+        log.debug("initializeTLS tls=" + tls + ", argv=" + argv + ", auxv=" + auxv + ", thread=" + thread + ", environ=" + environ);
     }
 
     private final Map<String, LinuxModule> modules = new LinkedHashMap<>();
