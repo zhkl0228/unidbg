@@ -213,7 +213,7 @@ public class UnicornPointer extends Pointer {
 
     @Override
     public UnicornPointer getPointer(long offset) {
-        return pointer(emulator, pointerSize == 4 ? (Number) getInt(offset) : (Number) getLong(0));
+        return pointer(emulator, pointerSize == 4 ? (Number) getInt(offset) : (Number) getLong(offset));
     }
 
     @Override
