@@ -401,6 +401,22 @@ public class ElfDynamicStructure {
 		return result;
 	}
 
+	public long getInitArrayOffset() {
+		return initArrayOffset;
+	}
+
+	public long getPreInitArrayOffset() {
+		return preInitArrayOffset;
+	}
+
+	public int getInitArraySize() {
+		return initArraySize;
+	}
+
+	public int getPreInitArraySize() {
+		return preInitArraySize;
+	}
+
 	public ElfInitArray getInitArray() throws IOException {
 		return initArray == null ? null : initArray.getValue();
 	}

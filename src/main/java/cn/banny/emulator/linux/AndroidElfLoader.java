@@ -471,19 +471,41 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
 
         List<InitFunction> initFunctionList = new ArrayList<>();
+        if (elfFile.file_type == ElfFile.FT_EXEC) {
+            int preInitArraySize = dynamicStructure.getPreInitArraySize();
+            int count = preInitArraySize / emulator.getPointerSize();
+            if (count > 0) {
+                Pointer pointer = UnicornPointer.pointer(emulator, load_base + dynamicStructure.getPreInitArrayOffset());
+                if (pointer == null) {
+                    throw new IllegalStateException("DT_PREINIT_ARRAY is null");
+                }
+                for (int i = 0; i < count; i++) {
+                    Pointer func = pointer.getPointer(i * emulator.getPointerSize());
+                    if (func != null) {
+                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnicornPointer) func).peer));
+                    }
+                }
+            }
+        }
         if (elfFile.file_type == ElfFile.FT_DYN) { // not executable
             int init = dynamicStructure.getInit();
-            ElfInitArray preInitArray = dynamicStructure.getPreInitArray();
-            ElfInitArray initArray = dynamicStructure.getInitArray();
-
-            initFunctionList.add(new LinuxInitFunction(load_base, soName, init));
-
-            if (preInitArray != null) {
-                initFunctionList.add(new LinuxInitFunction(load_base, soName, preInitArray));
+            if (init != 0) {
+                initFunctionList.add(new LinuxInitFunction(load_base, soName, init));
             }
 
-            if (initArray != null) {
-                initFunctionList.add(new LinuxInitFunction(load_base, soName, initArray));
+            int initArraySize = dynamicStructure.getInitArraySize();
+            int count = initArraySize / emulator.getPointerSize();
+            if (count > 0) {
+                Pointer pointer = UnicornPointer.pointer(emulator, load_base + dynamicStructure.getInitArrayOffset());
+                if (pointer == null) {
+                    throw new IllegalStateException("DT_INIT_ARRAY is null");
+                }
+                for (int i = 0; i < count; i++) {
+                    Pointer func = pointer.getPointer(i * emulator.getPointerSize());
+                    if (func != null) {
+                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnicornPointer) func).peer));
+                    }
+                }
             }
         }
 

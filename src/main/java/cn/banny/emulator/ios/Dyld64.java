@@ -501,15 +501,11 @@ public class Dyld64 extends Dyld {
                         continue;
                     }
                     for (InitFunction initFunction : mm.initFunctionList) {
-                        if (initFunction.addresses != null) {
-                            for (long addr : initFunction.addresses) {
-                                if (addr != 0 && addr != -1) {
-                                    log.debug("[" + mm.name + "]PushModInitFunction: 0x" + Long.toHexString(addr));
-                                    pointer = pointer.share(-4); // init array
-                                    pointer.setInt(0, (int) (mm.base + addr));
-                                }
-                            }
+                        if (log.isDebugEnabled()) {
+                            log.debug("[" + mm.name + "]PushModInitFunction: 0x" + Long.toHexString(initFunction.getAddress()));
                         }
+                        pointer = pointer.share(-4); // init array
+                        pointer.setInt(0, (int) initFunction.getAddress());
                     }
                     mm.initFunctionList.clear();
                 }

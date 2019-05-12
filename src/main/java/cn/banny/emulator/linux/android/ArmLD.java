@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
+import unicorn.UnicornException;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -98,7 +99,7 @@ public class ArmLD implements Dlfcn {
                             long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
                             Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                             log.info("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
-                            throw new UnsupportedOperationException();
+                            throw new UnicornException();
                         }
                     }).peer;
                 case "dlsym":
@@ -157,15 +158,11 @@ public class ArmLD implements Dlfcn {
                         continue;
                     }
                     for (InitFunction initFunction : m.initFunctionList) {
-                        if (initFunction.addresses != null) {
-                            for (long addr : initFunction.addresses) {
-                                if (addr != 0 && addr != -1) {
-                                    log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(addr));
-                                    pointer = pointer.share(-4); // init array
-                                    pointer.setInt(0, (int) (m.base + addr));
-                                }
-                            }
+                        if (log.isDebugEnabled()) {
+                            log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(initFunction.getAddress()));
                         }
+                        pointer = pointer.share(-4); // init array
+                        pointer.setInt(0, (int) initFunction.getAddress());
                     }
                     m.initFunctionList.clear();
                 }

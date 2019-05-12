@@ -62,6 +62,7 @@ public class CandyJni extends AbstractJni implements IOResolver {
 
         vm = emulator.createDalvikVM(new File(APK_PATH));
         DalvikModule dm = vm.loadLibrary("mtguard", false);
+        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.INFO);
         dm.callJNI_OnLoad(emulator);
         module = dm.getModule();
 
