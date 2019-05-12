@@ -11,20 +11,23 @@ public class AbsoluteInitFunction extends InitFunction {
 
     private static final Log log = LogFactory.getLog(AbsoluteInitFunction.class);
 
-    AbsoluteInitFunction(long load_base, String libName, long... addresses) {
-        super(load_base, libName, addresses);
+    AbsoluteInitFunction(long load_base, String libName, long address) {
+        super(load_base, libName, address);
+    }
+
+    @Override
+    public long getAddress() {
+        return address;
     }
 
     @Override
     public void call(Emulator emulator) {
-        for (long addr : addresses) {
-            Pointer pointer = UnicornPointer.pointer(emulator, addr);
-            log.debug("[" + libName + "]CallInitFunction: " + pointer);
-            long start = System.currentTimeMillis();
-            emulator.eInit(addr);
-            if (log.isDebugEnabled()) {
-                System.err.println("[" + libName + "]CallInitFunction: " + pointer + ", offset=" + (System.currentTimeMillis() - start) + "ms");
-            }
+        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        log.debug("[" + libName + "]CallInitFunction: " + pointer);
+        long start = System.currentTimeMillis();
+        emulator.eInit(address);
+        if (log.isDebugEnabled()) {
+            System.err.println("[" + libName + "]CallInitFunction: " + pointer + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
     }
 

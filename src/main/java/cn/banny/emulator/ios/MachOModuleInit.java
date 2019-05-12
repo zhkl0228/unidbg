@@ -18,12 +18,17 @@ class MachOModuleInit extends InitFunction {
     private final UnicornPointer vars;
     private final boolean isModInit;
 
-    MachOModuleInit(MachOModule module, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars, boolean isModInit, long... addresses) {
-        super(module.base, module.name, addresses);
+    MachOModuleInit(MachOModule module, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars, boolean isModInit, long address) {
+        super(module.base, module.name, address);
         this.envp = envp;
         this.apple = apple;
         this.vars = vars;
         this.isModInit = isModInit;
+    }
+
+    @Override
+    public long getAddress() {
+        return load_base + address;
     }
 
     /**
@@ -31,22 +36,20 @@ class MachOModuleInit extends InitFunction {
      */
     public void call(Emulator emulator) {
 //        emulator.traceCode();
-        for (long addr : addresses) {
-            if (isModInit) {
-                log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr));
-            } else {
-                log.debug("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(addr));
-            }
+        if (isModInit) {
+            log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address));
+        } else {
+            log.debug("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(address));
+        }
 //            emulator.attach().addBreakPoint(null, 0x401d6be6);
 //            emulator.attach().addBreakPoint(null, 0x402fb538);
-            long start = System.currentTimeMillis();
-            callModInit(emulator, load_base + addr, 0, null, envp, apple, vars);
-            if (log.isDebugEnabled()) {
-                if (isModInit) {
-                    System.err.println("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(addr) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
-                } else {
-                    System.err.println("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(addr) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
-                }
+        long start = System.currentTimeMillis();
+        callModInit(emulator, load_base + address, 0, null, envp, apple, vars);
+        if (log.isDebugEnabled()) {
+            if (isModInit) {
+                System.err.println("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+            } else {
+                System.err.println("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(address) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
             }
         }
     }
