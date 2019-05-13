@@ -12,6 +12,10 @@ import cn.banny.emulator.pointer.UnicornPointer;
 import cn.banny.emulator.spi.Dlfcn;
 import cn.banny.emulator.spi.InitFunction;
 import com.sun.jna.Pointer;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -20,6 +24,7 @@ import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class ArmLD64 implements Dlfcn {
 
@@ -42,15 +47,25 @@ public class ArmLD64 implements Dlfcn {
         if ("libdl.so".equals(libraryName)) {
             log.debug("link " + symbolName + ", old=0x" + Long.toHexString(old));
             switch (symbolName) {
+                case "dl_iterate_phdr":
+                    return svcMemory.registerSvc(new Arm64Svc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            Pointer cb = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                            Pointer data = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                            log.info("dl_iterate_phdr cb=" + cb + ", data=" + data);
+                            return 0;
+                        }
+                    }).peer;
                 case "dlerror":
-                    return svcMemory.registerSvc(new ArmSvc() {
+                    return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
                             return (int) error.peer;
                         }
                     }).peer;
                 case "dlclose":
-                    return svcMemory.registerSvc(new ArmSvc() {
+                    return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
                             long handle = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
@@ -63,15 +78,45 @@ public class ArmLD64 implements Dlfcn {
                 case "dlopen":
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
+                        public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                                        "sub sp, sp, #0x10",
+                                        "stp x29, x30, [sp]",
+                                        "svc #0x" + Integer.toHexString(svcNumber),
+
+                                        "ldr w7, [sp]",
+                                        "add sp, sp, #0x8", // manipulated stack in dlopen
+                                        "cmp w7, #0",
+                                        "b.eq #0x24",
+                                        // "sub lr, pc, #0x10", // jump to ldr w7, [sp]
+                                        "adr lr, #-0xf", // jump to ldr w7, [sp]
+                                        "br x7", // call init array
+
+                                        "ldr w0, [sp]",
+                                        "add sp, sp, #0x8",
+
+                                        "ldp x20, x30, [sp]",
+                                        "add sp, sp, #0x10",
+                                        "ret")); // with return address
+                                byte[] code = encoded.getMachineCode();
+                                UnicornPointer pointer = svcMemory.allocate(code.length);
+                                pointer.write(0, code, 0, code.length);
+                                return pointer;
+                            }
+                        }
+                        @Override
                         public int handle(Emulator emulator) {
                             Pointer filename = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             int flags = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-                            log.info("dlopen filename=" + filename.getString(0) + ", flags=" + flags);
-                            return 0;
+                            if (log.isDebugEnabled()) {
+                                log.debug("dlopen filename=" + filename.getString(0) + ", flags=" + flags);
+                            }
+                            return dlopen(emulator.getMemory(), filename.getString(0), emulator);
                         }
                     }).peer;
                 case "dladdr":
-                    return svcMemory.registerSvc(new ArmSvc() {
+                    return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
                             long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
@@ -81,11 +126,11 @@ public class ArmLD64 implements Dlfcn {
                         }
                     }).peer;
                 case "dlsym":
-                    return svcMemory.registerSvc(new ArmSvc() {
+                    return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
-                            long handle = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
-                            Pointer symbol = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            long handle = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
+                            Pointer symbol = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
                             }
@@ -93,7 +138,7 @@ public class ArmLD64 implements Dlfcn {
                         }
                     }).peer;
                 case "dl_unwind_find_exidx":
-                    return svcMemory.registerSvc(new ArmSvc() {
+                    return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
                             Pointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
@@ -110,25 +155,25 @@ public class ArmLD64 implements Dlfcn {
     }
 
     private int dlopen(Memory memory, String filename, Emulator emulator) {
-        Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+        Pointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
             Module module = memory.dlopen(filename, false);
             if (module == null) {
-                pointer = pointer.share(-4); // return value
-                pointer.setInt(0, 0);
+                pointer = pointer.share(-8); // return value
+                pointer.setLong(0, 0);
 
-                pointer = pointer.share(-4); // NULL-terminated
-                pointer.setInt(0, 0);
+                pointer = pointer.share(-8); // NULL-terminated
+                pointer.setLong(0, 0);
 
                 log.info("dlopen failed: " + filename);
                 this.error.setString(0, "Resolve library " + filename + " failed");
                 return 0;
             } else {
-                pointer = pointer.share(-4); // return value
-                pointer.setInt(0, (int) module.base);
+                pointer = pointer.share(-8); // return value
+                pointer.setLong(0, module.base);
 
-                pointer = pointer.share(-4); // NULL-terminated
-                pointer.setInt(0, 0);
+                pointer = pointer.share(-8); // NULL-terminated
+                pointer.setLong(0, 0);
 
                 for (Module md : memory.getLoadedModules()) {
                     LinuxModule m = (LinuxModule) md;
@@ -139,8 +184,8 @@ public class ArmLD64 implements Dlfcn {
                         if (log.isDebugEnabled()) {
                             log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(initFunction.getAddress()));
                         }
-                        pointer = pointer.share(-4); // init array
-                        pointer.setInt(0, (int) initFunction.getAddress());
+                        pointer = pointer.share(-8); // init array
+                        pointer.setLong(0, initFunction.getAddress());
                     }
                     m.initFunctionList.clear();
                 }
@@ -150,7 +195,7 @@ public class ArmLD64 implements Dlfcn {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         } finally {
-            unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) pointer).peer);
+            unicorn.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnicornPointer) pointer).peer);
         }
     }
 

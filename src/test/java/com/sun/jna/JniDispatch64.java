@@ -42,6 +42,8 @@ public class JniDispatch64 extends AbstractJni {
 
     private JniDispatch64() throws IOException {
         emulator = createARMEmulator();
+//        emulator.attach().addBreakPoint(null, 0xffffe09e0L);
+//        emulator.attach().addBreakPoint(null, 0xffffe0a04L);
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
         memory.setCallInitFunction();

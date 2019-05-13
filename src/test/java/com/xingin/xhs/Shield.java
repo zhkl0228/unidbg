@@ -30,7 +30,7 @@ import java.io.IOException;
 public class Shield extends AbstractJni implements IOResolver {
 
     private static LibraryResolver createLibraryResolver() {
-        return new AndroidResolver(19);
+        return new AndroidResolver(23);
     }
 
     private static ARMEmulator createARMEmulator() {
@@ -130,12 +130,12 @@ public class Shield extends AbstractJni implements IOResolver {
                 clazz = vm.resolveClass("okhttp3/Request$Builder");
                 return clazz.newObject(null);
             case "com/xingin/shield/http/RedHttpInterceptor->getBytesOfParams(Lokhttp3/Request;)[B":
-                byte[] data = new byte[256]; // TODO 生成真实的请求数据
-                return new ByteArray(data);
+                byte[] bytes = new byte[256];
+                return new ByteArray(bytes);
             case "okhttp3/Request$Builder->header(Ljava/lang/String;Ljava/lang/String;)Lokhttp3/Request$Builder;":
                 StringObject name = vaList.getObject(0);
                 StringObject value = vaList.getObject(4);
-                System.out.println("okhttp3/Request$Builder->header name=" + name.getValue() + ", value=" + value.getValue());
+                System.err.println("okhttp3/Request$Builder->header name=" + name.getValue() + ", value=" + value.getValue());
                 return dvmObject;
             case "okhttp3/Request$Builder->build()Lokhttp3/Request;":
                 clazz = vm.resolveClass("okhttp3/Request");

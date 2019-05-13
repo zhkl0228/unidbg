@@ -66,7 +66,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     return;
                 }
                 u.emu_stop();
-                throw new IllegalStateException("svc number: " + svcNumber);
+                throw new UnicornException("svc number: " + svcNumber);
             }
 
             if (log.isDebugEnabled()) {
