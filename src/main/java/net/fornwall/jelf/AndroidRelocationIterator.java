@@ -127,10 +127,9 @@ public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRel
             }
             reloc_.addend += readSleb128();
         } else if (!is_relocation_group_has_addend()) {
-            if (!rela) {
-                throw new IllegalStateException();
+            if (rela) {
+                reloc_.addend = 0;
             }
-            reloc_.addend = 0;
         }
 
         relocation_group_index_ = 0;
