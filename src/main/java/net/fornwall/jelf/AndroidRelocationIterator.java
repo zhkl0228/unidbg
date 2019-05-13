@@ -19,9 +19,10 @@ public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRel
     private static final int RELOCATION_GROUP_HAS_ADDEND_FLAG = 8;
 
     private long readSleb128() {
-        return Utils.readSignedLeb128(buffer);
+        return Utils.readSignedLeb128(buffer, objectSize == ElfFile.CLASS_32 ? 32 : 64);
     }
 
+    private final int objectSize;
     private final ByteBuffer buffer;
 
     private long relocation_count_;
@@ -34,6 +35,7 @@ public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRel
             Inspector.inspect(androidRelData, "androidRelData hex=" + Hex.encodeHexString(androidRelData));
         }
 
+        this.objectSize = objectSize;
         this.buffer = ByteBuffer.wrap(androidRelData);
         this.rela = rela;
         reloc_ = new ElfRelocation(objectSize, symtab);
