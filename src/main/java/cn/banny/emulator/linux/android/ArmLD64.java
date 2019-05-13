@@ -85,20 +85,19 @@ public class ArmLD64 implements Dlfcn {
                                         "stp x29, x30, [sp]",
                                         "svc #0x" + Integer.toHexString(svcNumber),
 
-                                        "ldr w7, [sp]",
+                                        "ldr x7, [sp]",
                                         "add sp, sp, #0x8", // manipulated stack in dlopen
-                                        "cmp w7, #0",
+                                        "cmp x7, #0",
                                         "b.eq #0x24",
-                                        // "sub lr, pc, #0x10", // jump to ldr w7, [sp]
-                                        "adr lr, #-0xf", // jump to ldr w7, [sp]
+                                        "adr lr, #-0xf", // jump to ldr x7, [sp]
                                         "br x7", // call init array
 
-                                        "ldr w0, [sp]",
+                                        "ldr x0, [sp]", // with return address
                                         "add sp, sp, #0x8",
 
                                         "ldp x20, x30, [sp]",
                                         "add sp, sp, #0x10",
-                                        "ret")); // with return address
+                                        "ret"));
                                 byte[] code = encoded.getMachineCode();
                                 UnicornPointer pointer = svcMemory.allocate(code.length);
                                 pointer.write(0, code, 0, code.length);
