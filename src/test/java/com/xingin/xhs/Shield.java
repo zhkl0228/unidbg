@@ -45,7 +45,7 @@ public class Shield extends AbstractJni implements IOResolver {
     private Shield() throws IOException {
         emulator = createARMEmulator();
         emulator.getSyscallHandler().addIOResolver(this);
-//        emulator.traceCode();
+        emulator.getMemory().setCallInitFunction();
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
         vm = emulator.createDalvikVM(new File("src/test/resources/app/com.xingin.xhs_5.44.0.apk"));
@@ -85,14 +85,25 @@ public class Shield extends AbstractJni implements IOResolver {
                 return HookStatus.RET(unicorn, originFunction);
             }
         });
-        xHook.register("libshield.so", "memcpy", new ReplaceCallback() {
+        /*xHook.register("libshield.so", "__aeabi_memcpy", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 Unicorn unicorn = emulator.getUnicorn();
                 Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 int length = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-                Inspector.inspect(src.getByteArray(0, length), "memcpy dest=" + dest);
+                Inspector.inspect(src.getByteArray(0, length), "__aeabi_memcpy dest=" + dest);
+                return HookStatus.RET(unicorn, originFunction);
+            }
+        });*/
+        xHook.register("libshield.so", "strcmp", new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                Unicorn unicorn = emulator.getUnicorn();
+                Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                String str = dest.getString(0);
+                Inspector.inspect(src.getByteArray(0, str.length()), "strcmp dest=" + str);
                 return HookStatus.RET(unicorn, originFunction);
             }
         });
@@ -100,6 +111,9 @@ public class Shield extends AbstractJni implements IOResolver {
 
         DvmClass Chain = vm.resolveClass("okhttp3/Interceptor$Chain");
         long start = System.currentTimeMillis();
+//        emulator.traceCode();
+//        emulator.attach().addBreakPoint(null, 0x400259a8);
+//        emulator.traceWrite(0xbffff504L, 0xbffff504L + 4);
         Number ret = RedHttpInterceptor.newObject(null).callJniMethod(emulator, "process(Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;", Chain.newObject(null));
         long hash = ret.intValue() & 0xffffffffL;
         DvmObject obj = vm.getObject(hash);
@@ -130,7 +144,8 @@ public class Shield extends AbstractJni implements IOResolver {
                 clazz = vm.resolveClass("okhttp3/Request$Builder");
                 return clazz.newObject(null);
             case "com/xingin/shield/http/RedHttpInterceptor->getBytesOfParams(Lokhttp3/Request;)[B":
-                byte[] bytes = new byte[256];
+                byte[] bytes = ("channel=Xiaomicursor_score=deviceId=e3480298-0835-355d-8972-bdce279963fcdevice_fingerprint=201905131833071ecc9d2a55804f47292bdd7406cf7ec201e39595e683d961device_fingerprint1=201905131833071ecc9d2a55804f47292bdd7406cf7ec201e39595e683d961geo=eyJsYXRpdHVkZSI6MC4wMDAwMDAsImxvbmdpdHVkZSI6MC4wMDAwMDB9\n" +
+                        "lang=ennote_index=0oid=homefeed_recommendplatform=androidrefresh_type=1sid=session.1557743689143267176190sign=03c10ccc41146a7728aa4ef604ac1bcdt=1557744164trace_id=9265ef6b-b869-3bd9-97c5-3214a93ff85durl=/api/sns/v6/homefeedversionName=5.44.0\n").getBytes();
                 return new ByteArray(bytes);
             case "okhttp3/Request$Builder->header(Ljava/lang/String;Ljava/lang/String;)Lokhttp3/Request$Builder;":
                 StringObject name = vaList.getObject(0);

@@ -4,7 +4,6 @@ import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.Symbol;
 import cn.banny.emulator.arm.Arm64Svc;
-import cn.banny.emulator.arm.ArmSvc;
 import cn.banny.emulator.linux.LinuxModule;
 import cn.banny.emulator.memory.Memory;
 import cn.banny.emulator.memory.SvcMemory;

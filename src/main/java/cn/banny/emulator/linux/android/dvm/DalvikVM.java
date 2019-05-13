@@ -882,7 +882,7 @@ public class DalvikVM extends BaseVM implements VM {
                 ByteArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetByteArrayElements array=" + array + ", isCopy=" + isCopy);
+                    Inspector.inspect(array.value, "GetByteArrayElements array=" + array + ", isCopy=" + isCopy);
                 }
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);

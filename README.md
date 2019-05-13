@@ -1,9 +1,14 @@
-# emulator
+# unidbg
 
 Allows you to emulate an Android ARM32 and/or ARM64 native library.<br>
 
 This is an educational project to learn more about the ELF file format and ARM assembly.
 
+## License
+- unidbg uses software libraries from [Apache Software Foundation](http://apache.org). 
+- unidbg developers Idea enterprise licenses are supported by [Jetbrains](https://www.jetbrains.com?from=unidbg).
+- [IntelliJ IDEA](https://www.jetbrains.com/idea?from=unidbg) can be used to edit unidbg sources.
+- ![](assets/idea_logo.svg)
 
 ## Usage
 
