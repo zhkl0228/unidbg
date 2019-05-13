@@ -107,6 +107,10 @@ public class DalvikVM extends BaseVM implements VM {
             @Override
             public int handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                if (object == null) {
+                    log.warn("_NewGlobalRef object=" + object);
+                    return 0;
+                }
                 DvmObject dvmObject = getObject(object.peer);
                 if (log.isDebugEnabled()) {
                     log.debug("NewGlobalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
@@ -298,7 +302,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
                 if (dvmMethod == null) {
-                    throw new UnicornException("dvmObject=" + dvmObject + ", dvmClass=" + dvmClass);
+                    throw new UnicornException("dvmObject=" + dvmObject + ", dvmClass=" + dvmClass + ", jmethodID=" + jmethodID);
                 } else {
                     return addObject(dvmMethod.callObjectMethodV(dvmObject, new VaList(DalvikVM.this, va_list)), false);
                 }
