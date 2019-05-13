@@ -40,12 +40,12 @@ public interface Loader {
     /**
      * 运行线程
      */
-    void runThread(int threadId);
+    void runThread(int threadId, long timeout);
 
     /**
      * 运行最后创建的线程
      */
-    void runLastThread();
+    void runLastThread(long timeout);
 
     boolean hasThread(int threadId);
 

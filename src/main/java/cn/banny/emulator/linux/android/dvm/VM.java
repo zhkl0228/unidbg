@@ -42,4 +42,9 @@ public interface VM {
     int addLocalObject(DvmObject object);
 
     void callJNI_OnLoad(Emulator emulator, Module module) throws IOException;
+
+    /**
+     * 设置apkFile以后，可调用该值获取apk对应的packageName
+     */
+    String getPackageName();
 }

@@ -9,8 +9,6 @@ import cn.banny.emulator.linux.android.AndroidARMEmulator;
 import cn.banny.emulator.linux.android.AndroidResolver;
 import cn.banny.emulator.linux.android.dvm.*;
 import cn.banny.emulator.memory.Memory;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -38,8 +36,6 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
 
     private final Module module;
 
-    private final byte[] signature;
-
     private KuaiShouSign() throws IOException {
         emulator = createARMEmulator();
         emulator.getSyscallHandler().addIOResolver(this);
@@ -55,12 +51,6 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
         module = dm.getModule();
 
         CPUJni = vm.resolveClass("com/yxcorp/gifshow/util/CPU");
-
-        try {
-            this.signature = Hex.decodeHex("3082024F308201B8A00302010202044E269662300D06092A864886F70D0101050500306B310B300906035504061302434E3110300E060355040813076265696A696E673110300E060355040713076265696A696E6731133011060355040A130A686563616F2E696E666F31133011060355040B130A686563616F2E696E666F310E300C0603550403130563616F68653020170D3131303732303038343833345A180F32303636303432323038343833345A306B310B300906035504061302434E3110300E060355040813076265696A696E673110300E060355040713076265696A696E6731133011060355040A130A686563616F2E696E666F31133011060355040B130A686563616F2E696E666F310E300C0603550403130563616F686530819F300D06092A864886F70D010101050003818D003081890281810093BCE2A30779500E3A3160CE5B557F3FA34DF50DF25AC1AE38C181C8AD94E4709D00AFBC532D27CCFD4A92C8F1BD5B19C1F04F37B8230020035E33EB39DE2D482AD4C043F251FB08007CB3EAC4A348E140A817784195F0FBAFC7480C90F76EF966D220ABD9C4AB3D246276C98CE6D77A7FCC4F451AE89EB387D9BFF521898D970203010001300D06092A864886F70D0101050500038181001CE4EB9F42D76DFC4E0F5DA07BC3EFAE2CF98B47A39790D35407F3AEB6B554CADD65E84C7252046B3AB72B2DFC86F0892E28FEE3E6E4E801093E3A4F29BC560762D33839CEB29385583DED64548F245977D61925543DDA7AC3D34E8153A88F9846F446FF96D4877AD808280BBD7C43B9BF5FEEA3DD8D6BD179BC8CF29F949163".toCharArray());
-        } catch (DecoderException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     private void destroy() throws IOException {
@@ -104,26 +94,8 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
                 return new StringObject(vm, APP_PACKAGE_NAME);
             case "com/yxcorp/gifshow/App->getPackageManager()Landroid/content/pm/PackageManager;":
                 return new DvmObject<Object>(vm.resolveClass("android/content/pm/PackageManager"), null);
-            case "android/content/pm/PackageManager->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;":
-                StringObject packageName = vaList.getObject(0);
-                int flags = vaList.getInt(4);
-                System.err.println("getPackageInfo packageName=" + packageName.getValue() + ", flags=" + flags);
-                return vm.resolveClass("android/content/pm/PackageInfo").newObject(packageName.getValue());
-            case "android/content/pm/Signature->toByteArray()[B":
-                return new ByteArray(this.signature);
         }
 
         return super.callObjectMethodV(vm, dvmObject, signature, methodName, args, vaList);
-    }
-
-    @Override
-    public DvmObject getObjectField(VM vm, DvmObject dvmObject, String signature) {
-        if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature)) {
-            String packageName = (String) dvmObject.getValue();
-            System.err.println("PackageInfo signatures packageName=" + packageName);
-            DvmObject sig = vm.resolveClass("android/content/pm/Signature").newObject(null);
-            return new ArrayObject(sig);
-        }
-        return super.getObjectField(vm, dvmObject, signature);
     }
 }

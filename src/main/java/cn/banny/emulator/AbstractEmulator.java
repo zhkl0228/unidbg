@@ -31,7 +31,7 @@ public abstract class AbstractEmulator implements Emulator {
 
     private static final Log log = LogFactory.getLog(AbstractEmulator.class);
 
-    private static final long DEFAULT_TIMEOUT = TimeUnit.HOURS.toMicros(1);
+    public static final long DEFAULT_TIMEOUT = TimeUnit.HOURS.toMicros(1);
 
     protected final Unicorn unicorn;
 
@@ -166,6 +166,11 @@ public abstract class AbstractEmulator implements Emulator {
     private final ReadHook readHook;
     private final WriteHook writeHook;
     private final AssemblyCodeDumper codeHook;
+
+    @Override
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
 
     /**
      * Emulate machine code in a specific duration of time.

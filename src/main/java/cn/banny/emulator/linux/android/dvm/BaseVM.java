@@ -3,8 +3,11 @@ package cn.banny.emulator.linux.android.dvm;
 import cn.banny.emulator.Emulator;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.linux.android.ElfLibraryFile;
+import cn.banny.emulator.linux.android.dvm.api.Signature;
 import cn.banny.emulator.spi.LibraryFile;
 import net.dongliu.apk.parser.ApkFile;
+import net.dongliu.apk.parser.bean.ApkSigner;
+import net.dongliu.apk.parser.bean.CertificateMeta;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,9 +17,8 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.security.cert.CertificateException;
+import java.util.*;
 
 public abstract class BaseVM implements VM {
 
@@ -158,6 +160,57 @@ public abstract class BaseVM implements VM {
 
             Module module = emulator.getMemory().load(new ApkLibraryFile(apkFile, soName, libData), forceCallInit);
             return new DalvikModule(this, module);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
+        }
+    }
+
+    private Signature[] signatures;
+
+    Signature[] getSignatures() {
+        if (apkFile == null) {
+            return null;
+        }
+        if (signatures != null) {
+            return signatures;
+        }
+
+        ApkFile apkFile = null;
+        try {
+            apkFile = new ApkFile(this.apkFile);
+            List<Signature> signatures = new ArrayList<>(10);
+            for (ApkSigner signer : apkFile.getApkSingers()) {
+                for (CertificateMeta meta : signer.getCertificateMetas()) {
+                    signatures.add(new Signature(this, meta));
+                }
+            }
+            this.signatures = signatures.toArray(new Signature[0]);
+            return this.signatures;
+        } catch (IOException | CertificateException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
+        }
+    }
+
+    private String packageName;
+
+    @Override
+    public String getPackageName() {
+        if (apkFile == null) {
+            return null;
+        }
+        if (packageName != null) {
+            return packageName;
+        }
+
+        ApkFile apkFile = null;
+        try {
+            apkFile = new ApkFile(this.apkFile);
+            packageName = apkFile.getApkMeta().getPackageName();
+            return packageName;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         } finally {
             IOUtils.closeQuietly(apkFile);
         }

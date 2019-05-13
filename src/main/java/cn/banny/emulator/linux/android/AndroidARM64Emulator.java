@@ -45,7 +45,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
 
     @Override
     protected Dlfcn createDyld(SvcMemory svcMemory) {
-        return new ArmLD(unicorn, svcMemory);
+        return new ArmLD64(unicorn, svcMemory);
     }
 
     @Override

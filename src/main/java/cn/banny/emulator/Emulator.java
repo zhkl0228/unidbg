@@ -108,4 +108,9 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
 
     Dlfcn getDlfcn();
 
+    /**
+     * @param timeout  Duration to emulate the code (in microseconds). When this value is 0, we will emulate the code in infinite time, until the code is finished.
+     */
+    void setTimeout(long timeout);
+
 }

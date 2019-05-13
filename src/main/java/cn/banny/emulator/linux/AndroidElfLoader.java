@@ -1,10 +1,7 @@
 package cn.banny.emulator.linux;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.Alignment;
-import cn.banny.emulator.Emulator;
-import cn.banny.emulator.Module;
-import cn.banny.emulator.Symbol;
+import cn.banny.emulator.*;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.hook.HookListener;
 import cn.banny.emulator.linux.android.ElfLibraryFile;
@@ -54,29 +51,34 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     }
 
     @Override
-    public void runLastThread() {
-        runThread(syscallHandler.lastThread);
+    public void runLastThread(long timeout) {
+        runThread(syscallHandler.lastThread, timeout);
     }
 
     @Override
-    public void runThread(int threadId) {
-        LinuxThread thread = syscallHandler.threadMap.get(threadId);
-        if (thread != null) {
-            if (thread.context == 0) {
-                log.info("run thread: fn=" + thread.fn + ", arg=" + thread.arg + ", child_stack=" + thread.child_stack);
-                LinuxModule.emulateFunction(emulator, __thread_entry, thread.fn, thread.arg, thread.child_stack);
+    public void runThread(int threadId, long timeout) {
+        try {
+            emulator.setTimeout(timeout);
+            LinuxThread thread = syscallHandler.threadMap.get(threadId);
+            if (thread != null) {
+                if (thread.context == 0) {
+                    log.info("run thread: fn=" + thread.fn + ", arg=" + thread.arg + ", child_stack=" + thread.child_stack);
+                    LinuxModule.emulateFunction(emulator, __thread_entry, thread.fn, thread.arg, thread.child_stack);
+                } else {
+                    unicorn.context_restore(thread.context);
+                    long pc = ((Number) unicorn.reg_read(emulator.getPointerSize() == 4 ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC)).intValue() & 0xffffffffL;
+                    log.info("resume thread: fn=" + thread.fn + ", arg=" + thread.arg + ", child_stack=" + thread.child_stack + ", pc=0x" + Long.toHexString(pc));
+                    unicorn.emu_start(pc, 0, 0, 0);
+                }
+                if (thread.context == 0) {
+                    thread.context = unicorn.context_alloc();
+                }
+                unicorn.context_save(thread.context);
             } else {
-                unicorn.context_restore(thread.context);
-                long pc = ((Number) unicorn.reg_read(emulator.getPointerSize() == 4 ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC)).intValue() & 0xffffffffL;
-                log.info("resume thread: fn=" + thread.fn + ", arg=" + thread.arg + ", child_stack=" + thread.child_stack + ", pc=0x" + Long.toHexString(pc));
-                unicorn.emu_start(pc, 0, 0, 0);
+                throw new IllegalStateException("thread: " + threadId + " not exits");
             }
-            if (thread.context == 0) {
-                thread.context = unicorn.context_alloc();
-            }
-            unicorn.context_save(thread.context);
-        } else {
-            throw new IllegalStateException("thread: " + threadId + " not exits");
+        } finally {
+            emulator.setTimeout(AbstractEmulator.DEFAULT_TIMEOUT);
         }
     }
 
@@ -395,9 +397,9 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
             Pointer relocationAddr = UnicornPointer.pointer(emulator, load_base + relocation.offset());
             assert relocationAddr != null;
 
-            if (relocation.isAndroid()) {
-                Log log = LogFactory.getLog("cn.banny.emulator.linux." + soName);
-                log.debug("symbol=" + symbol + ", type=" + type + ", relocationAddr=" + relocationAddr + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=" + relocation.addend());
+            Log log = LogFactory.getLog("cn.banny.emulator.linux." + soName);
+            if (log.isDebugEnabled()) {
+                log.debug("symbol=" + symbol + ", type=" + type + ", relocationAddr=" + relocationAddr + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=" + relocation.addend() + ", sym=" + relocation.sym() + ", android=" + relocation.isAndroid());
             }
 
             ModuleSymbol moduleSymbol;

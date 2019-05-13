@@ -62,14 +62,38 @@ class DvmMethod implements Hashable {
             log.debug("callObjectMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        if ("java/lang/String->getBytes(Ljava/lang/String;)[B".equals(signature)) {
-            StringObject string = (StringObject) dvmObject;
-            StringObject encoding = varArg.getObject(0);
-            System.err.println("string=" + string.getValue() + ", encoding=" + encoding.getValue());
-            try {
-                return new ByteArray(string.getValue().getBytes(encoding.value));
-            } catch (UnsupportedEncodingException e) {
-                throw new IllegalStateException(e);
+        switch (signature) {
+            case "java/lang/String->getBytes(Ljava/lang/String;)[B": {
+                StringObject string = (StringObject) dvmObject;
+                StringObject encoding = varArg.getObject(0);
+                System.err.println("string=" + string.getValue() + ", encoding=" + encoding.getValue());
+                try {
+                    return new ByteArray(string.getValue().getBytes(encoding.value));
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+            case "android/content/Context->getPackageManager()Landroid/content/pm/PackageManager;":
+                return new DvmObject<Object>(vm.resolveClass("android/content/pm/PackageManager"), null);
+            case "android/content/Context->getPackageName()Ljava/lang/String;": {
+                String packageName = vm.getPackageName();
+                if (packageName != null) {
+                    return new StringObject(vm, packageName);
+                }
+            }
+            case "android/content/pm/PackageManager->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;": {
+                StringObject packageName = varArg.getObject(0);
+                int flags = varArg.getInt(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("getPackageInfo packageName=" + packageName.getValue() + ", flags=0x" + Integer.toHexString(flags));
+                }
+                return new PackageInfo(vm, packageName.value, flags);
+            }
+            case "android/content/pm/Signature->toByteArray()[B": {
+                if (dvmObject instanceof Signature) {
+                    Signature sig = (Signature) dvmObject;
+                    return new ByteArray(sig.toByteArray());
+                }
             }
         }
         return vm.jni.callObjectMethod(vm, dvmObject, signature, methodName, args, varArg);
@@ -115,6 +139,28 @@ class DvmMethod implements Hashable {
             case "java/io/File->getAbsolutePath()Ljava/lang/String;":
                 File file = (File) dvmObject.getValue();
                 return new StringObject(vm, file.getAbsolutePath());
+            case "android/app/Application->getPackageManager()Landroid/content/pm/PackageManager;":
+                DvmClass clazz = vm.resolveClass("android/content/pm/PackageManager");
+                return clazz.newObject(signature);
+            case "android/content/pm/PackageManager->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;": {
+                StringObject packageName = vaList.getObject(0);
+                int flags = vaList.getInt(4);
+                if (log.isDebugEnabled()) {
+                    log.debug("getPackageInfo packageName=" + packageName.getValue() + ", flags=0x" + Integer.toHexString(flags));
+                }
+                return new PackageInfo(vm, packageName.value, flags);
+            }
+            case "android/app/Application->getPackageName()Ljava/lang/String;": {
+                String packageName = vm.getPackageName();
+                if (packageName != null) {
+                    return new StringObject(vm, packageName);
+                }
+            }
+            case "android/content/pm/Signature->toByteArray()[B":
+                if (dvmObject instanceof Signature) {
+                    Signature sig = (Signature) dvmObject;
+                    return new ByteArray(sig.toByteArray());
+                }
         }
         return vm.jni.callObjectMethodV(vm, dvmObject, signature, methodName, args, vaList);
     }
@@ -132,6 +178,12 @@ class DvmMethod implements Hashable {
             case "java/util/ArrayList->size()I":
                 ArrayListObject list = (ArrayListObject) dvmObject;
                 return list.size();
+            case "android/content/pm/Signature->hashCode()I": {
+                if (dvmObject instanceof Signature) {
+                    Signature sig = (Signature) dvmObject;
+                    return sig.getHashCode();
+                }
+            }
         }
         return vm.jni.callIntMethodV(vm, dvmObject, signature, methodName, args, vaList);
     }

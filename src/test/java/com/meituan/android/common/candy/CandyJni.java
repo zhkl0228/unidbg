@@ -15,9 +15,7 @@ import cn.banny.emulator.linux.file.ByteArrayFileIO;
 import cn.banny.emulator.linux.file.SimpleFileIO;
 import cn.banny.emulator.memory.Memory;
 import com.sun.jna.Pointer;
-import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -28,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public class CandyJni extends AbstractJni implements IOResolver {
 
@@ -68,13 +67,7 @@ public class CandyJni extends AbstractJni implements IOResolver {
 
         classCandyJni = vm.resolveClass("com.meituan.android.common.candy.CandyJni".replace(".", "/"));
 
-        // memory.runLastThread();
-
-        try {
-            this.signature = Hex.decodeHex("3082027f308201e8a00302010202044d691bb8300d06092a864886f70d0101050500308182310b300906035504061302434e3110300e060355040813074265696a696e673110300e060355040713074265696a696e6731243022060355040a131b53616e6b75616920546563686e6f6c6f677920436f2e204c74642e31143012060355040b130b6d65697475616e2e636f6d311330110603550403130a4348454e204c69616e673020170d3131303232363135323634385a180f32313131303230323135323634385a308182310b300906035504061302434e3110300e060355040813074265696a696e673110300e060355040713074265696a696e6731243022060355040a131b53616e6b75616920546563686e6f6c6f677920436f2e204c74642e31143012060355040b130b6d65697475616e2e636f6d311330110603550403130a4348454e204c69616e6730819f300d06092a864886f70d010101050003818d0030818902818100ba09b72ceec15a04d9b91d66ba2226b50254e78e3d59f67e6f61f042c647f017ebc87999548a244d4059d1d8724e79f71cef456f71ac06e3ec128964746e6f140b75a23841fa1bae3690dcdab0cf46fb54b5e6af4b61a1777523f8190137d18dd3572f49dca940f6ad2b59d8e7c39ab6284a937be31ba4f920bfa99b31496d750203010001300d06092a864886f70d01010505000381810048a9df9ea307bacbf3214317d03e6a658a34d53a14cfdaa71ab5c05ce9204131ebed264005bcc42bc2c0c86e8f8e00594099f6ef62394dee051a712006fdeedfe17255d38280158d9a1b8d4056cc3dab49d9821b9d7a15c1d79237a0112cc80f3d86f444779fde38f7430d0f0c6bb5fba307eafc1e601c43c0222fdd00ad22f8".toCharArray());
-        } catch (DecoderException e) {
-            throw new IllegalStateException(e);
-        }
+         memory.runLastThread(TimeUnit.SECONDS.toMicros(5));
     }
 
     private void destroy() throws IOException {
@@ -88,8 +81,6 @@ public class CandyJni extends AbstractJni implements IOResolver {
         test.getCandyDataWithKey();
         test.destroy();
     }
-
-    private final byte[] signature;
 
     private String getCandyDataWithKey(byte[] data) {
         /*byte[] s1 = DigestUtils.sha1("MtguardHamcKeySANKUAI_SALT".getBytes());
@@ -255,34 +246,10 @@ public class CandyJni extends AbstractJni implements IOResolver {
 
     @Override
     public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
-        switch (signature) {
-            case "android/content/Context->getPackageManager()Landroid/content/pm/PackageManager;":
-                return new DvmObject<Object>(vm.resolveClass("android/content/pm/PackageManager"), null);
-            case "android/content/Context->getPackageName()Ljava/lang/String;":
-                return new StringObject(vm, APP_PACKAGE_NAME);
-            case "android/content/pm/PackageManager->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;":
-                StringObject packageName = varArg.getObject(0);
-                int flags = varArg.getInt(1);
-                System.err.println("getPackageInfo packageName=" + packageName.getValue() + ", flags=" + flags);
-                return vm.resolveClass("android/content/pm/PackageInfo").newObject(packageName.getValue());
-            case "android/content/Context->getPackageCodePath()Ljava/lang/String;":
-                return new StringObject(vm, INSTALL_PATH);
-            case "android/content/pm/Signature->toByteArray()[B":
-                return new ByteArray(this.signature);
+        if ("android/content/Context->getPackageCodePath()Ljava/lang/String;".equals(signature)) {
+            return new StringObject(vm, INSTALL_PATH);
         }
 
         return super.callObjectMethod(vm, dvmObject, signature, methodName, args, varArg);
-    }
-
-    @Override
-    public DvmObject getObjectField(VM vm, DvmObject dvmObject, String signature) {
-        if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature)) {
-            String packageName = (String) dvmObject.getValue();
-            System.err.println("PackageInfo signatures packageName=" + packageName);
-            DvmObject sig = vm.resolveClass("android/content/pm/Signature").newObject(null);
-            return new ArrayObject(sig);
-        }
-
-        return super.getObjectField(vm, dvmObject, signature);
     }
 }

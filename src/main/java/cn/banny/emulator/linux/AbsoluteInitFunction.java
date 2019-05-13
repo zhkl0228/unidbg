@@ -29,8 +29,15 @@ public class AbsoluteInitFunction extends InitFunction {
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         log.debug("[" + libName + "]CallInitFunction: " + pointer);
         long start = System.currentTimeMillis();
-        emulator.eInit(address);
+
+        Log log = LogFactory.getLog("cn.banny.emulator.linux." + libName);
         if (log.isDebugEnabled()) {
+            emulator.traceCode();
+            emulator.eFunc(address);
+        } else {
+            emulator.eInit(address);
+        }
+        if (AbsoluteInitFunction.log.isDebugEnabled()) {
             System.err.println("[" + libName + "]CallInitFunction: " + pointer + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
     }

@@ -1,5 +1,7 @@
 package cn.banny.emulator.linux.android.dvm;
 
+import cn.banny.emulator.linux.android.dvm.api.PackageInfo;
+import cn.banny.emulator.linux.android.dvm.api.Signature;
 import cn.banny.emulator.linux.android.dvm.api.SystemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -74,7 +76,18 @@ class DvmField implements Hashable {
         if (log.isDebugEnabled()) {
             log.debug("getObjectField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
-        return dvmClass.vm.addObject(dvmClass.vm.jni.getObjectField(dvmClass.vm, dvmObject, signature), false);
+        BaseVM vm = dvmClass.vm;
+        if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature) &&
+                dvmObject instanceof PackageInfo) {
+            PackageInfo packageInfo = (PackageInfo) dvmObject;
+            if (packageInfo.getPackageName().equals(vm.getPackageName())) {
+                Signature[] signatures = vm.getSignatures();
+                if (signatures != null) {
+                    return vm.addObject(new ArrayObject(signatures), false);
+                }
+            }
+        }
+        return vm.addObject(vm.jni.getObjectField(vm, dvmObject, signature), false);
     }
 
     int getIntField(DvmObject dvmObject) {

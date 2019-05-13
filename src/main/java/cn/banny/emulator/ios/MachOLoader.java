@@ -1286,12 +1286,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     @Override
-    public void runThread(int threadId) {
+    public void runThread(int threadId, long timeout) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void runLastThread() {
+    public void runLastThread(long timeout) {
         throw new UnsupportedOperationException();
     }
 

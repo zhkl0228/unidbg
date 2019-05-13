@@ -1,6 +1,7 @@
 package net.fornwall.jelf;
 
 import cn.banny.auxiliary.Inspector;
+import cn.banny.emulator.ios.Utils;
 import cn.banny.utils.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -18,30 +19,13 @@ public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRel
     private static final int RELOCATION_GROUP_HAS_ADDEND_FLAG = 8;
 
     private long readSleb128() {
-        int shift = 0;
-        long value = 0;
-        int _byte;
-        do {
-            _byte = buffer.get() & 0xff;
-            value |= ((_byte & 0x7f) << shift);
-            shift += 7;
-        } while((_byte & 0x80) != 0);
-
-        final int size = objectSize == ElfFile.CLASS_32 ? 32 : 64;
-
-        if (shift < size && ((_byte & 0x40) != 0)) {
-            value |= -(1 << shift);
-        }
-
-        return value;
+        return Utils.readSignedLeb128(buffer);
     }
 
     private final ByteBuffer buffer;
 
     private long relocation_count_;
     private final ElfRelocation reloc_;
-
-    private final int objectSize;
 
     private final boolean rela;
 
@@ -50,7 +34,6 @@ public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRel
             Inspector.inspect(androidRelData, "androidRelData hex=" + Hex.encodeHexString(androidRelData));
         }
 
-        this.objectSize = objectSize;
         this.buffer = ByteBuffer.wrap(androidRelData);
         this.rela = rela;
         reloc_ = new ElfRelocation(objectSize, symtab);
@@ -144,9 +127,10 @@ public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRel
             }
             reloc_.addend += readSleb128();
         } else if (!is_relocation_group_has_addend()) {
-            if (rela) {
-                reloc_.addend = 0;
+            if (!rela) {
+                throw new IllegalStateException();
             }
+            reloc_.addend = 0;
         }
 
         relocation_group_index_ = 0;
