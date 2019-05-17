@@ -18,7 +18,6 @@ import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
-import unicorn.ArmConst;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
 
@@ -67,7 +66,7 @@ public class ArmLD64 implements Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
-                            long handle = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
+                            long handle = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
                             if (log.isDebugEnabled()) {
                                 log.debug("dlclose handle=0x" + Long.toHexString(handle));
                             }
@@ -117,8 +116,8 @@ public class ArmLD64 implements Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
-                            long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
-                            Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            long addr = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
+                            Pointer info = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                             log.info("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
                             throw new UnicornException();
                         }
@@ -139,8 +138,8 @@ public class ArmLD64 implements Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public int handle(Emulator emulator) {
-                            Pointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            Pointer pcount = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            Pointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                            Pointer pcount = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dl_unwind_find_exidx pc" + pc + ", pcount=" + pcount);
                             }
