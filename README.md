@@ -40,6 +40,7 @@ Simple tests under src/test directory
 - [src/test/java/com/meituan/android/common/candy/CandyJni.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/meituan/android/common/candy/CandyJni.java) 美团
 - [src/test/java/com/xingin/xhs/Shield.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/xingin/xhs/Shield.java) 小红书
 - [src/test/java/com/xunmeng/pinduoduo/secure/DeviceNative.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/xunmeng/pinduoduo/secure/DeviceNative.java) 拼多多
+- [src/test/java/com/mfw/tnative/AuthorizeHelper.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/mfw/tnative/AuthorizeHelper.java)
 
 ## Features
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.

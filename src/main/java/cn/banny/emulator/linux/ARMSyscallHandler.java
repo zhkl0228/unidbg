@@ -108,6 +108,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     case 19:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
                         return;
+                    case 26:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, ptrace(u, emulator));
+                        return;
                     case  20: // getpid
                     case 224: // gettid
                         u.reg_write(ArmConst.UC_ARM_REG_R0, emulator.getPid());
@@ -345,6 +348,17 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private static final int PTRACE_TRACEME = 0;
+
+    private int ptrace(Unicorn u, Emulator emulator) {
+        int request = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        int pid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        Pointer data = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
+        log.info("ptrace request=0x" + Integer.toHexString(request) + ", pid=" + pid + ", addr=" + addr + ", data=" + data);
+        return 0;
     }
 
     private int utimes(Emulator emulator) {

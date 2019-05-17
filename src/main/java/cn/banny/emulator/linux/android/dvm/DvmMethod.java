@@ -140,6 +140,7 @@ class DvmMethod implements Hashable {
                 File file = (File) dvmObject.getValue();
                 return new StringObject(vm, file.getAbsolutePath());
             case "android/app/Application->getPackageManager()Landroid/content/pm/PackageManager;":
+            case "android/content/Context->getPackageManager()Landroid/content/pm/PackageManager;":
                 DvmClass clazz = vm.resolveClass("android/content/pm/PackageManager");
                 return clazz.newObject(signature);
             case "android/content/pm/PackageManager->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;": {
@@ -150,7 +151,8 @@ class DvmMethod implements Hashable {
                 }
                 return new PackageInfo(vm, packageName.value, flags);
             }
-            case "android/app/Application->getPackageName()Ljava/lang/String;": {
+            case "android/app/Application->getPackageName()Ljava/lang/String;":
+            case "android/content/Context->getPackageName()Ljava/lang/String;": {
                 String packageName = vm.getPackageName();
                 if (packageName != null) {
                     return new StringObject(vm, packageName);
