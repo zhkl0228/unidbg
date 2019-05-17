@@ -1,6 +1,6 @@
 # unidbg
 
-Allows you to emulate an Android ARM32 and/or ARM64 native library.<br>
+Allows you to emulate an Android ARM32 and/or ARM64 native library, and an experimental  iOS ARM32 emulation.<br>
 
 This is an educational project to learn more about the ELF file format and ARM assembly.
 
@@ -18,21 +18,28 @@ VM options: -Djava.library.path=prebuilt/os -Djna.library.path=prebuilt/os
 Where os may: linux64, win32, win64, osx64
 
 Simple tests under src/test directory
-- [src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java](https://github.com/zhkl0228/emulator/blob/master/src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java)  
+- [src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java)  
 
 ![](assets/TTEncrypt.gif)
 ***
-- [src/test/java/com/sun/jna/JniDispatch32.java](https://github.com/zhkl0228/emulator/blob/master/src/test/java/com/sun/jna/JniDispatch32.java)  
+- [src/test/java/com/sun/jna/JniDispatch32.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/sun/jna/JniDispatch32.java)  
 ![](assets/JniDispatch32.gif)
 ***
-- [src/test/java/com/sun/jna/JniDispatch64.java](https://github.com/zhkl0228/emulator/blob/master/src/test/java/com/sun/jna/JniDispatch64.java)  
+- [src/test/java/com/sun/jna/JniDispatch64.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/sun/jna/JniDispatch64.java)  
 ![](assets/JniDispatch64.gif)
 ***
-- [src/test/java/org/telegram/messenger/Utilities32.java](https://github.com/zhkl0228/emulator/blob/master/src/test/java/org/telegram/messenger/Utilities32.java)  
+- [src/test/java/org/telegram/messenger/Utilities32.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/org/telegram/messenger/Utilities32.java)  
 ![](assets/Utilities32.gif)
 ***
-- [src/test/java/org/telegram/messenger/Utilities64.java](https://github.com/zhkl0228/emulator/blob/master/src/test/java/org/telegram/messenger/Utilities64.java)  
+- [src/test/java/org/telegram/messenger/Utilities64.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/org/telegram/messenger/Utilities64.java)  
 ![](assets/Utilities64.gif)
+
+## More tests
+- [src/test/java/cn/banny/emulator/QDReaderJni.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/cn/banny/emulator/QDReaderJni.java)
+- [src/test/java/com/kuaishou/KuaiShouSign.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/kuaishou/KuaiShouSign.java) 快手
+- [src/test/java/com/meituan/android/common/candy/CandyJni.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/meituan/android/common/candy/CandyJni.java) 美团
+- [src/test/java/com/xingin/xhs/Shield.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/xingin/xhs/Shield.java) 小红书
+- [src/test/java/com/xunmeng/pinduoduo/secure/DeviceNative.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/xunmeng/pinduoduo/secure/DeviceNative.java) 拼多多
 
 ## Features
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.

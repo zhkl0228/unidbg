@@ -1,6 +1,5 @@
 package com.kuaishou;
 
-import cn.banny.emulator.LibraryResolver;
 import cn.banny.emulator.Module;
 import cn.banny.emulator.arm.ARMEmulator;
 import cn.banny.emulator.file.FileIO;
@@ -19,14 +18,6 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
 
     private static final String APP_PACKAGE_NAME = "com.smile.gifmaker";
 
-    private static LibraryResolver createLibraryResolver() {
-        return new AndroidResolver(19);
-    }
-
-    private static ARMEmulator createARMEmulator() {
-        return new AndroidARMEmulator(APP_PACKAGE_NAME);
-    }
-
     private final ARMEmulator emulator;
     private final VM vm;
 
@@ -37,15 +28,16 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
     private final Module module;
 
     private KuaiShouSign() throws IOException {
-        emulator = createARMEmulator();
+        emulator = new AndroidARMEmulator(APP_PACKAGE_NAME);
         emulator.getSyscallHandler().addIOResolver(this);
         System.out.println("== init ===");
 
         final Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(createLibraryResolver());
+        memory.setLibraryResolver(new AndroidResolver(19));
         memory.setCallInitFunction();
 
         vm = emulator.createDalvikVM(new File(APK_PATH));
+        vm.setJni(this);
         DalvikModule dm = vm.loadLibrary("core", false);
         dm.callJNI_OnLoad(emulator);
         module = dm.getModule();
@@ -66,7 +58,6 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
     }
 
     private void sign() {
-        vm.setJni(this);
         Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
         String str = "app=0appver=6.2.3.8614c=ALI_CPD,17client_key=3c2cd3f3contactData=7A9IqsDstz815+zxGyC1+XgougsArgtFUPBRYcRwUhcjwTsafJBmYnLZgLc5l4g7sjINLj0nrXFq1CCsFHteQSpac+959kD0yYEJyGzukSqMQGayQCue397jX98gp0NPU26waWGh+JWMaYnZG/F1Sg==country_code=CNdid=ANDROID_9fb7792f6142ea63did_gt=1553767215144ftt=hotfix_ver=isp=iuid=iv=5okP62w8Yl7WHiG6kpf=ANDROID_PHONEkpn=KUAISHOUlanguage=zh-cnlat=40.054041lon=116.298517max_memory=192mod=LGE(Nexus 5)net=WIFIoc=ALI_CPD,17os=androidsys=ANDROID_6.0.1token=f68245ccc1344489894f963248cc3501-1082592150ud=1082592150ver=6.2";
 
