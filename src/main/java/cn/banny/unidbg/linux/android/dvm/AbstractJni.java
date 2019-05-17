@@ -15,7 +15,7 @@ public abstract class AbstractJni implements Jni {
     private static final Log log = LogFactory.getLog(AbstractJni.class);
 
     @Override
-    public DvmObject getStaticObjectField(VM vm, DvmClass dvmClass, String signature) {
+    public DvmObject getStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature) {
         switch (signature) {
             case "android/content/Context->TELEPHONY_SERVICE:Ljava/lang/String;":
                 return new StringObject(vm, SystemService.TELEPHONY_SERVICE);
@@ -53,18 +53,17 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public int getStaticIntField(DvmClass dvmClass, String signature) {
+    public int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public DvmObject getObjectField(VM vm, DvmObject dvmObject, String signature) {
+    public DvmObject getObjectField(BaseVM vm, DvmObject dvmObject, String signature) {
         if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature) &&
                 dvmObject instanceof PackageInfo) {
             PackageInfo packageInfo = (PackageInfo) dvmObject;
             if (packageInfo.getPackageName().equals(vm.getPackageName())) {
-                BaseVM bvm = (BaseVM) vm;
-                Signature[] signatures = bvm.getSignatures();
+                Signature[] signatures = vm.getSignatures();
                 if (signatures != null) {
                     return new ArrayObject(signatures);
                 }
@@ -75,22 +74,22 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public boolean callStaticBooleanMethod(String signature, VarArg varArg) {
+    public boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public boolean callStaticBooleanMethodV(String signature) {
+    public boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public int callStaticIntMethodV(String signature, VaList vaList) {
+    public int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public DvmObject callObjectMethodV(VM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "android/app/Application->getAssets()Landroid/content/res/AssetManager;":
                 return new AssetManager(vm.resolveClass("android/content/res/AssetManager"), signature);
@@ -155,17 +154,17 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VarArg varArg) {
+    public DvmObject callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public DvmObject callStaticObjectMethodV(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VaList vaList) {
+    public DvmObject callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         switch (signature) {
             case "com/android/internal/os/BinderInternal->getContextObject()Landroid/os/IBinder;":
                 return new Binder(dvmClass.vm.resolveClass("android/os/IBinder"), signature);
             case "android/app/ActivityThread->currentActivityThread()Landroid/app/ActivityThread;":
-                return new DvmObject<>(dvmClass, methodName);
+                return new DvmObject<Object>(dvmClass, null);
             case "android/app/ActivityThread->currentApplication()Landroid/app/Application;":
                 return new DvmObject<>(vm.resolveClass("android/app/Application"), signature);
             case "java/util/Locale->getDefault()Ljava/util/Locale;":
@@ -180,7 +179,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "android/os/Bundle->getInt(Ljava/lang/String;)I":
                 Bundle bundle = (Bundle) dvmObject;
@@ -200,12 +199,12 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public long callStaticLongMethodV(String signature, VaList vaList) {
+    public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public boolean callBooleanMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public boolean callBooleanMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         if ("java/util/Enumeration->hasMoreElements()Z".equals(signature)) {
             return ((Enumeration) dvmObject).hasMoreElements();
         }
@@ -219,7 +218,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public void callStaticVoidMethodV(String signature, VaList vaList) {
+    public void callStaticVoidMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 
@@ -234,8 +233,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public DvmObject newObject(DvmClass clazz, String signature, VarArg varArg) {
-        BaseVM vm = clazz.vm;
+    public DvmObject newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         switch (signature) {
             case "java/lang/String-><init>([B)V":
                 ByteArray array = varArg.getObject(0);
@@ -254,7 +252,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public DvmObject newObjectV(DvmClass clazz, String signature, VaList vaList) {
+    public DvmObject newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 
@@ -274,7 +272,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         switch (signature) {
             case "java/lang/String->getBytes(Ljava/lang/String;)[B": {
                 StringObject string = (StringObject) dvmObject;
@@ -314,7 +312,7 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         if ("java/lang/Integer->intValue()I".equals(signature)) {
             DvmInteger integer = (DvmInteger) dvmObject;
             return integer.value;
@@ -324,12 +322,12 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
-    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 
     @Override
-    public void callVoidMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public void callVoidMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 }

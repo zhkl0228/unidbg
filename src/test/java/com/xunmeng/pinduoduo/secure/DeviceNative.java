@@ -83,7 +83,7 @@ public class DeviceNative extends AbstractJni implements IOResolver {
     private static final String ANDROID_ID = "android_id";
 
     @Override
-    public DvmObject getStaticObjectField(VM vm, DvmClass dvmClass, String signature) {
+    public DvmObject getStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature) {
         switch (signature) {
             case "android/os/Build->SERIAL:Ljava/lang/String;":
                 return new StringObject(vm, "05efc1db004d1dee");
@@ -95,7 +95,7 @@ public class DeviceNative extends AbstractJni implements IOResolver {
     }
 
     @Override
-    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         switch (signature) {
             case "android/content/Context->getSystemService(Ljava/lang/String;)Ljava/lang/Object;":
                 DvmClass clazz = vm.resolveClass("android/telephony/TelephonyManager");
@@ -136,11 +136,11 @@ public class DeviceNative extends AbstractJni implements IOResolver {
                 return new ByteArray(data);
         }
 
-        return super.callObjectMethod(vm, dvmObject, signature, methodName, args, varArg);
+        return super.callObjectMethod(vm, dvmObject, signature, varArg);
     }
 
     @Override
-    public DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VarArg varArg) {
+    public DvmObject callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         if ("android/provider/Settings$Secure->getString(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;".equals(signature)) {
             StringObject key = varArg.getObject(1);
 
@@ -151,7 +151,7 @@ public class DeviceNative extends AbstractJni implements IOResolver {
             }
         }
 
-        return super.callStaticObjectMethod(vm, dvmClass, signature, methodName, args, varArg);
+        return super.callStaticObjectMethod(vm, dvmClass, signature, varArg);
     }
 
     private static final int PHONE_TYPE_GSM = 1;
@@ -169,7 +169,7 @@ public class DeviceNative extends AbstractJni implements IOResolver {
     private static final int DATA_ACTIVITY_NONE = 0x00000000;
 
     @Override
-    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+    public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         switch (signature) {
             case "android/telephony/TelephonyManager->getPhoneType()I":
                 return PHONE_TYPE_GSM;
@@ -183,49 +183,49 @@ public class DeviceNative extends AbstractJni implements IOResolver {
                 return DATA_ACTIVITY_NONE;
         }
 
-        return super.callIntMethod(vm, dvmObject, signature, methodName, args, varArg);
+        return super.callIntMethod(vm, dvmObject, signature, varArg);
     }
 
     @Override
-    public int getStaticIntField(DvmClass dvmClass, String signature) {
+    public int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature) {
         if ("android/telephony/TelephonyManager->PHONE_TYPE_GSM:I".equals(signature)) {
             return PHONE_TYPE_GSM;
         }
 
-        return super.getStaticIntField(dvmClass, signature);
+        return super.getStaticIntField(vm, dvmClass, signature);
     }
 
     @Override
-    public boolean callStaticBooleanMethod(String signature, VarArg varArg) {
+    public boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         if ("android/os/Debug->isDebuggerConnected()Z".equals(signature)) {
             return false;
         }
 
-        return super.callStaticBooleanMethod(signature, varArg);
+        return super.callStaticBooleanMethod(vm, dvmClass, signature, varArg);
     }
 
     @Override
-    public DvmObject newObject(DvmClass clazz, String signature, VarArg varArg) {
+    public DvmObject newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         switch (signature) {
             case "java/lang/Throwable-><init>()V":
-                return clazz.newObject(null);
+                return dvmClass.newObject(null);
             case "java/io/ByteArrayOutputStream-><init>()V":
-                return clazz.newObject(new ByteArrayOutputStream());
+                return dvmClass.newObject(new ByteArrayOutputStream());
             case "java/util/zip/GZIPOutputStream-><init>(Ljava/io/OutputStream;)V":
                 DvmObject obj = varArg.getObject(0);
                 OutputStream outputStream = (OutputStream) obj.getValue();
                 try {
-                    return clazz.newObject(new GZIPOutputStream(outputStream));
+                    return dvmClass.newObject(new GZIPOutputStream(outputStream));
                 } catch (IOException e) {
                     throw new IllegalStateException(e);
                 }
         }
 
-        return super.newObject(clazz, signature, varArg);
+        return super.newObject(vm, dvmClass, signature, varArg);
     }
 
     @Override
-    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+    public void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         switch (signature) {
             case "java/util/zip/GZIPOutputStream->write([B)V":
                 OutputStream outputStream = (OutputStream) dvmObject.getValue();
@@ -255,20 +255,20 @@ public class DeviceNative extends AbstractJni implements IOResolver {
                 return;
         }
 
-        super.callVoidMethod(vm, dvmObject, signature, methodName, args, varArg);
+        super.callVoidMethod(vm, dvmObject, signature, varArg);
     }
 
     @Override
-    public DvmObject callStaticObjectMethodV(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VaList vaList) {
+    public DvmObject callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         if ("java/util/UUID->randomUUID()Ljava/util/UUID;".equals(signature)) {
             return dvmClass.newObject(UUID.randomUUID());
         }
 
-        return super.callStaticObjectMethodV(vm, dvmClass, signature, methodName, args, vaList);
+        return super.callStaticObjectMethodV(vm, dvmClass, signature, vaList);
     }
 
     @Override
-    public DvmObject callObjectMethodV(VM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "java/util/UUID->toString()Ljava/lang/String;":
                 UUID uuid = (UUID) dvmObject.getValue();
@@ -280,7 +280,7 @@ public class DeviceNative extends AbstractJni implements IOResolver {
                 return new StringObject(vm, str.getValue().replaceAll(s1.getValue(), s2.getValue()));
         }
 
-        return super.callObjectMethodV(vm, dvmObject, signature, methodName, args, vaList);
+        return super.callObjectMethodV(vm, dvmObject, signature, vaList);
     }
 
     @Override

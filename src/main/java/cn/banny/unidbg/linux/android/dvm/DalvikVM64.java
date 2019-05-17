@@ -658,7 +658,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callStaticBooleanMethodV();
+                    return dvmMethod.callStaticBooleanMethodV(new VaList(DalvikVM64.this, va_list));
                 }
             }
         });

@@ -2,53 +2,53 @@ package cn.banny.unidbg.linux.android.dvm;
 
 public interface Jni {
 
-    DvmObject getStaticObjectField(VM vm, DvmClass dvmClass, String signature);
+    void callStaticVoidMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    int getStaticIntField(DvmClass dvmClass, String signature);
+    boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
-    DvmObject getObjectField(VM vm, DvmObject dvmObject, String signature);
+    boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    boolean callStaticBooleanMethod(String signature, VarArg varArg);
+    int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    boolean callStaticBooleanMethodV(String signature);
+    long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    int callStaticIntMethodV(String signature, VaList vaList);
+    DvmObject callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
-    DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg);
+    DvmObject callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    DvmObject callObjectMethodV(VM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList);
+    DvmObject newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
-    DvmObject callStaticObjectMethod(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VarArg varArg);
+    DvmObject newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    DvmObject callStaticObjectMethodV(VM vm, DvmClass dvmClass, String signature, String methodName, String args, VaList vaList);
+    void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg);
 
-    int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg);
+    void callVoidMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
-    int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList);
+    boolean callBooleanMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
-    long callStaticLongMethodV(String signature, VaList vaList);
+    int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg);
 
-    boolean callBooleanMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList);
+    int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
-    int getIntField(BaseVM vm, DvmObject dvmObject, String signature);
+    DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg);
 
-    void callStaticVoidMethodV(String signature, VaList vaList);
+    DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
-    void setObjectField(BaseVM vm, DvmObject dvmObject, String signature, DvmObject value);
+    int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature);
+
+    DvmObject getStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature);
 
     boolean getBooleanField(BaseVM vm, DvmObject dvmObject, String signature);
 
-    DvmObject newObject(DvmClass clazz, String signature, VarArg varArg);
+    int getIntField(BaseVM vm, DvmObject dvmObject, String signature);
 
-    DvmObject newObjectV(DvmClass clazz, String signature, VaList vaList);
+    DvmObject getObjectField(BaseVM vm, DvmObject dvmObject, String signature);
+
+    void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value);
 
     void setIntField(BaseVM vm, DvmObject dvmObject, String signature, int value);
 
     void setLongField(BaseVM vm, DvmObject dvmObject, String signature, long value);
 
-    void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value);
-
-    void callVoidMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg);
-
-    void callVoidMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList);
+    void setObjectField(BaseVM vm, DvmObject dvmObject, String signature, DvmObject value);
 }

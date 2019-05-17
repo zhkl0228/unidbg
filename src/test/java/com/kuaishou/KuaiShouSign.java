@@ -79,7 +79,7 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
     }
 
     @Override
-    public DvmObject callObjectMethodV(VM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "com/yxcorp/gifshow/App->getPackageName()Ljava/lang/String;":
                 return new StringObject(vm, APP_PACKAGE_NAME);
@@ -87,6 +87,6 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
                 return new DvmObject<Object>(vm.resolveClass("android/content/pm/PackageManager"), null);
         }
 
-        return super.callObjectMethodV(vm, dvmObject, signature, methodName, args, vaList);
+        return super.callObjectMethodV(vm, dvmObject, signature, vaList);
     }
 }

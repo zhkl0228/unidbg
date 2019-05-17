@@ -32,7 +32,8 @@ class DvmField implements Hashable {
         if (log.isDebugEnabled()) {
             log.debug("getStaticIntField dvmClass=" + dvmClass + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
-        return dvmClass.vm.jni.getStaticIntField(dvmClass, signature);
+        BaseVM vm = dvmClass.vm;
+        return dvmClass.vm.jni.getStaticIntField(vm, dvmClass, signature);
     }
 
     int getObjectField(DvmObject dvmObject) {

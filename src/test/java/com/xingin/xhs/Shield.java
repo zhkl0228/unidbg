@@ -133,7 +133,7 @@ public class Shield extends AbstractJni implements IOResolver {
     }
 
     @Override
-    public DvmObject callObjectMethodV(VM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "com/xingin/shield/http/RedHttpInterceptor->deviceId()Ljava/lang/String;":
                 return new StringObject(vm,"e3480298-0835-355d-8972-bdce279963fc");
@@ -160,16 +160,16 @@ public class Shield extends AbstractJni implements IOResolver {
                 return clazz.newObject(null);
         }
 
-        return super.callObjectMethodV(vm, dvmObject, signature, methodName, args, vaList);
+        return super.callObjectMethodV(vm, dvmObject, signature, vaList);
     }
 
     @Override
-    public int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VaList vaList) {
+    public int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         if ("okhttp3/Response->code()I".equals(signature)) {
             return 200;
         }
 
-        return super.callIntMethodV(vm, dvmObject, signature, methodName, args, vaList);
+        return super.callIntMethodV(vm, dvmObject, signature, vaList);
     }
 
     @Override

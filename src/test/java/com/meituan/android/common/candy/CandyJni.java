@@ -245,11 +245,11 @@ public class CandyJni extends AbstractJni implements IOResolver {
     }
 
     @Override
-    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, String methodName, String args, VarArg varArg) {
+    public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         if ("android/content/Context->getPackageCodePath()Ljava/lang/String;".equals(signature)) {
             return new StringObject(vm, INSTALL_PATH);
         }
 
-        return super.callObjectMethod(vm, dvmObject, signature, methodName, args, varArg);
+        return super.callObjectMethod(vm, dvmObject, signature, varArg);
     }
 }
