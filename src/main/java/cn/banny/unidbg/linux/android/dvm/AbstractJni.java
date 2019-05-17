@@ -92,9 +92,9 @@ public abstract class AbstractJni implements Jni {
     public DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "android/app/Application->getAssets()Landroid/content/res/AssetManager;":
-                return new AssetManager(vm.resolveClass("android/content/res/AssetManager"), signature);
+                return new AssetManager(vm, signature);
             case "android/app/Application->getClassLoader()Ljava/lang/ClassLoader;":
-                return new cn.banny.unidbg.linux.android.dvm.api.ClassLoader(vm.resolveClass("dalvik/system/PathClassLoader"), signature);
+                return new cn.banny.unidbg.linux.android.dvm.api.ClassLoader(vm, signature);
             case "android/app/Application->getContentResolver()Landroid/content/ContentResolver;":
                 return new DvmObject<>(vm.resolveClass("android/content/ContentResolver"), signature);
             case "java/util/ArrayList->get(I)Ljava/lang/Object;":
@@ -162,7 +162,7 @@ public abstract class AbstractJni implements Jni {
     public DvmObject callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         switch (signature) {
             case "com/android/internal/os/BinderInternal->getContextObject()Landroid/os/IBinder;":
-                return new Binder(dvmClass.vm.resolveClass("android/os/IBinder"), signature);
+                return new Binder(vm, signature);
             case "android/app/ActivityThread->currentActivityThread()Landroid/app/ActivityThread;":
                 return new DvmObject<Object>(dvmClass, null);
             case "android/app/ActivityThread->currentApplication()Landroid/app/Application;":
@@ -170,7 +170,7 @@ public abstract class AbstractJni implements Jni {
             case "java/util/Locale->getDefault()Ljava/util/Locale;":
                 return new DvmObject<>(dvmClass, Locale.getDefault());
             case "android/os/ServiceManagerNative->asInterface(Landroid/os/IBinder;)Landroid/os/IServiceManager;":
-                return new ServiceManager(vm.resolveClass("android/os/IServiceManager"), signature);
+                return new ServiceManager(vm, signature);
             case "com/android/internal/telephony/ITelephony$Stub->asInterface(Landroid/os/IBinder;)Lcom/android/internal/telephony/ITelephony;":
                 return vaList.getObject(0);
         }

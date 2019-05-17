@@ -1,15 +1,15 @@
 package cn.banny.unidbg.linux.android.dvm.api;
 
-import cn.banny.unidbg.linux.android.dvm.DvmClass;
 import cn.banny.unidbg.linux.android.dvm.DvmObject;
+import cn.banny.unidbg.linux.android.dvm.VM;
 import unicorn.UnicornException;
 
 import java.util.Properties;
 
 public class Bundle extends DvmObject<Properties> {
 
-    public Bundle(DvmClass objectType, Properties properties) {
-        super(objectType, properties);
+    public Bundle(VM vm, Properties properties) {
+        super(vm.resolveClass("android/os/Bundle"), properties);
     }
 
     public int getInt(String key) {

@@ -7,8 +7,8 @@ public class Enumeration extends DvmObject<List<?>> {
 
     private Iterator<? extends DvmObject> iterator;
 
-    public Enumeration(DvmClass objectType, List<? extends DvmObject> value) {
-        super(objectType, value);
+    public Enumeration(VM vm, List<? extends DvmObject> value) {
+        super(vm.resolveClass("java/util/Enumeration"), value);
 
         this.iterator = value == null ? null : value.iterator();
     }
