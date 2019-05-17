@@ -1,8 +1,5 @@
 package cn.banny.unidbg.linux.android.dvm;
 
-import cn.banny.unidbg.linux.android.dvm.api.PackageInfo;
-import cn.banny.unidbg.linux.android.dvm.api.Signature;
-import cn.banny.unidbg.linux.android.dvm.api.SystemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -26,39 +23,6 @@ class DvmField implements Hashable {
             log.debug("getStaticObjectField dvmClass=" + dvmClass + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        switch (signature) {
-            case "android/content/Context->TELEPHONY_SERVICE:Ljava/lang/String;":
-                return vm.addObject(new StringObject(vm, SystemService.TELEPHONY_SERVICE), false);
-            case "android/content/Context->WIFI_SERVICE:Ljava/lang/String;":
-                return vm.addObject(new StringObject(vm, SystemService.WIFI_SERVICE), false);
-            case "android/content/Context->CONNECTIVITY_SERVICE:Ljava/lang/String;":
-                return vm.addObject(new StringObject(vm, SystemService.CONNECTIVITY_SERVICE), false);
-            case "android/content/Context->ACCESSIBILITY_SERVICE:Ljava/lang/String;":
-                return vm.addObject(new StringObject(vm, SystemService.ACCESSIBILITY_SERVICE), false);
-            case "android/content/Context->KEYGUARD_SERVICE:Ljava/lang/String;":
-                return vm.addObject(new StringObject(vm, SystemService.KEYGUARD_SERVICE), false);
-            case "android/content/Context->ACTIVITY_SERVICE:Ljava/lang/String;":
-                return vm.addObject(new StringObject(vm, SystemService.ACTIVITY_SERVICE), false);
-            case "java/lang/Void->TYPE:Ljava/lang/Class;":
-                return vm.addObject(vm.resolveClass("java/lang/Void"), false);
-            case "java/lang/Boolean->TYPE:Ljava/lang/Class;":
-                return vm.addObject(vm.resolveClass("java/lang/Boolean"), false);
-            case "java/lang/Byte->TYPE:Ljava/lang/Class;":
-                return vm.addLocalObject(vm.resolveClass("java/lang/Byte"));
-            case "java/lang/Character->TYPE:Ljava/lang/Class;":
-                return vm.addLocalObject(vm.resolveClass("java/lang/Character"));
-            case "java/lang/Short->TYPE:Ljava/lang/Class;":
-                return vm.addLocalObject(vm.resolveClass("java/lang/Short"));
-            case "java/lang/Integer->TYPE:Ljava/lang/Class;":
-                return vm.addLocalObject(vm.resolveClass("java/lang/Integer"));
-            case "java/lang/Long->TYPE:Ljava/lang/Class;":
-                return vm.addLocalObject(vm.resolveClass("java/lang/Long"));
-            case "java/lang/Float->TYPE:Ljava/lang/Class;":
-                return vm.addLocalObject(vm.resolveClass("java/lang/Float"));
-            case "java/lang/Double->TYPE:Ljava/lang/Class;":
-                return vm.addLocalObject(vm.resolveClass("java/lang/Double"));
-        }
-
         DvmObject object = vm.jni.getStaticObjectField(vm, dvmClass, signature);
         return vm.addObject(object, false);
     }
@@ -77,16 +41,6 @@ class DvmField implements Hashable {
             log.debug("getObjectField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature) &&
-                dvmObject instanceof PackageInfo) {
-            PackageInfo packageInfo = (PackageInfo) dvmObject;
-            if (packageInfo.getPackageName().equals(vm.getPackageName())) {
-                Signature[] signatures = vm.getSignatures();
-                if (signatures != null) {
-                    return vm.addObject(new ArrayObject(signatures), false);
-                }
-            }
-        }
         return vm.addObject(vm.jni.getObjectField(vm, dvmObject, signature), false);
     }
 
