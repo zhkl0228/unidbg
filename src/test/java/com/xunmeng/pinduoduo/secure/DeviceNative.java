@@ -1,16 +1,16 @@
 package com.xunmeng.pinduoduo.secure;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.LibraryResolver;
-import cn.banny.emulator.Module;
-import cn.banny.emulator.arm.ARMEmulator;
-import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.file.IOResolver;
-import cn.banny.emulator.linux.android.AndroidARMEmulator;
-import cn.banny.emulator.linux.android.AndroidResolver;
-import cn.banny.emulator.linux.android.dvm.*;
-import cn.banny.emulator.linux.file.ByteArrayFileIO;
-import cn.banny.emulator.memory.Memory;
+import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.file.FileIO;
+import cn.banny.unidbg.file.IOResolver;
+import cn.banny.unidbg.linux.android.AndroidARMEmulator;
+import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.dvm.*;
+import cn.banny.unidbg.linux.file.ByteArrayFileIO;
+import cn.banny.unidbg.memory.Memory;
 import org.apache.commons.codec.binary.Base64;
 
 import java.io.ByteArrayOutputStream;

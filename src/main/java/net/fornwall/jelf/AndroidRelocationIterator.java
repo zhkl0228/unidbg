@@ -1,7 +1,7 @@
 package net.fornwall.jelf;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.ios.Utils;
+import cn.banny.unidbg.ios.Utils;
 import cn.banny.utils.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

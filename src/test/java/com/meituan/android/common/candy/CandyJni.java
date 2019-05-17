@@ -1,19 +1,19 @@
 package com.meituan.android.common.candy;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.Emulator;
-import cn.banny.emulator.LibraryResolver;
-import cn.banny.emulator.Module;
-import cn.banny.emulator.arm.ARMEmulator;
-import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.file.IOResolver;
-import cn.banny.emulator.hook.hookzz.*;
-import cn.banny.emulator.linux.android.AndroidARMEmulator;
-import cn.banny.emulator.linux.android.AndroidResolver;
-import cn.banny.emulator.linux.android.dvm.*;
-import cn.banny.emulator.linux.file.ByteArrayFileIO;
-import cn.banny.emulator.linux.file.SimpleFileIO;
-import cn.banny.emulator.memory.Memory;
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.file.FileIO;
+import cn.banny.unidbg.file.IOResolver;
+import cn.banny.unidbg.hook.hookzz.*;
+import cn.banny.unidbg.linux.android.AndroidARMEmulator;
+import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.dvm.*;
+import cn.banny.unidbg.linux.file.ByteArrayFileIO;
+import cn.banny.unidbg.linux.file.SimpleFileIO;
+import cn.banny.unidbg.memory.Memory;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -61,7 +61,7 @@ public class CandyJni extends AbstractJni implements IOResolver {
 
         vm = emulator.createDalvikVM(new File(APK_PATH));
         DalvikModule dm = vm.loadLibrary("mtguard", false);
-        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.INFO);
+        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.INFO);
         dm.callJNI_OnLoad(emulator);
         module = dm.getModule();
 
@@ -117,7 +117,7 @@ public class CandyJni extends AbstractJni implements IOResolver {
 
     private void getCandyDataWithKey() {
         vm.setJni(this);
-        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 
         byte[] data = "HelloWorld".getBytes();
         String key = "candyKey";

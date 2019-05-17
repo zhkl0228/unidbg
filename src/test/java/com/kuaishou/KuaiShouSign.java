@@ -1,13 +1,13 @@
 package com.kuaishou;
 
-import cn.banny.emulator.Module;
-import cn.banny.emulator.arm.ARMEmulator;
-import cn.banny.emulator.file.FileIO;
-import cn.banny.emulator.file.IOResolver;
-import cn.banny.emulator.linux.android.AndroidARMEmulator;
-import cn.banny.emulator.linux.android.AndroidResolver;
-import cn.banny.emulator.linux.android.dvm.*;
-import cn.banny.emulator.memory.Memory;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.file.FileIO;
+import cn.banny.unidbg.file.IOResolver;
+import cn.banny.unidbg.linux.android.AndroidARMEmulator;
+import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.dvm.*;
+import cn.banny.unidbg.memory.Memory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -58,7 +58,7 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
     }
 
     private void sign() {
-        Logger.getLogger("cn.banny.emulator.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         String str = "app=0appver=6.2.3.8614c=ALI_CPD,17client_key=3c2cd3f3contactData=7A9IqsDstz815+zxGyC1+XgougsArgtFUPBRYcRwUhcjwTsafJBmYnLZgLc5l4g7sjINLj0nrXFq1CCsFHteQSpac+959kD0yYEJyGzukSqMQGayQCue397jX98gp0NPU26waWGh+JWMaYnZG/F1Sg==country_code=CNdid=ANDROID_9fb7792f6142ea63did_gt=1553767215144ftt=hotfix_ver=isp=iuid=iv=5okP62w8Yl7WHiG6kpf=ANDROID_PHONEkpn=KUAISHOUlanguage=zh-cnlat=40.054041lon=116.298517max_memory=192mod=LGE(Nexus 5)net=WIFIoc=ALI_CPD,17os=androidsys=ANDROID_6.0.1token=f68245ccc1344489894f963248cc3501-1082592150ud=1082592150ver=6.2";
 
 //        emulator.traceCode();

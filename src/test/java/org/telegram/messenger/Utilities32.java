@@ -1,15 +1,15 @@
 package org.telegram.messenger;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.emulator.LibraryResolver;
-import cn.banny.emulator.arm.ARMEmulator;
-import cn.banny.emulator.linux.android.AndroidARMEmulator;
-import cn.banny.emulator.linux.android.AndroidResolver;
-import cn.banny.emulator.linux.android.dvm.ByteArray;
-import cn.banny.emulator.linux.android.dvm.DalvikModule;
-import cn.banny.emulator.linux.android.dvm.DvmClass;
-import cn.banny.emulator.linux.android.dvm.VM;
-import cn.banny.emulator.memory.Memory;
+import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.linux.android.AndroidARMEmulator;
+import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.dvm.ByteArray;
+import cn.banny.unidbg.linux.android.dvm.DalvikModule;
+import cn.banny.unidbg.linux.android.dvm.DvmClass;
+import cn.banny.unidbg.linux.android.dvm.VM;
+import cn.banny.unidbg.memory.Memory;
 
 import java.io.File;
 import java.io.IOException;
