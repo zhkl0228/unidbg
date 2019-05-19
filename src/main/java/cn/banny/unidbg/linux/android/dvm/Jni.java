@@ -8,6 +8,8 @@ public interface Jni {
 
     boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
+    int callStaticIntMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
+
     int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
     long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);

@@ -1353,7 +1353,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private static final int TINY_BASE = 0xe2000;
 
-    final long allocate(long address, long size) {
+    final long allocate(long address, long size, boolean isMap) {
+        if (log.isDebugEnabled()) {
+            log.debug("allocate address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", isMap=" + isMap);
+        }
+
         if (address < TINY_BASE) {
             address = TINY_BASE;
         }

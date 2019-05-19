@@ -663,6 +663,24 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallStaticIntMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public int handle(Emulator emulator) {
+                UnicornPointer clazz = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallStaticIntMethodV clazz=" + clazz + ", jmethodID=" + jmethodID);
+                }
+                DvmClass dvmClass = classMap.get(clazz.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    return dvmMethod.callStaticIntMethod(ArmVarArg.armVarArg(emulator, DalvikVM64.this, 3));
+                }
+            }
+        });
+
         Pointer _CallStaticIntMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public int handle(Emulator emulator) {
@@ -1145,6 +1163,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x398, _CallStaticObjectMethodV);
         impl.setPointer(0x3A8, _CallStaticBooleanMethod);
         impl.setPointer(0x3B0, _CallStaticBooleanMethodV);
+        impl.setPointer(0x408, _CallStaticIntMethod);
         impl.setPointer(0x410, _CallStaticIntMethodV);
         impl.setPointer(0x428, _CallStaticLongMethodV);
         impl.setPointer(0x470, _CallStaticVoidMethodV);

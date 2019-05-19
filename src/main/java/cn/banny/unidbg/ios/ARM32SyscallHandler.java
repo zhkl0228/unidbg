@@ -703,31 +703,31 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long mask = (r5 << 32) | r4;
         int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
         int cur_protection = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R8)).intValue();
-        boolean anywhere = (flags & VM_FLAGS_ANYWHERE) != 0;
-        boolean malloc = (flags & VM_MEMORY_MALLOC) != 0;
+        int tag = flags >> 24;
+        boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
+        if (!anywhere) {
+            throw new UnicornException("_kernelrpc_mach_vm_map_trap fixed");
+        }
 
         Pointer value = address.getPointer(0);
         UnicornPointer pointer;
-        if (malloc && value != null) {
+        if (value != null) {
             MachOLoader loader = (MachOLoader) emulator.getMemory();
-            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size));
+            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size, true));
         } else {
             pointer = emulator.getMemory().mmap((int) size, cur_protection);
         }
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
+            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
         } else {
             Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
+                log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
             }
         }
         address.setPointer(0, pointer);
         return 0;
     }
-
-    private static final int VM_FLAGS_ANYWHERE = 0x0001;
-    private static final int VM_MEMORY_MALLOC = 0x1000000;
 
     private int _kernelrpc_mach_vm_allocate_trap(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
@@ -737,24 +737,27 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
         long size = r2 | (r3 << 32);
         int flags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        boolean anywhere = (flags & VM_FLAGS_ANYWHERE) != 0;
-        boolean malloc = (flags & VM_MEMORY_MALLOC) != 0;
+        int tag = flags >> 24;
+        boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
+        if (!anywhere) {
+            throw new UnicornException("_kernelrpc_mach_vm_allocate_trap fixed");
+        }
 
         Pointer value = address.getPointer(0);
         UnicornPointer pointer;
-        if (malloc && value != null) {
+        if (value != null) {
             MachOLoader loader = (MachOLoader) emulator.getMemory();
-            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size));
+            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size, false));
         } else {
             pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
         }
         address.setPointer(0, pointer);
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
+            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
         } else {
             Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", malloc=" + malloc);
+                log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
             }
         }
         return 0;
