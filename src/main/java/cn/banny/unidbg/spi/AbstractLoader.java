@@ -66,7 +66,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 //    private static final int MAP_FIXED =	0x10;		/* Interpret addr exactly */
 //    private static final int MAP_ANONYMOUS =	0x20;		/* don't use a file */
 
-    protected final long allocateMapAddress(long startAddr, long length) {
+    protected final long allocateMapAddress(long mask, long length) {
         Map.Entry<Long, MemoryMap> lastEntry = null;
         for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
             if (lastEntry == null) {
@@ -74,7 +74,7 @@ public abstract class AbstractLoader implements Memory, Loader {
             } else {
                 MemoryMap map = lastEntry.getValue();
                 long mmapAddress = map.base + map.size;
-                if (mmapAddress + length <= entry.getKey() && mmapAddress >= startAddr) {
+                if (mmapAddress + length <= entry.getKey() && (mmapAddress & mask) == 0) {
                     return mmapAddress;
                 } else {
                     lastEntry = entry;
@@ -91,7 +91,10 @@ public abstract class AbstractLoader implements Memory, Loader {
         }
 
         long addr = mmapBaseAddress;
-        mmapBaseAddress += length;
+        while ((addr & mask) != 0) {
+            addr += emulator.getPageAlign();
+        }
+        mmapBaseAddress = addr + length;
         return addr;
     }
 

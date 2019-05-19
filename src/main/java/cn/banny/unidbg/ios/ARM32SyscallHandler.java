@@ -149,6 +149,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 74:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, mprotect(u, emulator));
                         return;
+                    case 75:
+                        syscall = "posix_madvise";
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
+                        return;
                     case 92:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fcntl(u, emulator));
                         return;
@@ -711,9 +715,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
         Pointer value = address.getPointer(0);
         UnicornPointer pointer;
-        if (value != null) {
+        if (mask != 0) {
             MachOLoader loader = (MachOLoader) emulator.getMemory();
-            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size, true));
+            pointer = UnicornPointer.pointer(emulator, loader.allocate(size, mask));
         } else {
             pointer = emulator.getMemory().mmap((int) size, cur_protection);
         }
@@ -744,13 +748,8 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
 
         Pointer value = address.getPointer(0);
-        UnicornPointer pointer;
-        if (value != null) {
-            MachOLoader loader = (MachOLoader) emulator.getMemory();
-            pointer = UnicornPointer.pointer(emulator, loader.allocate(((UnicornPointer) value).peer, size, false));
-        } else {
-            pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
-        }
+        UnicornPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+        pointer.write(0, new byte[(int) size], 0, (int) size);
         address.setPointer(0, pointer);
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));

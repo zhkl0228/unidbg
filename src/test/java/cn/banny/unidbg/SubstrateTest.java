@@ -39,7 +39,7 @@ public class SubstrateTest extends EmulatorTest {
         loader.setCallInitFunction();
 //        emulator.attach().addBreakPoint(null, 0x4097855c);
 //        emulator.traceCode();
-//        loader.setObjcRuntime(true);
+        loader.setObjcRuntime(false);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);

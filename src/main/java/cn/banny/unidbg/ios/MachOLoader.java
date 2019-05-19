@@ -1351,26 +1351,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private MachOModule executableModule;
 
-    private static final int TINY_BASE = 0xe2000;
-
-    final long allocate(long address, long size, boolean isMap) {
+    final long allocate(long size, long mask) {
         if (log.isDebugEnabled()) {
-            log.debug("allocate address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", isMap=" + isMap);
+            log.debug("allocate size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask));
         }
 
-        if (address < TINY_BASE) {
-            address = TINY_BASE;
-        }
-
-        MemoryMap mapped = null;
-        for (MemoryMap map : memoryMap.values()) {
-            if (address >= map.base && address < map.base + map.size) {
-                mapped = map;
-            }
-        }
-        if (mapped != null) {
-            address = allocateMapAddress(address, size);
-        }
+        long address = allocateMapAddress(mask, size);
         int prot = UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE;
         unicorn.mem_map(address, size,prot );
         memoryMap.put(address, new MemoryMap(address, size, prot));

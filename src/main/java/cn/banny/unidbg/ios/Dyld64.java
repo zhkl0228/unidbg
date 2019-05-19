@@ -4,7 +4,8 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.*;
-import cn.banny.unidbg.ios.struct.*;
+import cn.banny.unidbg.ios.struct.DlInfo;
+import cn.banny.unidbg.ios.struct.DyldImageInfo;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
@@ -25,8 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static cn.banny.unidbg.ios.MachO.LARGE_THRESHOLD;
 
 public class Dyld64 extends Dyld {
 
@@ -533,10 +532,6 @@ public class Dyld64 extends Dyld {
         }
     }
 
-    static final int dyld_image_state_bound = 40;
-    static final int dyld_image_state_dependents_initialized = 45; // Only single notification for this
-    private static final int dyld_image_state_terminated = 60; // Only single notification for this
-
     private DyldImageInfo[] registerImageStateBatchChangeHandler(int state, UnicornPointer handler, Emulator emulator) {
         if (log.isDebugEnabled()) {
             log.debug("registerImageStateBatchChangeHandler state=" + state + ", handler=" + handler);
@@ -608,228 +603,6 @@ public class Dyld64 extends Dyld {
                 }
                 return _abort;
             }
-        } else if ("libsystem_malloc.dylib".equals(libraryName)) {
-            {
-                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                if (log.isDebugEnabled()) {
-                    log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
-                } else if (Dyld64.log.isDebugEnabled()) {
-                    Dyld64.log.debug("checkHook symbolName=" + symbolName + ", old=0x" + Long.toHexString(old) + ", libraryName=" + libraryName);
-                }
-            }
-            /*if ("_free".equals(symbolName)) {
-                if (_free == 0) {
-                    _free = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            UnicornPointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            if ((pointer.peer & (emulator.getPageAlign() - 1)) != 0) {
-                                log.info("_free pointer=" + pointer);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _free;
-            }*/
-            if ("_malloc".equals(symbolName)) {
-                if (_malloc == 0) {
-                    _malloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
-                            if (size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _malloc size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _malloc size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X0, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _malloc;
-            }
-            if ("_valloc".equals(symbolName)) {
-                if (_valloc == 0) {
-                    _valloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
-                            if (size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _valloc size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _valloc size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X0, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _valloc;
-            }
-            if ("_realloc".equals(symbolName)) {
-                if (_realloc == 0) {
-                    _realloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-                            if (size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _realloc pointer=" + pointer + ", size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _realloc pointer=" + pointer + ", size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X1, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _realloc;
-            }
-            if ("_calloc".equals(symbolName)) {
-                if (_calloc == 0) {
-                    _calloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            int count = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-                            if (count * size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _calloc count=" + count + ", size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _calloc count=" + count + ", size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X0, 1);
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X1, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _calloc;
-            }
-            if ("_malloc_zone_malloc".equals(symbolName)) {
-                if (_malloc_zone_malloc == 0) {
-                    _malloc_zone_malloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer zone = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-                            if (size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _malloc_zone_malloc zone=" + zone + ", size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _malloc_zone_malloc zone=" + zone + ", size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X1, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _malloc_zone_malloc;
-            }
-            if ("_malloc_zone_calloc".equals(symbolName)) {
-                if (_malloc_zone_calloc == 0) {
-                    _malloc_zone_calloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer zone = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            int count = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
-                            if (count * size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _malloc_zone_calloc zone=" + zone + ", count=" + count + ", size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _malloc_zone_calloc zone=" + zone + ", count=" + count + ", size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X1, 1);
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X2, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _malloc_zone_calloc;
-            }
-            if ("_malloc_zone_realloc".equals(symbolName)) {
-                if (_malloc_zone_realloc == 0) {
-                    _malloc_zone_realloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer zone = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            Pointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
-                            if (size <= LARGE_THRESHOLD) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _malloc_zone_realloc zone=" + zone + ", pointer=" + pointer + ", size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X2, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _malloc_zone_realloc;
-            }
-            if ("_malloc_zone_valloc".equals(symbolName)) {
-                if (_malloc_zone_valloc == 0) {
-                    _malloc_zone_valloc = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer zone = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-                            if (size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _malloc_zone_valloc zone=" + zone + ", size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _malloc_zone_valloc zone=" + zone + ", size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X1, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _malloc_zone_valloc;
-            }
-            if ("_malloc_zone_memalign".equals(symbolName)) {
-                if (_malloc_zone_memalign == 0) {
-                    _malloc_zone_memalign = svcMemory.registerSvc(new Arm64Hook() {
-                        @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer zone = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            int alignment = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-                            int size = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
-                            if (size <= LARGE_THRESHOLD) {
-                                Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Fake _malloc_zone_memalign zone=" + zone + ", alignment=" + alignment + ", size=" + size);
-                                } else if (Dyld64.log.isDebugEnabled()) {
-                                    Dyld64.log.debug("Fake _malloc_zone_memalign zone=" + zone + ", alignment=" + alignment + ", size=" + size);
-                                }
-                                u.reg_write(Arm64Const.UC_ARM64_REG_X2, LARGE_THRESHOLD + 1);
-                            }
-                            return HookStatus.RET(u, old);
-                        }
-                    }).peer;
-                }
-                return _malloc_zone_memalign;
-            }
         } else if ("libsystem_pthread.dylib".equals(libraryName)) {
             if ("_pthread_getname_np".equals(symbolName)) {
                 if (_pthread_getname_np == 0) {
@@ -854,9 +627,6 @@ public class Dyld64 extends Dyld {
         return 0;
     }
 
-//    private long _free;
-    private long _realloc, _malloc, _calloc, _valloc;
-    private long _malloc_zone_malloc, _malloc_zone_calloc, _malloc_zone_realloc, _malloc_zone_valloc, _malloc_zone_memalign;
     private long _pthread_getname_np;
 
     private int dlsym(Memory memory, long handle, String symbolName) {
