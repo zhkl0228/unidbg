@@ -96,8 +96,8 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
             return createFileIO(file, path, oflags);
         }
 
-        String androidResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
-        InputStream inputStream = AndroidResolver.class.getResourceAsStream(androidResource);
+        String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
+        InputStream inputStream = AndroidResolver.class.getResourceAsStream(iosResource);
         if (inputStream != null) {
             OutputStream outputStream = null;
             try {

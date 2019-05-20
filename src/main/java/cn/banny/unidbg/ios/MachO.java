@@ -83,14 +83,4 @@ public interface MachO {
 
     int VM_FLAGS_ANYWHERE = 0x0001;
 
-    int VM_MEMORY_MALLOC = 1;
-    int VM_MEMORY_MALLOC_SMALL = 2;
-    int VM_MEMORY_MALLOC_LARGE = 3;
-    int VM_MEMORY_MALLOC_HUGE = 4;
-    int VM_MEMORY_REALLOC = 6;
-    int VM_MEMORY_MALLOC_TINY = 7;
-    int VM_MEMORY_OS_ALLOC_ONCE = 73; // 0x49
-
-    int LARGE_THRESHOLD = (15 * 1024); // strictly above this use "large"
-
 }
