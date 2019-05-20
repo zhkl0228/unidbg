@@ -943,7 +943,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int timeout = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
         int notify = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
 
-        msg.setSize(rcv_size);
+        msg.setSize(Math.max(send_size, rcv_size));
 
         final MachMsgHeader header = new MachMsgHeader(msg);
         header.unpack();
@@ -1113,16 +1113,21 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     }
                 }
 
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region_recurse_64 header=" + header + ", memoryMap=" + memoryMap);
+                }
+
                 if (memoryMap == null) {
-                    break;
+                    log.warn("vm_region_recurse_64 failed address=0x" + Long.toHexString(args.address) + ", size=0x" + Integer.toHexString(args.size()));
+                    return -1;
                 }
 
                 reply.NDR = args.NDR;
                 reply.retCode = 0; // success
                 reply.address = (int) memoryMap.base;
                 reply.size = (int) memoryMap.size;
-                reply.infoCnt = args.infoCnt;
-                reply.nestingDepth = args.nestingDepth;
+                reply.infoCnt = 7;
+                reply.nestingDepth = 0;
                 reply.info.protection = memoryMap.prot;
                 reply.info.max_protection = memoryMap.prot;
                 reply.info.inheritance = memoryMap.prot;
@@ -1186,6 +1191,78 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     log.debug("mach_ports_lookup reply=" + reply);
                 }
                 return MACH_MSG_SUCCESS;
+            }
+            case 3808: // vm_copy
+            {
+                VmCopyRequest args = new VmCopyRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_copy args=" + args + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                }
+
+                byte[] data = unicorn.mem_read(args.source_address, args.size);
+                unicorn.mem_write(args.dest_address, data);
+
+                VmCopyReply reply = new VmCopyReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 0;
+                reply.NDR = args.NDR;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_copy reply=" + reply + ", header=" + header);
+                }
+                return 0;
+            }
+            case 4813: // _kernelrpc_mach_vm_remap
+            {
+                VmRemapRequest args = new VmRemapRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_vm_remap args=" + args + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                }
+
+                if (args.anywhere != MachO.VM_FLAGS_OVERWRITE || args.mask != 0) {
+                    throw new UnsupportedOperationException();
+                }
+
+                unicorn.mem_unmap(args.target_address, args.size);
+                unicorn.mem_map(args.target_address, args.size, args.inheritance);
+                if (args.copy != 0) {
+                    byte[] data = unicorn.mem_read(args.getSourceAddress(), args.size);
+                    unicorn.mem_write(args.target_address, data);
+                }
+
+                VmRemapReply reply = new VmRemapReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.retCode = 0;
+                reply.target_address1 = (int) args.target_address;
+                reply.target_address2 = (int) (args.target_address >> 32);
+                reply.cur_protection = args.inheritance;
+                reply.max_protection = args.inheritance;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_vm_remap reply=" + reply + ", header=" + header);
+                }
+                return 0;
             }
             default:
                 Log log = LogFactory.getLog("cn.banny.unidbg.AbstractEmulator");

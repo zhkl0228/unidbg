@@ -39,7 +39,7 @@ public class SubstrateTest extends EmulatorTest {
         loader.setCallInitFunction();
 //        emulator.attach().addBreakPoint(null, 0x4097855c);
 //        emulator.traceCode();
-        loader.setObjcRuntime(true);
+        loader.setObjcRuntime(false);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
@@ -80,14 +80,18 @@ public class SubstrateTest extends EmulatorTest {
         int mSize = malloc_size.call(emulator, block)[0].intValue();
         System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0) + ", version=" + zone.getInt(0x34) + ", free_definite_size=" + zone.getPointer(0x3c));
 
+        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
         System.err.println("malloc_default_zone=" + malloc_default_zone + ", zone=" + zone + ", malloc=" + malloc +
-                ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize);
+                ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize + ", malloc_zone_malloc=0x" + Long.toHexString(malloc_zone_malloc.getAddress()));
 
         free.call(emulator, block);
 
         IHookZz hookZz = HookZz.getInstance(emulator);
-        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
+//        Logger.getLogger("cn.banny.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+        Pointer pointer = malloc_zone_malloc.createPointer(emulator);
+        Inspector.inspect(pointer.getByteArray(0, 0x10), "Before replace pointer=" + pointer);
 //        emulator.traceCode();
+//        emulator.attach().addBreakPoint(null, 0x41178b5a);
         hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -98,22 +102,18 @@ public class SubstrateTest extends EmulatorTest {
                 return HookStatus.RET(unicorn, originFunction);
             }
         });
+        Inspector.inspect(pointer.getByteArray(0, 0x10), "After replace");
+
+//        emulator.traceCode();
+        hookZz.wrap(module.findSymbolByName("_free"), new WrapCallback<Arm32RegisterContext>() {
+            @Override
+            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
+                System.err.println("preCall _free=" + ctx.getR0Pointer());
+            }
+        });
 
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
-
-//        emulator.traceCode();
-        hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
-            @Override
-            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                System.err.println("preCall _MSGetImageByName=" + ctx.getR0Pointer().getString(0));
-            }
-            @Override
-            public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                super.postCall(emulator, ctx, info);
-                System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0()));
-            }
-        });
 
 //        emulator.attach().addBreakPoint(null, 0x40235d2a);
 //        emulator.traceCode();

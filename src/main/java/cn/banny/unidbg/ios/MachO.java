@@ -83,4 +83,6 @@ public interface MachO {
 
     int VM_FLAGS_ANYWHERE = 0x0001;
 
+    int VM_FLAGS_OVERWRITE = 0x4000; /* delete any existing mappings first */
+
 }
