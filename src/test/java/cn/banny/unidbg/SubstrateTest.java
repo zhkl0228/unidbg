@@ -3,6 +3,8 @@ package cn.banny.unidbg;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
+import cn.banny.unidbg.hook.fishhook.FishHook;
+import cn.banny.unidbg.hook.fishhook.IFishHook;
 import cn.banny.unidbg.hook.hookzz.*;
 import cn.banny.unidbg.hook.whale.IWhale;
 import cn.banny.unidbg.hook.whale.Whale;
@@ -39,10 +41,24 @@ public class SubstrateTest extends EmulatorTest {
         loader.setCallInitFunction();
 //        emulator.attach().addBreakPoint(null, 0x4097855c);
 //        emulator.traceCode();
-        loader.setObjcRuntime(false);
+        loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+//        emulator.traceCode();
+
+        IFishHook fishHook = FishHook.getInstance(emulator);
+        fishHook.rebindSymbol("memcpy", new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                Unicorn unicorn = emulator.getUnicorn();
+                Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                System.err.println("memcpy dest=" + dest + ", src=" + src + ", size=" + size);
+                return HookStatus.RET(unicorn, originFunction);
+            }
+        });
 
         IWhale whale = Whale.getInstance(emulator);
         /*whale.WImportHookFunction("_malloc", new ReplaceCallback() {
@@ -146,15 +162,15 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
 //        emulator.traceCode();
 
-        /*whale.WInlineHookFunction(symbol, new ReplaceCallback() {
+        whale.WInlineHookFunction(module.findSymbolByName("_malloc"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 Unicorn unicorn = emulator.getUnicorn();
-                Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                System.err.println("onCall _MSGetImageByName=" + pointer.getString(0) + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
+                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                System.err.println("onCall _malloc size=" + size + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
                 return HookStatus.RET(unicorn, originFunction);
             }
-        });*/
+        });
 
         Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();

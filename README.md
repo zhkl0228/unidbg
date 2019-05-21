@@ -67,3 +67,4 @@ Simple tests under src/test directory
 - [jelf](https://github.com/fornwall/jelf)
 - [whale](https://github.com/asLody/whale)
 - [kaitai_struct](https://github.com/kaitai-io/kaitai_struct)
+- [fishhook](https://github.com/facebook/fishhook)

@@ -12,7 +12,7 @@ import io.kaitai.MachO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public abstract class Dyld implements Dlfcn {
+abstract class Dyld implements Dlfcn {
 
     private static final Log log = LogFactory.getLog(Dyld.class);
 

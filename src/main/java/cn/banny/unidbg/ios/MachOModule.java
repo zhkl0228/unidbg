@@ -44,11 +44,13 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
 
     private final Log log;
 
+    final boolean executable;
+
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
                 String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
-                long machHeader) {
+                long machHeader, boolean executable) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -63,6 +65,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
         this.apple = apple;
         this.vars = vars;
         this.machHeader = machHeader;
+        this.executable = executable;
 
         this.log = LogFactory.getLog("cn.banny.unidbg.ios." + name);
         this.routines = parseRoutines(machO);

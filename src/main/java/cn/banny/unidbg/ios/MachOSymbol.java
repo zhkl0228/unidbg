@@ -2,8 +2,6 @@ package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Symbol;
-import cn.banny.unidbg.memory.SvcMemory;
-import cn.banny.unidbg.pointer.UnicornPointer;
 import io.kaitai.MachO;
 
 public class MachOSymbol extends Symbol implements cn.banny.unidbg.ios.MachO {
@@ -42,18 +40,6 @@ public class MachOSymbol extends Symbol implements cn.banny.unidbg.ios.MachO {
     @Override
     public String getModuleName() {
         return module.name;
-    }
-
-    private UnicornPointer namePointer;
-
-    UnicornPointer createNameMemory(SvcMemory svcMemory) {
-        if (namePointer == null) {
-            byte[] name = getName().getBytes();
-            namePointer = svcMemory.allocate(name.length + 1);
-            namePointer.write(0, name, 0, name.length);
-            namePointer.setByte(name.length, (byte) 0);
-        }
-        return namePointer;
     }
 
 }

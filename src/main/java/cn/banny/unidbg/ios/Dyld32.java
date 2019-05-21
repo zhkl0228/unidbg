@@ -213,7 +213,7 @@ public class Dyld32 extends Dyld {
                                 return 0;
                             }
 
-                            MachOSymbol symbol = (MachOSymbol) module.findNearestSymbolByAddress(addr);
+                            Symbol symbol = module.findNearestSymbolByAddress(addr);
 
                             DlInfo dlInfo = new DlInfo(info);
                             dlInfo.dli_fname = module.createPathMemory(svcMemory);
@@ -369,6 +369,9 @@ public class Dyld32 extends Dyld {
                                     for (Module md : loader.getLoadedModules()) {
                                         Log log = LogFactory.getLog("cn.banny.unidbg.ios." + md.name);
                                         MachOModule mm = (MachOModule) md;
+                                        if (mm.executable) {
+                                            continue;
+                                        }
 
                                         // (headerType *mh, unsigned long	vmaddr_slide)
                                         pointer = pointer.share(-4);
