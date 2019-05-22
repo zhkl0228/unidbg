@@ -1,7 +1,7 @@
 package cn.banny.unidbg.hook.fishhook;
 
 import cn.banny.unidbg.hook.ReplaceCallback;
-import com.sun.jna.Pointer;
+import cn.banny.unidbg.ios.MachOModule;
 
 /**
  * Only support iOS
@@ -24,8 +24,6 @@ public interface IFishHook {
      * Rebinds as above, but only in the specified image. The header should point
      * to the mach-o header, the slide should be the slide offset. Others as above.
      */
-    void rebindSymbolImage(Pointer header, int slide, String symbol, ReplaceCallback callback);
-
-    void rebindSymbolImage(long machHeader, int slide, String symbol, ReplaceCallback callback);
+    void rebindSymbolImage(MachOModule module, String symbol, ReplaceCallback callback);
 
 }

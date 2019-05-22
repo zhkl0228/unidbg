@@ -3,7 +3,7 @@ package cn.banny.unidbg;
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
-import cn.banny.unidbg.hook.fishhook.FishHook;
+import cn.banny.unidbg.ios.FishHook;
 import cn.banny.unidbg.hook.fishhook.IFishHook;
 import cn.banny.unidbg.hook.hookzz.*;
 import cn.banny.unidbg.hook.whale.IWhale;

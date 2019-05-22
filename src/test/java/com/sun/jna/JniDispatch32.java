@@ -12,7 +12,7 @@ import cn.banny.unidbg.hook.hookzz.*;
 import cn.banny.unidbg.hook.whale.IWhale;
 import cn.banny.unidbg.hook.whale.Whale;
 import cn.banny.unidbg.hook.xhook.IxHook;
-import cn.banny.unidbg.hook.xhook.XHookImpl;
+import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.linux.android.dvm.*;

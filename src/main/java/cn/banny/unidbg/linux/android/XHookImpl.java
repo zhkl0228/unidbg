@@ -1,10 +1,11 @@
-package cn.banny.unidbg.hook.xhook;
+package cn.banny.unidbg.linux.android;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
+import cn.banny.unidbg.hook.xhook.IxHook;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

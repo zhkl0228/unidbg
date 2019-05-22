@@ -1,12 +1,12 @@
-package cn.banny.unidbg.hook.fishhook;
+package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
+import cn.banny.unidbg.hook.fishhook.IFishHook;
 import cn.banny.unidbg.memory.Memory;
-import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -74,17 +74,14 @@ public class FishHook extends BaseHook implements IFishHook {
     }
 
     @Override
-    public void rebindSymbolImage(Pointer header, int slide, String symbol, ReplaceCallback callback) {
+    public void rebindSymbolImage(MachOModule module, String symbol, ReplaceCallback callback) {
+        long header = module.machHeader;
+        int slide = Dyld.computeSlide(emulator, header);
         Pointer rebinding = createRebinding(symbol, callback);
         int ret = rebind_symbols_image.call(emulator, header, slide, rebinding, 1)[0].intValue();
         if (ret != RET_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
-    }
-
-    @Override
-    public void rebindSymbolImage(long machHeader, int slide, String symbol, ReplaceCallback callback) {
-        rebindSymbolImage(UnicornPointer.pointer(emulator, machHeader), slide, symbol, callback);
     }
 
 }
