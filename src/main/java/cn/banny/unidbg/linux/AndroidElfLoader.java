@@ -468,10 +468,8 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
                 case ARMEmulator.R_AARCH64_TLS_DTPREL32:
                 case ARMEmulator.R_ARM_IRELATIVE:
                 case ARMEmulator.R_ARM_REL32:
-                    log.warn("[" + soName + "]Unhandled relocation type " + type + ", symbol=" + symbol + ", relocationAddr=" + relocationAddr + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=" + relocation.addend() + ", android=" + relocation.isAndroid());
-                    break;
                 default:
-                    log.debug("[" + soName + "]Unhandled relocation type " + type + ", symbol=" + symbol + ", relocationAddr=" + relocationAddr + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=" + relocation.addend() + ", android=" + relocation.isAndroid());
+                    log.warn("[" + soName + "]Unhandled relocation type " + type + ", symbol=" + symbol + ", relocationAddr=" + relocationAddr + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=" + relocation.addend() + ", android=" + relocation.isAndroid());
                     break;
             }
         }
