@@ -1,6 +1,7 @@
 package cn.banny.unidbg.hook.hookzz;
 
 import cn.banny.unidbg.Symbol;
+import cn.banny.unidbg.arm.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
 
 public interface IHookZz {

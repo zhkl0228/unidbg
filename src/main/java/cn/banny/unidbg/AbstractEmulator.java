@@ -1,6 +1,7 @@
 package cn.banny.unidbg;
 
 import cn.banny.unidbg.arm.Arguments;
+import cn.banny.unidbg.arm.RegisterContext;
 import cn.banny.unidbg.debugger.Debugger;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.MemoryBlock;
@@ -44,11 +45,14 @@ public abstract class AbstractEmulator implements Emulator {
         POINTER_SIZE.set(Native.POINTER_SIZE);
     }
 
+    private final RegisterContext registerContext;
+
     public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName) {
         super();
 
         this.unicorn = new Unicorn(unicorn_arch, unicorn_mode);
         this.processName = processName == null ? "unidbg" : processName;
+        this.registerContext = createRegisterContext(unicorn);
 
         this.readHook = new TraceMemoryHook();
         this.writeHook = new TraceMemoryHook();
@@ -59,6 +63,14 @@ public abstract class AbstractEmulator implements Emulator {
         this.pid = Integer.parseInt(pid);
 
         POINTER_SIZE.set(getPointerSize());
+    }
+
+    protected abstract RegisterContext createRegisterContext(Unicorn unicorn);
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends RegisterContext> T getRegisterContext() {
+        return (T) registerContext;
     }
 
     protected  abstract Memory createMemory(UnixSyscallHandler syscallHandler);

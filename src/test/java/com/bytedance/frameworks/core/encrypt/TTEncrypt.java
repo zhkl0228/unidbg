@@ -6,6 +6,7 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.hookzz.*;
@@ -80,19 +81,19 @@ public class TTEncrypt {
             @Override
             public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
                 Pointer pointer = ctx.getR2Pointer();
-                int length = (int) ctx.getR3();
+                int length = (int) ctx.getR3Long();
                 byte[] key = pointer.getByteArray(0, length);
                 Inspector.inspect(key, "ss_encrypt key");
             }
             @Override
             public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                System.out.println("ss_encrypt.postCall R0=" + ctx.getR0());
+                System.out.println("ss_encrypt.postCall R0=" + ctx.getR0Long());
             }
         });
         hookZz.wrap(module.base + 0x00000F5C + 1, new WrapCallback<Arm32RegisterContext>() {
             @Override
             public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                System.out.println("R3=" + ctx.getR3() + ", R10=0x" + Long.toHexString(ctx.getR10()));
+                System.out.println("R3=" + ctx.getR3Long() + ", R10=0x" + Long.toHexString(ctx.getR10Long()));
             }
         });
 

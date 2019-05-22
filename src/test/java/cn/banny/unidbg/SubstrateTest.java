@@ -1,6 +1,7 @@
 package cn.banny.unidbg;
 
 import cn.banny.auxiliary.Inspector;
+import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.ios.FishHook;

@@ -1,5 +1,6 @@
 package cn.banny.unidbg;
 
+import cn.banny.unidbg.arm.RegisterContext;
 import cn.banny.unidbg.debugger.Debugger;
 import cn.banny.unidbg.linux.android.dvm.VM;
 import cn.banny.unidbg.memory.Memory;
@@ -112,5 +113,7 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      * @param timeout  Duration to emulate the code (in microseconds). When this value is 0, we will emulate the code in infinite time, until the code is finished.
      */
     void setTimeout(long timeout);
+
+    <T extends RegisterContext> T getRegisterContext();
 
 }

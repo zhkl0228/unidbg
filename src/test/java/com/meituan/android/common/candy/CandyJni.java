@@ -127,7 +127,7 @@ public class CandyJni extends AbstractJni implements IOResolver {
             @Override
             public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
                 Pointer pointer = ctx.getR0Pointer();
-                int size = (int) ctx.getR1();
+                int size = (int) ctx.getR1Long();
                 byte[] data = pointer.getByteArray(0, size);
                 Inspector.inspect(data, "data sha1=" + DigestUtils.sha1Hex(data) + ", pointer=" + pointer);
                 ctx.set("pointer", ctx.getR2Pointer());
@@ -143,17 +143,17 @@ public class CandyJni extends AbstractJni implements IOResolver {
         });*/
 
         IHookZz hookZz = HookZz.getInstance(emulator);
-        hookZz.wrap(module.base + 0x00004BED, new WrapCallback<Arm32RegisterContext>() {
+        hookZz.wrap(module.base + 0x00004BED, new WrapCallback<HookZzArm32RegisterContext>() {
             @Override
-            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
                 Pointer pointer = ctx.getR0Pointer();
-                int size = (int) ctx.getR1();
+                int size = (int) ctx.getR1Long();
                 byte[] data = pointer.getByteArray(0, size);
                 Inspector.inspect(data, "sign pointer=" + pointer);
                 ctx.set("pointer", ctx.getStackPointer().getPointer(0));
             }
             @Override
-            public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
+            public void postCall(Emulator emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
 
                 Pointer pointer = ctx.get("pointer");

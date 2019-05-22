@@ -6,6 +6,7 @@ import cn.banny.unidbg.StopEmulatorException;
 import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;
@@ -166,7 +167,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                         u.reg_write(ArmConst.UC_ARM_REG_R0, syslog(u, emulator));
                         return;
                     case 104:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, setitimer(u, emulator));
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, setitimer(emulator));
                         return;
                     case 118:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
@@ -937,8 +938,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int nanosleep(Emulator emulator) {
-        Pointer req = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer rem = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        Arm32RegisterContext context = emulator.getRegisterContext();
+        Pointer req = context.getR0Pointer();
+        Pointer rem = context.getR1Pointer();
         int tv_sec = req.getInt(0);
         int tv_nsec = req.getInt(4);
         if (log.isDebugEnabled()) {
@@ -960,10 +962,11 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         throw new UnsupportedOperationException();
     }
 
-    private int setitimer(Unicorn u, Emulator emulator) {
-        int which = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer new_value = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer old_value = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+    private int setitimer(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getRegisterContext();
+        int which = context.getR0Int();
+        Pointer new_value = context.getR1Pointer();
+        Pointer old_value = context.getR2Pointer();
         if (log.isDebugEnabled()) {
             log.debug("setitimer which=" + which + ", new_value=" + new_value + ", old_value=" + old_value);
         }

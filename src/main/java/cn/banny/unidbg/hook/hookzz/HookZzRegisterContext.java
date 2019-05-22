@@ -1,12 +1,15 @@
 package cn.banny.unidbg.hook.hookzz;
 
+import cn.banny.unidbg.arm.RegisterContext;
+import cn.banny.unidbg.spi.ValuePair;
+
 import java.util.Map;
 
-public abstract class RegisterContextImpl implements RegisterContext {
+public abstract class HookZzRegisterContext implements RegisterContext, ValuePair {
 
     private final Map<String, Object> context;
 
-    RegisterContextImpl(Map<String, Object> context) {
+    HookZzRegisterContext(Map<String, Object> context) {
         this.context = context;
     }
 

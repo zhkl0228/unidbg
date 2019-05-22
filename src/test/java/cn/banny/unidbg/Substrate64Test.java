@@ -1,6 +1,7 @@
 package cn.banny.unidbg;
 
 import cn.banny.auxiliary.Inspector;
+import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.hookzz.*;
@@ -111,7 +112,7 @@ public class Substrate64Test extends EmulatorTest {
             @Override
             public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
-                System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0()));
+                System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0Long()));
             }
         });
 

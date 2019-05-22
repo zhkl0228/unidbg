@@ -1,16 +1,15 @@
-package cn.banny.unidbg.hook.hookzz;
+package cn.banny.unidbg.arm;
 
-import cn.banny.unidbg.spi.ValuePair;
 import cn.banny.unidbg.pointer.UnicornPointer;
 
-public interface RegisterContext extends ValuePair {
+public interface RegisterContext {
 
     long getLr();
 
     UnicornPointer getLrPointer();
 
     /**
-     * SP
+     * sp
      */
     UnicornPointer getStackPointer();
 

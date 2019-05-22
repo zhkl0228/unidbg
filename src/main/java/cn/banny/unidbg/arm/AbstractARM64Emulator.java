@@ -66,6 +66,11 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     }
 
     @Override
+    protected RegisterContext createRegisterContext(Unicorn unicorn) {
+        return new UnicornArm64RegisterContext(unicorn, this);
+    }
+
+    @Override
     public Dlfcn getDlfcn() {
         return dlfcn;
     }

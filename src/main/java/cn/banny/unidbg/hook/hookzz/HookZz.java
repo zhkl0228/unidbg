@@ -5,6 +5,7 @@ import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.Arm64Svc;
 import cn.banny.unidbg.arm.ArmSvc;
+import cn.banny.unidbg.arm.RegisterContext;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -108,27 +109,27 @@ public class HookZz extends BaseHook implements IHookZz {
             @Override
             public int handle(Emulator emulator) {
                 context.clear();
-                callback.preCall(emulator, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
+                callback.preCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
             public int handle(Emulator emulator) {
                 context.clear();
-                callback.preCall(emulator, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
+                callback.preCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }
         });
         Pointer postCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
             @Override
             public int handle(Emulator emulator) {
-                callback.postCall(emulator, (T) new Arm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
+                callback.postCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
             public int handle(Emulator emulator) {
-                callback.postCall(emulator, (T) new Arm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
+                callback.postCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }
         });

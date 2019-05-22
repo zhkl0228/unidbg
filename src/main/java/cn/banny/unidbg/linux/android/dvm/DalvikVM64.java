@@ -2,6 +2,7 @@ package cn.banny.unidbg.linux.android.dvm;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.arm.Arm64RegisterContext;
 import cn.banny.unidbg.arm.Arm64Svc;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -37,8 +38,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _FindClass = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public int handle(Emulator emulator) {
-                Pointer env = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                Pointer className = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                Arm64RegisterContext context = emulator.getRegisterContext();
+                Pointer env = context.getXPointer(0);
+                Pointer className = context.getXPointer(1);
                 String name = className.getString(0);
                 DvmClass dvmClass = resolveClass(name);
                 long hash = dvmClass.hashCode() & 0xffffffffL;

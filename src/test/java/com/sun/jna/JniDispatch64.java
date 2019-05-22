@@ -12,9 +12,9 @@ import cn.banny.unidbg.hook.hookzz.*;
 import cn.banny.unidbg.hook.whale.IWhale;
 import cn.banny.unidbg.hook.whale.Whale;
 import cn.banny.unidbg.hook.xhook.IxHook;
-import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.AndroidARM64Emulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.dvm.*;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.pointer.UnicornPointer;
@@ -104,9 +104,9 @@ public class JniDispatch64 extends AbstractJni {
 
         IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol newJavaString = module.findSymbolByName("newJavaString");
-        hookZz.wrap(newJavaString, new WrapCallback<Arm64RegisterContext>() {
+        hookZz.wrap(newJavaString, new WrapCallback<HookZzArm64RegisterContext>() {
             @Override
-            public void preCall(Emulator emulator, Arm64RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 Pointer value = ctx.getXPointer(1);
                 Pointer encoding = ctx.getXPointer(2);
                 System.out.println("newJavaString value=" + value.getString(0) + ", encoding=" + encoding.getString(0));
