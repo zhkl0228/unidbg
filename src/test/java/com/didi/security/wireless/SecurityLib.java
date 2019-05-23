@@ -45,7 +45,7 @@ public class SecurityLib extends AbstractJni implements IOResolver {
         System.out.println("== init ===");
 
         final Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(new AndroidResolver(19));
+        memory.setLibraryResolver(new AndroidResolver(23));
         memory.setCallInitFunction();
 
         vm = emulator.createDalvikVM(new File(APK_PATH));
@@ -105,7 +105,7 @@ public class SecurityLib extends AbstractJni implements IOResolver {
 
 //        emulator.traceCode();
         DvmObject context = vm.resolveClass("android/content/Context").newObject(null);
-        long timestamp = 1558509659026L;
+        long timestamp = System.currentTimeMillis();
         Number ret = SecurityLib.callStaticJniMethod(emulator, "nativeSig(Landroid/content/Context;JLjava/lang/String;[B)Ljava/lang/String;",
                 context,
                 0, (int) timestamp, (int) (timestamp >> 32), // 一个long占两个int，所以要放两个寄存器，R0, R1, R2被占用，只剩R3的时候则组成long的两个int都放堆栈

@@ -63,7 +63,11 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
             if (thread != null) {
                 if (thread.context == 0) {
                     log.info("run thread: fn=" + thread.fn + ", arg=" + thread.arg + ", child_stack=" + thread.child_stack);
-                    LinuxModule.emulateFunction(emulator, __thread_entry, thread.fn, thread.arg, thread.child_stack);
+                    if (__thread_entry == 0) {
+                        LinuxModule.emulateFunction(emulator, thread.fn.peer, thread.arg);
+                    } else {
+                        LinuxModule.emulateFunction(emulator, __thread_entry, thread.fn, thread.arg, thread.child_stack);
+                    }
                 } else {
                     unicorn.context_restore(thread.context);
                     long pc = ((Number) unicorn.reg_read(emulator.getPointerSize() == 4 ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC)).intValue() & 0xffffffffL;
