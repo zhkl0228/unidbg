@@ -40,7 +40,8 @@ public class ArmVarArg implements VarArg {
 
     @Override
     public int getInt(int index) {
-        return (int) getArg(index).peer;
+        UnicornPointer pointer = getArg(index);
+        return pointer == null ? 0 : (int) pointer.peer;
     }
 
     private UnicornPointer getArg(int index) {

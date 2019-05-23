@@ -69,6 +69,16 @@ public abstract class AbstractJni implements Jni {
                 }
             }
         }
+        if ("android/content/pm/PackageInfo->versionName:Ljava/lang/String;".equals(signature) &&
+                dvmObject instanceof PackageInfo) {
+            PackageInfo packageInfo = (PackageInfo) dvmObject;
+            if (packageInfo.getPackageName().equals(vm.getPackageName())) {
+                String versionName = vm.getVersionName();
+                if (versionName != null) {
+                    return new StringObject(vm, versionName);
+                }
+            }
+        }
 
         throw new AbstractMethodError(signature);
     }
@@ -205,6 +215,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public boolean callBooleanMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 

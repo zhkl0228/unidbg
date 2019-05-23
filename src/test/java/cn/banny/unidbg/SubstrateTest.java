@@ -40,9 +40,9 @@ public class SubstrateTest extends EmulatorTest {
     public void testMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
+        loader.setObjcRuntime(true);
 //        emulator.attach().addBreakPoint(null, 0x4097855c);
 //        emulator.traceCode();
-        loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
@@ -71,14 +71,6 @@ public class SubstrateTest extends EmulatorTest {
                 return HookStatus.RET(unicorn, originFunction);
             }
         });*/
-
-//        emulator.attach().addBreakPoint(null, 0x40232a6c);
-
-        /*Symbol ___stdoutp = module.findSymbolByName("___stdoutp");
-        Symbol ___stderrp = module.findSymbolByName("___stderrp");
-        Symbol _setvbuf = module.findSymbolByName("_setvbuf");
-        _setvbuf.call(emulator, ___stdoutp.createPointer(emulator).getPointer(0), 0, MachO._IONBF, 0);
-        _setvbuf.call(emulator, ___stderrp.createPointer(emulator).getPointer(0), 0, MachO._IONBF, 0);*/
 
         Symbol malloc_num_zones = module.findSymbolByName("_malloc_num_zones");
         assertNotNull(malloc_num_zones);
@@ -178,8 +170,9 @@ public class SubstrateTest extends EmulatorTest {
         whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Pointer pointer1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                Pointer pointer2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                Arm32RegisterContext context = emulator.getRegisterContext();
+                Pointer pointer1 = context.getR0Pointer();
+                Pointer pointer2 = context.getR1Pointer();
                 System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0) + ", originFunction=0x" + Long.toHexString(originFunction));
                 return HookStatus.RET(emulator.getUnicorn(), originFunction);
             }

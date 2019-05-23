@@ -310,6 +310,25 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallBooleanMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public int handle(Emulator emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallBooleanMethod object=" + object + ", jmethodID=" + jmethodID);
+                }
+                DvmObject dvmObject = getObject(object.peer);
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    return dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.armVarArg(emulator, DalvikVM.this, 3));
+                }
+            }
+        });
+
         Pointer _CallBooleanMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public int handle(Emulator emulator) {
@@ -1148,6 +1167,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x84, _GetMethodID);
         impl.setPointer(0x88, _CallObjectMethod);
         impl.setPointer(0x8c, _CallObjectMethodV);
+        impl.setPointer(0x94, _CallBooleanMethod);
         impl.setPointer(0x98, _CallBooleanMethodV);
         impl.setPointer(0xc4, _CallIntMethod);
         impl.setPointer(0xc8, _CallIntMethodV);

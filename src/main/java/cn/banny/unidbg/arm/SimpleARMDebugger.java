@@ -220,9 +220,12 @@ public class SimpleARMDebugger implements Debugger {
                     UnicornPointer lr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
                     UnicornPointer r7 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R7);
                     do {
-                        Module module = memory.findModuleByAddress(lr.peer);
-                        if (lr.peer == AndroidARMEmulator.LR) {
-                            break;
+                        Module module = null;
+                        if (lr != null) {
+                            module = memory.findModuleByAddress(lr.peer);
+                            if (lr.peer == AndroidARMEmulator.LR) {
+                                break;
+                            }
                         }
 
                         hasTrace = true;
@@ -231,8 +234,10 @@ public class SimpleARMDebugger implements Debugger {
                             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
                             sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - module.base + (thumb ? 1 : 0)));
                         } else {
-                            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(lr.peer)));
-                            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 0xfffe0000L + (thumb ? 1 : 0)));
+                            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(lr == null ? 0 : lr.peer)));
+                            if (lr != null) {
+                                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 0xfffe0000L + (thumb ? 1 : 0)));
+                            }
                         }
                         System.out.println(sb);
 

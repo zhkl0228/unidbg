@@ -6,6 +6,7 @@ import cn.banny.unidbg.linux.android.ElfLibraryFile;
 import cn.banny.unidbg.linux.android.dvm.api.Signature;
 import cn.banny.unidbg.spi.LibraryFile;
 import net.dongliu.apk.parser.ApkFile;
+import net.dongliu.apk.parser.bean.ApkMeta;
 import net.dongliu.apk.parser.bean.ApkSigner;
 import net.dongliu.apk.parser.bean.CertificateMeta;
 import org.apache.commons.io.IOUtils;
@@ -193,22 +194,42 @@ public abstract class BaseVM implements VM {
         }
     }
 
-    private String packageName;
+    private ApkMeta apkMeta;
 
     @Override
     public String getPackageName() {
         if (apkFile == null) {
             return null;
         }
-        if (packageName != null) {
-            return packageName;
+        if (apkMeta != null) {
+            return apkMeta.getPackageName();
         }
 
         ApkFile apkFile = null;
         try {
             apkFile = new ApkFile(this.apkFile);
-            packageName = apkFile.getApkMeta().getPackageName();
-            return packageName;
+            apkMeta = apkFile.getApkMeta();
+            return apkMeta.getPackageName();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
+        }
+    }
+
+    String getVersionName() {
+        if (apkFile == null) {
+            return null;
+        }
+        if (apkMeta != null) {
+            return apkMeta.getVersionName();
+        }
+
+        ApkFile apkFile = null;
+        try {
+            apkFile = new ApkFile(this.apkFile);
+            apkMeta = apkFile.getApkMeta();
+            return apkMeta.getVersionName();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         } finally {

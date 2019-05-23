@@ -62,6 +62,14 @@ class DvmMethod implements Hashable {
         return vm.jni.callIntMethodV(vm, dvmObject, signature, vaList);
     }
 
+    int callBooleanMethod(DvmObject dvmObject, VarArg varArg) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callBooleanMethod signature=" + signature);
+        }
+        return dvmClass.vm.jni.callBooleanMethod(dvmClass.vm, dvmObject, signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
+    }
+
     int callBooleanMethodV(DvmObject dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
