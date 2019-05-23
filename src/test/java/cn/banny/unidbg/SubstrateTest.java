@@ -98,10 +98,6 @@ public class SubstrateTest extends EmulatorTest {
 
         IHookZz hookZz = HookZz.getInstance(emulator);
 //        Logger.getLogger("cn.banny.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-        Pointer pointer = malloc_zone_malloc.createPointer(emulator);
-        Inspector.inspect(pointer.getByteArray(0, 0x10), "Before replace pointer=" + pointer);
-//        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x41178b5a);
         hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -112,7 +108,6 @@ public class SubstrateTest extends EmulatorTest {
                 return HookStatus.RET(unicorn, originFunction);
             }
         });
-        Inspector.inspect(pointer.getByteArray(0, 0x10), "After replace");
 
 //        emulator.traceCode();
         hookZz.wrap(module.findSymbolByName("_free"), new WrapCallback<Arm32RegisterContext>() {

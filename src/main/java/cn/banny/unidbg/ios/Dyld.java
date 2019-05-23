@@ -20,6 +20,10 @@ abstract class Dyld implements Dlfcn {
     static final int dyld_image_state_dependents_initialized = 45; // Only single notification for this
     static final int dyld_image_state_terminated = 60; // Only single notification for this
 
+    static final int RTLD_FIRST = 0x100; /* Mac OS X 10.5 and later */
+    static final int RTLD_DEFAULT = (-2); /* Use default search algorithm. */
+    static final int RTLD_MAIN_ONLY = (-5); /* Search main executable only (Mac OS X 10.5 and later) */
+
     abstract int _stub_binding_helper();
 
     static int computeSlide(Emulator emulator, long machHeader) {

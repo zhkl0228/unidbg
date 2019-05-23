@@ -7,6 +7,7 @@ import cn.banny.unidbg.StopEmulatorException;
 import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.Cpsr;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.ios.file.LocalDarwinUdpSocket;
@@ -219,6 +220,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         return;
                     case 339:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
+                        return;
+                    case 340:
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(u, emulator));
                         return;
                     case 344:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, getdirentries64(u, emulator));
@@ -546,6 +550,20 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         return fstat(emulator, fd, stat);
+    }
+
+    /**
+     * lstat() is identical to stat(), except that if pathname is a symbolic link, then it returns information about the link itself, not the file that it refers to.
+     */
+    private int lstat(Unicorn u, Emulator emulator) {
+        Arm32RegisterContext context = emulator.getRegisterContext();
+        Pointer pathname = context.getR0Pointer();
+        Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        String path = FilenameUtils.normalize(pathname.getString(0));
+        if (log.isDebugEnabled()) {
+            log.debug("lstat path=" + path + ", stat=" + stat);
+        }
+        return stat64(emulator, path, stat);
     }
 
     private static final int RLIMIT_NOFILE = 8;		/* number of open files */

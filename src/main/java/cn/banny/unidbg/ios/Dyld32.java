@@ -189,10 +189,11 @@ public class Dyld32 extends Dyld {
                         public int handle(Emulator emulator) {
                             Pointer path = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             int mode = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            String str = path == null ? null : path.getString(0);
                             if (log.isDebugEnabled()) {
-                                log.debug("__dyld_dlopen path=" + path.getString(0) + ", mode=" + mode);
+                                log.debug("__dyld_dlopen path=" + str + ", mode=0x" + Integer.toHexString(mode));
                             }
-                            return dlopen(emulator.getMemory(), path.getString(0), emulator);
+                            return dlopen(emulator, str, mode);
                         }
                     });
                 }
@@ -473,20 +474,37 @@ public class Dyld32 extends Dyld {
         return 0;
     }
 
-    private int dlopen(Memory memory, String path, Emulator emulator) {
+    /**
+     * @param path passing NULL for path means return magic object
+     */
+    private int dlopen(Emulator emulator, String path, int mode) {
+        Memory memory = emulator.getMemory();
         Unicorn unicorn = emulator.getUnicorn();
         Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
-            Module module = memory.dlopen(path, false);
+            Module module = path == null ? null : memory.dlopen(path, false);
             if (module == null) {
+                int ret;
+                if (path == null) {
+                    if ((mode & RTLD_FIRST) != 0) {
+                        ret = RTLD_MAIN_ONLY;
+                    } else {
+                        ret = RTLD_DEFAULT;
+                    }
+                } else {
+                    ret = 0;
+                }
+
                 pointer = pointer.share(-4); // return value
-                pointer.setInt(0, 0);
+                pointer.setInt(0, ret);
 
                 pointer = pointer.share(-4); // NULL-terminated
                 pointer.setInt(0, 0);
 
-                log.info("dlopen failed: " + path);
-                this.error.setString(0, "Resolve library " + path + " failed");
+                if (ret == 0) {
+                    log.info("dlopen failed: " + path);
+                    this.error.setString(0, "Resolve library " + path + " failed");
+                }
                 return 0;
             } else {
                 pointer = pointer.share(-4); // return value
