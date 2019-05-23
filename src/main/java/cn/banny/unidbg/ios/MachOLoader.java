@@ -48,6 +48,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         this.setErrno(0);
     }
 
+    @Override
+    protected LibraryFile createLibraryFile(File file) {
+        return new MachOLibraryFile(file);
+    }
+
     public void setObjcRuntime(boolean objcRuntime) {
         this.objcRuntime = objcRuntime;
     }
@@ -153,7 +158,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap(libraryFile.readToByteArray());
+        ByteBuffer buffer = libraryFile.mapBuffer();
         return loadInternalPhase(libraryFile, buffer, loadNeeded, checkBootstrap);
     }
 

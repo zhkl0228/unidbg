@@ -46,6 +46,11 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     }
 
     @Override
+    protected LibraryFile createLibraryFile(File file) {
+        return new ElfLibraryFile(file);
+    }
+
+    @Override
     public boolean hasThread(int threadId) {
         return syscallHandler.threadMap.containsKey(threadId);
     }

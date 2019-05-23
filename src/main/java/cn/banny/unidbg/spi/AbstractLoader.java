@@ -7,7 +7,6 @@ import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.hook.HookListener;
 import cn.banny.unidbg.memory.MemoryMap;
 import cn.banny.unidbg.unix.UnixEmulator;
-import cn.banny.unidbg.linux.android.ElfLibraryFile;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.pointer.UnicornPointer;
@@ -189,8 +188,10 @@ public abstract class AbstractLoader implements Memory, Loader {
 
     @Override
     public final Module load(File elfFile, boolean forceCallInit) throws IOException {
-        return loadInternal(new ElfLibraryFile(elfFile), null, forceCallInit);
+        return loadInternal(createLibraryFile(elfFile), null, forceCallInit);
     }
+
+    protected abstract LibraryFile createLibraryFile(File file);
 
     @Override
     public final Module load(LibraryFile libraryFile, boolean forceCallInit) throws IOException {

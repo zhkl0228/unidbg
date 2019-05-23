@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.nio.ByteBuffer;
 import java.security.cert.CertificateException;
 import java.util.*;
 
@@ -134,6 +135,10 @@ public abstract class BaseVM implements VM {
         @Override
         public byte[] readToByteArray() {
             return soData;
+        }
+        @Override
+        public ByteBuffer mapBuffer() {
+            return ByteBuffer.wrap(soData);
         }
         @Override
         public String getPath() {

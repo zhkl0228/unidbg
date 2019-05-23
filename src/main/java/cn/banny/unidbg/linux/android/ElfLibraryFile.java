@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class ElfLibraryFile implements LibraryFile {
 
@@ -37,7 +38,13 @@ public class ElfLibraryFile implements LibraryFile {
     }
 
     @Override
+    public ByteBuffer mapBuffer() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String getPath() {
         return "/system/lib";
     }
+
 }

@@ -4,15 +4,14 @@ import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
-import cn.banny.unidbg.ios.FishHook;
 import cn.banny.unidbg.hook.fishhook.IFishHook;
-import cn.banny.unidbg.hook.hookzz.*;
+import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
+import cn.banny.unidbg.hook.hookzz.HookZz;
+import cn.banny.unidbg.hook.hookzz.IHookZz;
+import cn.banny.unidbg.hook.hookzz.WrapCallback;
 import cn.banny.unidbg.hook.whale.IWhale;
 import cn.banny.unidbg.hook.whale.Whale;
-import cn.banny.unidbg.ios.DarwinARMEmulator;
-import cn.banny.unidbg.ios.DarwinResolver;
-import cn.banny.unidbg.ios.MachOLoader;
-import cn.banny.unidbg.ios.MachOModule;
+import cn.banny.unidbg.ios.*;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
@@ -43,7 +42,9 @@ public class SubstrateTest extends EmulatorTest {
         loader.setObjcRuntime(true);
 //        emulator.attach().addBreakPoint(null, 0x4097855c);
 //        emulator.traceCode();
+        long start = System.currentTimeMillis();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
+        System.err.println("loadLibrary offset=" + (System.currentTimeMillis() - start) + "ms");
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
@@ -149,7 +150,7 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x40234c1e);
         memoryBlock.free(false);
 
-        long start = System.currentTimeMillis();
+        start = System.currentTimeMillis();
 
 //        emulator.traceRead();
 //        emulator.attach().addBreakPoint(null, 0x401495dc);

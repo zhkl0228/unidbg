@@ -6,6 +6,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 
 public class URLibraryFile implements LibraryFile {
 
@@ -40,6 +41,11 @@ public class URLibraryFile implements LibraryFile {
     @Override
     public byte[] readToByteArray() throws IOException {
         return IOUtils.toByteArray(url);
+    }
+
+    @Override
+    public ByteBuffer mapBuffer() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

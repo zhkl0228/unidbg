@@ -512,20 +512,6 @@ public class Dyld64 extends Dyld {
                     mm.initFunctionList.clear();
                 }
 
-                /*for (Module m : memory.getLoadedModules()) {
-                    MachOModule mm = (MachOModule) m;
-                    for (InitFunction routine : mm.routines) {
-                        for (long addr : routine.addresses) {
-                            if (addr != 0 && addr != -1) {
-                                log.debug("[" + mm.name + "]PushRoutineFunction: 0x" + Long.toHexString(addr));
-                                pointer = pointer.share(-4); // routines
-                                pointer.setInt(0, (int) (mm.base + addr));
-                            }
-                        }
-                    }
-                    mm.routines.clear();
-                }*/
-
                 return (int) module.base;
             }
         } catch (IOException e) {
