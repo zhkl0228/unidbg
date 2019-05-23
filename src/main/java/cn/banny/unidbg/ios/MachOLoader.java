@@ -1,12 +1,7 @@
 package cn.banny.unidbg.ios;
 
-import cn.banny.unidbg.Alignment;
-import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.Module;
-import cn.banny.unidbg.Symbol;
-import cn.banny.unidbg.arm.ARM;
-import cn.banny.unidbg.arm.Arm64Svc;
-import cn.banny.unidbg.arm.ArmSvc;
+import cn.banny.unidbg.*;
+import cn.banny.unidbg.arm.*;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.hook.HookListener;
 import cn.banny.unidbg.ios.struct.DyldImageInfo;
@@ -32,6 +27,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.banny.unidbg.ios.MachO {
@@ -216,6 +212,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             Module bootstrap = loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
 //            emulator.traceCode();
             bootstrap.callEntry(emulator);
+//            emulator.attach().debug(emulator);
         }
 
         long start = System.currentTimeMillis();
@@ -519,6 +516,34 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
             free = module.findSymbolByName("_free");
+        } else if ("Foundation".equals(dyId)) {
+            Symbol _NSSetLogCStringFunction = module.findSymbolByName("__NSSetLogCStringFunction", false);
+            if (_NSSetLogCStringFunction == null) {
+                throw new IllegalStateException("__NSSetLogCStringFunction is null");
+            } else {
+                Svc svc = emulator.getPointerSize() == 4 ? new ArmHook() {
+                    @Override
+                    protected HookStatus hook(Unicorn u, Emulator emulator) {
+                        Arm32RegisterContext context = emulator.getRegisterContext();
+                        Pointer message = context.getR0Pointer();
+                        int length = context.getR1Int();
+                        boolean withSysLogBanner = context.getR2Int() != 0;
+                        __NSSetLogCStringFunction(message, length, withSysLogBanner);
+                        return HookStatus.LR(u, 0);
+                    }
+                } : new Arm64Hook() {
+                    @Override
+                    protected HookStatus hook(Unicorn u, Emulator emulator) {
+                        Arm64RegisterContext context = emulator.getRegisterContext();
+                        Pointer message = context.getXPointer(0);
+                        int length = context.getXInt(1);
+                        boolean withSysLogBanner = context.getXInt(2) != 0;
+                        __NSSetLogCStringFunction(message, length, withSysLogBanner);
+                        return HookStatus.LR(u, 0);
+                    }
+                };
+                _NSSetLogCStringFunction.call(emulator, emulator.getSvcMemory().registerSvc(svc));
+            }
         }
 
         if (entryPointCommand != null) {
@@ -538,6 +563,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         return module;
+    }
+
+    private void __NSSetLogCStringFunction(Pointer message, int length, boolean withSysLogBanner) {
+        byte[] data = message.getByteArray(0, length);
+        String str = new String(data, StandardCharsets.UTF_8);
+        if (withSysLogBanner) {
+            System.err.println("NSLog: " + str);
+        } else {
+            System.out.println("NSLog: " + str);
+        }
     }
 
     private void checkSection(String dyId, String segName, String sectName) {
