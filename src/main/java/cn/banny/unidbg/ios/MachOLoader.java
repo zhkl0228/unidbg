@@ -1412,6 +1412,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         return address;
     }
 
+    public Module getExecutableModule() {
+        return executableModule;
+    }
+
     @Override
     public int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());

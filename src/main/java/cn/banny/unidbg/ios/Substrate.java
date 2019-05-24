@@ -32,6 +32,7 @@ public class Substrate extends BaseHook implements ISubstrate {
     private final Symbol _MSGetImageByName;
     private final Symbol _MSFindSymbol;
     private final Symbol _MSHookFunction;
+    private final Symbol _MSHookMessageEx;
 
     private Substrate(Emulator emulator) throws IOException {
         super(emulator, "libsubstrate");
@@ -39,7 +40,8 @@ public class Substrate extends BaseHook implements ISubstrate {
         _MSGetImageByName = module.findSymbolByName("_MSGetImageByName", false);
         _MSFindSymbol = module.findSymbolByName("_MSFindSymbol", false);
         _MSHookFunction = module.findSymbolByName("_MSHookFunction", false);
-        log.debug("_MSGetImageByName=" + _MSGetImageByName + ", _MSFindSymbol=" + _MSFindSymbol + ", _MSHookFunction=" + _MSHookFunction);
+        _MSHookMessageEx = module.findSymbolByName("_MSHookMessageEx", false);
+        log.debug("_MSGetImageByName=" + _MSGetImageByName + ", _MSFindSymbol=" + _MSFindSymbol + ", _MSHookFunction=" + _MSHookFunction + ", _MSHookMessageEx=" + _MSHookMessageEx);
 
         if (_MSGetImageByName == null) {
             throw new IllegalStateException("_MSGetImageByName is null");
@@ -49,6 +51,9 @@ public class Substrate extends BaseHook implements ISubstrate {
         }
         if (_MSHookFunction == null) {
             throw new IllegalStateException("_MSHookFunction is null");
+        }
+        if (_MSHookMessageEx == null) {
+            throw new IllegalStateException("_MSHookMessageEx is null");
         }
 
         Symbol _MSDebug = module.findSymbolByName("_MSDebug", false);
@@ -101,4 +106,12 @@ public class Substrate extends BaseHook implements ISubstrate {
         Pointer replace = createReplacePointer(callback, backup);
         _MSHookFunction.call(emulator, address, replace, backup);
     }
+
+    @Override
+    public void hookMessageEx(Pointer _class, Pointer message, ReplaceCallback callback) {
+        final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer replace = createReplacePointer(callback, backup);
+        _MSHookMessageEx.call(emulator, _class, message, replace, backup);
+    }
+
 }

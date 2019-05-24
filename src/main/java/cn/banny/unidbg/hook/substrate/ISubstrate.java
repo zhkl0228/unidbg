@@ -3,6 +3,7 @@ package cn.banny.unidbg.hook.substrate;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.ReplaceCallback;
+import com.sun.jna.Pointer;
 
 public interface ISubstrate {
 
@@ -27,5 +28,12 @@ public interface ISubstrate {
      */
     void hookFunction(Symbol symbol, ReplaceCallback callback);
     void hookFunction(long address, ReplaceCallback callback);
+
+    /**
+     * void MSHookMessageEx(Class _class, SEL message, IMP hook, IMP *old);
+     * @param _class Objective-C class on which a message will be instrumented. This class can be a meta-class (obtained directly using objc_getMetaClass or by calling object_getClass on a class), so as to allow hooking non-instance or "class" messages.
+     * @param message Objective-C selector of message that will be instrumented. This might be a literal using @selector or generated at runtime with sel_registerName.
+     */
+    void hookMessageEx(Pointer _class, Pointer message, ReplaceCallback callback);
 
 }

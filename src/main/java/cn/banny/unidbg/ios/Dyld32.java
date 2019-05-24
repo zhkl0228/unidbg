@@ -650,9 +650,31 @@ public class Dyld32 extends Dyld {
                 }
                 return _pthread_getname_np;
             }
+        } else if ("libsystem_asl.dylib".equals(libraryName)) {
+            if ("_asl_open".equals(symbolName)) {
+                if (_asl_open == 0) {
+                    _asl_open = svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Unicorn u, Emulator emulator) {
+                            EditableArm32RegisterContext context = emulator.getRegisterContext();
+                            Pointer ident = context.getR0Pointer();
+                            Pointer facility = context.getR1Pointer();
+                            int opts = context.getR2Int();
+                            if (log.isDebugEnabled()) {
+                                log.debug("_asl_open ident=" + (ident == null ? null : ident.getString(0)) + ", facility=" + facility.getString(0) + ", opts=0x" + Integer.toHexString(opts));
+                            }
+                            context.setR2(opts | ASL_OPT_STDERR);
+                            return HookStatus.RET(u, old);
+                        }
+                    }).peer;
+                }
+                return _asl_open;
+            }
         }
         return 0;
     }
+
+    private long _asl_open;
 
     private long _pthread_getname_np;
 

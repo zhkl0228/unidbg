@@ -24,6 +24,8 @@ abstract class Dyld implements Dlfcn {
     static final int RTLD_DEFAULT = (-2); /* Use default search algorithm. */
     static final int RTLD_MAIN_ONLY = (-5); /* Search main executable only (Mac OS X 10.5 and later) */
 
+    static final int ASL_OPT_STDERR = 0x00000001;
+
     abstract int _stub_binding_helper();
 
     static int computeSlide(Emulator emulator, long machHeader) {

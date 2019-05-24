@@ -5,7 +5,7 @@ import cn.banny.unidbg.pointer.UnicornPointer;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
-class UnicornArm32RegisterContext implements Arm32RegisterContext {
+class UnicornArm32RegisterContext implements EditableArm32RegisterContext {
 
     private final Unicorn unicorn;
     private final Emulator emulator;
@@ -17,6 +17,10 @@ class UnicornArm32RegisterContext implements Arm32RegisterContext {
 
     private long reg(int regId) {
         return ((Number) unicorn.reg_read(regId)).intValue() & 0xffffffffL;
+    }
+
+    private void set(int regId, int value) {
+        unicorn.reg_write(regId, value);
     }
 
     @Override
@@ -82,6 +86,46 @@ class UnicornArm32RegisterContext implements Arm32RegisterContext {
     @Override
     public long getR12Long() {
         return reg(ArmConst.UC_ARM_REG_R12);
+    }
+
+    @Override
+    public void setR0(int r0) {
+        set(ArmConst.UC_ARM_REG_R0, r0);
+    }
+
+    @Override
+    public void setR1(int r1) {
+        set(ArmConst.UC_ARM_REG_R1, r1);
+    }
+
+    @Override
+    public void setR2(int r2) {
+        set(ArmConst.UC_ARM_REG_R2, r2);
+    }
+
+    @Override
+    public void setR3(int r3) {
+        set(ArmConst.UC_ARM_REG_R3, r3);
+    }
+
+    @Override
+    public void setR4(int r4) {
+        set(ArmConst.UC_ARM_REG_R4, r4);
+    }
+
+    @Override
+    public void setR5(int r5) {
+        set(ArmConst.UC_ARM_REG_R5, r5);
+    }
+
+    @Override
+    public void setR6(int r6) {
+        set(ArmConst.UC_ARM_REG_R6, r6);
+    }
+
+    @Override
+    public void setR7(int r7) {
+        set(ArmConst.UC_ARM_REG_R7, r7);
     }
 
     @Override
