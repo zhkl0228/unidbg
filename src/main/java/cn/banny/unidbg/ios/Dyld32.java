@@ -142,13 +142,16 @@ public class Dyld32 extends Dyld {
                         @Override
                         public int handle(Emulator emulator) {
                             int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            log.debug("__dyld_get_image_vmaddr_slide index=" + image_index);
                             Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            int ret;
                             if (image_index < 0 || image_index >= modules.length) {
-                                return 0;
+                                ret = 0;
+                            } else {
+                                MachOModule module = (MachOModule) modules[image_index];
+                                ret = computeSlide(emulator, module.machHeader);
                             }
-                            MachOModule module = (MachOModule) modules[image_index];
-                            return computeSlide(emulator, module.machHeader);
+                            log.debug("__dyld_get_image_vmaddr_slide index=" + image_index + ", ret=0x" + Integer.toHexString(ret));
+                            return ret;
                         }
                     });
                 }

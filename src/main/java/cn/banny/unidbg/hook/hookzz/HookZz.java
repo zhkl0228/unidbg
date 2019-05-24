@@ -42,10 +42,10 @@ public class HookZz extends BaseHook implements IHookZz {
         super(emulator, "libhookzz");
 
         boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
-        zz_enable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_enable_arm_arm64_b_branch" : "zz_enable_arm_arm64_b_branch");
-        zz_disable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_disable_arm_arm64_b_branch" : "zz_disable_arm_arm64_b_branch");
-        zzReplace = module.findSymbolByName(isIOS ? "_ZzReplace" : "ZzReplace");
-        zzWrap = module.findSymbolByName(isIOS ? "_ZzWrap" : "ZzWrap");
+        zz_enable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_enable_arm_arm64_b_branch" : "zz_enable_arm_arm64_b_branch", false);
+        zz_disable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_disable_arm_arm64_b_branch" : "zz_disable_arm_arm64_b_branch", false);
+        zzReplace = module.findSymbolByName(isIOS ? "_ZzReplace" : "ZzReplace", false);
+        zzWrap = module.findSymbolByName(isIOS ? "_ZzWrap" : "ZzWrap", false);
         log.debug("zzReplace=" + zzReplace + ", zzWrap=" + zzWrap);
 
         if (zz_enable_arm_arm64_b_branch == null) {

@@ -34,8 +34,8 @@ public class XHookImpl extends BaseHook implements IxHook {
     private XHookImpl(Emulator emulator) throws IOException {
         super(emulator, "libxhook");
 
-        xhook_register = module.findSymbolByName("xhook_register");
-        xhook_refresh = module.findSymbolByName("xhook_refresh");
+        xhook_register = module.findSymbolByName("xhook_register", false);
+        xhook_refresh = module.findSymbolByName("xhook_refresh", false);
         log.debug("xhook_register=" + xhook_register + ", xhook_refresh=" + xhook_refresh);
 
         if (xhook_register == null) {
@@ -45,14 +45,14 @@ public class XHookImpl extends BaseHook implements IxHook {
             throw new IllegalStateException("xhook_refresh is null");
         }
 
-        Symbol xhook_enable_sigsegv_protection = module.findSymbolByName("xhook_enable_sigsegv_protection");
+        Symbol xhook_enable_sigsegv_protection = module.findSymbolByName("xhook_enable_sigsegv_protection", false);
         if (xhook_enable_sigsegv_protection == null) {
             throw new IllegalStateException("xhook_enable_sigsegv_protection is null");
         } else {
             xhook_enable_sigsegv_protection.call(emulator, 0);
         }
 
-        Symbol xhook_enable_debug = module.findSymbolByName("xhook_enable_debug");
+        Symbol xhook_enable_debug = module.findSymbolByName("xhook_enable_debug", false);
         if (xhook_enable_debug == null) {
             throw new IllegalStateException("xhook_enable_debug is null");
         } else {

@@ -1294,7 +1294,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     @Override
     public Symbol dlsym(long handle, String symbolName) throws IOException {
         for (Module module : modules.values()) {
-            if (module.base == handle) {
+            MachOModule mm = (MachOModule) module;
+            if (mm.machHeader == handle) {
                 return module.findSymbolByName(symbolName, false);
             }
         }
