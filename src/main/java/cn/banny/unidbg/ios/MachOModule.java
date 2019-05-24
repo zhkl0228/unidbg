@@ -35,7 +35,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     private final List<InitFunction> routines;
     final List<InitFunction> initFunctionList;
 
-    public final long machHeader;
+    final long machHeader;
 
     boolean indirectSymbolBound;
     boolean lazyPointerProcessed;

@@ -1,11 +1,11 @@
-package cn.banny.unidbg.hook.substrate;
+package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
-import cn.banny.unidbg.ios.MachOModule;
+import cn.banny.unidbg.hook.substrate.ISubstrate;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

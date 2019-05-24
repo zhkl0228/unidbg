@@ -1,14 +1,13 @@
-package cn.banny.unidbg.hook.substrate;
+package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Symbol;
-import cn.banny.unidbg.ios.MachOModule;
 
 class SubstrateSymbol extends Symbol {
 
     private final long address;
 
-    public SubstrateSymbol(String name, long address) {
+    SubstrateSymbol(String name, long address) {
         super(name);
         this.address = address;
     }
