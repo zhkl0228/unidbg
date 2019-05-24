@@ -1,7 +1,6 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
@@ -33,9 +32,8 @@ public class FishHook extends BaseHook implements IFishHook {
     private final Symbol rebind_symbols, rebind_symbols_image;
 
     private FishHook(Emulator emulator) throws IOException {
-        super(emulator);
+        super(emulator, "libfishhook");
 
-        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libfishhook"));
         rebind_symbols = module.findSymbolByName("_rebind_symbols");
         rebind_symbols_image = module.findSymbolByName("_rebind_symbols_image");
         log.debug("rebind_symbols=" + rebind_symbols + ", rebind_symbols_image=" + rebind_symbols_image);

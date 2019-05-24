@@ -1,7 +1,6 @@
 package cn.banny.unidbg.linux.android;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
@@ -33,9 +32,8 @@ public class XHookImpl extends BaseHook implements IxHook {
     private final Symbol xhook_refresh;
 
     private XHookImpl(Emulator emulator) throws IOException {
-        super(emulator);
+        super(emulator, "libxhook");
 
-        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libxhook"));
         xhook_register = module.findSymbolByName("xhook_register");
         xhook_refresh = module.findSymbolByName("xhook_refresh");
         log.debug("xhook_register=" + xhook_register + ", xhook_refresh=" + xhook_refresh);

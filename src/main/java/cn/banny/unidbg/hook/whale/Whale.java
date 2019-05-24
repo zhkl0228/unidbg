@@ -1,7 +1,6 @@
 package cn.banny.unidbg.hook.whale;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
@@ -31,10 +30,9 @@ public class Whale extends BaseHook implements IWhale {
     private final Symbol WInlineHookFunction, WImportHookFunction;
 
     private Whale(Emulator emulator) throws IOException {
-        super(emulator);
+        super(emulator, "libwhale");
 
         boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
-        Module module = emulator.getMemory().load(resolveLibrary(emulator, "libwhale"));
         WInlineHookFunction = module.findSymbolByName(isIOS ? "_WInlineHookFunction" : "WInlineHookFunction");
         WImportHookFunction = module.findSymbolByName(isIOS ? "_WImportHookFunction" : "WImportHookFunction");
         log.debug("WInlineHookFunction=" + WInlineHookFunction + ", WImportHookFunction=" + WImportHookFunction);
