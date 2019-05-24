@@ -1,14 +1,12 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.ios;
 
+import cn.banny.unidbg.*;
+import cn.banny.unidbg.android.EmulatorTest;
 import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.substrate.ISubstrate;
 import cn.banny.unidbg.hook.substrate.Substrate;
-import cn.banny.unidbg.hook.whale.IWhale;
-import cn.banny.unidbg.hook.whale.Whale;
-import cn.banny.unidbg.ios.DarwinARMEmulator;
-import cn.banny.unidbg.ios.DarwinResolver;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
@@ -62,24 +60,27 @@ public class XpcTest extends EmulatorTest {
         block.free(false);
 
         ISubstrate substrate = Substrate.getInstance(emulator);
-        assertNotNull(substrate.getImageByName("/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate"));
+        Module cydiaSubstrate = substrate.getImageByName("/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
+        assertNotNull(cydiaSubstrate);
         assertNotNull(substrate.getImageByName("xpc"));
         assertNull(substrate.getImageByName("not_exists"));
 
         Module libSystem = substrate.getImageByName("/usr/lib/libSystem.B.dylib");
         assertNotNull(libSystem);
 
-        IWhale whale = Whale.getInstance(emulator);
-        whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
+        Symbol _MSFindSymbol = substrate.findSymbol(cydiaSubstrate, "_MSFindSymbol");
+        assertNotNull(_MSFindSymbol);
+        substrate.hookFunction(_MSFindSymbol, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 Arm32RegisterContext context = emulator.getRegisterContext();
-                Pointer pointer1 = context.getR0Pointer();
-                Pointer pointer2 = context.getR1Pointer();
-                System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0) + ", originFunction=0x" + Long.toHexString(originFunction));
+                long image = context.getR0Long();
+                Pointer symbol = context.getR1Pointer();
+                System.out.println("_MSFindSymbol image=0x" + Long.toHexString(image) + ", symbol=" + symbol.getString(0));
                 return HookStatus.RET(emulator.getUnicorn(), originFunction);
             }
         });
+
         assertNotNull(substrate.findSymbol(null, "_malloc"));
     }
 

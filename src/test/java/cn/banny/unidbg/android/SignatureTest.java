@@ -1,4 +1,4 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.android;
 
 import cn.banny.utils.Hex;
 import junit.framework.TestCase;

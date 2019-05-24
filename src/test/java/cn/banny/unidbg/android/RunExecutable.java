@@ -1,5 +1,8 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.android;
 
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.ModuleListener;
 import cn.banny.unidbg.unix.UnixEmulator;
 import cn.banny.unidbg.linux.LinuxModule;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;

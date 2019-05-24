@@ -1430,19 +1430,17 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
                 MemoryMap mapped = null;
                 for (MemoryMap map : memoryMap.values()) {
-                    if (start >= map.base && start < map.base + map.size) {
+                    if (start >= map.base && start + aligned < map.base + map.size) {
                         mapped = map;
                     }
                 }
 
-                long addr = start;
                 if (mapped != null) {
-                    addr = allocateMapAddress(0, aligned);
+                    unicorn.mem_unmap(start, aligned);
                 }
-
                 FileIO io = syscallHandler.fdMap.get(fd);
                 if (io != null) {
-                    return io.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
+                    return io.mmap2(unicorn, start, aligned, prot, offset, length, memoryMap);
                 }
             }
         } catch (IOException e) {

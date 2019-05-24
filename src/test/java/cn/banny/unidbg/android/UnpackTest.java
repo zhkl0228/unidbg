@@ -1,6 +1,10 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.android;
 
 import cn.banny.auxiliary.Inspector;
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.pointer.UnicornPointer;

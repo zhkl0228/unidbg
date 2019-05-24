@@ -1,6 +1,8 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.android;
 
 import cn.banny.auxiliary.Inspector;
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;

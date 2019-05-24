@@ -113,7 +113,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
 
     @Override
     protected Debugger createDebugger() {
-        return new SimpleARMDebugger();
+        return new SimpleARMDebugger(this);
     }
 
     @Override

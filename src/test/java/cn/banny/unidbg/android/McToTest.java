@@ -1,5 +1,7 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.android;
 
+import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.linux.android.AndroidResolver;
 import unicorn.Unicorn;

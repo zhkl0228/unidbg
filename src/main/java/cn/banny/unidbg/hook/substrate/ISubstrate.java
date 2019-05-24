@@ -2,6 +2,7 @@ package cn.banny.unidbg.hook.substrate;
 
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
+import cn.banny.unidbg.hook.ReplaceCallback;
 
 public interface ISubstrate {
 
@@ -19,5 +20,12 @@ public interface ISubstrate {
      * @return Address of symbol (adjusting as typical for ARM/Thumb) or NULL if the symbol could not be located.
      */
     Symbol findSymbol(Module image, String name);
+
+    /**
+     * void MSHookFunction(void *symbol, void *hook, void **old);
+     * @param symbol The address of code to instrument with replacement code. This is normally, but need not be, a function.
+     */
+    void hookFunction(Symbol symbol, ReplaceCallback callback);
+    void hookFunction(long address, ReplaceCallback callback);
 
 }

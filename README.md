@@ -53,8 +53,8 @@ Simple tests under src/test directory
 - Support simple debugger, instruction trace, memory read/write trace.
 
 ## TODO
-- Working iOS emulation.
-- ~~Support iOS objc.~~
+- ~~Working iOS emulation.~~
+- ~~Working iOS objc.~~
 
 ## Thanks
 - [unicorn](https://github.com/unicorn-engine/unicorn)

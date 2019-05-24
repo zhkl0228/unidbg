@@ -1,7 +1,7 @@
 package org.aeonlucid;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.EmulatorTest;
+import cn.banny.unidbg.android.EmulatorTest;
 import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;

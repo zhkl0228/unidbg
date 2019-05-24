@@ -3,10 +3,7 @@ package cn.banny.unidbg.ios;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
-import cn.banny.unidbg.arm.AbstractARMEmulator;
-import cn.banny.unidbg.arm.ArmHook;
-import cn.banny.unidbg.arm.ArmSvc;
-import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.*;
 import cn.banny.unidbg.ios.struct.DlInfo;
 import cn.banny.unidbg.ios.struct.DyldImageInfo;
 import cn.banny.unidbg.memory.Memory;
@@ -66,6 +63,7 @@ public class Dyld32 extends Dyld {
     private Pointer __dyld_dlopen;
     private Pointer __dyld_dlsym;
     private Pointer __dyld_dladdr;
+    private Pointer __dyld_dlclose;
     private long _os_trace_redirect_func;
 
     @Override
@@ -232,6 +230,20 @@ public class Dyld32 extends Dyld {
                     });
                 }
                 address.setPointer(0, __dyld_dladdr);
+                return 1;
+            case "__dyld_dlclose":
+                if (__dyld_dlclose == null) {
+                    __dyld_dlclose = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public int handle(Emulator emulator) {
+                            Arm32RegisterContext context = emulator.getRegisterContext();
+                            long handler = context.getR0Long();
+                            log.info("__dyld_dlclose handler=0x" + Long.toHexString(handler));
+                            return 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_dlclose);
                 return 1;
             case "__dyld_dlsym":
                 if (__dyld_dlsym == null) {

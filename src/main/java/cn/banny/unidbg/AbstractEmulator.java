@@ -223,7 +223,7 @@ public abstract class AbstractEmulator implements Emulator {
 
             if (log.isDebugEnabled()) {
                 e.printStackTrace();
-                attach().debug(this);
+                attach().debug();
                 IOUtils.closeQuietly(this);
                 throw e;
             } else {

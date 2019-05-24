@@ -91,7 +91,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
 
     @Override
     protected Debugger createDebugger() {
-        return new SimpleARMDebugger();
+        return new SimpleARMDebugger(this);
     }
 
     @Override

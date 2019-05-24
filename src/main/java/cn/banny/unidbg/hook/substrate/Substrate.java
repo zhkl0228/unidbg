@@ -4,7 +4,9 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
+import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.ios.MachOModule;
+import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -29,19 +31,33 @@ public class Substrate extends BaseHook implements ISubstrate {
 
     private final Symbol _MSGetImageByName;
     private final Symbol _MSFindSymbol;
+    private final Symbol _MSHookFunction;
 
     private Substrate(Emulator emulator) throws IOException {
         super(emulator, "libsubstrate");
 
         _MSGetImageByName = module.findSymbolByName("_MSGetImageByName", false);
         _MSFindSymbol = module.findSymbolByName("_MSFindSymbol", false);
-        log.debug("_MSGetImageByName=" + _MSGetImageByName + ", _MSFindSymbol=" + _MSFindSymbol);
+        _MSHookFunction = module.findSymbolByName("_MSHookFunction", false);
+        log.debug("_MSGetImageByName=" + _MSGetImageByName + ", _MSFindSymbol=" + _MSFindSymbol + ", _MSHookFunction=" + _MSHookFunction);
 
         if (_MSGetImageByName == null) {
             throw new IllegalStateException("_MSGetImageByName is null");
         }
         if (_MSFindSymbol == null) {
             throw new IllegalStateException("_MSFindSymbol is null");
+        }
+        if (_MSHookFunction == null) {
+            throw new IllegalStateException("_MSHookFunction is null");
+        }
+
+        Symbol _MSDebug = module.findSymbolByName("_MSDebug", false);
+        if (_MSDebug == null) {
+            throw new IllegalStateException("_MSDebug is null");
+        }
+
+        if (log.isDebugEnabled()) {
+            _MSDebug.createPointer(emulator).setInt(0, 1);
         }
     }
 
@@ -74,4 +90,15 @@ public class Substrate extends BaseHook implements ISubstrate {
         }
     }
 
+    @Override
+    public void hookFunction(Symbol symbol, ReplaceCallback callback) {
+        hookFunction(symbol.getAddress(), callback);
+    }
+
+    @Override
+    public void hookFunction(long address, ReplaceCallback callback) {
+        final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer replace = createReplacePointer(callback, backup);
+        _MSHookFunction.call(emulator, address, replace, backup);
+    }
 }

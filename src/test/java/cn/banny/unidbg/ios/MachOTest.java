@@ -1,4 +1,4 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.ios;
 
 import cn.banny.auxiliary.Inspector;
 import io.kaitai.MachO;

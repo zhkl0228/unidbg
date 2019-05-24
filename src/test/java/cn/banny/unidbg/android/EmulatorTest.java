@@ -1,5 +1,7 @@
-package cn.banny.unidbg;
+package cn.banny.unidbg.android;
 
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import junit.framework.TestCase;
 

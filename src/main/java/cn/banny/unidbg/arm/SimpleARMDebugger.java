@@ -29,6 +29,12 @@ public class SimpleARMDebugger implements Debugger {
 
     private final Map<Long, Module> breakMap = new HashMap<>();
 
+    private final Emulator emulator;
+
+    SimpleARMDebugger(Emulator emulator) {
+        this.emulator = emulator;
+    }
+
     @Override
     public void addBreakPoint(Module module, String symbol) {
         try {
@@ -90,7 +96,7 @@ public class SimpleARMDebugger implements Debugger {
     }
 
     @Override
-    public void debug(Emulator emulator) {
+    public void debug() {
         Unicorn unicorn = emulator.getUnicorn();
         long address;
         if (emulator.getPointerSize() == 4) {
