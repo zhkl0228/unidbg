@@ -531,7 +531,7 @@ public class Dyld32 extends Dyld {
                     mm.initFunctionList.clear();
                 }
 
-                return (int) module.base;
+                return (int) ((MachOModule) module).machHeader;
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);
