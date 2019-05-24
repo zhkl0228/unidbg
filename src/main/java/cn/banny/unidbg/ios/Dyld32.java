@@ -388,6 +388,7 @@ public class Dyld32 extends Dyld {
                                         if (mm.executable) {
                                             continue;
                                         }
+                                        mm.addImageCallSet.add(callback);
 
                                         // (headerType *mh, unsigned long	vmaddr_slide)
                                         pointer = pointer.share(-4);
@@ -565,10 +566,10 @@ public class Dyld32 extends Dyld {
             return null;
         }
         loader.boundHandlers.add(handler);
-        return generateDyldImageInfo(emulator);
+        return generateDyldImageInfo(emulator, state, handler);
     }
 
-    private DyldImageInfo[] generateDyldImageInfo(Emulator emulator) {
+    private DyldImageInfo[] generateDyldImageInfo(Emulator emulator, int state, UnicornPointer handler) {
         List<DyldImageInfo> list = new ArrayList<>(loader.getLoadedModules().size());
         int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
         Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModules().size());
@@ -581,6 +582,12 @@ public class Dyld32 extends Dyld {
             info.pack();
             list.add(info);
             pointer = pointer.share(elementSize);
+
+            if (state == Dyld.dyld_image_state_bound) {
+                mm.boundCallSet.add(handler);
+            } else if (state == Dyld.dyld_image_state_dependents_initialized) {
+                mm.initializedCallSet.add(handler);
+            }
         }
         return list.toArray(new DyldImageInfo[0]);
     }
@@ -602,7 +609,7 @@ public class Dyld32 extends Dyld {
             return null;
         }
         loader.initializedHandlers.add(handler);
-        return generateDyldImageInfo(emulator);
+        return generateDyldImageInfo(emulator, state, handler);
     }
 
     private long _abort;

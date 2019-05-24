@@ -1356,17 +1356,23 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         switch (state) {
             case Dyld.dyld_image_state_bound:
                 int slide = Dyld.computeSlide(emulator, module.machHeader);
-                for (UnicornPointer callback : addImageCallbacks) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("notifySingle callback=" + callback);
+                if (!module.executable) {
+                    for (UnicornPointer callback : addImageCallbacks) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("notifySingle callback=" + callback);
+                        }
+                        if (module.addImageCallSet.add(callback)) {
+                            MachOModule.emulateFunction(emulator, callback.peer, (int) module.machHeader, slide);
+                        }
                     }
-                    MachOModule.emulateFunction(emulator, callback.peer, module.machHeader, slide);
                 }
                 for (UnicornPointer handler : boundHandlers) {
                     if (log.isDebugEnabled()) {
                         log.debug("notifySingle state=" + state + ", handler=" + handler);
                     }
-                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                    if (module.boundCallSet.add(handler)) {
+                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                    }
                 }
                 break;
             case Dyld.dyld_image_state_dependents_initialized:
@@ -1374,7 +1380,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if (log.isDebugEnabled()) {
                         log.debug("notifySingle state=" + state + ", handler=" + handler);
                     }
-                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                    if (module.initializedCallSet.add(handler)) {
+                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                    }
                 }
                 break;
             default:

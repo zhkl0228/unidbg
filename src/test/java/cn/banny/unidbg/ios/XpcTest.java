@@ -1,6 +1,9 @@
 package cn.banny.unidbg.ios;
 
-import cn.banny.unidbg.*;
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.android.EmulatorTest;
 import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
@@ -31,6 +34,9 @@ public class XpcTest extends EmulatorTest {
         long start = System.currentTimeMillis();
         int ret = module.callEntry(emulator);
         System.err.println("testXpcNoPie ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+
+        Symbol objc_getClass = module.findSymbolByName("_objc_getClass");
+        assertNotNull(objc_getClass);
     }
 
     public void testXpc() throws Exception {

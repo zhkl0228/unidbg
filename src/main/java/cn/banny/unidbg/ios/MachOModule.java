@@ -451,4 +451,8 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     boolean allSymbolBond;
     boolean allLazySymbolBond;
 
+    final Set<UnicornPointer> addImageCallSet = new HashSet<>();
+    final Set<UnicornPointer> boundCallSet = new HashSet<>();
+    final Set<UnicornPointer> initializedCallSet = new HashSet<>();
+
 }
