@@ -10,7 +10,9 @@
 
 @implementation BootstrapTest
 -(void) testObjc {
-  NSLog(@"Hello, unidbg ObjC: %@", self);
+  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+  dateFormatter.dateFormat = [NSString stringWithFormat:@"yyyy-MM-dd HH:mm:ss"];
+  NSLog(@"[%@]Hello, unidbg ObjC: %@", [dateFormatter stringFromDate:[NSDate date]], self);
 }
 @end
 

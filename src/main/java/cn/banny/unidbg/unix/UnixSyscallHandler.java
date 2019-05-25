@@ -83,7 +83,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
 
         if (log.isDebugEnabled()) {
             byte[] before = tv.getByteArray(0, 8);
-            Inspector.inspect(before, "gettimeofday tv");
+            Inspector.inspect(before, "gettimeofday tv=" + tv);
         }
         if (tz != null && log.isDebugEnabled()) {
             byte[] before = tz.getByteArray(0, 8);
@@ -109,7 +109,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
 
         if (log.isDebugEnabled()) {
             byte[] after = tv.getByteArray(0, 8);
-            Inspector.inspect(after, "gettimeofday tv after tv_sec=" + tv_sec + ", tv_usec=" + tv_usec);
+            Inspector.inspect(after, "gettimeofday tv after tv_sec=" + tv_sec + ", tv_usec=" + tv_usec + ", tv=" + tv);
         }
         if (tz != null && log.isDebugEnabled()) {
             byte[] after = tz.getByteArray(0, 8);

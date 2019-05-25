@@ -5,10 +5,7 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.StopEmulatorException;
 import cn.banny.unidbg.Svc;
-import cn.banny.unidbg.arm.ARM;
-import cn.banny.unidbg.arm.ARMEmulator;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
-import cn.banny.unidbg.arm.Cpsr;
+import cn.banny.unidbg.arm.*;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.ios.file.LocalDarwinUdpSocket;
 import cn.banny.unidbg.ios.struct.kernel.*;
@@ -799,7 +796,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         return 0;
                     case KERN_HOSTNAME:
                         log.debug(msg);
-                        String host = "unidbg";
+                        String host = "localhost";
                         if (bufferSize != null) {
                             bufferSize.setInt(0, host.length() + 1);
                         }
@@ -1342,9 +1339,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int gettimeofday(Emulator emulator) {
-        Pointer tv = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer tz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        return gettimeofday(tv, tz);
+        EditableArm32RegisterContext context = emulator.getRegisterContext();
+        long currentTimeMillis = System.currentTimeMillis();
+        long tv_sec = currentTimeMillis / 1000;
+        long tv_usec = (currentTimeMillis % 1000) * 1000;
+        context.setR1((int) tv_usec);
+        return (int) tv_sec;
     }
 
     private int mach_absolute_time(Emulator emulator) {

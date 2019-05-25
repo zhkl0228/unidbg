@@ -61,4 +61,11 @@ public class ClassDumpTest extends EmulatorTest {
         System.out.println(objcClass);
     }
 
+    public static void main(String[] args) throws Exception {
+        ClassDumpTest test = new ClassDumpTest();
+        test.setUp();
+        test.testClassDump();
+        test.tearDown();
+    }
+
 }
