@@ -6,6 +6,8 @@ import cn.banny.unidbg.Module;
 import cn.banny.unidbg.StopEmulatorException;
 import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.*;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.ios.file.LocalDarwinUdpSocket;
 import cn.banny.unidbg.ios.struct.kernel.*;

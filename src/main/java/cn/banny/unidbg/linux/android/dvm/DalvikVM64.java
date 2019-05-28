@@ -2,7 +2,7 @@ package cn.banny.unidbg.linux.android.dvm;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.Arm64RegisterContext;
+import cn.banny.unidbg.arm.context.Arm64RegisterContext;
 import cn.banny.unidbg.arm.Arm64Svc;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -193,7 +193,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.newObject(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
+                    return dvmMethod.newObject(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this));
                 }
             }
         });
@@ -285,7 +285,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return addObject(dvmMethod.callObjectMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3)), false);
+                    return addObject(dvmMethod.callObjectMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this)), false);
                 }
             }
         });
@@ -324,7 +324,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
+                    return dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this));
                 }
             }
         });
@@ -363,7 +363,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callIntMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
+                    return dvmMethod.callIntMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this));
                 }
             }
         });
@@ -402,7 +402,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    dvmMethod.callVoidMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
+                    dvmMethod.callVoidMethod(dvmObject, ArmVarArg.arm64VarArg(emulator, DalvikVM64.this));
                     return 0;
                 }
             }
@@ -623,7 +623,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return addObject(dvmMethod.callStaticObjectMethod(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3)), false);
+                    return addObject(dvmMethod.callStaticObjectMethod(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this)), false);
                 }
             }
         });
@@ -660,7 +660,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.CallStaticBooleanMethod(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this, 3));
+                    return dvmMethod.CallStaticBooleanMethod(ArmVarArg.arm64VarArg(emulator, DalvikVM64.this));
                 }
             }
         });
@@ -697,7 +697,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callStaticIntMethod(ArmVarArg.armVarArg(emulator, DalvikVM64.this, 3));
+                    return dvmMethod.callStaticIntMethod(ArmVarArg.armVarArg(emulator, DalvikVM64.this));
                 }
             }
         });

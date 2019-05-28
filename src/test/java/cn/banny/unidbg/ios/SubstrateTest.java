@@ -6,7 +6,7 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.android.EmulatorTest;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.fishhook.IFishHook;

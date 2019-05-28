@@ -1,18 +1,17 @@
-package cn.banny.unidbg.arm;
+package cn.banny.unidbg.arm.context;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
-class UnicornArm32RegisterContext implements EditableArm32RegisterContext {
+public class UnicornArm32RegisterContext extends BaseRegisterContext implements EditableArm32RegisterContext {
 
     private final Unicorn unicorn;
-    private final Emulator emulator;
 
-    UnicornArm32RegisterContext(Unicorn unicorn, Emulator emulator) {
+    public UnicornArm32RegisterContext(Unicorn unicorn, Emulator emulator) {
+        super(emulator, ArmConst.UC_ARM_REG_R0, 4);
         this.unicorn = unicorn;
-        this.emulator = emulator;
     }
 
     private long reg(int regId) {

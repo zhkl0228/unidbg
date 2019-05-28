@@ -4,6 +4,8 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.*;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
 import cn.banny.unidbg.ios.struct.DlInfo;
 import cn.banny.unidbg.ios.struct.DyldImageInfo;
 import cn.banny.unidbg.memory.Memory;

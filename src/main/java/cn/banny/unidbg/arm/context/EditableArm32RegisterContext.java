@@ -1,4 +1,4 @@
-package cn.banny.unidbg.arm;
+package cn.banny.unidbg.arm.context;
 
 public interface EditableArm32RegisterContext extends Arm32RegisterContext {
 

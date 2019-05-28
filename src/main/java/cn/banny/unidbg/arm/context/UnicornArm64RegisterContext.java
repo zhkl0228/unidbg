@@ -1,22 +1,30 @@
-package cn.banny.unidbg.arm;
+package cn.banny.unidbg.arm.context;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
 
-class UnicornArm64RegisterContext implements Arm64RegisterContext {
+public class UnicornArm64RegisterContext extends BaseRegisterContext implements EditableArm64RegisterContext {
 
     private final Unicorn unicorn;
-    private final Emulator emulator;
 
-    UnicornArm64RegisterContext(Unicorn unicorn, Emulator emulator) {
+    public UnicornArm64RegisterContext(Unicorn unicorn, Emulator emulator) {
+        super(emulator, Arm64Const.UC_ARM64_REG_X0, 8);
         this.unicorn = unicorn;
-        this.emulator = emulator;
     }
 
     private long reg(int regId) {
         return ((Number) unicorn.reg_read(regId)).longValue();
+    }
+
+    @Override
+    public void setXLong(int index, long value) {
+        if (index >= 0 && index <= 28) {
+            unicorn.reg_write(Arm64Const.UC_ARM64_REG_X0 + index, value);
+            return;
+        }
+        throw new IllegalArgumentException("invalid index: " + index);
     }
 
     @Override

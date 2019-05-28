@@ -6,7 +6,7 @@ import cn.banny.unidbg.StopEmulatorException;
 import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;

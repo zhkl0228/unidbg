@@ -1,7 +1,7 @@
 package cn.banny.unidbg.hook.hookzz;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 
 public abstract class WrapCallback<T extends RegisterContext> {
 

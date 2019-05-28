@@ -2,6 +2,8 @@ package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.*;
 import cn.banny.unidbg.arm.*;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.Arm64RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.hook.HookListener;
 import cn.banny.unidbg.ios.struct.DyldImageInfo;

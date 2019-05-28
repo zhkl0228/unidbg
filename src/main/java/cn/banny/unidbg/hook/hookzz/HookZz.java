@@ -4,7 +4,7 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.Arm64Svc;
 import cn.banny.unidbg.arm.ArmSvc;
-import cn.banny.unidbg.arm.RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.memory.SvcMemory;
