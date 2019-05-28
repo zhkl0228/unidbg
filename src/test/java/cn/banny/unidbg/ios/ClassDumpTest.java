@@ -37,12 +37,12 @@ public class ClassDumpTest extends EmulatorTest {
         Module main = loader.getExecutableModule();
         Symbol _objc_getMetaClass = main.findSymbolByName("_objc_getMetaClass");
         assertNotNull(_objc_getMetaClass);
-        long ClassDump = _objc_getMetaClass.call(emulator, "ClassDump")[0].intValue() & 0xffffffffL;
+        Number ClassDump = _objc_getMetaClass.call(emulator, "ClassDump")[0];
         assertTrue(ClassDump != 0);
 
         Symbol _sel_registerName = main.findSymbolByName("_sel_registerName");
         assertNotNull(_sel_registerName);
-        long my_dump_class = _sel_registerName.call(emulator, "my_dump_class:")[0].intValue() & 0xffffffffL;
+        Number my_dump_class = _sel_registerName.call(emulator, "my_dump_class:")[0];
         assertTrue(my_dump_class != 0);
 
         substrate.hookMessageEx(UnicornPointer.pointer(emulator, ClassDump), UnicornPointer.pointer(emulator, my_dump_class), new ReplaceCallback() {
@@ -53,6 +53,7 @@ public class ClassDumpTest extends EmulatorTest {
                 Pointer SEL = context.getR1Pointer();
                 Pointer name = context.getR2Pointer();
                 System.err.println("my_dump_class id=" + id + ", SEL=" + SEL + ", name=" + name.getString(0));
+                name.setString(0, "NSDate");
                 return HookStatus.RET(emulator.getUnicorn(), originFunction);
             }
         });

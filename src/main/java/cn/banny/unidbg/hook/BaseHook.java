@@ -14,7 +14,7 @@ import unicorn.Unicorn;
 import java.io.IOException;
 import java.net.URL;
 
-public abstract class BaseHook {
+public abstract class BaseHook implements IHook {
 
     protected final Emulator emulator;
     protected final Module module;
@@ -49,6 +49,7 @@ public abstract class BaseHook {
         return isIOS ? new cn.banny.unidbg.ios.URLibraryFile(url, libName, null) : new URLibraryFile(url, libName, -1);
     }
 
+    @Override
     public Module getModule() {
         return module;
     }
