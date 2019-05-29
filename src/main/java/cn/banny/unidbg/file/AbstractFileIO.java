@@ -156,7 +156,7 @@ public abstract class AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int fstat(StatStructure stat) {
+    public int fstat(Emulator emulator, StatStructure stat) {
         throw new AbstractMethodError(getClass().getName());
     }
 
@@ -167,6 +167,11 @@ public abstract class AbstractFileIO implements FileIO {
 
     @Override
     public FileIO dup2() {
+        throw new AbstractMethodError(getClass().getName());
+    }
+
+    @Override
+    public String getPath() {
         throw new AbstractMethodError(getClass().getName());
     }
 }

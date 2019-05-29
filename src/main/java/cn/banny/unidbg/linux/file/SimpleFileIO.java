@@ -5,6 +5,8 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.file.AbstractFileIO;
 import cn.banny.unidbg.file.FileIO;
+import cn.banny.unidbg.file.StatStructure;
+import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
@@ -232,5 +234,17 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
         }
 
         return super.llseek(offset_high, offset_low, result, whence);
+    }
+
+    @Override
+    public int fstat(Emulator emulator, StatStructure stat) {
+        stat.st_dev = 1;
+        stat.st_mode = (short) (IO.S_IFREG | 0x777);
+        stat.st_size = UnicornPointer.pointer(emulator, file.length());
+        stat.st_blocks = UnicornPointer.pointer(emulator, file.length());
+        stat.st_blksize = 0;
+        stat.st_ino = UnicornPointer.pointer(emulator, 1);
+        stat.pack();
+        return 0;
     }
 }

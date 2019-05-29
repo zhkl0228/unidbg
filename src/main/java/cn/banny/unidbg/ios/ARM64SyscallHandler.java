@@ -381,7 +381,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
         FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
         if (io != null) {
-            return io.fstat(new Stat(statbuf));
+            return io.fstat(emulator, new Stat(statbuf));
         }
 
         emulator.getMemory().setErrno(UnixEmulator.EACCES);

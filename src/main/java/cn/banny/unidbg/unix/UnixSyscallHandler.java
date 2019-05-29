@@ -183,7 +183,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return -1;
     }
 
-    protected final int fcntl(Emulator emulator, int fd, int cmd, int arg) {
+    protected int fcntl(Emulator emulator, int fd, int cmd, int arg) {
         if (log.isDebugEnabled()) {
             log.debug("fcntl fd=" + fd + ", cmd=" + cmd + ", arg=" + arg);
         }
@@ -281,7 +281,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return file.sendto(data, flags, dest_addr, addrlen);
     }
 
-    protected final int fstat(Emulator emulator, int fd, Pointer stat) {
+    protected int fstat(Emulator emulator, int fd, Pointer stat) {
         if (log.isDebugEnabled()) {
             log.debug("fstat fd=" + fd + ", stat=" + stat);
         }

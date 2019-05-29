@@ -13,10 +13,11 @@
   NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
   dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
   NSDate *date = [NSDate date];
-  NSLog(@"[%@]Hello, unidbg: %@, date=%@", [dateFormatter stringFromDate:date], self, [date description]);
+  NSString *str = [date description];
+  NSLog(@"[%@]Hello, unidbg: %@, date=%@", [dateFormatter stringFromDate:date], self, str);
 }
 -(NSString *) description {
-  return @"This is Objc TEST";
+  return @"This is ObjC TEST";
 }
 @end
 

@@ -113,10 +113,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         Pointer gap = allocateStack(emulator.getPointerSize());
 
-        /*emulator.traceWrite(thread.peer, thread.peer + 0x1000);
-        emulator.attach().addBreakPoint(null, 0x4041c740);
-        log.info("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", gap=" + gap + ", errno=" + errno);*/
-
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
         } else {
@@ -218,8 +214,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
             Module bootstrap = loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
 //            emulator.traceCode();
+//            emulator.attach().addBreakPoint(null, 0x409a7f44);
+//            emulator.attach().addBreakPoint(null, 0x40b95d06);
             bootstrap.callEntry(emulator);
-//            emulator.attach().debug(emulator);
+//            emulator.attach().debug();
         }
 
         long start = System.currentTimeMillis();

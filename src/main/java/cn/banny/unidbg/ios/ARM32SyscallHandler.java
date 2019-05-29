@@ -145,6 +145,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 25: // geteuid
                     case 43: // getegid
                     case 47: // getgid
+                        if (log.isDebugEnabled()) {
+                            log.debug("NR=" + NR);
+                        }
                         u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
                         return;
                     case 33:
@@ -170,6 +173,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
                         return;
                     case 92:
+                    case 406: // fcntl_NOCANCEL
                         u.reg_write(ArmConst.UC_ARM_REG_R0, fcntl(u, emulator));
                         return;
                     case 97:
@@ -262,6 +266,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     case 397:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, write_NOCANCEL(emulator));
                         return;
+                    case 5: // unix open
                     case 398:
                         u.reg_write(ArmConst.UC_ARM_REG_R0, open_NOCANCEL(emulator));
                         return;
@@ -529,18 +534,35 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private int stat64(Emulator emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = pathname.getString(0);
         if (log.isDebugEnabled()) {
             log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf);
         }
-        return stat64(emulator, path, statbuf);
+        return stat64(emulator, FilenameUtils.normalize(path), statbuf);
+    }
+
+    @Override
+    protected int fstat(Emulator emulator, int fd, Pointer stat) {
+        if (log.isDebugEnabled()) {
+            log.debug("fstat fd=" + fd + ", stat=" + stat);
+        }
+
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("fstat file=" + file + ", stat=" + stat);
+        }
+        return file.fstat(emulator, new Stat(stat));
     }
 
     @Override
     protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
         FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
         if (io != null) {
-            return io.fstat(new Stat(statbuf));
+            return io.fstat(emulator, new Stat(statbuf));
         }
 
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
@@ -1346,6 +1368,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long tv_sec = currentTimeMillis / 1000;
         long tv_usec = (currentTimeMillis % 1000) * 1000;
         context.setR1((int) tv_usec);
+        if (log.isDebugEnabled()) {
+            log.debug("gettimeofday");
+        }
         return (int) tv_sec;
     }
 
@@ -1436,6 +1461,19 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int cmd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         return fcntl(emulator, fd, cmd, arg);
+    }
+
+    @Override
+    protected int fcntl(Emulator emulator, int fd, int cmd, int arg) {
+        FileIO file = fdMap.get(fd);
+        if (file != null && cmd == MachO.F_GETPATH) {
+            Pointer pointer = UnicornPointer.pointer(emulator, arg & 0xffffffffL);
+            assert pointer != null;
+            pointer.setString(0, file.getPath());
+            return 0;
+        }
+
+        return super.fcntl(emulator, fd, cmd, arg);
     }
 
     private int mmap(Unicorn u, Emulator emulator) {

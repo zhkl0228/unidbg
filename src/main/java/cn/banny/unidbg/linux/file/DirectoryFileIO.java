@@ -5,10 +5,13 @@ import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.file.AbstractFileIO;
 import cn.banny.unidbg.file.StatStructure;
 import cn.banny.unidbg.ios.struct.kernel.StatFS;
+import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.unix.IO;
 import com.sun.jna.Pointer;
+import org.apache.commons.io.FilenameUtils;
 import unicorn.Unicorn;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -71,12 +74,12 @@ public class DirectoryFileIO extends AbstractFileIO {
     }
 
     @Override
-    public int fstat(StatStructure stat) {
-        stat.st_dev = 0;
+    public int fstat(Emulator emulator, StatStructure stat) {
+        stat.st_dev = 1;
         stat.st_mode = IO.S_IFDIR | 0x777;
-        stat.st_size = 0;
+        stat.st_size = null;
         stat.st_blksize = 0;
-        stat.st_ino = 0;
+        stat.st_ino = UnicornPointer.pointer(emulator, 1);
         stat.pack();
         return 0;
     }
@@ -109,4 +112,12 @@ public class DirectoryFileIO extends AbstractFileIO {
         return path;
     }
 
+    @Override
+    public String getPath() {
+        if (".".equals(path)) {
+            return FilenameUtils.normalize(new File("target").getAbsolutePath());
+        }
+
+        return path;
+    }
 }
