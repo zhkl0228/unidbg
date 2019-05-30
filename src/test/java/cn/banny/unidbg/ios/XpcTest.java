@@ -82,7 +82,7 @@ public class XpcTest extends EmulatorTest {
                 long image = context.getR0Long();
                 Pointer symbol = context.getR1Pointer();
                 System.out.println("_MSFindSymbol image=0x" + Long.toHexString(image) + ", symbol=" + symbol.getString(0));
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
 

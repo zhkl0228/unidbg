@@ -57,13 +57,13 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public long getLr() {
+    public long getLR() {
         return reg_ctx.getLong(30 * 8);
     }
 
     @Override
-    public UnicornPointer getLrPointer() {
-        return UnicornPointer.pointer(emulator, getLr());
+    public UnicornPointer getLRPointer() {
+        return UnicornPointer.pointer(emulator, getLR());
     }
 
     @Override

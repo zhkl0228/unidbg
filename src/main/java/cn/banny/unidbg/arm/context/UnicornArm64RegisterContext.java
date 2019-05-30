@@ -56,13 +56,13 @@ public class UnicornArm64RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
-    public long getLr() {
+    public long getLR() {
         return reg(Arm64Const.UC_ARM64_REG_LR);
     }
 
     @Override
-    public UnicornPointer getLrPointer() {
-        return UnicornPointer.pointer(emulator, getLr());
+    public UnicornPointer getLRPointer() {
+        return UnicornPointer.pointer(emulator, getLR());
     }
 
     @Override

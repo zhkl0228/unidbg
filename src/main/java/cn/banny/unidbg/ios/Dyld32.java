@@ -666,7 +666,7 @@ public class Dyld32 extends Dyld {
                                 log.debug("_asl_open ident=" + (ident == null ? null : ident.getString(0)) + ", facility=" + facility.getString(0) + ", opts=0x" + Integer.toHexString(opts));
                             }
                             context.setR2(opts | ASL_OPT_STDERR);
-                            return HookStatus.RET(u, old);
+                            return HookStatus.RET(emulator, old);
                         }
                     }).peer;
                 }

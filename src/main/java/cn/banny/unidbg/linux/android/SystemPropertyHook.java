@@ -1,13 +1,12 @@
 package cn.banny.unidbg.linux.android;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.memory.SvcMemory;
-import cn.banny.unidbg.hook.HookListener;
-import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.arm.ArmHook;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
+import cn.banny.unidbg.hook.HookListener;
+import cn.banny.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
-import unicorn.ArmConst;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
 
@@ -25,7 +24,8 @@ public class SystemPropertyHook implements HookListener {
                 @Override
                 protected HookStatus hook(Unicorn u, Emulator emulator) {
                     if (propertyProvider != null) {
-                        Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                        EditableArm32RegisterContext context = emulator.getRegisterContext();
+                        Pointer pointer = context.getPointerArg(0);
                         String key = pointer.getString(0);
                         String value = propertyProvider.getProperty(key);
                         if (value != null) {
@@ -34,12 +34,12 @@ public class SystemPropertyHook implements HookListener {
                                 throw new UnicornException("invalid property value length: key=" + key + ", value=" + value);
                             }
 
-                            UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
-                            return HookStatus.LR(u, value.length());
+                            context.getPointerArg(1).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
+                            return HookStatus.LR(emulator, value.length());
                         }
                     }
 
-                    return HookStatus.RET(u, old);
+                    return HookStatus.RET(emulator, old);
                 }
             }).peer;
         }

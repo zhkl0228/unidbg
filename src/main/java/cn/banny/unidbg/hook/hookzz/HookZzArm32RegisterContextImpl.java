@@ -106,7 +106,7 @@ public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public long getLr() {
+    public long getLR() {
         return reg_ctx.getInt(52) & 0xffffffffL;
     }
 
@@ -246,7 +246,7 @@ public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public UnicornPointer getLrPointer() {
-        return UnicornPointer.pointer(emulator, getLr());
+    public UnicornPointer getLRPointer() {
+        return UnicornPointer.pointer(emulator, getLR());
     }
 }

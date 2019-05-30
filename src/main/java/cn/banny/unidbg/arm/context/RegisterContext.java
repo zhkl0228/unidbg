@@ -19,9 +19,9 @@ public interface RegisterContext {
      */
     UnicornPointer getPointerArg(int index);
 
-    long getLr();
+    long getLR();
 
-    UnicornPointer getLrPointer();
+    UnicornPointer getLRPointer();
 
     /**
      * sp

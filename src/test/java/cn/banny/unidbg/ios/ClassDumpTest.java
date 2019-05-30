@@ -5,8 +5,8 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.android.EmulatorTest;
-import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.substrate.ISubstrate;
 import cn.banny.unidbg.ios.classdump.ClassDumper;
@@ -48,13 +48,13 @@ public class ClassDumpTest extends EmulatorTest {
         substrate.hookMessageEx(UnicornPointer.pointer(emulator, ClassDump), UnicornPointer.pointer(emulator, my_dump_class), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Arm32RegisterContext context = emulator.getRegisterContext();
-                Pointer id = context.getR0Pointer();
-                Pointer SEL = context.getR1Pointer();
-                Pointer name = context.getR2Pointer();
+                RegisterContext context = emulator.getRegisterContext();
+                Pointer id = context.getPointerArg(0);
+                Pointer SEL = context.getPointerArg(1);
+                Pointer name = context.getPointerArg(2);
                 System.err.println("my_dump_class id=" + id + ", SEL=" + SEL + ", name=" + name.getString(0));
                 name.setString(0, "NSDate");
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
 

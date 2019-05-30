@@ -258,12 +258,12 @@ public class UnicornArm32RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
-    public UnicornPointer getLrPointer() {
-        return UnicornPointer.pointer(emulator, getLr());
+    public UnicornPointer getLRPointer() {
+        return UnicornPointer.pointer(emulator, getLR());
     }
 
     @Override
-    public long getLr() {
+    public long getLR() {
         return reg(ArmConst.UC_ARM_REG_LR);
     }
 
