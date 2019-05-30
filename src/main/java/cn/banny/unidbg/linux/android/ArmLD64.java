@@ -2,7 +2,6 @@ package cn.banny.unidbg.linux.android;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
-import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.Arm64Svc;
 import cn.banny.unidbg.linux.LinuxModule;
 import cn.banny.unidbg.memory.Memory;
@@ -24,20 +23,15 @@ import unicorn.UnicornException;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class ArmLD64 implements Dlfcn {
+public class ArmLD64 extends Dlfcn {
 
     private static final Log log = LogFactory.getLog(ArmLD64.class);
-
-    private final UnicornPointer error;
 
     private Unicorn unicorn;
 
     ArmLD64(Unicorn unicorn, SvcMemory svcMemory) {
+        super(svcMemory);
         this.unicorn = unicorn;
-
-        error = svcMemory.allocate(0x40);
-        assert error != null;
-        error.setMemory(0, 0x40, (byte) 0);
     }
 
     @Override
@@ -193,19 +187,6 @@ public class ArmLD64 implements Dlfcn {
             throw new IllegalStateException(e);
         } finally {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnicornPointer) pointer).peer);
-        }
-    }
-
-    private int dlsym(Memory memory, long handle, String symbol) {
-        try {
-            Symbol elfSymbol = memory.dlsym(handle, symbol);
-            if (elfSymbol == null) {
-                this.error.setString(0, "Find symbol " + symbol + " failed");
-                return 0;
-            }
-            return (int) elfSymbol.getAddress();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         }
     }
 

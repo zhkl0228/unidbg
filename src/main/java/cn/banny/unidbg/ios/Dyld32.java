@@ -3,7 +3,10 @@ package cn.banny.unidbg.ios;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
-import cn.banny.unidbg.arm.*;
+import cn.banny.unidbg.arm.AbstractARMEmulator;
+import cn.banny.unidbg.arm.ArmHook;
+import cn.banny.unidbg.arm.ArmSvc;
+import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
 import cn.banny.unidbg.ios.struct.DlInfo;
@@ -34,14 +37,9 @@ public class Dyld32 extends Dyld {
 
     private final MachOLoader loader;
 
-    private final UnicornPointer error;
-
     Dyld32(MachOLoader loader, SvcMemory svcMemory) {
+        super(svcMemory);
         this.loader = loader;
-
-        error = svcMemory.allocate(0x40);
-        assert error != null;
-        error.setMemory(0, 0x40, (byte) 0);
     }
 
     private Pointer __dyld_image_count;
@@ -238,7 +236,7 @@ public class Dyld32 extends Dyld {
                     __dyld_dlclose = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public int handle(Emulator emulator) {
-                            Arm32RegisterContext context = emulator.getRegisterContext();
+                            Arm32RegisterContext context = emulator.getContext();
                             long handler = context.getR0Long();
                             log.info("__dyld_dlclose handler=0x" + Long.toHexString(handler));
                             return 0;
@@ -637,16 +635,8 @@ public class Dyld32 extends Dyld {
                 if (_pthread_getname_np == 0) {
                     _pthread_getname_np = svcMemory.registerSvc(new ArmHook() {
                         @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer thread = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            Pointer threadName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                            int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-                            if (log.isDebugEnabled()) {
-                                log.debug("_pthread_getname_np thread=" + thread + ", threadName=" + threadName + ", len=" + len);
-                            }
-                            byte[] data = Arrays.copyOf(Dyld32.this.threadName.getBytes(), len);
-                            threadName.write(0, data, 0, data.length);
-                            return HookStatus.LR(u, 0);
+                        protected HookStatus hook(Emulator emulator) {
+                            return _pthread_getname_np(emulator);
                         }
                     }).peer;
                 }
@@ -657,8 +647,8 @@ public class Dyld32 extends Dyld {
                 if (_asl_open == 0) {
                     _asl_open = svcMemory.registerSvc(new ArmHook() {
                         @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            EditableArm32RegisterContext context = emulator.getRegisterContext();
+                        protected HookStatus hook(Emulator emulator) {
+                            EditableArm32RegisterContext context = emulator.getContext();
                             Pointer ident = context.getR0Pointer();
                             Pointer facility = context.getR1Pointer();
                             int opts = context.getR2Int();
@@ -677,20 +667,5 @@ public class Dyld32 extends Dyld {
     }
 
     private long _asl_open;
-
-    private long _pthread_getname_np;
-
-    private int dlsym(Memory memory, long handle, String symbolName) {
-        try {
-            Symbol symbol = memory.dlsym(handle, symbolName);
-            if (symbol == null) {
-                this.error.setString(0, "Find symbol " + symbol + " failed");
-                return 0;
-            }
-            return (int) symbol.getAddress();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 
 }

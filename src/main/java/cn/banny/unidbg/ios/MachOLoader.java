@@ -528,23 +528,23 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             } else {
                 Svc svc = emulator.getPointerSize() == 4 ? new ArmHook() {
                     @Override
-                    protected HookStatus hook(Unicorn u, Emulator emulator) {
-                        Arm32RegisterContext context = emulator.getRegisterContext();
+                    protected HookStatus hook(Emulator emulator) {
+                        Arm32RegisterContext context = emulator.getContext();
                         Pointer message = context.getR0Pointer();
                         int length = context.getR1Int();
                         boolean withSysLogBanner = context.getR2Int() != 0;
                         __NSSetLogCStringFunction(message, length, withSysLogBanner);
-                        return HookStatus.LR(u, 0);
+                        return HookStatus.LR(emulator, 0);
                     }
                 } : new Arm64Hook() {
                     @Override
-                    protected HookStatus hook(Unicorn u, Emulator emulator) {
-                        Arm64RegisterContext context = emulator.getRegisterContext();
+                    protected HookStatus hook(Emulator emulator) {
+                        Arm64RegisterContext context = emulator.getContext();
                         Pointer message = context.getXPointer(0);
                         int length = context.getXInt(1);
                         boolean withSysLogBanner = context.getXInt(2) != 0;
                         __NSSetLogCStringFunction(message, length, withSysLogBanner);
-                        return HookStatus.LR(u, 0);
+                        return HookStatus.LR(emulator, 0);
                     }
                 };
                 _NSSetLogCStringFunction.call(emulator, emulator.getSvcMemory().registerSvc(svc));

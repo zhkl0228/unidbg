@@ -1,5 +1,7 @@
 package cn.banny.unidbg.arm.context;
 
+import com.sun.jna.Pointer;
+
 public interface EditableArm32RegisterContext extends Arm32RegisterContext {
 
     void setR0(int r0);
@@ -17,5 +19,7 @@ public interface EditableArm32RegisterContext extends Arm32RegisterContext {
     void setR6(int r6);
 
     void setR7(int r7);
+
+    void setStackPointer(Pointer sp);
 
 }

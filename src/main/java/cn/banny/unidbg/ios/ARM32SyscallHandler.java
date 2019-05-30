@@ -587,7 +587,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
      * lstat() is identical to stat(), except that if pathname is a symbolic link, then it returns information about the link itself, not the file that it refers to.
      */
     private int lstat(Unicorn u, Emulator emulator) {
-        Arm32RegisterContext context = emulator.getRegisterContext();
+        Arm32RegisterContext context = emulator.getContext();
         Pointer pathname = context.getR0Pointer();
         Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         String path = FilenameUtils.normalize(pathname.getString(0));
@@ -1363,7 +1363,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int gettimeofday(Emulator emulator) {
-        EditableArm32RegisterContext context = emulator.getRegisterContext();
+        EditableArm32RegisterContext context = emulator.getContext();
         long currentTimeMillis = System.currentTimeMillis();
         long tv_sec = currentTimeMillis / 1000;
         long tv_usec = (currentTimeMillis % 1000) * 1000;

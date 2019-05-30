@@ -2,6 +2,7 @@ package cn.banny.unidbg.arm.context;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.pointer.UnicornPointer;
+import com.sun.jna.Pointer;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
@@ -270,5 +271,10 @@ public class UnicornArm32RegisterContext extends BaseRegisterContext implements 
     @Override
     public UnicornPointer getStackPointer() {
         return UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+    }
+
+    @Override
+    public void setStackPointer(Pointer sp) {
+        unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) sp).peer);
     }
 }

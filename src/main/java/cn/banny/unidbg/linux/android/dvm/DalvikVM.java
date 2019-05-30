@@ -38,7 +38,7 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _FindClass = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public int handle(Emulator emulator) {
-                Arm32RegisterContext context = emulator.getRegisterContext();
+                Arm32RegisterContext context = emulator.getContext();
                 Pointer env = context.getR0Pointer();
                 Pointer className = context.getR1Pointer();
                 String name = className.getString(0);

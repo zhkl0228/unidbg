@@ -9,7 +9,6 @@ import cn.banny.unidbg.linux.android.URLibraryFile;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.net.URL;
@@ -28,12 +27,12 @@ public abstract class BaseHook implements IHook {
         SvcMemory svcMemory = emulator.getSvcMemory();
         return svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmHook() {
             @Override
-            protected HookStatus hook(Unicorn u, Emulator emulator) {
+            protected HookStatus hook(Emulator emulator) {
                 return callback.onCall(emulator, backup.getInt(0) & 0xffffffffL);
             }
         } : new Arm64Hook() {
             @Override
-            protected HookStatus hook(Unicorn u, Emulator emulator) {
+            protected HookStatus hook(Emulator emulator) {
                 return callback.onCall(emulator, backup.getLong(0));
             }
         });

@@ -938,7 +938,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int nanosleep(Emulator emulator) {
-        Arm32RegisterContext context = emulator.getRegisterContext();
+        Arm32RegisterContext context = emulator.getContext();
         Pointer req = context.getR0Pointer();
         Pointer rem = context.getR1Pointer();
         int tv_sec = req.getInt(0);
@@ -963,7 +963,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int setitimer(Emulator emulator) {
-        Arm32RegisterContext context = emulator.getRegisterContext();
+        Arm32RegisterContext context = emulator.getContext();
         int which = context.getR0Int();
         Pointer new_value = context.getR1Pointer();
         Pointer old_value = context.getR2Pointer();

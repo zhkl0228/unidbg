@@ -7,7 +7,6 @@ import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
 import cn.banny.unidbg.hook.HookListener;
 import cn.banny.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.nio.charset.StandardCharsets;
@@ -22,9 +21,9 @@ public class SystemPropertyHook implements HookListener {
         if ("libc.so".equals(libraryName) && "__system_property_get".equals(symbolName)) {
             return svcMemory.registerSvc(new ArmHook() {
                 @Override
-                protected HookStatus hook(Unicorn u, Emulator emulator) {
+                protected HookStatus hook(Emulator emulator) {
                     if (propertyProvider != null) {
-                        EditableArm32RegisterContext context = emulator.getRegisterContext();
+                        EditableArm32RegisterContext context = emulator.getContext();
                         Pointer pointer = context.getPointerArg(0);
                         String key = pointer.getString(0);
                         String value = propertyProvider.getProperty(key);

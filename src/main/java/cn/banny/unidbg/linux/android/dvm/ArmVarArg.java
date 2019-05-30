@@ -35,7 +35,7 @@ public class ArmVarArg implements VarArg {
     private static final int REG_OFFSET = 3;
 
     private UnicornPointer getArg(int index) {
-        return emulator.getRegisterContext().getPointerArg(REG_OFFSET + index);
+        return emulator.getContext().getPointerArg(REG_OFFSET + index);
     }
 
 }

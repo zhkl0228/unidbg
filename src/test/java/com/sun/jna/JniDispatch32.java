@@ -6,21 +6,22 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.ARMEmulator;
-import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
-import cn.banny.unidbg.hook.hookzz.*;
+import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
+import cn.banny.unidbg.hook.hookzz.HookZz;
+import cn.banny.unidbg.hook.hookzz.IHookZz;
+import cn.banny.unidbg.hook.hookzz.WrapCallback;
 import cn.banny.unidbg.hook.whale.IWhale;
 import cn.banny.unidbg.hook.whale.Whale;
 import cn.banny.unidbg.hook.xhook.IxHook;
-import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.dvm.*;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.pointer.UnicornPointer;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,10 +75,9 @@ public class JniDispatch32 extends AbstractJni {
         xHook.register("libjnidispatch.so", "malloc", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                int size = emulator.getContext().getIntArg(0);
                 System.out.println("malloc=" + size);
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
         xHook.refresh();
@@ -87,8 +87,8 @@ public class JniDispatch32 extends AbstractJni {
         whale.WInlineHookFunction(free, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                System.out.println("WInlineHookFunction free=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0));
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                System.out.println("WInlineHookFunction free=" + emulator.getContext().getPointerArg(0));
+                return HookStatus.RET(emulator, originFunction);
             }
         });
 
@@ -103,11 +103,11 @@ public class JniDispatch32 extends AbstractJni {
 
         IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol newJavaString = module.findSymbolByName("newJavaString");
-        hookZz.wrap(newJavaString, new WrapCallback<Arm32RegisterContext>() {
+        hookZz.wrap(newJavaString, new WrapCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                Pointer value = ctx.getR1Pointer();
-                Pointer encoding = ctx.getR2Pointer();
+            public void preCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
+                Pointer value = ctx.getPointerArg(1);
+                Pointer encoding = ctx.getPointerArg(2);
                 System.out.println("newJavaString value=" + value.getString(0) + ", encoding=" + encoding.getString(0));
             }
         });

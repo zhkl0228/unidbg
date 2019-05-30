@@ -39,7 +39,7 @@ public abstract class Arm64Hook extends Arm64Svc {
         Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
-            HookStatus status = hook(u, emulator);
+            HookStatus status = hook(emulator);
             sp = sp.share(-8);
             sp.setLong(0, status.jump);
 
@@ -49,6 +49,6 @@ public abstract class Arm64Hook extends Arm64Svc {
         }
     }
 
-    protected abstract HookStatus hook(Unicorn u, Emulator emulator);
+    protected abstract HookStatus hook(Emulator emulator);
 
 }

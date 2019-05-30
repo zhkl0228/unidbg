@@ -8,7 +8,6 @@ import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.hook.HookListener;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -83,8 +82,8 @@ public class ModuleSymbol {
                 if ("android_get_application_target_sdk_version".equals(symbolName)) {
                     long hook = svcMemory.registerSvc(new ArmHook() {
                         @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            return HookStatus.LR(u, 0);
+                        protected HookStatus hook(Emulator emulator) {
+                            return HookStatus.LR(emulator, 0);
                         }
                     }).peer;
                     return new ModuleSymbol(soName, WEAK_BASE, symbol, relocationAddr, "libdl.so", hook);

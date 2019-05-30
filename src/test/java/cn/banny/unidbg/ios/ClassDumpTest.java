@@ -48,7 +48,7 @@ public class ClassDumpTest extends EmulatorTest {
         substrate.hookMessageEx(UnicornPointer.pointer(emulator, ClassDump), UnicornPointer.pointer(emulator, my_dump_class), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                RegisterContext context = emulator.getRegisterContext();
+                RegisterContext context = emulator.getContext();
                 Pointer id = context.getPointerArg(0);
                 Pointer SEL = context.getPointerArg(1);
                 Pointer name = context.getPointerArg(2);

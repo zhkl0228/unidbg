@@ -33,14 +33,9 @@ public class Dyld64 extends Dyld {
 
     private final MachOLoader loader;
 
-    private final UnicornPointer error;
-
     Dyld64(MachOLoader loader, SvcMemory svcMemory) {
+        super(svcMemory);
         this.loader = loader;
-
-        error = svcMemory.allocate(0x40);
-        assert error != null;
-        error.setMemory(0, 0x40, (byte) 0);
     }
 
     private Pointer __dyld_image_count;
@@ -595,18 +590,10 @@ public class Dyld64 extends Dyld {
         } else if ("libsystem_pthread.dylib".equals(libraryName)) {
             if ("_pthread_getname_np".equals(symbolName)) {
                 if (_pthread_getname_np == 0) {
-                    _pthread_getname_np = svcMemory.registerSvc(new ArmHook() {
+                    _pthread_getname_np = svcMemory.registerSvc(new Arm64Hook() {
                         @Override
-                        protected HookStatus hook(Unicorn u, Emulator emulator) {
-                            Pointer thread = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            Pointer threadName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                            int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-                            if (log.isDebugEnabled()) {
-                                log.debug("_pthread_getname_np thread=" + thread + ", threadName=" + threadName + ", len=" + len);
-                            }
-                            byte[] data = Arrays.copyOf(Dyld64.this.threadName.getBytes(), len);
-                            threadName.write(0, data, 0, data.length);
-                            return HookStatus.LR(u, 0);
+                        protected HookStatus hook(Emulator emulator) {
+                            return _pthread_getname_np(emulator);
                         }
                     }).peer;
                 }
@@ -614,30 +601,6 @@ public class Dyld64 extends Dyld {
             }
         }
         return 0;
-    }
-
-    private long _pthread_getname_np;
-
-    private int dlsym(Memory memory, long handle, String symbolName) {
-        try {
-            Symbol symbol = memory.dlsym(handle, symbolName);
-            if (symbol == null) {
-                this.error.setString(0, "Find symbol " + symbol + " failed");
-                return 0;
-            }
-            return (int) symbol.getAddress();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private String threadName = "main";
-
-    void pthread_setname_np(String threadName) {
-        this.threadName = threadName;
-        if (log.isDebugEnabled()) {
-            log.debug("pthread_setname_np=" + threadName);
-        }
     }
 
 }

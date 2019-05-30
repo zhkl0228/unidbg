@@ -119,6 +119,6 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     void setTimeout(long timeout);
 
-    <T extends RegisterContext> T getRegisterContext();
+    <T extends RegisterContext> T getContext();
 
 }

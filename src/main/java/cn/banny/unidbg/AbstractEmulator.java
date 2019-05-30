@@ -71,7 +71,7 @@ public abstract class AbstractEmulator implements Emulator {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends RegisterContext> T getRegisterContext() {
+    public <T extends RegisterContext> T getContext() {
         return (T) registerContext;
     }
 

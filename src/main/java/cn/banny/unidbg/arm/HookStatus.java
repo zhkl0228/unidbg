@@ -17,12 +17,12 @@ public class HookStatus {
     }
 
     public static HookStatus RET(Emulator emulator, long pc) {
-        RegisterContext context = emulator.getRegisterContext();
+        RegisterContext context = emulator.getContext();
         return new HookStatus(context.getLongArg(0), pc);
     }
 
     public static HookStatus LR(Emulator emulator, long returnValue) {
-        RegisterContext context = emulator.getRegisterContext();
+        RegisterContext context = emulator.getContext();
         return new HookStatus(returnValue, context.getLR());
     }
 

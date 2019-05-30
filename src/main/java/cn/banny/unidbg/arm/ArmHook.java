@@ -38,7 +38,7 @@ public abstract class ArmHook extends ArmSvc {
         Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
-            HookStatus status = hook(u, emulator);
+            HookStatus status = hook(emulator);
             sp = sp.share(-4);
             sp.setInt(0, (int) status.jump);
 
@@ -48,6 +48,6 @@ public abstract class ArmHook extends ArmSvc {
         }
     }
 
-    protected abstract HookStatus hook(Unicorn u, Emulator emulator);
+    protected abstract HookStatus hook(Emulator emulator);
 
 }
