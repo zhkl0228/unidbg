@@ -14,7 +14,7 @@ public class DvmObject<T> implements Hashable {
     final DvmClass objectType;
     protected T value;
 
-    public DvmObject(DvmClass objectType, T value) {
+    protected DvmObject(DvmClass objectType, T value) {
         this.objectType = objectType;
         this.value = value;
     }

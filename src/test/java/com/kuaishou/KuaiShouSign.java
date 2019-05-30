@@ -84,7 +84,7 @@ public class KuaiShouSign extends AbstractJni implements IOResolver {
             case "com/yxcorp/gifshow/App->getPackageName()Ljava/lang/String;":
                 return new StringObject(vm, APP_PACKAGE_NAME);
             case "com/yxcorp/gifshow/App->getPackageManager()Landroid/content/pm/PackageManager;":
-                return new DvmObject<Object>(vm.resolveClass("android/content/pm/PackageManager"), null);
+                return vm.resolveClass("android/content/pm/PackageManager").newObject(null);
         }
 
         return super.callObjectMethodV(vm, dvmObject, signature, vaList);

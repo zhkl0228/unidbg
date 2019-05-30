@@ -18,7 +18,9 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.*;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -175,13 +177,20 @@ public abstract class AbstractEmulator implements Emulator {
         traceInstructionEnd = end;
     }
 
-    private final ReadHook readHook;
-    private final WriteHook writeHook;
+    private final TraceMemoryHook readHook;
+    private final TraceMemoryHook writeHook;
     private final AssemblyCodeDumper codeHook;
 
     @Override
     public void setTimeout(long timeout) {
         this.timeout = timeout;
+    }
+
+    private File traceOutFile;
+
+    @Override
+    public void redirectTrace(File outFile) {
+        this.traceOutFile = outFile;
     }
 
     /**
@@ -193,22 +202,34 @@ public abstract class AbstractEmulator implements Emulator {
     protected final Number emulate(long begin, long until, long timeout, boolean entry) {
         final Pointer pointer = UnicornPointer.pointer(this, begin);
         long start = 0;
+        PrintStream redirect = null;
         try {
             POINTER_SIZE.set(getPointerSize());
+
+            if (traceOutFile != null) {
+                try {
+                    redirect = new PrintStream(traceOutFile);
+                } catch (FileNotFoundException e) {
+                    log.warn("Set trace out file failed", e);
+                }
+            }
 
             if (entry) {
                 if (traceMemoryRead) {
                     traceMemoryRead = false;
+                    readHook.redirect = redirect;
                     unicorn.hook_add(readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
                 }
                 if (traceMemoryWrite) {
                     traceMemoryWrite = false;
+                    writeHook.redirect = redirect;
                     unicorn.hook_add(writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
                 }
             }
             if (traceInstruction) {
                 traceInstruction = false;
                 codeHook.initialize(traceInstructionBegin, traceInstructionEnd);
+                codeHook.redirect = redirect;
                 unicorn.hook_add(codeHook, traceInstructionBegin, traceInstructionEnd, this);
             }
             log.debug("emulate " + pointer + " started sp=" + getStackPointer());
@@ -234,9 +255,14 @@ public abstract class AbstractEmulator implements Emulator {
             if (entry) {
                 unicorn.hook_del(readHook);
                 unicorn.hook_del(writeHook);
+                readHook.redirect = null;
+                writeHook.redirect = null;
             }
             unicorn.hook_del(codeHook);
+            codeHook.redirect = null;
             log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+
+            IOUtils.closeQuietly(redirect);
         }
     }
 

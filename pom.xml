@@ -189,5 +189,4 @@
             <url>http://p.gzmtx.cn:8081/nexus/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
-
 </project>

@@ -123,7 +123,7 @@ public class DeviceNative extends AbstractJni implements IOResolver {
                 StackTraceElement[] elements = Thread.currentThread().getStackTrace();
                 DvmObject[] objs = new DvmObject[elements.length];
                 for (int i = 0; i < elements.length; i++) {
-                    objs[i] = new DvmObject<>(vm.resolveClass("java/lang/StackTraceElement"), elements[i]);
+                    objs[i] = vm.resolveClass("java/lang/StackTraceElement").newObject(elements[i]);
                 }
                 return new ArrayObject(objs);
             case "java/lang/StackTraceElement->getClassName()Ljava/lang/String;":
