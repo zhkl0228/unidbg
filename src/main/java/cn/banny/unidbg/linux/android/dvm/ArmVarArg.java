@@ -5,11 +5,7 @@ import cn.banny.unidbg.pointer.UnicornPointer;
 
 public class ArmVarArg implements VarArg {
 
-    static VarArg armVarArg(Emulator emulator, BaseVM vm) {
-        return new ArmVarArg(emulator, vm);
-    }
-
-    static VarArg arm64VarArg(Emulator emulator, BaseVM vm) {
+    static VarArg create(Emulator emulator, BaseVM vm) {
         return new ArmVarArg(emulator, vm);
     }
 
