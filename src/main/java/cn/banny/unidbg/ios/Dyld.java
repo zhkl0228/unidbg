@@ -37,7 +37,7 @@ abstract class Dyld extends Dlfcn {
 
     abstract int _stub_binding_helper();
 
-    static int computeSlide(Emulator emulator, long machHeader) {
+    static long computeSlide(Emulator emulator, long machHeader) {
         Pointer pointer = UnicornPointer.pointer(emulator, machHeader);
         assert pointer != null;
         MachHeader header = emulator.getPointerSize() == 4 ? new MachHeader(pointer) : new MachHeader64(pointer);
@@ -52,7 +52,7 @@ abstract class Dyld extends Dlfcn {
                 segmentCommand.unpack();
 
                 if ("__TEXT".equals(new String(segmentCommand.segname).trim())) {
-                    return (int) (machHeader - segmentCommand.vmaddr);
+                    return (machHeader - segmentCommand.vmaddr);
                 }
             }
             loadPointer = loadPointer.share(loadCommand.size);

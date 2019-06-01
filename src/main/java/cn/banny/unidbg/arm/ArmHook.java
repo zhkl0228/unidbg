@@ -34,7 +34,7 @@ public abstract class ArmHook extends ArmSvc {
     }
 
     @Override
-    public final int handle(Emulator emulator) {
+    public final long handle(Emulator emulator) {
         Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
@@ -42,7 +42,7 @@ public abstract class ArmHook extends ArmSvc {
             sp = sp.share(-4);
             sp.setInt(0, (int) status.jump);
 
-            return (int) status.returnValue;
+            return status.returnValue;
         } finally {
             u.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) sp).peer);
         }

@@ -18,14 +18,14 @@ public abstract class Dlfcn implements HookListener {
         error.setMemory(0, 0x40, (byte) 0);
     }
 
-    protected final int dlsym(Memory memory, long handle, String symbolName) {
+    protected final long dlsym(Memory memory, long handle, String symbolName) {
         try {
             Symbol symbol = memory.dlsym(handle, symbolName);
             if (symbol == null) {
                 this.error.setString(0, "Find symbol " + symbol + " failed");
                 return 0;
             }
-            return (int) symbol.getAddress();
+            return symbol.getAddress();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

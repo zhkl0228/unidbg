@@ -67,11 +67,11 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             if (svcNumber != DARWIN_SWI_SYSCALL) {
                 Svc svc = svcMemory.getSvc(svcNumber);
                 if (svc != null) {
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, svc.handle(emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));
                     return;
                 }
                 u.emu_stop();
-                throw new IllegalStateException("svc number: " + svcNumber);
+                throw new IllegalStateException("svc number: " + svcNumber + ", NR=" + NR);
             }
 
             if (log.isDebugEnabled()) {

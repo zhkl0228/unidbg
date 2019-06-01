@@ -64,7 +64,7 @@ public class ThumbIntercept extends ThumbSvc {
     }
 
     @Override
-    public int handle(Emulator emulator) {
+    public long handle(Emulator emulator) {
         Unicorn u = emulator.getUnicorn();
         if (callback != null) {
             callback.onIntercept(emulator);

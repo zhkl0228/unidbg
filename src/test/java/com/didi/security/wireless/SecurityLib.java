@@ -4,6 +4,7 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.file.IOResolver;
 import cn.banny.unidbg.hook.ReplaceCallback;
@@ -18,8 +19,6 @@ import cn.banny.unidbg.linux.file.SimpleFileIO;
 import cn.banny.unidbg.memory.Memory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.io.*;
 import java.net.*;
@@ -64,9 +63,9 @@ public class SecurityLib extends AbstractJni implements IOResolver {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 long currentTimeMillis = System.currentTimeMillis();
-                Unicorn unicorn = emulator.getUnicorn();
-                unicorn.reg_write(ArmConst.UC_ARM_REG_R1, (int) currentTimeMillis);
-                return HookStatus.LR(unicorn, (int) (currentTimeMillis >> 32));
+                EditableArm32RegisterContext context = emulator.getContext();
+                context.setR1((int) currentTimeMillis);
+                return HookStatus.LR(emulator, (int) (currentTimeMillis >> 32));
             }
         });
 

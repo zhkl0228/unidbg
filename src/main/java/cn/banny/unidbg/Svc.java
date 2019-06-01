@@ -7,6 +7,6 @@ public interface Svc {
 
     UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber);
 
-    int handle(Emulator emulator);
+    long handle(Emulator emulator);
 
 }

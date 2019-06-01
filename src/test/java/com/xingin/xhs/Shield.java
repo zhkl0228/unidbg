@@ -6,20 +6,18 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.file.IOResolver;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.xhook.IxHook;
-import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.dvm.*;
 import cn.banny.unidbg.linux.file.ByteArrayFileIO;
 import cn.banny.unidbg.memory.Memory;
-import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,51 +67,37 @@ public class Shield extends AbstractJni implements IOResolver {
         xHook.register("libshield.so", "strlen", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                Pointer pointer = emulator.getContext().getPointerArg(0);
                 System.out.println("strlen=" + pointer.getString(0));
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
         xHook.register("libshield.so", "memmove", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                int length = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                RegisterContext context = emulator.getContext();
+                Pointer dest = context.getPointerArg(0);
+                Pointer src = context.getPointerArg(1);
+                int length = context.getIntArg(2);
                 Inspector.inspect(src.getByteArray(0, length), "memmove dest=" + dest);
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
-        /*xHook.register("libshield.so", "__aeabi_memcpy", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                int length = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-                Inspector.inspect(src.getByteArray(0, length), "__aeabi_memcpy dest=" + dest);
-                return HookStatus.RET(unicorn, originFunction);
-            }
-        });*/
         xHook.register("libshield.so", "strcmp", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                RegisterContext context = emulator.getContext();
+                Pointer src = context.getPointerArg(0);
+                Pointer dest = context.getPointerArg(1);
                 String str = dest.getString(0);
                 Inspector.inspect(src.getByteArray(0, str.length()), "strcmp dest=" + str);
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
         xHook.refresh();
 
         DvmClass Chain = vm.resolveClass("okhttp3/Interceptor$Chain");
         long start = System.currentTimeMillis();
-//        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x400259a8);
-//        emulator.traceWrite(0xbffff504L, 0xbffff504L + 4);
         Number ret = RedHttpInterceptor.newObject(null).callJniMethod(emulator, "process(Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;", Chain.newObject(null));
         long hash = ret.intValue() & 0xffffffffL;
         DvmObject obj = vm.getObject(hash);

@@ -42,7 +42,7 @@ public class ArmLD64 extends Dlfcn {
                 case "dl_iterate_phdr":
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public int handle(Emulator emulator) {
+                        public long handle(Emulator emulator) {
                             Pointer cb = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             Pointer data = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                             log.info("dl_iterate_phdr cb=" + cb + ", data=" + data);
@@ -52,14 +52,14 @@ public class ArmLD64 extends Dlfcn {
                 case "dlerror":
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public int handle(Emulator emulator) {
-                            return (int) error.peer;
+                        public long handle(Emulator emulator) {
+                            return error.peer;
                         }
                     }).peer;
                 case "dlclose":
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public int handle(Emulator emulator) {
+                        public long handle(Emulator emulator) {
                             long handle = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
                             if (log.isDebugEnabled()) {
                                 log.debug("dlclose handle=0x" + Long.toHexString(handle));
@@ -97,7 +97,7 @@ public class ArmLD64 extends Dlfcn {
                             }
                         }
                         @Override
-                        public int handle(Emulator emulator) {
+                        public long handle(Emulator emulator) {
                             Pointer filename = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             int flags = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
                             if (log.isDebugEnabled()) {
@@ -109,7 +109,7 @@ public class ArmLD64 extends Dlfcn {
                 case "dladdr":
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public int handle(Emulator emulator) {
+                        public long handle(Emulator emulator) {
                             long addr = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
                             Pointer info = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                             log.info("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
@@ -119,7 +119,7 @@ public class ArmLD64 extends Dlfcn {
                 case "dlsym":
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public int handle(Emulator emulator) {
+                        public long handle(Emulator emulator) {
                             long handle = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
                             Pointer symbol = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                             if (log.isDebugEnabled()) {
@@ -131,7 +131,7 @@ public class ArmLD64 extends Dlfcn {
                 case "dl_unwind_find_exidx":
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public int handle(Emulator emulator) {
+                        public long handle(Emulator emulator) {
                             Pointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             Pointer pcount = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                             if (log.isDebugEnabled()) {
@@ -145,7 +145,7 @@ public class ArmLD64 extends Dlfcn {
         return 0;
     }
 
-    private int dlopen(Memory memory, String filename, Emulator emulator) {
+    private long dlopen(Memory memory, String filename, Emulator emulator) {
         Pointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
             Module module = memory.dlopen(filename, false);
@@ -181,7 +181,7 @@ public class ArmLD64 extends Dlfcn {
                     m.initFunctionList.clear();
                 }
 
-                return (int) module.base;
+                return module.base;
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);
