@@ -39,6 +39,7 @@ public class Substrate64Test extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x404c3398);
 //        emulator.traceCode();
 //        loader.setObjcRuntime(true);
+        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
@@ -155,7 +156,6 @@ public class Substrate64Test extends EmulatorTest {
             }
         });*/
 
-        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
             @Override

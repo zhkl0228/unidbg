@@ -8,6 +8,7 @@ import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.Cpsr;
+import cn.banny.unidbg.arm.context.EditableArm64RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.ios.file.LocalDarwinUdpSocket;
@@ -152,7 +153,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(u, emulator));
                         return;
                     case 116:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday());
+                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
                         return;
                     case 133:
                         u.reg_write(Arm64Const.UC_ARM64_REG_X0, sendto(u, emulator));
@@ -1066,14 +1067,16 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return sigprocmask(emulator, how, set, oldset);
     }
 
-    private long gettimeofday() {
+    private long gettimeofday(Emulator emulator) {
+        EditableArm64RegisterContext context = emulator.getContext();
         long currentTimeMillis = System.currentTimeMillis();
         long tv_sec = currentTimeMillis / 1000;
         long tv_usec = (currentTimeMillis % 1000) * 1000;
+        context.setXLong(1, tv_usec);
         if (log.isDebugEnabled()) {
             log.debug("gettimeofday");
         }
-        return (tv_usec << 32L) | tv_sec;
+        return tv_sec;
     }
 
     private int mach_absolute_time(Emulator emulator) {

@@ -185,7 +185,7 @@ public class Dyld64 extends Dyld {
                                         "ldr x0, [sp]", // with return address
                                         "add sp, sp, #0x8",
 
-                                        "ldp x20, x30, [sp]",
+                                        "ldp x29, x30, [sp]",
                                         "add sp, sp, #0x10",
                                         "ret"));
                                 byte[] code = encoded.getMachineCode();
@@ -437,7 +437,7 @@ public class Dyld64 extends Dyld {
                                         "ldr x0, [sp]", // with return address
                                         "add sp, sp, #0x8",
 
-                                        "ldp x20, x30, [sp]",
+                                        "ldp x29, x30, [sp]",
                                         "add sp, sp, #0x10",
                                         "ret"));
                                 byte[] code = encoded.getMachineCode();

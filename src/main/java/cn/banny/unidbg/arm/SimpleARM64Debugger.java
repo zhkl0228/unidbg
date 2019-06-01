@@ -3,26 +3,25 @@ package cn.banny.unidbg.arm;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.debugger.Debugger;
-import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
-import unicorn.ArmConst;
+import unicorn.Arm64Const;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.util.Scanner;
 
-class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
+class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
-    SimpleARMDebugger(Emulator emulator) {
+    SimpleARM64Debugger(Emulator emulator) {
         super(emulator);
     }
 
     @Override
     final void loop(Emulator emulator, Unicorn u, long address, int size) {
         System.out.println("debugger break at: 0x" + Long.toHexString(address));
-        boolean thumb = ARM.isThumb(u);
+        boolean thumb = false;
         long nextAddress = 0;
         try {
             emulator.showRegs();
@@ -68,21 +67,20 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
 
                     int reg = -1;
                     String name = null;
-                    if (command.startsWith("mr") && command.length() == 3) {
-                        char c = command.charAt(2);
-                        if (c >= '0' && c <= '7') {
-                            int r = c - '0';
-                            reg = ArmConst.UC_ARM_REG_R0 + r;
-                            name = "r" + r;
+                    if (command.startsWith("mx") && (command.length() == 3 || command.length() == 4)) {
+                        int idx = Integer.parseInt(command.substring(2));
+                        if (idx >= 0 && idx <= 28) {
+                            reg = Arm64Const.UC_ARM64_REG_X0 + idx;
+                            name = "x" + idx;
                         }
                     } else if ("mfp".equals(command)) {
-                        reg = ArmConst.UC_ARM_REG_FP;
+                        reg = Arm64Const.UC_ARM64_REG_FP;
                         name = "fp";
                     } else if ("mip".equals(command)) {
-                        reg = ArmConst.UC_ARM_REG_IP;
+                        reg = Arm64Const.UC_ARM64_REG_IP0;
                         name = "ip";
                     } else if ("msp".equals(command)) {
-                        reg = ArmConst.UC_ARM_REG_SP;
+                        reg = Arm64Const.UC_ARM64_REG_SP;
                         name = "sp";
                     } else if (command.startsWith("m0x")) {
                         long addr = Long.parseLong(command.substring(3).trim(), 16);
@@ -108,14 +106,13 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     Memory memory = emulator.getMemory();
                     String maxLengthSoName = memory.getMaxLengthLibraryName();
                     boolean hasTrace = false;
-                    UnicornPointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
-                    UnicornPointer lr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
-                    UnicornPointer r7 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R7);
+                    UnicornPointer lr = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR);
+                    UnicornPointer fp = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_FP);
                     do {
                         Module module = null;
                         if (lr != null) {
                             module = memory.findModuleByAddress(lr.peer);
-                            if (lr.peer == AndroidARMEmulator.LR) {
+                            if (lr.peer == AbstractARM64Emulator.LR) {
                                 break;
                             }
                         }
@@ -124,22 +121,22 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                         StringBuilder sb = new StringBuilder();
                         if (module != null) {
                             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
-                            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - module.base + (thumb ? 1 : 0)));
+                            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - module.base));
                         } else {
                             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(lr == null ? 0 : lr.peer)));
                             if (lr != null) {
-                                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 0xfffe0000L + (thumb ? 1 : 0)));
+                                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 0xfffe0000L));
                             }
                         }
                         System.out.println(sb);
 
-                        if (r7 == null || r7.peer < sp.peer) {
-                            System.err.println("r7=" + r7 + ", sp=" + sp);
+                        if (fp == null) {
+                            System.err.println("fp=" + fp);
                             break;
                         }
 
-                        lr = r7.getPointer(4);
-                        r7 = r7.getPointer(0);
+                        lr = fp.getPointer(8);
+                        fp = fp.getPointer(0);
                     } while(true);
                     if (!hasTrace) {
                         System.err.println("Decode back trace failed.");
@@ -163,14 +160,14 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     }
                 }
                 if ("blr".equals(line)) { // break LR
-                    long addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL;
+                    long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue();
                     breakMap.put(addr, null);
                     Module module = emulator.getMemory().findModuleByAddress(addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
                 if ("r".equals(line)) {
-                    long addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+                    long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
                     if (breakMap.containsKey(addr)) {
                         breakMap.remove(addr);
                         Module module = emulator.getMemory().findModuleByAddress(addr);
@@ -179,7 +176,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     continue;
                 }
                 if ("b".equals(line)) {
-                    long addr = ((Number) u.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+                    long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
                     breakMap.put(addr, null);
                     Module module = emulator.getMemory().findModuleByAddress(addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
@@ -232,7 +229,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("sblx: execute util BLX mnemonic");
         System.out.println();
         System.out.println("m(op) [size]: show memory, default size is 0x70, size may hex or decimal");
-        System.out.println("mr0-mr7, mfp, mip, msp [size]: show memory of specified register");
+        System.out.println("mx0-mx28, mfp, mip, msp [size]: show memory of specified register");
         System.out.println("m(address) [size]: show memory of specified address, address must start with 0x");
         System.out.println();
         System.out.println("b(address): add temporarily breakpoint, address must start with 0x, can be module offset");
