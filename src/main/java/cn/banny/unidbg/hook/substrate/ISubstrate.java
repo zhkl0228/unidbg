@@ -2,10 +2,11 @@ package cn.banny.unidbg.hook.substrate;
 
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
+import cn.banny.unidbg.hook.IHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import com.sun.jna.Pointer;
 
-public interface ISubstrate {
+public interface ISubstrate extends IHook {
 
     /**
      * MSImageRef MSGetImageByName(const char *file);

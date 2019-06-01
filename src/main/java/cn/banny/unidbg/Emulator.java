@@ -1,6 +1,6 @@
 package cn.banny.unidbg;
 
-import cn.banny.unidbg.arm.RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.debugger.Debugger;
 import cn.banny.unidbg.linux.android.dvm.VM;
 import cn.banny.unidbg.memory.Memory;
@@ -42,6 +42,11 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     void traceCode();
     void traceCode(long begin, long end);
+
+    /**
+     * redirect trace out
+     */
+    void redirectTrace(File outFile);
 
     void runAsm(String...asm);
 
@@ -114,6 +119,6 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     void setTimeout(long timeout);
 
-    <T extends RegisterContext> T getRegisterContext();
+    <T extends RegisterContext> T getContext();
 
 }

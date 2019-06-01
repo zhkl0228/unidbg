@@ -1,10 +1,11 @@
 package cn.banny.unidbg.hook.hookzz;
 
 import cn.banny.unidbg.Symbol;
-import cn.banny.unidbg.arm.RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
+import cn.banny.unidbg.hook.IHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 
-public interface IHookZz {
+public interface IHookZz extends IHook {
 
     int RS_SUCCESS = 1;
 

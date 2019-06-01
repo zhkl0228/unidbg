@@ -19,6 +19,16 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
+    public UnicornPointer getPointerArg(int index) {
+        if (index < 8) {
+            return getXPointer(index);
+        }
+
+        UnicornPointer sp = getStackPointer();
+        return sp.getPointer((index - 8) * emulator.getPointerSize());
+    }
+
+    @Override
     public long getXLong(int index) {
         if (index >= 0 && index <= 28) {
             return reg_ctx.getLong(index * 8);
@@ -47,13 +57,13 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public long getLr() {
+    public long getLR() {
         return reg_ctx.getLong(30 * 8);
     }
 
     @Override
-    public UnicornPointer getLrPointer() {
-        return UnicornPointer.pointer(emulator, getLr());
+    public UnicornPointer getLRPointer() {
+        return UnicornPointer.pointer(emulator, getLR());
     }
 
     @Override

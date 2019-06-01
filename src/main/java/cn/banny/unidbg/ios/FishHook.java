@@ -74,7 +74,7 @@ public class FishHook extends BaseHook implements IFishHook {
     @Override
     public void rebindSymbolImage(MachOModule module, String symbol, ReplaceCallback callback) {
         long header = module.machHeader;
-        int slide = Dyld.computeSlide(emulator, header);
+        long slide = Dyld.computeSlide(emulator, header);
         Pointer rebinding = createRebinding(symbol, callback);
         int ret = rebind_symbols_image.call(emulator, header, slide, rebinding, 1)[0].intValue();
         if (ret != RET_SUCCESS) {

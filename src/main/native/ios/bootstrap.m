@@ -11,8 +11,13 @@
 @implementation BootstrapTest
 -(void) testObjc {
   NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-  dateFormatter.dateFormat = [NSString stringWithFormat:@"yyyy-MM-dd HH:mm:ss"];
-  NSLog(@"[%@]Hello, unidbg ObjC: %@", [dateFormatter stringFromDate:[NSDate date]], self);
+  dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+  NSDate *date = [NSDate date];
+  NSString *str = [date description];
+  NSLog(@"[%@]Hello, unidbg: %@, date=%@", [dateFormatter stringFromDate:date], self, str);
+}
+-(NSString *) description {
+  return @"This is ObjC TEST";
 }
 @end
 

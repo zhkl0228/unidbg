@@ -1,6 +1,8 @@
 package cn.banny.unidbg.ios.classdump;
 
-public interface IClassDumper {
+import cn.banny.unidbg.hook.IHook;
+
+public interface IClassDumper extends IHook {
 
     String dumpClass(String className);
 

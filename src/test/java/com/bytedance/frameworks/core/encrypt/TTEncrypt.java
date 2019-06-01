@@ -6,23 +6,24 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.ARMEmulator;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
-import cn.banny.unidbg.hook.hookzz.*;
+import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
+import cn.banny.unidbg.hook.hookzz.HookZz;
+import cn.banny.unidbg.hook.hookzz.IHookZz;
+import cn.banny.unidbg.hook.hookzz.WrapCallback;
 import cn.banny.unidbg.hook.xhook.IxHook;
-import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
+import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.dvm.ByteArray;
 import cn.banny.unidbg.linux.android.dvm.DalvikModule;
 import cn.banny.unidbg.linux.android.dvm.DvmClass;
 import cn.banny.unidbg.linux.android.dvm.VM;
 import cn.banny.unidbg.memory.Memory;
-import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,23 +78,23 @@ public class TTEncrypt {
         Inspector.inspect(sbox1.createPointer(emulator).getByteArray(0, 256), "sbox1");
 
         IHookZz hookZz = HookZz.getInstance(emulator);
-        hookZz.wrap(module.findSymbolByName("ss_encrypt"), new WrapCallback<Arm32RegisterContext>() {
+        hookZz.wrap(module.findSymbolByName("ss_encrypt"), new WrapCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                Pointer pointer = ctx.getR2Pointer();
-                int length = (int) ctx.getR3Long();
+            public void preCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
+                Pointer pointer = ctx.getPointerArg(2);
+                int length = ctx.getIntArg(3);
                 byte[] key = pointer.getByteArray(0, length);
                 Inspector.inspect(key, "ss_encrypt key");
             }
             @Override
-            public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                System.out.println("ss_encrypt.postCall R0=" + ctx.getR0Long());
+            public void postCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
+                System.out.println("ss_encrypt.postCall R0=" + ctx.getLongArg(0));
             }
         });
         hookZz.wrap(module.base + 0x00000F5C + 1, new WrapCallback<Arm32RegisterContext>() {
             @Override
             public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                System.out.println("R3=" + ctx.getR3Long() + ", R10=0x" + Long.toHexString(ctx.getR10Long()));
+                System.out.println("R3=" + ctx.getLongArg(3) + ", R10=0x" + Long.toHexString(ctx.getR10Long()));
             }
         });
 
@@ -101,10 +102,8 @@ public class TTEncrypt {
         hookZz.replace(module.findSymbolByName("ss_encrypted_size"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Number arg0 = (Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0);
-                System.out.println("ss_encrypted_size.onCall arg0=" + arg0.intValue() + ", originFunction=0x" + Long.toHexString(originFunction));
-                return HookStatus.RET(unicorn, originFunction);
+                System.out.println("ss_encrypted_size.onCall arg0=" + emulator.getContext().getIntArg(0) + ", originFunction=0x" + Long.toHexString(originFunction));
+                return HookStatus.RET(emulator, originFunction);
             }
         });
         hookZz.disable_arm_arm64_b_branch();
@@ -113,31 +112,31 @@ public class TTEncrypt {
         xHook.register("libttEncrypt.so", "strlen", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                Pointer pointer = emulator.getContext().getPointerArg(0);
                 System.out.println("strlen=" + pointer.getString(0));
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
         xHook.register("libttEncrypt.so", "memmove", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                int length = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                RegisterContext context = emulator.getContext();
+                Pointer dest = context.getPointerArg(0);
+                Pointer src = context.getPointerArg(1);
+                int length = context.getIntArg(2);
                 Inspector.inspect(src.getByteArray(0, length), "memmove dest=" + dest);
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
         xHook.register("libttEncrypt.so", "memcpy", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Pointer dest = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                Pointer src = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                int length = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                RegisterContext context = emulator.getContext();
+                Pointer dest = context.getPointerArg(0);
+                Pointer src = context.getPointerArg(1);
+                int length = context.getIntArg(2);
                 Inspector.inspect(src.getByteArray(0, length), "memcpy dest=" + dest);
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
         xHook.refresh();

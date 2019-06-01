@@ -5,8 +5,8 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.android.EmulatorTest;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.substrate.ISubstrate;
 import cn.banny.unidbg.memory.MemoryBlock;
@@ -78,11 +78,11 @@ public class XpcTest extends EmulatorTest {
         substrate.hookFunction(_MSFindSymbol, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Arm32RegisterContext context = emulator.getRegisterContext();
-                long image = context.getR0Long();
-                Pointer symbol = context.getR1Pointer();
+                RegisterContext context = emulator.getContext();
+                long image = context.getLongArg(0);
+                Pointer symbol = context.getPointerArg(1);
                 System.out.println("_MSFindSymbol image=0x" + Long.toHexString(image) + ", symbol=" + symbol.getString(0));
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
 

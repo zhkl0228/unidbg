@@ -63,7 +63,7 @@ public class InlineHook {
                     }
                 }
                 @Override
-                public int handle(Emulator emulator) {
+                public long handle(Emulator emulator) {
                     if (callback != null) {
                         return callback.onHook(emulator);
                     }
@@ -114,7 +114,7 @@ public class InlineHook {
                     }
                 }
                 @Override
-                public int handle(Emulator emulator) {
+                public long handle(Emulator emulator) {
                     if (callback != null) {
                         return callback.onHook(emulator);
                     }

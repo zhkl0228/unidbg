@@ -1,7 +1,7 @@
 package cn.banny.unidbg.hook.hookzz;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import unicorn.ArmConst;
@@ -17,6 +17,27 @@ public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implem
         super(context);
         this.reg_ctx = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0).share(8); // skip dummy
         this.emulator = emulator;
+    }
+
+    @Override
+    public UnicornPointer getPointerArg(int index) {
+        if (index < 4) {
+            switch (index) {
+                case 0:
+                    return getR0Pointer();
+                case 1:
+                    return getR1Pointer();
+                case 2:
+                    return getR2Pointer();
+                case 3:
+                    return getR3Pointer();
+                default:
+                    throw new IllegalArgumentException("index=" + index);
+            }
+        }
+
+        UnicornPointer sp = getStackPointer();
+        return sp.getPointer((index - 4) * emulator.getPointerSize());
     }
 
     @Override
@@ -85,7 +106,7 @@ public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public long getLr() {
+    public long getLR() {
         return reg_ctx.getInt(52) & 0xffffffffL;
     }
 
@@ -225,7 +246,7 @@ public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public UnicornPointer getLrPointer() {
-        return UnicornPointer.pointer(emulator, getLr());
+    public UnicornPointer getLRPointer() {
+        return UnicornPointer.pointer(emulator, getLR());
     }
 }

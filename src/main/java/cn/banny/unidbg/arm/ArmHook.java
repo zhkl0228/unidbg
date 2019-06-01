@@ -34,20 +34,20 @@ public abstract class ArmHook extends ArmSvc {
     }
 
     @Override
-    public final int handle(Emulator emulator) {
+    public final long handle(Emulator emulator) {
         Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
-            HookStatus status = hook(u, emulator);
+            HookStatus status = hook(emulator);
             sp = sp.share(-4);
             sp.setInt(0, (int) status.jump);
 
-            return (int) status.returnValue;
+            return status.returnValue;
         } finally {
             u.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) sp).peer);
         }
     }
 
-    protected abstract HookStatus hook(Unicorn u, Emulator emulator);
+    protected abstract HookStatus hook(Emulator emulator);
 
 }

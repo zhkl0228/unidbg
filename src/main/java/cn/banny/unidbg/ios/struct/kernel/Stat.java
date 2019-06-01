@@ -6,10 +6,11 @@ import com.sun.jna.Pointer;
 import java.util.Arrays;
 import java.util.List;
 
-public class Stat extends StatStructure {
+public final class Stat extends StatStructure {
 
     public Stat(Pointer p) {
         super(p);
+        unpack();
     }
 
     @Override

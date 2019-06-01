@@ -2,6 +2,8 @@ package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.*;
 import cn.banny.unidbg.arm.*;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.Arm64RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.hook.HookListener;
 import cn.banny.unidbg.ios.struct.DyldImageInfo;
@@ -111,10 +113,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         Pointer gap = allocateStack(emulator.getPointerSize());
 
-        /*emulator.traceWrite(thread.peer, thread.peer + 0x1000);
-        emulator.attach().addBreakPoint(null, 0x4041c740);
-        log.info("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", gap=" + gap + ", errno=" + errno);*/
-
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
         } else {
@@ -216,8 +214,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
             Module bootstrap = loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
 //            emulator.traceCode();
+//            emulator.attach().addBreakPoint(null, 0x409a7f44);
+//            emulator.attach().addBreakPoint(null, 0x40b95d06);
             bootstrap.callEntry(emulator);
-//            emulator.attach().debug(emulator);
+//            emulator.attach().debug();
         }
 
         long start = System.currentTimeMillis();
@@ -528,23 +528,23 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             } else {
                 Svc svc = emulator.getPointerSize() == 4 ? new ArmHook() {
                     @Override
-                    protected HookStatus hook(Unicorn u, Emulator emulator) {
-                        Arm32RegisterContext context = emulator.getRegisterContext();
+                    protected HookStatus hook(Emulator emulator) {
+                        Arm32RegisterContext context = emulator.getContext();
                         Pointer message = context.getR0Pointer();
                         int length = context.getR1Int();
                         boolean withSysLogBanner = context.getR2Int() != 0;
                         __NSSetLogCStringFunction(message, length, withSysLogBanner);
-                        return HookStatus.LR(u, 0);
+                        return HookStatus.LR(emulator, 0);
                     }
                 } : new Arm64Hook() {
                     @Override
-                    protected HookStatus hook(Unicorn u, Emulator emulator) {
-                        Arm64RegisterContext context = emulator.getRegisterContext();
+                    protected HookStatus hook(Emulator emulator) {
+                        Arm64RegisterContext context = emulator.getContext();
                         Pointer message = context.getXPointer(0);
                         int length = context.getXInt(1);
                         boolean withSysLogBanner = context.getXInt(2) != 0;
                         __NSSetLogCStringFunction(message, length, withSysLogBanner);
-                        return HookStatus.LR(u, 0);
+                        return HookStatus.LR(emulator, 0);
                     }
                 };
                 _NSSetLogCStringFunction.call(emulator, emulator.getSvcMemory().registerSvc(svc));
@@ -861,7 +861,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 if (dyldLazyBinder == null) {
                                     dyldLazyBinder = emulator.getSvcMemory().registerSvc(new ArmSvc() {
                                         @Override
-                                        public int handle(Emulator emulator) {
+                                        public long handle(Emulator emulator) {
                                             return ((Dyld) emulator.getDlfcn())._stub_binding_helper();
                                         }
                                     });
@@ -869,7 +869,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 if (dyldFuncLookup == null) {
                                     dyldFuncLookup = emulator.getSvcMemory().registerSvc(new ArmSvc() {
                                         @Override
-                                        public int handle(Emulator emulator) {
+                                        public long handle(Emulator emulator) {
                                             String name = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0).getString(0);
                                             Pointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                                             return ((Dyld) emulator.getDlfcn())._dyld_func_lookup(emulator, name, address);
@@ -893,7 +893,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 if (dyldLazyBinder == null) {
                                     dyldLazyBinder = emulator.getSvcMemory().registerSvc(new Arm64Svc() {
                                         @Override
-                                        public int handle(Emulator emulator) {
+                                        public long handle(Emulator emulator) {
                                             return ((Dyld) emulator.getDlfcn())._stub_binding_helper();
                                         }
                                     });
@@ -901,7 +901,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                 if (dyldFuncLookup == null) {
                                     dyldFuncLookup = emulator.getSvcMemory().registerSvc(new Arm64Svc() {
                                         @Override
-                                        public int handle(Emulator emulator) {
+                                        public long handle(Emulator emulator) {
                                             String name = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0).getString(0);
                                             Pointer address = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                                             return ((Dyld) emulator.getDlfcn())._dyld_func_lookup(emulator, name, address);
@@ -1355,7 +1355,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         info.pack();
         switch (state) {
             case Dyld.dyld_image_state_bound:
-                int slide = Dyld.computeSlide(emulator, module.machHeader);
+                long slide = Dyld.computeSlide(emulator, module.machHeader);
                 if (!module.executable) {
                     for (UnicornPointer callback : addImageCallbacks) {
                         if (log.isDebugEnabled()) {

@@ -1,12 +1,13 @@
 package cn.banny.unidbg.hook.fishhook;
 
+import cn.banny.unidbg.hook.IHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.ios.MachOModule;
 
 /**
  * Only support iOS
  */
-public interface IFishHook {
+public interface IFishHook extends IHook {
 
     int RET_SUCCESS = 0;
 

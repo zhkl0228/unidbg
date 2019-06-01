@@ -1,9 +1,10 @@
 package cn.banny.unidbg.hook.whale;
 
 import cn.banny.unidbg.Symbol;
+import cn.banny.unidbg.hook.IHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 
-public interface IWhale {
+public interface IWhale extends IHook {
 
     void WInlineHookFunction(long address, ReplaceCallback callback);
     void WInlineHookFunction(Symbol symbol, ReplaceCallback callback);

@@ -30,7 +30,7 @@ public interface FileIO {
     int read(Unicorn unicorn, Pointer buffer, int count);
 
     int fstat(Emulator emulator, Unicorn unicorn, Pointer stat);
-    int fstat(StatStructure stat);
+    int fstat(Emulator emulator, StatStructure stat);
 
     int fcntl(int cmd, int arg);
 
@@ -65,4 +65,6 @@ public interface FileIO {
     int recvfrom(Unicorn unicorn, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen);
 
     int fstatfs(StatFS statFS);
+
+    String getPath();
 }

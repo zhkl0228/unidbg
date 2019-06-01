@@ -57,7 +57,7 @@ public class UnicornPointer extends Pointer {
         return addr == 0 ? null : new UnicornPointer(emulator, addr, emulator.getPointerSize());
     }
 
-    private static UnicornPointer pointer(Emulator emulator, Number number) {
+    public static UnicornPointer pointer(Emulator emulator, Number number) {
         return pointer(emulator, emulator.getPointerSize() == 4 ? number.intValue() & 0xffffffffL : number.longValue());
     }
 

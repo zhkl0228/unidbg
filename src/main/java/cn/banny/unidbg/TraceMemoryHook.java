@@ -6,6 +6,7 @@ import unicorn.ArmConst;
 import unicorn.MemHook;
 import unicorn.Unicorn;
 
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -15,6 +16,8 @@ import java.nio.ByteOrder;
  */
 
 class TraceMemoryHook implements MemHook {
+
+    PrintStream redirect;
 
     @Override
     public void hook(Unicorn u, long address, int size, Object user) {
@@ -26,45 +29,27 @@ class TraceMemoryHook implements MemHook {
             value = Hex.encodeHexString(data);
         }
         Emulator emulator = (Emulator) user;
+        printMsg("### Memory READ at 0x", emulator, address, size, value);
+    }
+
+    private void printMsg(String type, Emulator emulator, long address, int size, String value) {
         UnicornPointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
         UnicornPointer lr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
-        Module pcm = pc == null ? null : emulator.getMemory().findModuleByAddress(pc.peer);
-        Module lrm = lr == null ? null : emulator.getMemory().findModuleByAddress(lr.peer);
         StringBuilder sb = new StringBuilder();
-        sb.append("### Memory READ at 0x").append(Long.toHexString(address)).append(", data size = ").append(size).append(", data value = ").append(value);
-        if (pcm == null) {
-            sb.append(" pc=").append(pc);
-        } else {
-            sb.append(" pc=[").append(pcm.name).append("]0x").append(Long.toHexString(pc.peer - pcm.base));
+        sb.append(type).append(Long.toHexString(address)).append(", data size = ").append(size).append(", data value = ").append(value);
+        sb.append(" pc=").append(pc);
+        sb.append(" lr=").append(lr);
+        PrintStream out = System.out;
+        if (redirect != null) {
+            out = redirect;
         }
-        if (lrm == null) {
-            sb.append(" lr=").append(lr);
-        } else {
-            sb.append(" lr=[").append(lrm.name).append("]0x").append(Long.toHexString(lr.peer - lrm.base));
-        }
-        System.out.println(sb);
+        out.println(sb);
     }
 
     @Override
     public void hook(Unicorn u, long address, int size, long value, Object user) {
         Emulator emulator = (Emulator) user;
-        UnicornPointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
-        UnicornPointer lr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
-        Module pcm = pc == null ? null : emulator.getMemory().findModuleByAddress(pc.peer);
-        Module lrm = lr == null ? null : emulator.getMemory().findModuleByAddress(lr.peer);
-        StringBuilder sb = new StringBuilder();
-        sb.append("### Memory WRITE at 0x").append(Long.toHexString(address)).append(", data size = ").append(size).append(", data value = 0x").append(Long.toHexString(value));
-        if (pcm == null) {
-            sb.append(" pc=").append(pc);
-        } else {
-            sb.append(" pc=[").append(pcm.name).append("]0x").append(Long.toHexString(pc.peer - pcm.base));
-        }
-        if (lrm == null) {
-            sb.append(" lr=").append(lr);
-        } else {
-            sb.append(" lr=[").append(lrm.name).append("]0x").append(Long.toHexString(lr.peer - lrm.base));
-        }
-        System.out.println(sb.toString());
+        printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
     }
 
 }

@@ -5,8 +5,8 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.android.EmulatorTest;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.substrate.ISubstrate;
 import cn.banny.unidbg.ios.classdump.ClassDumper;
@@ -37,23 +37,24 @@ public class ClassDumpTest extends EmulatorTest {
         Module main = loader.getExecutableModule();
         Symbol _objc_getMetaClass = main.findSymbolByName("_objc_getMetaClass");
         assertNotNull(_objc_getMetaClass);
-        long ClassDump = _objc_getMetaClass.call(emulator, "ClassDump")[0].intValue() & 0xffffffffL;
+        Number ClassDump = _objc_getMetaClass.call(emulator, "ClassDump")[0];
         assertTrue(ClassDump != 0);
 
         Symbol _sel_registerName = main.findSymbolByName("_sel_registerName");
         assertNotNull(_sel_registerName);
-        long my_dump_class = _sel_registerName.call(emulator, "my_dump_class:")[0].intValue() & 0xffffffffL;
+        Number my_dump_class = _sel_registerName.call(emulator, "my_dump_class:")[0];
         assertTrue(my_dump_class != 0);
 
         substrate.hookMessageEx(UnicornPointer.pointer(emulator, ClassDump), UnicornPointer.pointer(emulator, my_dump_class), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Arm32RegisterContext context = emulator.getRegisterContext();
-                Pointer id = context.getR0Pointer();
-                Pointer SEL = context.getR1Pointer();
-                Pointer name = context.getR2Pointer();
+                RegisterContext context = emulator.getContext();
+                Pointer id = context.getPointerArg(0);
+                Pointer SEL = context.getPointerArg(1);
+                Pointer name = context.getPointerArg(2);
                 System.err.println("my_dump_class id=" + id + ", SEL=" + SEL + ", name=" + name.getString(0));
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                name.setString(0, "NSDate");
+                return HookStatus.RET(emulator, originFunction);
             }
         });
 

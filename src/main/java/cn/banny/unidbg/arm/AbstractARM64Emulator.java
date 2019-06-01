@@ -2,6 +2,8 @@ package cn.banny.unidbg.arm;
 
 import capstone.Capstone;
 import cn.banny.unidbg.AbstractEmulator;
+import cn.banny.unidbg.arm.context.RegisterContext;
+import cn.banny.unidbg.arm.context.UnicornArm64RegisterContext;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.spi.Dlfcn;
 import cn.banny.unidbg.unix.UnixSyscallHandler;

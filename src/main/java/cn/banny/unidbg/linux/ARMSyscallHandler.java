@@ -6,7 +6,7 @@ import cn.banny.unidbg.StopEmulatorException;
 import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;
@@ -67,7 +67,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             if (svcNumber != 0) {
                 Svc svc = svcMemory.getSvc(svcNumber);
                 if (svc != null) {
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, svc.handle(emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));
                     return;
                 }
                 u.emu_stop();
@@ -938,7 +938,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int nanosleep(Emulator emulator) {
-        Arm32RegisterContext context = emulator.getRegisterContext();
+        Arm32RegisterContext context = emulator.getContext();
         Pointer req = context.getR0Pointer();
         Pointer rem = context.getR1Pointer();
         int tv_sec = req.getInt(0);
@@ -963,7 +963,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int setitimer(Emulator emulator) {
-        Arm32RegisterContext context = emulator.getRegisterContext();
+        Arm32RegisterContext context = emulator.getContext();
         int which = context.getR0Int();
         Pointer new_value = context.getR1Pointer();
         Pointer old_value = context.getR2Pointer();

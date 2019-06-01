@@ -2,7 +2,7 @@ package cn.banny.unidbg.linux.android.dvm;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.ArmSvc;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -37,8 +37,8 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _FindClass = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
-                Arm32RegisterContext context = emulator.getRegisterContext();
+            public long handle(Emulator emulator) {
+                Arm32RegisterContext context = emulator.getContext();
                 Pointer env = context.getR0Pointer();
                 Pointer className = context.getR1Pointer();
                 String name = className.getString(0);
@@ -47,13 +47,13 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("FindClass env=" + env + ", className=" + name + ", hash=0x" + Long.toHexString(hash));
                 }
-                return (int) hash;
+                return hash;
             }
         });
 
         Pointer _Throw = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 DvmObject dvmObject = getObject(object.peer);
                 log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getObjectType());
@@ -64,17 +64,17 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _ExceptionOccurred = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionOccurred");
                 }
-                return jthrowable == null ? JNI_NULL : (int) (jthrowable.hashCode() & 0xffffffffL);
+                return jthrowable == null ? JNI_NULL : (jthrowable.hashCode() & 0xffffffffL);
             }
         });
 
         Pointer _ExceptionClear = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionClear");
                 }
@@ -85,7 +85,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _PushLocalFrame = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 int capacity = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                 if (log.isDebugEnabled()) {
                     log.debug("PushLocalFrame capacity=" + capacity);
@@ -96,18 +96,18 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _PopLocalFrame = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer jresult = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 if (log.isDebugEnabled()) {
                     log.debug("PopLocalFrame jresult=" + jresult);
                 }
-                return jresult == null ? 0 : (int) jresult.peer;
+                return jresult == null ? 0 : jresult.peer;
             }
         });
 
         Pointer _NewGlobalRef = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 if (object == null) {
                     return 0;
@@ -117,13 +117,13 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("NewGlobalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
                 }
                 addObject(dvmObject, true);
-                return (int) object.peer;
+                return object.peer;
             }
         });
 
         Pointer _DeleteGlobalRef = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteGlobalRef object=" + object);
@@ -135,7 +135,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _DeleteLocalRef = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteLocalRef object=" + object);
@@ -147,7 +147,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _IsSameObject = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Pointer ref1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Pointer ref2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -159,19 +159,19 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _NewLocalRef = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 DvmObject dvmObject = getObject(object.peer);
                 if (log.isDebugEnabled()) {
                     log.debug("NewLocalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
                 }
-                return (int) object.peer;
+                return object.peer;
             }
         });
 
         Pointer _EnsureLocalCapacity = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 int capacity = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                 if (log.isDebugEnabled()) {
                     log.debug("EnsureLocalCapacity capacity=" + capacity);
@@ -182,7 +182,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _NewObject = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 DvmClass dvmClass = classMap.get(clazz.peer);
@@ -193,14 +193,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.newObject(ArmVarArg.armVarArg(emulator, DalvikVM.this, 3));
+                    return dvmMethod.newObject(ArmVarArg.create(emulator, DalvikVM.this));
                 }
             }
         });
 
         Pointer _NewObjectV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -219,7 +219,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetObjectClass = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 DvmObject dvmObject = getObject(object.peer);
                 if (log.isDebugEnabled()) {
@@ -236,7 +236,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _IsInstanceOf = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 DvmObject dvmObject = getObject(object.peer);
@@ -253,7 +253,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetMethodID = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Pointer methodName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 Pointer argsPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -273,7 +273,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallObjectMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -285,14 +285,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return addObject(dvmMethod.callObjectMethod(dvmObject, ArmVarArg.armVarArg(emulator, DalvikVM.this, 3)), false);
+                    return addObject(dvmMethod.callObjectMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this)), false);
                 }
             }
         });
 
         Pointer _CallObjectMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -312,7 +312,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallBooleanMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -324,14 +324,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.armVarArg(emulator, DalvikVM.this, 3));
+                    return dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                 }
             }
         });
 
         Pointer _CallBooleanMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -351,7 +351,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallIntMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -363,14 +363,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callIntMethod(dvmObject, ArmVarArg.armVarArg(emulator, DalvikVM.this, 3));
+                    return dvmMethod.callIntMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                 }
             }
         });
 
         Pointer _CallIntMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -390,7 +390,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallVoidMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -402,7 +402,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    dvmMethod.callVoidMethod(dvmObject, ArmVarArg.armVarArg(emulator, DalvikVM.this, 3));
+                    dvmMethod.callVoidMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     return 0;
                 }
             }
@@ -410,7 +410,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallVoidMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -431,7 +431,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetFieldID = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Pointer fieldName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 Pointer argsPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -451,7 +451,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetObjectField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -470,7 +470,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetBooleanField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -489,7 +489,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetIntField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -508,7 +508,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _SetObjectField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer value = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -529,7 +529,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _SetBooleanField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 int value = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
@@ -550,7 +550,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _SetIntField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 int value = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
@@ -571,7 +571,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _SetLongField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
@@ -594,7 +594,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetStaticMethodID = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Pointer methodName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 Pointer argsPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -614,7 +614,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallStaticObjectMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -625,14 +625,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return addObject(dvmMethod.callStaticObjectMethod(ArmVarArg.armVarArg(emulator, DalvikVM.this, 3)), false);
+                    return addObject(dvmMethod.callStaticObjectMethod(ArmVarArg.create(emulator, DalvikVM.this)), false);
                 }
             }
         });
 
         Pointer _CallStaticObjectMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -651,7 +651,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallStaticBooleanMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -662,14 +662,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.CallStaticBooleanMethod(ArmVarArg.armVarArg(emulator, DalvikVM.this, 3));
+                    return dvmMethod.CallStaticBooleanMethod(ArmVarArg.create(emulator, DalvikVM.this));
                 }
             }
         });
 
         Pointer _CallStaticBooleanMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -688,7 +688,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallStaticIntMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -699,14 +699,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    return dvmMethod.callStaticIntMethod(ArmVarArg.armVarArg(emulator, DalvikVM.this, 3));
+                    return dvmMethod.callStaticIntMethod(ArmVarArg.create(emulator, DalvikVM.this));
                 }
             }
         });
 
         Pointer _CallStaticIntMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -725,7 +725,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _CallStaticLongMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -739,14 +739,14 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     long value = dvmMethod.callStaticLongMethodV(new VaList(DalvikVM.this, va_list));
                     emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (value >> 32));
-                    return (int) (value & 0xffffffffL);
+                    return (value & 0xffffffffL);
                 }
             }
         });
 
         Pointer _CallStaticVoidMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -766,7 +766,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetStaticFieldID = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Pointer fieldName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 Pointer argsPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
@@ -786,7 +786,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetStaticObjectField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -804,7 +804,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetStaticIntField = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -822,7 +822,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetStringUTFLength = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 DvmObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringUTFLength string=" + string + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
@@ -835,27 +835,28 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetStringUTFChars = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 StringObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 String value = string.getValue();
-                byte[] data = value.getBytes(StandardCharsets.UTF_8);
+                byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
+                byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
                 MemoryBlock memoryBlock = emulator.getMemory().malloc(data.length);
                 memoryBlock.getPointer().write(0, data, 0, data.length);
                 string.memoryBlock = memoryBlock;
-                return (int) memoryBlock.getPointer().peer;
+                return memoryBlock.getPointer().peer;
             }
         });
 
         Pointer _ReleaseStringUTFChars = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 StringObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -871,7 +872,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetArrayLength = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Array array = getObject(pointer.peer);
                 if (log.isDebugEnabled()) {
@@ -883,7 +884,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetObjectArrayElement = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 ArrayObject array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 int index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
                 if (log.isDebugEnabled()) {
@@ -895,7 +896,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _NewByteArray = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 int size = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                 if (log.isDebugEnabled()) {
                     log.debug("NewByteArray size=" + size);
@@ -906,7 +907,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _NewIntArray = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 int size = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                 if (log.isDebugEnabled()) {
                     log.debug("NewIntArray size=" + size);
@@ -917,7 +918,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetByteArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 ByteArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -930,13 +931,13 @@ public class DalvikVM extends BaseVM implements VM {
                 MemoryBlock memoryBlock = emulator.getMemory().malloc(value.length);
                 memoryBlock.getPointer().write(0, value, 0, value.length);
                 array.memoryBlock = memoryBlock;
-                return (int) memoryBlock.getPointer().peer;
+                return memoryBlock.getPointer().peer;
             }
         });
 
         Pointer _GetStringLength = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 DvmObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringLength string=" + string + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
@@ -948,15 +949,15 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetStringChars = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 StringObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 String value = string.getValue();
-                byte[] data = new byte[value.length() * 2];
-                ByteBuffer buffer = ByteBuffer.wrap(data);
+                byte[] bytes = new byte[value.length() * 2];
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 for (char c : value.toCharArray()) {
                     buffer.putChar(c);
@@ -964,16 +965,17 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
+                byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
                 MemoryBlock memoryBlock = emulator.getMemory().malloc(data.length);
                 memoryBlock.getPointer().write(0, data, 0, data.length);
                 string.memoryBlock = memoryBlock;
-                return (int) memoryBlock.getPointer().peer;
+                return memoryBlock.getPointer().peer;
             }
         });
 
         Pointer _ReleaseStringChars = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 StringObject string = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
@@ -989,7 +991,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _NewStringUTF = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Pointer bytes = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 String string = bytes.getString(0);
                 if (log.isDebugEnabled()) {
@@ -1001,7 +1003,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _ReleaseByteArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 ByteArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 int mode = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
@@ -1027,7 +1029,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetByteArrayRegion = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Unicorn u = emulator.getUnicorn();
                 ByteArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 int start = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
@@ -1044,7 +1046,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _SetByteArrayRegion = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Unicorn u = emulator.getUnicorn();
                 ByteArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 int start = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
@@ -1061,7 +1063,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _SetIntArrayRegion = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Unicorn u = emulator.getUnicorn();
                 IntArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 int start = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
@@ -1078,7 +1080,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _RegisterNatives = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Unicorn u = emulator.getUnicorn();
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Pointer methods = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
@@ -1105,7 +1107,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetJavaVM = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer vm = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 if (log.isDebugEnabled()) {
                     log.debug("GetJavaVM vm=" + vm);
@@ -1117,7 +1119,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _ExceptionCheck = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionCheck jthrowable=" + jthrowable);
                 }
@@ -1127,7 +1129,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         Pointer _GetObjectRefType = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 DvmObject dvmGlobalObject = globalObjectMap.get(object.toUIntPeer());
                 DvmObject dvmLocalObject = localObjectMap.get(object.toUIntPeer());
@@ -1219,7 +1221,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         UnicornPointer _AttachCurrentThread = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Pointer vm = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 Pointer env = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 Pointer args = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2); // JavaVMAttachArgs*
@@ -1233,7 +1235,7 @@ public class DalvikVM extends BaseVM implements VM {
 
         UnicornPointer _GetEnv = svcMemory.registerSvc(new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 Pointer vm = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 Pointer env = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 int version = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R2)).intValue();

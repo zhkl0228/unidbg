@@ -4,7 +4,7 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.Arm64Svc;
 import cn.banny.unidbg.arm.ArmSvc;
-import cn.banny.unidbg.arm.RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -105,14 +105,14 @@ public class HookZz extends BaseHook implements IHookZz {
         final Map<String, Object> context = new HashMap<>();
         Pointer preCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 context.clear();
                 callback.preCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 context.clear();
                 callback.preCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
@@ -120,13 +120,13 @@ public class HookZz extends BaseHook implements IHookZz {
         });
         Pointer postCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 callback.postCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
-            public int handle(Emulator emulator) {
+            public long handle(Emulator emulator) {
                 callback.postCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }

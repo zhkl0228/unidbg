@@ -85,4 +85,6 @@ public interface MachO {
 
     int VM_FLAGS_OVERWRITE = 0x4000; /* delete any existing mappings first */
 
+    int F_GETPATH = 50; /* return the full path of the fd */
+
 }

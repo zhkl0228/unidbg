@@ -126,25 +126,7 @@ public class SimpleARMDebugger implements Debugger {
         while ((line = scanner.nextLine()) != null) {
             try {
                 if ("help".equals(line)) {
-                    System.out.println("c: continue");
-                    System.out.println("n: step over");
-                    System.out.println("bt: back trace");
-                    System.out.println();
-                    System.out.println("s|si: step into");
-                    System.out.println("s[decimal]: execute specified amount instruction");
-                    System.out.println("sblx: execute util BLX mnemonic");
-                    System.out.println();
-                    System.out.println("m(op) [size]: show memory, default size is 0x70, size may hex or decimal");
-                    System.out.println("mr0-mr7, mfp, mip, msp [size]: show memory of specified register");
-                    System.out.println("m(address) [size]: show memory of specified address, address must start with 0x");
-                    System.out.println();
-                    System.out.println("b(address): add temporarily breakpoint, address must start with 0x, can be module offset");
-                    System.out.println("b: add breakpoint of register PC");
-                    System.out.println("r: remove breakpoint of register PC");
-                    System.out.println("blr: add temporarily breakpoint of register LR");
-                    System.out.println();
-                    System.out.println("d|dis: show disassemble");
-                    System.out.println("stop: stop emulation");
+                    showHelp();
                     continue;
                 }
                 if ("d".equals(line) || "dis".equals(line)) {
@@ -247,7 +229,7 @@ public class SimpleARMDebugger implements Debugger {
                         }
                         System.out.println(sb);
 
-                        if (r7.peer < sp.peer) {
+                        if (r7 == null || r7.peer < sp.peer) {
                             System.err.println("r7=" + r7 + ", sp=" + sp);
                             break;
                         }
@@ -262,7 +244,7 @@ public class SimpleARMDebugger implements Debugger {
                 }
                 if (line.startsWith("b0x")) {
                     try {
-                        long addr = Long.parseLong(line.substring(3), 16) & 0xFFFFFFFFFFFFFFFEL;
+                        long addr = Long.parseLong(line.substring(3), 16) & 0xfffffffffffffffeL;
                         Module module = null;
                         if (addr < Memory.MMAP_BASE && (module = emulator.getMemory().findModuleByAddress(address)) != null) {
                             addr += module.base;
@@ -343,10 +325,34 @@ public class SimpleARMDebugger implements Debugger {
                         break;
                     }
                 }
+
+                showHelp();
             } catch (UnicornException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void showHelp() {
+        System.out.println("c: continue");
+        System.out.println("n: step over");
+        System.out.println("bt: back trace");
+        System.out.println();
+        System.out.println("s|si: step into");
+        System.out.println("s[decimal]: execute specified amount instruction");
+        System.out.println("sblx: execute util BLX mnemonic");
+        System.out.println();
+        System.out.println("m(op) [size]: show memory, default size is 0x70, size may hex or decimal");
+        System.out.println("mr0-mr7, mfp, mip, msp [size]: show memory of specified register");
+        System.out.println("m(address) [size]: show memory of specified address, address must start with 0x");
+        System.out.println();
+        System.out.println("b(address): add temporarily breakpoint, address must start with 0x, can be module offset");
+        System.out.println("b: add breakpoint of register PC");
+        System.out.println("r: remove breakpoint of register PC");
+        System.out.println("blr: add temporarily breakpoint of register LR");
+        System.out.println();
+        System.out.println("d|dis: show disassemble");
+        System.out.println("stop: stop emulation");
     }
 
     private void dumpMemory(Pointer pointer, int _length, String label, boolean nullTerminated) {
