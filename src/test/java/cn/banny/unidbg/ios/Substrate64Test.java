@@ -1,22 +1,25 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.unidbg.*;
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.android.EmulatorTest;
-import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.HookStatus;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
-import cn.banny.unidbg.hook.hookzz.*;
+import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
+import cn.banny.unidbg.hook.hookzz.HookZz;
+import cn.banny.unidbg.hook.hookzz.IHookZz;
+import cn.banny.unidbg.hook.hookzz.WrapCallback;
 import cn.banny.unidbg.hook.whale.IWhale;
 import cn.banny.unidbg.hook.whale.Whale;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.io.File;
 import java.util.Arrays;
@@ -39,7 +42,7 @@ public class Substrate64Test extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x404c3398);
 //        emulator.traceCode();
 //        loader.setObjcRuntime(true);
-        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
@@ -91,11 +94,11 @@ public class Substrate64Test extends EmulatorTest {
         hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                Pointer zone = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                RegisterContext context = emulator.getContext();
+                Pointer zone = context.getPointerArg(0);
+                int size = context.getIntArg(1);
                 System.err.println("_malloc_zone_malloc zone=" + zone + ", size=" + size);
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
 
@@ -160,10 +163,11 @@ public class Substrate64Test extends EmulatorTest {
         whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Pointer pointer1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                Pointer pointer2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                RegisterContext context = emulator.getContext();
+                Pointer pointer1 = context.getPointerArg(0);
+                Pointer pointer2 = context.getPointerArg(1);
                 System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0) + ", originFunction=0x" + Long.toHexString(originFunction));
-                return HookStatus.RET(emulator.getUnicorn(), originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
         });
 

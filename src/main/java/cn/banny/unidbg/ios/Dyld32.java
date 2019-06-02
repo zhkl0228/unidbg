@@ -286,7 +286,7 @@ public class Dyld32 extends Dyld {
                             // the table passed to dyld containing thread helpers
                             Pointer helpers = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             if (log.isDebugEnabled()) {
-                                log.debug("registerThreadHelpers helpers=" + helpers);
+                                log.debug("registerThreadHelpers helpers=" + helpers + ", version=" + helpers.getInt(0));
                             }
                             return 0;
                         }

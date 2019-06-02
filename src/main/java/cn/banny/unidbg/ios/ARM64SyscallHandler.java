@@ -46,6 +46,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     @Override
     public void hook(Unicorn u, int intno, Object user) {
         Emulator emulator = (Emulator) user;
+        if (intno == 7) { // brk #0x1
+            emulator.attach().debug();
+            return;
+        }
 
         UnicornPointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
         final int svcNumber = (pc.getInt(-4) >> 5) & 0xffff;
@@ -61,7 +65,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     return;
                 }
                 u.emu_stop();
-                throw new UnicornException("svc number: " + svcNumber + ", NR=" + NR);
+                throw new UnicornException("svc number: " + svcNumber + ", NR=" + NR + ", intno=" + intno);
             }
 
             if (log.isDebugEnabled()) {
