@@ -45,4 +45,7 @@ public interface ARMEmulator extends Emulator {
 
     int PAGE_ALIGN = 0x1000; // 4k
 
+    int EXCP_SWI = 2; /* software interrupt */
+    int EXCP_BKPT = 7;
+
 }
