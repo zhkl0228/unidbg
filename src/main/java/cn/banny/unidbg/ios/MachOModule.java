@@ -437,7 +437,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     UnicornPointer createPathMemory(SvcMemory svcMemory) {
         if (this.pathPointer == null) {
             byte[] path = this.path.getBytes();
-            this.pathPointer = svcMemory.allocate(path.length + 1);
+            this.pathPointer = svcMemory.allocate(path.length + 1, "MachOModule.path");
             this.pathPointer.write(0, path, 0, path.length);
             this.pathPointer.setByte(path.length, (byte) 0);
         }

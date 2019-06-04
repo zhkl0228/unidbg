@@ -1347,7 +1347,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
     private void notifySingle(int state, MachOModule module) {
         int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
-        Pointer pointer = emulator.getSvcMemory().allocate(elementSize);
+        Pointer pointer = emulator.getSvcMemory().allocate(elementSize, "notifySingle");
         DyldImageInfo info = new DyldImageInfo(pointer);
         info.imageFilePath = module.createPathMemory(emulator.getSvcMemory());
         info.imageLoadAddress = UnicornPointer.pointer(emulator, module.machHeader);

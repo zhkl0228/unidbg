@@ -71,7 +71,7 @@ public class ArmLD extends Dlfcn {
                                         "bxne r7", // call init array
                                         "pop {r0, r4-r7, pc}")); // with return address
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length);
+                                UnicornPointer pointer = svcMemory.allocate(code.length, "dlopen");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }

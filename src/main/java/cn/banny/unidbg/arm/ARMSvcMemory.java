@@ -2,13 +2,16 @@ package cn.banny.unidbg.arm;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Svc;
+import cn.banny.unidbg.memory.MemRegion;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.spi.SyscallHandler;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ARMSvcMemory implements SvcMemory {
@@ -23,11 +26,29 @@ public class ARMSvcMemory implements SvcMemory {
         unicorn.mem_map(base, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
     }
 
+    private final List<MemRegion> memRegions = new ArrayList<>();
+
     @Override
-    public UnicornPointer allocate(int size) {
+    public MemRegion findRegion(long addr) {
+        for (MemRegion region : memRegions) {
+            if (addr >= region.begin && addr < region.end) {
+                return region;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public UnicornPointer allocate(int size, final String label) {
         size = ARM.alignSize(size);
         UnicornPointer pointer = base.share(0, size);
         base = (UnicornPointer) base.share(size);
+        memRegions.add(new MemRegion(pointer.peer, pointer.peer + size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC, null, 0) {
+            @Override
+            public String getName() {
+                return label;
+            }
+        });
         return pointer;
     }
 

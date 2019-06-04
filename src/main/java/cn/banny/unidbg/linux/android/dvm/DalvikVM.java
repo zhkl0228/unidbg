@@ -33,7 +33,7 @@ public class DalvikVM extends BaseVM implements VM {
         super(emulator, apkFile);
 
         final SvcMemory svcMemory = emulator.getSvcMemory();
-        _JavaVM = svcMemory.allocate(emulator.getPointerSize());
+        _JavaVM = svcMemory.allocate(emulator.getPointerSize(), "_JavaVM");
 
         Pointer _FindClass = svcMemory.registerSvc(new ArmSvc() {
             @Override
@@ -1146,7 +1146,7 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
-        final UnicornPointer impl = svcMemory.allocate(0x3a4 + emulator.getPointerSize());
+        final UnicornPointer impl = svcMemory.allocate(0x3a4 + emulator.getPointerSize(), "JNIEnv.impl");
         for (int i = 0; i < 0x3a4; i += 4) {
             impl.setInt(i, i);
         }
@@ -1216,7 +1216,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x390, _ExceptionCheck);
         impl.setPointer(0x3a0, _GetObjectRefType);
 
-        _JNIEnv = svcMemory.allocate(emulator.getPointerSize());
+        _JNIEnv = svcMemory.allocate(emulator.getPointerSize(), "_JNIEnv");
         _JNIEnv.setPointer(0, impl);
 
         UnicornPointer _AttachCurrentThread = svcMemory.registerSvc(new ArmSvc() {
@@ -1247,7 +1247,7 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
-        UnicornPointer _JNIInvokeInterface = svcMemory.allocate(emulator.getPointerSize() * 8);
+        UnicornPointer _JNIInvokeInterface = svcMemory.allocate(emulator.getPointerSize() * 8, "_JNIInvokeInterface");
         for (int i = 0; i < emulator.getPointerSize() * 8; i += emulator.getPointerSize()) {
             _JNIInvokeInterface.setInt(i, i);
         }

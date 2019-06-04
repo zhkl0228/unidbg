@@ -91,7 +91,7 @@ public class ArmLD64 extends Dlfcn {
                                         "add sp, sp, #0x10",
                                         "ret"));
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length);
+                                UnicornPointer pointer = svcMemory.allocate(code.length, "dlopen");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }

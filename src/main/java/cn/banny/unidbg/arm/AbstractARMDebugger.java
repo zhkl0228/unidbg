@@ -7,6 +7,8 @@ import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.debugger.DebugListener;
 import cn.banny.unidbg.debugger.Debugger;
+import cn.banny.unidbg.memory.MemRegion;
+import cn.banny.unidbg.memory.Memory;
 import cn.banny.utils.Hex;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -17,10 +19,7 @@ import unicorn.Unicorn;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 abstract class AbstractARMDebugger implements Debugger {
 
@@ -197,6 +196,40 @@ abstract class AbstractARMDebugger implements Debugger {
         }
         System.out.println(sb);
         return next;
+    }
+
+    final Module findModuleByAddress(long address) {
+        Memory memory = emulator.getMemory();
+        Module module = memory.findModuleByAddress(address);
+        if (module == null) {
+            MemRegion region = emulator.getSvcMemory().findRegion(address);
+            if (region != null) {
+                String name = region.getName();
+                int maxLength = memory.getMaxLengthLibraryName().length();
+                if (name.length() > maxLength) {
+                    name = name.substring(name.length() - maxLength);
+                }
+                module = new Module(name, region.begin, region.end - region.begin, Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList()) {
+                    @Override
+                    public Number[] callFunction(Emulator emulator, long offset, Object... args) {
+                        throw new UnsupportedOperationException();
+                    }
+                    @Override
+                    public Symbol findSymbolByName(String name, boolean withDependencies) {
+                        throw new UnsupportedOperationException();
+                    }
+                    @Override
+                    public Symbol findNearestSymbolByAddress(long addr) {
+                        throw new UnsupportedOperationException();
+                    }
+                    @Override
+                    public int callEntry(Emulator emulator, Object... args) {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        }
+        return module;
     }
 
 }

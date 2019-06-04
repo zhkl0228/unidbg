@@ -25,7 +25,7 @@ public abstract class Symbol {
     public final UnicornPointer createNameMemory(SvcMemory svcMemory) {
         if (namePointer == null) {
             byte[] name = getName().getBytes();
-            namePointer = svcMemory.allocate(name.length + 1);
+            namePointer = svcMemory.allocate(name.length + 1, "Symbol." + name);
             namePointer.write(0, name, 0, name.length);
             namePointer.setByte(name.length, (byte) 0);
         }

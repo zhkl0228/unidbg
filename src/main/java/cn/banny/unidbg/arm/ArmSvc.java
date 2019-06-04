@@ -23,7 +23,7 @@ public abstract class ArmSvc implements Svc {
                     "svc #0x" + Integer.toHexString(svcNumber),
                     "bx lr"));
             byte[] code = encoded.getMachineCode();
-            UnicornPointer pointer = svcMemory.allocate(code.length);
+            UnicornPointer pointer = svcMemory.allocate(code.length, "ArmSvc");
             pointer.write(0, code, 0, code.length);
             return pointer;
         }

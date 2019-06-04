@@ -188,7 +188,7 @@ public class Dyld64 extends Dyld {
                                         "add sp, sp, #0x10",
                                         "ret"));
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length);
+                                UnicornPointer pointer = svcMemory.allocate(code.length, "__dyld_dlopen");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }
@@ -366,7 +366,7 @@ public class Dyld64 extends Dyld {
                                         "add sp, sp, #0x10",
                                         "ret"));
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length);
+                                UnicornPointer pointer = svcMemory.allocate(code.length, "__dyld_register_func_for_add_image");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }
@@ -456,7 +456,7 @@ public class Dyld64 extends Dyld {
                                         "add sp, sp, #0x10",
                                         "ret"));
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length);
+                                UnicornPointer pointer = svcMemory.allocate(code.length, "dyld_image_state_change_handler");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }
@@ -594,7 +594,7 @@ public class Dyld64 extends Dyld {
     private DyldImageInfo[] generateDyldImageInfo(Emulator emulator) {
         List<DyldImageInfo> list = new ArrayList<>(loader.getLoadedModules().size());
         int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
-        Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModules().size());
+        Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModules().size(), "DyldImageInfo");
         for (Module module : loader.getLoadedModules()) {
             MachOModule mm = (MachOModule) module;
             DyldImageInfo info = new DyldImageInfo(pointer);

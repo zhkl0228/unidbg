@@ -111,7 +111,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     do {
                         Module module = null;
                         if (lr != null) {
-                            module = memory.findModuleByAddress(lr.peer);
+                            module = findModuleByAddress(lr.peer);
                             if (lr.peer == AbstractARM64Emulator.LR) {
                                 break;
                             }
@@ -147,12 +147,12 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     try {
                         long addr = Long.parseLong(line.substring(3), 16) & 0xfffffffffffffffeL;
                         Module module = null;
-                        if (addr < Memory.MMAP_BASE && (module = emulator.getMemory().findModuleByAddress(address)) != null) {
+                        if (addr < Memory.MMAP_BASE && (module = findModuleByAddress(address)) != null) {
                             addr += module.base;
                         }
                         breakMap.put(addr, null); // temp breakpoint
                         if (module == null) {
-                            module = emulator.getMemory().findModuleByAddress(addr);
+                            module = findModuleByAddress(addr);
                         }
                         System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                         continue;
@@ -162,7 +162,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                 if ("blr".equals(line)) { // break LR
                     long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue();
                     breakMap.put(addr, null);
-                    Module module = emulator.getMemory().findModuleByAddress(addr);
+                    Module module = findModuleByAddress(addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
@@ -170,7 +170,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
                     if (breakMap.containsKey(addr)) {
                         breakMap.remove(addr);
-                        Module module = emulator.getMemory().findModuleByAddress(addr);
+                        Module module = findModuleByAddress(addr);
                         System.out.println("Remove breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     }
                     continue;
@@ -178,7 +178,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                 if ("b".equals(line)) {
                     long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
                     breakMap.put(addr, null);
-                    Module module = emulator.getMemory().findModuleByAddress(addr);
+                    Module module = findModuleByAddress(addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
