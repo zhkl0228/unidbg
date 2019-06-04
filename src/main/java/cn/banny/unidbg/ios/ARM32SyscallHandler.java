@@ -332,6 +332,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (log.isDebugEnabled()) {
             log.debug("readlink path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
         }
+        if ("/var/db/timezone/localtime".equals(path)) { // 设置时区
+            path = "/var/db/timezone/zoneinfo/Asia/Shanghai";
+        }
         buf.setString(0, path);
         return path.length() + 1;
     }

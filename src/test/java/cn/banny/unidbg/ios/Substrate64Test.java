@@ -58,14 +58,6 @@ public class Substrate64Test extends EmulatorTest {
             }
         });*/
 
-//        emulator.attach().addBreakPoint(null, 0x40232a6c);
-
-        /*Symbol ___stdoutp = module.findSymbolByName("___stdoutp");
-        Symbol ___stderrp = module.findSymbolByName("___stderrp");
-        Symbol _setvbuf = module.findSymbolByName("_setvbuf");
-        _setvbuf.call(emulator, ___stdoutp.createPointer(emulator).getPointer(0), 0, MachO._IONBF, 0);
-        _setvbuf.call(emulator, ___stderrp.createPointer(emulator).getPointer(0), 0, MachO._IONBF, 0);*/
-
         Symbol malloc_num_zones = module.findSymbolByName("_malloc_num_zones");
         assertNotNull(malloc_num_zones);
         System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0));
