@@ -38,11 +38,11 @@ class AssemblyCodeDumper implements CodeHook {
     @Override
     public void hook(Unicorn u, long address, int size, Object user) {
         if (canTrace(address)) {
-            if (!emulator.printAssemble(address, size)) {
-                PrintStream out = System.err;
-                if (redirect != null) {
-                    out = redirect;
-                }
+            PrintStream out = System.err;
+            if (redirect != null) {
+                out = redirect;
+            }
+            if (!emulator.printAssemble(out, address, size)) {
                 out.println("### Trace Instruction at 0x" + Long.toHexString(address) + ", size = " + size);
             }
         }

@@ -27,6 +27,7 @@ import unicorn.UnicornConst;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 
 public abstract class AbstractARMEmulator extends AbstractEmulator implements ARMEmulator {
@@ -163,8 +164,8 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
     }
 
     @Override
-    public boolean printAssemble(long address, int size) {
-        printAssemble(disassemble(address, size, 0), address, ARM.isThumb(unicorn));
+    public boolean printAssemble(PrintStream out, long address, int size) {
+        printAssemble(out, disassemble(address, size, 0), address, ARM.isThumb(unicorn));
         return true;
     }
 
@@ -180,7 +181,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
         return thumb ? capstoneThumb.disasm(code, address) : capstoneArm.disasm(code, address);
     }
 
-    private void printAssemble(Capstone.CsInsn[] insns, long address, boolean thumb) {
+    private void printAssemble(PrintStream out, Capstone.CsInsn[] insns, long address, boolean thumb) {
         StringBuilder sb = new StringBuilder();
         for (Capstone.CsInsn ins : insns) {
             sb.append("### Trace Instruction ");
@@ -188,7 +189,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
             sb.append('\n');
             address += ins.size;
         }
-        System.out.print(sb.toString());
+        out.print(sb.toString());
     }
 
     @Override

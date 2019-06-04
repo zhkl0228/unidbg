@@ -85,11 +85,11 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
             if (log.isDebugEnabled()) {
                 log.debug("__kuser_memory_barrier");
                 for (int i = 0; i < __kuser_memory_barrier.length; i += 4) {
-                    printAssemble(0xffff0fa0L + i, 4);
+                    printAssemble(System.err, 0xffff0fa0L + i, 4);
                 }
                 log.debug("__kuser_cmpxchg");
                 for (int i = 0; i < __kuser_cmpxchg.length; i += 4) {
-                    printAssemble(0xffff0fc0L + i, 4);
+                    printAssemble(System.err, 0xffff0fc0L + i, 4);
                 }
             }
         }
