@@ -162,6 +162,10 @@ public abstract class AbstractLoader implements Memory, Loader {
             log.debug("munmap removed=0x" + Long.toHexString(removed.size) + ", aligned=0x" + Long.toHexString(aligned) + ", base=0x" + Long.toHexString(start + aligned) + ", size=" + (removed.size - aligned));
             return 0;
         }
+
+        if (memoryMap.isEmpty()) {
+            mmapBaseAddress = MMAP_BASE;
+        }
         return 0;
     }
 
