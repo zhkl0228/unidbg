@@ -1461,4 +1461,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
         throw new AbstractMethodError("mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset);
     }
+
+    @Override
+    protected long getModuleBase(Module module) {
+        return ((MachOModule) module).machHeader;
+    }
 }

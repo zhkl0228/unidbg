@@ -6,6 +6,10 @@ import cn.banny.unidbg.debugger.Debugger;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
@@ -243,6 +247,11 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
     @Override
     public void brk(Pointer pc, int svcNumber) {
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+            KeystoneEncoded encoded = keystone.assemble("nop");
+            byte[] code = encoded.getMachineCode();
+            pc.write(0, code, 0, code.length);
+        }
         debug();
     }
 }

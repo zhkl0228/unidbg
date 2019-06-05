@@ -5,11 +5,11 @@ import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.hook.HookListener;
-import cn.banny.unidbg.memory.MemoryMap;
-import cn.banny.unidbg.unix.UnixEmulator;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.MemoryBlock;
+import cn.banny.unidbg.memory.MemoryMap;
 import cn.banny.unidbg.pointer.UnicornPointer;
+import cn.banny.unidbg.unix.UnixEmulator;
 import cn.banny.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
@@ -330,11 +330,16 @@ public abstract class AbstractLoader implements Memory, Loader {
     @Override
     public final Module findModuleByAddress(long address) {
         for (Module module : getLoadedModules()) {
-            if (address >= module.base && address < module.base + module.size) {
+            long base = getModuleBase(module);
+            if (address >= base && address < base + module.size) {
                 return module;
             }
         }
         return null;
+    }
+
+    protected long getModuleBase(Module module) {
+        return module.base;
     }
 
     @Override
