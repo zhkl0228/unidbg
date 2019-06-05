@@ -50,15 +50,28 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
     @Override
     public void hook(Unicorn u, int intno, Object user) {
-        if (intno != ARMEmulator.EXCP_SWI) {
-            throw new UnsupportedOperationException("intno=" + intno);
+        Emulator emulator = (Emulator) user;
+        UnicornPointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
+        final boolean isThumb = ARM.isThumb(u);
+        final int bkpt;
+        if (ARM.isThumb(u)) {
+            bkpt = pc.getShort(0) & 0xff;
+        } else {
+            int instruction = pc.getInt(0);
+            bkpt = (instruction & 0xf) | ((instruction >> 8) & 0xfff) << 4;
         }
 
-        Emulator emulator = (Emulator) user;
+        if (intno == ARMEmulator.EXCP_BKPT) { // bkpt
+            emulator.attach().brk(pc, bkpt);
+            return;
+        }
 
-        Pointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
+        if (intno != ARMEmulator.EXCP_SWI) {
+            throw new UnicornException("intno=" + intno);
+        }
+
         final int svcNumber;
-        if (ARM.isThumb(u)) {
+        if (isThumb) {
             svcNumber = pc.getShort(-2) & 0xff;
         } else {
             svcNumber = pc.getInt(-4) & 0xffffff;
@@ -82,261 +95,259 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 ARM.showThumbRegs(u);
             }
 
-            if (intno == 2) {
-                switch (NR) {
-                    case 1:
-                        int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                        System.out.println("exit status=" + status);
-                        u.emu_stop();
-                        return;
-                    case 2:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, fork(emulator));
-                        return;
-                    case 3:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, read(u, emulator));
-                        return;
-                    case 4:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
-                        return;
-                    case 5:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, open(u, emulator));
-                        return;
-                    case 6:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, close(u, emulator));
-                        return;
-                    case 10:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
-                        return;
-                    case 11:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, execve(emulator));
-                        return;
-                    case 19:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
-                        return;
-                    case 26:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, ptrace(u, emulator));
-                        return;
-                    case  20: // getpid
-                    case 224: // gettid
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, emulator.getPid());
-                        return;
-                    case 33:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, access(u, emulator));
-                        return;
-                    case 36: // sync: causes all pending modifications to filesystem metadata and cached file data to be written to the underlying filesystems.
-                        return;
-                    case 37:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, kill(u));
-                        return;
-                    case 39:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mkdir(u, emulator));
-                        return;
-                    case 41:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, dup(u, emulator));
-                        return;
-                    case 42:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, pipe(emulator));
-                        return;
-                    case 45:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, brk(u, emulator));
-                        return;
-                    case 54:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, ioctl(u, emulator));
-                        return;
-                    case 60:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, umask(u));
-                        return;
-                    case 63:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, dup2(u, emulator));
-                        return;
-                    case 67:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
-                        return;
-                    case 78:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
-                        return;
-                    case 88:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, reboot(u, emulator));
-                        return;
-                    case 91:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, munmap(u, emulator));
-                        return;
-                    case 93:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, ftruncate(u));
-                        return;
-                    case 94:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, fchmod(u));
-                        return;
-                    case 103:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, syslog(u, emulator));
-                        return;
-                    case 104:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, setitimer(emulator));
-                        return;
-                    case 118:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
-                        return;
-                    case 120:
-                        Pointer child_stack = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                        int fn = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-                        int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-                        if (child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
-                            u.reg_write(ArmConst.UC_ARM_REG_R0, bionic_clone(u, emulator));
-                        } else {
-                            u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_clone(u, emulator));
-                        }
-                        return;
-                    case 122:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
-                        return;
-                    case 125:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mprotect(u, emulator));
-                        return;
-                    case 126:
-                    case 175:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
-                        return;
-                    case 132:
-                        syscall = "getpgid";
-                        break;
-                    case 136:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, personality(u));
-                        return;
-                    case 140:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, llseek(u, emulator));
-                        return;
-                    case 142:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, newselect(u, emulator));
-                        return;
-                    case 143:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, flock(u));
-                        return;
-                    case 146:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, writev(u, emulator));
-                        return;
-                    case 162:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
-                        return;
-                    case 168:
-                    case 336:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, poll(u, emulator));
-                        return;
-                    case 172:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, prctl(u, emulator));
-                        return;
-                    case 183:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getcwd(u, emulator));
-                        return;
-                    case 186:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sigaltstack(emulator));
-                        return;
-                    case 192:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mmap2(u, emulator));
-                        return;
-                    case 195:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
-                        return;
-                    case 196:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(emulator));
-                        return;
-                    case 197:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
-                        return;
-                    case 199: // getuid
-                    case 200: // getgid
-                    case 201: // geteuid
-                    case 202: // getegid
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
-                        return;
-                    case 205:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getgroups(u, emulator));
-                        return;
-                    case 208:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, setresuid32(u));
-                        return;
-                    case 210:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, setresgid32(u));
-                        return;
-                    case 217:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getdents64(u, emulator));
-                        return;
-                    case 220:
-                        syscall = "madvise";
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
-                        return;
-                    case 221:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, fcntl(u, emulator));
-                        return;
-                    case 230:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, lgetxattr(u, emulator));
-                        return;
-                    case 240:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, futex(u, emulator));
-                        return;
-                    case 248:
-                        exit_group(u);
-                        return;
-                    case 263:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, clock_gettime(u, emulator));
-                        return;
-                    case 266:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, statfs(emulator));
-                        return;
-                    case 268:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(u));
-                        return;
-                    case 269:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, utimes(emulator));
-                        return;
-                    case 281:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, socket(u, emulator));
-                        return;
-                    case 283:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, connect(u, emulator));
-                        return;
-                    case 286:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getsockname(u, emulator));
-                        return;
-                    case 287:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getpeername(u, emulator));
-                        return;
-                    case 290:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sendto(u, emulator));
-                        return;
-                    case 292:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, recvfrom(u, emulator));
-                        return;
-                    case 293:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, shutdown(u, emulator));
-                        return;
-                    case 294:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, setsockopt(u, emulator));
-                        return;
-                    case 295:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getsockopt(u, emulator));
-                        return;
-                    case 322:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, openat(u, emulator));
-                        return;
-                    case 323:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(u, emulator));
-                        return;
-                    case 327:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, fstatat64(u, emulator));
-                        return;
-                    case 334:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
-                        return;
-                    case 348:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
-                        return;
-                    case 0xf0002:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, cacheflush(u, emulator));
-                        return;
-                    case 0xf0005:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, set_tls(u, emulator));
-                        return;
-                }
+            switch (NR) {
+                case 1:
+                    int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                    System.out.println("exit status=" + status);
+                    u.emu_stop();
+                    return;
+                case 2:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, fork(emulator));
+                    return;
+                case 3:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, read(u, emulator));
+                    return;
+                case 4:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
+                    return;
+                case 5:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, open(u, emulator));
+                    return;
+                case 6:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, close(u, emulator));
+                    return;
+                case 10:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
+                    return;
+                case 11:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, execve(emulator));
+                    return;
+                case 19:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
+                    return;
+                case 26:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, ptrace(u, emulator));
+                    return;
+                case  20: // getpid
+                case 224: // gettid
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, emulator.getPid());
+                    return;
+                case 33:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, access(u, emulator));
+                    return;
+                case 36: // sync: causes all pending modifications to filesystem metadata and cached file data to be written to the underlying filesystems.
+                    return;
+                case 37:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, kill(u));
+                    return;
+                case 39:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mkdir(u, emulator));
+                    return;
+                case 41:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, dup(u, emulator));
+                    return;
+                case 42:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, pipe(emulator));
+                    return;
+                case 45:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, brk(u, emulator));
+                    return;
+                case 54:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, ioctl(u, emulator));
+                    return;
+                case 60:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, umask(u));
+                    return;
+                case 63:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, dup2(u, emulator));
+                    return;
+                case 67:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
+                    return;
+                case 78:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
+                    return;
+                case 88:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, reboot(u, emulator));
+                    return;
+                case 91:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, munmap(u, emulator));
+                    return;
+                case 93:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, ftruncate(u));
+                    return;
+                case 94:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, fchmod(u));
+                    return;
+                case 103:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, syslog(u, emulator));
+                    return;
+                case 104:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, setitimer(emulator));
+                    return;
+                case 118:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
+                    return;
+                case 120:
+                    Pointer child_stack = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                    int fn = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+                    int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+                    if (child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, bionic_clone(u, emulator));
+                    } else {
+                        u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_clone(u, emulator));
+                    }
+                    return;
+                case 122:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
+                    return;
+                case 125:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mprotect(u, emulator));
+                    return;
+                case 126:
+                case 175:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
+                    return;
+                case 132:
+                    syscall = "getpgid";
+                    break;
+                case 136:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, personality(u));
+                    return;
+                case 140:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, llseek(u, emulator));
+                    return;
+                case 142:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, newselect(u, emulator));
+                    return;
+                case 143:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, flock(u));
+                    return;
+                case 146:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, writev(u, emulator));
+                    return;
+                case 162:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
+                    return;
+                case 168:
+                case 336:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, poll(u, emulator));
+                    return;
+                case 172:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, prctl(u, emulator));
+                    return;
+                case 183:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getcwd(u, emulator));
+                    return;
+                case 186:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sigaltstack(emulator));
+                    return;
+                case 192:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mmap2(u, emulator));
+                    return;
+                case 195:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
+                    return;
+                case 196:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(emulator));
+                    return;
+                case 197:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
+                    return;
+                case 199: // getuid
+                case 200: // getgid
+                case 201: // geteuid
+                case 202: // getegid
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
+                    return;
+                case 205:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getgroups(u, emulator));
+                    return;
+                case 208:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, setresuid32(u));
+                    return;
+                case 210:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, setresgid32(u));
+                    return;
+                case 217:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getdents64(u, emulator));
+                    return;
+                case 220:
+                    syscall = "madvise";
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
+                    return;
+                case 221:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, fcntl(u, emulator));
+                    return;
+                case 230:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, lgetxattr(u, emulator));
+                    return;
+                case 240:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, futex(u, emulator));
+                    return;
+                case 248:
+                    exit_group(u);
+                    return;
+                case 263:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, clock_gettime(u, emulator));
+                    return;
+                case 266:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, statfs(emulator));
+                    return;
+                case 268:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(u));
+                    return;
+                case 269:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, utimes(emulator));
+                    return;
+                case 281:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, socket(u, emulator));
+                    return;
+                case 283:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, connect(u, emulator));
+                    return;
+                case 286:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getsockname(u, emulator));
+                    return;
+                case 287:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getpeername(u, emulator));
+                    return;
+                case 290:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sendto(u, emulator));
+                    return;
+                case 292:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, recvfrom(u, emulator));
+                    return;
+                case 293:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, shutdown(u, emulator));
+                    return;
+                case 294:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, setsockopt(u, emulator));
+                    return;
+                case 295:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getsockopt(u, emulator));
+                    return;
+                case 322:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, openat(u, emulator));
+                    return;
+                case 323:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(u, emulator));
+                    return;
+                case 327:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, fstatat64(u, emulator));
+                    return;
+                case 334:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
+                    return;
+                case 348:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
+                    return;
+                case 0xf0002:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, cacheflush(u, emulator));
+                    return;
+                case 0xf0005:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, set_tls(u, emulator));
+                    return;
             }
         } catch (StopEmulatorException e) {
             u.emu_stop();

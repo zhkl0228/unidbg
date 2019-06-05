@@ -46,16 +46,17 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     @Override
     public void hook(Unicorn u, int intno, Object user) {
         Emulator emulator = (Emulator) user;
-        if (intno == ARMEmulator.EXCP_BKPT) { // brk #0x1
-            emulator.attach().debug();
+        UnicornPointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
+
+        if (intno == ARMEmulator.EXCP_BKPT) { // brk
+            emulator.attach().brk(pc, (pc.getInt(0) >> 5) & 0xffff);
             return;
         }
 
         if (intno != ARMEmulator.EXCP_SWI) {
-            throw new UnsupportedOperationException("intno=" + intno);
+            throw new UnicornException("intno=" + intno);
         }
 
-        UnicornPointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
         final int svcNumber = (pc.getInt(-4) >> 5) & 0xffff;
 
         int NR = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X16)).intValue();
@@ -76,171 +77,169 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 ARM.showRegs64(u, null);
             }
 
-            if (intno == 2) {
-                Cpsr.getArm64(u).setCarry(false);
-                switch (NR) {
-                    case -3888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mach_absolute_time(emulator));
-                        return;
-                    case -10:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_allocate_trap(emulator));
-                        return;
-                    case -12:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_deallocate_trap(emulator));
-                        return;
-                    case -15:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_map_trap(emulator));
-                        return;
-                    case -18:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_deallocate_trap(emulator));
-                        return;
-                    case -1988:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_mod_refs_trap(emulator));
-                        return;
-                    case -2488:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_construct_trap(emulator));
-                        return;
-                    case -26: // mach_port_t mach_reply_port(...)
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_reply_port());
-                        return;
-                    case -27:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, thread_self_trap());
-                        return;
-                    case -28: // mach_port_name_t task_self_trap(void)
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, task_self_trap());
-                        return;
-                    case -29:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, host_self_trap());
-                        return;
-                    case -31:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_msg_trap(emulator));
-                        return;
-                    case -6188:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, thread_switch(emulator));
-                        return;
-                    case 4888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
-                        return;
-                    case 6888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, close(u, emulator));
-                        return;
-                    case 1088:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
-                        return;
-                    case 20:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
-                        return;
-                    case 24: // getuid
-                    case 2588: // geteuid
-                    case 4388: // getegid
-                    case 47: // getgid
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
-                        return;
-                    case 3388:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, access(u, emulator));
-                        return;
-                    case 4688:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
-                        return;
-                    case 48:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, sigprocmask(u, emulator));
-                        return;
-                    case 7388:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, munmap(u, emulator));
-                        return;
-                    case 74:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, mprotect(u, emulator));
-                        return;
-                    case 92:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(u, emulator));
-                        return;
-                    case 97:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(u, emulator));
-                        return;
-                    case 98:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(u, emulator));
-                        return;
-                    case 116:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
-                        return;
-                    case 133:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, sendto(u, emulator));
-                        return;
-                    case 19488:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getrlimit(u, emulator));
-                        return;
-                    case 19788:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, mmap(u, emulator));
-                        return;
-                    case 19988:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
-                        return;
-                    case 202:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator));
-                        return;
-                    case 30588:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
-                        return;
-                    case 327:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
-                        return;
-                    case 32988:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
-                        return;
-                    case 33688:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, proc_info(emulator));
-                        return;
-                    case 33888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
-                        return;
-                    case 339:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(u, emulator));
-                        return;
-                    case 34488:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getdirentries64(u, emulator));
-                        return;
-                    case 34688:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, fstatfs64(u, emulator));
-                        return;
-                    case 35788:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(u, emulator));
-                        return;
-                    case 366:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, bsdthread_register(emulator));
-                        return;
-                    case 372:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, thread_selfid());
-                        return;
-                    case 38188:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms(emulator));
-                        return;
-                    case 396:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, read_NOCANCEL(emulator));
-                        return;
-                    case 397:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, write_NOCANCEL(emulator));
-                        return;
-                    case 398:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, open_NOCANCEL(emulator));
-                        return;
-                    case 399:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, close_NOCANCEL(emulator));
-                        return;
-                    case 42388:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal_nocancel());
-                        return;
-                    case 42888:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, audit_session_self());
-                        return;
-                    case 0x80000008:
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
-                        return;
-                    case 0x80000000:
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_set_self(emulator));
-                        return;
-                    default:
-                        break;
-                }
+            Cpsr.getArm64(u).setCarry(false);
+            switch (NR) {
+                case -3888:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mach_absolute_time(emulator));
+                    return;
+                case -10:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_allocate_trap(emulator));
+                    return;
+                case -12:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_deallocate_trap(emulator));
+                    return;
+                case -15:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_map_trap(emulator));
+                    return;
+                case -18:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_deallocate_trap(emulator));
+                    return;
+                case -1988:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_mod_refs_trap(emulator));
+                    return;
+                case -2488:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_construct_trap(emulator));
+                    return;
+                case -26: // mach_port_t mach_reply_port(...)
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_reply_port());
+                    return;
+                case -27:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, thread_self_trap());
+                    return;
+                case -28: // mach_port_name_t task_self_trap(void)
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, task_self_trap());
+                    return;
+                case -29:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, host_self_trap());
+                    return;
+                case -31:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_msg_trap(emulator));
+                    return;
+                case -6188:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, thread_switch(emulator));
+                    return;
+                case 4888:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
+                    return;
+                case 6888:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, close(u, emulator));
+                    return;
+                case 1088:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
+                    return;
+                case 20:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
+                    return;
+                case 24: // getuid
+                case 2588: // geteuid
+                case 4388: // getegid
+                case 47: // getgid
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
+                    return;
+                case 3388:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, access(u, emulator));
+                    return;
+                case 4688:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
+                    return;
+                case 48:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sigprocmask(u, emulator));
+                    return;
+                case 7388:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, munmap(u, emulator));
+                    return;
+                case 74:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, mprotect(u, emulator));
+                    return;
+                case 92:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(u, emulator));
+                    return;
+                case 97:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(u, emulator));
+                    return;
+                case 98:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(u, emulator));
+                    return;
+                case 116:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
+                    return;
+                case 133:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sendto(u, emulator));
+                    return;
+                case 19488:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getrlimit(u, emulator));
+                    return;
+                case 19788:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mmap(u, emulator));
+                    return;
+                case 19988:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
+                    return;
+                case 202:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator));
+                    return;
+                case 30588:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
+                    return;
+                case 327:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
+                    return;
+                case 32988:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
+                    return;
+                case 33688:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, proc_info(emulator));
+                    return;
+                case 33888:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
+                    return;
+                case 339:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(u, emulator));
+                    return;
+                case 34488:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getdirentries64(u, emulator));
+                    return;
+                case 34688:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, fstatfs64(u, emulator));
+                    return;
+                case 35788:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(u, emulator));
+                    return;
+                case 366:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, bsdthread_register(emulator));
+                    return;
+                case 372:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, thread_selfid());
+                    return;
+                case 38188:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms(emulator));
+                    return;
+                case 396:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, read_NOCANCEL(emulator));
+                    return;
+                case 397:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, write_NOCANCEL(emulator));
+                    return;
+                case 398:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, open_NOCANCEL(emulator));
+                    return;
+                case 399:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, close_NOCANCEL(emulator));
+                    return;
+                case 42388:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal_nocancel());
+                    return;
+                case 42888:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, audit_session_self());
+                    return;
+                case 0x80000008:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
+                    return;
+                case 0x80000000:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_set_self(emulator));
+                    return;
+                default:
+                    break;
             }
         } catch (StopEmulatorException e) {
             u.emu_stop();

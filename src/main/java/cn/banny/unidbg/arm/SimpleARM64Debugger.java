@@ -241,4 +241,8 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println("stop: stop emulation");
     }
 
+    @Override
+    public void brk(Pointer pc, int svcNumber) {
+        debug();
+    }
 }
