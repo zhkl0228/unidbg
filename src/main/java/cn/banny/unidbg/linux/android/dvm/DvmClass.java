@@ -129,7 +129,13 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         list.add(vm.getJNIEnv());
         list.add(this.hashCode());
         if (args != null) {
-            Collections.addAll(list, args);
+            for (Object arg : args) {
+                list.add(arg);
+
+                if(arg instanceof DvmObject) {
+                    vm.addLocalObject((DvmObject) arg);
+                }
+            }
         }
         return LinuxModule.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
     }

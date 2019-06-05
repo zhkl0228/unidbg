@@ -6,7 +6,6 @@ import cn.banny.unidbg.pointer.UnicornPointer;
 import unicorn.UnicornException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class DvmObject<T> implements Hashable {
@@ -36,8 +35,15 @@ public class DvmObject<T> implements Hashable {
         List<Object> list = new ArrayList<>(10);
         list.add(objectType.vm.getJNIEnv());
         list.add(this.hashCode());
+        objectType.vm.addLocalObject(this);
         if (args != null) {
-            Collections.addAll(list, args);
+            for (Object arg : args) {
+                list.add(arg);
+
+                if(arg instanceof DvmObject) {
+                    objectType.vm.addLocalObject((DvmObject) arg);
+                }
+            }
         }
         return LinuxModule.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
     }

@@ -50,6 +50,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     @Override
     public void hook(Unicorn u, int intno, Object user) {
+        if (intno != ARMEmulator.EXCP_SWI) {
+            throw new UnsupportedOperationException("intno=" + intno);
+        }
+
         Emulator emulator = (Emulator) user;
 
         UnicornPointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
