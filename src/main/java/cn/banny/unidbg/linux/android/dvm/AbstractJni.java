@@ -295,6 +295,11 @@ public abstract class AbstractJni implements Jni {
     public void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value) {
         throw new AbstractMethodError(signature);
     }
+    
+    @Override
+    public void setDoubleField(BaseVM vm, DvmObject dvmObject, String signature, double value) {
+        throw new AbstractMethodError(signature);
+    }
 
     @Override
     public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
@@ -336,11 +341,6 @@ public abstract class AbstractJni implements Jni {
         throw new AbstractMethodError(signature);
     }
 
-    @Override
-    public void setDoubleField(BaseVM vm, DvmObject dvmObject, String signature, double value) {
-    	// TODO 自动生成的方法存根
-        throw new AbstractMethodError(signature);
-    }
     @Override
     public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         if ("java/lang/Integer->intValue()I".equals(signature)) {
