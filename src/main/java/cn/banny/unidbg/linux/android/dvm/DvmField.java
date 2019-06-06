@@ -84,13 +84,7 @@ class DvmField implements Hashable {
         }
         dvmClass.vm.jni.setIntField(dvmClass.vm, dvmObject, signature, value);
     }
-    void setDoubleField(DvmObject dvmObject, double value) {
-        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
-        if (log.isDebugEnabled()) {
-            log.debug("setLongField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
-        }
-        dvmClass.vm.jni.setDoubleField(dvmClass.vm, dvmObject, signature, value);
-    }
+    
     void setLongField(DvmObject dvmObject, long value) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
@@ -105,5 +99,13 @@ class DvmField implements Hashable {
             log.debug("setBooleanField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
         }
         dvmClass.vm.jni.setBooleanField(dvmClass.vm, dvmObject, signature, value);
+    }
+    
+    void setDoubleField(DvmObject dvmObject, double value) {
+        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+        if (log.isDebugEnabled()) {
+            log.debug("setDoubleField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
+        }
+        dvmClass.vm.jni.setDoubleField(dvmClass.vm, dvmObject, signature, value);
     }
 }
