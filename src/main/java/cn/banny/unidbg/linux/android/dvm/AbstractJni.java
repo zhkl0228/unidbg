@@ -337,6 +337,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public void setDoubleField(BaseVM vm, DvmObject dvmObject, String signature, double value) {
+    	// TODO 自动生成的方法存根
+        throw new AbstractMethodError(signature);
+    }
+    @Override
     public int callIntMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
         if ("java/lang/Integer->intValue()I".equals(signature)) {
             DvmInteger integer = (DvmInteger) dvmObject;

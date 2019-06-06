@@ -54,6 +54,8 @@ public interface Jni {
 
     void setIntField(BaseVM vm, DvmObject dvmObject, String signature, int value);
 
+    void setDoubleField(BaseVM vm, DvmObject dvmObject, String signature, double value);
+
     void setLongField(BaseVM vm, DvmObject dvmObject, String signature, long value);
 
     void setObjectField(BaseVM vm, DvmObject dvmObject, String signature, DvmObject value);
