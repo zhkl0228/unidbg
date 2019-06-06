@@ -95,17 +95,23 @@ public class UnicornPointer extends Pointer {
 
     @Override
     public void read(long offset, long[] buf, int index, int length) {
-        throw new AbstractMethodError();
+        for (int i = index; i < length; i++) {
+            buf[i] = getLong((i - index) * 8 + offset);
+        }
     }
 
     @Override
     public void read(long offset, float[] buf, int index, int length) {
-        throw new AbstractMethodError();
+    	 for (int i = index; i < length; i++) {
+             buf[i] = getFloat((i - index) * 4 + offset);
+         }
     }
 
     @Override
     public void read(long offset, double[] buf, int index, int length) {
-        throw new AbstractMethodError();
+    	  for (int i = index; i < length; i++) {
+              buf[i] = getDouble((i - index) * 8 + offset);
+          }
     }
 
     @Override
@@ -195,7 +201,6 @@ public class UnicornPointer extends Pointer {
     public long getLong(long offset) {
         return getByteBuffer(offset, 8).getLong();
     }
-
     @Override
     public NativeLong getNativeLong(long offset) {
         throw new AbstractMethodError();
@@ -270,7 +275,7 @@ public class UnicornPointer extends Pointer {
                 break;
             }
 
-            if (baos.size() > 0x10000) { // 64k
+            if (baos.size() > 65536*1024) { // 64M
                 throw new IllegalStateException("buffer overflow");
             }
 

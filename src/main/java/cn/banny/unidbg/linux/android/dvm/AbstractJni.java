@@ -295,6 +295,11 @@ public abstract class AbstractJni implements Jni {
     public void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value) {
         throw new AbstractMethodError(signature);
     }
+    
+    @Override
+    public void setDoubleField(BaseVM vm, DvmObject dvmObject, String signature, double value) {
+        throw new AbstractMethodError(signature);
+    }
 
     @Override
     public DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
