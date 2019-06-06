@@ -95,9 +95,9 @@ public class UnicornPointer extends Pointer {
 
     @Override
     public void read(long offset, long[] buf, int index, int length) {
-   	 for (int i = index; i < length; i++) {
-         buf[i] = getLong((i - index) * 8 + offset);
-     }
+        for (int i = index; i < length; i++) {
+            buf[i] = getLong((i - index) * 8 + offset);
+        }
     }
 
     @Override
@@ -275,7 +275,7 @@ public class UnicornPointer extends Pointer {
                 break;
             }
 
-            if (baos.size() > 65536*1024) { // 64k
+            if (baos.size() > 65536*1024) { // 64M
                 throw new IllegalStateException("buffer overflow");
             }
 
