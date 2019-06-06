@@ -933,6 +933,17 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _NewDoubleArray = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator emulator) {
+                int size = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("_NewDoubleArray size=" + size);
+                }
+                return addObject(new DoubleArray(new double[size]), false);
+            }
+        });
+
         Pointer _GetByteArrayElements = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator emulator) {
@@ -1097,6 +1108,23 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _SetDoubleArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator emulator) {
+                Unicorn u = emulator.getUnicorn();
+                DoubleArray array = getObject(UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toUIntPeer());
+                int start = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
+                int len = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X3)).intValue();
+                Pointer buf = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
+                double[] data = buf.getDoubleArray(0, len);
+                if (log.isDebugEnabled()) {
+                    log.debug("SetDoubleArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                }
+                array.setData(start, data);
+                return 0;
+            }
+        });
+
         Pointer _RegisterNatives = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator emulator) {
@@ -1220,6 +1248,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x558, _GetArrayLength);
         impl.setPointer(0x580, _NewByteArray);
         impl.setPointer(0x598, _NewIntArray);
+        impl.setPointer(0x5b0, _NewDoubleArray);
         impl.setPointer(0x5c0, _GetByteArrayElements);
         impl.setPointer(0x520, _GetStringLength);
         impl.setPointer(0x528, _GetStringChars);
@@ -1230,6 +1259,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x640, _GetByteArrayRegion);
         impl.setPointer(0x680, _SetByteArrayRegion);
         impl.setPointer(0x698, _SetIntArrayRegion);
+        impl.setPointer(0x6B0, _SetDoubleArrayRegion);
         impl.setPointer(0x6B8, _RegisterNatives);
         impl.setPointer(0x6D8, _GetJavaVM);
         impl.setPointer(0x720, _ExceptionCheck);

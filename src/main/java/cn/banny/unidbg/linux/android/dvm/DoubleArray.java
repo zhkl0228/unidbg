@@ -2,7 +2,7 @@ package cn.banny.unidbg.linux.android.dvm;
 
 public class DoubleArray extends DvmObject<double[]> implements Array<double[]> {
 
-    public DoubleArray(double[] value) {
+    DoubleArray(double[] value) {
         super(null, value);
     }
 

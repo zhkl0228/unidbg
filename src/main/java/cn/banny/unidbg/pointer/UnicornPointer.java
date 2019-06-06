@@ -201,6 +201,7 @@ public class UnicornPointer extends Pointer {
     public long getLong(long offset) {
         return getByteBuffer(offset, 8).getLong();
     }
+
     @Override
     public NativeLong getNativeLong(long offset) {
         throw new AbstractMethodError();
