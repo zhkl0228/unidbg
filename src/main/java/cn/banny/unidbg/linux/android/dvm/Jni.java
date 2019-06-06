@@ -46,6 +46,8 @@ public interface Jni {
 
     int getIntField(BaseVM vm, DvmObject dvmObject, String signature);
 
+    long getLongField(BaseVM vm, DvmObject dvmObject, String signature);
+
     DvmObject getObjectField(BaseVM vm, DvmObject dvmObject, String signature);
 
     void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value);

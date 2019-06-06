@@ -53,6 +53,14 @@ class DvmField implements Hashable {
         return dvmClass.vm.jni.getIntField(dvmClass.vm, dvmObject, signature);
     }
 
+    long getLongField(DvmObject dvmObject) {
+        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+        if (log.isDebugEnabled()) {
+            log.debug("getLongField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
+        }
+        return dvmClass.vm.jni.getLongField(dvmClass.vm, dvmObject, signature);
+    }
+
     void setObjectField(DvmObject dvmObject, DvmObject value) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
