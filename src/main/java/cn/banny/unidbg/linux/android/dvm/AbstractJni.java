@@ -163,6 +163,14 @@ public abstract class AbstractJni implements Jni {
                     Signature sig = (Signature) dvmObject;
                     return new ByteArray(sig.toByteArray());
                 }
+            case "java/lang/String->getBytes(Ljava/lang/String;)[B":
+                String str = (String) dvmObject.getValue();
+                StringObject charsetName = vaList.getObject(0);
+                try {
+                    return new ByteArray(str.getBytes(charsetName.value));
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalStateException(e);
+                }
         }
 
         throw new AbstractMethodError(signature);

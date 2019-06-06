@@ -1325,7 +1325,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         if (soData != null) {
             log.debug("resolve arm64-v8a library: " + soName);
             return soData;
+        } else {
+            return null;
         }
-        return soData;
     }
 }

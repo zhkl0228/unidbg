@@ -276,7 +276,7 @@ public class UnicornPointer extends Pointer {
                 break;
             }
 
-            if (baos.size() > 65536*1024) { // 64M
+            if (baos.size() > 0x10000) { // 64k
                 throw new IllegalStateException("buffer overflow");
             }
 
