@@ -67,8 +67,8 @@ public class DeviceNative extends AbstractJni implements IOResolver {
     private void info2() {
         vm.setJni(this);
 
-        /*emulator.attach(module.base, module.base + module.size).addBreakPoint(module, 0x00099422);
-        emulator.traceRead(0xbffff6bcL, 0xbffff6bcL + 16);
+//        emulator.attach(module.base, module.base + module.size, true).addBreakPoint(module, 0x00099422 + 1);
+        /*emulator.traceRead(0xbffff6bcL, 0xbffff6bcL + 16);
         emulator.traceWrite(0xbffff6ccL, 0xbffff6ccL + 16);*/
 
         long start = System.currentTimeMillis();

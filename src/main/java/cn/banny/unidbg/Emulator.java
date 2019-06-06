@@ -91,10 +91,14 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     Debugger attach();
 
+    Debugger attach(boolean softBreakpoint);
+
     /**
      * note: low performance
      */
     Debugger attach(long begin, long end);
+
+    Debugger attach(long begin, long end, boolean softBreakpoint);
 
     void setWorkDir(File dir);
     File getWorkDir();

@@ -107,26 +107,38 @@ public abstract class AbstractEmulator implements Emulator {
 
     @Override
     public Debugger attach() {
-        return attach(1, 0);
+        return attach(false);
     }
 
     @Override
-    public Debugger attach(long begin, long end) {
+    public Debugger attach(boolean softBreakpoint) {
+        return attach(1, 0, softBreakpoint);
+    }
+
+    @Override
+    public Debugger attach(long begin, long end, boolean softBreakpoint) {
         if (debugger != null) {
             return debugger;
         }
 
-        debugger = createDebugger();
+        debugger = createDebugger(softBreakpoint);
         if (debugger == null) {
             throw new UnsupportedOperationException();
         }
 
-        this.unicorn.hook_add(debugger, begin, end, this);
+        if (!softBreakpoint) {
+            this.unicorn.hook_add(debugger, begin, end, this);
+        }
         this.timeout = 0;
         return debugger;
     }
 
-    protected abstract Debugger createDebugger();
+    @Override
+    public Debugger attach(long begin, long end) {
+        return attach(begin, end, false);
+    }
+
+    protected abstract Debugger createDebugger(boolean softBreakpoint);
 
     @Override
     public int getPid() {

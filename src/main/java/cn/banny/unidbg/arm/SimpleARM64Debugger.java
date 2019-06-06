@@ -18,8 +18,8 @@ import java.util.Scanner;
 
 class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
-    SimpleARM64Debugger(Emulator emulator) {
-        super(emulator);
+    SimpleARM64Debugger(Emulator emulator, boolean softBreakpoint) {
+        super(emulator, softBreakpoint);
     }
 
     @Override
@@ -154,7 +154,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         if (addr < Memory.MMAP_BASE && (module = findModuleByAddress(address)) != null) {
                             addr += module.base;
                         }
-                        breakMap.put(addr, null); // temp breakpoint
+                        addBreakPoint(addr); // temp breakpoint
                         if (module == null) {
                             module = findModuleByAddress(addr);
                         }
@@ -165,15 +165,14 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                 }
                 if ("blr".equals(line)) { // break LR
                     long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue();
-                    breakMap.put(addr, null);
+                    addBreakPoint(addr);
                     Module module = findModuleByAddress(addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
                 if ("r".equals(line)) {
                     long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
-                    if (breakMap.containsKey(addr)) {
-                        breakMap.remove(addr);
+                    if (removeBreakPoint(addr)) {
                         Module module = findModuleByAddress(addr);
                         System.out.println("Remove breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     }
@@ -181,7 +180,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                 }
                 if ("b".equals(line)) {
                     long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
-                    breakMap.put(addr, null);
+                    addBreakPoint(addr);
                     Module module = findModuleByAddress(addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
@@ -194,7 +193,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         System.out.println("Next address failed.");
                         continue;
                     } else {
-                        breakMap.put(nextAddress, null);
+                        addBreakPoint(nextAddress);
                         break;
                     }
                 }
@@ -246,12 +245,11 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    public void brk(Pointer pc, int svcNumber) {
+    byte[] addSoftBreakPoint(long address, int svcNumber) {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-            KeystoneEncoded encoded = keystone.assemble("nop");
-            byte[] code = encoded.getMachineCode();
-            pc.write(0, code, 0, code.length);
+            KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
+            return encoded.getMachineCode();
         }
-        debug();
     }
+
 }
