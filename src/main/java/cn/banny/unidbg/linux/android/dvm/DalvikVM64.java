@@ -4,6 +4,7 @@ import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.arm.context.Arm64RegisterContext;
 import cn.banny.unidbg.arm.Arm64Svc;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
@@ -604,6 +605,32 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     dvmField.setLongField(dvmObject, value);
+                }
+                return 0;
+            }
+        });
+
+        Pointer _SetDoubleField = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator emulator) {
+                RegisterContext context = emulator.getContext();
+                UnicornPointer object = context.getPointerArg(1);
+                UnicornPointer jfieldID = context.getPointerArg(2);
+                ByteBuffer buffer = ByteBuffer.allocate(8);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putLong(context.getLongArg(3));
+                buffer.flip();
+                double value = buffer.getDouble();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetDoubleField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmObject dvmObject = getObject(object.peer);
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                if (dvmField == null) {
+                    throw new UnicornException();
+                } else {
+                    dvmField.setDoubleField(dvmObject, value);
                 }
                 return 0;
             }
@@ -1230,6 +1257,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x348, _SetBooleanField);
         impl.setPointer(0x368, _SetIntField);
         impl.setPointer(0x370, _SetLongField);
+        impl.setPointer(0x380, _SetDoubleField);
         impl.setPointer(0x388, _GetStaticMethodID);
         impl.setPointer(0x390, _CallStaticObjectMethod);
         impl.setPointer(0x398, _CallStaticObjectMethodV);

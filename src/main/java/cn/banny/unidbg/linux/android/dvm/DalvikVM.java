@@ -623,9 +623,8 @@ public class DalvikVM extends BaseVM implements VM {
                 UnicornPointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
                 double value = sp.getDouble(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetLongField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetDoubleField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
-                
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
                 DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
