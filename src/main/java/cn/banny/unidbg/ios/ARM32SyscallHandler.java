@@ -1510,7 +1510,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
 
         boolean warning = length >= 0x10000000;
-        int base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, (int) offset);
+        long base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, (int) offset);
         String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag;
         if (log.isDebugEnabled() || warning) {
             if (warning) {
@@ -1521,10 +1521,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         } else {
             Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug(msg + ", base=0x" + Integer.toHexString(base));
+                log.debug(msg + ", base=0x" + Long.toHexString(base));
             }
         }
-        return base;
+        return (int) base;
     }
 
     private int socket(Unicorn u, Emulator emulator) {

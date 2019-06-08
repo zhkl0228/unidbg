@@ -1308,7 +1308,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private static final int MMAP2_SHIFT = 12;
 
-    private int mmap(Unicorn u, Emulator emulator) {
+    private long mmap(Unicorn u, Emulator emulator) {
         long start = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue();
         int length = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
         int prot = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();

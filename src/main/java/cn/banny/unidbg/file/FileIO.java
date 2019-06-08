@@ -56,7 +56,7 @@ public interface FileIO {
 
     int getsockname(Pointer addr, Pointer addrlen);
 
-    int mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, MemoryMap> memoryMap) throws IOException;
+    long mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, MemoryMap> memoryMap) throws IOException;
 
     int llseek(long offset_high, long offset_low, Pointer result, int whence);
 

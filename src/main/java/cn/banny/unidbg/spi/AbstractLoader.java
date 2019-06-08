@@ -54,7 +54,8 @@ public abstract class AbstractLoader implements Memory, Loader {
     @Override
     public final UnicornPointer mmap(int length, int prot) {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
-        UnicornPointer pointer = UnicornPointer.pointer(emulator, mmap2(0, aligned, prot, 0, -1, 0) & 0xffffffffL);
+        long addr = mmap2(0, aligned, prot, 0, -1, 0);
+        UnicornPointer pointer = UnicornPointer.pointer(emulator, addr);
         assert pointer != null;
         return pointer.setSize(aligned);
     }
@@ -100,7 +101,7 @@ public abstract class AbstractLoader implements Memory, Loader {
     private static final int MAP_ANONYMOUS = 0x20;
 
     @Override
-    public int mmap2(long start, int length, int prot, int flags, int fd, int offset) {
+    public long mmap2(long start, int length, int prot, int flags, int fd, int offset) {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
 
         if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
@@ -108,7 +109,7 @@ public abstract class AbstractLoader implements Memory, Loader {
             log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
             unicorn.mem_map(addr, aligned, prot);
             memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
-            return (int) addr;
+            return addr;
         }
         try {
             FileIO file;

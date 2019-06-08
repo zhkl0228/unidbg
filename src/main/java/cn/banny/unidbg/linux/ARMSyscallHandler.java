@@ -1381,7 +1381,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 log.debug(msg);
             }
         }
-        return emulator.getMemory().mmap2(start, length, prot, flags, fd, offset);
+        return (int) emulator.getMemory().mmap2(start, length, prot, flags, fd, offset);
     }
 
     private int gettimeofday(Emulator emulator) {

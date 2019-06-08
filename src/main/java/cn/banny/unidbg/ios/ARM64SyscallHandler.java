@@ -179,8 +179,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 202:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator));
                     return;
-                case 30588:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
+                case 305:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_cvwait(emulator));
                     return;
                 case 327:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
@@ -711,17 +711,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             throw new UnicornException("_kernelrpc_mach_vm_map_trap fixed");
         }
 
-        if (mask == 0) {
-            mask = 0x3fff; // 0x4000 vm page size
-        }
-
+        MachOLoader loader = (MachOLoader) emulator.getMemory();
         Pointer value = address.getPointer(0);
         UnicornPointer pointer;
         if (mask != 0) {
-            MachOLoader loader = (MachOLoader) emulator.getMemory();
             pointer = UnicornPointer.pointer(emulator, loader.allocate(size, mask));
         } else {
-            pointer = emulator.getMemory().mmap((int) size, cur_protection);
+            pointer = loader.mmap((int) size, cur_protection);
         }
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
@@ -1182,7 +1178,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return fcntl(emulator, fd, cmd, arg);
     }
 
-    private int mmap(Unicorn u, Emulator emulator) {
+    private long mmap(Unicorn u, Emulator emulator) {
         UnicornPointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int length = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int prot = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
@@ -1198,7 +1194,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
 
         boolean warning = length >= 0x10000000;
-        int base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, (int) offset);
+        long base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, (int) offset);
         String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag;
         if (log.isDebugEnabled() || warning) {
             if (warning) {
@@ -1209,7 +1205,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         } else {
             Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug(msg + ", base=0x" + Integer.toHexString(base));
+                log.debug(msg + ", base=0x" + Long.toHexString(base));
             }
         }
         return base;
