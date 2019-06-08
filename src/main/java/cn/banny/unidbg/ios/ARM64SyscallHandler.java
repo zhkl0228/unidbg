@@ -8,6 +8,7 @@ import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.Cpsr;
+import cn.banny.unidbg.arm.context.Arm64RegisterContext;
 import cn.banny.unidbg.arm.context.EditableArm64RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.file.FileIO;
@@ -94,11 +95,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case -18:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_deallocate_trap(emulator));
                     return;
-                case -1988:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_mod_refs_trap(emulator));
+                case -19:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_mod_refs_trap(emulator));
                     return;
-                case -2488:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_construct_trap(emulator));
+                case -24:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_construct_trap(emulator));
                     return;
                 case -26: // mach_port_t mach_reply_port(...)
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_reply_port());
@@ -131,8 +132,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
                     return;
                 case 24: // getuid
-                case 2588: // geteuid
-                case 4388: // getegid
+                case 25: // geteuid
+                case 43: // getegid
                 case 47: // getgid
                     u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
                     return;
@@ -202,8 +203,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 34688:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fstatfs64(u, emulator));
                     return;
-                case 35788:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(u, emulator));
+                case 357:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, getaudit_addr(emulator));
                     return;
                 case 366:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, bsdthread_register(emulator));
@@ -211,8 +212,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 372:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, thread_selfid());
                     return;
-                case 38188:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms(emulator));
+                case 381:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sandbox_ms(emulator));
                     return;
                 case 396:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, read_NOCANCEL(emulator));
@@ -229,8 +230,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 42388:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal_nocancel());
                     return;
-                case 42888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, audit_session_self());
+                case 428:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, audit_session_self());
                     return;
                 case 0x80000008:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
@@ -435,12 +436,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 1;
     }
 
-    private int _kernelrpc_mach_port_mod_refs_trap(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        int task = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int right = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        int delta = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+    private long _kernelrpc_mach_port_mod_refs_trap(Emulator emulator) {
+        Arm64RegisterContext context = emulator.getContext();
+        int task = context.getXInt(0);
+        int name = context.getXInt(1);
+        int right = context.getXInt(2);
+        int delta = context.getXInt(3);
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_port_mod_refs_trap task=" + task + ", name=" + name + ", right=" + right + ", delta=" + delta);
         }
@@ -448,25 +449,24 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int _kernelrpc_mach_port_construct_trap(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        int task = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer options = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int r2 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        long r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        long context = r2 | (r3 << 32);
-        Pointer name = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
+        Arm64RegisterContext context = emulator.getContext();
+        int task = context.getXInt(0);
+        Pointer options = context.getXPointer(1);
+        long ctx = context.getXInt(2);
+        Pointer name = context.getXPointer(3);
         if (log.isDebugEnabled()) {
             MachPortOptions portOptions = new MachPortOptions(options);
             portOptions.unpack();
-            log.debug("_kernelrpc_mach_port_construct_trap task=" + task + ", options=" + options + ", context=0x" + Long.toHexString(context) + ", name=" + name + ", portOptions=" + portOptions);
+            log.debug("_kernelrpc_mach_port_construct_trap task=" + task + ", options=" + options + ", context=0x" + Long.toHexString(ctx) + ", name=" + name + ", portOptions=" + portOptions);
         }
         name.setInt(0, 0x88);
         return 0;
     }
 
-    private int getaudit_addr(Unicorn u, Emulator emulator) {
-        Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+    private long getaudit_addr(Emulator emulator) {
+        Arm64RegisterContext context = emulator.getContext();
+        Pointer addr = context.getXPointer(0);
+        int size = context.getXInt(1);
         if (log.isDebugEnabled()) {
             log.debug("getaudit_addr=" + addr + ", size=" + size);
         }
@@ -517,10 +517,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int sandbox_ms(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        Pointer policyName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int call = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        Pointer args = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        RegisterContext context = emulator.getContext();
+        Pointer policyName = context.getPointerArg(0);
+        int call = context.getIntArg(1);
+        Pointer args = context.getPointerArg(2);
         if (log.isDebugEnabled()) {
             log.debug("sandbox_ms policyName=" + policyName.getString(0) + ", call=" + call + ", args=" + args);
         }
@@ -709,6 +709,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
         if (!anywhere) {
             throw new UnicornException("_kernelrpc_mach_vm_map_trap fixed");
+        }
+
+        if (mask == 0) {
+            mask = 0x3fff; // 0x4000 vm page size
         }
 
         Pointer value = address.getPointer(0);
@@ -1061,7 +1065,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 4;
     }
 
-    private int audit_session_self() {
+    private long audit_session_self() {
         log.debug("audit_session_self");
         return 5;
     }

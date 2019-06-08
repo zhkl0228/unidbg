@@ -266,7 +266,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         throw new IllegalStateException(String.format("malformed mach-o image: segment load command %s filesize is larger than vmsize", command.type()));
                     }
                     if(segmentCommand64.vmaddr() % emulator.getPageAlign() != 0 || (segmentCommand64.vmaddr() + segmentCommand64.vmsize()) % emulator.getPageAlign() != 0) {
-                        throw new IllegalArgumentException("vmaddr or vmsize not page aligned");
+                        throw new IllegalArgumentException("vmaddr or vmsize not page aligned vmaddr=0x" + Long.toHexString(segmentCommand64.vmaddr()) + ", size=" + Long.toHexString(segmentCommand64.vmsize()));
                     }
 
                     if (segmentCommand64.vmsize() == 0) {

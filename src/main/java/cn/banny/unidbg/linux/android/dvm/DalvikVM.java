@@ -599,7 +599,6 @@ public class DalvikVM extends BaseVM implements VM {
                 UnicornPointer jfieldID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
                 long value = sp.getLong(0);
-                // emulator.attach().debug(emulator);
                 if (log.isDebugEnabled()) {
                     log.debug("SetLongField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
