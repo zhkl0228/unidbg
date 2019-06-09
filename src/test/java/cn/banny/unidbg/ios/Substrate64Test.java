@@ -7,7 +7,6 @@ import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.android.EmulatorTest;
 import cn.banny.unidbg.arm.HookStatus;
-import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
@@ -39,10 +38,10 @@ public class Substrate64Test extends EmulatorTest {
     public void testMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
-//        emulator.attach().addBreakPoint(null, 0x404c3398);
+//        emulator.attach().addBreakPoint(null, 0x100016088L);
+//        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
 //        loader.setObjcRuntime(true);
-//        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("cn.banny.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
@@ -57,28 +56,6 @@ public class Substrate64Test extends EmulatorTest {
                 return HookStatus.RET(unicorn, originFunction);
             }
         });*/
-
-        Symbol malloc_num_zones = module.findSymbolByName("_malloc_num_zones");
-        assertNotNull(malloc_num_zones);
-        System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0));
-        Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
-        Symbol malloc_size = module.findSymbolByName("_malloc_size");
-        Symbol free = module.findSymbolByName("_free");
-        assertNotNull(malloc_default_zone);
-        Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
-        assertNotNull(zone);
-        Pointer malloc = zone.getPointer(0xc);
-        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 1)[0].intValue());
-        assertNotNull(block);
-        Pointer sizeFun = zone.getPointer(0x8);
-        int size = MachOModule.emulateFunction(emulator, ((UnicornPointer) sizeFun).peer, zone, block)[0].intValue();
-        int mSize = malloc_size.call(emulator, block)[0].intValue();
-        System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0) + ", version=" + zone.getInt(0x34) + ", free_definite_size=" + zone.getPointer(0x3c));
-
-        System.err.println("malloc_default_zone=" + malloc_default_zone + ", zone=" + zone + ", malloc=" + malloc +
-                ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize);
-
-        free.call(emulator, block);
 
         IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
@@ -98,15 +75,15 @@ public class Substrate64Test extends EmulatorTest {
         assertNotNull(symbol);
 
 //        emulator.traceCode();
-        hookZz.wrap(symbol, new WrapCallback<Arm32RegisterContext>() {
+        hookZz.wrap(symbol, new WrapCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
-                System.err.println("preCall _MSGetImageByName=" + ctx.getR0Pointer().getString(0));
+            public void preCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
+                System.err.println("preCall _MSGetImageByName=" + ctx.getPointerArg(0).getString(0));
             }
             @Override
-            public void postCall(Emulator emulator, Arm32RegisterContext ctx, HookEntryInfo info) {
+            public void postCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
-                System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getR0Long()));
+                System.err.println("postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getLongArg(0)));
             }
         });
 

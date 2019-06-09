@@ -103,12 +103,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         vars.setPointer(3 * emulator.getPointerSize(), _NSGetEnviron);
         vars.setPointer(4 * emulator.getPointerSize(), _NSGetProgname);
 
-        errno = allocateStack(4);
+        errno = allocateStack(emulator.getPointerSize());
 
         final UnicornPointer thread = allocateStack(0x1000); // reserve space for pthread_internal_t
 
         /* 0xa4必须固定，否则初始化objc会失败 */
-        final UnicornPointer tsd = (UnicornPointer) thread.share(0xa4); // tsd size
+        final UnicornPointer tsd = (UnicornPointer) thread.share(emulator.getPointerSize() == 8 ? 0xe0 : 0xa4); // tsd size
         assert tsd != null;
         tsd.setPointer(__TSD_THREAD_SELF * emulator.getPointerSize(), thread);
         tsd.setPointer(__TSD_ERRNO * emulator.getPointerSize(), errno);

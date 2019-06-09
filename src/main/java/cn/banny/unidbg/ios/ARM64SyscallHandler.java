@@ -170,8 +170,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 19488:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getrlimit(u, emulator));
                     return;
-                case 19788:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, mmap(u, emulator));
+                case 197:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, mmap(u, emulator));
                     return;
                 case 19988:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
@@ -181,6 +181,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     return;
                 case 305:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_cvwait(emulator));
+                    return;
+                case 307:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_rw_wrlock(emulator));
+                    return;
+                case 308:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_rw_unlock(emulator));
                     return;
                 case 327:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
@@ -274,6 +280,18 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int option = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int option_time = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         log.info("thread_switch thread_name=" + thread_name + ", option=" + option + ", option_time=" + option_time);
+        return 0;
+    }
+
+    private long psynch_rw_unlock(Emulator emulator) {
+        // TODO: implement
+        log.info("psynch_rw_unlock");
+        return 0;
+    }
+
+    private long psynch_rw_wrlock(Emulator emulator) {
+        // TODO: implement
+        log.info("psynch_rw_wrlock");
         return 0;
     }
 
@@ -1179,14 +1197,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private long mmap(Unicorn u, Emulator emulator) {
-        UnicornPointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int length = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int prot = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        int flags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        int r5 = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-        long r6 = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-        long offset = r5 | (r6 << 32);
+        Arm64RegisterContext context = emulator.getContext();
+        UnicornPointer addr = context.getXPointer(0);
+        int length = context.getXInt(1);
+        int prot = context.getXInt(2);
+        int flags = context.getXInt(3);
+        int fd = context.getXInt(4);
+        long offset = context.getXLong(5);
 
         int tag = fd >>> 24;
         if (tag != 0) {
