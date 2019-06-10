@@ -12,10 +12,13 @@ public class VaList {
         this.va_list = va_list;
     }
 
-    @SuppressWarnings("unchecked")
     public <T extends DvmObject> T getObject(int offset) {
         UnicornPointer pointer = va_list.getPointer(offset);
-        return vm.getObject(pointer.toUIntPeer());
+        if (pointer == null) {
+            return null;
+        } else {
+            return vm.getObject(pointer.toUIntPeer());
+        }
     }
 
     public int getInt(int offset) {

@@ -108,4 +108,9 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator {
     public LibraryFile createURLibraryFile(URL url, String libName) {
         return new URLibraryFile(url, libName, null);
     }
+
+    @Override
+    public int getPageAlign() {
+        return 0x4000;
+    }
 }

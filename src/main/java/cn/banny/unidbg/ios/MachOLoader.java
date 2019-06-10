@@ -230,6 +230,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         String dyId = libraryFile.getName();
         String dylibPath = libraryFile.getName();
         MachO.DyldInfoCommand dyldInfoCommand = null;
+        boolean finalSegment = false;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case DYLD_INFO:
@@ -239,7 +240,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     }
                     dyldInfoCommand = (MachO.DyldInfoCommand) command.body();
                     break;
-                case SEGMENT:
+                case SEGMENT: {
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
                     if ("__PAGEZERO".equals(segmentCommand.segname())) {
                         break;
@@ -247,7 +248,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if (segmentCommand.filesize() > segmentCommand.vmsize()) {
                         throw new IllegalStateException(String.format("malformed mach-o image: segment load command %s filesize is larger than vmsize", command.type()));
                     }
-                    if(segmentCommand.vmaddr() % emulator.getPageAlign() != 0 || (segmentCommand.vmaddr() + segmentCommand.vmsize()) % emulator.getPageAlign() != 0) {
+                    if (finalSegment) {
+                        throw new IllegalStateException("finalSegment");
+                    }
+                    if (((segmentCommand.vmaddr() + segmentCommand.vmsize()) % emulator.getPageAlign()) != 0) {
+                        finalSegment = true;
+                    }
+                    if (segmentCommand.vmaddr() % emulator.getPageAlign() != 0) {
                         throw new IllegalArgumentException("vmaddr not page aligned");
                     }
 
@@ -257,12 +264,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if (segmentCommand.vmsize() < segmentCommand.filesize()) {
                         throw new IllegalStateException(String.format("malformed mach-o image: segment %s has vmsize < filesize", command.type()));
                     }
-                    long high = segmentCommand.vmaddr() + segmentCommand.vmsize();
+                    long vmsize = ARM.alignSize(segmentCommand.vmsize(), emulator.getPageAlign());
+                    long high = segmentCommand.vmaddr() + vmsize;
                     if (size < high) {
                         size = high;
                     }
                     break;
-                case SEGMENT_64:
+                }
+                case SEGMENT_64: {
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
                     if ("__PAGEZERO".equals(segmentCommand64.segname())) {
                         break;
@@ -270,8 +279,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if (segmentCommand64.filesize() > segmentCommand64.vmsize()) {
                         throw new IllegalStateException(String.format("malformed mach-o image: segment load command %s filesize is larger than vmsize", command.type()));
                     }
-                    if(segmentCommand64.vmaddr() % emulator.getPageAlign() != 0 || (segmentCommand64.vmaddr() + segmentCommand64.vmsize()) % emulator.getPageAlign() != 0) {
-                        throw new IllegalArgumentException("vmaddr or vmsize not page aligned vmaddr=0x" + Long.toHexString(segmentCommand64.vmaddr()) + ", size=" + Long.toHexString(segmentCommand64.vmsize()));
+                    if (finalSegment) {
+                        throw new IllegalStateException("finalSegment");
+                    }
+                    if (((segmentCommand64.vmaddr() + segmentCommand64.vmsize()) % emulator.getPageAlign()) != 0) {
+                        finalSegment = true;
+                    }
+                    if (segmentCommand64.vmaddr() % emulator.getPageAlign() != 0) {
+                        throw new IllegalArgumentException("vmaddr not page aligned");
                     }
 
                     if (segmentCommand64.vmsize() == 0) {
@@ -280,11 +295,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if (segmentCommand64.vmsize() < segmentCommand64.filesize()) {
                         throw new IllegalStateException(String.format("malformed mach-o image: segment %s has vmsize < filesize", command.type()));
                     }
-                    high = segmentCommand64.vmaddr() + segmentCommand64.vmsize();
+                    long vmsize = ARM.alignSize(segmentCommand64.vmsize(), emulator.getPageAlign());
+                    long high = segmentCommand64.vmaddr() + vmsize;
                     if (size < high) {
                         size = high;
                     }
                     break;
+                }
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     dylibPath = dylibCommand.name().replace("@rpath", libraryFile.getPath());
@@ -324,19 +341,19 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        final long load_base = isExecutable ? 0 : mmapBaseAddress;
+        final long loadBase = isExecutable ? 0 : mmapBaseAddress;
         long machHeader = -1;
         if (isExecutable) {
-            long end = load_base + size;
+            long end = loadBase + size;
             if (end >= mmapBaseAddress) {
                 mmapBaseAddress = end;
             }
         } else {
-            mmapBaseAddress = load_base + size;
+            mmapBaseAddress = loadBase + size;
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("start map dyid=" + dyId + ", base=0x" + Long.toHexString(load_base));
+            log.debug("start map dyid=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", size=0x" + Long.toHexString(size));
         }
 
         final List<NeedLibrary> neededList = new ArrayList<>();
@@ -347,9 +364,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         MachO.EntryPointCommand entryPointCommand = null;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
-                case SEGMENT:
+                case SEGMENT: {
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
-                    long begin = load_base + segmentCommand.vmaddr();
+                    long begin = loadBase + segmentCommand.vmaddr();
                     if ("__PAGEZERO".equals(segmentCommand.segname())) {
                         regions.add(new MemRegion(begin, begin + segmentCommand.vmsize(), 0, libraryFile, segmentCommand.vmaddr()));
                         break;
@@ -376,9 +393,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand.vmaddr()));
                     break;
-                case SEGMENT_64:
+                }
+                case SEGMENT_64: {
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
-                    begin = load_base + segmentCommand64.vmaddr();
+                    long begin = loadBase + segmentCommand64.vmaddr();
                     if ("__PAGEZERO".equals(segmentCommand64.segname())) {
                         regions.add(new MemRegion(begin, begin + segmentCommand64.vmsize(), 0, libraryFile, segmentCommand64.vmaddr()));
                         break;
@@ -392,7 +410,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                         regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand64.vmaddr()));
                         break;
                     }
-                    prot = get_segment_protection(segmentCommand64.initprot());
+                    int prot = get_segment_protection(segmentCommand64.initprot());
                     if (prot == UnicornConst.UC_PROT_NONE) {
                         prot = UnicornConst.UC_PROT_ALL;
                     }
@@ -400,11 +418,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                     if (machHeader == -1 && "__TEXT".equals(segmentCommand64.segname())) {
                         machHeader = begin;
                     }
-                    alignment = this.mem_map(begin, segmentCommand64.vmsize(), prot, dyId);
+                    Alignment alignment = this.mem_map(begin, segmentCommand64.vmsize(), prot, dyId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("mem_map address=0x" + Long.toHexString(alignment.address) + ", size=0x" + Long.toHexString(alignment.size));
+                    }
                     write_mem((int) segmentCommand64.fileoff(), (int) segmentCommand64.filesize(), begin, buffer);
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand64.vmaddr()));
                     break;
+                }
                 case LOAD_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     neededList.add(new NeedLibrary(dylibCommand.name(), false));
@@ -432,7 +454,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             log = MachOLoader.log;
         }
         if (log.isDebugEnabled()) {
-            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", dyldInfoCommand=" + dyldInfoCommand + ", loadNeeded=" + loadNeeded + ", regions=" + regions + ", isPositionIndependent=" + isPositionIndependent);
+            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", dyldInfoCommand=" + dyldInfoCommand + ", loadNeeded=" + loadNeeded + ", regions=" + regions + ", isPositionIndependent=" + isPositionIndependent);
         }
 
         Map<String, MachOModule> exportModules = new LinkedHashMap<>();
@@ -496,11 +518,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(load_base) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
+            log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
         }
 
-        long load_size = size;
-        MachOModule module = new MachOModule(machO, dyId, load_base, load_size, new HashMap<String, Module>(neededLibraries), regions,
+        final long loadSize = size;
+        MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars, machHeader, isExecutable);
         modules.put(dyId, module);
 
@@ -568,8 +590,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
             maxDylibName = dyId;
         }
-        if (size > maxSizeOfDylib) {
-            maxSizeOfDylib = load_size;
+        if (loadSize > maxSizeOfDylib) {
+            maxSizeOfDylib = loadSize;
         }
 
         log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -748,7 +770,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         } else {
             newPointer = newPointer.share(module.base);
         }
-        log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", old=" + old + ", new=" + newPointer);
+        /*if (log.isDebugEnabled()) {
+            log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", old=" + old + ", new=" + newPointer);
+        }*/
         switch (type) {
             case REBASE_TYPE_POINTER:
             case REBASE_TYPE_TEXT_ABSOLUTE32:
@@ -1008,7 +1032,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                                     }
                                 } else {
                                     pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
-                                    log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", symbol=" + symbol + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", symbol=" + symbol + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
+                                    }
                                 }
                             }
                         }
@@ -1159,9 +1185,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
             }
         }
 
-        if (log.isDebugEnabled()) {
+        /*if (log.isDebugEnabled()) {
             log.debug("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol + ", libName=" + module.name);
-        }
+        }*/
 
         Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
         if (newPointer == null) {
@@ -1408,17 +1434,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         }
     }
 
-    private static final int VM64_PAGE_SIZE = 0x4000;
-
     private MachOModule executableModule;
 
     final long allocate(long size, long mask) {
         if (log.isDebugEnabled()) {
             log.debug("allocate size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask));
-        }
-
-        if (emulator.getPointerSize() == 8 && mask < VM64_PAGE_SIZE) {
-            mask = VM64_PAGE_SIZE - 1;
         }
 
         long address = allocateMapAddress(mask, size);
@@ -1435,13 +1455,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
     @Override
     public long mmap2(long start, int length, int prot, int flags, int fd, int offset) {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
-        long mask = 0;
-        if (emulator.getPointerSize() == 8) {
-            mask = VM64_PAGE_SIZE - 1;
-        }
 
         if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
-            long addr = allocateMapAddress(mask, aligned);
+            long addr = allocateMapAddress(0, aligned);
             log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
             unicorn.mem_map(addr, aligned, prot);
             memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
@@ -1450,7 +1466,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         try {
             FileIO file;
             if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
-                long addr = allocateMapAddress(mask, aligned);
+                long addr = allocateMapAddress(0, aligned);
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
             }
