@@ -141,6 +141,15 @@ class DvmMethod implements Hashable {
         return vm.jni.callStaticBooleanMethodV(vm, dvmClass, signature, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
+    void callStaticVoidMethod(VarArg varArg) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callStaticVoidMethodV signature=" + signature);
+        }
+        BaseVM vm = dvmClass.vm;
+        vm.jni.callStaticVoidMethod(vm, dvmClass, signature, varArg);
+    }
+
     void callStaticVoidMethodV(VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {

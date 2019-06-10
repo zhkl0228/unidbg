@@ -1,6 +1,7 @@
 package cn.banny.unidbg.linux.android.dvm;
 
 import cn.banny.unidbg.linux.android.dvm.api.*;
+import cn.banny.unidbg.linux.android.dvm.wrapper.DvmBoolean;
 import cn.banny.unidbg.linux.android.dvm.wrapper.DvmInteger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -228,6 +229,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public boolean callBooleanMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg) {
+        if ("java/lang/Boolean->booleanValue()Z".equals(signature)) {
+            DvmBoolean dvmBoolean = (DvmBoolean) dvmObject;
+            return dvmBoolean.value;
+        }
+
         throw new AbstractMethodError(signature);
     }
 
@@ -247,6 +253,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public long getLongField(BaseVM vm, DvmObject dvmObject, String signature) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         throw new AbstractMethodError(signature);
     }
 

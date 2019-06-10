@@ -2,6 +2,8 @@ package cn.banny.unidbg.linux.android.dvm;
 
 public interface Jni {
 
+    void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
+
     void callStaticVoidMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
     boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);

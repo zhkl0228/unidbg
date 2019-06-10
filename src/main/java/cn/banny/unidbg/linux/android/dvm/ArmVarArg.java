@@ -19,7 +19,12 @@ public class ArmVarArg implements VarArg {
 
     @Override
     public <T extends DvmObject> T getObject(int index) {
-        return vm.getObject(getArg(index).toUIntPeer());
+        UnicornPointer pointer = getArg(index);
+        if (pointer == null) {
+            return null;
+        } else {
+            return vm.getObject(pointer.toUIntPeer());
+        }
     }
 
     @Override
