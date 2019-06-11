@@ -92,11 +92,16 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         }
 
         File file;
-        if (path.startsWith(workDir.getAbsolutePath()) && ((file = new File(path)).canRead() || create)) {
+        String workPath = workDir.getAbsolutePath();
+        if (path.startsWith(workPath) && ((file = new File(path)).canRead() || create)) {
             if (file.canRead()) {
                 return createFileIO(file, path, oflags);
             }
             try {
+                File parent = file.getParentFile();
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw new IOException("mkdirs failed: " + parent);
+                }
                 if (!file.exists() && !file.createNewFile()) {
                     throw new IOException("create file failed: " + file);
                 }

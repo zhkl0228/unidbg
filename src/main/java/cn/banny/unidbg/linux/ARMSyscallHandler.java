@@ -10,8 +10,11 @@ import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;
+import cn.banny.unidbg.memory.Memory;
+import cn.banny.unidbg.memory.MemoryMap;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
+import cn.banny.unidbg.spi.AbstractLoader;
 import cn.banny.unidbg.spi.SyscallHandler;
 import cn.banny.unidbg.unix.IO;
 import cn.banny.unidbg.unix.UnixEmulator;
@@ -140,6 +143,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 case 37:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, kill(u));
                     return;
+                case 38:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, rename(emulator));
+                    return;
                 case 39:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mkdir(u, emulator));
                     return;
@@ -228,6 +234,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     return;
                 case 162:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
+                    return;
+                case 163:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mremap(emulator));
                     return;
                 case 168:
                 case 336:
@@ -336,6 +345,12 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 case 327:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fstatat64(u, emulator));
                     return;
+                case 328:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, unlinkat(emulator));
+                    return;
+                case 329:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, renameat(emulator));
+                    return;
                 case 334:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
                     return;
@@ -364,6 +379,41 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private static final int MREMAP_MAYMOVE = 1;
+
+    private int mremap(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        UnicornPointer old_address = context.getR0Pointer();
+        int old_size = context.getR1Int();
+        int new_size = context.getR2Int();
+        int flags = context.getR3Int();
+        Pointer new_address = context.getR4Pointer();
+        if (log.isDebugEnabled()) {
+            log.debug("mremap old_address=" + old_address + ", old_size=" + old_size + ", new_size=" + new_size + ", flags=" + flags + ", new_address=" + new_address);
+        }
+        if (old_size == 0) {
+            throw new UnicornException("old_size is zero");
+        }
+        if ((flags & MREMAP_MAYMOVE) == 0) {
+            throw new UnicornException("flags=" + flags);
+        }
+
+        Memory memory = emulator.getMemory();
+        for (MemoryMap map : memory.getMemoryMap()) {
+            if (map.base == old_address.toUIntPeer() && map.size == old_size) {
+                byte[] data = new byte[old_size];
+                old_address.read(0, data, 0, data.length);
+                memory.munmap(map.base, (int) map.size);
+                long address = emulator.getMemory().mmap2(0, new_size, map.prot, AbstractLoader.MAP_ANONYMOUS, 0, 0);
+                UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
+                assert pointer != null;
+                pointer.write(0, data, 0, data.length);
+                return (int) pointer.toUIntPeer();
+            }
+        }
+        throw new UnicornException();
     }
 
     private static final int PTRACE_TRACEME = 0;
@@ -402,6 +452,33 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug("fsync fd=" + fd);
         }
+        return 0;
+    }
+
+    private int rename(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        Pointer oldpath = context.getR0Pointer();
+        Pointer newpath = context.getR1Pointer();
+        log.info("rename oldpath=" + oldpath.getString(0) + ", newpath=" + newpath.getString(0));
+        return 0;
+    }
+
+    private int renameat(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int olddirfd = context.getR0Int();
+        Pointer oldpath = context.getR1Pointer();
+        int newdirfd = context.getR2Int();
+        Pointer newpath = context.getR3Pointer();
+        log.info("renameat olddirfd=" + olddirfd + ", oldpath=" + oldpath.getString(0) + ", newdirfd=" + newdirfd + ", newpath=" + newpath.getString(0));
+        return 0;
+    }
+
+    private int unlinkat(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int dirfd = context.getR0Int();
+        Pointer pathname = context.getR1Pointer();
+        int flags = context.getR2Int();
+        log.info("unlinkat dirfd=" + dirfd + ", pathname=" + pathname.getString(0) + ", flags=" + flags);
         return 0;
     }
 

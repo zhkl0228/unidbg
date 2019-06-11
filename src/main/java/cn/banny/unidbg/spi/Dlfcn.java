@@ -13,9 +13,9 @@ public abstract class Dlfcn implements HookListener {
     protected final UnicornPointer error;
 
     protected Dlfcn(SvcMemory svcMemory) {
-        error = svcMemory.allocate(0x40, "Dlfcn.error");
+        error = svcMemory.allocate(0x80, "Dlfcn.error");
         assert error != null;
-        error.setMemory(0, 0x40, (byte) 0);
+        error.setMemory(0, 0x80, (byte) 0);
     }
 
     protected final long dlsym(Memory memory, long handle, String symbolName) {

@@ -98,7 +98,7 @@ public abstract class AbstractLoader implements Memory, Loader {
         return addr;
     }
 
-    private static final int MAP_ANONYMOUS = 0x20;
+    public static final int MAP_ANONYMOUS = 0x20;
 
     @Override
     public long mmap2(long start, int length, int prot, int flags, int fd, int offset) {
