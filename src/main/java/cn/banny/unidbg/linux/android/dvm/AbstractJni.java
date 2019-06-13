@@ -381,4 +381,9 @@ public abstract class AbstractJni implements Jni {
     public void callVoidMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
+
+    @Override
+    public void setStaticLongField(BaseVM vm, String signature, long value) {
+        throw new AbstractMethodError(signature);
+    }
 }

@@ -883,6 +883,26 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _SetStaticLongField = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator emulator) {
+                UnicornPointer clazz = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnicornPointer jfieldID = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                long value = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X3)).longValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticLongField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.staticFieldMap.get(jfieldID.peer);
+                if (dvmField == null) {
+                    throw new UnicornException("dvmClass=" + dvmClass);
+                } else {
+                    dvmField.setStaticLongField(value);
+                }
+                return 0;
+            }
+        });
+
         Pointer _GetStringUTFLength = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator emulator) {
@@ -1290,6 +1310,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x480, _GetStaticFieldID);
         impl.setPointer(0x488, _GetStaticObjectField);
         impl.setPointer(0x4B0, _GetStaticIntField);
+        impl.setPointer(0x500, _SetStaticLongField);
         impl.setPointer(0x540, _GetStringUTFLength);
         impl.setPointer(0x548, _GetStringUTFChars);
         impl.setPointer(0x550, _ReleaseStringUTFChars);

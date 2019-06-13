@@ -108,4 +108,12 @@ class DvmField implements Hashable {
         }
         dvmClass.vm.jni.setDoubleField(dvmClass.vm, dvmObject, signature, value);
     }
+
+    void setStaticLongField(long value) {
+        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+        if (log.isDebugEnabled()) {
+            log.debug("setStaticLongField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
+        }
+        dvmClass.vm.jni.setStaticLongField(dvmClass.vm, signature, value);
+    }
 }
