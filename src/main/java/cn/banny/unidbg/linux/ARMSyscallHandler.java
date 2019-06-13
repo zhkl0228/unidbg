@@ -1207,7 +1207,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 }
                 break;
         }
-        throw new UnsupportedOperationException("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
+        log.warn("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
+        emulator.getMemory().setErrno(UnixEmulator.EAFNOSUPPORT);
+        return -1;
     }
 
     private int getgroups(Unicorn u, Emulator emulator) {
@@ -1288,7 +1290,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if("/sys/fs/selinux".equals(path)) {
             return -1;
         }
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(path);
     }
 
     private static final int PR_SET_NAME = 15;
