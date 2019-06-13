@@ -63,4 +63,6 @@ public interface Jni {
     void setObjectField(BaseVM vm, DvmObject dvmObject, String signature, DvmObject value);
 
     void setStaticLongField(BaseVM vm, String signature, long value);
+
+    long getStaticLongField(BaseVM vm, String signature);
 }

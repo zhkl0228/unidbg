@@ -883,6 +883,27 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetStaticLongField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                EditableArm32RegisterContext context = emulator.getContext();
+                UnicornPointer clazz = context.getR1Pointer();
+                UnicornPointer jfieldID = context.getR2Pointer();
+                if (log.isDebugEnabled()) {
+                    log.debug("GetStaticLongField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                }
+                DvmClass dvmClass = classMap.get(clazz.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.staticFieldMap.get(jfieldID.peer);
+                if (dvmField == null) {
+                    throw new UnicornException();
+                } else {
+                    long value = dvmField.getStaticLongField();
+                    context.setR1((int) (value >> 32));
+                    return value;
+                }
+            }
+        });
+
         Pointer _SetStaticLongField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
@@ -1310,6 +1331,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x240, _GetStaticFieldID);
         impl.setPointer(0x244, _GetStaticObjectField);
         impl.setPointer(0x258, _GetStaticIntField);
+        impl.setPointer(0x25c, _GetStaticLongField);
         impl.setPointer(0x280, _SetStaticLongField);
         impl.setPointer(0x2a0, _GetStringUTFLength);
         impl.setPointer(0x2a4, _GetStringUTFChars);
