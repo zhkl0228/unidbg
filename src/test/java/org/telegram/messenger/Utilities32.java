@@ -5,7 +5,7 @@ import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
-import cn.banny.unidbg.linux.android.dvm.ByteArray;
+import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.linux.android.dvm.DalvikModule;
 import cn.banny.unidbg.linux.android.dvm.DvmClass;
 import cn.banny.unidbg.linux.android.dvm.VM;

@@ -1,21 +1,19 @@
-package cn.banny.unidbg.linux.android.dvm;
+package cn.banny.unidbg.linux.android.dvm.array;
 
-import cn.banny.unidbg.memory.MemoryBlock;
+import cn.banny.unidbg.linux.android.dvm.Array;
 
-public class ByteArray extends DvmObject<byte[]> implements Array<byte[]> {
+public class ByteArray extends BaseArray<byte[]> implements Array<byte[]> {
 
     public ByteArray(byte[] value) {
-        super(null, value);
+        super(value);
     }
-
-    MemoryBlock memoryBlock;
 
     @Override
     public int length() {
         return value.length;
     }
 
-    void setValue(byte[] value) {
+    public void setValue(byte[] value) {
         super.value = value;
     }
 

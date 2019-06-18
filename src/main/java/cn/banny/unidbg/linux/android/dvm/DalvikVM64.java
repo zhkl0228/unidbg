@@ -5,6 +5,10 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.arm.context.Arm64RegisterContext;
 import cn.banny.unidbg.arm.Arm64Svc;
 import cn.banny.unidbg.arm.context.RegisterContext;
+import cn.banny.unidbg.linux.android.dvm.array.ArrayObject;
+import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
+import cn.banny.unidbg.linux.android.dvm.array.DoubleArray;
+import cn.banny.unidbg.linux.android.dvm.array.IntArray;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
@@ -1042,10 +1046,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 ByteArray array = getObject(arrayPointer.toUIntPeer());
                 byte[] value = array.value;
-                MemoryBlock memoryBlock = emulator.getMemory().malloc(value.length);
-                memoryBlock.getPointer().write(0, value, 0, value.length);
-                array.memoryBlock = memoryBlock;
-                return memoryBlock.getPointer().peer;
+                UnicornPointer pointer = array.allocateMemoryBlock(emulator, value.length);
+                pointer.write(0, value, 0, value.length);
+                return pointer.peer;
             }
         });
 
@@ -1132,10 +1135,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     case 0:
                         array.setValue(pointer.getByteArray(0, array.value.length));
                     case JNI_ABORT:
-                        if (array.memoryBlock != null && array.memoryBlock.isSame(pointer)) {
-                            array.memoryBlock.free(true);
-                            array.memoryBlock = null;
-                        }
+                        array.freeMemoryBlock(pointer);
                         break;
                 }
                 return 0;

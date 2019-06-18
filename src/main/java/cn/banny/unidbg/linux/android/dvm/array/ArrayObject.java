@@ -1,9 +1,12 @@
-package cn.banny.unidbg.linux.android.dvm;
+package cn.banny.unidbg.linux.android.dvm.array;
 
-public class ArrayObject extends DvmObject<DvmObject[]> implements Array<DvmObject[]> {
+import cn.banny.unidbg.linux.android.dvm.Array;
+import cn.banny.unidbg.linux.android.dvm.DvmObject;
+
+public class ArrayObject extends BaseArray<DvmObject[]> implements Array<DvmObject[]> {
 
     public ArrayObject(DvmObject...value) {
-        super(null, value);
+        super(value);
     }
 
     @Override

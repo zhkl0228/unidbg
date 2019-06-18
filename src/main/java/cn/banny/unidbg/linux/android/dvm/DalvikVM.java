@@ -5,6 +5,7 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.ArmSvc;
 import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
+import cn.banny.unidbg.linux.android.dvm.array.*;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
@@ -998,6 +999,32 @@ public class DalvikVM extends BaseVM implements VM {
                 return addObject(array.getValue()[index], false);
             }
         });
+
+        Pointer _NewFloatArray = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                int size = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("NewByteArray size=" + size);
+                }
+                return addObject(new FloatArray(new float[size]), false);
+            }
+        });
+
+        Pointer _GetFloatArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                FloatArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (isCopy != null) {
+                    isCopy.setInt(0, JNI_TRUE);
+                }
+                float[] value = array.value;
+                UnicornPointer pointer = array.allocateMemoryBlock(emulator, value.length * 4);
+                pointer.write(0, value, 0, value.length);
+                return pointer.peer;
+            }
+        });
         
         Pointer _NewByteArray = svcMemory.registerSvc(new ArmSvc() {
             @Override
@@ -1044,10 +1071,9 @@ public class DalvikVM extends BaseVM implements VM {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 byte[] value = array.value;
-                MemoryBlock memoryBlock = emulator.getMemory().malloc(value.length);
-                memoryBlock.getPointer().write(0, value, 0, value.length);
-                array.memoryBlock = memoryBlock;
-                return memoryBlock.getPointer().peer;
+                UnicornPointer pointer = array.allocateMemoryBlock(emulator, value.length);
+                pointer.write(0, value, 0, value.length);
+                return pointer.peer;
             }
         });
 
@@ -1133,10 +1159,30 @@ public class DalvikVM extends BaseVM implements VM {
                     case 0:
                         array.setValue(pointer.getByteArray(0, array.value.length));
                     case JNI_ABORT:
-                        if (array.memoryBlock != null && array.memoryBlock.isSame(pointer)) {
-                            array.memoryBlock.free(true);
-                            array.memoryBlock = null;
-                        }
+                        array.freeMemoryBlock(pointer);
+                        break;
+                }
+                return 0;
+            }
+        });
+
+        Pointer _ReleaseFloatArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                FloatArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                int mode = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("ReleaseByteArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
+                }
+                switch (mode) {
+                    case JNI_COMMIT:
+                        array.setValue(pointer.getFloatArray(0, array.value.length));
+                        break;
+                    case 0:
+                        array.setValue(pointer.getFloatArray(0, array.value.length));
+                    case JNI_ABORT:
+                        array.freeMemoryBlock(pointer);
                         break;
                 }
                 return 0;
@@ -1186,6 +1232,23 @@ public class DalvikVM extends BaseVM implements VM {
                 int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
                 Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP).getPointer(0);
                 int[] data = buf.getIntArray(0, len);
+                if (log.isDebugEnabled()) {
+                    log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                }
+                array.setData(start, data);
+                return 0;
+            }
+        });
+
+        Pointer _SetFloatArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                Unicorn u = emulator.getUnicorn();
+                FloatArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                int start = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+                Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP).getPointer(0);
+                float[] data = buf.getFloatArray(0, len);
                 if (log.isDebugEnabled()) {
                     log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
                 }
@@ -1346,10 +1409,14 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x298, _ReleaseStringChars);
         impl.setPointer(0x29c, _NewStringUTF);
         impl.setPointer(0x2b4, _GetObjectArrayElement);
+        impl.setPointer(0x2d4, _NewFloatArray);
+        impl.setPointer(0x2f4, _GetFloatArrayElements);
         impl.setPointer(0x300, _ReleaseByteArrayElements);
+        impl.setPointer(0x314, _ReleaseFloatArrayElements);
         impl.setPointer(0x320, _GetByteArrayRegion);
         impl.setPointer(0x340, _SetByteArrayRegion);
         impl.setPointer(0x34c, _SetIntArrayRegion);
+        impl.setPointer(0x354, _SetFloatArrayRegion);
         impl.setPointer(0x358, _SetDoubleArrayRegion);
         impl.setPointer(0x35c, _RegisterNatives);
         impl.setPointer(0x36c, _GetJavaVM);

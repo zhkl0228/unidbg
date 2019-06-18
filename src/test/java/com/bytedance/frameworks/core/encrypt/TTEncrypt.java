@@ -18,7 +18,7 @@ import cn.banny.unidbg.hook.xhook.IxHook;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.linux.android.XHookImpl;
-import cn.banny.unidbg.linux.android.dvm.ByteArray;
+import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.linux.android.dvm.DalvikModule;
 import cn.banny.unidbg.linux.android.dvm.DvmClass;
 import cn.banny.unidbg.linux.android.dvm.VM;

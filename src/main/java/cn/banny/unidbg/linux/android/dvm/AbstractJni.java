@@ -1,6 +1,8 @@
 package cn.banny.unidbg.linux.android.dvm;
 
 import cn.banny.unidbg.linux.android.dvm.api.*;
+import cn.banny.unidbg.linux.android.dvm.array.ArrayObject;
+import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.linux.android.dvm.wrapper.DvmBoolean;
 import cn.banny.unidbg.linux.android.dvm.wrapper.DvmInteger;
 import org.apache.commons.logging.Log;

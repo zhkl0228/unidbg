@@ -7,6 +7,7 @@ import cn.banny.unidbg.file.IOResolver;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.linux.android.dvm.*;
+import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.memory.Memory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;

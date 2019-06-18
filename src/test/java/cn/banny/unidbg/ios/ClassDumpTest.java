@@ -38,12 +38,12 @@ public class ClassDumpTest extends EmulatorTest {
         Symbol _objc_getMetaClass = main.findSymbolByName("_objc_getMetaClass");
         assertNotNull(_objc_getMetaClass);
         Number ClassDump = _objc_getMetaClass.call(emulator, "ClassDump")[0];
-        assertTrue(ClassDump != 0);
+        assertTrue(ClassDump.intValue() != 0);
 
         Symbol _sel_registerName = main.findSymbolByName("_sel_registerName");
         assertNotNull(_sel_registerName);
         Number my_dump_class = _sel_registerName.call(emulator, "my_dump_class:")[0];
-        assertTrue(my_dump_class != 0);
+        assertTrue(my_dump_class.intValue() != 0);
 
         substrate.hookMessageEx(UnicornPointer.pointer(emulator, ClassDump), UnicornPointer.pointer(emulator, my_dump_class), new ReplaceCallback() {
             @Override
