@@ -2,10 +2,6 @@ package cn.banny.unidbg.debugger.gdb;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.arm.AbstractARMDebugger;
-import keystone.Keystone;
-import keystone.KeystoneArchitecture;
-import keystone.KeystoneEncoded;
-import keystone.KeystoneMode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,7 +44,7 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
     private List<ByteBuffer> pendingWrites;
 
     public GdbStub(Emulator emulator) {
-        super(emulator, true);
+        super(emulator, false);
 
         if (emulator.getPointerSize() == 4) { // arm32
             registers = new int[] {
@@ -82,6 +78,8 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
             registers[33] = Arm64Const.UC_ARM64_REG_NZCV;
         }
 
+        singleStep = 1;
+
         Thread thread = new Thread(this, "gdbserver");
         thread.start();
     }
@@ -112,7 +110,9 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
     }
 
     final void resumeRun() {
-        semaphore.release();
+        if (semaphore != null) {
+            semaphore.release();
+        }
     }
 
     private void runServer() {
@@ -159,7 +159,10 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
                     selectedKeys.remove();
                 }
                 processCommands();
-            } catch(Throwable ignored) {
+            } catch(Throwable e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("run server ex", e);
+                }
             }
         }
 
@@ -206,6 +209,11 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
     final void detachServer() {
         closeConnection = true;
         enableWrites(true);
+    }
+
+    final void singleStep() {
+        singleStep = 1;
+        resumeRun();
     }
 
     private void onSelectAccept(SelectionKey key) throws IOException {
@@ -430,21 +438,13 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
 
         GdbStubCommand commandQuery = new QueryCommand();
         registerCommand("q", commandQuery);
+
+        GdbStubCommand commandVCont = new VContCommand();
+        registerCommand("vCont", commandVCont);
     }
 
     @Override
     protected byte[] addSoftBreakPoint(long address, int svcNumber) {
-        if (emulator.getPointerSize() == 4) {
-            boolean isThumb = (address & 1) != 0;
-            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, isThumb ? KeystoneMode.ArmThumb : KeystoneMode.Arm)) {
-                KeystoneEncoded encoded = keystone.assemble("bkpt #" + svcNumber);
-                return encoded.getMachineCode();
-            }
-        } else {
-            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-                KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
-                return encoded.getMachineCode();
-            }
-        }
+        throw new UnsupportedOperationException();
     }
 }

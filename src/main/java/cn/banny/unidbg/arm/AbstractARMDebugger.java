@@ -37,6 +37,11 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
+    public boolean isSoftBreakpoint() {
+        return softBreakpoint;
+    }
+
+    @Override
     public final void addBreakPoint(Module module, String symbol) {
         try {
             Symbol sym = module.findSymbolByName(symbol, false);
@@ -93,6 +98,8 @@ public abstract class AbstractARMDebugger implements Debugger {
     protected abstract byte[] addSoftBreakPoint(long address, int svcNumber);
 
     public final boolean removeBreakPoint(long address) {
+        address &= (~1);
+
         if (softBreakpoint) {
             for (Iterator<Map.Entry<Integer, SoftBreakPoint>> iterator = softBreakpointMap.entrySet().iterator(); iterator.hasNext(); ) {
                 Map.Entry<Integer, SoftBreakPoint> entry = iterator.next();
@@ -174,7 +181,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    int singleStep;
+    protected int singleStep;
 
     String breakMnemonic;
 

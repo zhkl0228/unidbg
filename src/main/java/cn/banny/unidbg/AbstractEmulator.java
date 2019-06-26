@@ -115,22 +115,22 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     @Override
-    public Debugger attach(boolean softBreakpoint) {
-        return attach(1, 0, softBreakpoint);
+    public Debugger attach(boolean gdbServer) {
+        return attach(1, 0, gdbServer);
     }
 
     @Override
-    public Debugger attach(long begin, long end, boolean softBreakpoint) {
+    public Debugger attach(long begin, long end, boolean gdbServer) {
         if (debugger != null) {
             return debugger;
         }
 
-        debugger = createDebugger(softBreakpoint);
+        debugger = gdbServer ? new GdbStub(this) : createDebugger();
         if (debugger == null) {
             throw new UnsupportedOperationException();
         }
 
-        if (!softBreakpoint) {
+        if (!debugger.isSoftBreakpoint()) {
             this.unicorn.hook_add(debugger, begin, end, this);
         }
         this.timeout = 0;
@@ -142,7 +142,7 @@ public abstract class AbstractEmulator implements Emulator {
         return attach(begin, end, false);
     }
 
-    protected abstract Debugger createDebugger(boolean softBreakpoint);
+    protected abstract Debugger createDebugger();
 
     @Override
     public int getPid() {
@@ -359,14 +359,6 @@ public abstract class AbstractEmulator implements Emulator {
     @Override
     public <T> T get(String key) {
         return (T) context.get(key);
-    }
-
-    @Override
-    public void waitingGdbAttach() {
-        if (debugger == null) {
-            debugger = new GdbStub(this);
-        }
-        debugger.debug();
     }
 
 }

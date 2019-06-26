@@ -22,4 +22,6 @@ public interface Debugger extends CodeHook, Closeable {
 
     void setDebugListener(DebugListener listener);
 
+    boolean isSoftBreakpoint();
+
 }
