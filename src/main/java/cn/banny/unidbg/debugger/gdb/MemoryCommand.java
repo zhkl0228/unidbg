@@ -19,13 +19,13 @@ class MemoryCommand implements GdbStubCommand {
                 return true;
             }
             if (command.startsWith("m")) {
-                int len = Integer.parseInt(command.substring(divider + 1));
+                int len = Integer.parseInt(command.substring(divider + 1), 16);
                 final String resp = Hex.encodeHexString(pointer.getByteArray(0, len)).toUpperCase();
                 stub.makePacketAndSend(resp);
                 return true;
             } else {
                 int dividerForValue = command.indexOf(":");
-                int len = Integer.parseInt(command.substring(divider + 1, dividerForValue));
+                int len = Integer.parseInt(command.substring(divider + 1, dividerForValue), 16);
                 byte[] val = Hex.decodeHex(command.substring(dividerForValue + 1).toCharArray());
                 pointer.write(0, val, 0, len);
                 stub.makePacketAndSend("OK");

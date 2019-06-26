@@ -67,7 +67,8 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
                     ArmConst.UC_ARM_REG_R12,
                     ArmConst.UC_ARM_REG_SP,
                     ArmConst.UC_ARM_REG_LR,
-                    ArmConst.UC_ARM_REG_PC
+                    ArmConst.UC_ARM_REG_PC,
+                    ArmConst.UC_ARM_REG_CPSR
             };
         } else { // arm64
             registers = new int[34];
@@ -182,7 +183,9 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
     }
 
     private void closeSocketChannel() {
-        if (socketChannel == null) return;
+        if (socketChannel == null) {
+            return;
+        }
         SelectionKey key = socketChannel.keyFor(selector);
         if (key != null) key.cancel();
         IOUtils.closeQuietly(socketChannel);
