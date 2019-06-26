@@ -100,6 +100,11 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
 
     Debugger attach(long begin, long end, boolean softBreakpoint);
 
+    /**
+     * Start gdbserver and wait be attached
+     */
+    void waitingGdbAttach();
+
     void setWorkDir(File dir);
     File getWorkDir();
 

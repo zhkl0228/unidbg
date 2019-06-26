@@ -3,6 +3,7 @@ package cn.banny.unidbg;
 import cn.banny.unidbg.arm.Arguments;
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.debugger.Debugger;
+import cn.banny.unidbg.debugger.gdb.GdbStub;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.MemoryBlockImpl;
@@ -15,7 +16,10 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.*;
+import unicorn.Arm64Const;
+import unicorn.ArmConst;
+import unicorn.Unicorn;
+import unicorn.UnicornException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -289,6 +293,8 @@ public abstract class AbstractEmulator implements Emulator {
         }
 
         try {
+            IOUtils.closeQuietly(debugger);
+
             closeInternal();
 
             // unicorn.close(); // May cause crash
@@ -353,6 +359,14 @@ public abstract class AbstractEmulator implements Emulator {
     @Override
     public <T> T get(String key) {
         return (T) context.get(key);
+    }
+
+    @Override
+    public void waitingGdbAttach() {
+        if (debugger == null) {
+            debugger = new GdbStub(this);
+        }
+        debugger.debug();
     }
 
 }

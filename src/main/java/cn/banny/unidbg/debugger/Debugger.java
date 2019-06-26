@@ -4,7 +4,9 @@ import cn.banny.unidbg.Module;
 import com.sun.jna.Pointer;
 import unicorn.CodeHook;
 
-public interface Debugger extends CodeHook {
+import java.io.Closeable;
+
+public interface Debugger extends CodeHook, Closeable {
 
     void addBreakPoint(Module module, String symbol);
     void addBreakPoint(Module module, long offset);

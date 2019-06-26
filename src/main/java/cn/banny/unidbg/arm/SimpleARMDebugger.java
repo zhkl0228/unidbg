@@ -24,7 +24,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    final void loop(Emulator emulator, Unicorn u, long address, int size) {
+    protected final void loop(Emulator emulator, Unicorn u, long address, int size) {
         System.out.println("debugger break at: 0x" + Long.toHexString(address));
         boolean thumb = ARM.isThumb(u);
         long nextAddress = 0;
@@ -248,7 +248,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    byte[] addSoftBreakPoint(long address, int svcNumber) {
+    protected byte[] addSoftBreakPoint(long address, int svcNumber) {
         boolean isThumb = (address & 1) != 0;
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, isThumb ? KeystoneMode.ArmThumb : KeystoneMode.Arm)) {
             KeystoneEncoded encoded = keystone.assemble("bkpt #" + svcNumber);
