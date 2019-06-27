@@ -27,7 +27,7 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
 
     private static final Log log = LogFactory.getLog(GdbStub.class);
 
-    private static final int DEFAULT_PORT = 2159;
+    private static final int DEFAULT_PORT = 23946;
     static final String SIGTRAP = "05"; /* Trace trap (POSIX).  */
 
     final int[] registers;
@@ -115,6 +115,8 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
         }
     }
 
+    static final int PACKET_SIZE = 1024;
+
     private void runServer() {
         selector = null;
         serverSocketChannel = null;
@@ -133,7 +135,7 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
 
         pendingWrites = new LinkedList<>();
         currentInputPacket = new StringBuilder();
-        input = ByteBuffer.allocate(1024);
+        input = ByteBuffer.allocate(PACKET_SIZE);
         serverShutdown = false;
         serverRunning = true;
 
@@ -325,7 +327,9 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
                         reTransmitLastPacket();
                         break;
                     case '+': // Silently discard '+' packets
+                        break;
                     case 0x3: // Ctrl-C requests
+                        singleStep = 1;
                         break;
                     case '$':
                         currentInputPacket.append(c);
@@ -389,7 +393,7 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
             }
         }
         if (log.isDebugEnabled()) {
-            log.debug("Unsupported command=" + command);
+            log.warn("Unsupported command=" + command);
         }
         makePacketAndSend("");
     }
@@ -427,8 +431,8 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
         GdbStubCommand commandKill = new KillCommand();
         registerCommand("k", commandKill);
 
-        GdbStubCommand commandQSupported = new QSupportedCommand();
-        registerCommand("qSupported", commandQSupported);
+        GdbStubCommand commandEnableExtendedMode = new EnableExtendedModeCommand();
+        registerCommand("!", commandEnableExtendedMode);
 
         GdbStubCommand commandLastSignal = new LastSignalCommand();
         registerCommand("?", commandLastSignal);
@@ -439,7 +443,10 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
         GdbStubCommand commandQuery = new QueryCommand();
         registerCommand("q", commandQuery);
 
-        GdbStubCommand commandVCont = new VContCommand();
+        GdbStubCommand commandSetThread = new SetThreadCommand();
+        registerCommand("H", commandSetThread);
+
+        GdbStubCommand commandVCont = new ExtendedCommand();
         registerCommand("vCont", commandVCont);
     }
 
