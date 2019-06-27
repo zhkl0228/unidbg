@@ -199,8 +199,12 @@ public final class GdbStub extends AbstractDebugServer {
     }
 
     @Override
-    protected void onClose() {
+    protected void onDebuggerExit() {
         makePacketAndSend("W00");
+    }
+
+    @Override
+    protected void onDebuggerConnected() {
     }
 
     private static final Map<String, GdbStubCommand> commands;

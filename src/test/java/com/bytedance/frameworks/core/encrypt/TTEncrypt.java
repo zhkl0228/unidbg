@@ -9,6 +9,7 @@ import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
+import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
 import cn.banny.unidbg.hook.hookzz.HookZz;
@@ -143,7 +144,7 @@ public class TTEncrypt {
 
         long start = System.currentTimeMillis();
         byte[] data = new byte[16];
-        emulator.attach(true);
+        emulator.attach(DebuggerType.ANDROID_SERVER);
         Number ret = TTEncryptUtils.callStaticJniMethod(emulator, "ttEncrypt([BI)[B", vm.addLocalObject(new ByteArray(data)), data.length);
         long hash = ret.intValue() & 0xffffffffL;
         ByteArray array = vm.getObject(hash);

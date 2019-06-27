@@ -32,7 +32,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
 
         singleStep = 1; // break at attach
 
-        Thread thread = new Thread(this, "gdbserver");
+        Thread thread = new Thread(this, "dbgserver");
         thread.start();
     }
 
@@ -72,7 +72,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         serverShutdown = false;
         serverRunning = true;
 
-        System.err.println("Start gdbserver successfully on port: " + DEFAULT_PORT);
+        System.err.println("Start debugger server successfully on port: " + DEFAULT_PORT);
 
         while(serverRunning) {
             try {
@@ -97,6 +97,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
                     }
                     selectedKeys.remove();
                 }
+
                 processInput(input);
             } catch(Throwable e) {
                 if (log.isDebugEnabled()) {
@@ -133,8 +134,11 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
             sc.register(key.selector(), SelectionKey.OP_READ);
             socketChannel = sc;
             enableNewConnections(false);
+            onDebuggerConnected();
         }
     }
+
+    protected abstract void onDebuggerConnected();
 
     private void onSelectWrite(SelectionKey key) throws IOException {
         SocketChannel sc = (SocketChannel) key.channel();
@@ -233,11 +237,11 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     public final void close() {
         super.close();
 
-        onClose();
+        onDebuggerExit();
         shutdownServer();
     }
 
-    protected abstract void onClose();
+    protected abstract void onDebuggerExit();
 
     public final void shutdownServer() {
         serverShutdown = true;
