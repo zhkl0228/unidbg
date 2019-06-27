@@ -346,10 +346,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
         if (isExecutable) {
             long end = loadBase + size;
             if (end >= mmapBaseAddress) {
-                mmapBaseAddress = end;
+                setMMapBaseAddress(end);
             }
         } else {
-            mmapBaseAddress = loadBase + size;
+            setMMapBaseAddress(loadBase + size);
         }
 
         if (log.isDebugEnabled()) {

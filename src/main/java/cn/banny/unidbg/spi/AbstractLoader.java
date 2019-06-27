@@ -38,12 +38,20 @@ public abstract class AbstractLoader implements Memory, Loader {
     protected long mmapBaseAddress;
     protected final Map<Long, MemoryMap> memoryMap = new TreeMap<>();
 
+    protected void setMMapBaseAddress(long address) {
+        this.mmapBaseAddress = address;
+
+        if (log.isDebugEnabled()) {
+            log.debug("setMMapBaseAddress=0x" + Long.toHexString(address));
+        }
+    }
+
     public AbstractLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
         this.unicorn = emulator.getUnicorn();
         this.emulator = emulator;
         this.syscallHandler = syscallHandler;
 
-        mmapBaseAddress = MMAP_BASE;
+        setMMapBaseAddress(MMAP_BASE);
     }
 
     @Override
@@ -86,7 +94,7 @@ public abstract class AbstractLoader implements Memory, Loader {
             long mmapAddress = map.base + map.size;
             if (mmapAddress < mmapBaseAddress) {
                 log.debug("allocateMapAddress mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", mmapAddress=0x" + Long.toHexString(mmapAddress));
-                mmapBaseAddress = mmapAddress;
+                setMMapBaseAddress(mmapAddress);
             }
         }
 
@@ -94,7 +102,7 @@ public abstract class AbstractLoader implements Memory, Loader {
         while ((addr & mask) != 0) {
             addr += emulator.getPageAlign();
         }
-        mmapBaseAddress = addr + length;
+        setMMapBaseAddress(addr + length);
         return addr;
     }
 
@@ -106,7 +114,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 
         if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
             long addr = allocateMapAddress(0, aligned);
-            log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
+            log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
             unicorn.mem_map(addr, aligned, prot);
             memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
             return addr;
@@ -165,7 +173,7 @@ public abstract class AbstractLoader implements Memory, Loader {
         }
 
         if (memoryMap.isEmpty()) {
-            mmapBaseAddress = MMAP_BASE;
+            setMMapBaseAddress(MMAP_BASE);
         }
         return 0;
     }

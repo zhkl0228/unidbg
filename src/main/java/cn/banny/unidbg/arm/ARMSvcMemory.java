@@ -6,6 +6,8 @@ import cn.banny.unidbg.memory.MemRegion;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.spi.SyscallHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
@@ -15,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ARMSvcMemory implements SvcMemory {
+
+    private static final Log log = LogFactory.getLog(ARMSvcMemory.class);
 
     private UnicornPointer base;
 
@@ -43,6 +47,9 @@ public class ARMSvcMemory implements SvcMemory {
         size = ARM.alignSize(size);
         UnicornPointer pointer = base.share(0, size);
         base = (UnicornPointer) base.share(size);
+        if (log.isDebugEnabled()) {
+            log.debug("allocate size=" + size + ", label=" + label + ", base=" + base);
+        }
         memRegions.add(new MemRegion(pointer.peer, pointer.peer + size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC, null, 0) {
             @Override
             public String getName() {

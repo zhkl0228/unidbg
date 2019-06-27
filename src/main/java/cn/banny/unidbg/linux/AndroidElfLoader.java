@@ -310,7 +310,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         final long baseAlign = emulator.getPageAlign();
         final long load_base = ((mmapBaseAddress - 1) / baseAlign + 1) * baseAlign;
         long size = emulator.align(0, bound_high).size;
-        mmapBaseAddress = load_base + size;
+        setMMapBaseAddress(load_base + size);
 
         final List<cn.banny.unidbg.memory.MemRegion> regions = new ArrayList<>(5);
         for (int i = 0; i < elfFile.num_ph; i++) {
