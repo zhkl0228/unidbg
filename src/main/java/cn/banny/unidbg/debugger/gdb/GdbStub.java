@@ -66,9 +66,7 @@ public final class GdbStub extends AbstractDebugServer {
     }
 
     final void send(String packet) {
-        ByteBuffer bb = ByteBuffer.wrap(packet.getBytes());
-        pendingWrites.add(bb);
-        enableWrites(true);
+        sendData(packet.getBytes());
     }
 
     private void sendPacket(String packet) {

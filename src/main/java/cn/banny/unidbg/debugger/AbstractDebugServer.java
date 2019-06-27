@@ -22,7 +22,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
 
     private static final Log log = LogFactory.getLog(AbstractDebugServer.class);
 
-    protected final List<ByteBuffer> pendingWrites;
+    private final List<ByteBuffer> pendingWrites;
 
     public AbstractDebugServer(Emulator emulator) {
         super(emulator, false);
@@ -49,7 +49,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     }
 
     @Override
-    public void run() {
+    public final void run() {
         runServer();
     }
 
@@ -192,12 +192,18 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         }
     }
 
-    protected final void enableWrites(boolean enable) {
+    private void enableWrites(boolean enable) {
         if (socketChannel == null) {
             return;
         }
         SelectionKey key = socketChannel.keyFor(selector);
         key.interestOps(enable ? SelectionKey.OP_WRITE : SelectionKey.OP_READ);
+    }
+
+    protected final void sendData(byte[] data) {
+        ByteBuffer bb = ByteBuffer.wrap(data);
+        pendingWrites.add(bb);
+        enableWrites(true);
     }
 
     private Semaphore semaphore;
