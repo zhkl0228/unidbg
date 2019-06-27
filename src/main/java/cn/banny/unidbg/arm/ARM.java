@@ -42,7 +42,7 @@ public class ARM {
         showRegs(unicorn, ARM.THUMB_REGS);
     }
 
-    static void showRegs(Unicorn unicorn, int[] regs) {
+    public static void showRegs(Unicorn unicorn, int[] regs) {
         boolean thumb = isThumb(unicorn);
         if (regs == null || regs.length < 1) {
             regs = ARM.getAllRegisters(thumb);

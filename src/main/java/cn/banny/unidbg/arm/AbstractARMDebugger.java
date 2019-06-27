@@ -22,18 +22,23 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-abstract class AbstractARMDebugger implements Debugger {
+public abstract class AbstractARMDebugger implements Debugger {
 
     private static final Log log = LogFactory.getLog(AbstractARMDebugger.class);
 
     private final Map<Long, Module> breakMap = new HashMap<>();
 
-    final Emulator emulator;
+    protected final Emulator emulator;
     private final boolean softBreakpoint;
 
-    AbstractARMDebugger(Emulator emulator, boolean softBreakpoint) {
+    protected AbstractARMDebugger(Emulator emulator, boolean softBreakpoint) {
         this.emulator = emulator;
         this.softBreakpoint = softBreakpoint;
+    }
+
+    @Override
+    public boolean isSoftBreakpoint() {
+        return softBreakpoint;
     }
 
     @Override
@@ -90,14 +95,31 @@ abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    abstract byte[] addSoftBreakPoint(long address, int svcNumber);
+    protected abstract byte[] addSoftBreakPoint(long address, int svcNumber);
 
-    final boolean removeBreakPoint(long address) {
-        if (breakMap.containsKey(address)) {
-            breakMap.remove(address);
-            return true;
-        } else {
+    public final boolean removeBreakPoint(long address) {
+        address &= (~1);
+
+        if (softBreakpoint) {
+            for (Iterator<Map.Entry<Integer, SoftBreakPoint>> iterator = softBreakpointMap.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry<Integer, SoftBreakPoint> entry = iterator.next();
+                SoftBreakPoint breakPoint = entry.getValue();
+                if (address == breakPoint.address) {
+                    Pointer pointer = UnicornPointer.pointer(emulator, address);
+                    assert pointer != null;
+                    pointer.write(0, breakPoint.backup, 0, breakPoint.backup.length);
+                    iterator.remove();
+                    return true;
+                }
+            }
             return false;
+        } else {
+            if (breakMap.containsKey(address)) {
+                breakMap.remove(address);
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
@@ -159,11 +181,11 @@ abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    int singleStep;
+    protected int singleStep;
 
     String breakMnemonic;
 
-    abstract void loop(Emulator emulator, Unicorn u, long address, int size) throws Exception;
+    protected abstract void loop(Emulator emulator, Unicorn u, long address, int size) throws Exception;
 
     final void dumpMemory(Pointer pointer, int _length, String label, boolean nullTerminated) {
         if (nullTerminated) {
@@ -291,4 +313,9 @@ abstract class AbstractARMDebugger implements Debugger {
             debug();
         }
     }
+
+    @Override
+    public void close() {
+    }
+
 }

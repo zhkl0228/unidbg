@@ -4,7 +4,9 @@ import cn.banny.unidbg.Module;
 import com.sun.jna.Pointer;
 import unicorn.CodeHook;
 
-public interface Debugger extends CodeHook {
+import java.io.Closeable;
+
+public interface Debugger extends CodeHook, Closeable {
 
     void addBreakPoint(Module module, String symbol);
     void addBreakPoint(Module module, long offset);
@@ -19,5 +21,7 @@ public interface Debugger extends CodeHook {
     void brk(Pointer pc, int svcNumber);
 
     void setDebugListener(DebugListener listener);
+
+    boolean isSoftBreakpoint();
 
 }

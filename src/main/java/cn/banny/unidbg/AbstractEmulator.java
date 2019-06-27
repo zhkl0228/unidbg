@@ -3,6 +3,7 @@ package cn.banny.unidbg;
 import cn.banny.unidbg.arm.Arguments;
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.debugger.Debugger;
+import cn.banny.unidbg.debugger.gdb.GdbStub;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.MemoryBlockImpl;
@@ -15,7 +16,10 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.*;
+import unicorn.Arm64Const;
+import unicorn.ArmConst;
+import unicorn.Unicorn;
+import unicorn.UnicornException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -111,22 +115,22 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     @Override
-    public Debugger attach(boolean softBreakpoint) {
-        return attach(1, 0, softBreakpoint);
+    public Debugger attach(boolean gdbServer) {
+        return attach(1, 0, gdbServer);
     }
 
     @Override
-    public Debugger attach(long begin, long end, boolean softBreakpoint) {
+    public Debugger attach(long begin, long end, boolean gdbServer) {
         if (debugger != null) {
             return debugger;
         }
 
-        debugger = createDebugger(softBreakpoint);
+        debugger = gdbServer ? new GdbStub(this) : createDebugger();
         if (debugger == null) {
             throw new UnsupportedOperationException();
         }
 
-        if (!softBreakpoint) {
+        if (!debugger.isSoftBreakpoint()) {
             this.unicorn.hook_add(debugger, begin, end, this);
         }
         this.timeout = 0;
@@ -138,7 +142,7 @@ public abstract class AbstractEmulator implements Emulator {
         return attach(begin, end, false);
     }
 
-    protected abstract Debugger createDebugger(boolean softBreakpoint);
+    protected abstract Debugger createDebugger();
 
     @Override
     public int getPid() {
@@ -289,6 +293,8 @@ public abstract class AbstractEmulator implements Emulator {
         }
 
         try {
+            IOUtils.closeQuietly(debugger);
+
             closeInternal();
 
             // unicorn.close(); // May cause crash

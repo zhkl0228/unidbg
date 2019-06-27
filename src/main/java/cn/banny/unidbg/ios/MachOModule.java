@@ -261,7 +261,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
         List<InitFunction> routines = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
-                case ROUTINES:
+                case ROUTINES: {
                     MachO.RoutinesCommand routinesCommand = (MachO.RoutinesCommand) command.body();
                     long address = routinesCommand.initAddress();
                     if (log.isDebugEnabled()) {
@@ -269,8 +269,16 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
                     }
                     routines.add(new MachOModuleInit(this, envp, apple, vars, false, address));
                     break;
-                case ROUTINES_64:
-                    throw new UnsupportedOperationException();
+                }
+                case ROUTINES_64: {
+                    MachO.RoutinesCommand64 routinesCommand64 = (MachO.RoutinesCommand64) command.body();
+                    long address = routinesCommand64.initAddress();
+                    if (log.isDebugEnabled()) {
+                        log.debug("parseRoutines address=" + address);
+                    }
+                    routines.add(new MachOModuleInit(this, envp, apple, vars, false, address));
+                    break;
+                }
             }
         }
         return routines;

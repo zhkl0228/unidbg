@@ -345,10 +345,14 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
                     dynamicStructure = ph.getDynamicStructure();
                     break;
                 case ElfSegment.PT_INTERP:
-                    log.debug("[" + libraryFile.getName() + "]interp=" + ph.getIntepreter());
+                    if (log.isDebugEnabled()) {
+                        log.debug("[" + libraryFile.getName() + "]interp=" + ph.getIntepreter());
+                    }
                     break;
                 default:
-                    log.debug("[" + libraryFile.getName() + "]segment type=0x" + Integer.toHexString(ph.type) + ", offset=0x" + Long.toHexString(ph.offset));
+                    if (log.isDebugEnabled()) {
+                        log.debug("[" + libraryFile.getName() + "]segment type=0x" + Integer.toHexString(ph.type) + ", offset=0x" + Long.toHexString(ph.offset));
+                    }
                     break;
             }
         }
