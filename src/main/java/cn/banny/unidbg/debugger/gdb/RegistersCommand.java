@@ -14,7 +14,11 @@ class RegistersCommand implements GdbStubCommand {
     public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
         Unicorn unicorn = emulator.getUnicorn();
         if (log.isDebugEnabled()) {
-            ARM.showRegs(unicorn, null);
+            if (emulator.getPointerSize() == 4) {
+                ARM.showRegs(unicorn, null);
+            } else {
+                ARM.showRegs64(unicorn, null);
+            }
         }
 
         if (command.startsWith("g")) {

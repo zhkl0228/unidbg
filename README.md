@@ -50,7 +50,7 @@ Simple tests under src/test directory
 - Support ARM32 and ARM64 bit ELF.
 - Inline hook, thanks to HookZz.
 - Import hook, thanks to xHook.
-- Support simple debugger, instruction trace, memory read/write trace.
+- Support simple debugger, gdb stub, instruction trace, memory read/write trace.
 
 ## TODO
 - ~~Working iOS emulation.~~

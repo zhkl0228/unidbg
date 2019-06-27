@@ -124,6 +124,7 @@ public class JniDispatch64 extends AbstractJni {
         vm.deleteLocalRefs();
         System.out.println("getAPIChecksum checksum=" + checksum.getValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
+        emulator.attach(true);
         ret = Native.callStaticJniMethod(emulator, "sizeof(I)I", 0);
         vm.deleteLocalRefs();
         System.out.println("sizeof POINTER_SIZE=" + ret.intValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");

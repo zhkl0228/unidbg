@@ -137,7 +137,7 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
         serverShutdown = false;
         serverRunning = true;
 
-        System.err.println("Start gdbserver successfully");
+        System.err.println("Start gdbserver successfully on port: " + DEFAULT_PORT);
 
         while(serverRunning) {
             try {
