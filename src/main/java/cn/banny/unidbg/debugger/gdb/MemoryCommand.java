@@ -32,7 +32,7 @@ class MemoryCommand implements GdbStubCommand {
                 return true;
             }
         } catch (UnicornException e) {
-            stub.makePacketAndSend("E00");
+            stub.makePacketAndSend("E01");
             return true;
         } catch (Hex.DecoderException e) {
             throw new IllegalStateException("process memory command failed: " + command, e);

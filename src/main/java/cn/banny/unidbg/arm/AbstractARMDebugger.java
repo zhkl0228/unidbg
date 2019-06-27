@@ -148,17 +148,17 @@ public abstract class AbstractARMDebugger implements Debugger {
 
         try {
             if (breakMap.containsKey(address)) {
-                loop(emulator, u, address, size);
+                loop(emulator, address, size);
             } else if (singleStep == 0) {
-                loop(emulator, u, address, size);
+                loop(emulator, address, size);
             } else if (breakMnemonic != null) {
                 Capstone.CsInsn ins = history.disassemble(emulator);
                 if (breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
-                    loop(emulator, u, address, size);
+                    loop(emulator, address, size);
                 }
             } else if (listener != null && listener.canDebug(emulator, history)) {
-                loop(emulator, u, address, size);
+                loop(emulator, address, size);
             }
         } catch (Exception e) {
             log.warn("process hook failed", e);
@@ -175,7 +175,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             address = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
         }
         try {
-            loop(emulator, unicorn, address, 0);
+            loop(emulator, address, 0);
         } catch (Exception e) {
             log.warn("debug failed", e);
         }
@@ -185,7 +185,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     String breakMnemonic;
 
-    protected abstract void loop(Emulator emulator, Unicorn u, long address, int size) throws Exception;
+    protected abstract void loop(Emulator emulator, long address, int size) throws Exception;
 
     final void dumpMemory(Pointer pointer, int _length, String label, boolean nullTerminated) {
         if (nullTerminated) {

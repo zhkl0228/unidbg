@@ -2,6 +2,7 @@ package cn.banny.unidbg;
 
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.debugger.Debugger;
+import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.linux.android.dvm.VM;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -91,14 +92,14 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     Debugger attach();
 
-    Debugger attach(boolean gdbServer);
+    Debugger attach(DebuggerType type);
 
     /**
      * note: low performance
      */
     Debugger attach(long begin, long end);
 
-    Debugger attach(long begin, long end, boolean gdbServer);
+    Debugger attach(long begin, long end, DebuggerType type);
 
     void setWorkDir(File dir);
     File getWorkDir();

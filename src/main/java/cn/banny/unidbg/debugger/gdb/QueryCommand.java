@@ -1,6 +1,7 @@
 package cn.banny.unidbg.debugger.gdb;
 
 import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.debugger.DebugServer;
 import cn.banny.utils.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,7 +15,7 @@ class QueryCommand implements GdbStubCommand {
     @Override
     public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
         if (command.startsWith("qSupported")) {
-            stub.makePacketAndSend("PacketSize=" + GdbStub.PACKET_SIZE + ";vContSupported+;multiprocess-;xmlRegisters=arm");
+            stub.makePacketAndSend("PacketSize=" + DebugServer.PACKET_SIZE + ";vContSupported+;multiprocess-;xmlRegisters=arm");
             return true;
         }
         if (command.startsWith("qAttached")) {

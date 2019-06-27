@@ -1,50 +1,36 @@
 package cn.banny.unidbg.debugger.gdb;
 
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.AbstractARMDebugger;
-import org.apache.commons.io.IOUtils;
+import cn.banny.unidbg.debugger.AbstractDebugServer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.util.*;
-import java.util.concurrent.Semaphore;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * GdbStub class
  * @author Humberto Silva Naves
  */
-public final class GdbStub extends AbstractARMDebugger implements Runnable {
+public final class GdbStub extends AbstractDebugServer {
 
     private static final Log log = LogFactory.getLog(GdbStub.class);
 
-    private static final int DEFAULT_PORT = 23946;
     static final String SIGTRAP = "05"; /* Trace trap (POSIX).  */
 
     final int[] registers;
 
     private String lastPacket;
-    private StringBuilder currentInputPacket;
+    private final StringBuilder currentInputPacket;
     private int packetChecksum, packetFinished;
-    private boolean closeConnection, serverShutdown, serverRunning;
-
-    private Selector selector;
-    private ServerSocketChannel serverSocketChannel;
-    private SocketChannel socketChannel;
-    private ByteBuffer input;
-    private List<ByteBuffer> pendingWrites;
 
     public GdbStub(Emulator emulator) {
-        super(emulator, false);
+        super(emulator);
+
+        currentInputPacket = new StringBuilder();
 
         if (emulator.getPointerSize() == 4) { // arm32
             registers = new int[] {
@@ -77,206 +63,10 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
             registers[32] = Arm64Const.UC_ARM64_REG_PC;
             registers[33] = Arm64Const.UC_ARM64_REG_NZCV;
         }
-
-        singleStep = 1;
-
-        Thread thread = new Thread(this, "gdbserver");
-        thread.start();
-    }
-
-    @Override
-    public void close() {
-        super.close();
-
-        makePacketAndSend("W00");
-        shutdownServer();
-    }
-
-    @Override
-    public void run() {
-        runServer();
-    }
-
-    private Semaphore semaphore;
-
-    @Override
-    protected void loop(Emulator emulator, Unicorn u, long address, int size) throws Exception {
-        semaphore = new Semaphore(0);
-
-        if (socketChannel != null) {
-            makePacketAndSend("S" + SIGTRAP);
-        }
-        semaphore.acquire();
-    }
-
-    final void resumeRun() {
-        if (semaphore != null) {
-            semaphore.release();
-        }
-    }
-
-    static final int PACKET_SIZE = 1024;
-
-    private void runServer() {
-        selector = null;
-        serverSocketChannel = null;
-        socketChannel = null;
-        try {
-            serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.configureBlocking(false);
-
-            serverSocketChannel.socket().bind(new InetSocketAddress(GdbStub.DEFAULT_PORT));
-
-            selector = Selector.open();
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        } catch(IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-
-        pendingWrites = new LinkedList<>();
-        currentInputPacket = new StringBuilder();
-        input = ByteBuffer.allocate(PACKET_SIZE);
-        serverShutdown = false;
-        serverRunning = true;
-
-        System.err.println("Start gdbserver successfully on port: " + DEFAULT_PORT);
-
-        while(serverRunning) {
-            try {
-                selector.select(50);
-                Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
-                while (selectedKeys.hasNext()) {
-                    SelectionKey key = selectedKeys.next();
-                    if (key.isValid()) {
-                        if (key.isAcceptable()) {
-                            onSelectAccept(key);
-                        }
-                        if (key.isReadable()) {
-                            onSelectRead(key);
-                        }
-                        if (key.isWritable()) {
-                            onSelectWrite(key);
-                        }
-                    }
-                    selectedKeys.remove();
-                }
-                processCommands();
-            } catch(Throwable e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("run server ex", e);
-                }
-            }
-        }
-
-        IOUtils.closeQuietly(serverSocketChannel);
-        serverSocketChannel = null;
-        IOUtils.closeQuietly(selector);
-        selector = null;
-        closeSocketChannel();
-    }
-
-    private void enableNewConnections(boolean enable) {
-        if (serverSocketChannel == null) return;
-        SelectionKey key = serverSocketChannel.keyFor(selector);
-        key.interestOps(enable ? SelectionKey.OP_ACCEPT : 0);
-    }
-
-    private void enableWrites(boolean enable) {
-        if (socketChannel == null) return;
-        SelectionKey key = socketChannel.keyFor(selector);
-        key.interestOps(enable ? SelectionKey.OP_WRITE : SelectionKey.OP_READ);
-    }
-
-    private void closeSocketChannel() {
-        if (socketChannel == null) {
-            return;
-        }
-        SelectionKey key = socketChannel.keyFor(selector);
-        if (key != null) key.cancel();
-        IOUtils.closeQuietly(socketChannel);
-        socketChannel = null;
-        if (!serverShutdown) {
-            enableNewConnections(true);
-        } else {
-            serverRunning = false;
-        }
-    }
-
-    final void shutdownServer() {
-        serverShutdown = true;
-        closeConnection = true;
-        enableWrites(true);
-    }
-
-    final void detachServer() {
-        closeConnection = true;
-        enableWrites(true);
-    }
-
-    final void singleStep() {
-        singleStep = 1;
-        resumeRun();
-    }
-
-    private void onSelectAccept(SelectionKey key) throws IOException {
-        ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
-        SocketChannel sc = ssc.accept();
-        if (sc != null) {
-            closeConnection = false;
-            pendingWrites.clear();
-            input.clear();
-            sc.configureBlocking(false);
-            sc.register(key.selector(), SelectionKey.OP_READ);
-            socketChannel = sc;
-            enableNewConnections(false);
-        }
-    }
-
-    private void onSelectRead(SelectionKey key) {
-        SocketChannel sc = (SocketChannel) key.channel();
-
-        int numRead;
-        try {
-            numRead = sc.read(input);
-        } catch(IOException ex) {
-            numRead = -1;
-        }
-
-        if (numRead == -1) {
-            closeSocketChannel();
-        }
-    }
-
-    private void onSelectWrite(SelectionKey key) throws IOException {
-        SocketChannel sc = (SocketChannel) key.channel();
-        if (pendingWrites.isEmpty() && closeConnection) {
-            closeSocketChannel();
-            return;
-        }
-
-        while(!pendingWrites.isEmpty()) {
-            ByteBuffer bb = pendingWrites.get(0);
-            try {
-                sc.write(bb);
-            } catch(IOException ex) {
-                closeSocketChannel();
-                throw ex;
-            }
-            if (bb.remaining() > 0) {
-                break;
-            }
-            pendingWrites.remove(0);
-        }
-
-        if (pendingWrites.isEmpty() && !closeConnection) {
-            enableWrites(false);
-        }
     }
 
     final void send(String packet) {
-        ByteBuffer bb = ByteBuffer.wrap(packet.getBytes());
-        pendingWrites.add(bb);
-        enableWrites(true);
+        sendData(packet.getBytes());
     }
 
     private void sendPacket(String packet) {
@@ -317,8 +107,10 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
         return sb.toString();
     }
 
-    private void processCommands() {
+    @Override
+    protected void processInput(ByteBuffer input) {
         input.flip();
+
         while(input.hasRemaining()) {
             char c = (char) input.get();
             if (currentInputPacket.length() == 0) {
@@ -359,6 +151,7 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
                 }
             }
         }
+
         input.clear();
     }
 
@@ -398,60 +191,67 @@ public final class GdbStub extends AbstractARMDebugger implements Runnable {
         makePacketAndSend("");
     }
 
-    private static final Map<String, GdbStubCommand> commands;
-
-    private static void registerCommand(String commandPrefix, GdbStubCommand command) {
-        commands.put(commandPrefix, command);
+    @Override
+    protected void onHitBreakPoint(Emulator emulator, long address) {
+        if (isDebuggerConnected()) {
+            makePacketAndSend("S" + SIGTRAP);
+        }
     }
+
+    @Override
+    protected void onDebuggerExit() {
+        makePacketAndSend("W00");
+    }
+
+    @Override
+    protected void onDebuggerConnected() {
+    }
+
+    private static final Map<String, GdbStubCommand> commands;
 
     static {
         commands = new HashMap<>();
         GdbStubCommand commandContinue = new ContinueCommand();
-        registerCommand("c", commandContinue);
+        commands.put("c", commandContinue);
 
         GdbStubCommand commandStep = new StepCommand();
-        registerCommand("s", commandStep);
+        commands.put("s", commandStep);
 
         GdbStubCommand commandBreakpoint = new BreakpointCommand();
-        registerCommand("z0", commandBreakpoint);
-        registerCommand("Z0", commandBreakpoint);
+        commands.put("z0", commandBreakpoint);
+        commands.put("Z0", commandBreakpoint);
 
         GdbStubCommand commandMemory = new MemoryCommand();
-        registerCommand("m", commandMemory);
-        registerCommand("M", commandMemory);
+        commands.put("m", commandMemory);
+        commands.put("M", commandMemory);
 
         GdbStubCommand commandRegisters = new RegistersCommand();
-        registerCommand("g", commandRegisters);
-        registerCommand("G", commandRegisters);
+        commands.put("g", commandRegisters);
+        commands.put("G", commandRegisters);
 
         GdbStubCommand commandRegister = new RegisterCommand();
-        registerCommand("p", commandRegister);
-        registerCommand("P", commandRegister);
+        commands.put("p", commandRegister);
+        commands.put("P", commandRegister);
 
         GdbStubCommand commandKill = new KillCommand();
-        registerCommand("k", commandKill);
+        commands.put("k", commandKill);
 
         GdbStubCommand commandEnableExtendedMode = new EnableExtendedModeCommand();
-        registerCommand("!", commandEnableExtendedMode);
+        commands.put("!", commandEnableExtendedMode);
 
         GdbStubCommand commandLastSignal = new LastSignalCommand();
-        registerCommand("?", commandLastSignal);
+        commands.put("?", commandLastSignal);
 
         GdbStubCommand commandDetach = new DetachCommand();
-        registerCommand("D", commandDetach);
+        commands.put("D", commandDetach);
 
         GdbStubCommand commandQuery = new QueryCommand();
-        registerCommand("q", commandQuery);
+        commands.put("q", commandQuery);
 
         GdbStubCommand commandSetThread = new SetThreadCommand();
-        registerCommand("H", commandSetThread);
+        commands.put("H", commandSetThread);
 
         GdbStubCommand commandVCont = new ExtendedCommand();
-        registerCommand("vCont", commandVCont);
-    }
-
-    @Override
-    protected byte[] addSoftBreakPoint(long address, int svcNumber) {
-        throw new UnsupportedOperationException();
+        commands.put("vCont", commandVCont);
     }
 }

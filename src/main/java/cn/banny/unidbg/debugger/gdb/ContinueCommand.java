@@ -6,8 +6,8 @@ class ContinueCommand implements GdbStubCommand {
 
     @Override
     public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
-        stub.send("+");
         stub.resumeRun();
+        stub.send("+");
         return true;
     }
 
