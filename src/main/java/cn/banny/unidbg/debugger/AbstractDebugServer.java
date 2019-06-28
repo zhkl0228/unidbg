@@ -1,5 +1,6 @@
 package cn.banny.unidbg.debugger;
 
+import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.arm.AbstractARMDebugger;
 import org.apache.commons.io.IOUtils;
@@ -205,6 +206,9 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     }
 
     protected final void sendData(byte[] data) {
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(data, "sendData"));
+        }
         ByteBuffer bb = ByteBuffer.wrap(data);
         pendingWrites.add(bb);
         enableWrites(true);

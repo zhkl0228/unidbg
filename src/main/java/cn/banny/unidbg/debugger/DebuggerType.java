@@ -6,6 +6,6 @@ public enum  DebuggerType {
 
     GDB_SERVER, // gdb server
 
-    ANDROID_SERVER // ida android server
+    ANDROID_SERVER_V73 // ida android server v7.3
 
 }
