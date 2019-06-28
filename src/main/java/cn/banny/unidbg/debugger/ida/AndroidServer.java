@@ -8,6 +8,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.nio.ByteBuffer;
 
+@Deprecated
 public class AndroidServer extends AbstractDebugServer {
 
     private static final Log log = LogFactory.getLog(AndroidServer.class);
@@ -45,7 +46,7 @@ public class AndroidServer extends AbstractDebugServer {
 
         switch (type) {
             case 0x0:
-            case 0x14:
+            case 0x14: // confirm pulled info
                 sendPacket(0x0, new byte[] { 0x1 });
                 break;
             case 0xa:
@@ -59,7 +60,7 @@ public class AndroidServer extends AbstractDebugServer {
                 requestAttach();
                 break;
             case 0x11:
-                requestElement();
+                pullInfo();
                 break;
             case 0x22:
                 sendPacket(0x0, new byte[0]);
@@ -70,8 +71,8 @@ public class AndroidServer extends AbstractDebugServer {
         }
     }
 
-    private void requestElement() {
-        ByteBuffer buffer = ByteBuffer.allocate(64);
+    private void pullInfo() {
+        /*ByteBuffer buffer = ByteBuffer.allocate(64);
         buffer.put((byte) 0x2); // thread
         buffer.put((byte) 0x4);
         buffer.putInt(0x84e584f9);
@@ -80,6 +81,25 @@ public class AndroidServer extends AbstractDebugServer {
         buffer.put((byte) 0x1);
         buffer.put("main".getBytes());
         buffer.put((byte) 0);
+        buffer.flip();
+        byte[] packet = new byte[buffer.remaining()];
+        buffer.get(packet);
+        sendPacket(0x0, packet);*/
+
+        ByteBuffer buffer = ByteBuffer.allocate(64);
+        buffer.put((byte) 0x1);
+        buffer.putShort((short) 0x8400);
+        buffer.putInt(0x84e584e5);
+        buffer.put((byte) 0xff);
+        buffer.putInt(0x4010d791);
+        buffer.put((byte) 0x0);
+        buffer.put((byte) 0x1);
+        buffer.put("/system/bin/unidbg".getBytes());
+        buffer.put((byte) 0x0);
+        buffer.putInt(0xff400ca0);
+        buffer.put((byte) 0x1);
+        buffer.putInt(0xc00050);
+        buffer.putInt(0x1000001);
         buffer.flip();
         byte[] packet = new byte[buffer.remaining()];
         buffer.get(packet);

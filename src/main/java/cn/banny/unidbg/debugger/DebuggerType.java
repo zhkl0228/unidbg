@@ -2,10 +2,20 @@ package cn.banny.unidbg.debugger;
 
 public enum  DebuggerType {
 
-    SIMPLE, // simple debugger
+    /**
+     * simple debugger
+     */
+    SIMPLE,
 
-    GDB_SERVER, // gdb server
+    /**
+     * gdb server
+     */
+    GDB_SERVER,
 
-    ANDROID_SERVER_V73 // ida android server v7.3
+    /**
+     * ida android server v7.3
+     */
+    @Deprecated
+    ANDROID_SERVER_V73
 
 }

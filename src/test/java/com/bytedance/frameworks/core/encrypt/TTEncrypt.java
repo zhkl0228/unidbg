@@ -144,7 +144,7 @@ public class TTEncrypt {
 
         long start = System.currentTimeMillis();
         byte[] data = new byte[16];
-        emulator.attach(DebuggerType.ANDROID_SERVER_V73);
+        emulator.attach(DebuggerType.GDB_SERVER);
         Number ret = TTEncryptUtils.callStaticJniMethod(emulator, "ttEncrypt([BI)[B", vm.addLocalObject(new ByteArray(data)), data.length);
         long hash = ret.intValue() & 0xffffffffL;
         ByteArray array = vm.getObject(hash);
