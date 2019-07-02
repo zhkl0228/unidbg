@@ -980,7 +980,7 @@ public class DalvikVM extends BaseVM implements VM {
             @Override
             public long handle(Emulator emulator) {
                 UnicornPointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                Array array = getObject(pointer.peer);
+                Array array = (Array)getObject(pointer.peer);
                 if (log.isDebugEnabled()) {
                     log.debug("GetArrayLength array=" + array + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }

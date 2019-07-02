@@ -30,6 +30,7 @@ import java.util.Arrays;
 public class DalvikVM64 extends BaseVM implements VM {
 
     private static final Log log = LogFactory.getLog(DalvikVM64.class);
+    
 
     private final UnicornPointer _JavaVM;
     private final UnicornPointer _JNIEnv;
@@ -980,7 +981,7 @@ public class DalvikVM64 extends BaseVM implements VM {
             @Override
             public long handle(Emulator emulator) {
                 UnicornPointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Array array = getObject(pointer.toUIntPeer());
+                Array array = (Array)getObject(pointer.toUIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("GetArrayLength array=" + array);
                 }
