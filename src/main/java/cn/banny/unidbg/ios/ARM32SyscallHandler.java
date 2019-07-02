@@ -96,6 +96,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
 
             Cpsr.getArm(u).setCarry(false);
+            
+            if(syscallNumHandlers != null && syscallNumHandlers.containsKey(NR)) {
+            	syscallNumHandlers.get(NR).handle(u, emulator);
+            	return;
+            }
+            
             switch (NR) {
                 case -3:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mach_absolute_time(emulator));

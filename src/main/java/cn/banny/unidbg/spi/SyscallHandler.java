@@ -20,4 +20,6 @@ public interface SyscallHandler extends InterruptHook {
 
     int open(Emulator emulator, String pathname, int oflags);
 
+    void addSyscallNumHandler(int num, SyscallNumHandler handler);
+    
 }

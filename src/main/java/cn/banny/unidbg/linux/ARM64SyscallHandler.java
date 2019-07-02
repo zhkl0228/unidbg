@@ -82,6 +82,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 ARM.showRegs64(u, null);
             }
 
+            if(syscallNumHandlers != null && syscallNumHandlers.containsKey(NR)) {
+            	syscallNumHandlers.get(NR).handle(u, emulator);
+            	return;
+            }
+            
             switch (NR) {
                 case 1888:
                     int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();

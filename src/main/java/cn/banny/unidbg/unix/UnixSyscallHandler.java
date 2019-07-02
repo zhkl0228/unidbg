@@ -9,6 +9,7 @@ import cn.banny.unidbg.linux.LinuxThread;
 import cn.banny.unidbg.linux.file.*;
 import cn.banny.unidbg.memory.MemRegion;
 import cn.banny.unidbg.spi.SyscallHandler;
+import cn.banny.unidbg.spi.SyscallNumHandler;
 import cn.banny.unidbg.unix.struct.TimeVal;
 import cn.banny.unidbg.unix.struct.TimeZone;
 import com.sun.jna.Pointer;
@@ -25,6 +26,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     private static final Log log = LogFactory.getLog(UnixSyscallHandler.class);
 
     private final List<IOResolver> resolvers = new ArrayList<>(5);
+    protected Map<Integer, SyscallNumHandler> syscallNumHandlers = null;
 
     public final Map<Integer, FileIO> fdMap = new TreeMap<>();
 
@@ -48,6 +50,14 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         if (!resolvers.contains(resolver)) {
             resolvers.add(0, resolver);
         }
+    }
+    
+    @Override
+	public void addSyscallNumHandler(int num, SyscallNumHandler handler) {
+    	if(this.syscallNumHandlers == null) {
+    		this.syscallNumHandlers = new HashMap<>();
+    	} 
+        this.syscallNumHandlers.put(num, handler);
     }
 
     protected final FileIO resolve(Emulator emulator, String pathname, int oflags) {

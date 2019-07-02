@@ -98,6 +98,11 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 ARM.showThumbRegs(u);
             }
 
+            if(syscallNumHandlers != null && syscallNumHandlers.containsKey(NR)) {
+            	syscallNumHandlers.get(NR).handle(u, emulator);
+            	return;
+            }
+            
             switch (NR) {
                 case 1:
                     int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
@@ -381,7 +386,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         }
     }
 
-    private static final int MREMAP_MAYMOVE = 1;
+
+
+	private static final int MREMAP_MAYMOVE = 1;
 
     private int mremap(Emulator emulator) {
         Arm32RegisterContext context = emulator.getContext();
@@ -1124,7 +1131,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         }
         return file.getsockname(addr, addrlen);
     }
-
+    
     private int getsockopt(Unicorn u, Emulator emulator) {
         int sockfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         int level = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
