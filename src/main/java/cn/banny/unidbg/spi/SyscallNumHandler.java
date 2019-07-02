@@ -5,6 +5,6 @@ import unicorn.Unicorn;
 
 public interface SyscallNumHandler {
 
-	int handle(Unicorn u, Emulator emulator);
+	void handle(Unicorn u, Emulator emulator);
 	
 }
