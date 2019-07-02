@@ -83,41 +83,32 @@
         </plugins>
     </build>
     <dependencies>
+        <!--
         <dependency>
             <groupId>org.unicorn-engine</groupId>
             <artifactId>unicorn</artifactId>
             <version>1.0.1</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/unicorn-1.0.1.jar</systemPath>
-            -->
+
         </dependency>
         <dependency>
+
             <groupId>org.capstone-engine</groupId>
             <artifactId>capstone</artifactId>
             <version>3.0.5</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/capstone-3.0.5.jar</systemPath>
-            -->
+
         </dependency>
         <dependency>
             <groupId>keystone</groupId>
             <artifactId>java-bindings</artifactId>
             <version>0.9.1-2</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/java-bindings-0.9.1-2.jar</systemPath>
-            -->
+
         </dependency>
         <dependency>
+
             <groupId>cn.banny</groupId>
             <artifactId>utils</artifactId>
             <version>0.0.8</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/utils-0.0.8.jar</systemPath>
-            -->
+
         </dependency>
         <dependency>
             <groupId>net.java.dev.jna</groupId>
@@ -156,12 +147,14 @@
             <version>3.8.2</version>
             <scope>test</scope>
         </dependency>
+		
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.11</version>
             <scope>test</scope>
         </dependency>
+        -->
     </dependencies>
     <repositories>
         <repository>
