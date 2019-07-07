@@ -13,6 +13,10 @@ public class IntArray extends BaseArray<int[]> implements Array<int[]> {
         return value.length;
     }
 
+    public void setValue(int[] value) {
+        super.value = value;
+    }
+
     @Override
     public void setData(int start, int[] data) {
         System.arraycopy(data, 0, value, start, data.length);
