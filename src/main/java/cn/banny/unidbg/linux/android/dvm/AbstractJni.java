@@ -8,8 +8,14 @@ import cn.banny.unidbg.linux.android.dvm.wrapper.DvmInteger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.Collections;
 import java.util.Locale;
 
@@ -107,6 +113,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public long callLongMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
     public DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "android/app/Application->getAssets()Landroid/content/res/AssetManager;":
@@ -174,6 +185,21 @@ public abstract class AbstractJni implements Jni {
                 } catch (UnsupportedEncodingException e) {
                     throw new IllegalStateException(e);
                 }
+            case "java/security/cert/CertificateFactory->generateCertificate(Ljava/io/InputStream;)Ljava/security/cert/Certificate;":
+                CertificateFactory factory = (CertificateFactory) dvmObject.value;
+                InputStream inputStream = (InputStream) vaList.getObject(0).value;
+                try {
+                    return new DvmObject<>(vm.resolveClass("java/security/cert/Certificate"), factory.generateCertificate(inputStream));
+                } catch (CertificateException e) {
+                    throw new IllegalStateException(e);
+                }
+            case "java/security/cert/Certificate->getEncoded()[B":
+                Certificate certificate = (Certificate) dvmObject.value;
+                try {
+                    return new ByteArray(certificate.getEncoded());
+                } catch (CertificateEncodingException e) {
+                    throw new IllegalStateException(e);
+                }
         }
 
         throw new AbstractMethodError(signature);
@@ -199,6 +225,13 @@ public abstract class AbstractJni implements Jni {
                 return new ServiceManager(vm, signature);
             case "com/android/internal/telephony/ITelephony$Stub->asInterface(Landroid/os/IBinder;)Lcom/android/internal/telephony/ITelephony;":
                 return vaList.getObject(0);
+            case "java/security/cert/CertificateFactory->getInstance(Ljava/lang/String;)Ljava/security/cert/CertificateFactory;":
+                StringObject type = vaList.getObject(0);
+                try {
+                    return new DvmObject<>(vm.resolveClass("java/security/cert/CertificateFactory"), CertificateFactory.getInstance(type.value));
+                } catch (CertificateException e) {
+                    throw new IllegalStateException(e);
+                }
         }
 
         throw new AbstractMethodError(signature);
@@ -299,6 +332,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public DvmObject newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        if ("java/io/ByteArrayInputStream-><init>([B)V".equals(signature)) {
+            ByteArray array = vaList.getObject(0);
+            return new DvmObject<>(vm.resolveClass("java/io/ByteArrayInputStream"), new ByteArrayInputStream(array.value));
+        }
+
         throw new AbstractMethodError(signature);
     }
 
