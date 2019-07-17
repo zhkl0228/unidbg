@@ -6,3 +6,10 @@
 **/dev/log
 /src/test/resources/example_binaries/stdout
 /src/test/resources/example_binaries/stderr
+src/test/java/com/ces/CMS.java
+src/test/java/com/ces/CMS.java
+src/test/resources/app/700.apk
+src/test/resources/app/520.apk
+src/test/resources/app/660.apk
+src/test/java/com/ces/CMS.java
+src/test/resources/example_binaries/libcms.so

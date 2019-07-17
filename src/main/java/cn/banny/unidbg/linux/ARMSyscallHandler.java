@@ -195,14 +195,14 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
                     return;
                 case 120:
-                    Pointer child_stack = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                    int fn = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-                    int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-                    if (child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, bionic_clone(u, emulator));
-                    } else {
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_clone(u, emulator));
-                    }
+//                    Pointer child_stack = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+//                    int fn = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
+//                    int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+//                    if (child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
+//                        u.reg_write(ArmConst.UC_ARM_REG_R0, bionic_clone(u, emulator));
+//                    } else {
+//                        u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_clone(u, emulator));
+//                    }
                     return;
                 case 122:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
@@ -1646,11 +1646,16 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             log.debug("ioctl fd=" + fd + ", request=0x" + Long.toHexString(request) + ", argp=0x" + Long.toHexString(argp));
         }
 
+        if (fd == 3) {
+            return 0;
+        }
+
         FileIO file = fdMap.get(fd);
         if (file == null) {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
+
         int ret = file.ioctl(emulator, request, argp);
         if (ret == -1) {
             emulator.getMemory().setErrno(UnixEmulator.ENOTTY);

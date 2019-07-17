@@ -1,0 +1,30 @@
+00008000-0005a000 r-xp 00000000 00:01 5948       /root/adbd
+0005b000-0005d000 r--p 00052000 00:01 5948       /root/adbd
+0005d000-0005f000 rw-p 00054000 00:01 5948       /root/adbd
+0005f000-00062000 rw-p 00000000 00:00 0 
+b6842000-b6843000 ---p 00000000 00:00 0 
+b6843000-b6941000 rw-p 00000000 00:00 0          [stack:15412]
+b6941000-b6942000 ---p 00000000 00:00 0 
+b6942000-b6a40000 rw-p 00000000 00:00 0          [stack:15411]
+b6a40000-b6a80000 rw-p 00000000 00:00 0          [anon:libc_malloc]
+b6c81000-b6c82000 ---p 00000000 00:00 0 
+b6c82000-b6d80000 rw-p 00000000 00:00 0          [stack:15949]
+b6d80000-b6dc0000 rw-p 00000000 00:00 0          [anon:libc_malloc]
+b6dfb000-b6dfc000 ---p 00000000 00:00 0 
+b6dfc000-b6dfe000 rw-p 00000000 00:00 0          [anon:thread signal stack]
+b6dfe000-b6dff000 ---p 00000000 00:00 0 
+b6dff000-b6e01000 rw-p 00000000 00:00 0          [anon:thread signal stack]
+b6e01000-b6e02000 ---p 00000000 00:00 0 
+b6e02000-b6f00000 rw-p 00000000 00:00 0          [stack:421]
+b6f00000-b6f80000 rw-p 00000000 00:00 0          [anon:libc_malloc]
+b6f80000-b6f81000 ---p 00000000 00:00 0 
+b6f81000-b6f83000 rw-p 00000000 00:00 0          [anon:thread signal stack]
+b6f83000-b6f84000 ---p 00000000 00:00 0 
+b6f84000-b6f86000 rw-p 00000000 00:00 0          [anon:thread signal stack]
+b6f86000-b6f87000 r--p 00000000 00:00 0 
+b6f87000-b6fa7000 r--s 00000000 00:0b 3013       /dev/__properties__
+b6fa7000-b6fa8000 ---p 00000000 00:00 0 
+b6fa8000-b6faa000 rw-p 00000000 00:00 0          [anon:thread signal stack]
+b6faa000-b6fab000 r-xp 00000000 00:00 0          [sigpage]
+bee75000-bee96000 rw-p 00000000 00:00 0          [stack]
+ffff0000-ffff1000 r-xp 00000000 00:00 0          [vectors]
