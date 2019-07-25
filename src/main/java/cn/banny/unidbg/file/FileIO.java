@@ -23,6 +23,8 @@ public interface FileIO {
     int SEEK_CUR = 1;
     int SEEK_END = 2;
 
+    int SIOCGIFCONF = 0x8912;
+
     void close();
 
     int write(byte[] data);
