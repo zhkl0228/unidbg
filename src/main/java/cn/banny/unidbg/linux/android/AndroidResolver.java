@@ -132,6 +132,11 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
                 if (!tmp.exists() && !tmp.createNewFile()) {
                     throw new IOException("createNewFile failed: " + tmp);
                 }
+
+                if (tmp.isDirectory()) {
+                    return new DirectoryFileIO(oflags, path);
+                }
+
                 outputStream = new FileOutputStream(tmp);
                 IOUtils.copy(inputStream, outputStream);
                 return createFileIO(tmp, path, oflags);
