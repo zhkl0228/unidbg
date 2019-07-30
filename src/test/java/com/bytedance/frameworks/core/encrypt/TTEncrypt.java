@@ -31,14 +31,6 @@ import java.io.IOException;
 
 public class TTEncrypt {
 
-    private static LibraryResolver createLibraryResolver() {
-        return new AndroidResolver(23);
-    }
-
-    private static ARMEmulator createARMEmulator() {
-        return new AndroidARMEmulator("com.qidian.dldl.official");
-    }
-
     private final ARMEmulator emulator;
     private final VM vm;
     private final Module module;
@@ -46,9 +38,9 @@ public class TTEncrypt {
     private final DvmClass TTEncryptUtils;
 
     private TTEncrypt() throws IOException {
-        emulator = createARMEmulator();
+        emulator = new AndroidARMEmulator("com.qidian.dldl.official");
         final Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(createLibraryResolver());
+        memory.setLibraryResolver(new AndroidResolver(23));
         memory.setCallInitFunction();
 
         vm = emulator.createDalvikVM(null);

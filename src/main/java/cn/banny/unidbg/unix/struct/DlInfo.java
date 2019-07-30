@@ -1,4 +1,4 @@
-package cn.banny.unidbg.ios.struct;
+package cn.banny.unidbg.unix.struct;
 
 import cn.banny.unidbg.pointer.UnicornStructure;
 import com.sun.jna.Pointer;
