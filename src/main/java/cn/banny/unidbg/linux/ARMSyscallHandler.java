@@ -358,6 +358,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 case 334:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
                     return;
+                case 345:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getcpu(emulator));
+                    return;
                 case 348:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
                     return;
@@ -383,6 +386,23 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int getcpu(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        Pointer cpu = context.getR0Pointer();
+        Pointer node = context.getR1Pointer();
+        Pointer tcache = context.getR2Pointer();
+        if (log.isDebugEnabled()) {
+            log.debug("getcpu cpu=" + cpu + ", node=" + node + ", tcache=" + tcache);
+        }
+        if (cpu != null) {
+            cpu.setInt(0, 0);
+        }
+        if (node != null) {
+            node.setInt(0, 0);
+        }
+        return 0;
     }
 
     private int sysinfo(Emulator emulator) {
