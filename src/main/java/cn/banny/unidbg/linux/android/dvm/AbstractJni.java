@@ -126,10 +126,11 @@ public abstract class AbstractJni implements Jni {
                 return new cn.banny.unidbg.linux.android.dvm.api.ClassLoader(vm, signature);
             case "android/app/Application->getContentResolver()Landroid/content/ContentResolver;":
                 return new DvmObject<>(vm.resolveClass("android/content/ContentResolver"), signature);
-            case "java/util/ArrayList->get(I)Ljava/lang/Object;":
+            case "java/util/ArrayList->get(I)Ljava/lang/Object;": {
                 int index = vaList.getInt(0);
                 ArrayListObject arrayList = (ArrayListObject) dvmObject;
                 return arrayList.getValue().get(index);
+            }
             case "android/app/Application->getSystemService(Ljava/lang/String;)Ljava/lang/Object;":
                 StringObject serviceName = vaList.getObject(0);
                 return new SystemService(vm, serviceName.getValue());
@@ -200,6 +201,11 @@ public abstract class AbstractJni implements Jni {
                 } catch (CertificateEncodingException e) {
                     throw new IllegalStateException(e);
                 }
+            case "java/util/ArrayList->remove(I)Ljava/lang/Object;": {
+                int index = vaList.getInt(0);
+                ArrayListObject list = (ArrayListObject) dvmObject;
+                return list.value.remove(index);
+            }
         }
 
         throw new AbstractMethodError(signature);
@@ -274,8 +280,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public boolean callBooleanMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList) {
-        if ("java/util/Enumeration->hasMoreElements()Z".equals(signature)) {
-            return ((Enumeration) dvmObject).hasMoreElements();
+        switch (signature) {
+            case "java/util/Enumeration->hasMoreElements()Z":
+                return ((Enumeration) dvmObject).hasMoreElements();
+            case "java/util/ArrayList->isEmpty()Z":
+                return ((ArrayListObject) dvmObject).isEmpty();
         }
 
         throw new AbstractMethodError(signature);
