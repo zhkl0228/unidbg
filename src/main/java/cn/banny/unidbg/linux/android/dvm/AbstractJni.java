@@ -12,6 +12,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -87,6 +89,13 @@ public abstract class AbstractJni implements Jni {
                     return new StringObject(vm, versionName);
                 }
             }
+        }
+
+        if ("android/content/pm/ApplicationInfo->sourceDir:Ljava/lang/String;".equals(signature)  &&
+                dvmObject instanceof ApplicationInfo ) {
+            ApplicationInfo applicationInfo = (ApplicationInfo) dvmObject;
+            String sourceDir =  "/data/data/com.ss.android/";
+            return new StringObject(vm, sourceDir);
         }
 
         throw new AbstractMethodError(signature);
@@ -200,6 +209,20 @@ public abstract class AbstractJni implements Jni {
                 } catch (CertificateEncodingException e) {
                     throw new IllegalStateException(e);
                 }
+            case "java/security/MessageDigest->digest([B)[B":
+                String type = ((MessageDigest) dvmObject.getValue()).getAlgorithm();
+//                ByteArray byteArray = (ByteArray) dvmObject.getValue();
+                byte[] bytes = (byte[]) vaList.getObject(0).value;
+                MessageDigest messageDigest = null;
+                try {
+                    messageDigest = MessageDigest.getInstance(String.valueOf(type));
+                    return new ByteArray(messageDigest.digest(bytes));
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+            case "android/app/Application->getApplicationInfo()Landroid/content/pm/ApplicationInfo;":
+                return new ApplicationInfo(vm);
+
         }
 
         throw new AbstractMethodError(signature);
@@ -231,6 +254,17 @@ public abstract class AbstractJni implements Jni {
                     return new DvmObject<>(vm.resolveClass("java/security/cert/CertificateFactory"), CertificateFactory.getInstance(type.value));
                 } catch (CertificateException e) {
                     throw new IllegalStateException(e);
+                }
+            case "java/security/MessageDigest->getInstance(Ljava/lang/String;)Ljava/security/MessageDigest;":
+                type = vaList.getObject(0);
+                try {
+                    return new DvmObject<>(vm.resolveClass("java/security/MessageDigest"), MessageDigest.getInstance(type.value));
+                } catch (NoSuchAlgorithmException e) {
+                    try {
+                        throw new  NoSuchAlgorithmException(e);
+                    } catch (NoSuchAlgorithmException e1) {
+                        e1.printStackTrace();
+                    }
                 }
         }
 
@@ -354,7 +388,7 @@ public abstract class AbstractJni implements Jni {
     public void setBooleanField(BaseVM vm, DvmObject dvmObject, String signature, boolean value) {
         throw new AbstractMethodError(signature);
     }
-    
+
     @Override
     public void setDoubleField(BaseVM vm, DvmObject dvmObject, String signature, double value) {
         throw new AbstractMethodError(signature);
