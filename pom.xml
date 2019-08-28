@@ -12,12 +12,21 @@
     </properties>
     <profiles>
         <profile>
+            <id>disable-javadoc-doclint</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+            <properties>
+                <additionalparam>-Xdoclint:none</additionalparam>
+            </properties>
+        </profile>
+        <profile>
             <id>osx64</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <dynamic.lib.location>prebuilt/osx64</dynamic.lib.location>
+                <dynamic.lib.location>prebuilt/win64</dynamic.lib.location>
             </properties>
         </profile>
         <profile>
@@ -41,6 +50,21 @@
     </profiles>
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <!--这部分可有可无,加上的话则直接生成可运行jar包-->
+                    <!--<archive>-->
+                    <!--<manifest>-->
+                    <!--<mainClass>${exec.mainClass}</mainClass>-->
+                    <!--</manifest>-->
+                    <!--</archive>-->
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.12.4</version>
@@ -80,6 +104,14 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -87,10 +119,8 @@
             <groupId>org.unicorn-engine</groupId>
             <artifactId>unicorn</artifactId>
             <version>1.0.1</version>
-            <!--
             <scope>system</scope>
             <systemPath>${basedir}/prebuilt/jar/unicorn-1.0.1.jar</systemPath>
-            -->
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -111,34 +141,44 @@
             <groupId>org.capstone-engine</groupId>
             <artifactId>capstone</artifactId>
             <version>3.0.5</version>
-            <!--
             <scope>system</scope>
             <systemPath>${basedir}/prebuilt/jar/capstone-3.0.5.jar</systemPath>
-            -->
         </dependency>
         <dependency>
             <groupId>keystone</groupId>
             <artifactId>java-bindings</artifactId>
             <version>0.9.1-2</version>
-            <!--
             <scope>system</scope>
             <systemPath>${basedir}/prebuilt/jar/java-bindings-0.9.1-2.jar</systemPath>
-            -->
+        </dependency>
+        <dependency>
+            <groupId>xlog</groupId>
+            <artifactId>xlog</artifactId>
+            <version>0.9.1-2</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/prebuilt/jar/xlogEncrypt.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>cn.banny</groupId>
             <artifactId>utils</artifactId>
             <version>0.0.8</version>
-            <!--
+
             <scope>system</scope>
             <systemPath>${basedir}/prebuilt/jar/utils-0.0.8.jar</systemPath>
-            -->
+
         </dependency>
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
             <version>4.5.2</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.json/json -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20180813</version>
+        </dependency>
+
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -176,6 +216,12 @@
             <artifactId>commons-codec</artifactId>
             <version>1.11</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <repositories>

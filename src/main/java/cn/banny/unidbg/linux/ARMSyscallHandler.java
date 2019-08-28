@@ -23,6 +23,7 @@ import cn.banny.unidbg.unix.file.SocketIO;
 import cn.banny.unidbg.unix.file.TcpSocket;
 import cn.banny.unidbg.unix.file.UdpSocket;
 import com.sun.jna.Pointer;
+import com.sun.org.apache.bcel.internal.generic.RETURN;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -195,14 +196,16 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
                     return;
                 case 120:
+
 //                    Pointer child_stack = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
 //                    int fn = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
 //                    int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-//                    if (child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
+//                    if (child_stack!=null && child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
 //                        u.reg_write(ArmConst.UC_ARM_REG_R0, bionic_clone(u, emulator));
 //                    } else {
 //                        u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_clone(u, emulator));
 //                    }
+                    System.out.println("---------------------------------------------- 120 -------------------------------------------");
                     return;
                 case 122:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
@@ -262,6 +265,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     return;
                 case 197:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
+                    return;
+
+                case 116: // TODO - 新增 sysinfo
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sysinfo(u, emulator));
                     return;
                 case 199: // getuid
                 case 200: // getgid
@@ -354,6 +361,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 case 334:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
                     return;
+
+                case 345:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getcpu(emulator));
+                    return;
                 case 348:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
                     return;
@@ -363,6 +374,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 case 0xf0005:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, set_tls(u, emulator));
                     return;
+                default:
+//                    System.out.println("-------------------- NR ("+NR+")---------------");
+
             }
         } catch (StopEmulatorException e) {
             u.emu_stop();
@@ -1199,9 +1213,13 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                         fdMap.put(fd, new TcpSocket(emulator));
                         return fd;
                     case SocketIO.SOCK_DGRAM:
-                        fd = getMinFd();
-                        fdMap.put(fd, new UdpSocket(emulator));
-                        return fd;
+                        // TODO - 修改了这个值
+                        emulator.getMemory().setErrno(UnixEmulator.ENOTTY);
+                        return -1;
+//                        fd = getMinFd();
+
+//                        fdMap.put(fd, new UdpSocket(emulator));
+//                        return fd;
                     case SocketIO.SOCK_RAW:
                         throw new UnsupportedOperationException();
                 }
@@ -1290,6 +1308,15 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if("/sys/fs/selinux".equals(path)) {
             return -1;
         }
+
+        if ("/data".equals(path)) {
+            return -1;
+        }
+
+        if ("/sdcard".equals(path)){
+            return -1;
+        }
+
         throw new UnsupportedOperationException(path);
     }
 
@@ -1510,6 +1537,16 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             if (dirfd != IO.AT_FDCWD) {
                 throw new UnicornException();
             }
+//            if ("\\data\\app\\com.ss.android.ugc.aweme-1\\base.apk".equals(path)) {
+////                return 0;
+//                return stat64(emulator, path, statbuf);
+//            }
+
+            if (path.contains("tun0")) {
+                emulator.getMemory().setErrno(UnixEmulator.EACCES);
+                return -1;
+            }
+
 
             log.warn("fstatat64 dirfd=" + dirfd + ", pathname=" + path + ", statbuf=" + statbuf + ", flags=" + flags);
             emulator.getMemory().setErrno(UnixEmulator.EACCES);
@@ -1538,6 +1575,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
         }
+
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
@@ -1639,24 +1677,38 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int ioctl(Unicorn u, Emulator emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        long request = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue() & 0xffffffffL;
-        long argp = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue() & 0xffffffffL;
+        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue(); // 0x4
+        long request = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue() & 0xffffffffL;  // 0x8912
+        long argp = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue() & 0xffffffffL; // 0xbfffea84
         if (log.isDebugEnabled()) {
             log.debug("ioctl fd=" + fd + ", request=0x" + Long.toHexString(request) + ", argp=0x" + Long.toHexString(argp));
         }
 
-        if (fd == 3) {
-            return 0;
-        }
+
+//        if (fd == 4 ) {
+//            System.out.println("-------------------------------- fd == 4 ----------------------------------------");
+//            emulator.getMemory().setErrno(UnixEmulator.ENOTTY);
+//
+//            return 0;
+//
+//        }
+
 
         FileIO file = fdMap.get(fd);
+
         if (file == null) {
+
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
 
+        UdpSocket udpSocket = (UdpSocket) file;
+
+
+
+        // TODO - 这里没有实现 这里获取socket网卡的内容，socket网卡获取的已经被我取消
         int ret = file.ioctl(emulator, request, argp);
+
         if (ret == -1) {
             emulator.getMemory().setErrno(UnixEmulator.ENOTTY);
         }
@@ -1673,6 +1725,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     private int read(Unicorn u, Emulator emulator) {
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+
+
+
+
         int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         return read(emulator, fd, buffer, count);
     }
@@ -1700,6 +1756,40 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         _new = old.dup2();
         fdMap.put(newfd, _new);
         return newfd;
+    }
+
+
+    private int getcpu(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        Pointer cpu = context.getR0Pointer();
+        Pointer node = context.getR1Pointer();
+        Pointer tcache = context.getR2Pointer();
+        if (log.isDebugEnabled()) {
+            log.debug("getcpu cpu=" + cpu + ", node=" + node + ", tcache=" + tcache);
+        }
+        if (cpu != null) {
+            cpu.setInt(0, 0);
+        }
+        if (node != null) {
+            node.setInt(0, 0);
+        }
+        return 0;
+    }
+    /**
+     * 系统调用sysinfo
+     * @param u
+     * @param emulator
+     * @return
+     */
+    private int sysinfo(Unicorn u, Emulator emulator) {
+
+        System.out.println("-------------------------------- sysinfo --------------------------");
+        if (log.isDebugEnabled()) {
+            log.debug("----- sysinfo -----");
+        }
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+
+        return -1;
     }
 
 }
