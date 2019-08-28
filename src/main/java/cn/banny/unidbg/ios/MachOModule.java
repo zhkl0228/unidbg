@@ -4,7 +4,6 @@ import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.*;
 import cn.banny.unidbg.memory.MemRegion;
 import cn.banny.unidbg.memory.Memory;
-import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.spi.InitFunction;
 import com.sun.jna.Pointer;
@@ -440,18 +439,6 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
         return path;
     }
 
-    private UnicornPointer pathPointer;
-
-    UnicornPointer createPathMemory(SvcMemory svcMemory) {
-        if (this.pathPointer == null) {
-            byte[] path = this.path.getBytes();
-            this.pathPointer = svcMemory.allocate(path.length + 1, "MachOModule.path");
-            this.pathPointer.write(0, path, 0, path.length);
-            this.pathPointer.setByte(path.length, (byte) 0);
-        }
-        return this.pathPointer;
-    }
-
     boolean hasUnresolvedSymbol() {
         return !allSymbolBond || !allLazySymbolBond;
     }
@@ -463,4 +450,8 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     final Set<UnicornPointer> boundCallSet = new HashSet<>();
     final Set<UnicornPointer> initializedCallSet = new HashSet<>();
 
+    @Override
+    protected String getPath() {
+        return path;
+    }
 }

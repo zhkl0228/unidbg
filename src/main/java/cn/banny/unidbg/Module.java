@@ -1,6 +1,8 @@
 package cn.banny.unidbg;
 
 import cn.banny.unidbg.memory.MemRegion;
+import cn.banny.unidbg.memory.SvcMemory;
+import cn.banny.unidbg.pointer.UnicornPointer;
 import unicorn.Unicorn;
 
 import java.io.IOException;
@@ -102,5 +104,19 @@ public abstract class Module {
     }
 
     public  abstract int callEntry(Emulator emulator, Object... args);
+
+    private UnicornPointer pathPointer;
+
+    protected abstract String getPath();
+
+    public final UnicornPointer createPathMemory(SvcMemory svcMemory) {
+        if (this.pathPointer == null) {
+            byte[] path = getPath().getBytes();
+            this.pathPointer = svcMemory.allocate(path.length + 1, "Module.path");
+            this.pathPointer.write(0, path, 0, path.length);
+            this.pathPointer.setByte(path.length, (byte) 0);
+        }
+        return this.pathPointer;
+    }
 
 }
