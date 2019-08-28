@@ -294,6 +294,10 @@ public abstract class AbstractARMDebugger implements Debugger {
                     public int callEntry(Emulator emulator, Object... args) {
                         throw new UnsupportedOperationException();
                     }
+                    @Override
+                    protected String getPath() {
+                        throw new UnsupportedOperationException();
+                    }
                 };
             }
         }

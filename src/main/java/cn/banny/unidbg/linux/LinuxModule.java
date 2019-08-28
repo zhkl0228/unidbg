@@ -154,6 +154,11 @@ public class LinuxModule extends Module {
         return emulator.eFunc(address, list.toArray(new Number[0]));
     }
 
+    @Override
+    protected String getPath() {
+        return name;
+    }
+
     final Map<String, Long> hookMap = new HashMap<>();
 
     @Override
