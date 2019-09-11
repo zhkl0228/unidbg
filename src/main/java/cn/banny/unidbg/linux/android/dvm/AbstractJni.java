@@ -12,6 +12,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -194,13 +196,19 @@ public abstract class AbstractJni implements Jni {
                 } catch (CertificateException e) {
                     throw new IllegalStateException(e);
                 }
-            case "java/security/cert/Certificate->getEncoded()[B":
+            case "java/security/cert/Certificate->getEncoded()[B": {
                 Certificate certificate = (Certificate) dvmObject.value;
                 try {
                     return new ByteArray(certificate.getEncoded());
                 } catch (CertificateEncodingException e) {
                     throw new IllegalStateException(e);
                 }
+            }
+            case "java/security/MessageDigest->digest([B)[B": {
+                MessageDigest messageDigest = (MessageDigest) dvmObject.value;
+                ByteArray array = vaList.getObject(0);
+                return new ByteArray(messageDigest.digest(array.value));
+            }
             case "java/util/ArrayList->remove(I)Ljava/lang/Object;": {
                 int index = vaList.getInt(0);
                 ArrayListObject list = (ArrayListObject) dvmObject;
@@ -231,13 +239,22 @@ public abstract class AbstractJni implements Jni {
                 return new ServiceManager(vm, signature);
             case "com/android/internal/telephony/ITelephony$Stub->asInterface(Landroid/os/IBinder;)Lcom/android/internal/telephony/ITelephony;":
                 return vaList.getObject(0);
-            case "java/security/cert/CertificateFactory->getInstance(Ljava/lang/String;)Ljava/security/cert/CertificateFactory;":
+            case "java/security/cert/CertificateFactory->getInstance(Ljava/lang/String;)Ljava/security/cert/CertificateFactory;": {
                 StringObject type = vaList.getObject(0);
                 try {
                     return new DvmObject<>(vm.resolveClass("java/security/cert/CertificateFactory"), CertificateFactory.getInstance(type.value));
                 } catch (CertificateException e) {
                     throw new IllegalStateException(e);
                 }
+            }
+            case "java/security/MessageDigest->getInstance(Ljava/lang/String;)Ljava/security/MessageDigest;": {
+                StringObject type = vaList.getObject(0);
+                try {
+                    return new DvmObject<>(vm.resolveClass("java/security/MessageDigest"), MessageDigest.getInstance(type.value));
+                } catch (NoSuchAlgorithmException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         }
 
         throw new AbstractMethodError(signature);
