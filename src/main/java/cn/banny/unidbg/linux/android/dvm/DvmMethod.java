@@ -194,4 +194,13 @@ class DvmMethod implements Hashable {
         BaseVM vm = dvmClass.vm;
         vm.jni.callVoidMethodV(vm, dvmObject, signature, vaList);
     }
+
+    float callFloatMethodV(DvmObject dvmObject, VaList vaList) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callFloatMethodV signature=" + signature);
+        }
+        BaseVM vm = dvmClass.vm;
+        return vm.jni.callFloatMethodV(vm, dvmObject, signature, vaList);
+    }
 }

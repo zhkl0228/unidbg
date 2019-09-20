@@ -40,6 +40,8 @@ public interface Jni {
 
     long callLongMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
+    float callFloatMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
+
     DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature);

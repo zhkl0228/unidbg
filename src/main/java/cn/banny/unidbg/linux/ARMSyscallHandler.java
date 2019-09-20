@@ -1370,7 +1370,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     private int clock_gettime(Unicorn u, Emulator emulator) {
         int clk_id = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer tp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        long offset = System.nanoTime() - nanoTime;
+        long offset = clk_id == CLOCK_REALTIME ? System.currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;
         long tv_sec = offset / 1000000000L;
         long tv_nsec = offset % 1000000000L;
         if (log.isDebugEnabled()) {

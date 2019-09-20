@@ -639,6 +639,6 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
     @Override
     public Collection<Module> getLoadedModules() {
-        return new HashSet<Module>(modules.values());
+        return new ArrayList<Module>(modules.values());
     }
 }
