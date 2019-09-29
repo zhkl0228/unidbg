@@ -2,14 +2,12 @@ package com.bytedance.frameworks.core.encrypt;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
-import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
 import cn.banny.unidbg.hook.hookzz.HookZz;
@@ -64,7 +62,7 @@ public class TTEncrypt {
         test.destroy();
     }
 
-    private void ttEncrypt() throws IOException {
+    private void ttEncrypt() {
         Symbol sbox0 = module.findSymbolByName("sbox0");
         Symbol sbox1 = module.findSymbolByName("sbox1");
         Inspector.inspect(sbox0.createPointer(emulator).getByteArray(0, 256), "sbox0");

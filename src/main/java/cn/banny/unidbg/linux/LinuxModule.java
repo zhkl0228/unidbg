@@ -52,16 +52,20 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public final Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
-        ElfSymbol elfSymbol = dynsym.getELFSymbolByName(name);
-        if (elfSymbol != null && !elfSymbol.isUndef()) {
-            return new LinuxSymbol(this, elfSymbol);
-        }
+    public final Symbol findSymbolByName(String name, boolean withDependencies) {
+        try {
+            ElfSymbol elfSymbol = dynsym.getELFSymbolByName(name);
+            if (elfSymbol != null && !elfSymbol.isUndef()) {
+                return new LinuxSymbol(this, elfSymbol);
+            }
 
-        if (withDependencies) {
-            return findDependencySymbolByName(name);
+            if (withDependencies) {
+                return findDependencySymbolByName(name);
+            }
+            return null;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
-        return null;
     }
 
     public ElfSymbol getELFSymbolByName(String name) throws IOException {
@@ -94,21 +98,21 @@ public class LinuxModule extends Module {
             argc++;
         }
 
-        Pointer auxvPointer = memory.allocateStack(4);
+        Pointer auxvPointer = memory.allocateStack(emulator.getPointerSize());
         assert auxvPointer != null;
         auxvPointer.setPointer(0, null);
 
-        Pointer envPointer = memory.allocateStack(4);
+        Pointer envPointer = memory.allocateStack(emulator.getPointerSize());
         assert envPointer != null;
         envPointer.setPointer(0, null);
 
-        Pointer pointer = memory.allocateStack(4);
+        Pointer pointer = memory.allocateStack(emulator.getPointerSize());
         assert pointer != null;
         pointer.setPointer(0, null); // NULL-terminated argv
 
         Collections.reverse(argv);
         for (Pointer arg : argv) {
-            pointer = memory.allocateStack(4);
+            pointer = memory.allocateStack(emulator.getPointerSize());
             assert pointer != null;
             pointer.setPointer(0, arg);
         }
@@ -160,6 +164,11 @@ public class LinuxModule extends Module {
     }
 
     final Map<String, Long> hookMap = new HashMap<>();
+
+    @Override
+    public void registerSymbol(String symbolName, long address) {
+        hookMap.put(symbolName, address);
+    }
 
     @Override
     public String toString() {

@@ -13,7 +13,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -376,7 +375,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     }
 
     @Override
-    public Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
+    public Symbol findSymbolByName(String name, boolean withDependencies) {
         Symbol symbol = findSymbolByNameInternal(name, withDependencies);
         if (symbol != null) {
             if (symbol instanceof IndirectSymbol) {
@@ -392,7 +391,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
         }
     }
 
-    private Symbol findSymbolByNameInternal(String name, boolean withDependencies) throws IOException {
+    private Symbol findSymbolByNameInternal(String name, boolean withDependencies) {
         Symbol symbol = symbolMap.get(name);
         if (symbol != null) {
             return symbol;
@@ -453,5 +452,10 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     @Override
     protected String getPath() {
         return path;
+    }
+
+    @Override
+    public void registerSymbol(String symbolName, long address) {
+        throw new UnsupportedOperationException();
     }
 }

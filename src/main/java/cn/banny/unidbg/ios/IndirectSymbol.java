@@ -3,8 +3,6 @@ package cn.banny.unidbg.ios;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Symbol;
 
-import java.io.IOException;
-
 class IndirectSymbol extends Symbol {
 
     private final MachOModule module;
@@ -18,7 +16,7 @@ class IndirectSymbol extends Symbol {
 
     private Symbol actualSymbol;
 
-    final Symbol resolveSymbol() throws IOException {
+    final Symbol resolveSymbol() {
         if (actualSymbol != null) {
             return actualSymbol;
         }
@@ -28,15 +26,11 @@ class IndirectSymbol extends Symbol {
     }
 
     private Symbol checkSymbol() {
-        try {
-            Symbol symbol = resolveSymbol();
-            if (symbol == null) {
-                throw new IllegalStateException("symbol is null");
-            }
-            return symbol;
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
+        Symbol symbol = resolveSymbol();
+        if (symbol == null) {
+            throw new IllegalStateException("symbol is null");
         }
+        return symbol;
     }
 
     @Override

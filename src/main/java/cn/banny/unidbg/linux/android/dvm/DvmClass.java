@@ -8,7 +8,6 @@ import cn.banny.unidbg.pointer.UnicornPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 public class DvmClass extends DvmObject<String> implements Hashable {
@@ -104,17 +103,13 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         UnicornPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index != -1) {
-            try {
-                String symbolName = "Java_" + getClassName().replace('/', '_') + "_" + method.substring(0, index);
-                for (Module module : emulator.getMemory().getLoadedModules()) {
-                    Symbol symbol = module.findSymbolByName(symbolName, false);
-                    if (symbol != null) {
-                        fnPtr = (UnicornPointer) symbol.createPointer(emulator);
-                        break;
-                    }
+            String symbolName = "Java_" + getClassName().replace('/', '_') + "_" + method.substring(0, index);
+            for (Module module : emulator.getMemory().getLoadedModules()) {
+                Symbol symbol = module.findSymbolByName(symbolName, false);
+                if (symbol != null) {
+                    fnPtr = (UnicornPointer) symbol.createPointer(emulator);
+                    break;
                 }
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
             }
         }
         if (fnPtr == null) {
