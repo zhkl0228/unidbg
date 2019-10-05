@@ -2,10 +2,12 @@ package cn.banny.unidbg.spi;
 
 import cn.banny.unidbg.*;
 import cn.banny.unidbg.hook.HookListener;
+import cn.banny.unidbg.pointer.UnicornPointer;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 
 public interface Loader {
 
@@ -48,5 +50,10 @@ public interface Loader {
     void runLastThread(long timeout);
 
     boolean hasThread(int threadId);
+
+    /**
+     * 加载虚拟模块
+     */
+    Module loadVirtualModule(String name, final Map<String, UnicornPointer> symbols);
 
 }

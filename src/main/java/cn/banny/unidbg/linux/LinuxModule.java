@@ -20,6 +20,51 @@ public class LinuxModule extends Module {
 
     private static final Log log = LogFactory.getLog(LinuxModule.class);
 
+    static LinuxModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator emulator) {
+        if (symbols.isEmpty()) {
+            throw new IllegalArgumentException("symbols is empty");
+        }
+
+        List<UnicornPointer> list = new ArrayList<>(symbols.values());
+        Collections.sort(list, new Comparator<UnicornPointer>() {
+            @Override
+            public int compare(UnicornPointer o1, UnicornPointer o2) {
+                return (int) (o1.peer - o2.peer);
+            }
+        });
+        UnicornPointer first = list.get(0);
+        UnicornPointer last = list.get(list.size() - 1);
+        Alignment alignment = emulator.align(first.peer, last.peer - first.peer);
+        final long base = alignment.address;
+        final long size = alignment.size;
+
+        if (log.isDebugEnabled()) {
+            log.debug("createVirtualModule first=0x" + Long.toHexString(first.peer) + ", last=0x" + Long.toHexString(last.peer) + ", base=0x" + Long.toHexString(base) + ", size=0x" + Long.toHexString(size));
+        }
+
+        LinuxModule module = new LinuxModule(base, size, name, null,
+                Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
+                Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList()) {
+            @Override
+            public Symbol findSymbolByName(String name, boolean withDependencies) {
+                UnicornPointer pointer = symbols.get(name);
+                if (pointer != null) {
+                    return new LinuxVirtualSymbol(name, this, pointer.peer);
+                } else {
+                    return null;
+                }
+            }
+            @Override
+            public ElfSymbol getELFSymbolByName(String name) {
+                return null;
+            }
+        };
+        for (Map.Entry<String, UnicornPointer> entry : symbols.entrySet()) {
+            module.registerSymbol(entry.getKey(), entry.getValue().peer);
+        }
+        return module;
+    }
+
     private final SymbolLocator dynsym;
     private final List<ModuleSymbol> unresolvedSymbol;
     public final List<InitFunction> initFunctionList;
@@ -52,7 +97,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public final Symbol findSymbolByName(String name, boolean withDependencies) {
+    public Symbol findSymbolByName(String name, boolean withDependencies) {
         try {
             ElfSymbol elfSymbol = dynsym.getELFSymbolByName(name);
             if (elfSymbol != null && !elfSymbol.isUndef()) {

@@ -241,12 +241,12 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     }
 
     @Override
-    public LinuxSymbol dlsym(long handle, String symbol) throws IOException {
+    public Symbol dlsym(long handle, String symbol) throws IOException {
         for (LinuxModule module : modules.values()) {
             if (module.base == handle) {
                 ElfSymbol elfSymbol = module.getELFSymbolByName(symbol);
                 if (elfSymbol == null) {
-                    return null;
+                    return module.findSymbolByName(symbol, false);
                 } else {
                     return new LinuxSymbol(module, elfSymbol);
                 }
@@ -550,6 +550,19 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
         module.setEntryPoint(elfFile.entry_point);
         log.debug("Load library " + soName + " offset=" + (System.currentTimeMillis() - start) + "ms" + ", entry_point=0x" + Long.toHexString(elfFile.entry_point));
+        if (moduleListener != null) {
+            moduleListener.onLoaded(emulator, module);
+        }
+        return module;
+    }
+
+    @Override
+    public Module loadVirtualModule(String name, Map<String, UnicornPointer> symbols) {
+        LinuxModule module = LinuxModule.createVirtualModule(name, symbols, emulator);
+        modules.put(name, module);
+        if (maxSoName == null || name.length() > maxSoName.length()) {
+            maxSoName = name;
+        }
         if (moduleListener != null) {
             moduleListener.onLoaded(emulator, module);
         }

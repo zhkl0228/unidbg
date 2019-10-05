@@ -1,18 +1,25 @@
 package org.telegram.messenger;
 
 import cn.banny.auxiliary.Inspector;
+import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
 import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.arm.ArmSvc;
 import cn.banny.unidbg.linux.android.AndroidARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
-import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.linux.android.dvm.DalvikModule;
 import cn.banny.unidbg.linux.android.dvm.DvmClass;
 import cn.banny.unidbg.linux.android.dvm.VM;
+import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.memory.Memory;
+import cn.banny.unidbg.memory.SvcMemory;
+import cn.banny.unidbg.pointer.UnicornPointer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Utilities32 {
 
@@ -34,6 +41,17 @@ public class Utilities32 {
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
         memory.setCallInitFunction();
+
+        final SvcMemory svcMemory = emulator.getSvcMemory();
+        Map<String, UnicornPointer> symbols = new HashMap<>();
+        symbols.put("AndroidBitmap_getInfo", svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                return 0;
+            }
+        }));
+        Module module = memory.loadVirtualModule("libjnigraphics.so", symbols);
+        assert module != null;
 
         vm = emulator.createDalvikVM(null);
         DalvikModule dm = vm.loadLibrary(new File("src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), false);

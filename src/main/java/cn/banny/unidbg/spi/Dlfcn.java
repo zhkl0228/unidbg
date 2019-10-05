@@ -5,10 +5,14 @@ import cn.banny.unidbg.hook.HookListener;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
 public abstract class Dlfcn implements HookListener {
+
+    private static final Log log = LogFactory.getLog(Dlfcn.class);
 
     protected final UnicornPointer error;
 
@@ -22,7 +26,8 @@ public abstract class Dlfcn implements HookListener {
         try {
             Symbol symbol = memory.dlsym(handle, symbolName);
             if (symbol == null) {
-                this.error.setString(0, "Find symbol " + symbol + " failed");
+                log.info("Find symbol " + symbolName + " failed");
+                this.error.setString(0, "Find symbol " + symbolName + " failed");
                 return 0;
             }
             return symbol.getAddress();
