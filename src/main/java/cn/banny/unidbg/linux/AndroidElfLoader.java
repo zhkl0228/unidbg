@@ -241,14 +241,12 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     }
 
     @Override
-    public Symbol dlsym(long handle, String symbol) throws IOException {
+    public Symbol dlsym(long handle, String symbolName) {
         for (LinuxModule module : modules.values()) {
-            if (module.base == handle) {
-                ElfSymbol elfSymbol = module.getELFSymbolByName(symbol);
-                if (elfSymbol == null) {
-                    return module.findSymbolByName(symbol, false);
-                } else {
-                    return new LinuxSymbol(module, elfSymbol);
+            if (module.base == handle) { // virtual module may have same base address
+                Symbol symbol = module.findSymbolByName(symbolName, false);
+                if (symbol != null) {
+                    return symbol;
                 }
             }
         }
