@@ -188,7 +188,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (log.isDebugEnabled()) {
                     log.debug("NewObjectV clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
@@ -207,7 +207,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 UnicornPointer va_list = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (log.isDebugEnabled()) {
                     log.debug("NewObjectV clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
@@ -283,7 +283,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -303,7 +303,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException("dvmObject=" + dvmObject + ", dvmClass=" + dvmClass + ", jmethodID=" + jmethodID);
                 } else {
@@ -322,7 +322,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -342,7 +342,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -361,7 +361,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -381,7 +381,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -401,7 +401,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -423,7 +423,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -447,7 +447,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -468,7 +468,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.methodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -508,7 +508,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -527,7 +527,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -546,7 +546,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -566,7 +566,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -588,7 +588,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -609,7 +609,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -630,7 +630,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -652,7 +652,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -674,7 +674,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmField dvmField = dvmClass == null ? null : dvmClass.fieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -713,7 +713,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticObjectMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -732,7 +732,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticObjectMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -750,7 +750,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticBooleanMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -769,7 +769,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticBooleanMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -787,7 +787,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticIntMethodV clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -806,7 +806,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticIntMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -825,7 +825,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticLongMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -845,7 +845,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticVoidMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -865,7 +865,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("CallStaticVoidMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.staticMethodMap.get(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -904,7 +904,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetStaticObjectField clazz=" + clazz + ", jfieldID=" + jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmField dvmField = dvmClass == null ? null : dvmClass.staticFieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -922,7 +922,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetStaticIntField clazz=" + clazz + ", jfieldID=" + jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmField dvmField = dvmClass == null ? null : dvmClass.staticFieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -941,7 +941,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetStaticLongField clazz=" + clazz + ", jfieldID=" + jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmField dvmField = dvmClass == null ? null : dvmClass.staticFieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
@@ -963,7 +963,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("SetStaticLongField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
                 DvmClass dvmClass = classMap.get(clazz.peer);
-                DvmField dvmField = dvmClass == null ? null : dvmClass.staticFieldMap.get(jfieldID.peer);
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.peer);
                 if (dvmField == null) {
                     throw new UnicornException("dvmClass=" + dvmClass);
                 } else {

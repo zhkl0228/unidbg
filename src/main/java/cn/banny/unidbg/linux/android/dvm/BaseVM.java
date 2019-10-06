@@ -49,13 +49,13 @@ public abstract class BaseVM implements VM {
     final Map<Long, DvmObject> localObjectMap = new HashMap<>();
 
     @Override
-    public final DvmClass resolveClass(String className) {
+    public final DvmClass resolveClass(String className, DvmClass... interfaceClasses) {
         long hash = Objects.hash(className) & 0xffffffffL;
         DvmClass dvmClass = classMap.get(hash);
         if (dvmClass != null) {
             return dvmClass;
         } else {
-            dvmClass = new DvmClass(this, className);
+            dvmClass = new DvmClass(this, className, interfaceClasses);
             classMap.put(hash, dvmClass);
             addObject(dvmClass, true);
             return dvmClass;

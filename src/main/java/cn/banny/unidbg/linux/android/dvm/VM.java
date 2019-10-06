@@ -25,7 +25,7 @@ public interface VM {
 
     Pointer getJNIEnv();
 
-    DvmClass resolveClass(String className);
+    DvmClass resolveClass(String className, DvmClass... interfaceClasses);
     DvmClass findClass(String className);
 
     <T extends DvmObject> T getObject(long hash);

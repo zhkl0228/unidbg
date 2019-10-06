@@ -162,6 +162,7 @@ public abstract class AbstractJni implements Jni {
                 File file = (File) dvmObject.getValue();
                 return new StringObject(vm, file.getAbsolutePath());
             case "android/app/Application->getPackageManager()Landroid/content/pm/PackageManager;":
+            case "android/content/ContextWrapper->getPackageManager()Landroid/content/pm/PackageManager;":
             case "android/content/Context->getPackageManager()Landroid/content/pm/PackageManager;":
                 DvmClass clazz = vm.resolveClass("android/content/pm/PackageManager");
                 return clazz.newObject(signature);
@@ -174,17 +175,20 @@ public abstract class AbstractJni implements Jni {
                 return new PackageInfo(vm, packageName.value, flags);
             }
             case "android/app/Application->getPackageName()Ljava/lang/String;":
+            case "android/content/ContextWrapper->getPackageName()Ljava/lang/String;":
             case "android/content/Context->getPackageName()Ljava/lang/String;": {
                 String packageName = vm.getPackageName();
                 if (packageName != null) {
                     return new StringObject(vm, packageName);
                 }
+                break;
             }
             case "android/content/pm/Signature->toByteArray()[B":
                 if (dvmObject instanceof Signature) {
                     Signature sig = (Signature) dvmObject;
                     return new ByteArray(sig.toByteArray());
                 }
+                break;
             case "java/lang/String->getBytes(Ljava/lang/String;)[B":
                 String str = (String) dvmObject.getValue();
                 StringObject charsetName = vaList.getObject(0);
@@ -237,7 +241,7 @@ public abstract class AbstractJni implements Jni {
             case "android/app/ActivityThread->currentActivityThread()Landroid/app/ActivityThread;":
                 return new DvmObject<Object>(dvmClass, null);
             case "android/app/ActivityThread->currentApplication()Landroid/app/Application;":
-                return new DvmObject<>(vm.resolveClass("android/app/Application"), signature);
+                return new DvmObject<>(vm.resolveClass("android/app/Application", vm.resolveClass("android/content/ContextWrapper", vm.resolveClass("android/content/Context"))), signature);
             case "java/util/Locale->getDefault()Ljava/util/Locale;":
                 return new DvmObject<>(dvmClass, Locale.getDefault());
             case "android/os/ServiceManagerNative->asInterface(Landroid/os/IBinder;)Landroid/os/IServiceManager;":
@@ -279,6 +283,7 @@ public abstract class AbstractJni implements Jni {
                     Signature sig = (Signature) dvmObject;
                     return sig.getHashCode();
                 }
+                break;
             }
         }
 
@@ -413,6 +418,7 @@ public abstract class AbstractJni implements Jni {
                 if (packageName != null) {
                     return new StringObject(vm, packageName);
                 }
+                break;
             }
             case "android/content/pm/PackageManager->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;": {
                 StringObject packageName = varArg.getObject(0);
@@ -427,6 +433,7 @@ public abstract class AbstractJni implements Jni {
                     Signature sig = (Signature) dvmObject;
                     return new ByteArray(sig.toByteArray());
                 }
+                break;
             }
         }
 
