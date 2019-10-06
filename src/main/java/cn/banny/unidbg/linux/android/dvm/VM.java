@@ -6,6 +6,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 public interface VM {
 
@@ -47,4 +48,9 @@ public interface VM {
      * 设置apkFile以后，可调用该值获取apk对应的packageName
      */
     String getPackageName();
+
+    /**
+     * 设置apkFile以后，可调用该方法获取资源文件
+     */
+    InputStream openAsset(String fileName);
 }

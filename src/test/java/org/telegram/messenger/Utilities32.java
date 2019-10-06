@@ -15,6 +15,7 @@ import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
+import unicorn.UnicornException;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class Utilities32 {
         symbols.put("AndroidBitmap_getInfo", svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
-                return 0;
+                throw new UnicornException("AndroidBitmap_getInfo");
             }
         }));
         Module module = memory.loadVirtualModule("libjnigraphics.so", symbols);

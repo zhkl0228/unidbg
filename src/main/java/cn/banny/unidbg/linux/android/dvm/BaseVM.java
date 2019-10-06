@@ -13,8 +13,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
@@ -215,6 +217,24 @@ public abstract class BaseVM implements VM {
             apkFile = new ApkFile(this.apkFile);
             apkMeta = apkFile.getApkMeta();
             return apkMeta.getPackageName();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
+        }
+    }
+
+    @Override
+    public InputStream openAsset(String fileName) {
+        if (apkFile == null) {
+            return null;
+        }
+
+        ApkFile apkFile = null;
+        try {
+            apkFile = new ApkFile(this.apkFile);
+            byte[] data = apkFile.getFileData("assets/" + fileName);
+            return data == null ? null : new ByteArrayInputStream(data);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         } finally {
