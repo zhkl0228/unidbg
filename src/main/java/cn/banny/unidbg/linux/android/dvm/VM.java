@@ -6,7 +6,6 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 
 public interface VM {
 
@@ -51,6 +50,7 @@ public interface VM {
 
     /**
      * 设置apkFile以后，可调用该方法获取资源文件
+     * @return 可返回null
      */
-    InputStream openAsset(String fileName);
+    byte[] openAsset(String fileName);
 }
