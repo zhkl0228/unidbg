@@ -53,4 +53,15 @@ public interface VM {
      * @return 可返回null
      */
     byte[] openAsset(String fileName);
+
+    /**
+     * Add not found class
+     * @param className eg: sun/security/pkcs/PKCS7
+     */
+    void addNotFoundClass(String className);
+
+    /**
+     * VM throw exception
+     */
+    void throwException(DvmObject<?> jthrowable);
 }

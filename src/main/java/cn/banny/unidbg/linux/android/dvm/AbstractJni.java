@@ -469,4 +469,9 @@ public abstract class AbstractJni implements Jni {
     public long getStaticLongField(BaseVM vm, String signature) {
         throw new AbstractMethodError(signature);
     }
+
+    @Override
+    public DvmObject toReflectedMethod(BaseVM vm, String signature) {
+        throw new AbstractMethodError(signature);
+    }
 }

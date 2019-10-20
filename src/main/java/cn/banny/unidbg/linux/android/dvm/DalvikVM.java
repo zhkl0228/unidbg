@@ -2,8 +2,8 @@ package cn.banny.unidbg.linux.android.dvm;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.ArmSvc;
+import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
 import cn.banny.unidbg.linux.android.dvm.array.*;
 import cn.banny.unidbg.memory.MemoryBlock;
@@ -44,6 +44,11 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer env = context.getR0Pointer();
                 Pointer className = context.getR1Pointer();
                 String name = className.getString(0);
+                if (notFoundClassSet.contains(name)) {
+                    jthrowable = resolveClass("java/lang/NoClassDefFoundError").newObject(name);
+                    return 0;
+                }
+
                 DvmClass dvmClass = resolveClass(name);
                 long hash = dvmClass.hashCode() & 0xffffffffL;
                 if (log.isDebugEnabled()) {
@@ -52,6 +57,31 @@ public class DalvikVM extends BaseVM implements VM {
                 return hash;
             }
         });
+
+        Pointer _ToReflectedMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                Arm32RegisterContext context = emulator.getContext();
+                UnicornPointer clazz = context.getR1Pointer();
+                UnicornPointer jmethodID = context.getR2Pointer();
+                DvmClass dvmClass = classMap.get(clazz.peer);
+                DvmMethod dvmMethod = null;
+                if (dvmClass != null) {
+                    dvmMethod = dvmClass.getStaticMethod(jmethodID.peer);
+                    if (dvmMethod == null) {
+                        dvmMethod = dvmClass.getMethod(jmethodID.peer);
+                    }
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("ToReflectedMethod clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", lr=" + context.getLRPointer());
+                }
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    return addLocalObject(dvmMethod.toReflectedMethod());
+                }
+            }
+        }) ;
 
         Pointer _Throw = svcMemory.registerSvc(new ArmSvc() {
             @Override
@@ -1435,6 +1465,7 @@ public class DalvikVM extends BaseVM implements VM {
             impl.setInt(i, i);
         }
         impl.setPointer(0x18, _FindClass);
+        impl.setPointer(0x24, _ToReflectedMethod);
         impl.setPointer(0x34, _Throw);
         impl.setPointer(0x3c, _ExceptionOccurred);
         impl.setPointer(0x44, _ExceptionClear);

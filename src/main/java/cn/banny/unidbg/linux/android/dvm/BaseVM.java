@@ -33,12 +33,24 @@ public abstract class BaseVM implements VM {
     DvmObject<?> jthrowable;
 
     @Override
+    public void throwException(DvmObject<?> jthrowable) {
+        this.jthrowable = jthrowable;
+    }
+
+    @Override
     public final void setJni(Jni jni) {
         this.jni = jni;
     }
 
     private final Emulator emulator;
     private final File apkFile;
+
+    final Set<String> notFoundClassSet = new HashSet<>();
+
+    @Override
+    public void addNotFoundClass(String className) {
+        notFoundClassSet.add(className);
+    }
 
     BaseVM(Emulator emulator, File apkFile) {
         this.emulator = emulator;

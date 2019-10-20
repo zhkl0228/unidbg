@@ -69,4 +69,6 @@ public interface Jni {
     void setStaticLongField(BaseVM vm, String signature, long value);
 
     long getStaticLongField(BaseVM vm, String signature);
+
+    DvmObject toReflectedMethod(BaseVM vm, String signature);
 }
