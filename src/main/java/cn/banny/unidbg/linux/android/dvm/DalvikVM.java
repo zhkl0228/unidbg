@@ -845,6 +845,26 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallStaticLongMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                UnicornPointer clazz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallStaticLongMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                }
+                DvmClass dvmClass = classMap.get(clazz.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.peer);
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    long value = dvmMethod.callStaticLongMethod(ArmVarArg.create(emulator, DalvikVM.this));
+                    emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (value >> 32));
+                    return (value & 0xffffffffL);
+                }
+            }
+        });
+
         Pointer _CallStaticLongMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
@@ -1534,6 +1554,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x1d8, _CallStaticBooleanMethodV);
         impl.setPointer(0x204, _CallStaticIntMethod);
         impl.setPointer(0x208, _CallStaticIntMethodV);
+        impl.setPointer(0x210, _CallStaticLongMethod);
         impl.setPointer(0x214, _CallStaticLongMethodV);
         impl.setPointer(0x234, _CallStaticVoidMethod);
         impl.setPointer(0x238, _CallStaticVoidMethodV);
@@ -1542,6 +1563,10 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x258, _GetStaticIntField);
         impl.setPointer(0x25c, _GetStaticLongField);
         impl.setPointer(0x280, _SetStaticLongField);
+        impl.setPointer(0x290, _GetStringLength);
+        impl.setPointer(0x294, _GetStringChars);
+        impl.setPointer(0x298, _ReleaseStringChars);
+        impl.setPointer(0x29c, _NewStringUTF);
         impl.setPointer(0x2a0, _GetStringUTFLength);
         impl.setPointer(0x2a4, _GetStringUTFChars);
         impl.setPointer(0x2a8, _ReleaseStringUTFChars);
@@ -1552,10 +1577,6 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x2d8, _NewDoubleArray);
         impl.setPointer(0x2e0, _GetByteArrayElements);
         impl.setPointer(0x2ec, _GetIntArrayElements);
-        impl.setPointer(0x290, _GetStringLength);
-        impl.setPointer(0x294, _GetStringChars);
-        impl.setPointer(0x298, _ReleaseStringChars);
-        impl.setPointer(0x29c, _NewStringUTF);
         impl.setPointer(0x2b4, _GetObjectArrayElement);
         impl.setPointer(0x2d4, _NewFloatArray);
         impl.setPointer(0x2f4, _GetFloatArrayElements);

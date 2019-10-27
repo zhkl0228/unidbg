@@ -14,6 +14,8 @@ public interface Jni {
 
     int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
+    long callStaticLongMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
+
     long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
     DvmObject callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);

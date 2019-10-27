@@ -291,6 +291,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public long callStaticLongMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
     public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
