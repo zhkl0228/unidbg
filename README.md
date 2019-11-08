@@ -4,8 +4,6 @@ Allows you to emulate an Android ARM32 and/or ARM64 native library, and an exper
 
 This is an educational project to learn more about the ELF file format and ARM assembly.
 
-QQ Group: 675443841
-
 ## License
 - unidbg uses software libraries from [Apache Software Foundation](http://apache.org). 
 - unidbg developers Idea enterprise licenses are supported by [Jetbrains](https://www.jetbrains.com?from=unidbg).
