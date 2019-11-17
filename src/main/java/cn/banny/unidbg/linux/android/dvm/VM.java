@@ -55,6 +55,12 @@ public interface VM {
     byte[] openAsset(String fileName);
 
     /**
+     * 设置apkFile以后，可调用该方法获取AndroidManifest.xml
+     * @return 可返回null
+     */
+    String getManifestXml();
+
+    /**
      * Add not found class
      * @param className eg: sun/security/pkcs/PKCS7
      */

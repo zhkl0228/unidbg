@@ -235,6 +235,23 @@ public abstract class BaseVM implements VM {
     }
 
     @Override
+    public String getManifestXml() {
+        if (apkFile == null) {
+            return null;
+        }
+
+        ApkFile apkFile = null;
+        try {
+            apkFile = new ApkFile(this.apkFile);
+            return apkFile.getManifestXml();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
+        }
+    }
+
+    @Override
     public byte[] openAsset(String fileName) {
         if (apkFile == null) {
             return null;
