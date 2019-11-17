@@ -1351,16 +1351,15 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 return 0;
             }
             case PR_GET_NAME: {
-                String threadName = Thread.currentThread().getName();
-                if (threadName.length() > 15) {
-                    threadName = threadName.substring(0, 15);
+                String name = Thread.currentThread().getName();
+                if (name.length() > 15) {
+                    name = name.substring(0, 15);
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("prctl get thread name: " + threadName);
+                    log.debug("prctl get thread name: " + name);
                 }
-                Pointer pointer = UnicornPointer.pointer(emulator, arg2);
-                assert pointer != null;
-                pointer.setString(0, threadName);
+                Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                buffer.setString(0, name);
                 return 0;
             }
             case BIONIC_PR_SET_VMA:
