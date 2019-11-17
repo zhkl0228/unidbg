@@ -1330,6 +1330,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
     private static final int PR_SET_DUMPABLE = 4;
     private static final int PR_SET_NAME = 15;
+    private static final int PR_GET_NAME = 16;
     private static final int BIONIC_PR_SET_VMA =              0x53564d41;
 
     private int prctl(Unicorn u, Emulator emulator) {
@@ -1341,12 +1342,27 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         switch (option) {
             case PR_SET_DUMPABLE:
                 return 0;
-            case PR_SET_NAME:
+            case PR_SET_NAME: {
                 Pointer threadName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                String name = threadName.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("prctl set thread name: " + threadName.getString(0));
+                    log.debug("prctl set thread name: " + name);
                 }
                 return 0;
+            }
+            case PR_GET_NAME: {
+                String threadName = Thread.currentThread().getName();
+                if (threadName.length() > 15) {
+                    threadName = threadName.substring(0, 15);
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("prctl get thread name: " + threadName);
+                }
+                Pointer pointer = UnicornPointer.pointer(emulator, arg2);
+                assert pointer != null;
+                pointer.setString(0, threadName);
+                return 0;
+            }
             case BIONIC_PR_SET_VMA:
                 Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
