@@ -1122,6 +1122,21 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _setObjectArrayElement = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                ArrayObject array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                int index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+                DvmObject obj = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3).peer);
+                if (log.isDebugEnabled()) {
+                    log.debug("setObjectArrayElement array=" + array + ", index=" + index + ", obj=" + obj);
+                }
+                DvmObject[] objs = array.getValue();
+                objs[index]=obj;
+                return 0;
+            }
+        });
+
         Pointer _NewFloatArray = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
@@ -1578,6 +1593,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x2e0, _GetByteArrayElements);
         impl.setPointer(0x2ec, _GetIntArrayElements);
         impl.setPointer(0x2b4, _GetObjectArrayElement);
+        impl.setPointer(0x2b8, _setObjectArrayElement);
         impl.setPointer(0x2d4, _NewFloatArray);
         impl.setPointer(0x2f4, _GetFloatArrayElements);
         impl.setPointer(0x300, _ReleaseByteArrayElements);
