@@ -107,7 +107,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 19888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
                     return;
-                case  20888: // getpid
+                case  172: // getpid
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, emulator.getPid());
+                    return;
                 case 224888: // gettid
                     u.reg_write(ArmConst.UC_ARM_REG_R0, emulator.getPid());
                     return;
@@ -271,7 +273,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 230888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lgetxattr(u, emulator));
                     return;
-                case 248888:
+                case 94:
                     exit_group(u);
                     return;
                 case 263888:
@@ -280,8 +282,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 266888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, statfs(emulator));
                     return;
-                case 268888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(u));
+                case 131:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, tgkill(emulator));
                     return;
                 case 281888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, socket(u, emulator));
@@ -316,8 +318,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 327888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fstatat64(u, emulator));
                     return;
-                case 334888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
+                case 48:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, faccessat(emulator));
                     return;
                 case 0xf0002888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, cacheflush(u, emulator));
@@ -407,10 +409,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return -1;
     }
 
-    private int tgkill(Unicorn u) {
-        int tgid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int tid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int sig = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+    private int tgkill(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int tgid = context.getIntArg(0);
+        int tid = context.getIntArg(1);
+        int sig = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             log.debug("tgkill tgid=" + tgid + ", tid=" + tid + ", sig=" + sig);
         }
@@ -1134,7 +1137,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private void exit_group(Unicorn u) {
-        int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        int status = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
         if (log.isDebugEnabled()) {
             log.debug("exit with code: " + status);
         }
@@ -1341,11 +1344,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return gettimeofday(tv, tz);
     }
 
-    private int faccessat(Unicorn u, Emulator emulator) {
-        int dirfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer pathname_p = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+    private int faccessat(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname_p = context.getPointerArg(1);
+        int oflags = context.getIntArg(2);
+        int mode = context.getIntArg(3);
         String pathname = pathname_p.getString(0);
         if (log.isDebugEnabled()) {
             log.debug("faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
