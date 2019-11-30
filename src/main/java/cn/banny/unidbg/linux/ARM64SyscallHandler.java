@@ -6,6 +6,7 @@ import cn.banny.unidbg.StopEmulatorException;
 import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;
@@ -127,8 +128,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 42888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, pipe(emulator));
                     return;
-                case 54888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, ioctl(u, emulator));
+                case 29:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, ioctl(emulator));
                     return;
                 case 56:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, openat(u, emulator));
@@ -145,8 +146,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 63888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, dup2(u, emulator));
                     return;
-                case 67888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
+                case 134:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sigaction(emulator));
                     return;
                 case 80:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(u, emulator));
@@ -185,8 +186,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 122888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
                     return;
-                case 126888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(u, emulator));
+                case 135:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sigprocmask(emulator));
                     return;
                 case 132888:
                     syscall = "getpgid";
@@ -871,10 +872,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         throw new UnsupportedOperationException();
     }
 
-    private int sigprocmask(Unicorn u, Emulator emulator) {
-        int how = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer set = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oldset = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+    private int sigprocmask(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int how = context.getIntArg(0);
+        Pointer set = context.getPointerArg(1);
+        Pointer oldset = context.getPointerArg(2);
         return sigprocmask(emulator, how, set, oldset);
     }
 
@@ -935,10 +937,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int sigaction(Unicorn u, Emulator emulator) {
-        int signum = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer act = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oldact = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+    private int sigaction(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int signum = context.getIntArg(0);
+        Pointer act = context.getPointerArg(1);
+        Pointer oldact = context.getPointerArg(2);
 
         return sigaction(signum, act, oldact);
     }
@@ -1507,10 +1510,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return fstat(emulator, fd, stat);
     }
 
-    private int ioctl(Unicorn u, Emulator emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        long request = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue() & 0xffffffffL;
-        long argp = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue() & 0xffffffffL;
+    private int ioctl(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        long request = context.getLongArg(1);
+        long argp = context.getLongArg(2);
         if (log.isDebugEnabled()) {
             log.debug("ioctl fd=" + fd + ", request=0x" + Long.toHexString(request) + ", argp=0x" + Long.toHexString(argp));
         }

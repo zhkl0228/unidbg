@@ -10,8 +10,8 @@ public class RandomFileIO extends DriverFileIO {
 
     private final Random random = new Random();
 
-    RandomFileIO(String path) {
-        super(O_RDONLY, path);
+    RandomFileIO(Emulator emulator, String path) {
+        super(emulator, O_RDONLY, path);
     }
 
     @Override

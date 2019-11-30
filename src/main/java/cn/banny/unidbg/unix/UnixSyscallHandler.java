@@ -160,7 +160,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
             this.fdMap.put(minFd, io);
             return minFd;
         }
-        FileIO driverIO = DriverFileIO.create(oflags, pathname);
+        FileIO driverIO = DriverFileIO.create(emulator, oflags, pathname);
         if (driverIO != null) {
             this.fdMap.put(minFd, driverIO);
             return minFd;
