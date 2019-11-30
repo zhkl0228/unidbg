@@ -74,6 +74,11 @@ public abstract class AbstractEmulator implements Emulator {
         POINTER_SIZE.set(getPointerSize());
     }
 
+    @Override
+    public boolean is64Bit() {
+        return getPointerSize() == 8;
+    }
+
     protected abstract RegisterContext createRegisterContext(Unicorn unicorn);
 
     @SuppressWarnings("unchecked")
@@ -267,7 +272,7 @@ public abstract class AbstractEmulator implements Emulator {
             unicorn.emu_start(begin, until, timeout, (long) 0);
             return (Number) unicorn.reg_read(getPointerSize() == 4 ? ArmConst.UC_ARM_REG_R0 : Arm64Const.UC_ARM64_REG_X0);
         } catch (RuntimeException e) {
-            if (!entry && e instanceof UnicornException) {
+            if (!entry && e instanceof UnicornException && !log.isDebugEnabled()) {
                 log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);
                 return -1;
             }

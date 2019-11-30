@@ -2,7 +2,6 @@ package cn.banny.unidbg.linux.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.file.AbstractFileIO;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.file.StatStructure;
@@ -91,8 +90,8 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
     @Override
     public int read(Unicorn unicorn, Pointer buffer, int count) {
         try {
-            if (count > 1024) {
-                count = 1024;
+            if (count > 4096) {
+                count = 4096;
             }
             if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {
                 count = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
@@ -113,7 +112,7 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
                 throw new IllegalStateException("count=" + count + ", read=" + read);
             }
             if (log.isDebugEnabled() && buf.length < 0x3000) {
-                Inspector.inspect(buf, "read path=" + file);
+                Inspector.inspect(buf, "read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
             }
             buffer.write(0, buf, 0, buf.length);
             return buf.length;

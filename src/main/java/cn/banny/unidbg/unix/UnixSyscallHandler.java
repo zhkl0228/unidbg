@@ -321,4 +321,12 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return -1;
     }
 
+    /**
+     * handle unknown syscall
+     * @param NR syscall number
+     */
+    protected boolean handleUnknownSyscall(Emulator emulator, int NR) {
+        return false;
+    }
+
 }

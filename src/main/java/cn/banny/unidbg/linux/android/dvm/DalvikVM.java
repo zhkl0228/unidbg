@@ -1151,9 +1151,10 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _NewByteArray = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
-                int size = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                Arm32RegisterContext ctx = emulator.getContext();
+                int size = ctx.getR1Int();
                 if (log.isDebugEnabled()) {
-                    log.debug("NewByteArray size=" + size);
+                    log.debug("NewByteArray size=" + size + ", LR=" + ctx.getLRPointer() + ", PC=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC));
                 }
                 return addObject(new ByteArray(new byte[size]), false);
             }

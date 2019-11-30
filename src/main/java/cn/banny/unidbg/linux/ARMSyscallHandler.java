@@ -381,6 +381,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             exception = e;
         }
 
+        if (exception == null && handleUnknownSyscall(emulator, NR)) {
+            return;
+        }
+
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
         if (exception instanceof UnicornException) {

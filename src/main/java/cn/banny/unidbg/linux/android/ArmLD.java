@@ -154,7 +154,11 @@ public class ArmLD extends Dlfcn {
                 pointer = pointer.share(-4); // NULL-terminated
                 pointer.setInt(0, 0);
 
-                log.info("dlopen failed: " + filename);
+                if (!"libnetd_client.so".equals(filename)) {
+                    log.info("dlopen failed: " + filename);
+                } else if(log.isDebugEnabled()) {
+                    log.debug("dlopen failed: " + filename);
+                }
                 this.error.setString(0, "Resolve library " + filename + " failed");
                 return 0;
             } else {
