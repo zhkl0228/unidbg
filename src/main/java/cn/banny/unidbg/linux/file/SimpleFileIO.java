@@ -74,6 +74,9 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
                 Inspector.inspect(data, "write");
             }
 
+            if (isAppendMode()) {
+                randomAccessFile.seek(randomAccessFile.length());
+            }
             randomAccessFile.write(data);
             return data.length;
         } catch (IOException e) {
@@ -95,12 +98,27 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
             }
             if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {
                 count = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
+
+                /*
+                 * lseek() allows the file offset to be set beyond the end of the file
+                 *        (but this does not change the size of the file).  If data is later
+                 *        written at this point, subsequent reads of the data in the gap (a
+                 *        "hole") return null bytes ('\0') until data is actually written into
+                 *        the gap.
+                 */
+                if (count < 0) {
+                    return 0;
+                }
             }
 
             byte[] data = new byte[count];
             int read = randomAccessFile.read(data);
             if (read <= 0) {
                 return read;
+            }
+
+            if (randomAccessFile.getFilePointer() > randomAccessFile.length()) {
+                throw new IllegalStateException("fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
             }
 
             final byte[] buf;

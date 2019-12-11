@@ -99,6 +99,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 ARM.showThumbRegs(u);
             }
 
+            if (handleSyscall(emulator, NR)) {
+                return;
+            }
+
             switch (NR) {
                 case 1:
                     int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();

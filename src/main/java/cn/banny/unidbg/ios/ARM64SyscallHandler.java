@@ -76,6 +76,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
 
             Cpsr.getArm64(u).setCarry(false);
+            if (handleSyscall(emulator, NR)) {
+                return;
+            }
+
             switch (NR) {
                 case -3888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mach_absolute_time(emulator));
