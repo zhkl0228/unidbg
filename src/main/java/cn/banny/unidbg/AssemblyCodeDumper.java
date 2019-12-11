@@ -1,9 +1,12 @@
 package cn.banny.unidbg;
 
+import capstone.Capstone;
+import cn.banny.unidbg.listener.TraceCodeListener;
 import unicorn.CodeHook;
 import unicorn.Unicorn;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 
 /**
  * my code hook
@@ -22,15 +25,17 @@ class AssemblyCodeDumper implements CodeHook {
 
     private boolean traceInstruction;
     private long traceBegin, traceEnd;
+    private TraceCodeListener listener;
 
-    void initialize(long begin, long end) {
+    void initialize(long begin, long end, TraceCodeListener listener) {
         this.traceInstruction = true;
         this.traceBegin = begin;
         this.traceEnd = end;
+        this.listener = listener;
     }
 
     private boolean canTrace(long address) {
-        return traceInstruction && (traceBegin > traceEnd || address >= traceBegin && address <= traceEnd);
+        return traceInstruction && (traceBegin > traceEnd || (address >= traceBegin && address <= traceEnd));
     }
 
     PrintStream redirect;
@@ -42,8 +47,12 @@ class AssemblyCodeDumper implements CodeHook {
             if (redirect != null) {
                 out = redirect;
             }
-            if (!emulator.printAssemble(out, address, size)) {
-                out.println("### Trace Instruction at 0x" + Long.toHexString(address) + ", size = " + size);
+            Capstone.CsInsn[] insns = emulator.printAssemble(out, address, size);
+            if (listener != null) {
+                if (insns == null || insns.length != 1) {
+                    throw new IllegalStateException("insns=" + Arrays.toString(insns));
+                }
+                listener.onInstruction(emulator, address, insns[0]);
             }
         }
     }

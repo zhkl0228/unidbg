@@ -4,6 +4,9 @@ import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.debugger.Debugger;
 import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.linux.android.dvm.VM;
+import cn.banny.unidbg.listener.TraceCodeListener;
+import cn.banny.unidbg.listener.TraceReadListener;
+import cn.banny.unidbg.listener.TraceWriteListener;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.spi.*;
@@ -32,12 +35,14 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     Emulator traceRead();
     Emulator traceRead(long begin, long end);
+    Emulator traceRead(long begin, long end, TraceReadListener listener);
 
     /**
      * trace memory write
      */
     Emulator traceWrite();
     Emulator traceWrite(long begin, long end);
+    Emulator traceWrite(long begin, long end, TraceWriteListener listener);
 
     /**
      * trace instruction
@@ -45,6 +50,7 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     void traceCode();
     void traceCode(long begin, long end);
+    void traceCode(long begin, long end, TraceCodeListener listener);
 
     /**
      * redirect trace out

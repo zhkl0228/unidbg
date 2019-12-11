@@ -188,7 +188,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             boolean foundTerminated = false;
             while (true) {
-                byte[] data = pointer.getByteArray(addr, 0x100);
+                byte[] data = pointer.getByteArray(addr, 0x10);
                 int length = data.length;
                 for (int i = 0; i < data.length; i++) {
                     if (data[i] == 0) {

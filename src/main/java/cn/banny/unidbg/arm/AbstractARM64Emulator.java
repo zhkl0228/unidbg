@@ -141,9 +141,10 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
     }
 
     @Override
-    public boolean printAssemble(PrintStream out, long address, int size) {
-        printAssemble(out, disassemble(address, size, 0), address);
-        return true;
+    public Capstone.CsInsn[] printAssemble(PrintStream out, long address, int size) {
+        Capstone.CsInsn[] insns = disassemble(address, size, 0);
+        printAssemble(out, insns, address);
+        return insns;
     }
 
     @Override

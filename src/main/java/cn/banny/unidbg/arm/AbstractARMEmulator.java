@@ -164,9 +164,10 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
     }
 
     @Override
-    public boolean printAssemble(PrintStream out, long address, int size) {
-        printAssemble(out, disassemble(address, size, 0), address, ARM.isThumb(unicorn));
-        return true;
+    public Capstone.CsInsn[] printAssemble(PrintStream out, long address, int size) {
+        Capstone.CsInsn[] insns = disassemble(address, size, 0);
+        printAssemble(out, insns, address, ARM.isThumb(unicorn));
+        return insns;
     }
 
     @Override

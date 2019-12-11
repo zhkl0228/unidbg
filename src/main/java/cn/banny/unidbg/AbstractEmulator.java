@@ -7,6 +7,9 @@ import cn.banny.unidbg.debugger.Debugger;
 import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.debugger.gdb.GdbStub;
 import cn.banny.unidbg.debugger.ida.AndroidServer;
+import cn.banny.unidbg.listener.TraceCodeListener;
+import cn.banny.unidbg.listener.TraceReadListener;
+import cn.banny.unidbg.listener.TraceWriteListener;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.memory.MemoryBlockImpl;
@@ -63,8 +66,8 @@ public abstract class AbstractEmulator implements Emulator {
         this.processName = processName == null ? "unidbg" : processName;
         this.registerContext = createRegisterContext(unicorn);
 
-        this.readHook = new TraceMemoryHook();
-        this.writeHook = new TraceMemoryHook();
+        this.readHook = new TraceMemoryHook(true);
+        this.writeHook = new TraceMemoryHook(false);
         this.codeHook = new AssemblyCodeDumper(this);
 
         String name = ManagementFactory.getRuntimeMXBean().getName();
@@ -170,9 +173,12 @@ public abstract class AbstractEmulator implements Emulator {
 
     private boolean traceMemoryRead, traceMemoryWrite;
     private long traceMemoryReadBegin, traceMemoryReadEnd;
+    private TraceReadListener traceReadListener;
     private long traceMemoryWriteBegin, traceMemoryWriteEnd;
+    private TraceWriteListener traceWriteListener;
     protected boolean traceInstruction;
     private long traceInstructionBegin, traceInstructionEnd;
+    private TraceCodeListener traceCodeListener;
 
     @Override
     public final Emulator traceRead(long begin, long end) {
@@ -183,11 +189,23 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     @Override
+    public Emulator traceRead(long begin, long end, TraceReadListener listener) {
+        this.traceReadListener = listener;
+        return traceRead(begin, end);
+    }
+
+    @Override
     public final Emulator traceWrite(long begin, long end) {
         traceMemoryWrite = true;
         traceMemoryWriteBegin = begin;
         traceMemoryWriteEnd = end;
         return this;
+    }
+
+    @Override
+    public Emulator traceWrite(long begin, long end, TraceWriteListener listener) {
+        this.traceWriteListener = listener;
+        return traceWrite(begin, end);
     }
 
     @Override
@@ -210,6 +228,12 @@ public abstract class AbstractEmulator implements Emulator {
         traceInstruction = true;
         traceInstructionBegin = begin;
         traceInstructionEnd = end;
+    }
+
+    @Override
+    public void traceCode(long begin, long end, TraceCodeListener listener) {
+        this.traceCodeListener = listener;
+        traceCode(begin, end);
     }
 
     private final TraceMemoryHook readHook;
@@ -253,31 +277,37 @@ public abstract class AbstractEmulator implements Emulator {
                 if (traceMemoryRead) {
                     traceMemoryRead = false;
                     readHook.redirect = redirect;
+                    readHook.traceReadListener = traceReadListener;
+                    traceReadListener = null;
                     unicorn.hook_add(readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
                 }
                 if (traceMemoryWrite) {
                     traceMemoryWrite = false;
                     writeHook.redirect = redirect;
+                    writeHook.traceWriteListener = traceWriteListener;
+                    traceWriteListener = null;
                     unicorn.hook_add(writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
                 }
             }
             if (traceInstruction) {
                 traceInstruction = false;
-                codeHook.initialize(traceInstructionBegin, traceInstructionEnd);
+                codeHook.initialize(traceInstructionBegin, traceInstructionEnd, traceCodeListener);
+                traceCodeListener = null;
                 codeHook.redirect = redirect;
                 unicorn.hook_add(codeHook, traceInstructionBegin, traceInstructionEnd, this);
             }
             log.debug("emulate " + pointer + " started sp=" + getStackPointer());
             start = System.currentTimeMillis();
-            unicorn.emu_start(begin, until, timeout, (long) 0);
-            return (Number) unicorn.reg_read(getPointerSize() == 4 ? ArmConst.UC_ARM_REG_R0 : Arm64Const.UC_ARM64_REG_X0);
+            unicorn.emu_start(begin, until, timeout, 0);
+            return (Number) unicorn.reg_read(is64Bit() ? Arm64Const.UC_ARM64_REG_X0 : ArmConst.UC_ARM_REG_R0);
         } catch (RuntimeException e) {
             if (!entry && e instanceof UnicornException && !log.isDebugEnabled()) {
                 log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);
                 return -1;
             }
 
-            if (log.isDebugEnabled()) {
+            boolean enterDebug = log.isDebugEnabled();
+            if (enterDebug) {
                 e.printStackTrace();
                 attach().debug();
                 IOUtils.closeQuietly(this);

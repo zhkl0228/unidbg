@@ -67,6 +67,11 @@ public class UnicornArm64RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
+    public UnicornPointer getPCPointer() {
+        return UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
+    }
+
+    @Override
     public UnicornPointer getStackPointer() {
         return UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
     }
