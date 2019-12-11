@@ -14,7 +14,7 @@ public class DriverFileIO extends AbstractFileIO implements FileIO {
     private static final Log log = LogFactory.getLog(DriverFileIO.class);
 
     public static DriverFileIO create(Emulator emulator, int oflags, String pathname) {
-        if ("/dev/urandom".equals(pathname) || "/dev/random".equals(pathname)) {
+        if ("/dev/urandom".equals(pathname) || "/dev/random".equals(pathname) || "/dev/srandom".equals(pathname)) {
             return new RandomFileIO(emulator, pathname);
         }
         if ("/dev/alarm".equals(pathname) || "/dev/null".equals(pathname)) {
@@ -61,21 +61,12 @@ public class DriverFileIO extends AbstractFileIO implements FileIO {
         ANDROID_ALARM_SYSTEMTIME,
         ANDROID_ALARM_TYPE_COUNT;
         static AndroidAlarmType valueOf(long type) {
-            if (type == 0) {
-                return ANDROID_ALARM_RTC_WAKEUP;
-            } else if (type == 1) {
-                return ANDROID_ALARM_RTC;
-            } else if (type == 2) {
-                return ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP;
-            } else if (type == 3) {
-                return ANDROID_ALARM_ELAPSED_REALTIME;
-            } else if (type == 4) {
-                return ANDROID_ALARM_SYSTEMTIME;
-            } else if (type == 5) {
-                return ANDROID_ALARM_TYPE_COUNT;
-            } else {
-                throw new IllegalArgumentException("type=" + type);
+            for (AndroidAlarmType alarmType : values()) {
+                if (alarmType.ordinal() == type) {
+                    return alarmType;
+                }
             }
+            throw new IllegalArgumentException("type=" + type);
         }
     }
 

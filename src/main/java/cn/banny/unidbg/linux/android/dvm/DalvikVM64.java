@@ -330,7 +330,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toUIntPeer());
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -369,7 +369,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 DvmObject dvmObject = getObject(object.peer);
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
-                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.peer);
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toUIntPeer());
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
@@ -1050,10 +1050,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 ByteArray array = getObject(arrayPointer.toUIntPeer());
-                byte[] value = array.value;
-                UnicornPointer pointer = array.allocateMemoryBlock(emulator, value.length);
-                pointer.write(0, value, 0, value.length);
-                return pointer.peer;
+                return array._GetArrayCritical(emulator, isCopy).peer;
             }
         });
 
@@ -1133,16 +1130,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("ReleaseByteArrayElements arrayPointer=" + arrayPointer + ", pointer=" + pointer + ", mode=" + mode);
                 }
                 ByteArray array = getObject(arrayPointer.toUIntPeer());
-                switch (mode) {
-                    case JNI_COMMIT:
-                        array.setValue(pointer.getByteArray(0, array.value.length));
-                        break;
-                    case 0:
-                        array.setValue(pointer.getByteArray(0, array.value.length));
-                    case JNI_ABORT:
-                        array.freeMemoryBlock(pointer);
-                        break;
-                }
+                array._ReleaseArrayCritical(pointer, mode);
                 return 0;
             }
         });

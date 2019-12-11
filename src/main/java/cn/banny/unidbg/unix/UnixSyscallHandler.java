@@ -317,6 +317,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
             return io.fstat(emulator, emulator.getUnicorn(), statbuf);
         }
 
+        log.info("stat64 pathname=" + pathname);
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }

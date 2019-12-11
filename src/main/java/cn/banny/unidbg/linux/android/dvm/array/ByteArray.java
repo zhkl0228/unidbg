@@ -1,8 +1,11 @@
 package cn.banny.unidbg.linux.android.dvm.array;
 
-import cn.banny.unidbg.linux.android.dvm.Array;
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.linux.android.dvm.VM;
+import cn.banny.unidbg.pointer.UnicornPointer;
+import com.sun.jna.Pointer;
 
-public class ByteArray extends BaseArray<byte[]> implements Array<byte[]> {
+public class ByteArray extends BaseArray<byte[]> implements PrimitiveArray<byte[]> {
 
     public ByteArray(byte[] value) {
         super(value);
@@ -20,5 +23,29 @@ public class ByteArray extends BaseArray<byte[]> implements Array<byte[]> {
     @Override
     public void setData(int start, byte[] data) {
         System.arraycopy(data, 0, value, start, data.length);
+    }
+
+    @Override
+    public UnicornPointer _GetArrayCritical(Emulator emulator, Pointer isCopy) {
+        if (isCopy != null) {
+            isCopy.setInt(0, VM.JNI_TRUE);
+        }
+        UnicornPointer pointer = this.allocateMemoryBlock(emulator, value.length);
+        pointer.write(0, value, 0, value.length);
+        return pointer;
+    }
+
+    @Override
+    public void _ReleaseArrayCritical(Pointer elems, int mode) {
+        switch (mode) {
+            case VM.JNI_COMMIT:
+                this.setValue(elems.getByteArray(0, this.value.length));
+                break;
+            case 0:
+                this.setValue(elems.getByteArray(0, this.value.length));
+            case VM.JNI_ABORT:
+                this.freeMemoryBlock(elems);
+                break;
+        }
     }
 }

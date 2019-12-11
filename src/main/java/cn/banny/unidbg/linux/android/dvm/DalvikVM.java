@@ -1122,7 +1122,7 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
-        Pointer _setObjectArrayElement = svcMemory.registerSvc(new ArmSvc() {
+        Pointer _SetObjectArrayElement = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
                 ArrayObject array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
@@ -1153,13 +1153,7 @@ public class DalvikVM extends BaseVM implements VM {
             public long handle(Emulator emulator) {
                 FloatArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
                 Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-                if (isCopy != null) {
-                    isCopy.setInt(0, JNI_TRUE);
-                }
-                float[] value = array.value;
-                UnicornPointer pointer = array.allocateMemoryBlock(emulator, value.length * 4);
-                pointer.write(0, value, 0, value.length);
-                return pointer.peer;
+                return array._GetArrayCritical(emulator, isCopy).peer;
             }
         });
         
@@ -1205,13 +1199,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     Inspector.inspect(array.value, "GetByteArrayElements array=" + array + ", isCopy=" + isCopy);
                 }
-                if (isCopy != null) {
-                    isCopy.setInt(0, JNI_TRUE);
-                }
-                byte[] value = array.value;
-                UnicornPointer pointer = array.allocateMemoryBlock(emulator, value.length);
-                pointer.write(0, value, 0, value.length);
-                return pointer.peer;
+                return array._GetArrayCritical(emulator, isCopy).peer;
             }
         });
 
@@ -1223,13 +1211,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetIntArrayElements array=" + array + ", isCopy=" + isCopy);
                 }
-                if (isCopy != null) {
-                    isCopy.setInt(0, JNI_TRUE);
-                }
-                int[] value = array.value;
-                UnicornPointer pointer = array.allocateMemoryBlock(emulator, value.length * 4);
-                pointer.write(0, value, 0, value.length);
-                return pointer.peer;
+                return array._GetArrayCritical(emulator, isCopy).peer;
             }
         });
 
@@ -1308,16 +1290,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseByteArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
                 }
-                switch (mode) {
-                    case JNI_COMMIT:
-                        array.setValue(pointer.getByteArray(0, array.value.length));
-                        break;
-                    case 0:
-                        array.setValue(pointer.getByteArray(0, array.value.length));
-                    case JNI_ABORT:
-                        array.freeMemoryBlock(pointer);
-                        break;
-                }
+                array._ReleaseArrayCritical(pointer, mode);
                 return 0;
             }
         });
@@ -1331,16 +1304,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseIntArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
                 }
-                switch (mode) {
-                    case JNI_COMMIT:
-                        array.setValue(pointer.getIntArray(0, array.value.length));
-                        break;
-                    case 0:
-                        array.setValue(pointer.getIntArray(0, array.value.length));
-                    case JNI_ABORT:
-                        array.freeMemoryBlock(pointer);
-                        break;
-                }
+                array._ReleaseArrayCritical(pointer, mode);
                 return 0;
             }
         });
@@ -1354,16 +1318,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseByteArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
                 }
-                switch (mode) {
-                    case JNI_COMMIT:
-                        array.setValue(pointer.getFloatArray(0, array.value.length));
-                        break;
-                    case 0:
-                        array.setValue(pointer.getFloatArray(0, array.value.length));
-                    case JNI_ABORT:
-                        array.freeMemoryBlock(pointer);
-                        break;
-                }
+                array._ReleaseArrayCritical(pointer, mode);
                 return 0;
             }
         });
@@ -1395,7 +1350,11 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP).getPointer(0);
                 byte[] data = buf.getByteArray(0, len);
                 if (log.isDebugEnabled()) {
-                    Inspector.inspect(data, "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    if (data.length > 1024) {
+                        Inspector.inspect(Arrays.copyOf(data, 1024), "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    } else {
+                        Inspector.inspect(data, "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    }
                 }
                 array.setData(start, data);
                 return 0;
@@ -1489,6 +1448,32 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 vm.setPointer(0, _JavaVM);
                 return JNI_OK;
+            }
+        });
+
+        Pointer _GetPrimitiveArrayCritical = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                PrimitiveArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                Pointer isCopy = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetPrimitiveArrayCritical array=" + array + ", isCopy=" + isCopy);
+                }
+                return array._GetArrayCritical(emulator, isCopy).peer;
+            }
+        });
+
+        Pointer _ReleasePrimitiveArrayCritical = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                PrimitiveArray array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).peer);
+                Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                int mode = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("ReleasePrimitiveArrayCritical array=" + array + ", pointer=" + pointer + ", mode=" + mode);
+                }
+                array._ReleaseArrayCritical(pointer, mode);
+                return 0;
             }
         });
 
@@ -1594,7 +1579,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x2e0, _GetByteArrayElements);
         impl.setPointer(0x2ec, _GetIntArrayElements);
         impl.setPointer(0x2b4, _GetObjectArrayElement);
-        impl.setPointer(0x2b8, _setObjectArrayElement);
+        impl.setPointer(0x2b8, _SetObjectArrayElement);
         impl.setPointer(0x2d4, _NewFloatArray);
         impl.setPointer(0x2f4, _GetFloatArrayElements);
         impl.setPointer(0x300, _ReleaseByteArrayElements);
@@ -1607,6 +1592,8 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x358, _SetDoubleArrayRegion);
         impl.setPointer(0x35c, _RegisterNatives);
         impl.setPointer(0x36c, _GetJavaVM);
+        impl.setPointer(0x378, _GetPrimitiveArrayCritical);
+        impl.setPointer(0x37c, _ReleasePrimitiveArrayCritical);
         impl.setPointer(0x390, _ExceptionCheck);
         impl.setPointer(0x3a0, _GetObjectRefType);
 

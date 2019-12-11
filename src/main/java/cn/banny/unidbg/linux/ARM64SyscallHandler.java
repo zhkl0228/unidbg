@@ -104,8 +104,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 11888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, execve(emulator));
                     return;
-                case 19888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
+                case 62:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, lseek(emulator));
                     return;
                 case  172: // getpid
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, emulator.getPid());
@@ -221,6 +221,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 168888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, poll(u, emulator));
                     return;
+                case 73:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, ppoll(emulator));
+                    return;
                 case 183888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getcwd(u, emulator));
                     return;
@@ -233,7 +236,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 196888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(emulator));
                     return;
-                case 199888: // getuid
+                case 174: // getuid
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, 0);
+                    return;
                 case 200888: // getgid
                 case 201888: // geteuid
                 case 202888: // getegid
@@ -285,11 +290,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 131:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, tgkill(emulator));
                     return;
-                case 281888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, socket(u, emulator));
+                case 198:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator));
                     return;
-                case 283888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, connect(u, emulator));
+                case 203:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
                     return;
                 case 286888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getsockname(u, emulator));
@@ -795,6 +800,36 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private static final short POLLIN = 0x0001;
     private static final short POLLOUT = 0x0004;
 
+    private int ppoll(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer fds = context.getPointerArg(0);
+        int nfds = context.getIntArg(1);
+        Pointer tmo_p = context.getPointerArg(2);
+        Pointer sigmask = context.getPointerArg(3);
+        int count = 0;
+        for (int i = 0; i < nfds; i++) {
+            Pointer pollfd = fds.share(i * 8);
+            int fd = pollfd.getInt(0);
+            short events = pollfd.getShort(4); // requested events
+            if (log.isDebugEnabled()) {
+                log.debug("ppoll fds=" + fds + ", nfds=" + nfds + ", tmo_p=" + tmo_p + ", sigmask=" + sigmask + ", fd=" + fd + ", events=" + events);
+            }
+            if (fd < 0) {
+                pollfd.setShort(6, (short) 0);
+            } else {
+                short revents = 0;
+                if((events & POLLOUT) != 0) {
+                    revents = POLLOUT;
+                } else if ((events & POLLIN) != 0) {
+                    revents = POLLIN;
+                }
+                pollfd.setShort(6, revents); // returned events
+                count++;
+            }
+        }
+        return count;
+    }
+
     private int poll(Unicorn u, Emulator emulator) {
         Pointer fds = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int nfds = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
@@ -979,10 +1014,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return sendto(emulator, sockfd, buf, len, flags, dest_addr, addrlen);
     }
 
-    private int connect(Unicorn u, Emulator emulator) {
-        int sockfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int addrlen = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+    private int connect(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int sockfd = context.getIntArg(0);
+        Pointer addr = context.getPointerArg(1);
+        int addrlen = context.getIntArg(2);
         return connect(emulator, sockfd, addr, addrlen);
     }
 
@@ -1037,10 +1073,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return file.setsockopt(level, optname, optval, optlen);
     }
 
-    private int socket(Unicorn u, Emulator emulator) {
-        int domain = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int type = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue() & 0x7ffff;
-        int protocol = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+    private int socket(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int domain = context.getIntArg(0);
+        int type = context.getIntArg(1) & 0x7ffff;
+        int protocol = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             log.debug("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
         }
@@ -1459,10 +1496,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return file.ftruncate(length);
     }
 
-    private int lseek(Unicorn u, Emulator emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int offset = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int whence = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+    private int lseek(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int offset = context.getIntArg(1);
+        int whence = context.getIntArg(2);
         FileIO file = fdMap.get(fd);
         if (file == null) {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
