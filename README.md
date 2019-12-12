@@ -4,8 +4,6 @@ Allows you to emulate an Android ARM32 and/or ARM64 native library, and an exper
 
 This is an educational project to learn more about the ELF file format and ARM assembly.
 
-QQ Group: 675443841
-
 ## License
 - unidbg uses software libraries from [Apache Software Foundation](http://apache.org). 
 - unidbg developers Idea enterprise licenses are supported by [Jetbrains](https://www.jetbrains.com?from=unidbg).
@@ -36,12 +34,6 @@ Simple tests under src/test directory
 
 ## More tests
 - [src/test/java/cn/banny/emulator/QDReaderJni.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/cn/banny/emulator/QDReaderJni.java)
-- [src/test/java/com/kuaishou/KuaiShouSign.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/kuaishou/KuaiShouSign.java) 快手
-- [src/test/java/com/meituan/android/common/candy/CandyJni.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/meituan/android/common/candy/CandyJni.java) 美团
-- [src/test/java/com/xingin/xhs/Shield.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/xingin/xhs/Shield.java) 小红书
-- [src/test/java/com/xunmeng/pinduoduo/secure/DeviceNative.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/xunmeng/pinduoduo/secure/DeviceNative.java) 拼多多
-- [src/test/java/com/mfw/tnative/AuthorizeHelper.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/mfw/tnative/AuthorizeHelper.java) 马蜂窝旅游
-- [src/test/java/com/didi/security/wireless/SecurityLib.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/didi/security/wireless/SecurityLib.java) 的的打车
 
 ## Features
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.

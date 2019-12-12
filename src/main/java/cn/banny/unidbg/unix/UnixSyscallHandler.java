@@ -160,7 +160,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
             this.fdMap.put(minFd, io);
             return minFd;
         }
-        FileIO driverIO = DriverFileIO.create(oflags, pathname);
+        FileIO driverIO = DriverFileIO.create(emulator, oflags, pathname);
         if (driverIO != null) {
             this.fdMap.put(minFd, driverIO);
             return minFd;
@@ -317,8 +317,21 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
             return io.fstat(emulator, emulator.getUnicorn(), statbuf);
         }
 
+        log.info("stat64 pathname=" + pathname);
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
+    }
+
+    protected boolean handleSyscall(Emulator emulator, int NR) {
+        return false;
+    }
+
+    /**
+     * handle unknown syscall
+     * @param NR syscall number
+     */
+    protected boolean handleUnknownSyscall(Emulator emulator, int NR) {
+        return false;
     }
 
 }

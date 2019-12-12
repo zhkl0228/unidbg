@@ -17,7 +17,7 @@ public class Arguments {
 
     public final Number[] args;
 
-    public Arguments(Memory memory, Number[] args) {
+    Arguments(Memory memory, Number[] args) {
         int i = 0;
         while (args != null && i < args.length) {
             if (args[i] instanceof StringNumber) {

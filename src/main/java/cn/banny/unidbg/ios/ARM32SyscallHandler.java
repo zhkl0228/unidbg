@@ -1,10 +1,7 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.Module;
-import cn.banny.unidbg.StopEmulatorException;
-import cn.banny.unidbg.Svc;
+import cn.banny.unidbg.*;
 import cn.banny.unidbg.arm.*;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
@@ -96,6 +93,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
 
             Cpsr.getArm(u).setCarry(false);
+            if (handleSyscall(emulator, NR)) {
+                return;
+            }
+
             switch (NR) {
                 case -3:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mach_absolute_time(emulator));

@@ -58,10 +58,10 @@ class MachOModuleInit extends InitFunction {
     private static void callModInit(Emulator emulator, long address, int argc, UnicornPointer argv, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars) {
         List<Number> list = new ArrayList<>(5);
         list.add(argc);
-        list.add(argv == null ? 0 : argv.peer);
-        list.add(envp == null ? 0 : envp.peer);
-        list.add(apple == null ? 0 : apple.peer);
-        list.add(vars == null ? 0 : vars.peer);
+        list.add(argv == null ? 0L : argv.peer);
+        list.add(envp == null ? 0L : envp.peer);
+        list.add(apple == null ? 0L : apple.peer);
+        list.add(vars == null ? 0L : vars.peer);
         emulator.eFunc(address, list.toArray(new Number[0]));
     }
 

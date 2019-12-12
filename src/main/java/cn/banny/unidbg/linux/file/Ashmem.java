@@ -10,8 +10,8 @@ class Ashmem extends DriverFileIO {
 
     private static final Log log = LogFactory.getLog(Ashmem.class);
 
-    Ashmem(int oflags, String path) {
-        super(oflags, path);
+    Ashmem(Emulator emulator, int oflags, String path) {
+        super(emulator, oflags, path);
     }
 
     private static final int ASHMEM_SET_NAME = 0x41007701;

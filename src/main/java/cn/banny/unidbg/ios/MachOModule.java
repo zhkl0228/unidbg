@@ -4,7 +4,6 @@ import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.*;
 import cn.banny.unidbg.memory.MemRegion;
 import cn.banny.unidbg.memory.Memory;
-import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.spi.InitFunction;
 import com.sun.jna.Pointer;
@@ -14,7 +13,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -377,7 +375,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     }
 
     @Override
-    public Symbol findSymbolByName(String name, boolean withDependencies) throws IOException {
+    public Symbol findSymbolByName(String name, boolean withDependencies) {
         Symbol symbol = findSymbolByNameInternal(name, withDependencies);
         if (symbol != null) {
             if (symbol instanceof IndirectSymbol) {
@@ -393,7 +391,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
         }
     }
 
-    private Symbol findSymbolByNameInternal(String name, boolean withDependencies) throws IOException {
+    private Symbol findSymbolByNameInternal(String name, boolean withDependencies) {
         Symbol symbol = symbolMap.get(name);
         if (symbol != null) {
             return symbol;
@@ -440,18 +438,6 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
         return path;
     }
 
-    private UnicornPointer pathPointer;
-
-    UnicornPointer createPathMemory(SvcMemory svcMemory) {
-        if (this.pathPointer == null) {
-            byte[] path = this.path.getBytes();
-            this.pathPointer = svcMemory.allocate(path.length + 1, "MachOModule.path");
-            this.pathPointer.write(0, path, 0, path.length);
-            this.pathPointer.setByte(path.length, (byte) 0);
-        }
-        return this.pathPointer;
-    }
-
     boolean hasUnresolvedSymbol() {
         return !allSymbolBond || !allLazySymbolBond;
     }
@@ -463,4 +449,13 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
     final Set<UnicornPointer> boundCallSet = new HashSet<>();
     final Set<UnicornPointer> initializedCallSet = new HashSet<>();
 
+    @Override
+    protected String getPath() {
+        return path;
+    }
+
+    @Override
+    public void registerSymbol(String symbolName, long address) {
+        throw new UnsupportedOperationException();
+    }
 }

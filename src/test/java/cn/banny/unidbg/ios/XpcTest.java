@@ -1,5 +1,6 @@
 package cn.banny.unidbg.ios;
 
+import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
@@ -37,6 +38,11 @@ public class XpcTest extends EmulatorTest {
 
         Symbol objc_getClass = module.findSymbolByName("_objc_getClass");
         assertNotNull(objc_getClass);
+
+        MemoryBlock block = emulator.getMemory().malloc(32, false);
+        Symbol snprintf = module.findSymbolByName("_snprintf");
+        snprintf.call(emulator, block.getPointer(), 32, "%llu", 0x0, 0x16d, 0x0);
+        Inspector.inspect(block.getPointer().getByteArray(0, 32), "snprintf");
     }
 
     public void testXpc() throws Exception {

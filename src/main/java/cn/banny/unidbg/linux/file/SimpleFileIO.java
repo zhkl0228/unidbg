@@ -2,7 +2,6 @@ package cn.banny.unidbg.linux.file;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.file.AbstractFileIO;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.file.StatStructure;
@@ -75,6 +74,9 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
                 Inspector.inspect(data, "write");
             }
 
+            if (isAppendMode()) {
+                randomAccessFile.seek(randomAccessFile.length());
+            }
             randomAccessFile.write(data);
             return data.length;
         } catch (IOException e) {
@@ -91,17 +93,32 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
     @Override
     public int read(Unicorn unicorn, Pointer buffer, int count) {
         try {
-            if (count > 1024) {
-                count = 1024;
+            if (count > 4096) {
+                count = 4096;
             }
             if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {
                 count = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
+
+                /*
+                 * lseek() allows the file offset to be set beyond the end of the file
+                 *        (but this does not change the size of the file).  If data is later
+                 *        written at this point, subsequent reads of the data in the gap (a
+                 *        "hole") return null bytes ('\0') until data is actually written into
+                 *        the gap.
+                 */
+                if (count < 0) {
+                    return 0;
+                }
             }
 
             byte[] data = new byte[count];
             int read = randomAccessFile.read(data);
             if (read <= 0) {
                 return read;
+            }
+
+            if (randomAccessFile.getFilePointer() > randomAccessFile.length()) {
+                throw new IllegalStateException("fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
             }
 
             final byte[] buf;
@@ -113,7 +130,7 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
                 throw new IllegalStateException("count=" + count + ", read=" + read);
             }
             if (log.isDebugEnabled() && buf.length < 0x3000) {
-                Inspector.inspect(buf, "read path=" + file);
+                Inspector.inspect(buf, "read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
             }
             buffer.write(0, buf, 0, buf.length);
             return buf.length;

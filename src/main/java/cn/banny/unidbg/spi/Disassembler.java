@@ -11,7 +11,7 @@ import java.io.PrintStream;
 
 public interface Disassembler {
 
-    boolean printAssemble(PrintStream out, long address, int size);
+    Capstone.CsInsn[] printAssemble(PrintStream out, long address, int size);
     Capstone.CsInsn[] disassemble(long address, int size, long count);
     Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb);
 

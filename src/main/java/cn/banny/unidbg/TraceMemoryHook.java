@@ -1,8 +1,10 @@
 package cn.banny.unidbg;
 
+import cn.banny.unidbg.arm.context.RegisterContext;
+import cn.banny.unidbg.listener.TraceReadListener;
+import cn.banny.unidbg.listener.TraceWriteListener;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.utils.Hex;
-import unicorn.ArmConst;
 import unicorn.MemHook;
 import unicorn.Unicorn;
 
@@ -17,10 +19,22 @@ import java.nio.ByteOrder;
 
 class TraceMemoryHook implements MemHook {
 
+    private final boolean read;
+
+    TraceMemoryHook(boolean read) {
+        this.read = read;
+    }
+
     PrintStream redirect;
+    TraceReadListener traceReadListener;
+    TraceWriteListener traceWriteListener;
 
     @Override
     public void hook(Unicorn u, long address, int size, Object user) {
+        if (!read) {
+            return;
+        }
+
         byte[] data = u.mem_read(address, size);
         String value;
         if (data.length == 4) {
@@ -30,26 +44,36 @@ class TraceMemoryHook implements MemHook {
         }
         Emulator emulator = (Emulator) user;
         printMsg("### Memory READ at 0x", emulator, address, size, value);
+        if (traceReadListener != null) {
+            traceReadListener.onRead(emulator, address, data, value);
+        }
     }
 
     private void printMsg(String type, Emulator emulator, long address, int size, String value) {
-        UnicornPointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
-        UnicornPointer lr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
-        StringBuilder sb = new StringBuilder();
-        sb.append(type).append(Long.toHexString(address)).append(", data size = ").append(size).append(", data value = ").append(value);
-        sb.append(" pc=").append(pc);
-        sb.append(" lr=").append(lr);
+        RegisterContext context = emulator.getContext();
+        UnicornPointer pc = context.getPCPointer();
+        UnicornPointer lr = context.getLRPointer();
         PrintStream out = System.out;
         if (redirect != null) {
             out = redirect;
         }
+        String sb = type + Long.toHexString(address) + ", data size = " + size + ", data value = " + value +
+                " pc=" + pc +
+                " lr=" + lr;
         out.println(sb);
     }
 
     @Override
     public void hook(Unicorn u, long address, int size, long value, Object user) {
+        if (read) {
+            return;
+        }
+
         Emulator emulator = (Emulator) user;
         printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
+        if (traceWriteListener != null) {
+            traceWriteListener.onWrite(emulator, address, size, value);
+        }
     }
 
 }

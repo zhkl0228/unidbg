@@ -2,6 +2,7 @@ package cn.banny.unidbg.debugger;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.Module;
 import cn.banny.unidbg.arm.AbstractARMDebugger;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -14,9 +15,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 
 public abstract class AbstractDebugServer extends AbstractARMDebugger implements DebugServer {
@@ -74,6 +73,16 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         serverRunning = true;
 
         System.err.println("Start debugger server successfully on port: " + DEFAULT_PORT);
+        List<Module> loaded = new ArrayList<>(emulator.getMemory().getLoadedModules());
+        Collections.sort(loaded, new Comparator<Module>() {
+            @Override
+            public int compare(Module o1, Module o2) {
+                return (int) (o1.base - o2.base);
+            }
+        });
+        for (Module module : loaded) {
+            System.err.println("[0x" + Long.toHexString(module.base) + "]" + module.name);
+        }
 
         while(serverRunning) {
             try {

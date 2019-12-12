@@ -71,7 +71,7 @@ public class JniDispatch64 extends AbstractJni {
         test.destroy();
     }
 
-    private void test() throws IOException {
+    private void test() {
         IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libjnidispatch.so", "malloc", new ReplaceCallback() {
             @Override

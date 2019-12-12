@@ -118,7 +118,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
         auxv.setPointer(emulator.getPointerSize(), __stack_chk_guard);
 
-        final Pointer environ = allocateStack(emulator.getPointerSize());
+        final Pointer environ = allocateStack(8);
         assert environ != null;
         environ.setInt(0, 0);
 
@@ -241,14 +241,12 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     }
 
     @Override
-    public LinuxSymbol dlsym(long handle, String symbol) throws IOException {
+    public Symbol dlsym(long handle, String symbolName) {
         for (LinuxModule module : modules.values()) {
-            if (module.base == handle) {
-                ElfSymbol elfSymbol = module.getELFSymbolByName(symbol);
-                if (elfSymbol == null) {
-                    return null;
-                } else {
-                    return new LinuxSymbol(module, elfSymbol);
+            if (module.base == handle) { // virtual module may have same base address
+                Symbol symbol = module.findSymbolByName(symbolName, false);
+                if (symbol != null) {
+                    return symbol;
                 }
             }
         }
@@ -556,6 +554,19 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         return module;
     }
 
+    @Override
+    public Module loadVirtualModule(String name, Map<String, UnicornPointer> symbols) {
+        LinuxModule module = LinuxModule.createVirtualModule(name, symbols, emulator);
+        modules.put(name, module);
+        if (maxSoName == null || name.length() > maxSoName.length()) {
+            maxSoName = name;
+        }
+        if (moduleListener != null) {
+            moduleListener.onLoaded(emulator, module);
+        }
+        return module;
+    }
+
     private long __thread_entry;
 
     private String maxSoName;
@@ -563,7 +574,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
     private ModuleSymbol resolveSymbol(long load_base, ElfSymbol symbol, Pointer relocationAddr, String soName, Collection<Module> neededLibraries, long offset) throws IOException {
         if (symbol == null) {
-            return new ModuleSymbol(soName, load_base, symbol, relocationAddr, soName, offset);
+            return new ModuleSymbol(soName, load_base, null, relocationAddr, soName, offset);
         }
 
         if (!symbol.isUndef()) {
@@ -639,6 +650,6 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
     @Override
     public Collection<Module> getLoadedModules() {
-        return new HashSet<Module>(modules.values());
+        return new ArrayList<Module>(modules.values());
     }
 }

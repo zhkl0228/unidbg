@@ -6,8 +6,6 @@ import cn.banny.unidbg.Symbol;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
-
 public class DalvikModule {
 
     private static final Log log = LogFactory.getLog(DalvikModule.class);
@@ -24,7 +22,7 @@ public class DalvikModule {
         return module;
     }
 
-    public void callJNI_OnLoad(Emulator emulator) throws IOException {
+    public void callJNI_OnLoad(Emulator emulator) {
         Symbol onLoad = module.findSymbolByName("JNI_OnLoad", false);
         if (onLoad != null) {
             long start = System.currentTimeMillis();

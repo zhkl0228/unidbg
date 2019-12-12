@@ -24,7 +24,9 @@ class LinuxInitFunction extends InitFunction {
             return;
         }
 
-        log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address));
+        if (log.isDebugEnabled()) {
+            log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address));
+        }
         long start = System.currentTimeMillis();
         emulator.eInit(getAddress());
         if (log.isDebugEnabled()) {

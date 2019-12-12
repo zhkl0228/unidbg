@@ -2,14 +2,12 @@ package com.bytedance.frameworks.core.encrypt;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.LibraryResolver;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
-import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
 import cn.banny.unidbg.hook.hookzz.HookZz;
@@ -31,14 +29,6 @@ import java.io.IOException;
 
 public class TTEncrypt {
 
-    private static LibraryResolver createLibraryResolver() {
-        return new AndroidResolver(23);
-    }
-
-    private static ARMEmulator createARMEmulator() {
-        return new AndroidARMEmulator("com.qidian.dldl.official");
-    }
-
     private final ARMEmulator emulator;
     private final VM vm;
     private final Module module;
@@ -46,9 +36,9 @@ public class TTEncrypt {
     private final DvmClass TTEncryptUtils;
 
     private TTEncrypt() throws IOException {
-        emulator = createARMEmulator();
+        emulator = new AndroidARMEmulator("com.qidian.dldl.official");
         final Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(createLibraryResolver());
+        memory.setLibraryResolver(new AndroidResolver(23));
         memory.setCallInitFunction();
 
         vm = emulator.createDalvikVM(null);
@@ -72,7 +62,7 @@ public class TTEncrypt {
         test.destroy();
     }
 
-    private void ttEncrypt() throws IOException {
+    private void ttEncrypt() {
         Symbol sbox0 = module.findSymbolByName("sbox0");
         Symbol sbox1 = module.findSymbolByName("sbox1");
         Inspector.inspect(sbox0.createPointer(emulator).getByteArray(0, 256), "sbox0");
@@ -144,7 +134,7 @@ public class TTEncrypt {
 
         long start = System.currentTimeMillis();
         byte[] data = new byte[16];
-        emulator.attach(DebuggerType.GDB_SERVER);
+//        emulator.attach(DebuggerType.GDB_SERVER);
         Number ret = TTEncryptUtils.callStaticJniMethod(emulator, "ttEncrypt([BI)[B", vm.addLocalObject(new ByteArray(data)), data.length);
         long hash = ret.intValue() & 0xffffffffL;
         ByteArray array = vm.getObject(hash);

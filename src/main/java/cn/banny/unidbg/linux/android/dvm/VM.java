@@ -25,7 +25,7 @@ public interface VM {
 
     Pointer getJNIEnv();
 
-    DvmClass resolveClass(String className);
+    DvmClass resolveClass(String className, DvmClass... interfaceClasses);
     DvmClass findClass(String className);
 
     <T extends DvmObject> T getObject(long hash);
@@ -41,10 +41,33 @@ public interface VM {
 
     int addLocalObject(DvmObject object);
 
-    void callJNI_OnLoad(Emulator emulator, Module module) throws IOException;
+    void callJNI_OnLoad(Emulator emulator, Module module);
 
     /**
      * 设置apkFile以后，可调用该值获取apk对应的packageName
      */
     String getPackageName();
+
+    /**
+     * 设置apkFile以后，可调用该方法获取资源文件
+     * @return 可返回null
+     */
+    byte[] openAsset(String fileName);
+
+    /**
+     * 设置apkFile以后，可调用该方法获取AndroidManifest.xml
+     * @return 可返回null
+     */
+    String getManifestXml();
+
+    /**
+     * Add not found class
+     * @param className eg: sun/security/pkcs/PKCS7
+     */
+    void addNotFoundClass(String className);
+
+    /**
+     * VM throw exception
+     */
+    void throwException(DvmObject<?> jthrowable);
 }

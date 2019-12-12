@@ -19,7 +19,6 @@ import unicorn.ArmConst;
 import unicorn.Unicorn;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.*;
 
 public abstract class AbstractARMDebugger implements Debugger {
@@ -43,15 +42,11 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public final void addBreakPoint(Module module, String symbol) {
-        try {
-            Symbol sym = module.findSymbolByName(symbol, false);
-            if (sym == null) {
-                throw new IllegalStateException("find symbol failed: " + symbol);
-            }
-            addBreakPoint(module, sym.getValue());
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
+        Symbol sym = module.findSymbolByName(symbol, false);
+        if (sym == null) {
+            throw new IllegalStateException("find symbol failed: " + symbol);
         }
+        addBreakPoint(module, sym.getValue());
     }
 
     @Override
@@ -193,7 +188,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             boolean foundTerminated = false;
             while (true) {
-                byte[] data = pointer.getByteArray(addr, 0x100);
+                byte[] data = pointer.getByteArray(addr, 0x10);
                 int length = data.length;
                 for (int i = 0; i < data.length; i++) {
                     if (data[i] == 0) {
@@ -292,6 +287,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                     }
                     @Override
                     public int callEntry(Emulator emulator, Object... args) {
+                        throw new UnsupportedOperationException();
+                    }
+                    @Override
+                    protected String getPath() {
+                        throw new UnsupportedOperationException();
+                    }
+                    @Override
+                    public void registerSymbol(String symbolName, long address) {
                         throw new UnsupportedOperationException();
                     }
                 };

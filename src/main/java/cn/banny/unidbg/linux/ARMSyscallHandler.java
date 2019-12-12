@@ -10,6 +10,7 @@ import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;
+import cn.banny.unidbg.linux.struct.SysInfo32;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.MemoryMap;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -96,6 +97,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
             if (log.isDebugEnabled()) {
                 ARM.showThumbRegs(u);
+            }
+
+            if (handleSyscall(emulator, NR)) {
+                return;
             }
 
             switch (NR) {
@@ -190,6 +195,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     return;
                 case 104:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, setitimer(emulator));
+                    return;
+                case 116:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, sysinfo(emulator));
                     return;
                 case 118:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
@@ -354,6 +362,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 case 334:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
                     return;
+                case 345:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getcpu(emulator));
+                    return;
                 case 348:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
                     return;
@@ -374,11 +385,43 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             exception = e;
         }
 
+        if (exception == null && handleUnknownSyscall(emulator, NR)) {
+            return;
+        }
+
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int getcpu(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        Pointer cpu = context.getR0Pointer();
+        Pointer node = context.getR1Pointer();
+        Pointer tcache = context.getR2Pointer();
+        if (log.isDebugEnabled()) {
+            log.debug("getcpu cpu=" + cpu + ", node=" + node + ", tcache=" + tcache);
+        }
+        if (cpu != null) {
+            cpu.setInt(0, 0);
+        }
+        if (node != null) {
+            node.setInt(0, 0);
+        }
+        return 0;
+    }
+
+    private int sysinfo(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        Pointer info = context.getR0Pointer();
+        if (log.isDebugEnabled()) {
+            log.debug("sysinfo info=" + info);
+        }
+        SysInfo32 sysInfo32 = new SysInfo32(info);
+        sysInfo32.pack();
+        return 0;
     }
 
     private static final int MREMAP_MAYMOVE = 1;
@@ -1264,7 +1307,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
     private void exit_group(Unicorn u) {
         int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        log.info("exit with code: " + status);
+        log.info("exit with code: " + status, new Exception("exit_group"));
         u.emu_stop();
         System.exit(status);
     }
@@ -1293,7 +1336,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         throw new UnsupportedOperationException(path);
     }
 
+    private static final int PR_SET_DUMPABLE = 4;
     private static final int PR_SET_NAME = 15;
+    private static final int PR_GET_NAME = 16;
     private static final int BIONIC_PR_SET_VMA =              0x53564d41;
 
     private int prctl(Unicorn u, Emulator emulator) {
@@ -1303,12 +1348,28 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             log.debug("prctl option=0x" + Integer.toHexString(option) + ", arg2=0x" + Long.toHexString(arg2));
         }
         switch (option) {
-            case PR_SET_NAME:
+            case PR_SET_DUMPABLE:
+                return 0;
+            case PR_SET_NAME: {
                 Pointer threadName = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                String name = threadName.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("prctl set thread name: " + threadName.getString(0));
+                    log.debug("prctl set thread name: " + name);
                 }
                 return 0;
+            }
+            case PR_GET_NAME: {
+                String name = Thread.currentThread().getName();
+                if (name.length() > 15) {
+                    name = name.substring(0, 15);
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("prctl get thread name: " + name);
+                }
+                Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                buffer.setString(0, name);
+                return 0;
+            }
             case BIONIC_PR_SET_VMA:
                 Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
@@ -1332,7 +1393,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     private int clock_gettime(Unicorn u, Emulator emulator) {
         int clk_id = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer tp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        long offset = System.nanoTime() - nanoTime;
+        long offset = clk_id == CLOCK_REALTIME ? System.currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;
         long tv_sec = offset / 1000000000L;
         long tv_nsec = offset % 1000000000L;
         if (log.isDebugEnabled()) {

@@ -567,9 +567,13 @@ public class ARM {
         Collections.reverse(list);
         while (!list.isEmpty()) {
             Number number = list.remove(0);
-            Pointer pointer = memory.allocateStack(4);
+            Pointer pointer = memory.allocateStack(emulator.getPointerSize());
             assert pointer != null;
-            pointer.setInt(0, number.intValue());
+            if (emulator.is64Bit()) {
+                pointer.setLong(0, number.longValue());
+            } else {
+                pointer.setInt(0, number.intValue());
+            }
         }
         return args;
     }

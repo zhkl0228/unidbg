@@ -14,6 +14,8 @@ public interface Jni {
 
     int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
+    long callStaticLongMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
+
     long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
     DvmObject callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
@@ -37,6 +39,10 @@ public interface Jni {
     int callIntMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
     DvmObject callObjectMethod(BaseVM vm, DvmObject dvmObject, String signature, VarArg varArg);
+
+    long callLongMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
+
+    float callFloatMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
     DvmObject callObjectMethodV(BaseVM vm, DvmObject dvmObject, String signature, VaList vaList);
 
@@ -65,4 +71,6 @@ public interface Jni {
     void setStaticLongField(BaseVM vm, String signature, long value);
 
     long getStaticLongField(BaseVM vm, String signature);
+
+    DvmObject toReflectedMethod(BaseVM vm, String signature);
 }

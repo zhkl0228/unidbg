@@ -6,7 +6,7 @@ import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.*;
 import cn.banny.unidbg.arm.context.EditableArm64RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
-import cn.banny.unidbg.ios.struct.DlInfo;
+import cn.banny.unidbg.unix.struct.DlInfo;
 import cn.banny.unidbg.ios.struct.DyldImageInfo;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.SvcMemory;

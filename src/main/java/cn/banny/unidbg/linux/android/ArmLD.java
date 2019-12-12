@@ -2,6 +2,7 @@ package cn.banny.unidbg.linux.android;
 
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
+import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.ArmSvc;
 import cn.banny.unidbg.linux.LinuxModule;
 import cn.banny.unidbg.memory.Memory;
@@ -9,6 +10,7 @@ import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.spi.Dlfcn;
 import cn.banny.unidbg.spi.InitFunction;
+import cn.banny.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -18,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
-import unicorn.UnicornException;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,7 +36,7 @@ public class ArmLD extends Dlfcn {
     }
 
     @Override
-    public long hook(SvcMemory svcMemory, String libraryName, String symbolName, long old) {
+    public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, long old) {
         if ("libdl.so".equals(libraryName)) {
             log.debug("link " + symbolName + ", old=0x" + Long.toHexString(old));
             switch (symbolName) {
@@ -92,8 +93,25 @@ public class ArmLD extends Dlfcn {
                         public long handle(Emulator emulator) {
                             long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
                             Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                            log.info("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
-                            throw new UnicornException();
+                            if (log.isDebugEnabled()) {
+                                log.debug("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
+                            }
+                            Module module = emulator.getMemory().findModuleByAddress(addr);
+                            if (module == null) {
+                                return 0;
+                            }
+
+                            Symbol symbol = null; // module.findNearestSymbolByAddress(addr);
+
+                            DlInfo dlInfo = new DlInfo(info);
+                            dlInfo.dli_fname = module.createPathMemory(svcMemory);
+                            dlInfo.dli_fbase = UnicornPointer.pointer(emulator, module.base);
+                            if (symbol != null) {
+                                dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
+                                dlInfo.dli_saddr = UnicornPointer.pointer(emulator, symbol.getAddress());
+                            }
+                            dlInfo.pack();
+                            return 1;
                         }
                     }).peer;
                 case "dlsym":
@@ -136,7 +154,11 @@ public class ArmLD extends Dlfcn {
                 pointer = pointer.share(-4); // NULL-terminated
                 pointer.setInt(0, 0);
 
-                log.info("dlopen failed: " + filename);
+                if (!"libnetd_client.so".equals(filename)) {
+                    log.info("dlopen failed: " + filename);
+                } else if(log.isDebugEnabled()) {
+                    log.debug("dlopen failed: " + filename);
+                }
                 this.error.setString(0, "Resolve library " + filename + " failed");
                 return 0;
             } else {

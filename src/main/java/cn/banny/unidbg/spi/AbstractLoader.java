@@ -361,4 +361,8 @@ public abstract class AbstractLoader implements Memory, Loader {
         return null;
     }
 
+    @Override
+    public Module loadVirtualModule(String name, Map<String, UnicornPointer> symbols) {
+        throw new UnsupportedOperationException();
+    }
 }

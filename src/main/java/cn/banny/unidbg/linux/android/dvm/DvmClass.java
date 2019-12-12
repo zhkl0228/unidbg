@@ -8,7 +8,6 @@ import cn.banny.unidbg.pointer.UnicornPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 public class DvmClass extends DvmObject<String> implements Hashable {
@@ -16,10 +15,12 @@ public class DvmClass extends DvmObject<String> implements Hashable {
     private static final Log log = LogFactory.getLog(DvmClass.class);
 
     public final BaseVM vm;
+    private final DvmClass[] interfaceClasses;
 
-    DvmClass(BaseVM vm, String className) {
+    DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
         super("java/lang/Class".equals(className) ? null : vm.resolveClass("java/lang/Class"), className);
         this.vm = vm;
+        this.interfaceClasses = interfaceClasses;
     }
 
     public String getClassName() {
@@ -32,7 +33,20 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return obj;
     }
 
-    final Map<Long, DvmMethod> staticMethodMap = new HashMap<>();
+    private final Map<Long, DvmMethod> staticMethodMap = new HashMap<>();
+
+    final DvmMethod getStaticMethod(long hash) {
+        DvmMethod method = staticMethodMap.get(hash);
+        if (method == null) {
+            for (DvmClass interfaceClass : interfaceClasses) {
+                method = interfaceClass.getStaticMethod(hash);
+                if (method != null) {
+                    break;
+                }
+            }
+        }
+        return method;
+    }
 
     int getStaticMethodID(String methodName, String args) {
         String name = getClassName() + "->" + methodName + args;
@@ -44,7 +58,20 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return (int) hash;
     }
 
-    final Map<Long, DvmMethod> methodMap = new HashMap<>();
+    private final Map<Long, DvmMethod> methodMap = new HashMap<>();
+
+    final DvmMethod getMethod(long hash) {
+        DvmMethod method = methodMap.get(hash);
+        if (method == null) {
+            for (DvmClass interfaceClass : interfaceClasses) {
+                method = interfaceClass.getMethod(hash);
+                if (method != null) {
+                    break;
+                }
+            }
+        }
+        return method;
+    }
 
     int getMethodID(String methodName, String args) {
         String name = getClassName() + "->" + methodName + args;
@@ -56,7 +83,20 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return (int) hash;
     }
 
-    final Map<Long, DvmField> fieldMap = new HashMap<>();
+    private final Map<Long, DvmField> fieldMap = new HashMap<>();
+
+    final DvmField getField(long hash) {
+        DvmField field = fieldMap.get(hash);
+        if (field == null) {
+            for (DvmClass interfaceClass : interfaceClasses) {
+                field = interfaceClass.getField(hash);
+                if (field != null) {
+                    break;
+                }
+            }
+        }
+        return field;
+    }
 
     int getFieldID(String fieldName, String fieldType) {
         String name = getClassName() + "->" + fieldName + ":" + fieldType;
@@ -68,7 +108,20 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return (int) hash;
     }
 
-    final Map<Long, DvmField> staticFieldMap = new HashMap<>();
+    private final Map<Long, DvmField> staticFieldMap = new HashMap<>();
+
+    final DvmField getStaticField(long hash) {
+        DvmField field = staticFieldMap.get(hash);
+        if (field == null) {
+            for (DvmClass interfaceClass : interfaceClasses) {
+                field = interfaceClass.getStaticField(hash);
+                if (field != null) {
+                    break;
+                }
+            }
+        }
+        return field;
+    }
 
     int getStaticFieldID(String fieldName, String fieldType) {
         String name = getClassName() + "->" + fieldName + ":" + fieldType;
@@ -104,17 +157,13 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         UnicornPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index != -1) {
-            try {
-                String symbolName = "Java_" + getClassName().replace('/', '_') + "_" + method.substring(0, index);
-                for (Module module : emulator.getMemory().getLoadedModules()) {
-                    Symbol symbol = module.findSymbolByName(symbolName, false);
-                    if (symbol != null) {
-                        fnPtr = (UnicornPointer) symbol.createPointer(emulator);
-                        break;
-                    }
+            String symbolName = "Java_" + getClassName().replace('/', '_') + "_" + method.substring(0, index);
+            for (Module module : emulator.getMemory().getLoadedModules()) {
+                Symbol symbol = module.findSymbolByName(symbolName, false);
+                if (symbol != null) {
+                    fnPtr = (UnicornPointer) symbol.createPointer(emulator);
+                    break;
                 }
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
             }
         }
         if (fnPtr == null) {

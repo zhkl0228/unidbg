@@ -263,7 +263,7 @@ public class UnicornPointer extends Pointer {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         while (true) {
-            byte[] data = unicorn.mem_read(addr, 0x100);
+            byte[] data = unicorn.mem_read(addr, 0x10);
             int length = data.length;
             for (int i = 0; i < data.length; i++) {
                 if (data[i] == 0) {

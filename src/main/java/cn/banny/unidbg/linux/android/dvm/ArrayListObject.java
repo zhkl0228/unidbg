@@ -12,4 +12,8 @@ public class ArrayListObject extends DvmObject<List<? extends DvmObject>> {
         return value.size();
     }
 
+    public boolean isEmpty() {
+        return value.isEmpty();
+    }
+
 }

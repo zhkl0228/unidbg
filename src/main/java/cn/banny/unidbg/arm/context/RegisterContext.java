@@ -23,6 +23,8 @@ public interface RegisterContext {
 
     UnicornPointer getLRPointer();
 
+    UnicornPointer getPCPointer();
+
     /**
      * sp
      */
