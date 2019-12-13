@@ -363,6 +363,7 @@ public class ARM {
             ArmConst.UC_ARM_REG_R5,
             ArmConst.UC_ARM_REG_R6,
             ArmConst.UC_ARM_REG_R7,
+            ArmConst.UC_ARM_REG_R8,
             ArmConst.UC_ARM_REG_SB,
             ArmConst.UC_ARM_REG_SL,
 

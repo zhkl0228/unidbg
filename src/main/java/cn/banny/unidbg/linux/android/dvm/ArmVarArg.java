@@ -18,7 +18,7 @@ public class ArmVarArg implements VarArg {
     }
 
     @Override
-    public <T extends DvmObject> T getObject(int index) {
+    public <T extends DvmObject<?>> T getObject(int index) {
         UnicornPointer pointer = getArg(index);
         if (pointer == null) {
             return null;

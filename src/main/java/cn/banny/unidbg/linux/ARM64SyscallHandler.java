@@ -266,9 +266,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 217888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getdents64(u, emulator));
                     return;
-                case 220888:
+                case 233:
                     syscall = "madvise";
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, 0);
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, 0);
                     return;
                 case 221888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fcntl(u, emulator));

@@ -5,7 +5,7 @@ public interface VarArg {
     /**
      * @param index 0 based
      */
-    <T extends DvmObject> T getObject(int index);
+    <T extends DvmObject<?>> T getObject(int index);
 
     /**
      * @param index 0 based
