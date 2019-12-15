@@ -3,7 +3,6 @@ package cn.banny.unidbg.linux.file;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.file.AbstractFileIO;
-import cn.banny.unidbg.file.FileIO;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -82,11 +81,6 @@ public class ByteArrayFileIO extends AbstractFileIO {
     @Override
     public int ioctl(Emulator emulator, long request, long argp) {
         return 0;
-    }
-
-    @Override
-    public FileIO dup2() {
-        throw new AbstractMethodError();
     }
 
     @Override

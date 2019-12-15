@@ -23,7 +23,7 @@ class DvmField implements Hashable {
             log.debug("getStaticObjectField dvmClass=" + dvmClass + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        DvmObject object = vm.jni.getStaticObjectField(vm, dvmClass, signature);
+        DvmObject<?> object = vm.jni.getStaticObjectField(vm, dvmClass, signature);
         return vm.addObject(object, false);
     }
 
@@ -36,7 +36,7 @@ class DvmField implements Hashable {
         return dvmClass.vm.jni.getStaticIntField(vm, dvmClass, signature);
     }
 
-    int getObjectField(DvmObject dvmObject) {
+    int getObjectField(DvmObject<?> dvmObject) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("getObjectField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
@@ -45,7 +45,7 @@ class DvmField implements Hashable {
         return vm.addObject(vm.jni.getObjectField(vm, dvmObject, signature), false);
     }
 
-    int getIntField(DvmObject dvmObject) {
+    int getIntField(DvmObject<?> dvmObject) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("getIntField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
@@ -53,7 +53,7 @@ class DvmField implements Hashable {
         return dvmClass.vm.jni.getIntField(dvmClass.vm, dvmObject, signature);
     }
 
-    long getLongField(DvmObject dvmObject) {
+    long getLongField(DvmObject<?> dvmObject) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("getLongField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
@@ -61,7 +61,7 @@ class DvmField implements Hashable {
         return dvmClass.vm.jni.getLongField(dvmClass.vm, dvmObject, signature);
     }
 
-    void setObjectField(DvmObject dvmObject, DvmObject value) {
+    void setObjectField(DvmObject<?> dvmObject, DvmObject<?> value) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("setObjectField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
@@ -69,7 +69,7 @@ class DvmField implements Hashable {
         dvmClass.vm.jni.setObjectField(dvmClass.vm, dvmObject, signature, value);
     }
 
-    int getBooleanField(DvmObject dvmObject) {
+    int getBooleanField(DvmObject<?> dvmObject) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("getBooleanField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
@@ -77,7 +77,7 @@ class DvmField implements Hashable {
         return dvmClass.vm.jni.getBooleanField(dvmClass.vm, dvmObject, signature) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
-    void setIntField(DvmObject dvmObject, int value) {
+    void setIntField(DvmObject<?> dvmObject, int value) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("setIntField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
@@ -85,7 +85,7 @@ class DvmField implements Hashable {
         dvmClass.vm.jni.setIntField(dvmClass.vm, dvmObject, signature, value);
     }
     
-    void setLongField(DvmObject dvmObject, long value) {
+    void setLongField(DvmObject<?> dvmObject, long value) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("setLongField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
@@ -93,7 +93,7 @@ class DvmField implements Hashable {
         dvmClass.vm.jni.setLongField(dvmClass.vm, dvmObject, signature, value);
     }
 
-    void setBooleanField(DvmObject dvmObject, boolean value) {
+    void setBooleanField(DvmObject<?> dvmObject, boolean value) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("setBooleanField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
@@ -101,7 +101,7 @@ class DvmField implements Hashable {
         dvmClass.vm.jni.setBooleanField(dvmClass.vm, dvmObject, signature, value);
     }
     
-    void setDoubleField(DvmObject dvmObject, double value) {
+    void setDoubleField(DvmObject<?> dvmObject, double value) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("setDoubleField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);

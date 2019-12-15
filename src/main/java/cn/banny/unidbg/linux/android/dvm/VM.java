@@ -26,9 +26,10 @@ public interface VM {
     Pointer getJNIEnv();
 
     DvmClass resolveClass(String className, DvmClass... interfaceClasses);
+
     DvmClass findClass(String className);
 
-    <T extends DvmObject> T getObject(long hash);
+    <T extends DvmObject<?>> T getObject(long hash);
 
     void setJni(Jni jni);
 
@@ -39,7 +40,7 @@ public interface VM {
     DalvikModule loadLibrary(String libname, boolean forceCallInit) throws IOException;
     DalvikModule loadLibrary(File elfFile, boolean forceCallInit) throws IOException;
 
-    int addLocalObject(DvmObject object);
+    int addLocalObject(DvmObject<?> object);
 
     void callJNI_OnLoad(Emulator emulator, Module module);
 
@@ -69,5 +70,5 @@ public interface VM {
     /**
      * VM throw exception
      */
-    void throwException(DvmObject<?> jthrowable);
+    void throwException(DvmObject<?> throwable);
 }

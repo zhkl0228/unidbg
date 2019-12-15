@@ -27,8 +27,8 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return value;
     }
 
-    public DvmObject newObject(Object value) {
-        DvmObject obj = new DvmObject<>(this, value);
+    public DvmObject<?> newObject(Object value) {
+        DvmObject<?> obj = new DvmObject<>(this, value);
         vm.addObject(obj, false);
         return obj;
     }
@@ -182,7 +182,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
                 list.add(arg);
 
                 if(arg instanceof DvmObject) {
-                    vm.addLocalObject((DvmObject) arg);
+                    vm.addLocalObject((DvmObject<?>) arg);
                 }
             }
         }

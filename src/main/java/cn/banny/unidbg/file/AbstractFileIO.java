@@ -34,7 +34,7 @@ public abstract class AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int fcntl(int cmd, int arg) {
+    public int fcntl(int cmd, long arg) {
         switch (cmd) {
             case F_GETFD:
                 return op;

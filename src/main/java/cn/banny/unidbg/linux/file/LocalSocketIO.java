@@ -81,11 +81,6 @@ public class LocalSocketIO extends SocketIO implements FileIO {
     }
 
     @Override
-    public FileIO dup2() {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     protected InetSocketAddress getLocalSocketAddress() {
         throw new AbstractMethodError();
     }

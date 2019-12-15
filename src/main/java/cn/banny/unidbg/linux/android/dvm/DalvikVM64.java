@@ -2,8 +2,9 @@ package cn.banny.unidbg.linux.android.dvm;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.arm.context.Arm64RegisterContext;
 import cn.banny.unidbg.arm.Arm64Svc;
+import cn.banny.unidbg.arm.context.Arm64RegisterContext;
+import cn.banny.unidbg.arm.context.EditableArm64RegisterContext;
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.linux.android.dvm.array.ArrayObject;
 import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
@@ -48,7 +49,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 Pointer className = context.getXPointer(1);
                 String name = className.getString(0);
                 if (notFoundClassSet.contains(name)) {
-                    jthrowable = resolveClass("java/lang/NoClassDefFoundError").newObject(name);
+                    throwable = resolveClass("java/lang/NoClassDefFoundError").newObject(name);
                     return 0;
                 }
 
@@ -61,13 +62,38 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _ToReflectedMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator emulator) {
+                RegisterContext context = emulator.getContext();
+                UnicornPointer clazz = context.getPointerArg(1);
+                UnicornPointer jmethodID = context.getPointerArg(2);
+                DvmClass dvmClass = classMap.get(clazz.toUIntPeer());
+                DvmMethod dvmMethod = null;
+                if (dvmClass != null) {
+                    dvmMethod = dvmClass.getStaticMethod(jmethodID.toUIntPeer());
+                    if (dvmMethod == null) {
+                        dvmMethod = dvmClass.getMethod(jmethodID.toUIntPeer());
+                    }
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("ToReflectedMethod clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", lr=" + context.getLRPointer());
+                }
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    return addLocalObject(dvmMethod.toReflectedMethod());
+                }
+            }
+        }) ;
+
         Pointer _Throw = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                 DvmObject<?> dvmObject = getObject(object.toUIntPeer());
                 log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getObjectType());
-                jthrowable = dvmObject;
+                throwable = dvmObject;
                 return 0;
             }
         });
@@ -78,7 +104,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionOccurred");
                 }
-                return jthrowable == null ? JNI_NULL : (jthrowable.hashCode() & 0xffffffffL);
+                return throwable == null ? JNI_NULL : (throwable.hashCode() & 0xffffffffL);
             }
         });
 
@@ -88,7 +114,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionClear");
                 }
-                jthrowable = null;
+                throwable = null;
                 return 0;
             }
         });
@@ -394,6 +420,54 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     return dvmMethod.callIntMethodV(dvmObject, new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod));
+                }
+            }
+        });
+
+        Pointer _CallLongMethodV = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator emulator) {
+                EditableArm64RegisterContext context = emulator.getContext();
+                UnicornPointer object = context.getPointerArg(1);
+                UnicornPointer jmethodID = context.getPointerArg(2);
+                UnicornPointer va_list = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallLongMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toUIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toUIntPeer());
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+//                    emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (value >> 32));
+                    return dvmMethod.callLongMethodV(dvmObject, new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod));
+                }
+            }
+        });
+
+        Pointer _CallFloatMethodV = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator emulator) {
+                RegisterContext context = emulator.getContext();
+                UnicornPointer object = context.getPointerArg(1);
+                UnicornPointer jmethodID = context.getPointerArg(2);
+                UnicornPointer va_list = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallFloatMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toUIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toUIntPeer());
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    float value = dvmMethod.callFloatMethodV(dvmObject, new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod));
+                    ByteBuffer buffer = ByteBuffer.allocate(4);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putFloat(value);
+                    buffer.flip();
+                    return (buffer.getInt() & 0xffffffffL);
                 }
             }
         });
@@ -1162,7 +1236,11 @@ public class DalvikVM64 extends BaseVM implements VM {
                 Pointer buf = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
                 byte[] data = buf.getByteArray(0, len);
                 if (log.isDebugEnabled()) {
-                    Inspector.inspect(data, "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    if (data.length > 1024) {
+                        Inspector.inspect(Arrays.copyOf(data, 1024), "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    } else {
+                        Inspector.inspect(data, "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    }
                 }
                 array.setData(start, data);
                 return 0;
@@ -1245,9 +1323,9 @@ public class DalvikVM64 extends BaseVM implements VM {
             @Override
             public long handle(Emulator emulator) {
                 if (log.isDebugEnabled()) {
-                    log.debug("ExceptionCheck jthrowable=" + jthrowable);
+                    log.debug("ExceptionCheck jthrowable=" + throwable);
                 }
-                return jthrowable == null ? JNI_FALSE : JNI_TRUE;
+                return throwable == null ? JNI_FALSE : JNI_TRUE;
             }
         });
 
@@ -1275,6 +1353,7 @@ public class DalvikVM64 extends BaseVM implements VM {
             impl.setLong(i, i);
         }
         impl.setPointer(0x30, _FindClass);
+        impl.setPointer(0x48, _ToReflectedMethod);
         impl.setPointer(0x68, _Throw);
         impl.setPointer(0x78, _ExceptionOccurred);
         impl.setPointer(0x88, _ExceptionClear);
@@ -1297,6 +1376,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x130, _CallBooleanMethodV);
         impl.setPointer(0x188, _CallIntMethod);
         impl.setPointer(0x190, _CallIntMethodV);
+        impl.setPointer(0x1a8, _CallLongMethodV);
+        impl.setPointer(0x1c0, _CallFloatMethodV);
         impl.setPointer(0x1e8, _CallVoidMethod);
         impl.setPointer(0x1f0, _CallVoidMethodV);
         impl.setPointer(0x2f0, _GetFieldID);

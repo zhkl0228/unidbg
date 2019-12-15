@@ -45,7 +45,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer className = context.getR1Pointer();
                 String name = className.getString(0);
                 if (notFoundClassSet.contains(name)) {
-                    jthrowable = resolveClass("java/lang/NoClassDefFoundError").newObject(name);
+                    throwable = resolveClass("java/lang/NoClassDefFoundError").newObject(name);
                     return 0;
                 }
 
@@ -89,7 +89,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 DvmObject<?> dvmObject = getObject(object.toUIntPeer());
                 log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getObjectType());
-                jthrowable = dvmObject;
+                throwable = dvmObject;
                 return 0;
             }
         });
@@ -100,7 +100,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionOccurred");
                 }
-                return jthrowable == null ? JNI_NULL : (jthrowable.hashCode() & 0xffffffffL);
+                return throwable == null ? JNI_NULL : (throwable.hashCode() & 0xffffffffL);
             }
         });
 
@@ -110,7 +110,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ExceptionClear");
                 }
-                jthrowable = null;
+                throwable = null;
                 return 0;
             }
         });
@@ -1481,9 +1481,9 @@ public class DalvikVM extends BaseVM implements VM {
             @Override
             public long handle(Emulator emulator) {
                 if (log.isDebugEnabled()) {
-                    log.debug("ExceptionCheck jthrowable=" + jthrowable);
+                    log.debug("ExceptionCheck jthrowable=" + throwable);
                 }
-                return jthrowable == null ? JNI_FALSE : JNI_TRUE;
+                return throwable == null ? JNI_FALSE : JNI_TRUE;
             }
         });
 

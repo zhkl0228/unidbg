@@ -154,7 +154,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, mprotect(u, emulator));
                     return;
                 case 92:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(u, emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(emulator));
                     return;
                 case 97:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(u, emulator));
@@ -1189,11 +1189,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return sigaction(signum, act, oldact);
     }
 
-    private int fcntl(Unicorn u, Emulator emulator) {
+    private int fcntl(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         int fd = context.getIntArg(0);
         int cmd = context.getIntArg(1);
-        int arg = context.getIntArg(2);
+        long arg = context.getLongArg(2);
         return fcntl(emulator, fd, cmd, arg);
     }
 

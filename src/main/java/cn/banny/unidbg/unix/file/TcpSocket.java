@@ -75,11 +75,6 @@ public class TcpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    public FileIO dup2() {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     protected int connect_ipv4(Pointer addr, int addrlen) {
         if (log.isDebugEnabled()) {
             byte[] data = addr.getByteArray(0, addrlen);

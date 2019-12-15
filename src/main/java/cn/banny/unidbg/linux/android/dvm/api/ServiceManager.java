@@ -9,7 +9,7 @@ public class ServiceManager extends DvmObject<String> {
         super(vm.resolveClass("android/os/IServiceManager"), value);
     }
 
-    public DvmObject getService(VM vm, String serviceName) {
+    public SystemService getService(VM vm, String serviceName) {
         return new SystemService(vm, serviceName);
     }
 }

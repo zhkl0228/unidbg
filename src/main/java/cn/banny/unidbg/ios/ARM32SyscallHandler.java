@@ -245,7 +245,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fstat(u, emulator));
                     return;
                 case 340:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(u, emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(emulator));
                     return;
                 case 344:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getdirentries64(u, emulator));
@@ -605,7 +605,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     /**
      * lstat() is identical to stat(), except that if pathname is a symbolic link, then it returns information about the link itself, not the file that it refers to.
      */
-    private int lstat(Unicorn u, Emulator emulator) {
+    private int lstat(Emulator emulator) {
         Arm32RegisterContext context = emulator.getContext();
         Pointer pathname = context.getR0Pointer();
         Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
@@ -1483,7 +1483,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     @Override
-    protected int fcntl(Emulator emulator, int fd, int cmd, int arg) {
+    protected int fcntl(Emulator emulator, int fd, int cmd, long arg) {
         FileIO file = fdMap.get(fd);
         if (file != null && cmd == MachO.F_GETPATH) {
             Pointer pointer = UnicornPointer.pointer(emulator, arg & 0xffffffffL);

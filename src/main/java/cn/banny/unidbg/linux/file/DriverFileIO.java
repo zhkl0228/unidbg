@@ -126,11 +126,6 @@ public class DriverFileIO extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public FileIO dup2() {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public String toString() {
         return path;
     }

@@ -27,7 +27,7 @@ public class DvmObject<T> implements Hashable {
     }
 
     protected boolean isInstanceOf(VM vm, DvmClass dvmClass) {
-        throw new UnicornException("isInstanceOf");
+        throw new UnicornException("isInstanceOf vm=" + vm + ", dvmClass=" + dvmClass);
     }
 
     public Number callJniMethod(Emulator emulator, String method, Object...args) {
@@ -41,7 +41,7 @@ public class DvmObject<T> implements Hashable {
                 list.add(arg);
 
                 if(arg instanceof DvmObject) {
-                    objectType.vm.addLocalObject((DvmObject) arg);
+                    objectType.vm.addLocalObject((DvmObject<?>) arg);
                 }
             }
         }

@@ -101,7 +101,7 @@ public class ArmLD extends Dlfcn {
                                 return 0;
                             }
 
-                            Symbol symbol = null; // module.findNearestSymbolByAddress(addr);
+                            Symbol symbol = module.findNearestSymbolByAddress(addr);
 
                             DlInfo dlInfo = new DlInfo(info);
                             dlInfo.dli_fname = module.createPathMemory(svcMemory);
@@ -147,8 +147,8 @@ public class ArmLD extends Dlfcn {
         Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
             Module module = memory.dlopen(filename, false);
+            pointer = pointer.share(-4); // return value
             if (module == null) {
-                pointer = pointer.share(-4); // return value
                 pointer.setInt(0, 0);
 
                 pointer = pointer.share(-4); // NULL-terminated
@@ -162,7 +162,6 @@ public class ArmLD extends Dlfcn {
                 this.error.setString(0, "Resolve library " + filename + " failed");
                 return 0;
             } else {
-                pointer = pointer.share(-4); // return value
                 pointer.setInt(0, (int) module.base);
 
                 pointer = pointer.share(-4); // NULL-terminated

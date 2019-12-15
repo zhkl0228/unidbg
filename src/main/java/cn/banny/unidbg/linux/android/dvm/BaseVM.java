@@ -30,11 +30,11 @@ public abstract class BaseVM implements VM {
 
     Jni jni;
 
-    DvmObject<?> jthrowable;
+    DvmObject<?> throwable;
 
     @Override
-    public void throwException(DvmObject<?> jthrowable) {
-        this.jthrowable = jthrowable;
+    public void throwException(DvmObject<?> throwable) {
+        this.throwable = throwable;
     }
 
     @Override
@@ -57,24 +57,22 @@ public abstract class BaseVM implements VM {
         this.apkFile = apkFile;
     }
 
-    final Map<Long, DvmObject> globalObjectMap = new HashMap<>();
-    final Map<Long, DvmObject> localObjectMap = new HashMap<>();
+    final Map<Long, DvmObject<?>> globalObjectMap = new HashMap<>();
+    final Map<Long, DvmObject<?>> localObjectMap = new HashMap<>();
 
     @Override
     public final DvmClass resolveClass(String className, DvmClass... interfaceClasses) {
         long hash = Objects.hash(className) & 0xffffffffL;
         DvmClass dvmClass = classMap.get(hash);
-        if (dvmClass != null) {
-            return dvmClass;
-        } else {
+        if (dvmClass == null) {
             dvmClass = new DvmClass(this, className, interfaceClasses);
             classMap.put(hash, dvmClass);
             addObject(dvmClass, true);
-            return dvmClass;
         }
+        return dvmClass;
     }
 
-    final int addObject(DvmObject object, boolean global) {
+    final int addObject(DvmObject<?> object, boolean global) {
         if (object == null) {
             return 0;
         } else {
@@ -92,7 +90,7 @@ public abstract class BaseVM implements VM {
     }
 
     @Override
-    public final int addLocalObject(DvmObject object) {
+    public final int addLocalObject(DvmObject<?> object) {
         if (object == null) {
             return VM.JNI_NULL;
         }
@@ -102,7 +100,7 @@ public abstract class BaseVM implements VM {
 
     @SuppressWarnings("unchecked")
     @Override
-    public final <T extends DvmObject> T getObject(long hash) {
+    public final <T extends DvmObject<?>> T getObject(long hash) {
         if (localObjectMap.containsKey(hash)) {
             return (T) localObjectMap.get(hash);
         } else {

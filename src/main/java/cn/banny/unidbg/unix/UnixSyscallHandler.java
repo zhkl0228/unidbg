@@ -183,7 +183,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return -1;
     }
 
-    protected int fcntl(Emulator emulator, int fd, int cmd, int arg) {
+    protected int fcntl(Emulator emulator, int fd, int cmd, long arg) {
         if (log.isDebugEnabled()) {
             log.debug("fcntl fd=" + fd + ", cmd=" + cmd + ", arg=" + arg);
         }

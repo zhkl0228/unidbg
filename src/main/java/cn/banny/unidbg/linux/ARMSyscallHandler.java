@@ -798,20 +798,18 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         Pointer argv = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         Pointer envp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
         assert filename != null;
-        if (log.isDebugEnabled()) {
-            List<String> args = new ArrayList<>();
-            Pointer pointer;
-            while ((pointer = argv.getPointer(0)) != null) {
-                args.add(pointer.getString(0));
-                argv = argv.share(4);
-            }
-            List<String> env = new ArrayList<>();
-            while ((pointer = envp.getPointer(0)) != null) {
-                env.add(pointer.getString(0));
-                envp = envp.share(4);
-            }
-            log.debug("execve filename=" + filename.getString(0) + ", args=" + args + ", env=" + env);
+        List<String> args = new ArrayList<>();
+        Pointer pointer;
+        while ((pointer = argv.getPointer(0)) != null) {
+            args.add(pointer.getString(0));
+            argv = argv.share(4);
         }
+        List<String> env = new ArrayList<>();
+        while ((pointer = envp.getPointer(0)) != null) {
+            env.add(pointer.getString(0));
+            envp = envp.share(4);
+        }
+        log.info("execve filename=" + filename.getString(0) + ", args=" + args + ", env=" + env);
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }

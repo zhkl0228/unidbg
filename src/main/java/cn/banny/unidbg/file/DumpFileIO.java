@@ -22,4 +22,8 @@ public class DumpFileIO extends AbstractFileIO {
     public void close() {
     }
 
+    @Override
+    public FileIO dup2() {
+        return this;
+    }
 }

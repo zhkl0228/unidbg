@@ -71,11 +71,6 @@ public class NullFileIO extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public FileIO dup2() {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public int ioctl(Emulator emulator, long request, long argp) {
         return 0;
     }

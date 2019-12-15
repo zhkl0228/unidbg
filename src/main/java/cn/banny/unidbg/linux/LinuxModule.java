@@ -119,7 +119,7 @@ public class LinuxModule extends Module {
 
     @Override
     public Symbol findNearestSymbolByAddress(long addr) {
-        throw new UnsupportedOperationException();
+        return null; // TODO implement
     }
 
     @Override

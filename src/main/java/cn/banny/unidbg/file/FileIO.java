@@ -34,7 +34,7 @@ public interface FileIO {
     int fstat(Emulator emulator, Unicorn unicorn, Pointer stat);
     int fstat(Emulator emulator, StatStructure stat);
 
-    int fcntl(int cmd, int arg);
+    int fcntl(int cmd, long arg);
 
     int ioctl(Emulator emulator, long request, long argp);
 

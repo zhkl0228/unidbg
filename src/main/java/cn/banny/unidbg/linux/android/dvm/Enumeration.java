@@ -5,9 +5,9 @@ import java.util.List;
 
 public class Enumeration extends DvmObject<List<?>> {
 
-    private Iterator<? extends DvmObject> iterator;
+    private Iterator<? extends DvmObject<?>> iterator;
 
-    public Enumeration(VM vm, List<? extends DvmObject> value) {
+    public Enumeration(VM vm, List<? extends DvmObject<?>> value) {
         super(vm.resolveClass("java/util/Enumeration"), value);
 
         this.iterator = value == null ? null : value.iterator();
@@ -17,7 +17,7 @@ public class Enumeration extends DvmObject<List<?>> {
         return iterator != null && iterator.hasNext();
     }
 
-    public DvmObject nextElement() {
+    public DvmObject<?> nextElement() {
         return iterator.next();
     }
 
