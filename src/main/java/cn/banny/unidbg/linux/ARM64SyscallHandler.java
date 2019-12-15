@@ -1319,7 +1319,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private int gettimeofday(Emulator emulator) {
         Pointer tv = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
         Pointer tz = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-        return gettimeofday(tv, tz);
+        return gettimeofday64(tv, tz);
     }
 
     private int faccessat(Emulator emulator) {

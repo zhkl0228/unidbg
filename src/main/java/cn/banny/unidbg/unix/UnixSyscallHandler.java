@@ -9,7 +9,8 @@ import cn.banny.unidbg.linux.LinuxThread;
 import cn.banny.unidbg.linux.file.*;
 import cn.banny.unidbg.memory.MemRegion;
 import cn.banny.unidbg.spi.SyscallHandler;
-import cn.banny.unidbg.unix.struct.TimeVal;
+import cn.banny.unidbg.unix.struct.TimeVal32;
+import cn.banny.unidbg.unix.struct.TimeVal64;
 import cn.banny.unidbg.unix.struct.TimeZone;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
@@ -93,9 +94,51 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         long currentTimeMillis = System.currentTimeMillis();
         long tv_sec = currentTimeMillis / 1000;
         long tv_usec = (currentTimeMillis % 1000) * 1000;
-        TimeVal timeVal = new TimeVal(tv);
+        TimeVal32 timeVal = new TimeVal32(tv);
         timeVal.tv_sec = (int) tv_sec;
         timeVal.tv_usec = (int) tv_usec;
+        timeVal.pack();
+
+        if (tz != null) {
+            Calendar calendar = Calendar.getInstance();
+            int tz_minuteswest = -(calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / (60 * 1000);
+            TimeZone timeZone = new TimeZone(tz);
+            timeZone.tz_minuteswest = tz_minuteswest;
+            timeZone.tz_dsttime = 0;
+            timeZone.pack();
+        }
+
+        if (log.isDebugEnabled()) {
+            byte[] after = tv.getByteArray(0, 8);
+            Inspector.inspect(after, "gettimeofday tv after tv_sec=" + tv_sec + ", tv_usec=" + tv_usec + ", tv=" + tv);
+        }
+        if (tz != null && log.isDebugEnabled()) {
+            byte[] after = tz.getByteArray(0, 8);
+            Inspector.inspect(after, "gettimeofday tz after");
+        }
+        return 0;
+    }
+
+    protected final int gettimeofday64(Pointer tv, Pointer tz) {
+        if (log.isDebugEnabled()) {
+            log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
+        }
+
+        if (log.isDebugEnabled()) {
+            byte[] before = tv.getByteArray(0, 8);
+            Inspector.inspect(before, "gettimeofday tv=" + tv);
+        }
+        if (tz != null && log.isDebugEnabled()) {
+            byte[] before = tz.getByteArray(0, 8);
+            Inspector.inspect(before, "gettimeofday tz");
+        }
+
+        long currentTimeMillis = System.currentTimeMillis();
+        long tv_sec = currentTimeMillis / 1000;
+        long tv_usec = (currentTimeMillis % 1000) * 1000;
+        TimeVal64 timeVal = new TimeVal64(tv);
+        timeVal.tv_sec = tv_sec;
+        timeVal.tv_usec = tv_usec;
         timeVal.pack();
 
         if (tz != null) {

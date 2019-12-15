@@ -130,7 +130,7 @@ public class JniDispatch32 extends AbstractJni {
     }
 
     @Override
-    public DvmObject callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+    public DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         if ("java/lang/System->getProperty(Ljava/lang/String;)Ljava/lang/String;".equals(signature)) {
             StringObject string = varArg.getObject(0);
             return new StringObject(vm, System.getProperty(string.getValue()));

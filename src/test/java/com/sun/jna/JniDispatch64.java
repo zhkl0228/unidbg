@@ -8,7 +8,6 @@ import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.arm.context.RegisterContext;
-import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.hookzz.HookEntryInfo;
 import cn.banny.unidbg.hook.hookzz.HookZz;
@@ -125,14 +124,14 @@ public class JniDispatch64 extends AbstractJni {
         vm.deleteLocalRefs();
         System.out.println("getAPIChecksum checksum=" + checksum.getValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        emulator.attach(DebuggerType.GDB_SERVER);
+//        emulator.attach(DebuggerType.GDB_SERVER);
         ret = Native.callStaticJniMethod(emulator, "sizeof(I)I", 0);
         vm.deleteLocalRefs();
         System.out.println("sizeof POINTER_SIZE=" + ret.intValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
     @Override
-    public DvmObject callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+    public DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         if ("java/lang/System->getProperty(Ljava/lang/String;)Ljava/lang/String;".equals(signature)) {
             StringObject string = varArg.getObject(0);
             return new StringObject(vm, System.getProperty(string.getValue()));
