@@ -71,4 +71,6 @@ public interface VM {
      * VM throw exception
      */
     void throwException(DvmObject<?> throwable);
+
+    void setVerbose(boolean verbose);
 }

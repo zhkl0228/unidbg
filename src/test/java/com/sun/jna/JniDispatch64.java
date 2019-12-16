@@ -21,6 +21,7 @@ import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.linux.android.XHookImpl;
 import cn.banny.unidbg.linux.android.dvm.*;
 import cn.banny.unidbg.memory.Memory;
+import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.pointer.UnicornPointer;
 
 import java.io.File;
@@ -55,6 +56,11 @@ public class JniDispatch64 extends AbstractJni {
         this.module = dm.getModule();
 
         Native = vm.resolveClass("com/sun/jna/Native");
+
+        Symbol __system_property_get = module.findSymbolByName("__system_property_get", true);
+        MemoryBlock block = memory.malloc(0x10);
+        Number ret = __system_property_get.call(emulator, "ro.build.version.sdk", block.getPointer())[0];
+        System.out.println("sdk=" + new String(block.getPointer().getByteArray(0, ret.intValue())));
     }
 
     private void destroy() throws IOException {

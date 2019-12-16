@@ -54,7 +54,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         if (log.isDebugEnabled()) {
             log.debug("getStaticMethodID name=" + name + ", hash=0x" + Long.toHexString(hash));
         }
-        staticMethodMap.put(hash, new DvmMethod(this, methodName, args));
+        staticMethodMap.put(hash, new DvmMethod(this, methodName, args, true));
         return (int) hash;
     }
 
@@ -79,7 +79,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         if (log.isDebugEnabled()) {
             log.debug("getMethodID name=" + name + ", hash=0x" + Long.toHexString(hash));
         }
-        methodMap.put(hash, new DvmMethod(this, methodName, args));
+        methodMap.put(hash, new DvmMethod(this, methodName, args, false));
         return (int) hash;
     }
 

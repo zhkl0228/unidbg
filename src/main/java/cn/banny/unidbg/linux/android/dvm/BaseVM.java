@@ -32,6 +32,13 @@ public abstract class BaseVM implements VM {
 
     DvmObject<?> throwable;
 
+    boolean verbose;
+
+    @Override
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+
     @Override
     public void throwException(DvmObject<?> throwable) {
         this.throwable = throwable;

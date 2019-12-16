@@ -157,6 +157,8 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
          */
         stat.setLong(0x0, 0); // st_dev
         stat.setInt(0x10, st_mode); // st_mode
+        stat.setInt(0x18, 0); // st_uid
+        stat.setInt(0x1c, 0); // st_gid
         stat.setLong(0x30, file.length()); // st_size
         stat.setInt(0x38, emulator.getPageAlign()); // st_blksize
         stat.setLong(0x60, 0); // st_ino

@@ -459,8 +459,6 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         throw new UnicornException();
     }
 
-    private static final int PTRACE_TRACEME = 0;
-
     private int ptrace(Unicorn u, Emulator emulator) {
         int request = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         int pid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
@@ -822,12 +820,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             log.debug("personality persona=0x" + Long.toHexString(persona));
         }
         int old = (int) this.persona;
-        if (persona == 0xffffffffL) {
-            return old;
-        } else {
+        if (persona != 0xffffffffL) {
             this.persona = persona;
-            return old;
         }
+        return old;
     }
 
     private int shutdown(Unicorn u, Emulator emulator) {
@@ -1534,12 +1530,13 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
         String pathname = pathname_p.getString(0);
+        String msg = "faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
-            log.debug("faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.debug(msg);
         }
         int ret = faccessat(emulator, pathname);
         if (ret == -1) {
-            log.info("faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.info(msg);
         }
         return ret;
     }
@@ -1594,13 +1591,14 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
         String pathname = pathname_p.getString(0);
+        String msg = "openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
-            log.debug("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.debug(msg);
         }
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
-                log.info("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+                log.info(msg);
             }
             return fd;
         } else {
@@ -1608,7 +1606,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 throw new UnicornException();
             }
 
-            log.warn("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.warn(msg);
             emulator.getMemory().setErrno(UnixEmulator.EACCES);
             return -1;
         }
@@ -1619,12 +1617,13 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         String pathname = pathname_p.getString(0);
+        String msg = "open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
-            log.debug("open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.debug(msg);
         }
         int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
-            log.info("open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.info(msg);
         }
         return fd;
     }

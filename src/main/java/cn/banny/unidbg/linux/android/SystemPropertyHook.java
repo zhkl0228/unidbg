@@ -8,12 +8,16 @@ import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.HookListener;
 import cn.banny.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.UnicornException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class SystemPropertyHook implements HookListener {
+
+    private static final Log log = LogFactory.getLog(SystemPropertyHook.class);
 
     private static final int PROP_VALUE_MAX = 92;
 
@@ -46,12 +50,16 @@ public class SystemPropertyHook implements HookListener {
     }
 
     private HookStatus __system_property_get(long old) {
+        RegisterContext context = emulator.getContext();
+        Pointer pointer = context.getPointerArg(0);
+        String key = pointer.getString(0);
         if (propertyProvider != null) {
-            RegisterContext context = emulator.getContext();
-            Pointer pointer = context.getPointerArg(0);
-            String key = pointer.getString(0);
             String value = propertyProvider.getProperty(key);
             if (value != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("__system_property_get key=" + key + ", value=" + value);
+                }
+
                 byte[] data = value.getBytes(StandardCharsets.UTF_8);
                 if (data.length >= PROP_VALUE_MAX) {
                     throw new UnicornException("invalid property value length: key=" + key + ", value=" + value);
@@ -62,6 +70,9 @@ public class SystemPropertyHook implements HookListener {
             }
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("__system_property_get key=" + key);
+        }
         return HookStatus.RET(emulator, old);
     }
 

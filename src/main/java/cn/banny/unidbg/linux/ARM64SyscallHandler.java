@@ -433,8 +433,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int threadId;
-
     private static final int CLONE_VM = 0x00000100;
     private static final int CLONE_FS = 0x00000200;
     private static final int CLONE_FILES = 0x00000400;
@@ -515,7 +513,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             list.add("CLONE_STOPPED");
         }
         if (log.isDebugEnabled()) {
-            log.debug("bionic_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", pid=" + pid + ", tls=" + tls + ", ctid=" + ctid + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
+            log.debug("bionic_clone child_stack=" + child_stack + ", pid=" + pid + ", tls=" + tls + ", ctid=" + ctid + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         }
         emulator.getMemory().setErrno(UnixEmulator.EAGAIN);
         throw new AbstractMethodError();
@@ -1390,13 +1388,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int oflags = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
         int mode = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X3)).intValue();
         String pathname = pathname_p.getString(0);
+        String msg = "openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
-            log.debug("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.debug(msg);
         }
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
-                log.info("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+                log.info(msg);
             }
             return fd;
         } else {
@@ -1404,7 +1403,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 throw new UnicornException();
             }
 
-            log.warn("openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.warn(msg);
             emulator.getMemory().setErrno(UnixEmulator.EACCES);
             return -1;
         }
@@ -1415,12 +1414,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         String pathname = pathname_p.getString(0);
+        String msg = "open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
-            log.debug("open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.debug(msg);
         }
         int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
-            log.info("open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.info(msg);
         }
         return fd;
     }

@@ -8,13 +8,15 @@ class DvmMethod implements Hashable {
     private static final Log log = LogFactory.getLog(DvmMethod.class);
 
     private final DvmClass dvmClass;
-    private final String methodName;
+    final String methodName;
     final String args;
+    final boolean isStatic;
 
-    DvmMethod(DvmClass dvmClass, String methodName, String args) {
+    DvmMethod(DvmClass dvmClass, String methodName, String args, boolean isStatic) {
         this.dvmClass = dvmClass;
         this.methodName = methodName;
         this.args = args;
+        this.isStatic = isStatic;
     }
 
     DvmObject<?>  callStaticObjectMethod(VarArg varArg) {
@@ -38,7 +40,7 @@ class DvmMethod implements Hashable {
     DvmObject<?>  callObjectMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callObjectMethod signature=" + signature);
+            log.debug("callObjectMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         return vm.jni.callObjectMethod(vm, dvmObject, signature, varArg);
@@ -47,7 +49,7 @@ class DvmMethod implements Hashable {
     long callLongMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callLongMethodV signature=" + signature);
+            log.debug("callLongMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         return vm.jni.callLongMethodV(vm, dvmObject, signature, vaList);
@@ -56,7 +58,7 @@ class DvmMethod implements Hashable {
     DvmObject<?>  callObjectMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callObjectMethodV signature=" + signature);
+            log.debug("callObjectMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         return vm.jni.callObjectMethodV(vm, dvmObject, signature, vaList);
@@ -65,7 +67,7 @@ class DvmMethod implements Hashable {
     int callIntMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callIntMethodV signature=" + signature);
+            log.debug("callIntMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         return vm.jni.callIntMethodV(vm, dvmObject, signature, vaList);
@@ -74,7 +76,7 @@ class DvmMethod implements Hashable {
     int callBooleanMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callBooleanMethod signature=" + signature);
+            log.debug("callBooleanMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         return dvmClass.vm.jni.callBooleanMethod(dvmClass.vm, dvmObject, signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
@@ -82,7 +84,7 @@ class DvmMethod implements Hashable {
     int callBooleanMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callBooleanMethodV signature=" + signature);
+            log.debug("callBooleanMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         return dvmClass.vm.jni.callBooleanMethodV(dvmClass.vm, dvmObject, signature, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
@@ -90,7 +92,7 @@ class DvmMethod implements Hashable {
     int callIntMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callIntMethod signature=" + signature);
+            log.debug("callIntMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         return vm.jni.callIntMethod(vm, dvmObject, signature, varArg);
@@ -99,7 +101,7 @@ class DvmMethod implements Hashable {
     void callVoidMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callVoidMethod signature=" + signature);
+            log.debug("callVoidMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         vm.jni.callVoidMethod(vm, dvmObject, signature, varArg);
@@ -198,7 +200,7 @@ class DvmMethod implements Hashable {
     void callVoidMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callVoidMethodV signature=" + signature);
+            log.debug("callVoidMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         vm.jni.callVoidMethodV(vm, dvmObject, signature, vaList);
@@ -207,7 +209,7 @@ class DvmMethod implements Hashable {
     float callFloatMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
-            log.debug("callFloatMethodV signature=" + signature);
+            log.debug("callFloatMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
         return vm.jni.callFloatMethodV(vm, dvmObject, signature, vaList);
