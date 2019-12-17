@@ -26,6 +26,10 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         this.needed = needed == null ? null : Arrays.asList(needed);
     }
 
+    public int getSdk() {
+        return sdk;
+    }
+
     @Override
     public LibraryFile resolveLibrary(Emulator emulator, String libraryName) {
         if (needed == null) {

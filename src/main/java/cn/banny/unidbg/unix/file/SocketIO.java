@@ -3,6 +3,7 @@ package cn.banny.unidbg.unix.file;
 import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.file.AbstractFileIO;
 import cn.banny.unidbg.file.FileIO;
+import cn.banny.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -192,6 +193,22 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
 
     @Override
     public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
+        int st_mode = IO.S_IFSOCK;
+        /*
+         * 0x00: st_dev
+         * 0x18: st_uid
+         * 0x1c: st_gid
+         * 0x30: st_size
+         * 0x38: st_blksize
+         * 0x60: st_ino
+         */
+        stat.setLong(0x0, 0); // st_dev
+        stat.setInt(0x10, st_mode); // st_mode
+        stat.setInt(0x18, 0); // st_uid
+        stat.setInt(0x1c, 0); // st_gid
+        stat.setLong(0x30, 0); // st_size
+        stat.setInt(0x38, 0); // st_blksize
+        stat.setLong(0x60, 0); // st_ino
         return 0;
     }
 }

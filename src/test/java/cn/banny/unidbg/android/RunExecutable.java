@@ -24,7 +24,7 @@ class RunExecutable {
         try {
             long start = System.currentTimeMillis();
             Memory memory = emulator.getMemory();
-            memory.setLibraryResolver(new AndroidResolver(19));
+            memory.setLibraryResolver(new AndroidResolver(23));
 
             memory.setCallInitFunction();
             if (listener != null) {
@@ -54,12 +54,13 @@ class RunExecutable {
             int value = pointer.getInt(0);
             assert value == UnixEmulator.EACCES;
 
-            // emulator.traceCode();
+//             emulator.traceCode();
             Pointer strerror = UnicornPointer.pointer(emulator, libc.callFunction(emulator, "strerror", UnixEmulator.ECONNREFUSED)[0].intValue() & 0xffffffffL);
             assert strerror != null;
             System.out.println(strerror.getString(0));
 
-            // emulator.traceCode();
+//             emulator.traceCode();
+//             emulator.attach().addBreakPoint(libc.base + 0x00038F20);
             System.out.println("exit code: " + module.callEntry(emulator, args) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         } finally {
             IOUtils.closeQuietly(emulator);

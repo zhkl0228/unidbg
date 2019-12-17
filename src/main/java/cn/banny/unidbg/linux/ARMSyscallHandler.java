@@ -8,6 +8,8 @@ import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.file.FileIO;
+import cn.banny.unidbg.file.IOResolver;
+import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;
 import cn.banny.unidbg.linux.struct.SysInfo32;
@@ -261,6 +263,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     return;
                 case 192:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mmap2(u, emulator));
+                    return;
+                case 194:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, ftruncate(u));
                     return;
                 case 195:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
@@ -1198,6 +1203,17 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         return file.setsockopt(level, optname, optval, optlen);
     }
 
+    private int sdk;
+
+    @Override
+    public void addIOResolver(IOResolver resolver) {
+        super.addIOResolver(resolver);
+
+        if (resolver instanceof AndroidResolver) {
+            sdk = ((AndroidResolver) resolver).getSdk();
+        }
+    }
+
     private int socket(Unicorn u, Emulator emulator) {
         int domain = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         int type = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue() & 0x7ffff;
@@ -1218,7 +1234,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 switch (type) {
                     case SocketIO.SOCK_STREAM:
                         fd = getMinFd();
-                        fdMap.put(fd, new LocalSocketIO(emulator));
+                        fdMap.put(fd, new LocalSocketIO(emulator, sdk));
                         return fd;
                     case SocketIO.SOCK_DGRAM:
                         fd = getMinFd();
@@ -1273,7 +1289,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         nodename.setString(0, "localhost");
 
         Pointer release = nodename.share(SYS_NMLN);
-        release.setString(0, "3.4.0-cyanogenmod+");
+        release.setString(0, "1.0.0-unidbg");
 
         Pointer version = release.share(SYS_NMLN);
         version.setString(0, "#1 SMP PREEMPT Thu Apr 19 14:36:58 CST 2018");
@@ -1301,9 +1317,8 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
     private void exit_group(Unicorn u) {
         int status = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        log.info("exit with code: " + status, new Exception("exit_group"));
+        log.info("exit with code: " + status, new Exception("exit_group status=" + status));
         u.emu_stop();
-        System.exit(status);
     }
 
     private int munmap(Unicorn u, Emulator emulator) {

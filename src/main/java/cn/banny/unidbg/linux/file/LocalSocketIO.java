@@ -30,9 +30,11 @@ public class LocalSocketIO extends SocketIO implements FileIO {
     }
 
     private final Emulator emulator;
+    private final int sdk;
 
-    public LocalSocketIO(Emulator emulator) {
+    public LocalSocketIO(Emulator emulator, int sdk) {
         this.emulator = emulator;
+        this.sdk = sdk;
     }
 
     @Override
@@ -88,7 +90,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
     private SocketHandler handler;
 
     @Override
-    public int connect(Pointer addr, int addrlen) {
+    public int connect(final Pointer addr, int addrlen) {
         short sa_family = addr.getShort(0);
         if (sa_family != AF_LOCAL) {
             throw new UnsupportedOperationException("sa_family=" + sa_family);
@@ -192,26 +194,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
                             buffer.put((DnsProxyQueryResult + "\0").getBytes());
 
                             for (InetAddress address : addresses) {
-                                buffer.order(ByteOrder.BIG_ENDIAN);
-                                buffer.putInt(32); // sizeof(struct addrinfo)
-                                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                                buffer.putInt(ai_flags);
-                                buffer.putInt(SocketIO.AF_INET);
-                                buffer.putInt(ai_socktype);
-                                buffer.putInt(SocketIO.IPPROTO_TCP);
-                                buffer.putInt(16); // ai_addrlen
-                                buffer.putInt(0); // ai_canonname
-                                buffer.putInt(0); // ai_addr
-                                buffer.putInt(0); // ai_next
-                                buffer.order(ByteOrder.BIG_ENDIAN);
-                                buffer.putInt(16); // ai_addrlen
-                                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                                buffer.putShort((short) SocketIO.AF_INET); // sin_family
-                                buffer.putShort(Short.reverseBytes(port)); // sin_port
-                                buffer.put(Arrays.copyOf(address.getAddress(), 4));
-                                buffer.put(new byte[8]); // __pad
-                                buffer.order(ByteOrder.BIG_ENDIAN);
-                                buffer.putInt(0); // ai_canonname
+                                putAddress(buffer, address, ai_flags, ai_socktype, port);
                             }
 
                             buffer.order(ByteOrder.BIG_ENDIAN);
@@ -220,7 +203,8 @@ public class LocalSocketIO extends SocketIO implements FileIO {
                             final int EAI_NODATA = 7;
                             buffer.put((DnsProxyOperationFailed + "\0").getBytes());
                             buffer.putInt(4);
-                            buffer.order(ByteOrder.LITTLE_ENDIAN).putInt(EAI_NODATA);
+                            buffer.order(ByteOrder.LITTLE_ENDIAN);
+                            buffer.putInt(EAI_NODATA);
                         }
 
                         buffer.flip();
@@ -230,6 +214,47 @@ public class LocalSocketIO extends SocketIO implements FileIO {
                             Inspector.inspect(response, "getaddrinfo");
                         }
                         return response;
+                    }
+                    private void putAddress(ByteBuffer buffer, InetAddress address, int ai_flags, int ai_socktype, short port) {
+                        if (sdk == 19) {
+                            buffer.order(ByteOrder.BIG_ENDIAN);
+                            buffer.putInt(32); // sizeof(struct addrinfo)
+                            buffer.order(ByteOrder.LITTLE_ENDIAN);
+                            buffer.putInt(ai_flags);
+                            buffer.putInt(SocketIO.AF_INET);
+                            buffer.putInt(ai_socktype);
+                            buffer.putInt(SocketIO.IPPROTO_TCP);
+                            buffer.putInt(16); // ai_addrlen
+                            buffer.putInt(0); // ai_canonname
+                            buffer.putInt(0); // ai_addr
+                            buffer.putInt(0); // ai_next
+                            buffer.order(ByteOrder.BIG_ENDIAN);
+                            buffer.putInt(16); // ai_addrlen
+                            buffer.order(ByteOrder.LITTLE_ENDIAN);
+                            buffer.putShort((short) SocketIO.AF_INET); // sin_family
+                            buffer.putShort(Short.reverseBytes(port)); // sin_port
+                            buffer.put(Arrays.copyOf(address.getAddress(), 4));
+                            buffer.put(new byte[8]); // __pad
+                            buffer.order(ByteOrder.BIG_ENDIAN);
+                            buffer.putInt(0); // ai_canonname
+                        } else if (sdk == 23) {
+                            buffer.order(ByteOrder.BIG_ENDIAN);
+                            buffer.putInt(1); // sizeof(struct addrinfo)
+                            buffer.putInt(ai_flags);
+                            buffer.putInt(SocketIO.AF_INET);
+                            buffer.putInt(ai_socktype);
+                            buffer.putInt(SocketIO.IPPROTO_TCP);
+                            buffer.putInt(16); // ai_addrlen
+                            buffer.order(ByteOrder.LITTLE_ENDIAN);
+                            buffer.putShort((short) SocketIO.AF_INET); // sin_family
+                            buffer.putShort(Short.reverseBytes(port)); // sin_port
+                            buffer.put(Arrays.copyOf(address.getAddress(), 4));
+                            buffer.put(new byte[8]); // __pad
+                            buffer.order(ByteOrder.BIG_ENDIAN);
+                            buffer.putInt(0); // ai_canonname
+                        } else {
+                            throw new IllegalStateException("sdk=" + sdk);
+                        }
                     }
                 };
                 return 0;

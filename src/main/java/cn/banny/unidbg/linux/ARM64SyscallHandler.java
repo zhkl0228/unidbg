@@ -8,6 +8,8 @@ import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.file.FileIO;
+import cn.banny.unidbg.file.IOResolver;
+import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.linux.file.LocalAndroidUdpSocket;
 import cn.banny.unidbg.linux.file.LocalSocketIO;
 import cn.banny.unidbg.memory.SvcMemory;
@@ -1009,6 +1011,17 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return file.setsockopt(level, optname, optval, optlen);
     }
 
+    private int sdk;
+
+    @Override
+    public void addIOResolver(IOResolver resolver) {
+        super.addIOResolver(resolver);
+
+        if (resolver instanceof AndroidResolver) {
+            sdk = ((AndroidResolver) resolver).getSdk();
+        }
+    }
+
     private int socket(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         int domain = context.getIntArg(0);
@@ -1030,7 +1043,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 switch (type) {
                     case SocketIO.SOCK_STREAM:
                         fd = getMinFd();
-                        fdMap.put(fd, new LocalSocketIO(emulator));
+                        fdMap.put(fd, new LocalSocketIO(emulator, sdk));
                         return fd;
                     case SocketIO.SOCK_DGRAM:
                         fd = getMinFd();
@@ -1084,7 +1097,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         nodeName.setString(0, "localhost"); /* Name within "some implementation-defined network" */
 
         Pointer release = nodeName.share(SYS_NMLN);
-        release.setString(0, "3.4.0-cyanogenmod+"); /* Operating system release (e.g., "2.6.28") */
+        release.setString(0, "1.0.0-unidbg"); /* Operating system release (e.g., "2.6.28") */
 
         Pointer version = release.share(SYS_NMLN);
         version.setString(0, "#1 SMP PREEMPT Thu Apr 19 14:36:58 CST 2018"); /* Operating system version */
@@ -1112,9 +1125,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private void exit_group(Unicorn u) {
         int status = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("exit with code: " + status);
-        }
+        log.info("exit with code: " + status, new Exception("exit_group status=" + status));
         u.emu_stop();
     }
 

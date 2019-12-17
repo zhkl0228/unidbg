@@ -45,7 +45,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     }
 
     @Override
-    public final void addIOResolver(IOResolver resolver) {
+    public void addIOResolver(IOResolver resolver) {
         if (!resolvers.contains(resolver)) {
             resolvers.add(0, resolver);
         }
