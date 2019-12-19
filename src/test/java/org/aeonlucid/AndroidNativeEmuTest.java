@@ -15,7 +15,7 @@ public class AndroidNativeEmuTest extends EmulatorTest {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
-        return new AndroidResolver(19, "libc.so", "libdl.so");
+        return new AndroidResolver(23, "libc.so", "libdl.so");
     }
 
     public void testExample() throws Exception {

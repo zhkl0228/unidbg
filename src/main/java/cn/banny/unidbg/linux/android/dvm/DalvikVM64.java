@@ -1465,9 +1465,6 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("GetJavaVM vm=" + vm);
                 }
                 vm.setPointer(0, _JavaVM);
-                if (verbose) {
-                    System.out.println(String.format("JNIEnv->GetJavaVM(0x%08x) was called", vm.toUIntPeer()));
-                }
                 return JNI_OK;
             }
         });

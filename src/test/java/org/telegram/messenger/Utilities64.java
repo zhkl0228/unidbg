@@ -2,6 +2,7 @@ package org.telegram.messenger;
 
 import cn.banny.auxiliary.Inspector;
 import cn.banny.unidbg.LibraryResolver;
+import cn.banny.unidbg.Module;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.linux.android.AndroidARM64Emulator;
 import cn.banny.unidbg.linux.android.AndroidResolver;
@@ -9,6 +10,8 @@ import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
 import cn.banny.unidbg.linux.android.dvm.DalvikModule;
 import cn.banny.unidbg.linux.android.dvm.DvmClass;
 import cn.banny.unidbg.linux.android.dvm.VM;
+import cn.banny.unidbg.linux.module.AndroidModule;
+import cn.banny.unidbg.linux.module.JniGraphics;
 import cn.banny.unidbg.memory.Memory;
 
 import java.io.File;
@@ -36,6 +39,11 @@ public class Utilities64 {
         memory.setCallInitFunction();
 
         vm = emulator.createDalvikVM(null);
+        Module module = new JniGraphics(emulator, vm).register(memory);
+        assert module != null;
+        new AndroidModule(emulator, vm).register(memory);
+
+        vm.setVerbose(true);
         DalvikModule dm = vm.loadLibrary(new File("src/test/resources/example_binaries/arm64-v8a/libtmessages.29.so"), false);
         dm.callJNI_OnLoad(emulator);
 

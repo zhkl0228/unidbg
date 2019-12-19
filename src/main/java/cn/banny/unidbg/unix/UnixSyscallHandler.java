@@ -77,7 +77,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return null;
     }
 
-    protected final int gettimeofday(Pointer tv, Pointer tz) {
+    protected int gettimeofday(Pointer tv, Pointer tz) {
         if (log.isDebugEnabled()) {
             log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
         }
@@ -119,7 +119,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         return 0;
     }
 
-    protected final int gettimeofday64(Pointer tv, Pointer tz) {
+    protected int gettimeofday64(Pointer tv, Pointer tz) {
         if (log.isDebugEnabled()) {
             log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
         }
