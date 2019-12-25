@@ -151,7 +151,7 @@ public class DalvikVM64 extends BaseVM implements VM {
             public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
                 if (object == null) {
-                    throw new UnicornException("object is null");
+                    return 0;
                 }
                 DvmObject<?> dvmObject = getObject(object.toUIntPeer());
                 if (log.isDebugEnabled()) {
