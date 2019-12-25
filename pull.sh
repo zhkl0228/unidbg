@@ -16,7 +16,6 @@ adb pull /system/lib/libstdc++.so lib/libstdcpp.so
 adb pull /system/lib/libz.so lib
 adb pull /system/lib/libcrypto.so lib
 adb pull /system/lib/libssl.so lib
-adb pull /system/lib/libnetd_client.so lib
 
 set -e
 
@@ -30,4 +29,3 @@ adb pull /system/lib64/libstdc++.so lib64/libstdcpp.so
 adb pull /system/lib64/libz.so lib64
 adb pull /system/lib64/libcrypto.so lib64
 adb pull /system/lib64/libssl.so lib64
-adb pull /system/lib64/libnetd_client.so lib64
