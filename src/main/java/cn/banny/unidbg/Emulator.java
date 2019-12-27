@@ -120,6 +120,7 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      * @param apkFile 可为null
      */
     VM createDalvikVM(File apkFile);
+    VM getDalvikVM();
 
     String getLibraryExtension();
     String getLibraryPath();

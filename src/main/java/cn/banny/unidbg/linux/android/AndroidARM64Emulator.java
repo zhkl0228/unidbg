@@ -54,7 +54,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
     }
 
     @Override
-    public VM createDalvikVM(File apkFile) {
+    public VM createDalvikVMInternal(File apkFile) {
         return new DalvikVM64(this, apkFile);
     }
 

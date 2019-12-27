@@ -7,6 +7,7 @@ import cn.banny.unidbg.debugger.Debugger;
 import cn.banny.unidbg.debugger.DebuggerType;
 import cn.banny.unidbg.debugger.gdb.GdbStub;
 import cn.banny.unidbg.debugger.ida.AndroidServer;
+import cn.banny.unidbg.linux.android.dvm.VM;
 import cn.banny.unidbg.listener.TraceCodeListener;
 import cn.banny.unidbg.listener.TraceReadListener;
 import cn.banny.unidbg.listener.TraceWriteListener;
@@ -416,4 +417,23 @@ public abstract class AbstractEmulator implements Emulator {
         return (T) context.get(key);
     }
 
+    private VM vm;
+
+    @Override
+    public final VM createDalvikVM(File apkFile) {
+        if (vm != null) {
+            throw new IllegalStateException("vm is already created");
+        }
+        vm = createDalvikVMInternal(apkFile);
+        return vm;
+    }
+
+    protected VM createDalvikVMInternal(File apkFile) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final VM getDalvikVM() {
+        return vm;
+    }
 }

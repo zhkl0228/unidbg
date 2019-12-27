@@ -1,7 +1,6 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.arm.AbstractARM64Emulator;
-import cn.banny.unidbg.linux.android.dvm.VM;
 import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.memory.SvcMemory;
 import cn.banny.unidbg.pointer.UnicornPointer;
@@ -15,7 +14,6 @@ import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.UnicornConst;
 
-import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
 
@@ -87,11 +85,6 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator {
     @Override
     protected UnixSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
         return new ARM64SyscallHandler(svcMemory);
-    }
-
-    @Override
-    public VM createDalvikVM(File apkFile) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

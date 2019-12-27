@@ -54,7 +54,7 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    public VM createDalvikVM(File apkFile) {
+    public VM createDalvikVMInternal(File apkFile) {
         return new DalvikVM(this, apkFile);
     }
 
