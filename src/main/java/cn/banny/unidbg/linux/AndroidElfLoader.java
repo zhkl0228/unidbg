@@ -139,7 +139,9 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
-        log.debug("initializeTLS tls=" + tls + ", argv=" + argv + ", auxv=" + auxv + ", thread=" + thread + ", environ=" + environ);
+        if (log.isDebugEnabled()) {
+            log.debug("initializeTLS tls=" + tls + ", argv=" + argv + ", auxv=" + auxv + ", thread=" + thread + ", environ=" + environ + ", sp=0x" + Long.toHexString(getStackPoint()));
+        }
     }
 
     private final Map<String, LinuxModule> modules = new LinkedHashMap<>();

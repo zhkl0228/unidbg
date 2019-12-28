@@ -566,6 +566,9 @@ public class ARM {
             i++;
         }
         Collections.reverse(list);
+        if (list.size() % 2 != 0) { // alignment sp
+            memory.allocateStack(emulator.getPointerSize());
+        }
         while (!list.isEmpty()) {
             Number number = list.remove(0);
             Pointer pointer = memory.allocateStack(emulator.getPointerSize());
