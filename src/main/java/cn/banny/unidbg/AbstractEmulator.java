@@ -436,4 +436,6 @@ public abstract class AbstractEmulator implements Emulator {
     public final VM getDalvikVM() {
         return vm;
     }
+
+    protected abstract boolean isPaddingArgument();
 }

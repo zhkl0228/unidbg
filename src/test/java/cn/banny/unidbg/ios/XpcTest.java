@@ -41,7 +41,7 @@ public class XpcTest extends EmulatorTest {
 
         MemoryBlock block = emulator.getMemory().malloc(32, false);
         Symbol snprintf = module.findSymbolByName("_snprintf");
-        snprintf.call(emulator, block.getPointer(), 32, "%llu", 0x0, 0x16d, 0x0);
+        snprintf.call(emulator, block.getPointer(), 32, "%llu", 0x16dL);
         Inspector.inspect(block.getPointer().getByteArray(0, 32), "snprintf");
     }
 

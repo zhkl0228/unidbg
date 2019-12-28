@@ -4,6 +4,7 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
+import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,7 +50,7 @@ public class Whale extends BaseHook implements IWhale {
     public void WInlineHookFunction(long address, final ReplaceCallback callback) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup);
-        WInlineHookFunction.call(emulator, address, replace, backup);
+        WInlineHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
     }
 
     @Override

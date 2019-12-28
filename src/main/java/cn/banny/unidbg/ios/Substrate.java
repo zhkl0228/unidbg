@@ -6,6 +6,7 @@ import cn.banny.unidbg.Symbol;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.hook.substrate.ISubstrate;
+import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -104,7 +105,7 @@ public class Substrate extends BaseHook implements ISubstrate {
     public void hookFunction(long address, ReplaceCallback callback) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup);
-        _MSHookFunction.call(emulator, address, replace, backup);
+        _MSHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
     }
 
     @Override

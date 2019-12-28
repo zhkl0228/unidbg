@@ -109,4 +109,9 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     public LibraryFile createURLibraryFile(URL url, String libName) {
         return new URLibraryFile(url, libName, -1);
     }
+
+    @Override
+    protected boolean isPaddingArgument() {
+        return true;
+    }
 }

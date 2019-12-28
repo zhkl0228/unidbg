@@ -189,7 +189,7 @@ public class LinuxModule extends Module {
                 list.add(new ByteArrayNumber((byte[]) arg));
             } else if(arg instanceof UnicornPointer) {
                 UnicornPointer pointer = (UnicornPointer) arg;
-                list.add(pointer.peer);
+                list.add(new PointerNumber(pointer));
             } else if (arg instanceof Number) {
                 list.add((Number) arg);
             } else if(arg instanceof Hashable) {

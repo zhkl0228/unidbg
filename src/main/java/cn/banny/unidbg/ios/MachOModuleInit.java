@@ -1,6 +1,7 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.PointerNumber;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.unidbg.spi.InitFunction;
 import org.apache.commons.logging.Log;
@@ -58,10 +59,10 @@ class MachOModuleInit extends InitFunction {
     private static void callModInit(Emulator emulator, long address, int argc, UnicornPointer argv, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars) {
         List<Number> list = new ArrayList<>(5);
         list.add(argc);
-        list.add(argv == null ? 0L : argv.peer);
-        list.add(envp == null ? 0L : envp.peer);
-        list.add(apple == null ? 0L : apple.peer);
-        list.add(vars == null ? 0L : vars.peer);
+        list.add(argv == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, argv.peer)));
+        list.add(envp == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, envp.peer)));
+        list.add(apple == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, apple.peer)));
+        list.add(vars == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, vars.peer)));
         emulator.eFunc(address, list.toArray(new Number[0]));
     }
 

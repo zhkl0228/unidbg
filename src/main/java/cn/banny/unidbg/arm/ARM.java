@@ -7,12 +7,16 @@ import cn.banny.unidbg.Emulator;
 import cn.banny.unidbg.Module;
 import cn.banny.unidbg.memory.Memory;
 import com.sun.jna.Pointer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -549,18 +553,71 @@ public class ARM {
         }
     }
 
-    static Arguments initArgs(Emulator emulator, Number... arguments) {
+    private static final Log log = LogFactory.getLog(ARM.class);
+
+    static Arguments initArgs(Emulator emulator, boolean padding, Number... arguments) {
         Unicorn unicorn = emulator.getUnicorn();
         Memory memory = emulator.getMemory();
 
-        int i = 0;
         int[] regArgs = ARM.getRegArgs(emulator);
-        final Arguments args = new Arguments(memory, arguments);
+        List<Number> argList = new ArrayList<>(arguments.length * 2);
+        int index = 0;
+        for (Number arg : arguments) {
+            if (emulator.is64Bit()) {
+                argList.add(arg);
+                continue;
+            }
+            if (arg instanceof Long) {
+                if (log.isDebugEnabled()) {
+                    log.debug("initLongArgs index=" + index + ", length=" + regArgs.length, new Exception("initArgs long=" + arg));
+                }
+                if (padding && index == regArgs.length - 1) {
+                    argList.add(0);
+                    index++;
+                }
+                ByteBuffer buffer = ByteBuffer.allocate(8);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putLong((Long) arg);
+                buffer.flip();
+                int v1 = buffer.getInt();
+                int v2 = buffer.getInt();
+                argList.add(v1);
+                argList.add(v2);
+                index += 2;
+            } else if (arg instanceof Double) {
+                if (log.isDebugEnabled()) {
+                    log.debug("initDoubleArgs index=" + index + ", length=" + regArgs.length, new Exception("initArgs double=" + arg));
+                }
+                if (padding && index == regArgs.length - 1) {
+                    argList.add(0);
+                    index++;
+                }
+                ByteBuffer buffer = ByteBuffer.allocate(8);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putDouble((Double) arg);
+                buffer.flip();
+                argList.add(buffer.getInt());
+                argList.add(buffer.getInt());
+                index += 2;
+            } else if (arg instanceof Float) {
+                ByteBuffer buffer = ByteBuffer.allocate(4);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putFloat((Float) arg);
+                buffer.flip();
+                argList.add(buffer.getInt());
+                index++;
+            } else {
+                argList.add(arg);
+                index++;
+            }
+        }
+        final Arguments args = new Arguments(memory, argList.toArray(new Number[0]));
 
         List<Number> list = new ArrayList<>();
         if (args.args != null) {
             Collections.addAll(list, args.args);
         }
+        int i = 0;
         while (!list.isEmpty() && i < regArgs.length) {
             unicorn.reg_write(regArgs[i], list.remove(0));
             i++;

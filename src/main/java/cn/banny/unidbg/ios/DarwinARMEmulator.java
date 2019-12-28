@@ -85,4 +85,9 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     public LibraryFile createURLibraryFile(URL url, String libName) {
         return new URLibraryFile(url, libName, null);
     }
+
+    @Override
+    protected boolean isPaddingArgument() {
+        return false;
+    }
 }

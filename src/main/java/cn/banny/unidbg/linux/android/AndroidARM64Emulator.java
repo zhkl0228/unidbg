@@ -88,4 +88,9 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
     public LibraryFile createURLibraryFile(URL url, String libName) {
         return new URLibraryFile(url, libName, -1);
     }
+
+    @Override
+    protected boolean isPaddingArgument() {
+        return true;
+    }
 }

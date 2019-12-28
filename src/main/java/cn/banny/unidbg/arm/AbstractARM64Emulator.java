@@ -187,7 +187,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
         long spBackup = memory.getStackPoint();
         try {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
-            final Arguments args = ARM.initArgs(this, arguments);
+            final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
             return eFunc(begin, args, LR, true);
         } finally {
             memory.setStackPoint(spBackup);
@@ -199,7 +199,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
         long spBackup = memory.getStackPoint();
         try {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
-            final Arguments args = ARM.initArgs(this, arguments);
+            final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
             eFunc(begin, args, LR, false);
         } finally {
             memory.setStackPoint(spBackup);

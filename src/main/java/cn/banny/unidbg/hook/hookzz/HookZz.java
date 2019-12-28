@@ -8,6 +8,7 @@ import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.hook.BaseHook;
 import cn.banny.unidbg.hook.ReplaceCallback;
 import cn.banny.unidbg.memory.SvcMemory;
+import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -82,7 +83,7 @@ public class HookZz extends BaseHook implements IHookZz {
     public void replace(long functionAddress, final ReplaceCallback callback) {
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replaceCall = createReplacePointer(callback, originCall);
-        int ret = zzReplace.call(emulator, functionAddress, replaceCall, originCall)[0].intValue();
+        int ret = zzReplace.call(emulator, UnicornPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -131,7 +132,7 @@ public class HookZz extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        int ret = zzWrap.call(emulator, functionAddress, preCall, postCall)[0].intValue();
+        int ret = zzWrap.call(emulator, UnicornPointer.pointer(emulator, functionAddress), preCall, postCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }

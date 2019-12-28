@@ -1,8 +1,8 @@
 package cn.banny.unidbg.arm;
 
 import cn.banny.unidbg.ByteArrayNumber;
-import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.StringNumber;
+import cn.banny.unidbg.memory.Memory;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import cn.banny.utils.Hex;
 import org.apache.commons.logging.Log;
@@ -36,6 +36,8 @@ public class Arguments {
                 }
                 args[i] = pointer.peer;
                 pointers.add(pointer.peer);
+            } else if (args[i] == null) {
+                args[i] = 0;
             }
             i++;
         }

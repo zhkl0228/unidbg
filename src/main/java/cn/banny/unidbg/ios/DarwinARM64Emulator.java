@@ -106,4 +106,9 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator {
     public int getPageAlign() {
         return 0x4000;
     }
+
+    @Override
+    protected boolean isPaddingArgument() {
+        return false;
+    }
 }

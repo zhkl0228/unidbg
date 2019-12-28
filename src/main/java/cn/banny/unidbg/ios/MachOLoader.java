@@ -1398,7 +1398,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, cn.ba
                             log.debug("notifySingle callback=" + callback);
                         }
                         if (module.addImageCallSet.add(callback)) {
-                            MachOModule.emulateFunction(emulator, callback.peer, (int) module.machHeader, slide);
+                            MachOModule.emulateFunction(emulator, callback.peer, (int) module.machHeader, new PointerNumber(UnicornPointer.pointer(emulator, slide)));
                         }
                     }
                 }

@@ -19,8 +19,6 @@ import cn.banny.unidbg.memory.MemoryBlock;
 import cn.banny.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.util.Arrays;
@@ -41,7 +39,7 @@ public class Substrate64Test extends EmulatorTest {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
 //        emulator.attach().addBreakPoint(null, 0x100016088L);
-        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("cn.banny.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
 //        loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
