@@ -189,6 +189,12 @@ public abstract class AbstractJni implements Jni {
                     return new ByteArray(sig.toByteArray());
                 }
                 break;
+            case "android/content/pm/Signature->toCharsString()Ljava/lang/String;":
+                if (dvmObject instanceof Signature) {
+                    Signature sig = (Signature) dvmObject;
+                    return new StringObject(vm, sig.toCharsString());
+                }
+                break;
             case "java/lang/String->getBytes(Ljava/lang/String;)[B":
                 String str = (String) dvmObject.getValue();
                 StringObject charsetName = vaList.getObject(0);
@@ -437,6 +443,13 @@ public abstract class AbstractJni implements Jni {
                 if (dvmObject instanceof Signature) {
                     Signature sig = (Signature) dvmObject;
                     return new ByteArray(sig.toByteArray());
+                }
+                break;
+            }
+            case "android/content/pm/Signature->toCharsString()Ljava/lang/String;": {
+                if (dvmObject instanceof Signature) {
+                    Signature sig = (Signature) dvmObject;
+                    return new StringObject(vm, sig.toCharsString());
                 }
                 break;
             }
