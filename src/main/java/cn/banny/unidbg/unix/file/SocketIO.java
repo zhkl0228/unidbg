@@ -37,6 +37,8 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
     private static final int SO_BROADCAST = 6;
     private static final int SO_RCVBUF = 8;
     private static final int SO_KEEPALIVE = 9;
+    private static final int SO_RCVTIMEO = 20;
+    private static final int SO_SNDTIMEO = 21;
 
     static final int SHUT_RD = 0;
     static final int SHUT_WR = 1;
@@ -108,6 +110,10 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
                             }
                             setKeepAlive(optval.getInt(0));
                             return 0;
+                        case SO_RCVTIMEO:
+                        case SO_SNDTIMEO: {
+                            return 0;
+                        }
                     }
                     break;
                 case IPPROTO_TCP:

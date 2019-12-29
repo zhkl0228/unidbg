@@ -1274,7 +1274,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         return 0;
     }
 
-    private int uname(Emulator emulator) {
+    protected int uname(Emulator emulator) {
         Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         if (log.isDebugEnabled()) {
             log.debug("uname buf=" + buf);

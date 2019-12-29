@@ -392,11 +392,9 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     protected final Number[] eFunc(long begin, Arguments args, long lr, boolean entry) {
-        if (log.isDebugEnabled()) {
-            long sp = getMemory().getStackPoint();
-            if (sp % 8 != 0) {
-                log.debug("SP NOT 8 byte aligned", new Exception(getStackPointer().toString()));
-            }
+        long sp = getMemory().getStackPoint();
+        if (sp % 8 != 0) {
+            log.warn("SP NOT 8 byte aligned", new Exception(getStackPointer().toString()));
         }
         final List<Number> numbers = new ArrayList<>(10);
         numbers.add(emulate(begin, lr, timeout, entry));

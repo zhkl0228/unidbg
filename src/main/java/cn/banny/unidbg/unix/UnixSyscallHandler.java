@@ -53,7 +53,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
 
     protected final FileIO resolve(Emulator emulator, String pathname, int oflags) {
         for (IOResolver resolver : resolvers) {
-            FileIO io = resolver.resolve(emulator.getWorkDir(), pathname, oflags);
+            FileIO io = resolver.resolve(emulator, emulator.getWorkDir(), pathname, oflags);
             if (io != null) {
                 return io;
             }

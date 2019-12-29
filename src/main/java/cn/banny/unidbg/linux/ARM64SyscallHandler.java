@@ -317,8 +317,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 293888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, shutdown(u, emulator));
                     return;
-                case 294888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, setsockopt(u, emulator));
+                case 208:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, setsockopt(emulator));
                     return;
                 case 295888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getsockopt(u, emulator));
@@ -993,12 +993,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return file.getsockopt(level, optname, optval, optlen);
     }
 
-    private int setsockopt(Unicorn u, Emulator emulator) {
-        int sockfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int level = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int optname = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        Pointer optval = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        int optlen = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
+    private int setsockopt(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int sockfd = context.getIntArg(0);
+        int level = context.getIntArg(1);
+        int optname = context.getIntArg(2);
+        Pointer optval = context.getPointerArg(3);
+        int optlen = context.getIntArg(4);
         if (log.isDebugEnabled()) {
             log.debug("setsockopt sockfd=" + sockfd + ", level=" + level + ", optname=" + optname + ", optval=" + optval + ", optlen=" + optlen);
         }
@@ -1081,7 +1082,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int uname(Emulator emulator) {
+    protected int uname(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         Pointer buf = context.getPointerArg(0);
         if (log.isDebugEnabled()) {

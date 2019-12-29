@@ -54,7 +54,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public FileIO resolve(File workDir, String path, int oflags) {
+    public FileIO resolve(Emulator emulator, File workDir, String path, int oflags) {
         if (workDir == null) {
             workDir = new File("target");
         }

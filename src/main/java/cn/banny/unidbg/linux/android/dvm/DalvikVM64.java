@@ -194,9 +194,6 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("IsSameObject ref1=" + ref1 + ", ref2=" + ref2);
                 }
-                if (verbose) {
-                    System.out.println(String.format("JNIEnv->IsSameObject(0x%x, 0x%x) was called", ref1.toUIntPeer(), ref2.toUIntPeer()));
-                }
                 return ref1 == ref2 || ref1.equals(ref2) ? JNI_TRUE : JNI_FALSE;
             }
         });

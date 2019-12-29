@@ -600,6 +600,9 @@ public class ARM {
                 argList.add(buffer.getInt());
                 index += 2;
             } else if (arg instanceof Float) {
+                if (log.isDebugEnabled()) {
+                    log.debug("initFloatArgs index=" + index + ", length=" + regArgs.length, new Exception("initArgs float=" + arg));
+                }
                 ByteBuffer buffer = ByteBuffer.allocate(4);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 buffer.putFloat((Float) arg);
