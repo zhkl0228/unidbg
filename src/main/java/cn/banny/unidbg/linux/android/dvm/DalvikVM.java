@@ -80,7 +80,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->ToReflectedMethod(%s, %s, %s) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.isStatic));
+                        System.out.println(String.format("JNIEnv->ToReflectedMethod(%s, %s, %s) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.isStatic ? "is static" : "not static"));
                     }
 
                     return addLocalObject(dvmMethod.toReflectedMethod());
@@ -1171,7 +1171,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 String value = (String) string.getValue();
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->GetStringUTFLength(%s) was called", value));
+                    System.out.println(String.format("JNIEnv->GetStringUTFLength(%s) was called", string));
                 }
                 byte[] data = value.getBytes(StandardCharsets.UTF_8);
                 return data.length;
@@ -1188,7 +1188,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 String value = string.getValue();
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->GetStringUtfChars(%s) was called", value));
+                    System.out.println(String.format("JNIEnv->GetStringUtfChars(%s) was called", string));
                 }
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
@@ -1293,10 +1293,10 @@ public class DalvikVM extends BaseVM implements VM {
             public long handle(Emulator emulator) {
                 int size = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                 if (log.isDebugEnabled()) {
-                    log.debug("NewByteArray size=" + size);
+                    log.debug("NewFloatArray size=" + size);
                 }
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->NewFloatArray(%d) was called", size));
+                    System.out.println(String.format("JNIEnv->NewFloatArray(%d) was called from %s", size, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
                 return addObject(new FloatArray(new float[size]), false);
             }
@@ -1320,7 +1320,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("NewByteArray size=" + size + ", LR=" + ctx.getLRPointer() + ", PC=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC));
                 }
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->NewByteArray(%d) was called", size));
+                    System.out.println(String.format("JNIEnv->NewByteArray(%d) was called from %s", size, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
                 return addObject(new ByteArray(new byte[size]), false);
             }
@@ -1441,7 +1441,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("NewStringUTF bytes=" + bytes + ", string=" + string);
                 }
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->NewStringUTF(%s) was called from %s", string, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                    System.out.println(String.format("JNIEnv->NewStringUTF(\"%s\") was called from %s", string, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
                 return addObject(new StringObject(DalvikVM.this, string), false);
             }
