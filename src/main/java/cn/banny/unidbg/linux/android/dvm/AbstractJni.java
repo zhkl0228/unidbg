@@ -492,4 +492,14 @@ public abstract class AbstractJni implements Jni {
     public DvmObject<?> toReflectedMethod(BaseVM vm, String signature) {
         throw new AbstractMethodError(signature);
     }
+
+    @Override
+    public boolean acceptMethod(String signature, boolean isStatic) {
+        return true;
+    }
+
+    @Override
+    public boolean acceptField(String signature, boolean isStatic) {
+        return true;
+    }
 }
