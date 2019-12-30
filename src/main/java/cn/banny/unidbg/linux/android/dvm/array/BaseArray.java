@@ -33,4 +33,9 @@ abstract class BaseArray<T> extends DvmObject<T> implements Array<T> {
         }
     }
 
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
 }

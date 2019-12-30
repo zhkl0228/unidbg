@@ -188,7 +188,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnicornPointer ref1 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 UnicornPointer ref2 = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
-                    log.debug("IsSameObject ref1=" + ref1 + ", ref2=" + ref2);
+                    log.debug("IsSameObject ref1=" + ref1 + ", ref2=" + ref2 + ", LR=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 return ref1 == ref2 || ref1.equals(ref2) ? JNI_TRUE : JNI_FALSE;
             }
@@ -255,10 +255,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    DvmObject<?> obj = dvmMethod.newObjectV(vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->NewObjectV(%s, %s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->NewObjectV(%s, %s(%s) => %s) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj));
                     }
-                    return dvmMethod.newObjectV(new VaList32(DalvikVM.this, va_list));
+                    return addLocalObject(obj);
                 }
             }
         });
@@ -354,10 +356,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException("dvmObject=" + dvmObject + ", dvmClass=" + dvmClass + ", jmethodID=" + jmethodID);
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    DvmObject<?> obj = dvmMethod.callObjectMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallObjectMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallObjectMethodV(%s, %s(%s) => %s) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), obj));
                     }
-                    return addObject(dvmMethod.callObjectMethodV(dvmObject, new VaList32(DalvikVM.this, va_list)), false);
+                    return addObject(obj, false);
                 }
             }
         });
@@ -399,10 +403,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    int ret = dvmMethod.callBooleanMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallBooleanMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallBooleanMethodV(%s, %s(%s) => %s) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE));
                     }
-                    return dvmMethod.callBooleanMethodV(dvmObject, new VaList32(DalvikVM.this, va_list));
+                    return ret;
                 }
             }
         });
@@ -444,10 +450,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    int ret = dvmMethod.callIntMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallIntMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallIntMethodV(%s, %s(%s) => 0x%x) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret));
                     }
-                    return dvmMethod.callIntMethodV(dvmObject, new VaList32(DalvikVM.this, va_list));
+                    return ret;
                 }
             }
         });
@@ -467,12 +475,13 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    long ret = dvmMethod.callLongMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallLongMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallLongMethodV(%s, %s(%s) => 0x%x) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret));
                     }
-                    long value = dvmMethod.callLongMethodV(dvmObject, new VaList32(DalvikVM.this, va_list));
-                    emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (value >> 32));
-                    return (value & 0xffffffffL);
+                    emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (ret >> 32));
+                    return (ret & 0xffffffffL);
                 }
             }
         });
@@ -492,13 +501,14 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    float ret = dvmMethod.callFloatMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallFloatMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallFloatMethodV(%s, %s(%s) => %s) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret));
                     }
-                    float value = dvmMethod.callFloatMethodV(dvmObject, new VaList32(DalvikVM.this, va_list));
                     ByteBuffer buffer = ByteBuffer.allocate(4);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
-                    buffer.putFloat(value);
+                    buffer.putFloat(ret);
                     buffer.flip();
                     return (buffer.getInt() & 0xffffffffL);
                 }
@@ -543,10 +553,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    dvmMethod.callVoidMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallVoidMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called", dvmClass.value, dvmMethod.methodName, vaList.formatArgs()));
                     }
-                    dvmMethod.callVoidMethodV(dvmObject, new VaList32(DalvikVM.this, va_list));
                     return 0;
                 }
             }
@@ -586,10 +597,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    DvmObject<?> obj = dvmField.getObjectField(dvmObject);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->GetObjectField(%s, %s%s) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType));
+                        System.out.println(String.format("JNIEnv->GetObjectField(%s, %s %s => %s) was called", dvmObject, dvmField.fieldName, dvmField.fieldType, obj));
                     }
-                    return dvmField.getObjectField(dvmObject);
+                    return addLocalObject(obj);
                 }
             }
         });
@@ -608,10 +620,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    int ret = dvmField.getBooleanField(dvmObject);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->GetBooleanField(%s, %s%s) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType));
+                        System.out.println(String.format("JNIEnv->GetBooleanField(%s, %s => %s) was called", dvmObject, dvmField.fieldName, ret == JNI_TRUE));
                     }
-                    return dvmField.getBooleanField(dvmObject);
+                    return ret;
                 }
             }
         });
@@ -630,10 +643,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    int ret = dvmField.getIntField(dvmObject);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->GetIntField(%s, %s%s) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType));
+                        System.out.println(String.format("JNIEnv->GetIntField(%s, %s => 0x%x) was called", dvmObject, dvmField.fieldName, ret));
                     }
-                    return dvmField.getIntField(dvmObject);
+                    return ret;
                 }
             }
         });
@@ -653,12 +667,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    long ret = dvmField.getLongField(dvmObject);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->GetLongField(%s, %s%s) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType));
+                        System.out.println(String.format("JNIEnv->GetLongField(%s, %s => 0x%x) was called", dvmObject, dvmField.fieldName, ret));
                     }
-                    long value = dvmField.getLongField(dvmObject);
-                    context.setR1((int) (value >> 32));
-                    return value;
+                    context.setR1((int) (ret >> 32));
+                    return ret;
                 }
             }
         });
@@ -678,10 +692,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    DvmObject<?> obj = getObject(value.toUIntPeer());
+                    dvmField.setObjectField(dvmObject, obj);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->SetObjectField(%s, %s%s, 0x%x) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType, value.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->SetObjectField(%s, %s %s => %s) was called", dvmObject, dvmField.fieldName, dvmField.fieldType, obj));
                     }
-                    dvmField.setObjectField(dvmObject, getObject(value.toUIntPeer()));
                 }
                 return 0;
             }
@@ -702,10 +717,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    boolean flag = value == JNI_TRUE;
+                    dvmField.setBooleanField(dvmObject, flag);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->SetBooleanField(%s, %s%s, %s) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType, value == JNI_TRUE));
+                        System.out.println(String.format("JNIEnv->SetBooleanField(%s, %s => %s) was called", dvmObject, dvmField.fieldName, flag));
                     }
-                    dvmField.setBooleanField(dvmObject, value == JNI_TRUE);
                 }
                 return 0;
             }
@@ -726,10 +742,10 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
-                    if (verbose) {
-                        System.out.println(String.format("JNIEnv->SetIntField(%s, %s%s, %d) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType, value));
-                    }
                     dvmField.setIntField(dvmObject, value);
+                    if (verbose) {
+                        System.out.println(String.format("JNIEnv->SetIntField(%s, %s => 0x%x) was called", dvmObject, dvmField.fieldName, value));
+                    }
                 }
                 return 0;
             }
@@ -751,10 +767,10 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
-                    if (verbose) {
-                        System.out.println(String.format("JNIEnv->SetLongField(%s, %s%s, %d) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType, value));
-                    }
                     dvmField.setLongField(dvmObject, value);
+                    if (verbose) {
+                        System.out.println(String.format("JNIEnv->SetLongField(%s, %s => 0x%x) was called", dvmObject, dvmField.fieldName, value));
+                    }
                 }
                 return 0;
             }
@@ -776,10 +792,10 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
-                    if (verbose) {
-                        System.out.println(String.format("JNIEnv->SetDoubleField(%s, %s%s, %f) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType, value));
-                    }
                     dvmField.setDoubleField(dvmObject, value);
+                    if (verbose) {
+                        System.out.println(String.format("JNIEnv->SetDoubleField(%s, %s => %s) was called", dvmObject, dvmField.fieldName, value));
+                    }
                 }
                 return 0;
             }
@@ -819,7 +835,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticObjectMethod(%s, %s%s) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args));
+                        System.out.println(String.format("JNIEnv->CallStaticObjectMethod(%s, %s%s) was called", dvmClass, dvmMethod.methodName, dvmMethod.args));
                     }
                     return addObject(dvmMethod.callStaticObjectMethod(ArmVarArg.create(emulator, DalvikVM.this)), false);
                 }
@@ -840,10 +856,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    DvmObject<?> obj = dvmMethod.callStaticObjectMethodV(vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticObjectMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallStaticObjectMethodV(%s, %s(%s) => %s) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj));
                     }
-                    return addObject(dvmMethod.callStaticObjectMethodV(new VaList32(DalvikVM.this, va_list)), false);
+                    return addObject(obj, false);
                 }
             }
         });
@@ -862,7 +880,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticBooleanMethod(%s, %s%s) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args));
+                        System.out.println(String.format("JNIEnv->CallStaticBooleanMethod(%s, %s%s) was called", dvmClass, dvmMethod.methodName, dvmMethod.args));
                     }
                     return dvmMethod.CallStaticBooleanMethod(ArmVarArg.create(emulator, DalvikVM.this));
                 }
@@ -883,10 +901,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    int ret = dvmMethod.callStaticBooleanMethodV(vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticBooleanMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallStaticBooleanMethodV(%s, %s(%s) => %s) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE));
                     }
-                    return dvmMethod.callStaticBooleanMethodV(new VaList32(DalvikVM.this, va_list));
+                    return ret;
                 }
             }
         });
@@ -905,7 +925,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticIntMethod(%s, %s%s) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args));
+                        System.out.println(String.format("JNIEnv->CallStaticIntMethod(%s, %s%s) was called", dvmClass, dvmMethod.methodName, dvmMethod.args));
                     }
                     return dvmMethod.callStaticIntMethod(ArmVarArg.create(emulator, DalvikVM.this));
                 }
@@ -926,10 +946,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    int ret = dvmMethod.callStaticIntMethodV(vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticIntMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallStaticIntMethodV(%s, %s(%s) => 0x%x) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret));
                     }
-                    return dvmMethod.callStaticIntMethodV(new VaList32(DalvikVM.this, va_list));
+                    return ret;
                 }
             }
         });
@@ -948,7 +970,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticLongMethod(%s, %s%s) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args));
+                        System.out.println(String.format("JNIEnv->CallStaticLongMethod(%s, %s%s) was called", dvmClass, dvmMethod.methodName, dvmMethod.args));
                     }
                     long value = dvmMethod.callStaticLongMethod(ArmVarArg.create(emulator, DalvikVM.this));
                     emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (value >> 32));
@@ -971,12 +993,13 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    long ret = dvmMethod.callStaticLongMethodV(vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticLongMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallStaticLongMethodV(%s, %s(%s) => 0x%x) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret));
                     }
-                    long value = dvmMethod.callStaticLongMethodV(new VaList32(DalvikVM.this, va_list));
-                    emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (value >> 32));
-                    return (value & 0xffffffffL);
+                    emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (ret >> 32));
+                    return (ret & 0xffffffffL);
                 }
             }
         });
@@ -995,7 +1018,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticVoidMethod(%s, %s%s) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args));
+                        System.out.println(String.format("JNIEnv->CallStaticVoidMethod(%s, %s%s) was called", dvmClass, dvmMethod.methodName, dvmMethod.args));
                     }
                     dvmMethod.callStaticVoidMethod(ArmVarArg.create(emulator, DalvikVM.this));
                     return 0;
@@ -1017,10 +1040,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    dvmMethod.callStaticVoidMethodV(vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallStaticVoidMethodV(%s, %s%s, 0x%x) was called", dvmClass.value, dvmMethod.methodName, dvmMethod.args, va_list.toUIntPeer()));
+                        System.out.println(String.format("JNIEnv->CallStaticVoidMethodV(%s, %s(%s)) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs()));
                     }
-                    dvmMethod.callStaticVoidMethodV(new VaList32(DalvikVM.this, va_list));
                     return 0;
                 }
             }
@@ -1059,10 +1083,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    DvmObject<?> obj = dvmField.getStaticObjectField();
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->GetStaticObjectField(%s, %s, %s) was called", dvmClass.value, dvmField.fieldName, dvmField.fieldType));
+                        System.out.println(String.format("JNIEnv->GetStaticObjectField(%s, %s %s => %s) was called", dvmClass, dvmField.fieldName, dvmField.fieldType, obj));
                     }
-                    return dvmField.getStaticObjectField();
+                    return addLocalObject(obj);
                 }
             }
         });
@@ -1080,10 +1105,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    int ret = dvmField.getStaticIntField();
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->GetStaticIntField(%s, %s) was called", dvmClass.value, dvmField.fieldName));
+                        System.out.println(String.format("JNIEnv->GetStaticIntField(%s, %s => 0x%x) was called", dvmClass, dvmField.fieldName, ret));
                     }
-                    return dvmField.getStaticIntField();
+                    return ret;
                 }
             }
         });
@@ -1102,12 +1128,12 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException();
                 } else {
+                    long ret = dvmField.getStaticLongField();
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->GetStaticLongField(%s, %s) was called", dvmClass.value, dvmField.fieldName));
+                        System.out.println(String.format("JNIEnv->GetStaticLongField(%s, %s => 0x%x) was called", dvmClass, dvmField.fieldName, ret));
                     }
-                    long value = dvmField.getStaticLongField();
-                    context.setR1((int) (value >> 32));
-                    return value;
+                    context.setR1((int) (ret >> 32));
+                    return ret;
                 }
             }
         });
@@ -1127,10 +1153,10 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new UnicornException("dvmClass=" + dvmClass);
                 } else {
-                    if (verbose) {
-                        System.out.println(String.format("JNIEnv->SetStaticLongField(%s, %s, %d) was called", dvmClass.value, dvmField.fieldName, value));
-                    }
                     dvmField.setStaticLongField(value);
+                    if (verbose) {
+                        System.out.println(String.format("JNIEnv->SetStaticLongField(%s, %s, 0x%x) was called", dvmClass, dvmField.fieldName, value));
+                    }
                 }
                 return 0;
             }
@@ -1162,7 +1188,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 String value = string.getValue();
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->GetStringUtfChars(%s, %s) was called", value, isCopy));
+                    System.out.println(String.format("JNIEnv->GetStringUtfChars(%s) was called", value));
                 }
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
@@ -1415,7 +1441,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("NewStringUTF bytes=" + bytes + ", string=" + string);
                 }
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->NewStringUTF(%s, %s) was called", string, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                    System.out.println(String.format("JNIEnv->NewStringUTF(%s) was called from %s", string, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
                 return addObject(new StringObject(DalvikVM.this, string), false);
             }
@@ -1647,7 +1673,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmObject<?> dvmGlobalObject = globalObjectMap.get(object.toUIntPeer());
                 DvmObject<?> dvmLocalObject = localObjectMap.get(object.toUIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetObjectRefType object=" + object + ", dvmGlobalObject=" + dvmGlobalObject + ", dvmLocalObject=" + dvmLocalObject);
+                    log.debug("GetObjectRefType object=" + object + ", dvmGlobalObject=" + dvmGlobalObject + ", dvmLocalObject=" + dvmLocalObject + ", LR=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 if (dvmGlobalObject != null) {
                     return JNIGlobalRefType;

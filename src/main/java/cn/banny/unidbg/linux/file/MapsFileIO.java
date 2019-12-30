@@ -18,10 +18,14 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
     private static final Log log = LogFactory.getLog(MapsFileIO.class);
 
     public MapsFileIO(int oflags, String path, Collection<Module> modules) {
-        super(oflags, path, getMapsData(modules));
+        super(oflags, path, getMapsData(modules, null));
     }
 
-    private static byte[] getMapsData(Collection<Module> modules) {
+    protected MapsFileIO(int oflags, String path, Collection<Module> modules, String additionContent) {
+        super(oflags, path, getMapsData(modules, additionContent));
+    }
+
+    private static byte[] getMapsData(Collection<Module> modules, String additionContent) {
         List<MemRegion> list = new ArrayList<>(modules.size());
         for (Module module : modules) {
             list.addAll(module.getRegions());
@@ -53,6 +57,9 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
             }
             builder.append(memRegion.getName());
             builder.append('\n');
+        }
+        if (additionContent != null) {
+            builder.append(additionContent).append('\n');
         }
         builder.append("ffff0000-ffff1000 r-xp 00000000 00:00 0          [vectors]");
         if (log.isDebugEnabled()) {

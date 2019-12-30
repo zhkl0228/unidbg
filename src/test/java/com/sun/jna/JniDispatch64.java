@@ -51,6 +51,7 @@ public class JniDispatch64 extends AbstractJni {
 
         vm = emulator.createDalvikVM(null);
         vm.setJni(this);
+        vm.setVerbose(true);
         DalvikModule dm = vm.loadLibrary(new File("src/test/resources/example_binaries/arm64-v8a/libjnidispatch.so"), false);
         dm.callJNI_OnLoad(emulator);
         this.module = dm.getModule();

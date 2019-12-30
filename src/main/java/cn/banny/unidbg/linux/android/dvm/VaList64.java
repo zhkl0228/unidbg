@@ -10,7 +10,7 @@ import org.apache.commons.logging.LogFactory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public class VaList64 implements VaList {
+public class VaList64 extends VaList {
 
     private static final Log log = LogFactory.getLog(VaList64.class);
 
@@ -18,6 +18,7 @@ public class VaList64 implements VaList {
     private final ByteBuffer buffer;
 
     VaList64(Emulator emulator, BaseVM vm, UnicornPointer va_list, DvmMethod method) {
+        super(method);
         this.vm = vm;
 
         long base_p = va_list.getLong(0);
@@ -190,4 +191,15 @@ public class VaList64 implements VaList {
         return buffer.getLong();
     }
 
+    @Override
+    public float getFloat(int offset) {
+        buffer.position(offset);
+        return buffer.getFloat();
+    }
+
+    @Override
+    public double getDouble(int offset) {
+        buffer.position(offset);
+        return buffer.getDouble();
+    }
 }

@@ -179,13 +179,13 @@ class DvmMethod implements Hashable {
         vm.jni.callStaticVoidMethodV(vm, dvmClass, signature, vaList);
     }
 
-    int newObjectV(VaList vaList) {
+    DvmObject<?> newObjectV(VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {
             log.debug("newObjectV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        return vm.addObject(vm.jni.newObjectV(vm, dvmClass, signature, vaList), false);
+        return vm.jni.newObjectV(vm, dvmClass, signature, vaList);
     }
 
     int newObject(VarArg varArg) {

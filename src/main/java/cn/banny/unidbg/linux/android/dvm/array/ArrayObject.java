@@ -3,9 +3,9 @@ package cn.banny.unidbg.linux.android.dvm.array;
 import cn.banny.unidbg.linux.android.dvm.Array;
 import cn.banny.unidbg.linux.android.dvm.DvmObject;
 
-public class ArrayObject extends BaseArray<DvmObject[]> implements Array<DvmObject[]> {
+public class ArrayObject extends BaseArray<DvmObject<?>[]> implements Array<DvmObject<?>[]> {
 
-    public ArrayObject(DvmObject...value) {
+    public ArrayObject(DvmObject<?>...value) {
         super(value);
     }
 
@@ -15,7 +15,7 @@ public class ArrayObject extends BaseArray<DvmObject[]> implements Array<DvmObje
     }
 
     @Override
-    public void setData(int start, DvmObject[] data) {
+    public void setData(int start, DvmObject<?>[] data) {
         System.arraycopy(data, 0, value, start, data.length);
     }
 }

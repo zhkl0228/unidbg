@@ -50,8 +50,13 @@ public class DvmObject<T> implements Hashable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "value=" + value +
-                '}';
+        if (objectType == null) {
+            return getClass().getSimpleName() + "{" +
+                    "value=" + value +
+                    '}';
+        }
+
+        return objectType.getName() + "@" + Integer.toHexString(hashCode());
     }
+
 }

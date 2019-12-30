@@ -17,14 +17,13 @@ class DvmField implements Hashable {
         this.fieldType = fieldType;
     }
 
-    int getStaticObjectField() {
+    DvmObject<?> getStaticObjectField() {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("getStaticObjectField dvmClass=" + dvmClass + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        DvmObject<?> object = vm.jni.getStaticObjectField(vm, dvmClass, signature);
-        return vm.addObject(object, false);
+        return vm.jni.getStaticObjectField(vm, dvmClass, signature);
     }
 
     int getStaticIntField() {
@@ -36,13 +35,13 @@ class DvmField implements Hashable {
         return dvmClass.vm.jni.getStaticIntField(vm, dvmClass, signature);
     }
 
-    int getObjectField(DvmObject<?> dvmObject) {
+    DvmObject<?> getObjectField(DvmObject<?> dvmObject) {
         String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("getObjectField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        return vm.addObject(vm.jni.getObjectField(vm, dvmObject, signature), false);
+        return vm.jni.getObjectField(vm, dvmObject, signature);
     }
 
     int getIntField(DvmObject<?> dvmObject) {

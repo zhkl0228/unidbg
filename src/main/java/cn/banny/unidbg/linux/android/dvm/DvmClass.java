@@ -27,6 +27,10 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return value;
     }
 
+    public String getName() {
+        return value.replace('/', '.');
+    }
+
     public DvmObject<?> newObject(Object value) {
         DvmObject<?> obj = new DvmObject<>(this, value);
         vm.addObject(obj, false);
@@ -148,7 +152,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
 
     @Override
     public String toString() {
-        return getClassName();
+        return "class " + getClassName();
     }
 
     final Map<String, UnicornPointer> nativesMap = new HashMap<>();

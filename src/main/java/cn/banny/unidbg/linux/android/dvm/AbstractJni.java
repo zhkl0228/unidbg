@@ -144,7 +144,7 @@ public abstract class AbstractJni implements Jni {
             case "java/lang/String->toString()Ljava/lang/String;":
                 return dvmObject;
             case "java/lang/Class->getName()Ljava/lang/String;":
-                return new StringObject(vm, ((DvmClass) dvmObject).getClassName().replace('/', '.'));
+                return new StringObject(vm, ((DvmClass) dvmObject).getName());
             case "android/view/accessibility/AccessibilityManager->getEnabledAccessibilityServiceList(I)Ljava/util/List;":
                 return new ArrayListObject(vm, Collections.<DvmObject<?>>emptyList());
             case "java/util/Enumeration->nextElement()Ljava/lang/Object;":
