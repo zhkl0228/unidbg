@@ -66,7 +66,7 @@ public class SystemPropertyHook implements HookListener {
                 }
 
                 context.getPointerArg(1).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
-                return HookStatus.LR(emulator, value.length());
+                return HookStatus.LR(emulator, data.length);
             }
         }
 
