@@ -7,6 +7,7 @@ import cn.banny.unidbg.Svc;
 import cn.banny.unidbg.arm.ARM;
 import cn.banny.unidbg.arm.ARMEmulator;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.file.IOResolver;
 import cn.banny.unidbg.linux.android.AndroidResolver;
@@ -314,7 +315,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     u.reg_write(ArmConst.UC_ARM_REG_R0, clock_gettime(u, emulator));
                     return;
                 case 266:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, statfs(emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, statfs64(emulator));
                     return;
                 case 268:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(u));
@@ -1332,17 +1333,19 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         return ret;
     }
 
-    private int statfs(Emulator emulator) {
-        Pointer pathPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+    private int statfs64(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathPointer = context.getPointerArg(0);
+        int size = context.getIntArg(1);
+        Pointer buf = context.getPointerArg(2);
         String path = pathPointer.getString(0);
         if (log.isDebugEnabled()) {
-            log.debug("statfs pathPointer=" + pathPointer + ", buf=" + buf + ", path=" + path);
+            log.debug("statfs64 pathPointer=" + pathPointer + ", buf=" + buf + ", size=" + size + ", path=" + path);
         }
         if("/sys/fs/selinux".equals(path)) {
             return -1;
         }
-        throw new UnsupportedOperationException(path);
+        throw new UnicornException("statfs64 path=" + path + ", size=" + size + ", buf=" + buf);
     }
 
     private static final int PR_SET_DUMPABLE = 4;
