@@ -1208,7 +1208,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("GetArrayLength array=" + array);
                 }
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->GetArrayLength(%s) was called", array.length()));
+                    System.out.println(String.format("JNIEnv->GetArrayLength(%s => %s) was called", array, array.length()));
                 }
                 return array.length();
             }

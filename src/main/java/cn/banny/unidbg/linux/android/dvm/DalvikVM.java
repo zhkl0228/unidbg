@@ -1227,7 +1227,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetArrayLength array=" + array + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->GetArrayLength(%s) was called", array.length()));
+                    System.out.println(String.format("JNIEnv->GetArrayLength(%s => %s) was called", array, array.length()));
                 }
                 return array.length();
             }
@@ -1248,7 +1248,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException("elementClass=" + elementClass);
                 }
 
-                DvmObject<?> obj = getObject(initialElement.toUIntPeer());
+                DvmObject<?> obj = size == 0 ? null : getObject(initialElement.toUIntPeer());
                 DvmObject<?>[] array = new DvmObject[size];
                 for (int i = 0; i < size; i++) {
                     array[i] = new DvmObject<>(dvmClass, obj);
