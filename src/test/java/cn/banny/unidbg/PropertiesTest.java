@@ -13,7 +13,7 @@ public class PropertiesTest extends TestCase {
     private static final int PROP_AREA_VERSION = 0xfc6ed0ab;
 
     public void testParse() throws Exception {
-        File file = new File("src/main/resources/android/sdk23/dev/__properties__");
+        File file = new File("src/main/resources/android/sdk19/dev/__properties__");
         ByteBuffer buffer = ByteBuffer.allocate((int) file.length());
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.put(FileUtils.readFileToByteArray(file));
@@ -33,7 +33,8 @@ public class PropertiesTest extends TestCase {
         String[] props = new String[]{
                 "ro.build.version.sdk",
                 "ro.serialno",
-                "ro.build.version.release"
+                "ro.build.version.release",
+                "persist.sys.root_access"
         };
         for (String key : props) {
             System.err.println(key + "=" + findProperty(buffer, startPos, key));
@@ -53,6 +54,9 @@ public class PropertiesTest extends TestCase {
             PropBt root = new PropBt(buffer, startPos + children_offset);
             current = find_prop_bt(buffer, root, want_subtree ? name.substring(0, index) : name, startPos);
             if (current == null) {
+                if (!want_subtree) {
+                    return null;
+                }
                 throw new IllegalStateException("current is null");
             }
 

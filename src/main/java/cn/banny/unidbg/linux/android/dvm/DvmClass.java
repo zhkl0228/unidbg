@@ -189,6 +189,9 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         if (fnPtr == null) {
             throw new IllegalArgumentException("find method failed: " + method);
         }
+        if (vm.verbose) {
+            System.out.println(String.format("Find native function %s => %s", "Java_" + getClassName().replace('/', '_') + "_" + method, fnPtr));
+        }
         return fnPtr;
     }
 

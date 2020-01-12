@@ -1,10 +1,7 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.LibraryResolver;
-import cn.banny.unidbg.Module;
-import cn.banny.unidbg.Symbol;
+import cn.banny.unidbg.*;
 import cn.banny.unidbg.android.EmulatorTest;
 import cn.banny.unidbg.arm.HookStatus;
 import cn.banny.unidbg.arm.context.RegisterContext;
@@ -42,7 +39,8 @@ public class SubstrateTest extends EmulatorTest {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
         loader.setObjcRuntime(true);
-//        emulator.attach().addBreakPoint(null, 0x4097855c);
+//        emulator.attach().addBreakPoint(null, 0x402c730e);
+//        emulator.attach().addBreakPoint(null, 0x402c730e - 0x0000630E + 0x00001C62);
 //        emulator.traceCode();
         long start = System.currentTimeMillis();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
@@ -171,7 +169,7 @@ public class SubstrateTest extends EmulatorTest {
                 RegisterContext context = emulator.getContext();
                 Pointer pointer1 = context.getPointerArg(0);
                 Pointer pointer2 = context.getPointerArg(1);
-                System.out.println("strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0) + ", originFunction=0x" + Long.toHexString(originFunction));
+                System.out.println("strcmp str1=" + (pointer1 == null ? null : pointer1.getString(0)) + ", str2=" + (pointer2 == null ? null : pointer2.getString(0)) + ", originFunction=0x" + Long.toHexString(originFunction));
                 return HookStatus.RET(emulator, originFunction);
             }
         });
@@ -185,8 +183,8 @@ public class SubstrateTest extends EmulatorTest {
         symbol = module.findSymbolByName("_MSFindSymbol");
         assertNotNull(symbol);
         start = System.currentTimeMillis();
-        // emulator.traceCode();
-        numbers = symbol.call(emulator, ret, "_MSGetImageByName");
+//         emulator.traceCode();
+        numbers = symbol.call(emulator, UnicornPointer.pointer(emulator, ret), "_MSGetImageByName");
         ret = numbers[0].intValue() & 0xffffffffL;
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }

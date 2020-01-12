@@ -58,5 +58,4 @@ public class DvmObject<T> implements Hashable {
 
         return objectType.getName() + "@" + Integer.toHexString(hashCode());
     }
-
 }

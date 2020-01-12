@@ -6,15 +6,15 @@ import com.sun.jna.Pointer;
 import java.util.Arrays;
 import java.util.List;
 
-public class VmRegionRecurse64Reply extends UnicornStructure {
+public class VmRegionRecurse32Reply extends UnicornStructure {
 
-    public VmRegionRecurse64Reply(Pointer p) {
+    public VmRegionRecurse32Reply(Pointer p) {
         super(p);
     }
 
     public NDR_record NDR;
     public int retCode;
-    public long address;
+    public int address;
     public int size;
     public int nestingDepth;
     public int infoCnt = 7;

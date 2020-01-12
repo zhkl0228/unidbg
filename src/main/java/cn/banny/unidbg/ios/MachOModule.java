@@ -159,17 +159,15 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
             pointer.setPointer(0, arg);
         }
 
-        UnicornPointer kernelArgumentBlock = memory.allocateStack(4);
-        assert kernelArgumentBlock != null;
-        kernelArgumentBlock.setInt(0, argc);
-
         if (log.isDebugEnabled()) {
             UnicornPointer sp = memory.allocateStack(0);
             byte[] data = sp.getByteArray(0, (int) (stack.peer - sp.peer));
-            Inspector.inspect(data, "kernelArgumentBlock=" + kernelArgumentBlock + ", envPointer=" + envPointer + ", auxvPointer=" + auxvPointer);
+            Inspector.inspect(data, "callEntry sp=0x" + Long.toHexString(memory.getStackPoint()) + ", envPointer=" + envPointer + ", auxvPointer=" + auxvPointer);
         }
 
-        return emulator.eEntry(machHeader + entryPoint, kernelArgumentBlock.peer).intValue();
+        Pointer argvPointer = memory.allocateStack(0);
+        return emulateFunction(emulator, machHeader + entryPoint, argc, argvPointer, envPointer, auxvPointer)[0].intValue();
+//        return emulator.eFunc(machHeader + entryPoint, argc, argvPointer)[0].intValue();
     }
 
     void callRoutines(Emulator emulator) {
@@ -354,7 +352,7 @@ public class MachOModule extends Module implements cn.banny.unidbg.ios.MachO {
             } else if (arg instanceof Number) {
                 list.add((Number) arg);
             } else if(arg == null) {
-                list.add(0); // null
+                list.add(new PointerNumber(null)); // null
             } else {
                 throw new IllegalStateException("Unsupported arg: " + arg);
             }

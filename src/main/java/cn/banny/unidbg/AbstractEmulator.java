@@ -297,7 +297,9 @@ public abstract class AbstractEmulator implements Emulator {
                 codeHook.redirect = redirect;
                 unicorn.hook_add(codeHook, traceInstructionBegin, traceInstructionEnd, this);
             }
-            log.debug("emulate " + pointer + " started sp=" + getStackPointer());
+            if (log.isDebugEnabled()) {
+                log.debug("emulate " + pointer + " started sp=" + getStackPointer());
+            }
             start = System.currentTimeMillis();
             unicorn.emu_start(begin, until, timeout, 0);
             return (Number) unicorn.reg_read(is64Bit() ? Arm64Const.UC_ARM64_REG_X0 : ArmConst.UC_ARM_REG_R0);
@@ -326,7 +328,9 @@ public abstract class AbstractEmulator implements Emulator {
             }
             unicorn.hook_del(codeHook);
             codeHook.redirect = null;
-            log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+            if (log.isDebugEnabled()) {
+                log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+            }
 
             IOUtils.closeQuietly(redirect);
         }
@@ -393,8 +397,9 @@ public abstract class AbstractEmulator implements Emulator {
 
     protected final Number[] eFunc(long begin, Arguments args, long lr, boolean entry) {
         long sp = getMemory().getStackPoint();
-        if (sp % 8 != 0) {
-            log.warn("SP NOT 8 byte aligned", new Exception(getStackPointer().toString()));
+        int align = is64Bit() ? 16 : 8;
+        if (sp % align != 0) {
+            log.info("SP NOT " + align + " byte aligned", new Exception(getStackPointer().toString()));
         }
         final List<Number> numbers = new ArrayList<>(10);
         numbers.add(emulate(begin, lr, timeout, entry));

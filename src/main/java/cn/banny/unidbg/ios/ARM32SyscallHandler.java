@@ -1,10 +1,16 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.auxiliary.Inspector;
-import cn.banny.unidbg.*;
-import cn.banny.unidbg.arm.*;
+import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.Module;
+import cn.banny.unidbg.StopEmulatorException;
+import cn.banny.unidbg.Svc;
+import cn.banny.unidbg.arm.ARM;
+import cn.banny.unidbg.arm.ARMEmulator;
+import cn.banny.unidbg.arm.Cpsr;
 import cn.banny.unidbg.arm.context.Arm32RegisterContext;
 import cn.banny.unidbg.arm.context.EditableArm32RegisterContext;
+import cn.banny.unidbg.arm.context.RegisterContext;
 import cn.banny.unidbg.file.FileIO;
 import cn.banny.unidbg.ios.file.LocalDarwinUdpSocket;
 import cn.banny.unidbg.ios.struct.kernel.*;
@@ -29,6 +35,8 @@ import unicorn.UnicornConst;
 import unicorn.UnicornException;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
@@ -287,6 +295,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 398:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, open_NOCANCEL(emulator));
                     return;
+                case 266:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, shm_open(emulator));
+                    return;
                 case 399:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, close_NOCANCEL(emulator));
                     return;
@@ -316,7 +327,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
 
         Module module = emulator.getMemory().findModuleByAddress(pc.peer);
-        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall + (module == null ? "" : (", module=" + module + ", address=0x" + Long.toHexString(pc.peer - module.base))), exception);
+        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
@@ -973,12 +984,13 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         UnicornPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
         pointer.write(0, new byte[(int) size], 0, (int) size);
         address.setPointer(0, pointer);
+        String str = "_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag);
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
+            log.debug(str);
         } else {
             Log log = LogFactory.getLog("cn.banny.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
+                log.debug(str);
             }
         }
         return 0;
@@ -1157,13 +1169,13 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
             case 3822: // vm_region_recurse_64
             {
-                VmRegionRecurse64Request args = new VmRegionRecurse64Request(request);
+                VmRegionRecurse32Request args = new VmRegionRecurse32Request(request);
                 args.unpack();
                 if (log.isDebugEnabled()) {
                     log.debug("vm_region_recurse_64 args=" + args);
                 }
 
-                VmRegionRecurse64Reply reply = new VmRegionRecurse64Reply(request);
+                VmRegionRecurse32Reply reply = new VmRegionRecurse32Reply(request);
                 reply.unpack();
 
                 header.msgh_bits &= 0xff;
@@ -1175,7 +1187,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
                 MemoryMap memoryMap = null;
                 for (MemoryMap mm : emulator.getMemory().getMemoryMap()) {
-                    if (args.address >= mm.base && args.address < mm.base + mm.size) {
+                    if (args.getAddress() >= mm.base && args.getAddress() < mm.base + mm.size) {
                         memoryMap = mm;
                         break;
                     }
@@ -1186,7 +1198,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 }
 
                 if (memoryMap == null) {
-                    log.warn("vm_region_recurse_64 failed address=0x" + Long.toHexString(args.address) + ", size=0x" + Integer.toHexString(args.size()));
+                    log.warn("vm_region_recurse_64 failed address=0x" + args.address + ", size=0x" + Integer.toHexString(args.size()));
                     return -1;
                 }
 
@@ -1288,7 +1300,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 if (log.isDebugEnabled()) {
                     log.debug("vm_copy reply=" + reply + ", header=" + header);
                 }
-                return 0;
+                return MACH_MSG_SUCCESS;
             }
             case 4813: // _kernelrpc_mach_vm_remap
             {
@@ -1330,12 +1342,206 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 if (log.isDebugEnabled()) {
                     log.debug("_kernelrpc_mach_vm_remap reply=" + reply + ", header=" + header);
                 }
-                return 0;
+                return MACH_MSG_SUCCESS;
+            }
+            case 404: { // vproc_mig_look_up2
+                VprocMigLookupRequest args = new VprocMigLookupRequest(request);
+                args.unpack();
+
+                VprocMigLookupReply reply = new VprocMigLookupReply(request);
+                reply.unpack();
+
+                header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.sp.name = STATIC_PORT;
+                reply.sp.pad1 = 0;
+                reply.sp.pad2 = 0;
+                reply.sp.disposition = 17;
+                reply.sp.type = MACH_MSG_PORT_DESCRIPTOR;
+                reply.pack();
+
+                VprocMigLookupData data = new VprocMigLookupData(request.share(reply.size()));
+                if (log.isDebugEnabled()) {
+                    log.debug("vproc_mig_look_up2 args=" + args + ", data=" + data);
+                }
+
+                data.size = 0x20;
+                Arrays.fill(data.au_tok.val, 0);
+                data.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vproc_mig_look_up2 reply=" + reply + ", data=" + data);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 78945669: { // notify_server_register_plain
+                NotifyServerRegisterPlainRequest args = new NotifyServerRegisterPlainRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    Pointer pointer = UnicornPointer.pointer(emulator, args.name);
+                    log.debug("notify_server_register_plain args=" + args + ", name=" + (pointer == null ? null : new String(pointer.getByteArray(0, args.nameCnt), StandardCharsets.UTF_8)));
+                }
+
+                NotifyServerRegisterPlainReply reply = new NotifyServerRegisterPlainReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.ret = 0;
+                reply.code = 0;
+                reply.clientId = STATIC_PORT;
+                reply.status = NOTIFY_STATUS_OK;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("notify_server_register_plain reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 78945681: { // notify_server_get_state
+                NotifyServerGetStateRequest args = new NotifyServerGetStateRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("notify_server_get_state args=" + args);
+                }
+
+                NotifyServerGetStateReply reply = new NotifyServerGetStateReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.ret = 0;
+                reply.code = 0;
+                reply.version = 0;
+                reply.pid = emulator.getPid();
+                reply.status = NOTIFY_STATUS_OK;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("notify_server_get_state reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 78945679: { // notify_server_cancel
+                NotifyServerCancelRequest args = new NotifyServerCancelRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("notify_server_cancel args=" + args);
+                }
+
+                NotifyServerCancelReply reply = new NotifyServerCancelReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.ret = 0;
+                reply.code = 0;
+                reply.status = NOTIFY_STATUS_OK;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("notify_server_cancel reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 78945670: { // notify_server_register_check
+                NotifyServerRegisterCheckRequest args = new NotifyServerRegisterCheckRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    Pointer pointer = UnicornPointer.pointer(emulator, args.name);
+                    log.debug("notify_server_register_check args=" + args + ", name=" + (pointer == null ? null : new String(pointer.getByteArray(0, args.namelen), StandardCharsets.UTF_8)));
+                }
+
+                NotifyServerRegisterCheckReply reply = new NotifyServerRegisterCheckReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.ret = 0;
+                reply.code = 0;
+                reply.shmsize = 0;
+                reply.slot = 0;
+                reply.clientId = STATIC_PORT;
+                reply.status = NOTIFY_STATUS_OK;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("notify_server_register_check reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 118: { // asl_server_message
+                AslServerMessageRequest args = new AslServerMessageRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("asl_server_message args=" + args);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 78945673: { // notify_server_register_mach_port
+                NotifyServerRegisterMachPortRequest args = new NotifyServerRegisterMachPortRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    Pointer pointer = UnicornPointer.pointer(emulator, args.name);
+                    log.debug("notify_server_register_mach_port args=" + args + ", name=" + (pointer == null ? null : new String(pointer.getByteArray(0, args.namelen), StandardCharsets.UTF_8)));
+                }
+
+                NotifyServerRegisterMachPortReply reply = new NotifyServerRegisterMachPortReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.ret = 0;
+                reply.code = 0;
+                reply.clientId = STATIC_PORT;
+                reply.status = NOTIFY_STATUS_OK;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("notify_server_register_mach_port reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
             }
             default:
+                log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 Log log = LogFactory.getLog("cn.banny.unidbg.AbstractEmulator");
                 if (log.isDebugEnabled()) {
-                    log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     emulator.attach().debug();
                 }
                 break;
@@ -1441,6 +1647,17 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", fd=" + fd);
         }
         return fd;
+    }
+
+    private int shm_open(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pointer = context.getPointerArg(0);
+        int oflags = context.getIntArg(1);
+        int mode = context.getIntArg(2);
+        String name = pointer.getString(0);
+        log.info("shm_open name=" + name + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
     }
 
     private int getpid(Emulator emulator) {

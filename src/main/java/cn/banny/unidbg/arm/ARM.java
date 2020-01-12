@@ -70,6 +70,9 @@ public class ARM {
                     number = (Number) unicorn.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r0=0x%x", value));
+                    if (value < 0) {
+                        builder.append('(').append(value).append(')');
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_R1:
                     number = (Number) unicorn.reg_read(reg);

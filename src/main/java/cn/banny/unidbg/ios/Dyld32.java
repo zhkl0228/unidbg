@@ -94,11 +94,17 @@ public class Dyld32 extends Dyld {
                         public long handle(Emulator emulator) {
                             int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            long ret;
                             if (image_index < 0 || image_index >= modules.length) {
-                                return 0;
+                                ret = 0;
+                            } else {
+                                MachOModule module = (MachOModule) modules[image_index];
+                                ret = module.createPathMemory(svcMemory).peer;
                             }
-                            MachOModule module = (MachOModule) modules[image_index];
-                            return module.createPathMemory(svcMemory).peer;
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_get_image_name ret=0x" + Long.toHexString(ret));
+                            }
+                            return ret;
                         }
                     });
                 }
@@ -111,11 +117,17 @@ public class Dyld32 extends Dyld {
                         public long handle(Emulator emulator) {
                             int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            long ret;
                             if (image_index < 0 || image_index >= modules.length) {
-                                return 0;
+                                ret = 0;
+                            } else {
+                                MachOModule module = (MachOModule) modules[image_index];
+                                ret = module.machHeader;
                             }
-                            MachOModule module = (MachOModule) modules[image_index];
-                            return module.machHeader;
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_get_image_header machHeader=0x" + Long.toHexString(ret));
+                            }
+                            return ret;
                         }
                     });
                 }
@@ -127,7 +139,9 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            log.debug("__dyld_get_image_slide mh=" + mh);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_get_image_slide mh=" + mh);
+                            }
                             return mh == null ? 0 : computeSlide(emulator, mh.peer);
                         }
                     });
@@ -160,7 +174,11 @@ public class Dyld32 extends Dyld {
                     __dyld_image_count = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator emulator) {
-                            return loader.getLoadedModules().size();
+                            int ret = loader.getLoadedModules().size();
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_image_count size=" + ret);
+                            }
+                            return ret;
                         }
                     });
                 }
@@ -396,10 +414,11 @@ public class Dyld32 extends Dyld {
                                         pointer = pointer.share(-4);
                                         pointer.setInt(0, (int) computeSlide(emulator, mm.machHeader));
 
+                                        String str = "[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader);
                                         if (log.isDebugEnabled()) {
-                                            log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader));
+                                            log.debug(str);
                                         } else if (Dyld32.log.isDebugEnabled()) {
-                                            Dyld32.log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader));
+                                            Dyld32.log.debug(str);
                                         }
                                         pointer = pointer.share(-4); // callback
                                         pointer.setPointer(0, callback);

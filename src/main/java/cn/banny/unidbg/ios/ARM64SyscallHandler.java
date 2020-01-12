@@ -948,7 +948,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 }
                 return MACH_MSG_SUCCESS;
             }
-            case 3822: // vm_region_recurse_64
+            case 4815: // vm_region_recurse_64
             {
                 VmRegionRecurse64Request args = new VmRegionRecurse64Request(request);
                 args.unpack();
@@ -968,7 +968,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
                 MemoryMap memoryMap = null;
                 for (MemoryMap mm : emulator.getMemory().getMemoryMap()) {
-                    if (args.address >= mm.base && args.address < mm.base + mm.size) {
+                    if (args.getAddress() >= mm.base && args.getAddress() < mm.base + mm.size) {
                         memoryMap = mm;
                         break;
                     }
@@ -980,7 +980,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
                 reply.NDR = args.NDR;
                 reply.retCode = 0; // success
-                reply.address = (int) memoryMap.base;
+                reply.address = memoryMap.base;
                 reply.size = (int) memoryMap.size;
                 reply.infoCnt = args.infoCnt;
                 reply.nestingDepth = args.nestingDepth;
@@ -1050,6 +1050,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                Log log = LogFactory.getLog("cn.banny.unidbg.AbstractEmulator");
+                if (log.isDebugEnabled()) {
+                    emulator.attach().debug();
+                }
                 break;
         }
 

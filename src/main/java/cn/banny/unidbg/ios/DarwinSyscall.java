@@ -8,10 +8,13 @@ public interface DarwinSyscall {
     int MACH_RCV_MSG = 0x00000002;
 
     int MACH_MSG_PORT_DESCRIPTOR = 0;
+    int MACH_MSG_OOL_DESCRIPTOR = 1;
     int MACH_MSGH_BITS_COMPLEX = 0x80000000;	/* message is complex */
 
     int TASK_BOOTSTRAP_PORT = 4;
 
     int HOST_PRIORITY_INFO = 5; /* priority information */
+
+    int NOTIFY_STATUS_OK = 0;
 
 }

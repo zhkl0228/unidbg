@@ -143,6 +143,10 @@ public class LinuxModule extends Module {
             argc++;
         }
 
+        if (argc % 2 != 0) { // alignment sp
+            memory.allocateStack(emulator.getPointerSize());
+        }
+
         Pointer auxvPointer = memory.allocateStack(emulator.getPointerSize());
         assert auxvPointer != null;
         auxvPointer.setPointer(0, null);
@@ -195,7 +199,7 @@ public class LinuxModule extends Module {
             } else if(arg instanceof Hashable) {
                 list.add(arg.hashCode()); // dvm object
             } else if(arg == null) {
-                list.add(0); // null
+                list.add(new PointerNumber(null)); // null
             } else {
                 throw new IllegalStateException("Unsupported arg: " + arg);
             }
