@@ -255,7 +255,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.newObjectV(vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->NewObjectV(%s, %s(%s) => %s) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj));
@@ -356,7 +356,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException("dvmObject=" + dvmObject + ", dvmClass=" + dvmClass + ", jmethodID=" + jmethodID);
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callObjectMethodV(dvmObject, vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallObjectMethodV(%s, %s(%s) => %s) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), obj));
@@ -403,7 +403,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     int ret = dvmMethod.callBooleanMethodV(dvmObject, vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallBooleanMethodV(%s, %s(%s) => %s) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE));
@@ -450,7 +450,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     int ret = dvmMethod.callIntMethodV(dvmObject, vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallIntMethodV(%s, %s(%s) => 0x%x) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret));
@@ -475,7 +475,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     long ret = dvmMethod.callLongMethodV(dvmObject, vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallLongMethodV(%s, %s(%s) => 0x%x) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret));
@@ -501,7 +501,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     float ret = dvmMethod.callFloatMethodV(dvmObject, vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallFloatMethodV(%s, %s(%s) => %s) was called", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret));
@@ -553,7 +553,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     dvmMethod.callVoidMethodV(dvmObject, vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called", dvmClass.value, dvmMethod.methodName, vaList.formatArgs()));
@@ -856,7 +856,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callStaticObjectMethodV(vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallStaticObjectMethodV(%s, %s(%s) => %s) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj));
@@ -901,7 +901,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     int ret = dvmMethod.callStaticBooleanMethodV(vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallStaticBooleanMethodV(%s, %s(%s) => %s) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE));
@@ -946,7 +946,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     int ret = dvmMethod.callStaticIntMethodV(vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallStaticIntMethodV(%s, %s(%s) => 0x%x) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret));
@@ -993,7 +993,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     long ret = dvmMethod.callStaticLongMethodV(vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallStaticLongMethodV(%s, %s(%s) => 0x%x) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret));
@@ -1040,7 +1040,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    VaList vaList = new VaList32(DalvikVM.this, va_list, dvmMethod);
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     dvmMethod.callStaticVoidMethodV(vaList);
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallStaticVoidMethodV(%s, %s(%s)) was called", dvmClass, dvmMethod.methodName, vaList.formatArgs()));

@@ -97,7 +97,7 @@ public class VaList64 extends VaList {
                             base_p = (base_p + 15) & 0xfffffffffffffff8L;
                         }
                         assert pointer != null;
-                        buffer.putFloat(pointer.getFloat(0));
+                        buffer.putDouble(pointer.getDouble(0));
                         break;
                     }
                     case 'F': {
@@ -116,7 +116,7 @@ public class VaList64 extends VaList {
                             base_p = (base_p + 15) & 0xfffffffffffffff8L;
                         }
                         assert pointer != null;
-                        buffer.putDouble(pointer.getDouble(0));
+                        buffer.putFloat((float) pointer.getDouble(0));
                         break;
                     }
                     case 'J': {
