@@ -109,6 +109,66 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                         continue;
                     }
                 }
+                if (line.startsWith("w")) {
+                    String command;
+                    String[] tokens = line.split("\\s+");
+                    if (tokens.length < 2) {
+                        System.out.println("wr0-wr7, wfp, wip, wsp <value>: write specified register");
+                        System.out.println("wb(address), ws(address), wi(address) <value>: write (byte, short, integer) memory of specified address, address must start with 0x");
+                        continue;
+                    }
+                    int value;
+                    try {
+                        command = tokens[0];
+                        int radix = 10;
+                        String str = tokens[1];
+                        if (str.startsWith("0x")) {
+                            str = str.substring(2);
+                            radix = 16;
+                        }
+                        value = Integer.parseInt(str, radix);
+                    } catch(NumberFormatException e) {
+                        e.printStackTrace();
+                        continue;
+                    }
+
+                    int reg = -1;
+                    if (command.startsWith("wr") && command.length() == 3) {
+                        char c = command.charAt(2);
+                        if (c >= '0' && c <= '7') {
+                            int r = c - '0';
+                            reg = ArmConst.UC_ARM_REG_R0 + r;
+                        }
+                    } else if ("wfp".equals(command)) {
+                        reg = ArmConst.UC_ARM_REG_FP;
+                    } else if ("wip".equals(command)) {
+                        reg = ArmConst.UC_ARM_REG_IP;
+                    } else if ("wsp".equals(command)) {
+                        reg = ArmConst.UC_ARM_REG_SP;
+                    } else if (command.startsWith("wb0x") || command.startsWith("ws0x") || command.startsWith("wi0x")) {
+                        long addr = Long.parseLong(command.substring(4).trim(), 16);
+                        Pointer pointer = UnicornPointer.pointer(emulator, addr);
+                        if (pointer != null) {
+                            if (command.startsWith("wb")) {
+                                pointer.setByte(0, (byte) value);
+                            } else if (command.startsWith("ws")) {
+                                pointer.setShort(0, (short) value);
+                            } else if (command.startsWith("wi")) {
+                                pointer.setInt(0, value);
+                            }
+                            dumpMemory(pointer, 16, pointer.toString(), false);
+                        } else {
+                            System.out.println(addr + " is null");
+                        }
+                        continue;
+                    }
+                    if (reg != -1) {
+                        Unicorn unicorn = emulator.getUnicorn();
+                        unicorn.reg_write(reg, value);
+                        ARM.showRegs(unicorn, new int[] { reg });
+                        continue;
+                    }
+                }
                 if ("bt".equals(line)) {
                     Memory memory = emulator.getMemory();
                     String maxLengthSoName = memory.getMaxLengthLibraryName();
@@ -238,6 +298,9 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("m(op) [size]: show memory, default size is 0x70, size may hex or decimal");
         System.out.println("mr0-mr7, mfp, mip, msp [size]: show memory of specified register");
         System.out.println("m(address) [size]: show memory of specified address, address must start with 0x");
+        System.out.println();
+        System.out.println("wr0-wr7, wfp, wip, wsp <value>: write specified register");
+        System.out.println("wb(address), ws(address), wi(address) <value>: write (byte, short, integer) memory of specified address, address must start with 0x");
         System.out.println();
         System.out.println("b(address): add temporarily breakpoint, address must start with 0x, can be module offset");
         System.out.println("b: add breakpoint of register PC");
