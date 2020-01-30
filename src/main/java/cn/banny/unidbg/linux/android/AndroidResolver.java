@@ -26,6 +26,13 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         this.needed = needed == null ? null : Arrays.asList(needed);
     }
 
+    private StdoutCallback callback;
+
+    @Override
+    public void setStdoutCallback(StdoutCallback callback) {
+        this.callback = callback;
+    }
+
     public int getSdk() {
         return sdk;
     }
@@ -70,7 +77,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
-                return new Stdout(oflags, stdio, path, IO.STDERR.equals(path));
+                return new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }

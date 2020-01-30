@@ -1,6 +1,7 @@
 package cn.banny.unidbg.ios;
 
 import cn.banny.unidbg.Emulator;
+import cn.banny.unidbg.linux.file.StdoutCallback;
 import cn.banny.unidbg.unix.IO;
 import cn.banny.unidbg.linux.android.AndroidResolver;
 import cn.banny.unidbg.linux.file.DirectoryFileIO;
@@ -36,6 +37,13 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
         return resolveLibrary(libraryName, version);
     }
 
+    private StdoutCallback callback;
+
+    @Override
+    public void setStdoutCallback(StdoutCallback callback) {
+        this.callback = callback;
+    }
+
     static LibraryFile resolveLibrary(String libraryName, String version) {
         String name = "/ios/" + version + libraryName.replace('+', 'p');
         URL url = DarwinResolver.class.getResource(name);
@@ -62,7 +70,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
-                return new Stdout(oflags, stdio, path, IO.STDERR.equals(path));
+                return new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }

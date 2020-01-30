@@ -1126,7 +1126,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private void exit_group(Unicorn u) {
         int status = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
-        log.info("exit with code: " + status, new Exception("exit_group status=" + status));
+        if (log.isDebugEnabled()) {
+            log.debug("exit with code: " + status, new Exception("exit_group status=" + status));
+        } else {
+            System.out.println("exit with code: " + status);
+        }
         u.emu_stop();
     }
 

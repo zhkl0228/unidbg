@@ -50,6 +50,10 @@ public class DalvikVM extends BaseVM implements VM {
                     return 0;
                 }
 
+                if (verbose) {
+                    System.out.println(String.format("JNIEnv->FindClass(%s) was called from %s", name, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                }
+
                 DvmClass dvmClass = resolveClass(name);
                 long hash = dvmClass.hashCode() & 0xffffffffL;
                 if (log.isDebugEnabled()) {

@@ -16,9 +16,11 @@ public class Stdout extends SimpleFileIO {
 
     private final boolean err;
     private PrintStream out;
+    private final StdoutCallback callback;
 
-    public Stdout(int oflags, File file, String path, boolean err) {
+    public Stdout(int oflags, File file, String path, boolean err, StdoutCallback callback) {
         super(oflags, file, path);
+        this.callback = callback;
 
         this.err = err;
         out = err ? System.err : System.out;
@@ -50,6 +52,9 @@ public class Stdout extends SimpleFileIO {
             }
             out.write(data);
             out.flush();
+            if (callback != null) {
+                callback.notifyOut(data, err);
+            }
 
             output.write(data);
             return data.length;
@@ -88,7 +93,7 @@ public class Stdout extends SimpleFileIO {
 
     @Override
     public FileIO dup2() {
-        Stdout dup = new Stdout(0, file, path, err);
+        Stdout dup = new Stdout(0, file, path, err, callback);
         dup.debugStream = debugStream;
         dup.op = op;
         dup.oflags = oflags;

@@ -22,6 +22,11 @@ public class AbsoluteInitFunction extends InitFunction {
 
     @Override
     public void call(Emulator emulator) {
+        long address = this.address;
+        if (!emulator.is64Bit()) {
+            address = (int) address;
+        }
+
         if (address == 0 || address == -1) {
             return;
         }
