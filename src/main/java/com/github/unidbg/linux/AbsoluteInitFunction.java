@@ -1,8 +1,8 @@
-package cn.banny.unidbg.linux;
+package com.github.unidbg.linux;
 
-import cn.banny.unidbg.Emulator;
-import cn.banny.unidbg.pointer.UnicornPointer;
-import cn.banny.unidbg.spi.InitFunction;
+import com.github.unidbg.Emulator;
+import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.spi.InitFunction;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
