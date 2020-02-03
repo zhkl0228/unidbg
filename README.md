@@ -33,7 +33,7 @@ Simple tests under src/test directory
 ![](assets/Utilities64.gif)
 
 ## More tests
-- [src/test/java/cn/banny/emulator/QDReaderJni.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/cn/banny/emulator/QDReaderJni.java)
+- [src/test/java/com/github/unidbg/android/QDReaderJni.java](https://github.com/zhkl0228/unidbg/blob/master/src/test/java/com/github/unidbg/android/QDReaderJni.java)
 
 ## Features
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.

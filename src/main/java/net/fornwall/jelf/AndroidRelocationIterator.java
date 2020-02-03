@@ -1,8 +1,8 @@
 package net.fornwall.jelf;
 
-import cn.banny.auxiliary.Inspector;
-import cn.banny.unidbg.ios.Utils;
-import cn.banny.utils.Hex;
+import com.github.unidbg.ios.Utils;
+import com.github.unidbg.utils.Inspector;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

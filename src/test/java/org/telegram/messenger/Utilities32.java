@@ -1,18 +1,18 @@
 package org.telegram.messenger;
 
-import cn.banny.auxiliary.Inspector;
-import cn.banny.unidbg.LibraryResolver;
-import cn.banny.unidbg.Module;
-import cn.banny.unidbg.arm.ARMEmulator;
-import cn.banny.unidbg.linux.android.AndroidARMEmulator;
-import cn.banny.unidbg.linux.android.AndroidResolver;
-import cn.banny.unidbg.linux.android.dvm.DalvikModule;
-import cn.banny.unidbg.linux.android.dvm.DvmClass;
-import cn.banny.unidbg.linux.android.dvm.VM;
-import cn.banny.unidbg.linux.android.dvm.array.ByteArray;
-import cn.banny.unidbg.linux.module.AndroidModule;
-import cn.banny.unidbg.linux.module.JniGraphics;
-import cn.banny.unidbg.memory.Memory;
+import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.Module;
+import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.linux.android.AndroidARMEmulator;
+import com.github.unidbg.linux.android.AndroidResolver;
+import com.github.unidbg.linux.android.dvm.DalvikModule;
+import com.github.unidbg.linux.android.dvm.DvmClass;
+import com.github.unidbg.linux.android.dvm.VM;
+import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.linux.module.AndroidModule;
+import com.github.unidbg.linux.module.JniGraphics;
+import com.github.unidbg.memory.Memory;
+import com.github.unidbg.utils.Inspector;
 
 import java.io.File;
 import java.io.IOException;
