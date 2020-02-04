@@ -261,7 +261,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     MachO.RoutinesCommand routinesCommand = (MachO.RoutinesCommand) command.body();
                     long address = routinesCommand.initAddress();
                     if (log.isDebugEnabled()) {
-                        log.debug("parseRoutines address=" + address);
+                        log.debug("parseRoutines address=0x" + Long.toHexString(address));
                     }
                     routines.add(new MachOModuleInit(this, envp, apple, vars, false, address));
                     break;
@@ -270,7 +270,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     MachO.RoutinesCommand64 routinesCommand64 = (MachO.RoutinesCommand64) command.body();
                     long address = routinesCommand64.initAddress();
                     if (log.isDebugEnabled()) {
-                        log.debug("parseRoutines address=" + address);
+                        log.debug("parseRoutines64 address=0x" + Long.toHexString(address));
                     }
                     routines.add(new MachOModuleInit(this, envp, apple, vars, false, address));
                     break;

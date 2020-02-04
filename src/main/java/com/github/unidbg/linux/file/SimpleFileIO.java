@@ -91,8 +91,9 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Unicorn unicorn, Pointer buffer, final int _count) {
         try {
+            int count = _count;
             if (count > 4096) {
                 count = 4096;
             }
@@ -107,6 +108,9 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
                  *        the gap.
                  */
                 if (count < 0) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
+                    }
                     return 0;
                 }
             }
@@ -114,6 +118,9 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
             byte[] data = new byte[count];
             int read = randomAccessFile.read(data);
             if (read <= 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
+                }
                 return read;
             }
 
@@ -130,7 +137,7 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
                 throw new IllegalStateException("count=" + count + ", read=" + read);
             }
             if (log.isDebugEnabled() && buf.length < 0x3000) {
-                Inspector.inspect(buf, "read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
+                Inspector.inspect(buf, "read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
             }
             buffer.write(0, buf, 0, buf.length);
             return buf.length;

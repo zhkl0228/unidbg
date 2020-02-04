@@ -28,9 +28,9 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
 
     private static final int IPPROTO_IP = 0;
     public static final int IPPROTO_ICMP = 1;
-    protected static final int IPPROTO_TCP = 6;
+    public static final int IPPROTO_TCP = 6;
 
-    private static final int SOL_SOCKET = 1;
+    protected static final int SOL_SOCKET = 1;
 
     private static final int SO_REUSEADDR = 2;
     private static final int SO_ERROR = 4;
@@ -39,6 +39,7 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
     private static final int SO_KEEPALIVE = 9;
     private static final int SO_RCVTIMEO = 20;
     private static final int SO_SNDTIMEO = 21;
+    protected static final int SO_PEERSEC = 31;
 
     static final int SHUT_RD = 0;
     static final int SHUT_WR = 1;

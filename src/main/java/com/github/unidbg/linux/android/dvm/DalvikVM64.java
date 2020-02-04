@@ -49,13 +49,13 @@ public class DalvikVM64 extends BaseVM implements VM {
                 Pointer className = context.getXPointer(1);
                 String name = className.getString(0);
 
+                if (verbose) {
+                    System.out.println(String.format("JNIEnv->FindClass(%s) was called from %s", name, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
+                }
+
                 if (notFoundClassSet.contains(name)) {
                     throwable = resolveClass("java/lang/NoClassDefFoundError").newObject(name);
                     return 0;
-                }
-
-                if (verbose) {
-                    System.out.println(String.format("JNIEnv->FindClass(%s) was called from %s", name, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                 }
 
                 DvmClass dvmClass = resolveClass(name);

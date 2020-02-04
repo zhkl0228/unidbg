@@ -43,7 +43,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         // init stack
         long stackBase = STACK_BASE;
-        if (emulator.getPointerSize() == 8) {
+        if (emulator.is64Bit()) {
             stackBase += 0xf00000000L;
         }
 
@@ -75,10 +75,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
     private void initializeTSD() {
         final Pointer environ = allocateStack(emulator.getPointerSize() * 3);
         assert environ != null;
-        final Pointer MallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
-        environ.setPointer(0, MallocCorruptionAbort);
-        final Pointer MallocStackLogging = null;//writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
-        environ.setPointer(emulator.getPointerSize(), MallocStackLogging);
+        final Pointer pMallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
+        environ.setPointer(0, pMallocCorruptionAbort);
+        final Pointer pMallocStackLogging = null;//writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
+        environ.setPointer(emulator.getPointerSize(), pMallocStackLogging);
         environ.setPointer(emulator.getPointerSize() * 2, null);
 
         UnicornPointer _NSGetEnviron = allocateStack(emulator.getPointerSize());
@@ -108,7 +108,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         final UnicornPointer thread = allocateStack(0x1000); // reserve space for pthread_internal_t
 
         /* 0xa4必须固定，否则初始化objc会失败 */
-        final UnicornPointer tsd = (UnicornPointer) thread.share(emulator.getPointerSize() == 8 ? 0xe0 : 0xa4); // tsd size
+        final UnicornPointer tsd = (UnicornPointer) thread.share(emulator.is64Bit() ? 0xe0 : 0xa4); // tsd size
         assert tsd != null;
         tsd.setPointer(__TSD_THREAD_SELF * emulator.getPointerSize(), thread);
         tsd.setPointer(__TSD_ERRNO * emulator.getPointerSize(), errno);
@@ -123,7 +123,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDRRO_EL0, tsd.peer);
         }
-        log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", sp=0x" + Long.toHexString(getStackPoint()) + ", errno=" + errno);
+        if (log.isDebugEnabled()) {
+            log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", sp=0x" + Long.toHexString(getStackPoint()) + ", errno=" + errno + ", gap=" + gap);
+        }
     }
 
     @Override
@@ -334,6 +336,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 case LOAD_DYLINKER:
                 case MAIN:
                 case ROUTINES:
+                case ROUTINES_64:
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);

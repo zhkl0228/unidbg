@@ -10,7 +10,6 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
-import com.github.unidbg.linux.file.LocalSocketIO;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.SyscallHandler;
@@ -320,8 +319,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 208:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, setsockopt(emulator));
                     return;
-                case 295888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, getsockopt(u, emulator));
+                case 209:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, getsockopt(emulator));
                     return;
                 case 323888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(u, emulator));
@@ -975,12 +974,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return file.getsockname(addr, addrlen);
     }
 
-    private int getsockopt(Unicorn u, Emulator emulator) {
-        int sockfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int level = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int optname = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        Pointer optval = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        Pointer optlen = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
+    private int getsockopt(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int sockfd = context.getIntArg(0);
+        int level = context.getIntArg(1);
+        int optname = context.getIntArg(2);
+        Pointer optval = context.getPointerArg(3);
+        Pointer optlen = context.getPointerArg(4);
         if (log.isDebugEnabled()) {
             log.debug("getsockopt sockfd=" + sockfd + ", level=" + level + ", optname=" + optname + ", optval=" + optval + ", optlen=" + optlen);
         }
@@ -1044,7 +1044,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 switch (type) {
                     case SocketIO.SOCK_STREAM:
                         fd = getMinFd();
-                        fdMap.put(fd, new LocalSocketIO(emulator, sdk));
+                        fdMap.put(fd, createLocalSocketIO(emulator, sdk));
                         return fd;
                     case SocketIO.SOCK_DGRAM:
                         fd = getMinFd();

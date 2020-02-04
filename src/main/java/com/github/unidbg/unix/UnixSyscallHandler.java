@@ -171,7 +171,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
 
     protected final int read(Emulator emulator, int fd, Pointer buffer, int count) {
         if (log.isDebugEnabled()) {
-            log.debug("read fd=" + fd + ", buffer=" + buffer + ", count=" + count);
+            log.debug("read fd=" + fd + ", buffer=" + buffer + ", count=" + count + ", from=" + emulator.getContext().getLRPointer());
         }
 
         FileIO file = fdMap.get(fd);
@@ -325,17 +325,17 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     }
 
     protected int fstat(Emulator emulator, int fd, Pointer stat) {
-        if (log.isDebugEnabled()) {
-            log.debug("fstat fd=" + fd + ", stat=" + stat);
-        }
-
         FileIO file = fdMap.get(fd);
         if (file == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("fstat fd=" + fd + ", stat=" + stat + ", errno=" + UnixEmulator.EBADF);
+            }
+
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
         if (log.isDebugEnabled()) {
-            log.debug("fstat file=" + file + ", stat=" + stat);
+            log.debug("fstat file=" + file + ", stat=" + stat + ", from=" + emulator.getContext().getLRPointer());
         }
         return file.fstat(emulator, emulator.getUnicorn(), stat);
     }
@@ -375,6 +375,13 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
      */
     protected boolean handleUnknownSyscall(Emulator emulator, int NR) {
         return false;
+    }
+
+    /**
+     * create AF_UNIX local SOCK_STREAM
+     */
+    protected FileIO createLocalSocketIO(Emulator emulator, int sdk) {
+        return new LocalSocketIO(emulator, sdk);
     }
 
 }

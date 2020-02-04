@@ -565,6 +565,9 @@ public class ARM {
                         case "sp":
                             r = is64Bit ? Arm64Const.UC_ARM64_REG_SP : ArmConst.UC_ARM_REG_SP;
                             break;
+                        case "lr":
+                            r = is64Bit ? Arm64Const.UC_ARM64_REG_LR : ArmConst.UC_ARM_REG_LR;
+                            break;
                     }
                     if (r != -1) {
                         UnicornPointer pointer = UnicornPointer.register(emulator, r);

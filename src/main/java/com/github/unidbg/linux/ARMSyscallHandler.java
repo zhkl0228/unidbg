@@ -11,7 +11,6 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
-import com.github.unidbg.linux.file.LocalSocketIO;
 import com.github.unidbg.linux.struct.SysInfo32;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
@@ -1175,7 +1174,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         Pointer optval = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
         Pointer optlen = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
         if (log.isDebugEnabled()) {
-            log.debug("getsockopt sockfd=" + sockfd + ", level=" + level + ", optname=" + optname + ", optval=" + optval + ", optlen=" + optlen);
+            log.debug("getsockopt sockfd=" + sockfd + ", level=" + level + ", optname=" + optname + ", optval=" + optval + ", optlen=" + optlen + ", from=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
         }
 
         FileIO file = fdMap.get(sockfd);
@@ -1235,7 +1234,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                 switch (type) {
                     case SocketIO.SOCK_STREAM:
                         fd = getMinFd();
-                        fdMap.put(fd, new LocalSocketIO(emulator, sdk));
+                        fdMap.put(fd, createLocalSocketIO(emulator, sdk));
                         return fd;
                     case SocketIO.SOCK_DGRAM:
                         fd = getMinFd();
@@ -1332,7 +1331,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int length = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int ret = emulator.getMemory().munmap(start, length);
         if (log.isDebugEnabled()) {
-            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", ret=" + ret + ", offset=" + (System.currentTimeMillis() - timeInMillis));
+            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", ret=" + ret + ", offset=" + (System.currentTimeMillis() - timeInMillis) + ", from=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
         }
         return ret;
     }
@@ -1530,7 +1529,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
 
         boolean warning = length >= 0x10000000;
         if (log.isDebugEnabled() || warning) {
-            String msg = "mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset;
+            String msg = "mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", from=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
             if (warning) {
                 log.warn(msg);
             } else {
@@ -1639,7 +1638,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         String pathname = pathname_p.getString(0);
-        String msg = "open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
+        String msg = "open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", from=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
         if (log.isDebugEnabled()) {
             log.debug(msg);
         }
@@ -1674,7 +1673,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         }
         int pos = file.lseek(offset, whence);
         if (log.isDebugEnabled()) {
-            log.debug("lseek fd=" + fd + ", offset=" + offset + ", whence=" + whence + ", pos=" + pos);
+            log.debug("lseek fd=" + fd + ", offset=" + offset + ", whence=" + whence + ", pos=" + pos + ", from=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
         }
         return pos;
     }
