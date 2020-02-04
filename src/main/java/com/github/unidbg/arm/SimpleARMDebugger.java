@@ -165,7 +165,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     if (reg != -1) {
                         Unicorn unicorn = emulator.getUnicorn();
                         unicorn.reg_write(reg, value);
-                        ARM.showRegs(unicorn, new int[] { reg });
+                        ARM.showRegs(emulator, new int[] { reg });
                         continue;
                     }
                 }

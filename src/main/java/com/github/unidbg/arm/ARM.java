@@ -43,11 +43,12 @@ public class ARM {
         return (ins & 0xe000) == 0xe000 && (ins & 0x1800) != 0x0000;
     }
 
-    public static void showThumbRegs(Unicorn unicorn) {
-        showRegs(unicorn, ARM.THUMB_REGS);
+    public static void showThumbRegs(Emulator emulator) {
+        showRegs(emulator, ARM.THUMB_REGS);
     }
 
-    public static void showRegs(Unicorn unicorn, int[] regs) {
+    public static void showRegs(Emulator emulator, int[] regs) {
+        Unicorn unicorn = emulator.getUnicorn();
         boolean thumb = isThumb(unicorn);
         if (regs == null || regs.length < 1) {
             regs = ARM.getAllRegisters(thumb);
@@ -141,21 +142,18 @@ public class ARM {
                     builder.append(String.format(Locale.US, " sp=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_LR:
-                    number = (Number) unicorn.reg_read(reg);
-                    value = number.intValue();
-                    builder.append(String.format(Locale.US, " lr=0x%x", value));
+                    builder.append(String.format(Locale.US, " LR=%s", UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                     break;
                 case ArmConst.UC_ARM_REG_PC:
-                    number = (Number) unicorn.reg_read(reg);
-                    value = number.intValue();
-                    builder.append(String.format(Locale.US, " pc=0x%x", value));
+                    builder.append(String.format(Locale.US, " PC=%s", UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC)));
                     break;
             }
         }
         System.out.println(builder.toString());
     }
 
-    public static void showRegs64(Unicorn unicorn, int[] regs) {
+    public static void showRegs64(Emulator emulator, int[] regs) {
+        Unicorn unicorn = emulator.getUnicorn();
         if (regs == null || regs.length < 1) {
             regs = ARM.getAll64Registers();
         }
@@ -330,14 +328,10 @@ public class ARM {
                     builder.append(String.format(Locale.US, "\nsp=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_LR:
-                    number = (Number) unicorn.reg_read(reg);
-                    value = number.longValue();
-                    builder.append(String.format(Locale.US, "\nlr=0x%x", value));
+                    builder.append(String.format(Locale.US, "\nLR=%s", UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                     break;
                 case Arm64Const.UC_ARM64_REG_PC:
-                    number = (Number) unicorn.reg_read(reg);
-                    value = number.longValue();
-                    builder.append(String.format(Locale.US, "\npc=0x%x", value));
+                    builder.append(String.format(Locale.US, "\nPC=%s", UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC)));
                     break;
             }
         }

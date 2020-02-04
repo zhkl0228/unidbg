@@ -164,7 +164,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     if (reg != -1) {
                         Unicorn unicorn = emulator.getUnicorn();
                         unicorn.reg_write(reg, value);
-                        ARM.showRegs64(unicorn, new int[] { reg });
+                        ARM.showRegs64(emulator, new int[] { reg });
                         continue;
                     }
                 }

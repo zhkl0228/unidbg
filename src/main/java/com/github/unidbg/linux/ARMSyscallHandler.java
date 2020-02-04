@@ -98,7 +98,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             }
 
             if (log.isDebugEnabled()) {
-                ARM.showThumbRegs(u);
+                ARM.showThumbRegs(emulator);
             }
 
             if (handleSyscall(emulator, NR)) {

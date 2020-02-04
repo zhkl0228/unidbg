@@ -160,7 +160,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
 
     @Override
     public final void showRegs(int... regs) {
-        ARM.showRegs(unicorn, regs);
+        ARM.showRegs(this, regs);
     }
 
     @Override

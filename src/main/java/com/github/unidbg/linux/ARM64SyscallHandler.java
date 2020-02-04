@@ -81,7 +81,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
 
             if (log.isDebugEnabled()) {
-                ARM.showRegs64(u, null);
+                ARM.showRegs64(emulator, null);
             }
 
             if (handleSyscall(emulator, NR)) {

@@ -137,7 +137,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
 
     @Override
     public final void showRegs(int... regs) {
-        ARM.showRegs64(unicorn, regs);
+        ARM.showRegs64(this, regs);
     }
 
     @Override

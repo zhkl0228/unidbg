@@ -97,7 +97,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
 
             if (log.isDebugEnabled()) {
-                ARM.showThumbRegs(u);
+                ARM.showThumbRegs(emulator);
             }
 
             Cpsr.getArm(u).setCarry(false);

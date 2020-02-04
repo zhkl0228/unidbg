@@ -15,9 +15,9 @@ class RegistersCommand implements GdbStubCommand {
         Unicorn unicorn = emulator.getUnicorn();
         if (log.isDebugEnabled()) {
             if (emulator.getPointerSize() == 4) {
-                ARM.showRegs(unicorn, null);
+                ARM.showRegs(emulator, null);
             } else {
-                ARM.showRegs64(unicorn, null);
+                ARM.showRegs64(emulator, null);
             }
         }
 
