@@ -272,8 +272,18 @@ public abstract class AbstractLoader implements Memory, Loader {
         return UnicornPointer.pointer(emulator, address);
     }
 
+    private long stackBase;
+
+    @Override
+    public long getStackBase() {
+        return stackBase;
+    }
+
     @Override
     public final void setStackPoint(long sp) {
+        if (this.sp == 0) {
+            this.stackBase = sp;
+        }
         this.sp = sp;
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_SP, sp);

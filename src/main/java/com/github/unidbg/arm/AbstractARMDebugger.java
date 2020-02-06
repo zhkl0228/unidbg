@@ -8,15 +8,18 @@ import com.github.unidbg.debugger.DebugListener;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
+import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
 import java.util.*;
@@ -220,6 +223,138 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
+    private void searchStack(byte[] data) {
+        if (data == null || data.length < 1) {
+            System.err.println("search stack failed as empty data");
+            return;
+        }
+
+        UnicornPointer stack = emulator.getContext().getStackPointer();
+        Unicorn unicorn = emulator.getUnicorn();
+        Collection<Pointer> pointers = searchMemory(unicorn, stack.toUIntPeer(), emulator.getMemory().getStackBase(), data);
+        System.out.println("Search stack from " + stack + " matches " + pointers.size() + " count");
+        for (Pointer pointer : pointers) {
+            System.out.println("Stack matches: " + pointer);
+        }
+    }
+
+    private void searchHeap(byte[] data, int prot) {
+        if (data == null || data.length < 1) {
+            System.err.println("search heap failed as empty data");
+            return;
+        }
+
+        List<Pointer> list = new ArrayList<>();
+        Unicorn unicorn = emulator.getUnicorn();
+        for (MemoryMap map : emulator.getMemory().getMemoryMap()) {
+            if ((map.prot & prot) != 0) {
+                Collection<Pointer> pointers = searchMemory(unicorn, map.base, map.base + map.size, data);
+                list.addAll(pointers);
+            }
+        }
+        System.out.println("Search heap matches " + list.size() + " count");
+        for (Pointer pointer : list) {
+            System.out.println("Heap matches: " + pointer);
+        }
+    }
+
+    private Collection<Pointer> searchMemory(Unicorn unicorn, long start, long end, byte[] data) {
+        List<Pointer> pointers = new ArrayList<>();
+        for (long i = start, m = end - data.length; i < m; i++) {
+            byte[] oneByte = unicorn.mem_read(i, 1);
+            if (data[0] != oneByte[0]) {
+                continue;
+            }
+
+            if (Arrays.equals(data, unicorn.mem_read(i, data.length))) {
+                pointers.add(UnicornPointer.pointer(emulator, i));
+                i += (data.length - 1);
+            }
+        }
+        return pointers;
+    }
+
+    final boolean handleCommon(Unicorn u, String line, long nextAddress) throws DecoderException {
+        if ("c".equals(line)) { // continue
+            return true;
+        }
+        if ("n".equals(line)) {
+            if (nextAddress == 0) {
+                System.out.println("Next address failed.");
+                return false;
+            } else {
+                addBreakPoint(nextAddress);
+                return true;
+            }
+        }
+        if (line.startsWith("st")) { // search stack
+            int index = line.indexOf(' ');
+            if (index != -1) {
+                String hex = line.substring(index + 1).trim();
+                byte[] data = Hex.decodeHex(hex.toCharArray());
+                if (data.length > 0) {
+                    searchStack(data);
+                    return false;
+                }
+            }
+        }
+        if (line.startsWith("shw")) { // search writable heap
+            int index = line.indexOf(' ');
+            if (index != -1) {
+                String hex = line.substring(index + 1).trim();
+                byte[] data = Hex.decodeHex(hex.toCharArray());
+                if (data.length > 0) {
+                    searchHeap(data, UnicornConst.UC_PROT_WRITE);
+                    return false;
+                }
+            }
+        }
+        if (line.startsWith("shr")) { // search readable heap
+            int index = line.indexOf(' ');
+            if (index != -1) {
+                String hex = line.substring(index + 1).trim();
+                byte[] data = Hex.decodeHex(hex.toCharArray());
+                if (data.length > 0) {
+                    searchHeap(data, UnicornConst.UC_PROT_READ);
+                    return false;
+                }
+            }
+        }
+        if (line.startsWith("shx")) { // search executable heap
+            int index = line.indexOf(' ');
+            if (index != -1) {
+                String hex = line.substring(index + 1).trim();
+                byte[] data = Hex.decodeHex(hex.toCharArray());
+                if (data.length > 0) {
+                    searchHeap(data, UnicornConst.UC_PROT_EXEC);
+                    return false;
+                }
+            }
+        }
+        if ("stop".equals(line)) {
+            u.emu_stop();
+            return true;
+        }
+        if ("s".equals(line) || "si".equals(line)) {
+            singleStep = 1;
+            return true;
+        }
+        if (line.startsWith("s")) {
+            try {
+                singleStep = Integer.parseInt(line.substring(1));
+                return true;
+            } catch (NumberFormatException e) {
+                breakMnemonic = line.substring(1);
+                return true;
+            }
+        }
+
+        showHelp();
+        return false;
+    }
+
+    void showHelp() {}
+
     /**
      * @return next address
      */
@@ -259,6 +394,21 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         System.out.println(sb);
         return next;
+    }
+
+    final void disassembleBlock(Emulator emulator, long address, boolean thumb) {
+        StringBuilder sb = new StringBuilder();
+        long nextAddr = address;
+        UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
+        assert pointer != null;
+        byte[] code = pointer.getByteArray(0, 4 * 10);
+        Capstone.CsInsn[] insns = emulator.disassemble(nextAddr, code, thumb);
+        for (Capstone.CsInsn ins : insns) {
+            sb.append("    ");
+            sb.append(ARM.assembleDetail(emulator, ins, nextAddr, thumb, false)).append('\n');
+            nextAddr += ins.size;
+        }
+        System.out.println(sb);
     }
 
     final Module findModuleByAddress(long address) {

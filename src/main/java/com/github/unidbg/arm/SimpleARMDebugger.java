@@ -11,6 +11,7 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
+import org.apache.commons.codec.DecoderException;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
@@ -47,6 +48,11 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                 if ("d".equals(line) || "dis".equals(line)) {
                     emulator.showRegs();
                     disassemble(emulator, address, size, thumb);
+                    continue;
+                }
+                if (line.startsWith("d0x")) {
+                    long da = Long.parseLong(line.substring(3), 16);
+                    disassembleBlock(emulator, da & 0xfffffffeL,(da & 1) == 1);
                     continue;
                 }
                 if (line.startsWith("m")) {
@@ -113,7 +119,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     String command;
                     String[] tokens = line.split("\\s+");
                     if (tokens.length < 2) {
-                        System.out.println("wr0-wr7, wfp, wip, wsp <value>: write specified register");
+                        System.out.println("wr0-wr8, wfp, wip, wsp <value>: write specified register");
                         System.out.println("wb(address), ws(address), wi(address) <value>: write (byte, short, integer) memory of specified address, address must start with 0x");
                         continue;
                     }
@@ -135,7 +141,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     int reg = -1;
                     if (command.startsWith("wr") && command.length() == 3) {
                         char c = command.charAt(2);
-                        if (c >= '0' && c <= '7') {
+                        if (c >= '0' && c <= '8') {
                             int r = c - '0';
                             reg = ArmConst.UC_ARM_REG_R0 + r;
                         }
@@ -249,47 +255,25 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
-                if ("c".equals(line)) { // continue
+                if(handleCommon(u, line, nextAddress)) {
                     break;
                 }
-                if ("n".equals(line)) {
-                    if (nextAddress == 0) {
-                        System.out.println("Next address failed.");
-                        continue;
-                    } else {
-                        addBreakPoint(nextAddress);
-                        break;
-                    }
-                }
-                if ("stop".equals(line)) {
-                    u.emu_stop();
-                    break;
-                }
-                if ("s".equals(line) || "si".equals(line)) {
-                    singleStep = 1;
-                    break;
-                }
-                if (line.startsWith("s")) {
-                    try {
-                        singleStep = Integer.parseInt(line.substring(1));
-                        break;
-                    } catch (NumberFormatException e) {
-                        breakMnemonic = line.substring(1);
-                        break;
-                    }
-                }
-
-                showHelp();
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | DecoderException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void showHelp() {
+    @Override
+    final void showHelp() {
         System.out.println("c: continue");
         System.out.println("n: step over");
         System.out.println("bt: back trace");
+        System.out.println();
+        System.out.println("st hex: search stack");
+        System.out.println("shw hex: search writable heap");
+        System.out.println("shr hex: search readable heap");
+        System.out.println("shx hex: search executable heap");
         System.out.println();
         System.out.println("s|si: step into");
         System.out.println("s[decimal]: execute specified amount instruction");

@@ -550,6 +550,21 @@ public class ARM {
                     boolean is64Bit = emulator.is64Bit();
                     int r = -1;
                     switch (reg) {
+                        case "r0":
+                            r = ArmConst.UC_ARM_REG_R0;
+                            break;
+                        case "r1":
+                            r = ArmConst.UC_ARM_REG_R1;
+                            break;
+                        case "r2":
+                            r = ArmConst.UC_ARM_REG_R2;
+                            break;
+                        case "r3":
+                            r = ArmConst.UC_ARM_REG_R3;
+                            break;
+                        case "r5":
+                            r = ArmConst.UC_ARM_REG_R5;
+                            break;
                         case "r6":
                             r = ArmConst.UC_ARM_REG_R6;
                             break;

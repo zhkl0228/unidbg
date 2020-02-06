@@ -22,6 +22,7 @@ public interface Memory extends IO, Loader {
     UnicornPointer pointer(long address);
     void setStackPoint(long sp);
     long getStackPoint();
+    long getStackBase();
 
     void setCallInitFunction();
 

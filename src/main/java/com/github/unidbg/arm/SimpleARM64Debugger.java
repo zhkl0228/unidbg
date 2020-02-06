@@ -10,6 +10,7 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
+import org.apache.commons.codec.DecoderException;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
@@ -26,11 +27,10 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     protected final void loop(Emulator emulator, long address, int size) {
         System.out.println("debugger break at: 0x" + Long.toHexString(address));
         Unicorn u = emulator.getUnicorn();
-        boolean thumb = false;
         long nextAddress = 0;
         try {
             emulator.showRegs();
-            nextAddress = disassemble(emulator, address, size, thumb);
+            nextAddress = disassemble(emulator, address, size, false);
         } catch (UnicornException e) {
             e.printStackTrace();
         }
@@ -45,7 +45,11 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                 }
                 if ("d".equals(line) || "dis".equals(line)) {
                     emulator.showRegs();
-                    disassemble(emulator, address, size, thumb);
+                    disassemble(emulator, address, size, false);
+                    continue;
+                }
+                if (line.startsWith("d0x")) {
+                    disassembleBlock(emulator, Long.parseLong(line.substring(3), 16), false);
                     continue;
                 }
                 if (line.startsWith("m")) {
@@ -197,7 +201,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         System.out.println(sb);
 
                         if (fp == null) {
-                            System.err.println("fp=" + fp);
+                            System.err.println("fp=null");
                             break;
                         }
 
@@ -247,47 +251,25 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
-                if ("c".equals(line)) { // continue
+                if(handleCommon(u, line, nextAddress)) {
                     break;
                 }
-                if ("n".equals(line)) {
-                    if (nextAddress == 0) {
-                        System.out.println("Next address failed.");
-                        continue;
-                    } else {
-                        addBreakPoint(nextAddress);
-                        break;
-                    }
-                }
-                if ("stop".equals(line)) {
-                    u.emu_stop();
-                    break;
-                }
-                if ("s".equals(line) || "si".equals(line)) {
-                    singleStep = 1;
-                    break;
-                }
-                if (line.startsWith("s")) {
-                    try {
-                        singleStep = Integer.parseInt(line.substring(1));
-                        break;
-                    } catch (NumberFormatException e) {
-                        breakMnemonic = line.substring(1);
-                        break;
-                    }
-                }
-
-                showHelp();
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | DecoderException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void showHelp() {
+    @Override
+    final void showHelp() {
         System.out.println("c: continue");
         System.out.println("n: step over");
         System.out.println("bt: back trace");
+        System.out.println();
+        System.out.println("st hex: search stack");
+        System.out.println("shw hex: search writable heap");
+        System.out.println("shr hex: search readable heap");
+        System.out.println("shx hex: search executable heap");
         System.out.println();
         System.out.println("s|si: step into");
         System.out.println("s[decimal]: execute specified amount instruction");
