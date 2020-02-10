@@ -338,10 +338,10 @@ public class Dyld64 extends Dyld {
                  * for each image that is currently part of the program.
                  */
                 if (__dyld_register_func_for_add_image == null) {
-                    __dyld_register_func_for_add_image = svcMemory.registerSvc(new ArmSvc() {
+                    __dyld_register_func_for_add_image = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
                                 KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                         "sub sp, sp, #0x10",
                                         "stp x29, x30, [sp]",

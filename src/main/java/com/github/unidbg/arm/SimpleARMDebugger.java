@@ -277,7 +277,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println();
         System.out.println("s|si: step into");
         System.out.println("s[decimal]: execute specified amount instruction");
-        System.out.println("sblx: execute util BLX mnemonic");
+        System.out.println("s(blx): execute util BLX mnemonic");
         System.out.println();
         System.out.println("m(op) [size]: show memory, default size is 0x70, size may hex or decimal");
         System.out.println("mr0-mr7, mfp, mip, msp [size]: show memory of specified register");
@@ -291,6 +291,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("r: remove breakpoint of register PC");
         System.out.println("blr: add temporarily breakpoint of register LR");
         System.out.println();
+        System.out.println("vm: view loaded modules");
         System.out.println("d|dis: show disassemble");
         System.out.println("stop: stop emulation");
     }

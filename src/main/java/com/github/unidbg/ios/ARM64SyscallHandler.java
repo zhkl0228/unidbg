@@ -198,8 +198,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 32988:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
                     return;
-                case 33688:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, proc_info(emulator));
+                case 336:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator));
                     return;
                 case 33888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, stat64(emulator));
@@ -499,15 +499,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private static final int PROC_SELFSET_THREADNAME = 2;
 
     private int proc_info(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        int callNum = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int pid = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int flavor = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-        int r3 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        long r4 = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
-        long arg = r3 | (r4 << 32);
-        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R5);
-        int bufferSize = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
+        RegisterContext context = emulator.getContext();
+        int callNum = context.getIntArg(0);
+        int pid = context.getIntArg(1);
+        int flavor = context.getIntArg(2);
+        long arg = context.getLongArg(3);
+        Pointer buffer = context.getPointerArg(4);
+        int bufferSize = context.getIntArg(5);
 
         String msg = "proc_info callNum=" + callNum + ", pid=" + pid + ", flavor=" + flavor + ", arg=" + arg + ", buffer=" + buffer + ", bufferSize=" + bufferSize;
         if (PROC_INFO_CALL_SETCONTROL == callNum && PROC_SELFSET_THREADNAME == flavor) {
@@ -815,7 +813,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             log.debug("mach_msg_trap msg=" + msg + ", option=0x" + Integer.toHexString(option) + ", send_size=" + send_size + ", rcv_size=" + rcv_size + ", rcv_name=" + rcv_name + ", timeout=" + timeout + ", notify=" + notify + ", header=" + header);
         }
 
-        final Pointer request = msg.share(header.size());
+        final UnicornPointer request = (UnicornPointer) msg.share(header.size());
 
         switch (header.msgh_id) {
             case 3409: // task_get_special_port
@@ -1029,19 +1027,19 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             }
             case 3404: // mach_ports_lookup
             {
-                MachPortsLookupReply reply = new MachPortsLookupReply(request);
+                MachPortsLookup64Reply reply = new MachPortsLookup64Reply(request);
                 reply.unpack();
 
                 header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
-                header.msgh_size = 52;
+                header.msgh_size = 56;
                 header.msgh_remote_port = header.msgh_local_port;
                 header.msgh_local_port = 0;
                 header.msgh_id += 100; // reply Id always equals reqId+100
                 header.pack();
 
                 reply.retCode = 1;
-                reply.outPort = request;
-                reply.ret = 0;
+                reply.outPortLow = (int) request.toUIntPeer();
+                reply.outPortHigh = (int) (request.peer >> 32L);
                 reply.mask = 0x2110000;
                 reply.cnt = 0;
                 reply.pack();

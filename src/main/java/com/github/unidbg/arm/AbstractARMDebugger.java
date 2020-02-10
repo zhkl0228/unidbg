@@ -331,6 +331,18 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
             }
         }
+        if ("vm".equals(line)) {
+            Memory memory = emulator.getMemory();
+            String maxLengthSoName = memory.getMaxLengthLibraryName();
+            StringBuilder sb = new StringBuilder();
+            for (Module module : memory.getLoadedModules()) {
+                sb.append(String.format("[%" + maxLengthSoName.length() + "s] ", module.name));
+                sb.append(String.format("[0x%x-0x%x]", module.base, module.base + module.size));
+                sb.append("\n");
+            }
+            System.out.println(sb);
+            return false;
+        }
         if ("stop".equals(line)) {
             u.emu_stop();
             return true;

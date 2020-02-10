@@ -212,9 +212,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 importName = null;
             }
             String symbolName = new String(cummulativeString, 0, curStrOffset);
-            map.put(symbolName, new ExportSymbol(symbolName, address, this, base + other));
+            map.put(symbolName, new ExportSymbol(symbolName, address, this, base + other, (flags & EXPORT_SYMBOL_FLAGS_KIND_MASK) == EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE));
             if (log.isDebugEnabled()) {
-                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName);
+                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName + ", flags=0x" + Integer.toHexString(flags));
             }
             buffer.reset();
             buffer.position(buffer.position() + terminalSize);

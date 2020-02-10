@@ -4,12 +4,14 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.InvalidMemoryAccessException;
 import com.github.unidbg.Module;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.MemoryMap;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
+import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -412,7 +414,35 @@ public class UnicornPointer extends Pointer {
     public String toString() {
         Memory memory = emulator == null ? null : emulator.getMemory();
         Module module = memory == null ? null : memory.findModuleByAddress(peer);
-        return "unicorn@0x" + Long.toHexString(peer) + (module == null ? "" : ("[" + module.name + "]0x" + Long.toHexString(peer - module.base)));
+        MemoryMap memoryMap = null;
+        if (memory != null) {
+            for (MemoryMap mm : memory.getMemoryMap()) {
+                if (peer >= mm.base && peer < mm.base + mm.size) {
+                    memoryMap = mm;
+                    break;
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        if (memoryMap == null) {
+            sb.append("unicorn");
+        } else {
+            if ((memoryMap.prot & UnicornConst.UC_PROT_READ) != 0) {
+                sb.append('R');
+            }
+            if ((memoryMap.prot & UnicornConst.UC_PROT_WRITE) != 0) {
+                sb.append('W');
+            }
+            if ((memoryMap.prot & UnicornConst.UC_PROT_EXEC) != 0) {
+                sb.append('X');
+            }
+        }
+        sb.append("@0x");
+        sb.append(Long.toHexString(peer));
+        if (module != null) {
+            sb.append("[").append(module.name).append("]0x").append(Long.toHexString(peer - module.base));
+        }
+        return sb.toString();
     }
 
     @Override

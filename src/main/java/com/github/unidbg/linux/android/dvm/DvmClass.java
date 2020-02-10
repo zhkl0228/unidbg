@@ -116,7 +116,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         if (log.isDebugEnabled()) {
             log.debug("getFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        if (vm.jni.acceptField(signature, false)) {
+        if (vm.jni != null && vm.jni.acceptField(signature, false)) {
             fieldMap.put(hash, new DvmField(this, fieldName, fieldType));
             return (int) hash;
         } else {

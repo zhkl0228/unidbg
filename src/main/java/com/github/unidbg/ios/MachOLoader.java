@@ -7,14 +7,15 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DyldImageInfo;
-import com.github.unidbg.memory.*;
 import com.github.unidbg.memory.MemRegion;
+import com.github.unidbg.memory.*;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
@@ -141,6 +142,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 log.info("Export module resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
             }
         }
+
         for (MachOModule m : modules.values()) {
             bindIndirectSymbolPointers(m);
             setupLazyPointerHandler(m);
@@ -158,6 +160,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 m.callRoutines(emulator);
             }
         }
+
+        notifySingle(Dyld.dyld_image_state_initialized, module);
 
         return module;
     }
@@ -773,9 +777,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         } else {
             newPointer = newPointer.share(module.base);
         }
-        /*if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("rebaseAt type=" + type + ", address=0x" + Long.toHexString(address - module.base) + ", module=" + module.name + ", old=" + old + ", new=" + newPointer);
-        }*/
+        }
         switch (type) {
             case REBASE_TYPE_POINTER:
             case REBASE_TYPE_TEXT_ABSOLUTE32:
@@ -859,7 +863,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 ret = false;
             } else {
                 pointer.setPointer(0, UnicornPointer.pointer(emulator, address));
-                log.debug("bindExternalRelocations address=0x" + Long.toHexString(relocation.address) + ", symbolNum=0x" + Integer.toHexString(relocation.symbolNum) + ", symbolName=" + symbol.getName());
+                if (log.isDebugEnabled()) {
+                    log.debug("bindExternalRelocations address=0x" + Long.toHexString(relocation.address) + ", symbolNum=0x" + Integer.toHexString(relocation.symbolNum) + ", symbolName=" + symbol.getName());
+                }
             }
         }
         return ret;
@@ -1168,7 +1174,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         return ret;
     }
 
-    private boolean doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy) throws IOException {
+    private boolean doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy) {
         Symbol symbol = module.findSymbolByName(symbolName, true);
         if (symbol == null) {
             log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries + ", libraryOrdinal=" + libraryOrdinal);
@@ -1188,9 +1194,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             }
         }
 
-        /*if (log.isDebugEnabled()) {
-            log.debug("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbolName + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol + ", libName=" + module.name);
-        }*/
+        if (log.isDebugEnabled()) {
+            log.debug("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbol.getModuleName() + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", symbol=" + symbol + ", pointer=" + pointer + ", bindAt=0x" + Long.toHexString(bindAt) + ", libraryOrdinal=" + libraryOrdinal);
+        }
 
         Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
         if (newPointer == null) {
@@ -1205,6 +1211,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             case BIND_TYPE_TEXT_ABSOLUTE32:
                 pointer.setInt(0, (int) (symbol.getAddress() + addend));
                 break;
+            case BIND_TYPE_TEXT_PCREL32:
             default:
                 throw new IllegalStateException("bad bind type " + type);
         }
@@ -1221,6 +1228,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             byte[] data = new byte[size];
             buffer.get(data);
             unicorn.mem_write(begin, data);
+        } else if(size < 0) {
+            log.warn("write_mem offset=" + offset + ", size=" + offset + ", begin=0x" + Long.toHexString(begin));
         }
     }
 
@@ -1423,6 +1432,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                         MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
                     }
                 }
+                break;
+            case Dyld.dyld_image_state_initialized:
                 break;
             default:
                 throw new UnsupportedOperationException("state=" + state);

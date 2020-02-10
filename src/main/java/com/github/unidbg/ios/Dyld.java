@@ -23,6 +23,7 @@ abstract class Dyld extends Dlfcn {
 
     static final int dyld_image_state_bound = 40;
     static final int dyld_image_state_dependents_initialized = 45; // Only single notification for this
+    static final int dyld_image_state_initialized = 50;
     static final int dyld_image_state_terminated = 60; // Only single notification for this
 
     static final int RTLD_FIRST = 0x100; /* Mac OS X 10.5 and later */

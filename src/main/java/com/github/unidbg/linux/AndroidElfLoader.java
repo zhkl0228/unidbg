@@ -118,7 +118,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
         auxv.setPointer(emulator.getPointerSize(), __stack_chk_guard);
 
-        final Pointer environ = allocateStack(8);
+        final Pointer environ = allocateStack(0x10);
         assert environ != null;
         environ.setInt(0, 0);
 

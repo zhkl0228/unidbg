@@ -1145,7 +1145,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return ret;
     }
 
-    private int statfs(Emulator emulator) {
+    protected int statfs(Emulator emulator) {
         Pointer pathPointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         String path = pathPointer.getString(0);

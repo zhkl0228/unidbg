@@ -160,6 +160,13 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
          * 0x1c: st_gid
          * 0x30: st_size
          * 0x38: st_blksize
+         * 0x3c: st_blocks
+         * 0x44: st_atime
+         * 0x48: st_atime_nsec
+         * 0x4c: st_mtime
+         * 0x50: st_mtime_nsec
+         * 0x54: st_ctime
+         * 0x58: st_ctime_nsec
          * 0x60: st_ino
          */
         stat.setLong(0x0, 0); // st_dev

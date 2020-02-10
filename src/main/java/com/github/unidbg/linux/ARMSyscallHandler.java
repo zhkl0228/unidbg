@@ -208,7 +208,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
                     Pointer child_stack = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                     int fn = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
                     int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-                    if (child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
+                    if (child_stack != null && child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
                         u.reg_write(ArmConst.UC_ARM_REG_R0, bionic_clone(u, emulator));
                     } else {
                         u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_clone(u, emulator));
@@ -1336,7 +1336,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         return ret;
     }
 
-    private int statfs64(Emulator emulator) {
+    protected int statfs64(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         Pointer pathPointer = context.getPointerArg(0);
         int size = context.getIntArg(1);
