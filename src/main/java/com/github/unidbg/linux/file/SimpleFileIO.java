@@ -271,12 +271,15 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
 
     @Override
     public int fstat(Emulator emulator, StatStructure stat) {
+        int blockSize = emulator.getPointerSize();
         stat.st_dev = 1;
         stat.st_mode = (short) (IO.S_IFREG | 0x777);
         stat.st_size = UnicornPointer.pointer(emulator, file.length());
-        stat.st_blocks = UnicornPointer.pointer(emulator, file.length());
-        stat.st_blksize = 0;
-        stat.st_ino = UnicornPointer.pointer(emulator, 1);
+        stat.st_blocks = UnicornPointer.pointer(emulator, file.length() / blockSize);
+        stat.st_blksize = blockSize;
+        stat.st_ino = 1;
+        stat.st_uid = 0;
+        stat.st_gid = 0;
         stat.pack();
         return 0;
     }

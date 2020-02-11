@@ -40,29 +40,30 @@ public class Substrate64Test extends EmulatorTest {
     public void testMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
-//        emulator.attach().addBreakPoint(null, 0x100016088L);
+//        Debugger debugger = emulator.attach();
+//        debugger.addBreakPoint(null, 0x100dd29b4L);
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
-//        loader.setObjcRuntime(true);
+        loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
 //        Logger.getLogger("com.github.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 
         IWhale whale = Whale.getInstance(emulator);
-        /*whale.WImportHookFunction("_malloc", new ReplaceCallback() {
+        whale.WImportHookFunction("_malloc", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                RegisterContext context = emulator.getContext();
+                int size = context.getIntArg(0);
                 System.err.println("IWhale hook _malloc size=" + size);
-                return HookStatus.RET(unicorn, originFunction);
+                return HookStatus.RET(emulator, originFunction);
             }
-        });*/
+        });
 
         IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
 //        emulator.traceCode();
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {

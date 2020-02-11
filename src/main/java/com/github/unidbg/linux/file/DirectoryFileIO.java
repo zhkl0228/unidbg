@@ -5,7 +5,6 @@ import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.AbstractFileIO;
 import com.github.unidbg.file.StatStructure;
 import com.github.unidbg.ios.struct.kernel.StatFS;
-import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
@@ -79,7 +78,7 @@ public class DirectoryFileIO extends AbstractFileIO {
         stat.st_mode = IO.S_IFDIR | 0x777;
         stat.st_size = null;
         stat.st_blksize = 0;
-        stat.st_ino = UnicornPointer.pointer(emulator, 1);
+        stat.st_ino = 1;
         stat.pack();
         return 0;
     }

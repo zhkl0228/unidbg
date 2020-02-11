@@ -1,23 +1,23 @@
 package com.github.unidbg.ios.struct.kernel;
 
 import com.github.unidbg.file.StatStructure;
-import com.github.unidbg.unix.struct.TimeSpec;
+import com.github.unidbg.unix.struct.TimeSpec64;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public final class Stat extends StatStructure {
+public class Stat64 extends StatStructure {
 
-    public Stat(Pointer p) {
+    public Stat64(Pointer p) {
         super(p);
         unpack();
     }
 
-    public TimeSpec st_atimespec; /* time of last access */
-    public TimeSpec st_mtimespec; /* time of last data modification */
-    public TimeSpec st_ctimespec; /* time of last status change */
-    public TimeSpec st_birthtimespec; /* time of file creation(birth) */
+    public TimeSpec64 st_atimespec; /* time of last access */
+    public TimeSpec64 st_mtimespec; /* time of last data modification */
+    public TimeSpec64 st_ctimespec; /* time of last status change */
+    public TimeSpec64 st_birthtimespec; /* time of file creation(birth) */
 
     @Override
     protected List<String> getFieldOrder() {

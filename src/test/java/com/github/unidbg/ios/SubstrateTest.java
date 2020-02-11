@@ -1,5 +1,9 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.Emulator;
+import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.Module;
+import com.github.unidbg.Symbol;
 import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -13,15 +17,9 @@ import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.whale.Whale;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.Module;
-import com.github.unidbg.Symbol;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.util.Arrays;
@@ -42,14 +40,13 @@ public class SubstrateTest extends EmulatorTest {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
         loader.setObjcRuntime(true);
-//        emulator.attach().addBreakPoint(null, 0x402c730e);
-//        emulator.attach().addBreakPoint(null, 0x402c730e - 0x0000630E + 0x00001C62);
 //        emulator.traceCode();
+//        emulator.attach().addBreakPoint(null, 0x40b95d06);
+//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         long start = System.currentTimeMillis();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("loadLibrary offset=" + (System.currentTimeMillis() - start) + "ms");
 
-//        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
 
         IFishHook fishHook = FishHook.getInstance(emulator);
@@ -164,7 +161,7 @@ public class SubstrateTest extends EmulatorTest {
             }
         });
 
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
             @Override

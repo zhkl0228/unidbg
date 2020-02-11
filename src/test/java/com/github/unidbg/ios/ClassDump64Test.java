@@ -13,8 +13,10 @@ import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
-public class ClassDumpTest extends EmulatorTest {
+public class ClassDump64Test extends EmulatorTest {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -23,10 +25,12 @@ public class ClassDumpTest extends EmulatorTest {
 
     @Override
     protected Emulator createARMEmulator() {
-        return new DarwinARMEmulator();
+        return new DarwinARM64Emulator();
     }
 
     public void testClassDump() {
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
         loader.setObjcRuntime(true);
@@ -63,7 +67,7 @@ public class ClassDumpTest extends EmulatorTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ClassDumpTest test = new ClassDumpTest();
+        ClassDump64Test test = new ClassDump64Test();
         test.setUp();
         test.testClassDump();
         test.tearDown();
