@@ -622,9 +622,13 @@ public class ARM {
             if (is64Bit) {
                 long value = pointer.getLong(0);
                 sb.append(" => 0x").append(Long.toHexString(value));
-                int iv = (int) value;
-                if (iv < 0) {
-                    sb.append(" (-0x").append(Long.toHexString(-iv)).append(")");
+                if (value < 0) {
+                    sb.append(" (-0x").append(Long.toHexString(-value)).append(')');
+                } else if((value & 0x7fffffff00000000L) == 0) {
+                    int iv = (int) value;
+                    if (iv < 0) {
+                        sb.append(" (-0x").append(Integer.toHexString(-iv)).append(')');
+                    }
                 }
             } else {
                 int value = pointer.getInt(0);
