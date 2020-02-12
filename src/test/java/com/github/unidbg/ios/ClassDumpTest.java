@@ -2,8 +2,6 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.Module;
-import com.github.unidbg.Symbol;
 import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -11,7 +9,7 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.ios.objc.ObjC;
 import com.sun.jna.Pointer;
 
 public class ClassDumpTest extends EmulatorTest {
@@ -34,18 +32,8 @@ public class ClassDumpTest extends EmulatorTest {
 
         ISubstrate substrate = Substrate.getInstance(emulator);
 
-        Module main = loader.getExecutableModule();
-        Symbol _objc_getMetaClass = main.findSymbolByName("_objc_getMetaClass");
-        assertNotNull(_objc_getMetaClass);
-        Number ClassDump = _objc_getMetaClass.call(emulator, "ClassDump")[0];
-        assertTrue(ClassDump.intValue() != 0);
-
-        Symbol _sel_registerName = main.findSymbolByName("_sel_registerName");
-        assertNotNull(_sel_registerName);
-        Number my_dump_class = _sel_registerName.call(emulator, "my_dump_class:")[0];
-        assertTrue(my_dump_class.intValue() != 0);
-
-        substrate.hookMessageEx(UnicornPointer.pointer(emulator, ClassDump), UnicornPointer.pointer(emulator, my_dump_class), new ReplaceCallback() {
+        ObjC objc = ObjC.getInstance(emulator);
+        substrate.hookMessageEx(objc.getMetaClass("ClassDump"), objc.registerName("my_dump_class:"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();

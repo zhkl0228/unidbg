@@ -1,6 +1,6 @@
 package com.github.unidbg.ios.struct.objc;
 
-public interface Objc {
+public interface ObjcConstants {
 
     // Values for class_ro_t->flags
     // These are emitted by the compiler and are part of the ABI.

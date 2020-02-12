@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * class_ro_t
  */
-public class ClassRO extends UnicornStructure implements Objc {
+public class ClassRO extends UnicornStructure implements ObjcConstants {
 
     public ClassRO(Pointer p) {
         super(p);
