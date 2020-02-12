@@ -15,7 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
@@ -85,7 +85,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 boolean isWeakDef = (nlist.desc() & N_WEAK_DEF) != 0;
                 boolean isThumb = (nlist.desc() & N_ARM_THUMB_DEF) != 0;
                 strBuffer.position((int) nlist.un());
-                String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+                String symbolName = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
                 if ((type == N_SECT || type == N_ABS) && (nlist.type() & N_STAB) == 0) {
                     ExportSymbol exportSymbol = null;
                     if (exportSymbols.isEmpty() || (exportSymbol = exportSymbols.get(symbolName)) != null) {
@@ -109,7 +109,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     }
                 } else if (type == N_INDR) {
                     strBuffer.position(nlist.value().intValue());
-                    String indirectSymbol = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+                    String indirectSymbol = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
                     if (!symbolName.equals(indirectSymbol)) {
                         log.debug("nlist indirect symbolName=" + symbolName + ", indirectSymbol=" + indirectSymbol);
                         symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol));
@@ -368,7 +368,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         MachO.SymtabCommand.Nlist nlist = symtabCommand.symbols().get(index);
         strBuffer.position((int) nlist.un());
-        String symbolName = new String(io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+        String symbolName = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
         return new MachOSymbol(this, nlist, symbolName);
     }
 

@@ -77,8 +77,8 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         assert environ != null;
         final Pointer pMallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
         environ.setPointer(0, pMallocCorruptionAbort);
-        final Pointer pMallocStackLogging = null;//writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
-        environ.setPointer(emulator.getPointerSize(), pMallocStackLogging);
+//        final Pointer pMallocStackLogging = writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
+        environ.setPointer(emulator.getPointerSize(), null); // pMallocStackLogging
         environ.setPointer(emulator.getPointerSize() * 2, null);
 
         UnicornPointer _NSGetEnviron = allocateStack(emulator.getPointerSize());
@@ -143,9 +143,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
 
         for (MachOModule m : modules.values()) {
-            bindIndirectSymbolPointers(m);
-            setupLazyPointerHandler(m);
+            processBind(m);
         }
+//        processBind(module);
 
         notifySingle(Dyld.dyld_image_state_bound, module);
         notifySingle(Dyld.dyld_image_state_dependents_initialized, module);
@@ -340,6 +340,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 case MAIN:
                 case ROUTINES:
                 case ROUTINES_64:
+                case LOAD_WEAK_DYLIB:
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
@@ -508,7 +509,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                     neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
                 }
                 if (neededLibraryFile != null) {
-                    MachOModule needed = loadInternalPhase(neededLibraryFile, loadNeeded, false);
+                    MachOModule needed = loadInternalPhase(neededLibraryFile, true, false);
                     needed.addReferenceCount();
                     if (library.upward) {
                         upwardLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
@@ -655,7 +656,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             case "__dof_CFRunLoop":
             case "__dof_Cocoa_Aut":
             case "__dof_cache":
-                break;
             case "__stubs":
             case "__unwind_info":
             case "__got":
@@ -825,7 +825,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
     }
 
-    private boolean bindExternalRelocations(MachOModule module) throws IOException {
+    private boolean bindExternalRelocations(MachOModule module) {
         MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
         if (dysymtabCommand.nExtRel() <= 0) {
             return true;
@@ -870,7 +870,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         return ret;
     }
 
-    private long resolveSymbol(Module module, Symbol symbol) throws IOException {
+    private long resolveSymbol(Module module, Symbol symbol) {
         Symbol replace = module.findSymbolByName(symbol.getName(), true);
         long address = replace == null ? 0L : replace.getAddress();
         for (HookListener listener : hookListeners) {
@@ -962,7 +962,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
     }
 
-    private void bindIndirectSymbolPointers(MachOModule module) throws IOException {
+    private void bindIndirectSymbolPointers(MachOModule module) {
         if (module.indirectSymbolBound) {
             return;
         }
@@ -1002,7 +1002,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                                 if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
                                     UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
                                     if (pointer == null) {
-                                        throw new IllegalStateException("pointer=" + pointer);
+                                        throw new IllegalStateException("pointer is null");
                                     }
                                     Pointer newPointer = pointer.getPointer(0);
                                     if (newPointer == null) {
@@ -1029,11 +1029,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
                                 UnicornPointer pointer = UnicornPointer.pointer(emulator, ptrToBind + module.base);
                                 if (pointer == null) {
-                                    throw new IllegalStateException("pointer=" + pointer);
+                                    throw new IllegalStateException("pointer is null");
                                 }
                                 if (address == 0L) {
                                     if (isWeakRef) {
-                                        log.info("bindIndirectSymbolPointers symbol=" + symbol + ", isWeakRef=" + isWeakRef);
+                                        log.info("bindIndirectSymbolPointers symbol=" + symbol + ", isWeakRef=true");
                                         pointer.setPointer(0, null);
                                     } else {
                                         log.warn("bindIndirectSymbolPointers failed symbol=" + symbol);
@@ -1070,7 +1070,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
     }
 
-    private boolean eachBind(Log log, ByteBuffer buffer, MachOModule module, boolean lazy) throws IOException {
+    private boolean eachBind(Log log, ByteBuffer buffer, MachOModule module, boolean lazy) {
         final List<MemRegion> regions = module.getRegions();
         int type = lazy ? BIND_TYPE_POINTER : 0;
         int segmentIndex;
@@ -1176,7 +1176,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
     private boolean doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy) {
         Symbol symbol = module.findSymbolByName(symbolName, true);
         if (symbol == null) {
-            log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries + ", libraryOrdinal=" + libraryOrdinal);
+            log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
             return false;
         }
         Pointer pointer = UnicornPointer.pointer(emulator, address);
@@ -1278,6 +1278,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         return dlopen(path, true);
     }
 
+    private void processBind(MachOModule m) {
+        bindIndirectSymbolPointers(m);
+        setupLazyPointerHandler(m);
+    }
+
     @Override
     public Module dlopen(String path, boolean callInit) throws IOException {
         MachOModule loaded = modules.get(FilenameUtils.getName(path));
@@ -1308,9 +1313,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             }
         }
         for (MachOModule m : modules.values()) {
-            bindIndirectSymbolPointers(m);
-            setupLazyPointerHandler(m);
+            processBind(m);
         }
+//        processBind(module);
 
         if (!callInitFunction) { // No need call init array
             for (MachOModule m : modules.values()) {
@@ -1339,7 +1344,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
 
     @Override
-    public Symbol dlsym(long handle, String symbolName) throws IOException {
+    public Symbol dlsym(long handle, String symbolName) {
         for (Module module : modules.values()) {
             MachOModule mm = (MachOModule) module;
             if (mm.machHeader == handle) {
