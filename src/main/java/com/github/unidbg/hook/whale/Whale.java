@@ -47,19 +47,19 @@ public class Whale extends BaseHook implements IWhale {
     }
 
     @Override
-    public void WInlineHookFunction(long address, final ReplaceCallback callback) {
+    public void inlineHookFunction(long address, final ReplaceCallback callback) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup);
         WInlineHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
     }
 
     @Override
-    public void WInlineHookFunction(Symbol symbol, ReplaceCallback callback) {
-        WInlineHookFunction(symbol.getAddress(), callback);
+    public void inlineHookFunction(Symbol symbol, ReplaceCallback callback) {
+        inlineHookFunction(symbol.getAddress(), callback);
     }
 
     @Override
-    public void WImportHookFunction(String symbol, final ReplaceCallback callback) {
+    public void importHookFunction(String symbol, final ReplaceCallback callback) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup);
         WImportHookFunction.call(emulator, symbol, null, replace, backup);

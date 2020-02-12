@@ -91,7 +91,7 @@ public class JniDispatch64 extends AbstractJni {
 
         IWhale whale = Whale.getInstance(emulator);
         Symbol free = emulator.getMemory().findModule("libc.so").findSymbolByName("free");
-        whale.WInlineHookFunction(free, new ReplaceCallback() {
+        whale.inlineHookFunction(free, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 System.out.println("WInlineHookFunction free=" + emulator.getContext().getPointerArg(0));

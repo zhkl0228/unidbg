@@ -988,7 +988,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int timeout = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).intValue();
         int notify = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X6)).intValue();
 
-        msg.setSize(rcv_size);
+        msg.setSize(Math.max(send_size, rcv_size));
 
         final MachMsgHeader header = new MachMsgHeader(msg);
         header.unpack();
@@ -1132,6 +1132,78 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 4807: // vm_copy
+            {
+                VmCopy64Request args = new VmCopy64Request(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_copy args=" + args + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                }
+
+                byte[] data = unicorn.mem_read(args.source_address, args.size);
+                unicorn.mem_write(args.dest_address, data);
+
+                VmCopyReply reply = new VmCopyReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 0;
+                reply.NDR = args.NDR;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_copy reply=" + reply + ", header=" + header);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 4813: // _kernelrpc_mach_vm_remap
+            {
+                VmRemapRequest args = new VmRemapRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_vm_remap args=" + args + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                }
+
+                if (args.anywhere != MachO.VM_FLAGS_OVERWRITE || args.mask != 0) {
+                    throw new UnsupportedOperationException();
+                }
+
+                unicorn.mem_unmap(args.target_address, args.size);
+                unicorn.mem_map(args.target_address, args.size, args.inheritance);
+                if (args.copy != 0) {
+                    byte[] data = unicorn.mem_read(args.getSourceAddress(), args.size);
+                    unicorn.mem_write(args.target_address, data);
+                }
+
+                VmRemapReply reply = new VmRemapReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.retCode = 0;
+                reply.target_address1 = (int) args.target_address;
+                reply.target_address2 = (int) (args.target_address >> 32);
+                reply.cur_protection = args.inheritance;
+                reply.max_protection = args.inheritance;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_vm_remap reply=" + reply + ", header=" + header);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             case 4815: // vm_region_recurse_64
             {
                 VmRegionRecurse64Request args = new VmRegionRecurse64Request(request);
@@ -1164,9 +1236,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
                 reply.NDR = args.NDR;
                 reply.retCode = 0; // success
-                reply.address = memoryMap.base;
-                reply.size = (int) memoryMap.size;
-                reply.infoCnt = args.infoCnt;
+                reply.addressLow = (int) memoryMap.base;
+                reply.addressHigh = (int) (memoryMap.base >> 32L);
+                reply.sizeLow = (int) memoryMap.size;
+                reply.sizeHigh = (int) (memoryMap.size >> 32L);
+                reply.infoCnt = 7;
                 reply.nestingDepth = args.nestingDepth;
                 reply.info.protection = memoryMap.prot;
                 reply.info.max_protection = memoryMap.prot;
@@ -1183,7 +1257,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 TaskGetExceptionPortsRequest args = new TaskGetExceptionPortsRequest(request);
                 args.unpack();
                 if (log.isDebugEnabled()) {
-                    log.debug("task_get_exception_ports args=" + args + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    log.debug("task_get_exception_ports args=" + args + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                 }
 
                 TaskGetExceptionPortsReply reply = new TaskGetExceptionPortsReply(request);
@@ -1427,7 +1501,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 return MACH_MSG_SUCCESS;
             }
             default:
-                log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                 Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");
                 if (log.isDebugEnabled()) {
                     emulator.attach().debug();

@@ -6,6 +6,7 @@ import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.fishhook.IFishHook;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,7 +77,7 @@ public class FishHook extends BaseHook implements IFishHook {
         long header = module.machHeader;
         long slide = Dyld.computeSlide(emulator, header);
         Pointer rebinding = createRebinding(symbol, callback);
-        int ret = rebind_symbols_image.call(emulator, header, slide, rebinding, 1)[0].intValue();
+        int ret = rebind_symbols_image.call(emulator, UnicornPointer.pointer(emulator, header), UnicornPointer.pointer(emulator, slide), rebinding, 1)[0].intValue();
         if (ret != RET_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }

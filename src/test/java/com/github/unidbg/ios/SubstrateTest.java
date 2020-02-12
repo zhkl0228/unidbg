@@ -57,7 +57,7 @@ public class SubstrateTest extends EmulatorTest {
                 Pointer dest = context.getPointerArg(0);
                 Pointer src = context.getPointerArg(1);
                 int size = context.getIntArg(2);
-                System.err.println("memcpy dest=" + dest + ", src=" + src + ", size=" + size);
+                System.err.println("fishhook memcpy dest=" + dest + ", src=" + src + ", size=" + size);
                 return HookStatus.RET(emulator, originFunction);
             }
         });
@@ -151,7 +151,7 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
 //        emulator.traceCode();
 
-        whale.WInlineHookFunction(module.findSymbolByName("_malloc"), new ReplaceCallback() {
+        whale.inlineHookFunction(module.findSymbolByName("_malloc"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -163,7 +163,7 @@ public class SubstrateTest extends EmulatorTest {
 
 //        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
-        whale.WImportHookFunction("_strcmp", new ReplaceCallback() {
+        whale.importHookFunction("_strcmp", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();

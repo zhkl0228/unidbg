@@ -25,15 +25,15 @@ public abstract class BaseHook implements IHook {
 
     protected Pointer createReplacePointer(final ReplaceCallback callback, final Pointer backup) {
         SvcMemory svcMemory = emulator.getSvcMemory();
-        return svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmHook() {
-            @Override
-            protected HookStatus hook(Emulator emulator) {
-                return callback.onCall(emulator, backup.getInt(0) & 0xffffffffL);
-            }
-        } : new Arm64Hook() {
+        return svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Hook() {
             @Override
             protected HookStatus hook(Emulator emulator) {
                 return callback.onCall(emulator, backup.getLong(0));
+            }
+        } : new ArmHook() {
+            @Override
+            protected HookStatus hook(Emulator emulator) {
+                return callback.onCall(emulator, backup.getInt(0) & 0xffffffffL);
             }
         });
     }
@@ -46,6 +46,14 @@ public abstract class BaseHook implements IHook {
 
         boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
         return isIOS ? new com.github.unidbg.ios.URLibraryFile(url, libName, null) : new URLibraryFile(url, libName, -1);
+    }
+
+    protected final long numberToAddress(Number number) {
+        if (emulator.is64Bit()) {
+            return number.longValue();
+        } else {
+            return number.intValue() & 0xffffffffL;
+        }
     }
 
     @Override

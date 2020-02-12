@@ -26,7 +26,7 @@ public abstract class Dlfcn implements HookListener {
         try {
             Symbol symbol = memory.dlsym(handle, symbolName);
             if (symbol == null) {
-                log.info("Find symbol " + symbolName + " failed");
+                log.info("Find symbol \"" + symbolName + "\" failed");
                 this.error.setString(0, "Find symbol " + symbolName + " failed");
                 return 0;
             }

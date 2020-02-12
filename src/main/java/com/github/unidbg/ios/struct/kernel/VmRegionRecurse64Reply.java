@@ -14,15 +14,17 @@ public class VmRegionRecurse64Reply extends UnicornStructure {
 
     public NDR_record NDR;
     public int retCode;
-    public long address;
-    public int size;
+    public int addressLow;
+    public int addressHigh;
+    public int sizeLow;
+    public int sizeHigh;
     public int nestingDepth;
     public int infoCnt = 7;
     public VmRegionSubMapShortInfo64 info;
 
     @Override
     protected List<String> getFieldOrder() {
-        return Arrays.asList("NDR", "retCode", "address", "size", "nestingDepth", "infoCnt", "info");
+        return Arrays.asList("NDR", "retCode", "addressLow", "addressHigh", "sizeLow", "sizeHigh", "nestingDepth", "infoCnt", "info");
     }
 
 }

@@ -47,7 +47,9 @@ public class HookZz extends BaseHook implements IHookZz {
         zz_disable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_disable_arm_arm64_b_branch" : "zz_disable_arm_arm64_b_branch", false);
         zzReplace = module.findSymbolByName(isIOS ? "_ZzReplace" : "ZzReplace", false);
         zzWrap = module.findSymbolByName(isIOS ? "_ZzWrap" : "ZzWrap", false);
-        log.debug("zzReplace=" + zzReplace + ", zzWrap=" + zzWrap);
+        if (log.isDebugEnabled()) {
+            log.debug("zzReplace=" + zzReplace + ", zzWrap=" + zzWrap);
+        }
 
         if (zz_enable_arm_arm64_b_branch == null) {
             throw new IllegalStateException("zz_enable_arm_arm64_b_branch is null");

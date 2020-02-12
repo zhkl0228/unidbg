@@ -6,12 +6,12 @@ import com.github.unidbg.hook.ReplaceCallback;
 
 public interface IWhale extends IHook {
 
-    void WInlineHookFunction(long address, ReplaceCallback callback);
-    void WInlineHookFunction(Symbol symbol, ReplaceCallback callback);
+    void inlineHookFunction(long address, ReplaceCallback callback);
+    void inlineHookFunction(Symbol symbol, ReplaceCallback callback);
 
     /**
      * 当前对android无效，参考：https://github.com/asLody/whale/blob/master/whale/src/whale.cc，只支持苹果
      */
-    void WImportHookFunction(String symbol, ReplaceCallback callback);
+    void importHookFunction(String symbol, ReplaceCallback callback);
 
 }
