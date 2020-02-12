@@ -13,8 +13,6 @@ import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 public class ClassDump64Test extends EmulatorTest {
 
@@ -29,14 +27,12 @@ public class ClassDump64Test extends EmulatorTest {
     }
 
     public void testClassDump() {
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
         loader.setObjcRuntime(true);
         IClassDumper classDumper = ClassDumper.getInstance(emulator);
-
-        ISubstrate substrate = Substrate.getInstance(emulator);
 
         Module main = loader.getExecutableModule();
         Symbol _objc_getMetaClass = main.findSymbolByName("_objc_getMetaClass");
@@ -49,6 +45,11 @@ public class ClassDump64Test extends EmulatorTest {
         Number my_dump_class = _sel_registerName.call(emulator, "my_dump_class:")[0];
         assertTrue(my_dump_class.intValue() != 0);
 
+//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.DEBUG);
+        ISubstrate substrate = Substrate.getInstance(emulator);
+//        Module libSubstrate = emulator.getMemory().findModule("CydiaSubstrate");
+//        emulator.attach(libSubstrate.base, libSubstrate.base + libSubstrate.size).addBreakPoint(libSubstrate, 0x0000000000002988);
         substrate.hookMessageEx(UnicornPointer.pointer(emulator, ClassDump), UnicornPointer.pointer(emulator, my_dump_class), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {

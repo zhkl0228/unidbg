@@ -15,7 +15,6 @@ import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.unix.UnixSyscallHandler;
-import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
@@ -1514,6 +1513,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
     @Override
     protected long getModuleBase(Module module) {
-        return ((MachOModule) module).machHeader;
+//        return ((MachOModule) module).machHeader;
+        return super.getModuleBase(module);
     }
 }

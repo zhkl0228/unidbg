@@ -3,16 +3,19 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.arm.*;
+import com.github.unidbg.arm.AbstractARMEmulator;
+import com.github.unidbg.arm.Arm64Hook;
+import com.github.unidbg.arm.Arm64Svc;
+import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.unix.struct.DlInfo;
 import com.github.unidbg.ios.struct.DyldImageInfo;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.InitFunction;
+import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -60,6 +63,7 @@ public class Dyld64 extends Dyld {
     private Pointer __dyld_dlsym;
     private Pointer __dyld_dladdr;
     private long _os_trace_redirect_func;
+    private long sandbox_check;
 
     @Override
     final int _dyld_func_lookup(Emulator emulator, String name, Pointer address) {
@@ -255,7 +259,7 @@ public class Dyld64 extends Dyld {
                             String symbolName = symbol.getString(0);
                             if ((int) handle == MachO.RTLD_MAIN_ONLY && "_os_trace_redirect_func".equals(symbolName)) {
                                 if (_os_trace_redirect_func == 0) {
-                                    _os_trace_redirect_func = svcMemory.registerSvc(new ArmSvc() {
+                                    _os_trace_redirect_func = svcMemory.registerSvc(new Arm64Svc() {
                                         @Override
                                         public long handle(Emulator emulator) {
                                             Pointer msg = emulator.getContext().getPointerArg(0);
@@ -266,6 +270,24 @@ public class Dyld64 extends Dyld {
                                     }).peer;
                                 }
                                 return _os_trace_redirect_func;
+                            }
+                            if ("sandbox_check".equals(symbolName)) {
+                                if (sandbox_check == 0) {
+                                    sandbox_check = svcMemory.registerSvc(new Arm64Svc() {
+                                        @Override
+                                        public long handle(Emulator emulator) {
+                                            RegisterContext ctx = emulator.getContext();
+                                            int pid = ctx.getIntArg(0);
+                                            Pointer operation = ctx.getPointerArg(1);
+                                            int type = ctx.getIntArg(2);
+                                            if (log.isDebugEnabled()) {
+                                                log.debug("sandbox_check pid=" + pid + ", operation=" + (operation == null ? null : operation.getString(0)) + ", type=" + type);
+                                            }
+                                            return 1;
+                                        }
+                                    }).peer;
+                                }
+                                return sandbox_check;
                             }
 
                             return dlsym(emulator.getMemory(), handle, symbolName);
@@ -629,6 +651,7 @@ public class Dyld64 extends Dyld {
     }
 
     private long _abort;
+    private long _asl_open;
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
@@ -657,6 +680,26 @@ public class Dyld64 extends Dyld {
                     }).peer;
                 }
                 return _pthread_getname_np;
+            }
+        } else if ("libsystem_asl.dylib".equals(libraryName)) {
+            if ("_asl_open".equals(symbolName)) {
+                if (_asl_open == 0) {
+                    _asl_open = svcMemory.registerSvc(new Arm64Hook() {
+                        @Override
+                        protected HookStatus hook(Emulator emulator) {
+                            EditableArm64RegisterContext context = emulator.getContext();
+                            Pointer ident = context.getPointerArg(0);
+                            Pointer facility = context.getPointerArg(1);
+                            int opts = context.getIntArg(2);
+                            if (log.isDebugEnabled()) {
+                                log.debug("_asl_open ident=" + (ident == null ? null : ident.getString(0)) + ", facility=" + facility.getString(0) + ", opts=0x" + Integer.toHexString(opts));
+                            }
+                            context.setXLong(2, opts | ASL_OPT_STDERR);
+                            return HookStatus.RET(emulator, old);
+                        }
+                    }).peer;
+                }
+                return _asl_open;
             }
         }
         return 0;

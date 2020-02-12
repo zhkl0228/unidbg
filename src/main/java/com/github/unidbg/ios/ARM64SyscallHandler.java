@@ -136,8 +136,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case -89:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, _mach_timebase_info(emulator));
                     return;
-                case 4888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
+                case 4:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, write(u, emulator));
                     return;
                 case 6:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, close(emulator));
@@ -1667,9 +1667,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int write(Unicorn u, Emulator emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        Pointer buffer = context.getPointerArg(1);
+        int count = context.getIntArg(2);
         byte[] data = buffer.getByteArray(0, count);
         if (log.isDebugEnabled()) {
             Inspector.inspect(data, "write fd=" + fd + ", buffer=" + buffer + ", count=" + count);

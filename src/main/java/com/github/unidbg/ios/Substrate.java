@@ -42,7 +42,6 @@ public class Substrate extends BaseHook implements ISubstrate {
         _MSFindSymbol = module.findSymbolByName("_MSFindSymbol", false);
         _MSHookFunction = module.findSymbolByName("_MSHookFunction", false);
         _MSHookMessageEx = module.findSymbolByName("_MSHookMessageEx", false);
-        log.debug("_MSGetImageByName=" + _MSGetImageByName + ", _MSFindSymbol=" + _MSFindSymbol + ", _MSHookFunction=" + _MSHookFunction + ", _MSHookMessageEx=" + _MSHookMessageEx);
 
         if (_MSGetImageByName == null) {
             throw new IllegalStateException("_MSGetImageByName is null");
@@ -60,6 +59,9 @@ public class Substrate extends BaseHook implements ISubstrate {
         Symbol _MSDebug = module.findSymbolByName("_MSDebug", false);
         if (_MSDebug == null) {
             throw new IllegalStateException("_MSDebug is null");
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("_MSGetImageByName=" + UnicornPointer.pointer(emulator, _MSGetImageByName.getAddress()) + ", _MSFindSymbol=" + UnicornPointer.pointer(emulator, _MSFindSymbol.getAddress()) + ", _MSHookFunction=" + UnicornPointer.pointer(emulator, _MSHookFunction.getAddress()) + ", _MSHookMessageEx=" + UnicornPointer.pointer(emulator, _MSHookMessageEx.getAddress()) + ", _MSDebug=" + UnicornPointer.pointer(emulator, _MSDebug.getAddress()));
         }
 
         if (log.isDebugEnabled()) {
