@@ -67,5 +67,10 @@ int main(int argc, char *argv[]) {
   }
   free(classes);
 
+  char buf[0x40];
+  memset(buf, 0, 0x40);
+  snprintf(buf, 0x40, "snprintf: %p\n", buf);
+  fprintf(stderr, "printf[%p] test: %s", buf, buf);
+
   return 0;
 }

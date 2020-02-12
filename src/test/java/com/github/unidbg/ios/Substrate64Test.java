@@ -15,14 +15,10 @@ import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.WrapCallback;
 import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.whale.Whale;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import junit.framework.AssertionFailedError;
 
 import java.io.File;
-import java.util.Arrays;
 
 public class Substrate64Test extends EmulatorTest {
 
@@ -109,31 +105,6 @@ public class Substrate64Test extends EmulatorTest {
                 System.err.println("HookZz postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getLongArg(0)));
             }
         });
-
-//        emulator.attach().addBreakPoint(null, 0x40235d2a);
-//        emulator.traceCode();
-
-        MemoryBlock memoryBlock = emulator.getMemory().malloc(0x40, false);
-        Pointer memory = memoryBlock.getPointer();
-        Symbol _snprintf = module.findSymbolByName("_snprintf", true);
-        assertNotNull(_snprintf);
-
-        byte[] before = memory.getByteArray(0, 0x40);
-        Inspector.inspect(before, "Before memory=" + memory);
-//        emulator.traceCode();
-//        emulator.traceWrite(memory.peer, memory.peer + 0x40);
-//        emulator.traceWrite();
-        String fmt = "Test snprintf=%p\n";
-//        Module libsystemC = emulator.getMemory().findModule("libsystem_c.dylib");
-//        emulator.attach(libsystemC.base, libsystemC.base + libsystemC.size).addBreakPoint(libsystemC, 0x11d40);
-        _snprintf.call(emulator, memory, 0x40, fmt, memory);
-        byte[] after = memory.getByteArray(0, 0x40);
-        Inspector.inspect(after, "After _snprintf=" + UnicornPointer.pointer(emulator, _snprintf.getAddress()));
-        if (Arrays.equals(before, after)) {
-            throw new AssertionFailedError();
-        }
-//        emulator.attach().addBreakPoint(null, 0x40234c1e);
-        memoryBlock.free(false);
 
         long start = System.currentTimeMillis();
 
