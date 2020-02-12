@@ -144,13 +144,19 @@ public class Dyld64 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             int image_index = emulator.getContext().getIntArg(0);
-                            log.debug("__dyld_get_image_vmaddr_slide index=" + image_index);
                             Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
                             if (image_index < 0 || image_index >= modules.length) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("__dyld_get_image_vmaddr_slide index=" + image_index);
+                                }
                                 return 0;
                             }
                             MachOModule module = (MachOModule) modules[image_index];
-                            return computeSlide(emulator, module.machHeader);
+                            long slide = computeSlide(emulator, module.machHeader);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_get_image_vmaddr_slide index=" + image_index + ", slide=0x" + Long.toHexString(slide) + ", module=" + module.name);
+                            }
+                            return slide;
                         }
                     });
                 }

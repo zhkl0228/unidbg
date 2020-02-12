@@ -47,9 +47,11 @@ public class Substrate64Test extends EmulatorTest {
         loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
-//        Logger.getLogger("com.github.emulator.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-
         IWhale whale = Whale.getInstance(emulator);
+//        Logger.getLogger("com.github.emulator.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.DEBUG);
+//        Module libwhale = emulator.getMemory().findModule("libwhale.dylib");
+//        emulator.attach(libwhale.base, libwhale.base + libwhale.size).addBreakPoint(libwhale, 0x0000184b0);
         whale.WImportHookFunction("_malloc", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {

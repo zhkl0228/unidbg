@@ -335,8 +335,9 @@ public abstract class AbstractARMDebugger implements Debugger {
             Memory memory = emulator.getMemory();
             String maxLengthSoName = memory.getMaxLengthLibraryName();
             StringBuilder sb = new StringBuilder();
+            int index = 0;
             for (Module module : memory.getLoadedModules()) {
-                sb.append(String.format("[%" + maxLengthSoName.length() + "s] ", module.name));
+                sb.append(String.format("[%2s][%" + maxLengthSoName.length() + "s] ", index++, module.name));
                 sb.append(String.format("[0x%x-0x%x]", module.base, module.base + module.size));
                 sb.append("\n");
             }

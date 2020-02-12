@@ -3,10 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.ios.struct.LoadCommand;
-import com.github.unidbg.ios.struct.MachHeader;
-import com.github.unidbg.ios.struct.MachHeader64;
-import com.github.unidbg.ios.struct.SegmentCommand;
+import com.github.unidbg.ios.struct.*;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.Dlfcn;
@@ -49,11 +46,11 @@ abstract class Dyld extends Dlfcn {
             loadCommand.unpack();
             if (loadCommand.type == io.kaitai.MachO.LoadCommandType.SEGMENT.id() ||
                     loadCommand.type == MachO.LoadCommandType.SEGMENT_64.id()) {
-                SegmentCommand segmentCommand = new SegmentCommand(loadPointer);
+                SegmentCommand segmentCommand = emulator.is64Bit() ? new SegmentCommand64(loadPointer) : new SegmentCommand32(loadPointer);
                 segmentCommand.unpack();
 
-                if ("__TEXT".equals(new String(segmentCommand.segname).trim())) {
-                    return (machHeader - segmentCommand.vmaddr);
+                if ("__TEXT".equals(segmentCommand.getSegName())) {
+                    return (machHeader - segmentCommand.getVmAddress());
                 }
             }
             loadPointer = loadPointer.share(loadCommand.size);
