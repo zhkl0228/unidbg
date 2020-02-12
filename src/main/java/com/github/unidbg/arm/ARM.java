@@ -604,9 +604,10 @@ public class ARM {
                     }
                     if (r != -1) {
                         UnicornPointer pointer = UnicornPointer.register(emulator, r);
-                        assert pointer != null;
-                        long addr = (is64Bit ? pointer.peer : pointer.toUIntPeer()) + value;
-                        appendAddrValue(sb, addr, memory, is64Bit);
+                        if (pointer != null) {
+                            long addr = (is64Bit ? pointer.peer : pointer.toUIntPeer()) + value;
+                            appendAddrValue(sb, addr, memory, is64Bit);
+                        }
                     }
                 }
             }

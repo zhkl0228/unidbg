@@ -1,6 +1,9 @@
 package com.github.unidbg.ios.ipa;
 
-import com.dd.plist.*;
+import com.dd.plist.NSDictionary;
+import com.dd.plist.NSString;
+import com.dd.plist.PropertyListFormatException;
+import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.memory.Memory;
@@ -12,11 +15,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class IpaLoader {
 
@@ -26,7 +30,7 @@ public abstract class IpaLoader {
 
     public static IpaLoader load(Emulator emulator, File ipa, boolean forceCallInit, String... loads) throws IOException {
         try {
-            String appDir = parseMetadata(ipa);
+            String appDir = parseApp(ipa);
             byte[] data = loadZip(ipa, appDir + "Info.plist");
             if (data == null) {
                 throw new IllegalStateException("Find Info.plist failed");
@@ -42,19 +46,23 @@ public abstract class IpaLoader {
         }
     }
 
-    private static String parseMetadata(File ipa) throws IOException, ParserConfigurationException, ParseException, SAXException, PropertyListFormatException {
-        byte[] data = loadZip(ipa, "iTunesMetadata.plist");
-        if (data == null) {
-            throw new IllegalStateException("iTunesMetadata.plist not exists");
+    private static final Pattern PATTERN = Pattern.compile("^(Payload/\\w+\\.app/)");
+
+    private static String parseApp(File ipa) throws IOException {
+        try (JarFile file = new JarFile(ipa)) {
+            Enumeration<JarEntry> enumeration = file.entries();
+            while (enumeration.hasMoreElements()) {
+                JarEntry entry = enumeration.nextElement();
+                if (!entry.getName().startsWith("Payload/")) {
+                    continue;
+                }
+                Matcher matcher = PATTERN.matcher(entry.getName());
+                if (matcher.find()) {
+                    return matcher.group(1);
+                }
+            }
         }
-        String xml = new String(data, StandardCharsets.UTF_8).trim();
-        NSDictionary metadata = (NSDictionary) XMLPropertyListParser.parse(xml.getBytes(StandardCharsets.UTF_8));
-        NSString bundleDisplayName = (NSString) metadata.get("bundleDisplayName");
-        NSString fileExtension = (NSString) metadata.get("fileExtension");
-        if (!".app".equals(fileExtension.getContent())) {
-            throw new IllegalArgumentException("ipa is not app");
-        }
-        return "Payload/" + bundleDisplayName.getContent() + ".app/";
+        throw new IllegalStateException("NOT app ipa");
     }
 
     static byte[] loadZip(File file, String path) throws IOException {

@@ -130,7 +130,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case -31:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_msg_trap(emulator));
                     return;
-                case -6188:
+                case -61:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, thread_switch(emulator));
                     return;
                 case -89:
@@ -338,11 +338,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int thread_switch(Emulator emulator) {
-        // TODO: implement
-        Unicorn unicorn = emulator.getUnicorn();
-        int thread_name = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int option = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        int option_time = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        RegisterContext context = emulator.getContext();
+        int thread_name = context.getIntArg(0);
+        int option = context.getIntArg(1);
+        int option_time = context.getIntArg(2);
         log.info("thread_switch thread_name=" + thread_name + ", option=" + option + ", option_time=" + option_time);
         return 0;
     }

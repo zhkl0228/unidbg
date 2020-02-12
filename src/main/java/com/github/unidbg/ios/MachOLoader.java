@@ -671,6 +671,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             case "__swift5_protos":
             case "__info_plist":
             case "__crash_info":
+            case "__thread_vars":
+            case "__thread_bss":
+            case "__thread_data":
                 break;
             default:
                 boolean isObjc = sectName.startsWith("__objc_");
