@@ -187,6 +187,10 @@ public class SubstrateTest extends EmulatorTest {
         numbers = symbol.call(emulator, UnicornPointer.pointer(emulator, ret), "_MSGetImageByName");
         ret = numbers[0].intValue() & 0xffffffffL;
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+
+        start = System.currentTimeMillis();
+        loader.getExecutableModule().callEntry(emulator);
+        System.err.println("callExecutableEntry ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void main(String[] args) throws Exception {

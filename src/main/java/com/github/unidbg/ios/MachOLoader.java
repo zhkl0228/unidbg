@@ -222,11 +222,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (checkBootstrap && !isExecutable && executableModule == null) {
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
-            Module bootstrap = loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
+            /*Module bootstrap = */loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
 //            emulator.traceCode();
 //            emulator.attach().addBreakPoint(null, 0x409a7f44);
 //            emulator.attach().addBreakPoint(null, 0x40b95d06);
-            bootstrap.callEntry(emulator);
+//            bootstrap.callEntry(emulator);
 //            emulator.attach().debug();
         }
 
