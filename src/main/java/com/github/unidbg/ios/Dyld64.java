@@ -52,6 +52,7 @@ public class Dyld64 extends Dyld {
     private Pointer __dyld_dyld_register_image_state_change_handler;
     private Pointer __dyld_image_path_containing_address;
     private Pointer __dyld__NSGetExecutablePath;
+    private Pointer __dyld_fast_stub_entry;
 
     @Override
     final int _stub_binding_helper() {
@@ -72,6 +73,23 @@ public class Dyld64 extends Dyld {
         }
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
+            case "__dyld_fast_stub_entry":
+                if (__dyld_fast_stub_entry == null) {
+                    __dyld_fast_stub_entry = svcMemory.registerSvc(new Arm64Svc() {
+                        @Override
+                        public long handle(Emulator emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer loaderCache = context.getPointerArg(0);
+                            long lazyInfo = context.getLongArg(1);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_fast_stub_entry loaderCache=" + loaderCache + ", lazyInfo=" + lazyInfo);
+                            }
+                            return 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld__NSGetExecutablePath);
+                return 1;
             case "__dyld__NSGetExecutablePath":
                 if (__dyld__NSGetExecutablePath == null) {
                     __dyld__NSGetExecutablePath = svcMemory.registerSvc(new Arm64Svc() {

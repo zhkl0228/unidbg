@@ -190,7 +190,7 @@ public class SubstrateTest extends EmulatorTest {
 
         start = System.currentTimeMillis();
         loader.getExecutableModule().callEntry(emulator);
-        System.err.println("callExecutableEntry ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void main(String[] args) throws Exception {

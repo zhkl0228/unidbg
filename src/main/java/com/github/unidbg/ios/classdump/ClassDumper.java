@@ -43,9 +43,9 @@ public class ClassDumper extends BaseHook implements IClassDumper {
             throw new IllegalStateException("numbers length=" + numbers.length);
         }
         int size = numbers[0].intValue();
-        Pointer pointer = UnicornPointer.pointer(emulator, numbers[2].longValue());
+        Pointer pointer = UnicornPointer.pointer(emulator, numberToAddress(numbers[2]));
         assert pointer != null;
-        if (size == 0) { // dump failed
+        if (size <= 0 || size > buf.length) { // dump failed
             throw new IllegalArgumentException(pointer.getString(0));
         }
         buf = pointer.getByteArray(0, size);

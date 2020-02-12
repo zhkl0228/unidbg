@@ -11,6 +11,6 @@ class NeedLibrary {
 
     @Override
     public String toString() {
-        return path;
+        return (upward ? '?' : '*') + path;
     }
 }

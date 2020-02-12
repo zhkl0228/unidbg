@@ -26,7 +26,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final ByteBuffer buffer;
     final List<NeedLibrary> lazyLoadNeededList;
     final Map<String, Module> upwardLibraries;
-    private final Map<String, MachOModule> exportModules;
+    private final Map<String, Module> exportModules;
     private final String path;
     final MachO.DyldInfoCommand dyldInfoCommand;
 
@@ -43,12 +43,13 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     private final Log log;
 
     final boolean executable;
+    private final MachOLoader loader;
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
-                List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, MachOModule> exportModules,
+                List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
                 String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
-                long machHeader, boolean executable) {
+                long machHeader, boolean executable, MachOLoader loader) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -64,6 +65,14 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.vars = vars;
         this.machHeader = machHeader;
         this.executable = executable;
+        this.loader = loader;
+
+        {
+            Log log = LogFactory.getLog(MachOModule.class);
+            if (log.isDebugEnabled()) {
+                log.debug(name + ": lazyLoadNeededList=" + lazyLoadNeededList + ", upwardLibraries=" + upwardLibraries.values() + ", exportModules=" + exportModules.values() + ", neededLibraries=" + neededLibraries.values());
+            }
+        }
 
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = parseRoutines(machO);
@@ -395,23 +404,25 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             return symbol;
         }
 
-        for (Module module : exportModules.values()) {
+        Log log = LogFactory.getLog(MachOModule.class);
+        if (log.isDebugEnabled()) {
+            log.debug("findSymbolByNameInternal symbolName=" + name + ", withDependencies=" + withDependencies + ", moduleName=" + this.name);
+        }
+
+        Set<Module> list = new LinkedHashSet<>(exportModules.values());
+        if (withDependencies) {
+            list.addAll(upwardLibraries.values());
+            list.addAll(neededLibraries.values());
+            list.addAll(loader.getLoadedModules());
+        }
+
+        for (Module module : list) {
             symbol = module.findSymbolByName(name, false);
             if (symbol != null) {
                 return symbol;
             }
         }
 
-        if (withDependencies) {
-            for (Module module : upwardLibraries.values()) {
-                symbol = module.findSymbolByName(name, false);
-                if (symbol != null) {
-                    return symbol;
-                }
-            }
-
-            return findDependencySymbolByName(name);
-        }
         return null;
     }
 

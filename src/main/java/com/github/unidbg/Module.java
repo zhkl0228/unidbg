@@ -124,5 +124,4 @@ public abstract class Module {
         }
         return this.pathPointer;
     }
-
 }
