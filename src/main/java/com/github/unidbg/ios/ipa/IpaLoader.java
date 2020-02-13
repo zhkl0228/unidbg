@@ -28,6 +28,10 @@ public abstract class IpaLoader {
 
     public abstract Module getExecutable();
 
+    public static IpaLoader load(Emulator emulator, File ipa, String... loads) throws IOException {
+        return load(emulator, ipa, true, loads);
+    }
+
     public static IpaLoader load(Emulator emulator, File ipa, boolean forceCallInit, String... loads) throws IOException {
         try {
             String appDir = parseApp(ipa);

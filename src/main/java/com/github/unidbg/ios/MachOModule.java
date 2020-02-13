@@ -30,7 +30,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     private final String path;
     final MachO.DyldInfoCommand dyldInfoCommand;
 
-    private final List<InitFunction> routines;
+    final List<InitFunction> routines;
     final List<InitFunction> initFunctionList;
 
     final long machHeader;
@@ -66,13 +66,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.machHeader = machHeader;
         this.executable = executable;
         this.loader = loader;
-
-        {
-            Log log = LogFactory.getLog(MachOModule.class);
-            if (log.isDebugEnabled()) {
-                log.debug(name + ": lazyLoadNeededList=" + lazyLoadNeededList + ", upwardLibraries=" + upwardLibraries.values() + ", exportModules=" + exportModules.values() + ", neededLibraries=" + neededLibraries.values());
-            }
-        }
 
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = parseRoutines(machO);
@@ -179,14 +172,27 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 //        return emulator.eFunc(machHeader + entryPoint, argc, argvPointer)[0].intValue();
     }
 
-    void callRoutines(Emulator emulator) {
+    final void doInitialization(Emulator emulator) {
+        callRoutines(emulator);
+        callInitFunction(emulator);
+    }
+
+    private void callRoutines(Emulator emulator) {
+        Log log = LogFactory.getLog(MachOModule.class);
+        if (log.isDebugEnabled() && !routines.isEmpty()) {
+            log.debug("callRoutines name=" + name);
+        }
         while (!routines.isEmpty()) {
             InitFunction routine = routines.remove(0);
             routine.call(emulator);
         }
     }
 
-    void callInitFunction(Emulator emulator) {
+    private void callInitFunction(Emulator emulator) {
+        Log log = LogFactory.getLog(MachOModule.class);
+        if (log.isDebugEnabled() && !initFunctionList.isEmpty()) {
+            log.debug("callInitFunction name=" + name);
+        }
         while (!initFunctionList.isEmpty()) {
             InitFunction initFunction = initFunctionList.remove(0);
             initFunction.call(emulator);
@@ -402,11 +408,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         Symbol symbol = symbolMap.get(name);
         if (symbol != null) {
             return symbol;
-        }
-
-        Log log = LogFactory.getLog(MachOModule.class);
-        if (log.isDebugEnabled()) {
-            log.debug("findSymbolByNameInternal symbolName=" + name + ", withDependencies=" + withDependencies + ", moduleName=" + this.name);
         }
 
         Set<Module> list = new LinkedHashSet<>(exportModules.values());

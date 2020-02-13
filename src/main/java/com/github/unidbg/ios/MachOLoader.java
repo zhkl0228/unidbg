@@ -152,11 +152,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (callInitFunction || forceCallInit) {
             for (MachOModule m : modules.values()) {
-                m.callInitFunction(emulator);
-            }
-
-            for (MachOModule m : modules.values()) {
-                m.callRoutines(emulator);
+                m.doInitialization(emulator);
             }
         }
 
@@ -1347,11 +1343,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (callInit) {
             for (MachOModule m : modules.values()) {
-                m.callInitFunction(emulator);
-            }
-
-            for (MachOModule m : modules.values()) {
-                m.callRoutines(emulator);
+                m.doInitialization(emulator);
             }
         }
 

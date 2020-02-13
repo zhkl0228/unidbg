@@ -882,13 +882,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int _kernelrpc_mach_vm_map_trap(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        int target = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
-        Pointer address = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-        long size = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X2)).longValue();
-        long mask = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X3)).longValue();
-        int flags = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X4)).intValue();
-        int cur_protection = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).intValue();
+        RegisterContext context = emulator.getContext();
+        int target = context.getIntArg(0);
+        Pointer address = context.getPointerArg(1);
+        long size = context.getLongArg(2);
+        long mask = context.getLongArg(3);
+        int flags = context.getIntArg(4);
+        int cur_protection = context.getIntArg(5);
         int tag = flags >> 24;
         boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
         if (!anywhere) {
@@ -903,12 +903,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         } else {
             pointer = loader.mmap((int) size, cur_protection);
         }
+        String msg = "_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=true, tag=0x" + Integer.toHexString(tag);
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
+            log.debug(msg);
         } else {
             Log log = LogFactory.getLog("com.github.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug("_kernelrpc_mach_vm_map_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", mask=0x" + Long.toHexString(mask) + ", flags=0x" + Long.toHexString(flags) + ", cur_protection=" + cur_protection + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
+                log.debug(msg);
             }
         }
         address.setPointer(0, pointer);

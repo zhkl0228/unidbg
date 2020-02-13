@@ -26,9 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class Dyld64 extends Dyld {
 
@@ -566,6 +564,7 @@ public class Dyld64 extends Dyld {
         EditableArm64RegisterContext context = emulator.getContext();
         Pointer pointer = context.getStackPointer();
         try {
+            Collection<Module> loaded = memory.getLoadedModules();
             Module module = path == null ? null : memory.dlopen(path, false);
             if (module == null) {
                 int ret;
@@ -597,11 +596,24 @@ public class Dyld64 extends Dyld {
                 pointer = pointer.share(-8); // NULL-terminated
                 pointer.setLong(0, 0);
 
-                for (Module m : memory.getLoadedModules()) {
+                Set<Module> newLoaded = new HashSet<>(memory.getLoadedModules());
+                newLoaded.removeAll(loaded);
+                if (log.isDebugEnabled()) {
+                    log.debug("newLoaded=" + newLoaded + ", contains=" + loaded.contains(module));
+                }
+                for (Module m : newLoaded) {
                     MachOModule mm = (MachOModule) m;
                     if (mm.hasUnresolvedSymbol()) {
                         continue;
                     }
+                    for (InitFunction initFunction : mm.routines) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("[" + mm.name + "]PushRoutineFunction: 0x" + Long.toHexString(initFunction.getAddress()));
+                        }
+                        pointer = pointer.share(-8); // routine
+                        pointer.setLong(0, initFunction.getAddress());
+                    }
+                    mm.routines.clear();
                     for (InitFunction initFunction : mm.initFunctionList) {
                         if (log.isDebugEnabled()) {
                             log.debug("[" + mm.name + "]PushModInitFunction: 0x" + Long.toHexString(initFunction.getAddress()));
