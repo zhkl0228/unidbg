@@ -152,7 +152,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (callInitFunction || forceCallInit) {
             for (MachOModule m : modules.values()) {
-                m.doInitialization(emulator);
+                if (m.allSymbolBond || forceCallInit) {
+                    m.doInitialization(emulator);
+                }
             }
         }
 
@@ -1330,7 +1332,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (callInit) {
             for (MachOModule m : modules.values()) {
-                m.doInitialization(emulator);
+                if (m.allSymbolBond) {
+                    m.doInitialization(emulator);
+                }
             }
         }
 
@@ -1411,34 +1415,40 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 long slide = Dyld.computeSlide(emulator, module.machHeader);
                 if (!module.executable) {
                     for (UnicornPointer callback : addImageCallbacks) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("notifySingle callback=" + callback);
-                        }
                         if (module.addImageCallSet.add(callback)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("notifySingle callback=" + callback + ", module=" + module.name);
+                            }
                             MachOModule.emulateFunction(emulator, callback.peer, UnicornPointer.pointer(emulator, module.machHeader), UnicornPointer.pointer(emulator, slide));
                         }
                     }
                 }
                 for (UnicornPointer handler : boundHandlers) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("notifySingle state=" + state + ", handler=" + handler);
-                    }
                     if (module.boundCallSet.add(handler)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
+                        }
                         MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
                     }
                 }
                 break;
             case Dyld.dyld_image_state_dependents_initialized:
                 for (UnicornPointer handler : initializedHandlers) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("notifySingle state=" + state + ", handler=" + handler);
-                    }
-                    if (module.initializedCallSet.add(handler)) {
+                    if (module.dependentsInitializedCallSet.add(handler)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
+                        }
                         MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
                     }
                 }
                 break;
             case Dyld.dyld_image_state_initialized:
+                for (UnicornPointer handler : boundHandlers) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
+                    }
+                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                }
                 break;
             default:
                 throw new UnsupportedOperationException("state=" + state);

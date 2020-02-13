@@ -109,6 +109,10 @@ abstract class Dyld extends Dlfcn {
         int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
         Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModules().size(), "DyldImageInfo");
         for (Module module : loader.getLoadedModules()) {
+            if (module == loader.getExecutableModule()) {
+                continue;
+            }
+
             MachOModule mm = (MachOModule) module;
             DyldImageInfo info = new DyldImageInfo(pointer);
             info.imageFilePath = mm.createPathMemory(emulator.getSvcMemory());
@@ -121,7 +125,7 @@ abstract class Dyld extends Dlfcn {
             if (state == dyld_image_state_bound) {
                 mm.boundCallSet.add(handler);
             } else if (state == dyld_image_state_dependents_initialized) {
-                mm.initializedCallSet.add(handler);
+                mm.dependentsInitializedCallSet.add(handler);
             }
         }
         return list.toArray(new DyldImageInfo[0]);

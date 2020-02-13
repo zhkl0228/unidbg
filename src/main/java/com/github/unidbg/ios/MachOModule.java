@@ -484,7 +484,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     final Set<UnicornPointer> addImageCallSet = new HashSet<>();
     final Set<UnicornPointer> boundCallSet = new HashSet<>();
-    final Set<UnicornPointer> initializedCallSet = new HashSet<>();
+    final Set<UnicornPointer> dependentsInitializedCallSet = new HashSet<>();
 
     @Override
     protected String getPath() {
