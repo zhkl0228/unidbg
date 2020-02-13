@@ -484,7 +484,7 @@ public class Dyld32 extends Dyld {
                                     pointer.setInt(0, state);
 
                                     if (log.isDebugEnabled()) {
-                                        log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length);
+                                        log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length + ", batch=" + batch);
                                     }
                                     pointer = pointer.share(-4); // handler
                                     pointer.setPointer(0, handler);

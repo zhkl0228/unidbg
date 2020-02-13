@@ -524,15 +524,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
         }
 
-        final long loadSize = size;
-        MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars, machHeader, isExecutable, this);
-        modules.put(dyId, module);
-
-        if (isExecutable) {
-            setExecuteModule(module);
-        }
-
         for (MachOModule export : modules.values()) {
             for (Iterator<NeedLibrary> iterator = export.lazyLoadNeededList.iterator(); iterator.hasNext(); ) {
                 NeedLibrary library = iterator.next();
@@ -551,7 +542,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             }
         }
 
+        final long loadSize = size;
+        MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars, machHeader, isExecutable, this);
         processRebase(log, module);
+        if (isExecutable) {
+            setExecuteModule(module);
+        }
+        modules.put(dyId, module);
 
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");

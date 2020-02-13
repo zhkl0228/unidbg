@@ -174,10 +174,14 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     final void doInitialization(Emulator emulator) {
         callRoutines(emulator);
+        for (Module module : neededLibraries.values()) {
+            MachOModule mm = (MachOModule) module;
+            mm.doInitialization(emulator);
+        }
         callInitFunction(emulator);
     }
 
-    private void callRoutines(Emulator emulator) {
+    final void callRoutines(Emulator emulator) {
         Log log = LogFactory.getLog(MachOModule.class);
         if (log.isDebugEnabled() && !routines.isEmpty()) {
             log.debug("callRoutines name=" + name);
@@ -188,7 +192,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
-    private void callInitFunction(Emulator emulator) {
+    final void callInitFunction(Emulator emulator) {
         Log log = LogFactory.getLog(MachOModule.class);
         if (log.isDebugEnabled() && !initFunctionList.isEmpty()) {
             log.debug("callInitFunction name=" + name);

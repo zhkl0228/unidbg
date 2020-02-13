@@ -536,7 +536,7 @@ public class Dyld64 extends Dyld {
                                     pointer.setLong(0, state);
 
                                     if (log.isDebugEnabled()) {
-                                        log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length);
+                                        log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length + ", batch=" + batch);
                                     }
                                     pointer = pointer.share(-8); // handler
                                     pointer.setPointer(0, handler);
