@@ -9,13 +9,12 @@ import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
-import com.github.unidbg.unix.struct.DlInfo;
 import com.github.unidbg.ios.struct.DyldImageInfo;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.InitFunction;
+import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -27,7 +26,10 @@ import unicorn.ArmConst;
 import unicorn.Unicorn;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Dyld32 extends Dyld {
 
@@ -461,9 +463,9 @@ public class Dyld32 extends Dyld {
                             UnicornPointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                             DyldImageInfo[] imageInfos;
                             if (batch == 1) {
-                                imageInfos = registerImageStateBatchChangeHandler(state, handler, emulator);
+                                imageInfos = registerImageStateBatchChangeHandler(loader, state, handler, emulator);
                             } else {
-                                imageInfos = registerImageStateSingleChangeHandler(state, handler, emulator);
+                                imageInfos = registerImageStateSingleChangeHandler(loader, state, handler, emulator);
                             }
 
                             Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
@@ -582,65 +584,6 @@ public class Dyld32 extends Dyld {
         } finally {
             unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) pointer).peer);
         }
-    }
-
-    private DyldImageInfo[] registerImageStateBatchChangeHandler(int state, UnicornPointer handler, Emulator emulator) {
-        if (log.isDebugEnabled()) {
-            log.debug("registerImageStateBatchChangeHandler state=" + state + ", handler=" + handler);
-        }
-
-        if (state != dyld_image_state_bound) {
-            throw new UnsupportedOperationException("state=" + state);
-        }
-
-        if (loader.boundHandlers.contains(handler)) {
-            return null;
-        }
-        loader.boundHandlers.add(handler);
-        return generateDyldImageInfo(emulator, state, handler);
-    }
-
-    private DyldImageInfo[] generateDyldImageInfo(Emulator emulator, int state, UnicornPointer handler) {
-        List<DyldImageInfo> list = new ArrayList<>(loader.getLoadedModules().size());
-        int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
-        Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModules().size(), "DyldImageInfo");
-        for (Module module : loader.getLoadedModules()) {
-            MachOModule mm = (MachOModule) module;
-            DyldImageInfo info = new DyldImageInfo(pointer);
-            info.imageFilePath = mm.createPathMemory(emulator.getSvcMemory());
-            info.imageLoadAddress = UnicornPointer.pointer(emulator, mm.machHeader);
-            info.imageFileModDate = 0;
-            info.pack();
-            list.add(info);
-            pointer = pointer.share(elementSize);
-
-            if (state == dyld_image_state_bound) {
-                mm.boundCallSet.add(handler);
-            } else if (state == dyld_image_state_dependents_initialized) {
-                mm.initializedCallSet.add(handler);
-            }
-        }
-        return list.toArray(new DyldImageInfo[0]);
-    }
-
-    private DyldImageInfo[] registerImageStateSingleChangeHandler(int state, UnicornPointer handler, Emulator emulator) {
-        if (log.isDebugEnabled()) {
-            log.debug("registerImageStateSingleChangeHandler state=" + state + ", handler=" + handler);
-        }
-
-        if (state == dyld_image_state_terminated) {
-            return null;
-        }
-
-        if (state != dyld_image_state_dependents_initialized) {
-            throw new UnsupportedOperationException("state=" + state);
-        }
-
-        if (loader.initializedHandlers.contains(handler)) {
-            return null;
-        }
-        loader.initializedHandlers.add(handler);
-        return generateDyldImageInfo(emulator, state, handler);
     }
 
     private long _abort;

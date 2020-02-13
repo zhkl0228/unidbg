@@ -218,12 +218,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (checkBootstrap && !isExecutable && executableModule == null) {
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
-            /*Module bootstrap = */loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
-//            emulator.traceCode();
-//            emulator.attach().addBreakPoint(null, 0x409a7f44);
-//            emulator.attach().addBreakPoint(null, 0x40b95d06);
-//            bootstrap.callEntry(emulator);
-//            emulator.attach().debug();
+            loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
         }
 
         long start = System.currentTimeMillis();
@@ -1063,23 +1058,22 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             ret &= bindExternalRelocations(module);
             module.allSymbolBond = ret;
         } else {
-            final Set<String> failedSet = new HashSet<>();
             if (dyldInfoCommand.bindSize() > 0) {
                 ByteBuffer buffer = module.buffer.duplicate();
                 buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
                 buffer.position((int) dyldInfoCommand.bindOff());
-                module.allSymbolBond = eachBind(log, buffer.slice(), module, false, failedSet);
+                module.allSymbolBond = eachBind(log, buffer.slice(), module, false);
             }
             if (dyldInfoCommand.lazyBindSize() > 0) {
                 ByteBuffer buffer = module.buffer.duplicate();
                 buffer.limit((int) (dyldInfoCommand.lazyBindOff() + dyldInfoCommand.lazyBindSize()));
                 buffer.position((int) dyldInfoCommand.lazyBindOff());
-                module.allLazySymbolBond = eachBind(log, buffer.slice(), module, true, failedSet);
+                module.allLazySymbolBond = eachBind(log, buffer.slice(), module, true);
             }
         }
     }
 
-    private boolean eachBind(Log log, ByteBuffer buffer, MachOModule module, boolean lazy, Set<String> failedSet) {
+    private boolean eachBind(Log log, ByteBuffer buffer, MachOModule module, boolean lazy) {
         final List<MemRegion> regions = module.getRegions();
         int type = lazy ? BIND_TYPE_POINTER : 0;
         int segmentIndex;
@@ -1147,21 +1141,21 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                     if (address >= segmentEndAddress) {
                         throw new IllegalStateException();
                     }
-                    ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy, failedSet);
+                    ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
                     address += emulator.getPointerSize();
                     break;
                 case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
                     if (address >= segmentEndAddress) {
                         throw new IllegalStateException();
                     }
-                    ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy, failedSet);
+                    ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
                     address += (Utils.readULEB128(buffer).longValue() + emulator.getPointerSize());
                     break;
                 case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
                     if (address >= segmentEndAddress) {
                         throw new IllegalStateException();
                     }
-                    ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy, failedSet);
+                    ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
                     address += (immediate*emulator.getPointerSize() + emulator.getPointerSize());
                     break;
                 case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
@@ -1171,7 +1165,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                         if (address >= segmentEndAddress) {
                             throw new IllegalStateException();
                         }
-                        ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy, failedSet);
+                        ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module, lazy);
                         address += (skip + emulator.getPointerSize());
                     }
                     break;
@@ -1182,14 +1176,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         return ret;
     }
 
-    private boolean doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy, Set<String> failedSet) {
-        if (failedSet.contains(symbolName)) {
-            return false;
-        }
-
+    private boolean doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy) {
         Symbol symbol = module.findSymbolByName(symbolName, true);
         if (symbol == null) {
-            failedSet.add(symbolName);
             if (log.isDebugEnabled()) {
                 log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
             }
@@ -1321,7 +1310,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             return null;
         }
 
-        MachOModule module = loadInternalPhase(libraryFile, true, true);
+        MachOModule module = loadInternalPhase(libraryFile, true, false);
 
         for (MachOModule export : modules.values()) {
             if (!export.lazyLoadNeededList.isEmpty()) {
@@ -1464,7 +1453,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
     }
 
-    private MachOModule executableModule;
+    MachOModule executableModule;
 
     final long allocate(long size, long mask) {
         if (log.isDebugEnabled()) {

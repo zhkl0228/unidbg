@@ -20,6 +20,8 @@ import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import junit.framework.AssertionFailedError;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.util.Arrays;
@@ -41,8 +43,8 @@ public class SubstrateTest extends EmulatorTest {
         loader.setCallInitFunction();
         loader.setObjcRuntime(true);
 //        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x40b95d06);
-//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        emulator.attach().addBreakPoint(null, 0x402ffd10);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
         long start = System.currentTimeMillis();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
         System.err.println("loadLibrary offset=" + (System.currentTimeMillis() - start) + "ms");

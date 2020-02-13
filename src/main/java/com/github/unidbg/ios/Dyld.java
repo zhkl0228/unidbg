@@ -1,18 +1,22 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.ios.struct.*;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.Dlfcn;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 abstract class Dyld extends Dlfcn {
 
@@ -82,6 +86,65 @@ abstract class Dyld extends Dlfcn {
         byte[] data = Arrays.copyOf(Dyld.this.threadName.getBytes(), len);
         threadName.write(0, data, 0, data.length);
         return HookStatus.LR(emulator, 0);
+    }
+
+    protected final DyldImageInfo[] registerImageStateBatchChangeHandler(MachOLoader loader, int state, UnicornPointer handler, Emulator emulator) {
+        if (log.isDebugEnabled()) {
+            log.debug("registerImageStateBatchChangeHandler state=" + state + ", handler=" + handler);
+        }
+
+        if (state != dyld_image_state_bound) {
+            throw new UnsupportedOperationException("state=" + state);
+        }
+
+        if (loader.boundHandlers.contains(handler)) {
+            return null;
+        }
+        loader.boundHandlers.add(handler);
+        return generateDyldImageInfo(emulator, loader, state, handler);
+    }
+
+    private DyldImageInfo[] generateDyldImageInfo(Emulator emulator, MachOLoader loader, int state, UnicornPointer handler) {
+        List<DyldImageInfo> list = new ArrayList<>(loader.getLoadedModules().size());
+        int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
+        Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModules().size(), "DyldImageInfo");
+        for (Module module : loader.getLoadedModules()) {
+            MachOModule mm = (MachOModule) module;
+            DyldImageInfo info = new DyldImageInfo(pointer);
+            info.imageFilePath = mm.createPathMemory(emulator.getSvcMemory());
+            info.imageLoadAddress = UnicornPointer.pointer(emulator, mm.machHeader);
+            info.imageFileModDate = 0;
+            info.pack();
+            list.add(info);
+            pointer = pointer.share(elementSize);
+
+            if (state == dyld_image_state_bound) {
+                mm.boundCallSet.add(handler);
+            } else if (state == dyld_image_state_dependents_initialized) {
+                mm.initializedCallSet.add(handler);
+            }
+        }
+        return list.toArray(new DyldImageInfo[0]);
+    }
+
+    protected final DyldImageInfo[] registerImageStateSingleChangeHandler(MachOLoader loader, int state, UnicornPointer handler, Emulator emulator) {
+        if (log.isDebugEnabled()) {
+            log.debug("registerImageStateSingleChangeHandler state=" + state + ", handler=" + handler);
+        }
+
+        if (state == dyld_image_state_terminated) {
+            return null;
+        }
+
+        if (state != dyld_image_state_dependents_initialized) {
+            throw new UnsupportedOperationException("state=" + state);
+        }
+
+        if (loader.initializedHandlers.contains(handler)) {
+            return null;
+        }
+        loader.initializedHandlers.add(handler);
+        return generateDyldImageInfo(emulator, loader, state, handler);
     }
 
 }

@@ -28,6 +28,7 @@ public class IpaLoaderTest extends EmulatorTest {
     }
 
     public void testLoader() throws Exception {
+        emulator.getMemory().setCallInitFunction();
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
 //        emulator.attach(0x102a594f0L - 1000, 0x102a594f0L + 1000).addBreakPoint(null, 0x102a594f0L);
         IpaLoader loader = IpaLoader.load(emulator, new File("src/test/resources/app/TelegramMessenger-5.11..ipa"), true,
