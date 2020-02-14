@@ -543,26 +543,3 @@ BOOL isSystemClass(Class clazz) {
 }
 
 @end
-
-size_t dumpClass(const char *name, char *buf, size_t buf_size) {
-    NSString *str = [ClassDump my_dump_class: name];
-    if(str) {
-        if(!buf) {
-            snprintf(buf, buf_size, "dump class failed: buf is null\n");
-            return 0;
-        }
-
-        const char *utf8 = [str UTF8String];
-        size_t length = strlen(utf8);
-        if(length > buf_size) {
-            snprintf(buf, buf_size, "dump class failed: buffer overflow %lu > %lu.\n", length, buf_size);
-            return 0;
-        } else {
-            memcpy(buf, utf8, length);
-            return length;
-        }
-    } else {
-        snprintf(buf, buf_size, "dump class failed: %s NOT found.\n", name);
-        return 0;
-    }
-}

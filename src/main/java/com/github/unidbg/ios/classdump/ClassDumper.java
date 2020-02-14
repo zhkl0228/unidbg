@@ -1,13 +1,13 @@
 package com.github.unidbg.ios.classdump;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.ios.objc.ObjC;
+import com.github.unidbg.ios.struct.objc.ObjcClass;
+import com.github.unidbg.ios.struct.objc.ObjcObject;
 import com.sun.jna.Pointer;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 public class ClassDumper extends BaseHook implements IClassDumper {
 
@@ -24,31 +24,20 @@ public class ClassDumper extends BaseHook implements IClassDumper {
         return classDumper;
     }
 
-    private final Symbol _dumpClass;
-
     private ClassDumper(Emulator emulator) throws IOException {
         super(emulator, "libclassdump");
-
-        _dumpClass = module.findSymbolByName("_dumpClass", false);
-        if (_dumpClass == null) {
-            throw new IllegalStateException("_dumpClass is null");
-        }
     }
 
     @Override
     public String dumpClass(String className) {
-        byte[] buf = new byte[0x4000];
-        Number[] numbers = _dumpClass.call(emulator, className, buf, buf.length);
-        if (numbers.length != 3) {
-            throw new IllegalStateException("numbers length=" + numbers.length);
+        ObjC objc = ObjC.getInstance(emulator);
+        ObjcClass oClassDump = objc.getClass("ClassDump");
+        Pointer pointer = oClassDump.call(emulator, "my_dump_class:", className);
+        if (pointer == null) {
+            return null;
+        } else {
+            ObjcObject str = ObjcObject.create(emulator, pointer);
+            return str.call(emulator, "UTF8String").getString(0);
         }
-        int size = numbers[0].intValue();
-        Pointer pointer = UnicornPointer.pointer(emulator, numberToAddress(numbers[2]));
-        assert pointer != null;
-        if (size <= 0 || size > buf.length) { // dump failed
-            throw new IllegalArgumentException(pointer.getString(0));
-        }
-        buf = pointer.getByteArray(0, size);
-        return new String(buf, StandardCharsets.UTF_8);
     }
 }
