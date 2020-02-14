@@ -61,9 +61,8 @@ public class ClassDump64Test extends EmulatorTest {
         assertTrue(oClassDump.getMeta().isMetaClass());
         System.out.println("className=" + oClassDump.getName() + ", metaClassName=" + oClassDump.getMeta().getName());
 
-        Pointer pointer = oClassDump.call(emulator, "my_dump_class:", "NSTimeZone");
-        ObjcObject str = ObjcObject.create(emulator, pointer);
-        System.out.println(str.call(emulator, "UTF8String").getString(0));
+        ObjcObject str = oClassDump.callObjc("my_dump_class:", "NSTimeZone");
+        System.out.println(str.getDescription());
     }
 
     public static void main(String[] args) throws Exception {

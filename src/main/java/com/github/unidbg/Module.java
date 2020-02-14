@@ -1,10 +1,13 @@
 package com.github.unidbg;
 
+import com.github.unidbg.linux.android.dvm.Hashable;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnicornStructure;
 import unicorn.Unicorn;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -124,4 +127,31 @@ public abstract class Module {
         }
         return this.pathPointer;
     }
+
+    public static Number[] emulateFunction(Emulator emulator, long address, Object... args) {
+        List<Number> list = new ArrayList<>(args.length);
+        for (Object arg : args) {
+            if (arg instanceof String) {
+                list.add(new StringNumber((String) arg));
+            } else if(arg instanceof byte[]) {
+                list.add(new ByteArrayNumber((byte[]) arg));
+            } else if(arg instanceof UnicornPointer) {
+                UnicornPointer pointer = (UnicornPointer) arg;
+                list.add(new PointerNumber(pointer));
+            } else if(arg instanceof UnicornStructure) {
+                UnicornStructure structure = (UnicornStructure) arg;
+                list.add(new PointerNumber((UnicornPointer) structure.getPointer()));
+            } else if (arg instanceof Number) {
+                list.add((Number) arg);
+            } else if(arg instanceof Hashable) {
+                list.add(arg.hashCode()); // dvm object
+            } else if(arg == null) {
+                list.add(new PointerNumber(null)); // null
+            } else {
+                throw new IllegalStateException("Unsupported arg: " + arg);
+            }
+        }
+        return emulator.eFunc(address, list.toArray(new Number[0]));
+    }
+
 }

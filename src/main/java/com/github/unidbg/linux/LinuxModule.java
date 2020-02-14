@@ -184,29 +184,6 @@ public class LinuxModule extends Module {
         return emulateFunction(emulator, base + offset, args);
     }
 
-    public static Number[] emulateFunction(Emulator emulator, long address, Object... args) {
-        List<Number> list = new ArrayList<>(args.length);
-        for (Object arg : args) {
-            if (arg instanceof String) {
-                list.add(new StringNumber((String) arg));
-            } else if(arg instanceof byte[]) {
-                list.add(new ByteArrayNumber((byte[]) arg));
-            } else if(arg instanceof UnicornPointer) {
-                UnicornPointer pointer = (UnicornPointer) arg;
-                list.add(new PointerNumber(pointer));
-            } else if (arg instanceof Number) {
-                list.add((Number) arg);
-            } else if(arg instanceof Hashable) {
-                list.add(arg.hashCode()); // dvm object
-            } else if(arg == null) {
-                list.add(new PointerNumber(null)); // null
-            } else {
-                throw new IllegalStateException("Unsupported arg: " + arg);
-            }
-        }
-        return emulator.eFunc(address, list.toArray(new Number[0]));
-    }
-
     @Override
     protected String getPath() {
         return name;

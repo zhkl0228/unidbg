@@ -13,9 +13,13 @@ import java.util.List;
 public class ObjcObject extends UnicornStructure {
 
     public static ObjcObject create(Emulator emulator, Pointer pointer) {
-        ObjcObject obj = new ObjcObject(emulator, pointer);
-        obj.unpack();
-        return obj;
+        if (pointer == null) {
+            return null;
+        } else {
+            ObjcObject obj = new ObjcObject(emulator, pointer);
+            obj.unpack();
+            return obj;
+        }
     }
 
     final Emulator emulator;
@@ -42,7 +46,7 @@ public class ObjcObject extends UnicornStructure {
         }
     }
 
-    public Pointer call(Emulator emulator, String selectorName, Object... args) {
+    public Pointer call(String selectorName, Object... args) {
         ObjC objc = ObjC.getInstance(emulator);
         Pointer selector = objc.registerName(selectorName);
         List<Object> list = new ArrayList<>(args.length + 2);
@@ -51,6 +55,19 @@ public class ObjcObject extends UnicornStructure {
         Collections.addAll(list, args);
         Number number = objc.msgSend(emulator, list.toArray());
         return UnicornPointer.pointer(emulator, number);
+    }
+
+    public ObjcObject callObjc(String selectorName, Object... args) {
+        return create(emulator, call(selectorName, args));
+    }
+
+    public ObjcClass toClass() {
+        return ObjcClass.create(emulator, getPointer());
+    }
+
+    public String getDescription() {
+        ObjcObject str = callObjc("description");
+        return str == null ? null : str.call("UTF8String").getString(0);
     }
 
 }
