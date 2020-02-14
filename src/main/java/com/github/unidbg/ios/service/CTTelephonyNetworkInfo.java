@@ -63,30 +63,6 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
         final ObjcObject fakeAllowsVoIP = cNSNumber.callObjc("numberWithBool:", YES);
 
         ISubstrate substrate = Substrate.getInstance(emulator);
-        substrate.hookMessageEx(cCTTelephonyNetworkInfo, objc.registerName("queryDataMode"), new ReplaceCallback() { // updateRadioAccessTechnology
-            @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer self = context.getPointerArg(0);
-                Pointer selector = context.getPointerArg(1);
-                if (log.isDebugEnabled()) {
-                    log.debug("[CTTelephonyNetworkInfo queryDataMode] self=" + self + ", selector=" + selector);
-                }
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-        substrate.hookMessageEx(cCTTelephonyNetworkInfo, objc.registerName("queryCTSignalStrengthNotification"), new ReplaceCallback() { // updateSignalStrength
-            @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer self = context.getPointerArg(0);
-                Pointer selector = context.getPointerArg(1);
-                if (log.isDebugEnabled()) {
-                    log.debug("[CTTelephonyNetworkInfo queryCTSignalStrengthNotification] self=" + self + ", selector=" + selector);
-                }
-                return HookStatus.LR(emulator, 0);
-            }
-        });
         substrate.hookFunction(__CTServerConnectionCopyProviderNameUsingCarrierBundle, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -146,6 +122,30 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
                     return HookStatus.LR(emulator, 0);
                 }
                 return HookStatus.RET(emulator, originFunction);
+            }
+        });
+        substrate.hookMessageEx(cCTTelephonyNetworkInfo, objc.registerName("queryDataMode"), new ReplaceCallback() { // updateRadioAccessTechnology
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                RegisterContext context = emulator.getContext();
+                Pointer self = context.getPointerArg(0);
+                Pointer selector = context.getPointerArg(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("[CTTelephonyNetworkInfo queryDataMode] self=" + self + ", selector=" + selector);
+                }
+                return HookStatus.LR(emulator, 0);
+            }
+        });
+        substrate.hookMessageEx(cCTTelephonyNetworkInfo, objc.registerName("queryCTSignalStrengthNotification"), new ReplaceCallback() { // updateSignalStrength
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                RegisterContext context = emulator.getContext();
+                Pointer self = context.getPointerArg(0);
+                Pointer selector = context.getPointerArg(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("[CTTelephonyNetworkInfo queryCTSignalStrengthNotification] self=" + self + ", selector=" + selector);
+                }
+                return HookStatus.LR(emulator, 0);
             }
         });
     }

@@ -812,7 +812,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     if ("kern.osrelease".equals(sub)) {
                         buffer.setInt(0, CTL_KERN);
                         buffer.setInt(4, KERN_OSRELEASE);
-                        bufferSize.setInt(0, 8);
+                        bufferSize.setLong(0, 8);
                         return 0;
                     }
                     return 1;
@@ -831,14 +831,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         log.debug(msg);
                         String osRelease = "7.1.2";
                         if (bufferSize != null) {
-                            bufferSize.setInt(0, osRelease.length() + 1);
+                            bufferSize.setLong(0, osRelease.length() + 1);
                         }
                         if (buffer != null) {
                             buffer.setString(0, osRelease);
                         }
                         return 0;
                     case KERN_ARGMAX:
-                        bufferSize.setInt(0, 4);
+                        bufferSize.setLong(0, 4);
                         buffer.setInt(0, 128);
                         return 0;
                     case KERN_PROC:
@@ -855,7 +855,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         log.debug(msg);
                         String osVersion = "9A127";
                         if (bufferSize != null) {
-                            bufferSize.setInt(0, osVersion.length() + 1);
+                            bufferSize.setLong(0, osVersion.length() + 1);
                         }
                         if (buffer != null) {
                             buffer.setString(0, osVersion);
@@ -872,7 +872,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 if (action == HW_PAGESIZE) {
                     log.debug(msg);
                     if (bufferSize != null) {
-                        bufferSize.setInt(0, 4);
+                        bufferSize.setLong(0, 4);
                     }
                     if (buffer != null) {
                         buffer.setInt(0, emulator.getPageAlign());
