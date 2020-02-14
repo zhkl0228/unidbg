@@ -23,4 +23,6 @@ public abstract class ObjC {
 
     public abstract Pointer registerName(String selectorName);
 
+    public abstract Number msgSend(Emulator emulator, Object... args);
+
 }

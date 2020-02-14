@@ -1,5 +1,6 @@
 package com.github.unidbg.ios.struct.objc;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 
@@ -12,17 +13,14 @@ import java.util.List;
  */
 public class ObjcClass extends ObjcObject implements ObjcConstants {
 
-    public static ObjcClass create(Pointer pointer) {
-        if (pointer == null) {
-            return null;
-        }
-        ObjcClass objcClass = new ObjcClass(pointer);
+    public static ObjcClass create(Emulator emulator, Pointer pointer) {
+        ObjcClass objcClass = new ObjcClass(emulator, pointer);
         objcClass.unpack();
         return objcClass;
     }
 
-    private ObjcClass(Pointer p) {
-        super(p);
+    private ObjcClass(Emulator emulator, Pointer p) {
+        super(emulator, p);
     }
 
     public Pointer superClass;
@@ -39,14 +37,16 @@ public class ObjcClass extends ObjcObject implements ObjcConstants {
 
     private ClassRW data() {
         UnicornPointer pointer = (UnicornPointer) data;
-        ClassRW classRW = new ClassRW(pointer.newPointer(pointer.peer & ~CLASS_FAST_FLAG_MASK));
+        long address = pointer.peer & ~CLASS_FAST_FLAG_MASK;
+        ClassRW classRW = new ClassRW(UnicornPointer.pointer(emulator, address));
         classRW.unpack();
         return classRW;
     }
 
     private ClassRO ro() {
         UnicornPointer pointer = (UnicornPointer) data;
-        ClassRO classRO = new ClassRO(pointer.newPointer(pointer.peer & ~CLASS_FAST_FLAG_MASK));
+        long address = pointer.peer & ~CLASS_FAST_FLAG_MASK;
+        ClassRO classRO = new ClassRO(UnicornPointer.pointer(emulator, address));
         classRO.unpack();
         return classRO;
     }
@@ -59,7 +59,7 @@ public class ObjcClass extends ObjcObject implements ObjcConstants {
         if (isMetaClass()) {
             return this;
         } else {
-            return create(isa);
+            return getObjClass();
         }
     }
 

@@ -10,6 +10,9 @@ import com.sun.jna.Pointer;
 class ObjcImpl extends ObjC {
 
     private final Emulator emulator;
+
+    private final Symbol _objc_msgSend;
+
     private final Symbol _objc_getMetaClass;
     private final Symbol _objc_getClass;
     private final Symbol _objc_lookUpClass;
@@ -20,6 +23,11 @@ class ObjcImpl extends ObjC {
         Module module = emulator.getMemory().findModule("libobjc.A.dylib");
         if (module == null) {
             throw new IllegalStateException("libobjc.A.dylib NOT loaded");
+        }
+
+        _objc_msgSend = module.findSymbolByName("_objc_msgSend", false);
+        if (_objc_msgSend == null) {
+            throw new IllegalStateException("_objc_msgSend is null");
         }
 
         _objc_getMetaClass = module.findSymbolByName("_objc_getMetaClass", false);
@@ -50,7 +58,7 @@ class ObjcImpl extends ObjC {
         if (pointer == null) {
             throw new IllegalArgumentException(className + " NOT found");
         }
-        return ObjcClass.create(pointer);
+        return ObjcClass.create(emulator, pointer);
     }
 
     @Override
@@ -60,14 +68,14 @@ class ObjcImpl extends ObjC {
         if (pointer == null) {
             throw new IllegalArgumentException(className + " NOT found");
         }
-        return ObjcClass.create(pointer);
+        return ObjcClass.create(emulator, pointer);
     }
 
     @Override
     public ObjcClass lookUpClass(String className) {
         Number number = _objc_lookUpClass.call(emulator, className)[0];
         Pointer pointer = UnicornPointer.pointer(emulator, number);
-        return ObjcClass.create(pointer);
+        return pointer == null ? null : ObjcClass.create(emulator, pointer);
     }
 
     @Override
@@ -78,5 +86,10 @@ class ObjcImpl extends ObjC {
             throw new IllegalStateException(selectorName);
         }
         return pointer;
+    }
+
+    @Override
+    public Number msgSend(Emulator emulator, Object... args) {
+        return _objc_msgSend.call(emulator, args)[0];
     }
 }

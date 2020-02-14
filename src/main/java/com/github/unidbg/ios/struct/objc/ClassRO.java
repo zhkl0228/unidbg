@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class ClassRO extends UnicornStructure implements ObjcConstants {
 
-    public ClassRO(Pointer p) {
+    ClassRO(Pointer p) {
         super(p);
     }
 

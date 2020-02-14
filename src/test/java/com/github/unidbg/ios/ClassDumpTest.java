@@ -31,11 +31,11 @@ public class ClassDumpTest extends EmulatorTest {
         loader.setCallInitFunction();
         loader.setObjcRuntime(true);
         IClassDumper classDumper = ClassDumper.getInstance(emulator);
-
         ISubstrate substrate = Substrate.getInstance(emulator);
 
         ObjC objc = ObjC.getInstance(emulator);
         ObjcClass oClassDump = objc.getClass("ClassDump");
+        assertNotNull(oClassDump);
         substrate.hookMessageEx(oClassDump.getMeta(), objc.registerName("my_dump_class:"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -43,8 +43,13 @@ public class ClassDumpTest extends EmulatorTest {
                 Pointer id = context.getPointerArg(0);
                 Pointer SEL = context.getPointerArg(1);
                 Pointer name = context.getPointerArg(2);
-                ObjcObject obj = ObjcObject.create(id);
-                System.err.println("my_dump_class id=" + id + ", SEL=" + SEL + ", name=" + name.getString(0) + ", className=" + obj.getObjClass().getName());
+                String className = name.getString(0);
+                if ("NSTimeZone".equals(className)) {
+                    return HookStatus.RET(emulator, originFunction);
+                }
+
+                ObjcObject obj = ObjcObject.create(emulator, id);
+                System.err.println("my_dump_class id=" + id + ", SEL=" + SEL + ", name=" + className + ", className=" + obj.getObjClass().getName());
                 name.setString(0, "NSDate");
                 return HookStatus.RET(emulator, originFunction);
             }
@@ -55,6 +60,10 @@ public class ClassDumpTest extends EmulatorTest {
 
         assertTrue(oClassDump.getMeta().isMetaClass());
         System.out.println("className=" + oClassDump.getName() + ", metaClassName=" + oClassDump.getMeta().getName());
+
+        Pointer pointer = oClassDump.call(emulator, "my_dump_class:", "NSTimeZone");
+        ObjcObject str = ObjcObject.create(emulator, pointer);
+        System.out.println(str.call(emulator, "UTF8String").getString(0));
     }
 
     public static void main(String[] args) throws Exception {

@@ -42,10 +42,6 @@ public class UnicornPointer extends Pointer {
         this.pointerSize = pointerSize;
     }
 
-    public UnicornPointer newPointer(long peer) {
-        return pointer(emulator, peer);
-    }
-
     private long size;
 
     public UnicornPointer setSize(long size) {

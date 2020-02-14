@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ClassRW extends UnicornStructure implements ObjcConstants {
 
-    public ClassRW(Pointer p) {
+    ClassRW(Pointer p) {
         super(p);
     }
 
