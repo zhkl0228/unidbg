@@ -3,6 +3,7 @@
 #include <objc/runtime.h>
 #include <dlfcn.h>
 #import <Foundation/Foundation.h>
+#import <CoreTelephony/CTTelephonyNetworkInfo.h>
 
 @interface BootstrapTest : NSObject {}
 -(void)testObjc;
@@ -14,7 +15,11 @@
   dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
   NSDate *date = [NSDate date];
   NSString *str = [date description];
-  NSLog(@"[%@]Hello, unidbg: %@, date=%@", [dateFormatter stringFromDate:date], self, str);
+  NSLog(@"[%@]Hello, unidbg: %@, date=%@, YES=%lu", [dateFormatter stringFromDate:date], self, str, (unsigned long) YES);
+
+  CTTelephonyNetworkInfo *info = [[CTTelephonyNetworkInfo alloc]init];
+  CTCarrier *carrier = [info subscriberCellularProvider];
+  NSLog(@"CTTelephonyNetworkInfo: carrier=%@", carrier);
 }
 -(NSString *) description {
   return @"This is ObjC TEST";

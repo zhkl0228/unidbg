@@ -15,6 +15,7 @@ import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.WrapCallback;
 import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.whale.Whale;
+import com.github.unidbg.ios.service.CTTelephonyNetworkInfo;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.utils.Inspector;
@@ -165,16 +166,16 @@ public class SubstrateTest extends EmulatorTest {
 
 //        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
-        whale.importHookFunction("_strcmp", new ReplaceCallback() {
+        /*whale.importHookFunction("_strcmp", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer pointer1 = context.getPointerArg(0);
                 Pointer pointer2 = context.getPointerArg(1);
-                System.out.println("strcmp str1=" + (pointer1 == null ? null : pointer1.getString(0)) + ", str2=" + (pointer2 == null ? null : pointer2.getString(0)) + ", originFunction=0x" + Long.toHexString(originFunction));
+                System.out.println("IWhale strcmp str1=" + (pointer1 == null ? null : pointer1.getString(0)) + ", str2=" + (pointer2 == null ? null : pointer2.getString(0)) + ", originFunction=0x" + Long.toHexString(originFunction));
                 return HookStatus.RET(emulator, originFunction);
             }
-        });
+        });*/
 
         // emulator.attach().addBreakPoint(module, 0x00b608L);
 //        emulator.traceCode();
@@ -191,6 +192,11 @@ public class SubstrateTest extends EmulatorTest {
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         start = System.currentTimeMillis();
+//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
+        new CTTelephonyNetworkInfo(emulator).tryHook();
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

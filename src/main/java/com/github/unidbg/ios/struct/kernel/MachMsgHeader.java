@@ -1,12 +1,13 @@
 package com.github.unidbg.ios.struct.kernel;
 
+import com.github.unidbg.ios.DarwinSyscall;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class MachMsgHeader extends UnicornStructure {
+public class MachMsgHeader extends UnicornStructure implements DarwinSyscall {
 
     public MachMsgHeader(Pointer p) {
         super(p);
@@ -18,6 +19,10 @@ public class MachMsgHeader extends UnicornStructure {
     public int msgh_local_port;
     public int msgh_voucher_port;
     public int msgh_id;
+
+    public void setComplex() {
+        msgh_bits = (msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+    }
 
     @Override
     protected List<String> getFieldOrder() {

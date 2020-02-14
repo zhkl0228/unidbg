@@ -5,12 +5,16 @@ import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.util.Map;
 
 public abstract class AbstractFileIO implements FileIO {
+
+    private static final Log log = LogFactory.getLog(AbstractFileIO.class);
 
     private static final int F_GETFD = 1; /* get file descriptor flags */
     private static final int F_SETFD = 2; /* set file descriptor flags */
@@ -124,7 +128,9 @@ public abstract class AbstractFileIO implements FileIO {
     public final long mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, MemoryMap> memoryMap) throws IOException {
         byte[] data = getMmapData(offset, length);
         unicorn.mem_map(addr, aligned, prot);
-        memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
+        if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
+            log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
+        }
         unicorn.mem_write(addr, data);
         return addr;
     }

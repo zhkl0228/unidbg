@@ -1,7 +1,6 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.Module;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
@@ -147,6 +146,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     return;
                 case -31:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mach_msg_trap(emulator));
+                    return;
+                case -36: // _semaphore_wait_trap
+                    u.reg_write(ArmConst.UC_ARM_REG_D0, _semaphore_wait_trap(emulator));
+                    return;
+                case -41: // _xpc_mach_port_guard
+                    u.reg_write(ArmConst.UC_ARM_REG_D0, _kernelrpc_mach_port_guard_trap(emulator));
                     return;
                 case -61:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, thread_switch(emulator));
@@ -326,7 +331,6 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             exception = e;
         }
 
-        Module module = emulator.getMemory().findModuleByAddress(pc.peer);
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
         if (exception instanceof UnicornException) {
@@ -441,6 +445,25 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_port_insert_right_trap task=" + task + ", name=" + name + ", poly=" + poly + ", polyPoly=" + polyPoly);
         }
+        return 0;
+    }
+
+    private long _semaphore_wait_trap(Emulator emulator) {
+        int port = emulator.getContext().getIntArg(0);
+        log.info("_semaphore_wait_trap port=" + port);
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
+        return 0;
+    }
+
+    private long _kernelrpc_mach_port_guard_trap(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int task = context.getIntArg(0);
+        int name = context.getIntArg(1);
+        Pointer guard = context.getPointerArg(2);
+        int strict = context.getIntArg(3);
+        log.info("_kernelrpc_mach_port_guard_trap task=" + task + ", name=" + name + ", guard=" + guard + ", strict=" + strict);
         return 0;
     }
 
@@ -1538,6 +1561,60 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 205: { // host_get_io_master
+                MachPortReply reply = new MachPortReply(request);
+                reply.unpack();
+
+                header.setComplex();
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.port.name = STATIC_PORT;
+                reply.port.pad1 = 0;
+                reply.port.pad2 = 0;
+                reply.port.disposition = 17;
+                reply.port.type = MACH_MSG_PORT_DESCRIPTOR;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("host_get_io_master reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 2873: { // io_service_get_matching_service
+                IOServiceGetMatchingServiceRequest args = new IOServiceGetMatchingServiceRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("io_service_get_matching_service args=" + args + ", matching=" + args.getMatching());
+                }
+
+                MachPortReply reply = new MachPortReply(request);
+                reply.unpack();
+
+                header.setComplex();
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.port.name = STATIC_PORT;
+                reply.port.pad1 = 0;
+                reply.port.pad2 = 0;
+                reply.port.disposition = 17;
+                reply.port.type = MACH_MSG_PORT_DESCRIPTOR;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("io_service_get_matching_service reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");
@@ -1796,7 +1873,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         byte[] data = buffer.getByteArray(0, count);
         if (log.isDebugEnabled()) {
-            Inspector.inspect(data, "write fd=" + fd + ", buffer=" + buffer + ", count=" + count);
+            log.debug("write fd=" + fd + ", buffer=" + buffer + ", count=" + count);
         }
 
         FileIO file = fdMap.get(fd);

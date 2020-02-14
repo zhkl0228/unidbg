@@ -253,6 +253,13 @@ public abstract class AbstractEmulator implements Emulator {
         this.traceOutFile = outFile;
     }
 
+    private boolean running;
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
     /**
      * Emulate machine code in a specific duration of time.
      * @param begin    Address where emulation starts
@@ -260,6 +267,11 @@ public abstract class AbstractEmulator implements Emulator {
      * @param timeout  Duration to emulate the code (in microseconds). When this value is 0, we will emulate the code in infinite time, until the code is finished.
      */
     protected final Number emulate(long begin, long until, long timeout, boolean entry) {
+        if (running) {
+            unicorn.emu_stop();
+            throw new IllegalStateException("running");
+        }
+
         final Pointer pointer = UnicornPointer.pointer(this, begin);
         long start = 0;
         PrintStream redirect = null;
@@ -301,6 +313,7 @@ public abstract class AbstractEmulator implements Emulator {
                 log.debug("emulate " + pointer + " started sp=" + getStackPointer());
             }
             start = System.currentTimeMillis();
+            running = true;
             unicorn.emu_start(begin, until, timeout, 0);
             return (Number) unicorn.reg_read(is64Bit() ? Arm64Const.UC_ARM64_REG_X0 : ArmConst.UC_ARM_REG_R0);
         } catch (RuntimeException e) {
@@ -320,6 +333,8 @@ public abstract class AbstractEmulator implements Emulator {
                 return -1;
             }
         } finally {
+            running = false;
+
             if (entry) {
                 unicorn.hook_del(readHook);
                 unicorn.hook_del(writeHook);

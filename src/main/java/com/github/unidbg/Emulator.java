@@ -73,6 +73,11 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
     Unicorn eBlock(long begin, long until);
 
     /**
+     * 是否正在运行
+     */
+    boolean isRunning();
+
+    /**
      * show all registers
      */
     void showRegs();

@@ -1,8 +1,8 @@
 package com.github.unidbg.hook.fishhook;
 
+import com.github.unidbg.Module;
 import com.github.unidbg.hook.IHook;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.ios.MachOModule;
 
 /**
  * Only support iOS
@@ -25,6 +25,6 @@ public interface IFishHook extends IHook {
      * Rebinds as above, but only in the specified image. The header should point
      * to the mach-o header, the slide should be the slide offset. Others as above.
      */
-    void rebindSymbolImage(MachOModule module, String symbol, ReplaceCallback callback);
+    void rebindSymbolImage(Module module, String symbol, ReplaceCallback callback);
 
 }

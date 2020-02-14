@@ -1181,7 +1181,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         Symbol symbol = module.findSymbolByName(symbolName, true);
         if (symbol == null) {
             if (log.isDebugEnabled()) {
-                log.warn("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
+                log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
             }
             return false;
         }
@@ -1471,7 +1471,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         long address = allocateMapAddress(mask, size);
         int prot = UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE;
         unicorn.mem_map(address, size,prot );
-        memoryMap.put(address, new MemoryMap(address, size, prot));
+        if (memoryMap.put(address, new MemoryMap(address, size, prot)) != null) {
+            log.warn("Replace memory map address=0x" + Long.toHexString(address));
+        }
         return address;
     }
 
@@ -1485,16 +1487,22 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (((flags & com.github.unidbg.ios.MachO.MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
             long addr = allocateMapAddress(0, aligned);
-            log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
+            if (log.isDebugEnabled()) {
+                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);
+            }
             unicorn.mem_map(addr, aligned, prot);
-            memoryMap.put(addr, new MemoryMap(addr, aligned, prot));
+            if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
+                log.warn("mmap2 replace exists memory map: addr=" + Long.toHexString(addr));
+            }
             return addr;
         }
         try {
             FileIO file;
             if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
                 long addr = allocateMapAddress(0, aligned);
-                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                if (log.isDebugEnabled()) {
+                    log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                }
                 return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
             }
 
@@ -1505,13 +1513,15 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
                 MemoryMap mapped = null;
                 for (MemoryMap map : memoryMap.values()) {
-                    if (start >= map.base && start + aligned < map.base + map.size) {
+                    if (start >= map.base && start + aligned <= map.base + map.size) {
                         mapped = map;
                     }
                 }
 
                 if (mapped != null) {
-                    unicorn.mem_unmap(start, aligned);
+                    munmap(start, aligned);
+                } else {
+                    log.warn("mmap2 MAP_FIXED not found mapped memory: start=0x" + Long.toHexString(start));
                 }
                 FileIO io = syscallHandler.fdMap.get(fd);
                 if (io != null) {

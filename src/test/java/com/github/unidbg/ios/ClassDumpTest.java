@@ -44,7 +44,7 @@ public class ClassDumpTest extends EmulatorTest {
                 Pointer SEL = context.getPointerArg(1);
                 Pointer name = context.getPointerArg(2);
                 String className = name.getString(0);
-                if ("NSTimeZone".equals(className)) {
+                if (!"NSLocale".equals(className)) {
                     return HookStatus.RET(emulator, originFunction);
                 }
 
@@ -61,7 +61,7 @@ public class ClassDumpTest extends EmulatorTest {
         assertTrue(oClassDump.getMeta().isMetaClass());
         System.out.println("className=" + oClassDump.getName() + ", metaClassName=" + oClassDump.getMeta().getName());
 
-        ObjcObject str = oClassDump.callObjc("my_dump_class:", "NSTimeZone");
+        ObjcObject str = oClassDump.callObjc("my_dump_class:", "NSString");
         System.out.println(str.getDescription());
     }
 

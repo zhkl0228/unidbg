@@ -50,7 +50,7 @@ public class ObjcObject extends UnicornStructure {
         ObjC objc = ObjC.getInstance(emulator);
         Pointer selector = objc.registerName(selectorName);
         List<Object> list = new ArrayList<>(args.length + 2);
-        list.add(getPointer());
+        list.add(this);
         list.add(selector);
         Collections.addAll(list, args);
         Number number = objc.msgSend(emulator, list.toArray());
