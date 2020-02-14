@@ -431,10 +431,16 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
+    private final Map<String, Symbol> symbolCache = new HashMap<>();
+
     private Symbol findSymbolByNameInternal(String name, boolean withDependencies) {
         Symbol symbol = symbolMap.get(name);
         if (symbol != null) {
             return symbol;
+        }
+
+        if (withDependencies && symbolCache.containsKey(name)) {
+            return symbolCache.get(name);
         }
 
         Set<Module> list = new LinkedHashSet<>(exportModules.values());
@@ -447,11 +453,14 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         for (Module module : list) {
             symbol = module.findSymbolByName(name, false);
             if (symbol != null) {
-                return symbol;
+                break;
             }
         }
 
-        return null;
+        if (withDependencies) {
+            symbolCache.put(name, symbol);
+        }
+        return symbol;
     }
 
     @Override

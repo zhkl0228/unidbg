@@ -3,6 +3,7 @@ package com.github.unidbg.pointer;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.InvalidMemoryAccessException;
 import com.github.unidbg.Module;
+import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
 import com.sun.jna.NativeLong;
@@ -41,6 +42,10 @@ public class UnicornPointer extends Pointer {
         this.pointerSize = pointerSize;
     }
 
+    public UnicornPointer newPointer(long peer) {
+        return pointer(emulator, peer);
+    }
+
     private long size;
 
     public UnicornPointer setSize(long size) {
@@ -60,7 +65,7 @@ public class UnicornPointer extends Pointer {
     }
 
     public static UnicornPointer pointer(Emulator emulator, Number number) {
-        return pointer(emulator, emulator.getPointerSize() == 4 ? number.intValue() & 0xffffffffL : number.longValue());
+        return pointer(emulator, BaseHook.numberToAddress(emulator, number));
     }
 
     public static UnicornPointer register(Emulator emulator, int reg) {

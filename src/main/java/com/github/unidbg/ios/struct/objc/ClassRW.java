@@ -37,4 +37,10 @@ public class ClassRW extends UnicornStructure implements ObjcConstants {
         flags = (flags | set) & ~clear;
     }
 
+    public ClassRO ro() {
+        ClassRO ro = new ClassRO(this.ro);
+        ro.unpack();
+        return ro;
+    }
+
 }

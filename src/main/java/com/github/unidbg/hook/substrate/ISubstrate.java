@@ -4,6 +4,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.IHook;
 import com.github.unidbg.hook.ReplaceCallback;
+import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.sun.jna.Pointer;
 
 public interface ISubstrate extends IHook {
@@ -36,5 +37,6 @@ public interface ISubstrate extends IHook {
      * @param message Objective-C selector of message that will be instrumented. This might be a literal using @selector or generated at runtime with sel_registerName.
      */
     void hookMessageEx(Pointer _class, Pointer message, ReplaceCallback callback);
+    void hookMessageEx(ObjcClass _class, Pointer message, ReplaceCallback callback);
 
 }

@@ -10,6 +10,8 @@ import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
 import com.github.unidbg.ios.objc.ObjC;
+import com.github.unidbg.ios.struct.objc.ObjcClass;
+import com.github.unidbg.ios.struct.objc.ObjcObject;
 import com.sun.jna.Pointer;
 
 public class ClassDumpTest extends EmulatorTest {
@@ -33,14 +35,16 @@ public class ClassDumpTest extends EmulatorTest {
         ISubstrate substrate = Substrate.getInstance(emulator);
 
         ObjC objc = ObjC.getInstance(emulator);
-        substrate.hookMessageEx(objc.getMetaClass("ClassDump"), objc.registerName("my_dump_class:"), new ReplaceCallback() {
+        ObjcClass oClassDump = objc.getClass("ClassDump");
+        substrate.hookMessageEx(oClassDump.getMeta(), objc.registerName("my_dump_class:"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer id = context.getPointerArg(0);
                 Pointer SEL = context.getPointerArg(1);
                 Pointer name = context.getPointerArg(2);
-                System.err.println("my_dump_class id=" + id + ", SEL=" + SEL + ", name=" + name.getString(0));
+                ObjcObject obj = ObjcObject.create(id);
+                System.err.println("my_dump_class id=" + id + ", SEL=" + SEL + ", name=" + name.getString(0) + ", className=" + obj.getObjClass().getName());
                 name.setString(0, "NSDate");
                 return HookStatus.RET(emulator, originFunction);
             }
@@ -48,6 +52,9 @@ public class ClassDumpTest extends EmulatorTest {
 
         String objcClass = classDumper.dumpClass("NSLocale");
         System.out.println(objcClass);
+
+        assertTrue(oClassDump.getMeta().isMetaClass());
+        System.out.println("className=" + oClassDump.getName() + ", metaClassName=" + oClassDump.getMeta().getName());
     }
 
     public static void main(String[] args) throws Exception {

@@ -6,6 +6,8 @@ import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.ios.DarwinARM64Emulator;
+import com.github.unidbg.ios.DarwinResolver;
 import com.github.unidbg.memory.Memory;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -27,6 +29,16 @@ public abstract class IpaLoader {
     public abstract void callEntry();
 
     public abstract Module getExecutable();
+
+    public abstract Emulator getEmulator();
+
+    public static IpaLoader load(File ipa, String... loads) throws IOException {
+        Emulator emulator = new DarwinARM64Emulator();
+        Memory memory = emulator.getMemory();
+        memory.setCallInitFunction();
+        memory.setLibraryResolver(new DarwinResolver());
+        return load(emulator, ipa, false, loads);
+    }
 
     public static IpaLoader load(Emulator emulator, File ipa, String... loads) throws IOException {
         return load(emulator, ipa, false, loads);

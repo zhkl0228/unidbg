@@ -22,4 +22,9 @@ class IpaLoaderImpl extends IpaLoader {
     public Module getExecutable() {
         return executable;
     }
+
+    @Override
+    public Emulator getEmulator() {
+        return emulator;
+    }
 }

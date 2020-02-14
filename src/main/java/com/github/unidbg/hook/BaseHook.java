@@ -49,6 +49,10 @@ public abstract class BaseHook implements IHook {
     }
 
     protected final long numberToAddress(Number number) {
+        return numberToAddress(emulator, number);
+    }
+
+    public static long numberToAddress(Emulator emulator, Number number) {
         if (emulator.is64Bit()) {
             return number.longValue();
         } else {

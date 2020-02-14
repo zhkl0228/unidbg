@@ -145,7 +145,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         for (MachOModule m : modules.values()) {
             processBind(m);
         }
-//        processBind(module);
 
         notifySingle(Dyld.dyld_image_state_bound, module);
         notifySingle(Dyld.dyld_image_state_dependents_initialized, module);
@@ -521,6 +520,22 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
         }
 
+        final long loadSize = size;
+        MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
+                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars, machHeader, isExecutable, this);
+        processRebase(log, module);
+        if (isExecutable) {
+            setExecuteModule(module);
+        }
+        modules.put(dyId, module);
+
+        if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
+            maxDylibName = dyId;
+        }
+        if (loadSize > maxSizeOfDylib) {
+            maxSizeOfDylib = loadSize;
+        }
+
         for (MachOModule export : modules.values()) {
             for (Iterator<NeedLibrary> iterator = export.lazyLoadNeededList.iterator(); iterator.hasNext(); ) {
                 NeedLibrary library = iterator.next();
@@ -539,15 +554,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             }
         }
 
-        final long loadSize = size;
-        MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
-                symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator, dyldInfoCommand, null, null, vars, machHeader, isExecutable, this);
-        processRebase(log, module);
-        if (isExecutable) {
-            setExecuteModule(module);
-        }
-        modules.put(dyId, module);
-
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
             free = module.findSymbolByName("_free");
@@ -556,7 +562,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             if (_NSSetLogCStringFunction == null) {
                 throw new IllegalStateException("__NSSetLogCStringFunction is null");
             } else {
-                Svc svc = emulator.getPointerSize() == 4 ? new ArmHook() {
+                Svc svc = !emulator.is64Bit() ? new ArmHook() {
                     @Override
                     protected HookStatus hook(Emulator emulator) {
                         Arm32RegisterContext context = emulator.getContext();
@@ -583,13 +589,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (entryPointCommand != null) {
             module.setEntryPoint(entryPointCommand.entryOff());
-        }
-
-        if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
-            maxDylibName = dyId;
-        }
-        if (loadSize > maxSizeOfDylib) {
-            maxSizeOfDylib = loadSize;
         }
 
         log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -1322,7 +1321,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         for (MachOModule m : modules.values()) {
             processBind(m);
         }
-//        processBind(module);
 
         if (!callInitFunction) { // No need call init array
             for (MachOModule m : modules.values()) {

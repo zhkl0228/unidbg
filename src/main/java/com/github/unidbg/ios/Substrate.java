@@ -6,6 +6,7 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
+import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -117,4 +118,8 @@ public class Substrate extends BaseHook implements ISubstrate {
         _MSHookMessageEx.call(emulator, _class, message, replace, backup);
     }
 
+    @Override
+    public void hookMessageEx(ObjcClass _class, Pointer message, ReplaceCallback callback) {
+        hookMessageEx(_class.getPointer(), message, callback);
+    }
 }
