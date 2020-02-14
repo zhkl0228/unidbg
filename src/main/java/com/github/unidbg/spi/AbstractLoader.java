@@ -143,30 +143,31 @@ public abstract class AbstractLoader implements Memory, Loader {
         MemoryMap removed = memoryMap.remove(start);
 
         if (removed == null) {
-            Map.Entry<Long, MemoryMap> segment = null;
+            MemoryMap segment = null;
             for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
                 MemoryMap map = entry.getValue();
                 if (start > entry.getKey() && start < map.base + map.size) {
-                    segment = entry;
+                    segment = entry.getValue();
                     break;
                 }
             }
-            if (segment == null || segment.getValue().size < aligned) {
+            if (segment == null || segment.size < aligned) {
                 throw new IllegalStateException("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start));
             }
-            if (start + aligned < segment.getKey() + segment.getValue().size) {
+            if (start + aligned < segment.base + segment.size) {
+                long newSize = segment.base + segment.size - start - aligned;
                 if (log.isDebugEnabled()) {
-                    log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(start + aligned) + ", size=" + (segment.getKey() + segment.getValue().size - start - aligned));
+                    log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(start + aligned) + ", size=" + newSize);
                 }
-                if (memoryMap.put(start + aligned, new MemoryMap(start + aligned, (int) (segment.getKey() + segment.getValue().size - start - aligned), segment.getValue().prot)) != null) {
+                if (memoryMap.put(start + aligned, new MemoryMap(start + aligned, (int) newSize, segment.prot)) != null) {
                     log.warn("munmap replace exists memory map addr=0x" + Long.toHexString(start + aligned));
                 }
             }
-            if (memoryMap.put(segment.getKey(), new MemoryMap(segment.getKey(), (int) (start - segment.getKey()), segment.getValue().prot)) == null) {
-                log.warn("munmap replace failed warning: addr=0x" + Long.toHexString(segment.getKey()));
+            if (memoryMap.put(segment.base, new MemoryMap(segment.base, (int) (start - segment.base), segment.prot)) == null) {
+                log.warn("munmap replace failed warning: addr=0x" + Long.toHexString(segment.base));
             }
             if (log.isDebugEnabled()) {
-                log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(segment.getKey()) + ", size=" + (start - segment.getKey()));
+                log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(segment.base) + ", size=" + (start - segment.base));
             }
             return 0;
         }

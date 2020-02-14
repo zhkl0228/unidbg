@@ -148,10 +148,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mach_msg_trap(emulator));
                     return;
                 case -36: // _semaphore_wait_trap
-                    u.reg_write(ArmConst.UC_ARM_REG_D0, _semaphore_wait_trap(emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, _semaphore_wait_trap(emulator));
                     return;
                 case -41: // _xpc_mach_port_guard
-                    u.reg_write(ArmConst.UC_ARM_REG_D0, _kernelrpc_mach_port_guard_trap(emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_guard_trap(emulator));
                     return;
                 case -61:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, thread_switch(emulator));
