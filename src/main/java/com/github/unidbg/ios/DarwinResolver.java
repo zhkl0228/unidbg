@@ -1,16 +1,16 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.linux.file.StdoutCallback;
-import com.github.unidbg.unix.IO;
+import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.linux.file.Stdout;
+import com.github.unidbg.linux.file.StdoutCallback;
 import com.github.unidbg.spi.LibraryFile;
-import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.file.FileIO;
-import com.github.unidbg.file.IOResolver;
+import com.github.unidbg.unix.IO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -76,6 +76,9 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
             }
         }
 
+        if ("".equals(path)) {
+            return null;
+        }
 
         if (".".equals(path)) {
             return createFileIO(workDir, path, oflags);

@@ -1,5 +1,6 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
@@ -22,7 +23,6 @@ import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unix.file.SocketIO;
 import com.github.unidbg.unix.file.TcpSocket;
 import com.github.unidbg.unix.file.UdpSocket;
-import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
@@ -80,8 +80,20 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             if (log.isDebugEnabled()) {
                 ARM.showRegs64(emulator, null);
             }
-
             Cpsr.getArm64(u).setCarry(false);
+
+            boolean isIndirect = NR == 0;
+            if (isIndirect) {
+                int indirectNR = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
+                if (!handleIndirect(emulator, u, indirectNR)) {
+                    log.warn("handleInterrupt intno=" + intno + ", indirectNR=" + indirectNR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc);
+                    if (log.isDebugEnabled()) {
+                        emulator.attach().debug();
+                    }
+                }
+                return;
+            }
+
             if (handleSyscall(emulator, NR)) {
                 return;
             }
@@ -142,10 +154,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, _mach_timebase_info(emulator));
                     return;
                 case 4:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, write(u, emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, write(emulator, 0));
                     return;
                 case 6:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, close(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, close(emulator, 0));
                     return;
                 case 10:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, unlink(emulator));
@@ -194,7 +206,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
                     return;
                 case 133:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sendto(u, emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sendto(emulator));
+                    return;
+                case 136:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, mkdir(emulator));
                     return;
                 case 194:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getrlimit(emulator));
@@ -245,7 +260,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(u, emulator));
                     return;
                 case 340:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator, 0));
                     return;
                 case 344:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getdirentries64(emulator));
@@ -277,15 +292,16 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case 381:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, sandbox_ms(emulator));
                     return;
+                case 3:
                 case 396:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, read_NOCANCEL(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, read_NOCANCEL(emulator, 0));
                     return;
                 case 397:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, write_NOCANCEL(emulator));
                     return;
                 case 5:
                 case 398:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, open_NOCANCEL(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, open_NOCANCEL(emulator, 0));
                     return;
                 case 399:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, close_NOCANCEL(emulator));
@@ -325,6 +341,36 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
     }
 
+    private long mkdir(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathname = context.getPointerArg(0);
+        int mode = context.getIntArg(1);
+        log.info("mkdir pathname=" + pathname.getString(0) + ", mode=" + mode);
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
+    }
+
+    private boolean handleIndirect(Emulator emulator, Unicorn u, int indirectNR) {
+        switch (indirectNR) {
+            case 3:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, read_NOCANCEL(emulator, 1));
+                return true;
+            case 4:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, write(emulator, 1));
+                return true;
+            case 5:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, open_NOCANCEL(emulator, 1));
+                return true;
+            case 6:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, close(emulator, 1));
+                return true;
+            case 190:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator, 1));
+                return true;
+        }
+        return false;
+    }
+
     private long _kernelrpc_mach_port_guard_trap(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         int task = context.getIntArg(0);
@@ -338,6 +384,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private long _semaphore_wait_trap(Emulator emulator) {
         int port = emulator.getContext().getIntArg(0);
         log.info("_semaphore_wait_trap port=" + port);
+        Log log = ARM64SyscallHandler.log;
+        if (!log.isDebugEnabled()) {
+            log = LogFactory.getLog(AbstractEmulator.class);
+        }
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }
@@ -431,9 +481,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int close(Emulator emulator) {
+    private int close(Emulator emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        int fd = context.getIntArg(0);
+        int fd = context.getIntArg(offset);
         if (log.isDebugEnabled()) {
             log.debug("close fd=" + fd);
         }
@@ -562,15 +612,20 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     /**
      * lstat() is identical to stat(), except that if pathname is a symbolic link, then it returns information about the link itself, not the file that it refers to.
      */
-    private int lstat(Emulator emulator) {
+    private int lstat(Emulator emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        Pointer pathname = context.getPointerArg(0);
-        Pointer stat = context.getPointerArg(1);
+        Pointer pathname = context.getPointerArg(offset);
+        Pointer stat = context.getPointerArg(offset + 1);
         String path = FilenameUtils.normalize(pathname.getString(0));
-        if (log.isDebugEnabled()) {
-            log.debug("lstat path=" + path + ", stat=" + stat);
+        int ret = stat64(emulator, path, stat);
+        if (ret == -1) {
+            log.info("lstat path=" + path + ", stat=" + stat);
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("lstat path=" + path + ", stat=" + stat + ", ret=" + ret);
+            }
         }
-        return stat64(emulator, path, stat);
+        return ret;
     }
 
     private int fstat(Unicorn u, Emulator emulator) {
@@ -656,6 +711,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private static final int PROC_INFO_CALL_SETCONTROL = 0x5;
     private static final int PROC_SELFSET_THREADNAME = 2;
+
+    private static final int PROC_INFO_CALL_PIDINFO = 0x2;
 
     private int proc_info(Emulator emulator) {
         RegisterContext context = emulator.getContext();
@@ -782,11 +839,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private static final int KERN_OSRELEASE = 2; /* string: system release */
     private static final int KERN_ARGMAX = 8; /* int: max arguments to exec */
+    private static final int KERN_HOSTNAME = 10; /* string: hostname */
     private static final int KERN_PROC = 14; /* struct: process entries */
     private static final int KERN_USRSTACK32 = 35; /* int: address of USRSTACK */
     private static final int KERN_PROCARGS2 = 49;
     private static final int KERN_OSVERSION = 65; /* for build number i.e. 9A127 */
 
+    private static final int HW_NCPU = 3; /* int: number of cpus */
     private static final int HW_PAGESIZE = 7; /* int: software page size */
 
     private static final int KERN_PROC_PID = 1; /* by process id */
@@ -861,6 +920,16 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                             buffer.setString(0, osVersion);
                         }
                         return 0;
+                    case KERN_HOSTNAME:
+                        log.debug(msg);
+                        String hostName = "unidbg.local";
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, hostName.length() + 1);
+                        }
+                        if (buffer != null) {
+                            buffer.setString(0, hostName);
+                        }
+                        return 0;
                     default:
                         log.info(msg);
                         break;
@@ -869,15 +938,25 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
             case CTL_HW:
                 action = name.getInt(4);
                 msg = "sysctl CTL_HW action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
-                if (action == HW_PAGESIZE) {
-                    log.debug(msg);
-                    if (bufferSize != null) {
-                        bufferSize.setLong(0, 4);
-                    }
-                    if (buffer != null) {
-                        buffer.setInt(0, emulator.getPageAlign());
-                    }
-                    return 0;
+                switch (action) {
+                    case HW_NCPU:
+                        log.debug(msg);
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 2); // 2 cpus
+                        }
+                        return 0;
+                    case HW_PAGESIZE:
+                        log.debug(msg);
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, emulator.getPageAlign());
+                        }
+                        return 0;
                 }
                 log.info(msg);
                 break;
@@ -1675,22 +1754,22 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         }
     }
 
-    private int read_NOCANCEL(Emulator emulator) {
-        Unicorn u = emulator.getUnicorn();
-        int fd = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
-        Pointer buffer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-        int count = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
+    private int read_NOCANCEL(Emulator emulator, int offset) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(offset);
+        Pointer buffer = context.getPointerArg(offset + 1);
+        int count = context.getIntArg(offset + 2);
         if (log.isDebugEnabled()) {
             log.debug("read_NOCANCEL fd=" + fd + ", buffer=" + buffer + ", count=" + count);
         }
         return read(emulator, fd, buffer, count);
     }
 
-    private int open_NOCANCEL(Emulator emulator) {
-        Unicorn u = emulator.getUnicorn();
-        Pointer pathname_p = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-        int oflags = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-        int mode = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
+    private int open_NOCANCEL(Emulator emulator, int offset) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathname_p = context.getPointerArg(offset);
+        int oflags = context.getIntArg(offset + 1);
+        int mode = context.getIntArg(offset + 2);
         String pathname = pathname_p.getString(0);
         int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
@@ -1707,7 +1786,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return pid;
     }
 
-    private int sendto(Unicorn u, Emulator emulator) {
+    private int sendto(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         int sockfd = context.getIntArg(0);
         Pointer buf = context.getPointerArg(1);
@@ -1821,11 +1900,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         throw new UnsupportedOperationException("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
     }
 
-    private int write(Unicorn u, Emulator emulator) {
+    private int write(Emulator emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        int fd = context.getIntArg(0);
-        Pointer buffer = context.getPointerArg(1);
-        int count = context.getIntArg(2);
+        int fd = context.getIntArg(offset);
+        Pointer buffer = context.getPointerArg(offset + 1);
+        int count = context.getIntArg(offset + 2);
         byte[] data = buffer.getByteArray(0, count);
         if (log.isDebugEnabled()) {
             log.debug("write fd=" + fd + ", buffer=" + buffer + ", count=" + count);

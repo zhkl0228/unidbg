@@ -156,7 +156,7 @@ public abstract class AbstractFileIO implements FileIO {
 
     @Override
     public int read(Unicorn unicorn, Pointer buffer, int count) {
-        throw new AbstractMethodError();
+        throw new AbstractMethodError(getClass().getName());
     }
 
     @Override

@@ -586,6 +586,9 @@ public class ARM {
                         case "x0":
                             r = Arm64Const.UC_ARM64_REG_X0;
                             break;
+                        case "x19":
+                            r = Arm64Const.UC_ARM64_REG_X19;
+                            break;
                         case "x20":
                             r = Arm64Const.UC_ARM64_REG_X20;
                             break;

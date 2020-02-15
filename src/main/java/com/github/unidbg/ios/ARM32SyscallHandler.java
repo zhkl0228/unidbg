@@ -1,5 +1,6 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
@@ -22,7 +23,6 @@ import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unix.file.SocketIO;
 import com.github.unidbg.unix.file.TcpSocket;
 import com.github.unidbg.unix.file.UdpSocket;
-import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -451,6 +451,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private long _semaphore_wait_trap(Emulator emulator) {
         int port = emulator.getContext().getIntArg(0);
         log.info("_semaphore_wait_trap port=" + port);
+        Log log = ARM32SyscallHandler.log;
+        if (!log.isDebugEnabled()) {
+            log = LogFactory.getLog(AbstractEmulator.class);
+        }
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }

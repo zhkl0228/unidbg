@@ -20,6 +20,9 @@
   CTTelephonyNetworkInfo *info = [[CTTelephonyNetworkInfo alloc]init];
   CTCarrier *carrier = [info subscriberCellularProvider];
   NSLog(@"CTTelephonyNetworkInfo: carrier=%@", carrier);
+
+  NSDictionary *proxySettings = (NSDictionary *)CFNetworkCopySystemProxySettings();
+  NSLog(@"CFNetworkCopySystemProxySettings proxySettings=%@", proxySettings);
 }
 -(NSString *) description {
   return @"This is ObjC TEST";

@@ -271,7 +271,7 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
 
     @Override
     public int fstat(Emulator emulator, StatStructure stat) {
-        int blockSize = emulator.getPointerSize();
+        int blockSize = emulator.getPageAlign();
         stat.st_dev = 1;
         stat.st_mode = (short) (IO.S_IFREG | 0x777);
         stat.st_size = UnicornPointer.pointer(emulator, file.length());

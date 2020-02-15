@@ -15,6 +15,7 @@ public interface FileIO {
     int O_CREAT = 0x40;
     int O_APPEND = 0x400;
     int O_NONBLOCK = 0x800;
+    int O_DIRECTORY = 0x10000;
     int O_NOFOLLOW = 0x20000;
 
     int SEEK_SET = 0;

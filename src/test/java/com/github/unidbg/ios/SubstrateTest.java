@@ -15,7 +15,8 @@ import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.WrapCallback;
 import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.whale.Whale;
-import com.github.unidbg.ios.service.CTTelephonyNetworkInfo;
+import com.github.unidbg.ios.service.CFNetwork;
+import com.github.unidbg.ios.service.CoreTelephony;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.utils.Inspector;
@@ -197,7 +198,10 @@ public class SubstrateTest extends EmulatorTest {
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x4128F000, 0x41339000).addBreakPoint(null, 0x4128F000 + 0x0001E9B8);
-        new CTTelephonyNetworkInfo(emulator).tryHook();
+
+        new CoreTelephony().processHook(emulator);
+        new CFNetwork().processHook(emulator);
+
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

@@ -15,7 +15,8 @@ import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.WrapCallback;
 import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.whale.Whale;
-import com.github.unidbg.ios.service.CTTelephonyNetworkInfo;
+import com.github.unidbg.ios.service.CFNetwork;
+import com.github.unidbg.ios.service.CoreTelephony;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -152,12 +153,15 @@ public class Substrate64Test extends EmulatorTest {
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         start = System.currentTimeMillis();
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
-//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x102984000L, 0x102998000L).addBreakPoint(null, 0x102984000L + 0x000000000000A0A4);
-        new CTTelephonyNetworkInfo(emulator, "中国电信", "460", "cn", "01", false).tryHook();
+
+        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
+        new CFNetwork().processHook(emulator);
+
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

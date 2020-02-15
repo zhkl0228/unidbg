@@ -2,6 +2,7 @@ package com.github.unidbg.arm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.pointer.UnicornPointer;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
@@ -24,6 +25,10 @@ public class HookStatus {
     public static HookStatus LR(Emulator emulator, long returnValue) {
         RegisterContext context = emulator.getContext();
         return new HookStatus(returnValue, context.getLR());
+    }
+
+    public static HookStatus LR(Emulator emulator, UnicornPointer pointer) {
+        return LR(emulator, pointer.peer);
     }
 
     @Deprecated

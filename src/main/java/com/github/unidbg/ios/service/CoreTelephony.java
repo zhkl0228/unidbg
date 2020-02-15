@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.service;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -16,46 +17,21 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
+public class CoreTelephony extends FrameworkHooker implements Constants {
 
-    private static final Log log = LogFactory.getLog(CTTelephonyNetworkInfo.class);
+    private static final Log log = LogFactory.getLog(CoreTelephony.class);
 
-    private final Symbol __CTServerConnectionCopyProviderNameUsingCarrierBundle;
-    private final Symbol __CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes;
-    private final Symbol __CTServerConnectionCopyMobileSubscriberNetworkCode;
-    private final Symbol __CTServerConnectionCarrierSettingsCopyValue;
-
-    public CTTelephonyNetworkInfo(Emulator emulator) {
-        this(emulator, "中国联通", "460", "cn", "01", true);
+    public CoreTelephony() {
+        this("中国联通", "460", "cn", "01", true);
     }
 
-    public CTTelephonyNetworkInfo(Emulator emulator, String carrierName, String countryCode, String isoCountryCode, String mobileNetworkCode, boolean allowsVoIP) {
-        super(emulator, "CoreTelephony");
+    public CoreTelephony(String carrierName, String countryCode, String isoCountryCode, String mobileNetworkCode, boolean allowsVoIP) {
+        super();
         this.carrierName = carrierName;
         this.countryCode = countryCode;
         this.isoCountryCode = isoCountryCode;
         this.mobileNetworkCode = mobileNetworkCode;
         this.allowsVoIP = allowsVoIP;
-
-        __CTServerConnectionCopyProviderNameUsingCarrierBundle = module.findSymbolByName("__CTServerConnectionCopyProviderNameUsingCarrierBundle", false);
-        if (__CTServerConnectionCopyProviderNameUsingCarrierBundle == null) {
-            throw new IllegalStateException("__CTServerConnectionCopyProviderNameUsingCarrierBundle is null");
-        }
-
-        __CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes = module.findSymbolByName("__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes", false);
-        if (__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes == null) {
-            throw new IllegalStateException("__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes is null");
-        }
-
-        __CTServerConnectionCopyMobileSubscriberNetworkCode = module.findSymbolByName("__CTServerConnectionCopyMobileSubscriberNetworkCode", false);
-        if (__CTServerConnectionCopyMobileSubscriberNetworkCode == null) {
-            throw new IllegalStateException("__CTServerConnectionCopyMobileSubscriberNetworkCode is null");
-        }
-
-        __CTServerConnectionCarrierSettingsCopyValue = module.findSymbolByName("__CTServerConnectionCarrierSettingsCopyValue", false);
-        if (__CTServerConnectionCarrierSettingsCopyValue == null) {
-            throw new IllegalStateException("__CTServerConnectionCarrierSettingsCopyValue is null");
-        }
     }
 
     private final String carrierName;
@@ -65,7 +41,11 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
     private final boolean allowsVoIP;
 
     @Override
-    public void tryHook() {
+    protected final void doHook(Emulator emulator, Module module) {
+        patchCTTelephonyNetworkInfo(emulator, module);
+    }
+
+    private void patchCTTelephonyNetworkInfo(Emulator emulator, Module module) {
         ObjC objc = ObjC.getInstance(emulator);
         ObjcClass cCTTelephonyNetworkInfo = objc.getClass("CTTelephonyNetworkInfo");
         ObjcClass cNSString = objc.getClass("NSString");
@@ -75,6 +55,26 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
         final ObjcObject fakeIsoCountryCode = cNSString.callObjc("stringWithCString:", isoCountryCode);
         final ObjcObject fakeMobileNetworkCode = cNSString.callObjc("stringWithCString:", mobileNetworkCode);
         final ObjcObject fakeAllowsVoIP = cNSNumber.callObjc("numberWithBool:", allowsVoIP ? YES : NO);
+
+        Symbol __CTServerConnectionCopyProviderNameUsingCarrierBundle = module.findSymbolByName("__CTServerConnectionCopyProviderNameUsingCarrierBundle", false);
+        if (__CTServerConnectionCopyProviderNameUsingCarrierBundle == null) {
+            throw new IllegalStateException("__CTServerConnectionCopyProviderNameUsingCarrierBundle is null");
+        }
+
+        Symbol __CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes = module.findSymbolByName("__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes", false);
+        if (__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes == null) {
+            throw new IllegalStateException("__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes is null");
+        }
+
+        Symbol __CTServerConnectionCopyMobileSubscriberNetworkCode = module.findSymbolByName("__CTServerConnectionCopyMobileSubscriberNetworkCode", false);
+        if (__CTServerConnectionCopyMobileSubscriberNetworkCode == null) {
+            throw new IllegalStateException("__CTServerConnectionCopyMobileSubscriberNetworkCode is null");
+        }
+
+        Symbol __CTServerConnectionCarrierSettingsCopyValue = module.findSymbolByName("__CTServerConnectionCarrierSettingsCopyValue", false);
+        if (__CTServerConnectionCarrierSettingsCopyValue == null) {
+            throw new IllegalStateException("__CTServerConnectionCarrierSettingsCopyValue is null");
+        }
 
         ISubstrate substrate = Substrate.getInstance(emulator);
         substrate.hookFunction(__CTServerConnectionCopyProviderNameUsingCarrierBundle, new ReplaceCallback() {
