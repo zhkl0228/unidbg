@@ -2,12 +2,10 @@ package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.ios.struct.kernel.StatFS;
-import com.github.unidbg.memory.MemoryMap;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
 import java.io.IOException;
-import java.util.Map;
 
 public interface FileIO {
 
@@ -58,7 +56,7 @@ public interface FileIO {
 
     int getsockname(Pointer addr, Pointer addrlen);
 
-    long mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length, Map<Long, MemoryMap> memoryMap) throws IOException;
+    long mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length) throws IOException;
 
     int llseek(long offset_high, long offset_low, Pointer result, int whence);
 

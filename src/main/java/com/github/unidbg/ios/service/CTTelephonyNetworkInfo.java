@@ -9,13 +9,12 @@ import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.Substrate;
 import com.github.unidbg.ios.objc.Constants;
 import com.github.unidbg.ios.objc.ObjC;
+import com.github.unidbg.ios.struct.cf.CFString;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.nio.charset.StandardCharsets;
 
 public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
 
@@ -111,9 +110,8 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
                 Pointer connection = context.getPointerArg(0);
                 Pointer key = context.getPointerArg(1);
                 Pointer value = context.getPointerArg(2);
-                int key_length = key.share(emulator.getPointerSize() * 3).getInt(0);
-                byte[] key_data = key.share(emulator.getPointerSize() * 2).getPointer(0).getByteArray(0, key_length);
-                String keyName = new String(key_data, StandardCharsets.UTF_8);
+                CFString keyStr = new CFString(key);
+                String keyName = keyStr.getData();
                 if (log.isDebugEnabled()) {
                     log.debug("__CTServerConnectionCarrierSettingsCopyValue connection=" + connection + ", key=" + key + ", value=" + value + ", keyName=" + keyName);
                 }

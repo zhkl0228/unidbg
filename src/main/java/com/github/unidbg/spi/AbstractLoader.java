@@ -115,7 +115,9 @@ public abstract class AbstractLoader implements Memory, Loader {
 
         if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
             long addr = allocateMapAddress(0, aligned);
-            log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
+            if (log.isDebugEnabled()) {
+                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
+            }
             unicorn.mem_map(addr, aligned, prot);
             if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                 log.warn("mmap2 replace exists memory map addr=" + Long.toHexString(addr));
@@ -126,8 +128,14 @@ public abstract class AbstractLoader implements Memory, Loader {
             FileIO file;
             if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
                 long addr = allocateMapAddress(0, aligned);
-                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
-                return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
+                if (log.isDebugEnabled()) {
+                    log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                }
+                long ret = file.mmap2(unicorn, addr, aligned, prot, offset, length);
+                if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
+                    log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
+                }
+                return ret;
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);

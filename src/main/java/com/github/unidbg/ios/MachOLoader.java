@@ -1503,7 +1503,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 if (log.isDebugEnabled()) {
                     log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 }
-                return file.mmap2(unicorn, addr, aligned, prot, offset, length, memoryMap);
+                long ret = file.mmap2(unicorn, addr, aligned, prot, offset, length);
+                if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
+                    log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
+                }
+                return ret;
             }
 
             if ((flags & MAP_FIXED) != 0) {
@@ -1519,13 +1523,13 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 }
 
                 if (mapped != null) {
-                    munmap(start, aligned);
+                    unicorn.mem_unmap(start, aligned);
                 } else {
                     log.warn("mmap2 MAP_FIXED not found mapped memory: start=0x" + Long.toHexString(start));
                 }
                 FileIO io = syscallHandler.fdMap.get(fd);
                 if (io != null) {
-                    return io.mmap2(unicorn, start, aligned, prot, offset, length, memoryMap);
+                    return io.mmap2(unicorn, start, aligned, prot, offset, length);
                 }
             }
         } catch (IOException e) {
