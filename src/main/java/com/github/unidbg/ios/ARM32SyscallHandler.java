@@ -1569,7 +1569,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 MachPortReply reply = new MachPortReply(request);
                 reply.unpack();
 
-                header.setComplex();
+                header.setMsgBits(true);
                 header.msgh_size = header.size() + reply.size();
                 header.msgh_remote_port = header.msgh_local_port;
                 header.msgh_local_port = 0;
@@ -1599,7 +1599,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 MachPortReply reply = new MachPortReply(request);
                 reply.unpack();
 
-                header.setComplex();
+                header.setMsgBits(true);
                 header.msgh_size = header.size() + reply.size();
                 header.msgh_remote_port = header.msgh_local_port;
                 header.msgh_local_port = 0;

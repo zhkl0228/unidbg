@@ -9,8 +9,8 @@ import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
-import com.github.unidbg.linux.module.AndroidModule;
-import com.github.unidbg.linux.module.JniGraphics;
+import com.github.unidbg.virtualmodule.android.AndroidModule;
+import com.github.unidbg.virtualmodule.android.JniGraphics;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.utils.Inspector;
 

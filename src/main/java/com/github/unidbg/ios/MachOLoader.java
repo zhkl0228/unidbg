@@ -896,6 +896,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
         module.lazyPointerProcessed = true;
 
+        if (module.machO == null) { // virtual module
+            return;
+        }
+
         for (MachO.LoadCommand command : module.machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT:
@@ -973,6 +977,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         module.indirectSymbolBound = true;
 
         MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
+        if (dysymtabCommand == null) { // virtual module
+            return;
+        }
+
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
         Log log = LogFactory.getLog("com.github.unidbg.ios." + module.name);
         if (!log.isDebugEnabled()) {
@@ -1371,6 +1379,16 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         return new ArrayList<Module>(modules.values());
     }
 
+    final Collection<Module> getLoadedModulesNoVirtual() {
+        List<Module> list = new ArrayList<>(modules.size());
+        for (MachOModule mm : modules.values()) {
+            if (mm.machO != null) {
+                list.add(mm);
+            }
+        }
+        return list;
+    }
+
     @Override
     public String getMaxLengthLibraryName() {
         return maxDylibName;
@@ -1401,6 +1419,10 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
     final List<UnicornPointer> initializedHandlers = new ArrayList<>();
 
     private void notifySingle(int state, MachOModule module) {
+        if (module.machO == null) { // virtual module
+            return;
+        }
+
         int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
         Pointer pointer = emulator.getSvcMemory().allocate(elementSize, "notifySingle");
         DyldImageInfo info = new DyldImageInfo(pointer);
@@ -1537,6 +1559,19 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
 
         throw new AbstractMethodError("mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset);
+    }
+
+    @Override
+    public Module loadVirtualModule(String name, Map<String, UnicornPointer> symbols) {
+        MachOModule module = MachOModule.createVirtualModule(name, symbols, emulator);
+        modules.put(name, module);
+        if (maxDylibName == null || name.length() > maxDylibName.length()) {
+            maxDylibName = name;
+        }
+        if (moduleListener != null) {
+            moduleListener.onLoaded(emulator, module);
+        }
+        return module;
     }
 
     @Override

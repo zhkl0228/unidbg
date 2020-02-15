@@ -105,10 +105,10 @@ abstract class Dyld extends Dlfcn {
     }
 
     private DyldImageInfo[] generateDyldImageInfo(Emulator emulator, MachOLoader loader, int state, UnicornPointer handler) {
-        List<DyldImageInfo> list = new ArrayList<>(loader.getLoadedModules().size());
+        List<DyldImageInfo> list = new ArrayList<>(loader.getLoadedModulesNoVirtual().size());
         int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
-        Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModules().size(), "DyldImageInfo");
-        for (Module module : loader.getLoadedModules()) {
+        Pointer pointer = emulator.getSvcMemory().allocate(elementSize * loader.getLoadedModulesNoVirtual().size(), "DyldImageInfo");
+        for (Module module : loader.getLoadedModulesNoVirtual()) {
             if (module == loader.getExecutableModule()) {
                 continue;
             }

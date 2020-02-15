@@ -1,12 +1,12 @@
 package com.github.unidbg.linux;
 
 import com.github.unidbg.*;
-import com.github.unidbg.linux.android.dvm.Hashable;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.utils.Inspector;
+import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.SymbolLocator;
@@ -49,7 +49,7 @@ public class LinuxModule extends Module {
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnicornPointer pointer = symbols.get(name);
                 if (pointer != null) {
-                    return new LinuxVirtualSymbol(name, this, pointer.peer);
+                    return new VirtualSymbol(name, this, pointer.peer);
                 } else {
                     return null;
                 }

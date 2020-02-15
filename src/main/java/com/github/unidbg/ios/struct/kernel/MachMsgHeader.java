@@ -20,8 +20,11 @@ public class MachMsgHeader extends UnicornStructure implements DarwinSyscall {
     public int msgh_voucher_port;
     public int msgh_id;
 
-    public void setComplex() {
-        msgh_bits = (msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+    public void setMsgBits(boolean complex) {
+        msgh_bits &= 0xff;
+        if (complex) {
+            msgh_bits |= MACH_MSGH_BITS_COMPLEX;
+        }
     }
 
     @Override

@@ -123,6 +123,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 case -21:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_insert_right_trap(emulator));
                     return;
+                case -22: // _mach_port_insert_member
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _mach_port_insert_member(emulator));
+                    return;
                 case -24:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_construct_trap(emulator));
                     return;
@@ -152,6 +155,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     return;
                 case -89:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, _mach_timebase_info(emulator));
+                    return;
+                case -91: // mk_timer_create
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _mk_timer_create());
                     return;
                 case 4:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, write(emulator, 0));
@@ -339,6 +345,24 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private long _mach_port_insert_member(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        int task = context.getIntArg(0);
+        int name = context.getIntArg(1);
+        int pset = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("_mach_port_insert_member task=" + task + ", name=" + name + ", pset=" + pset);
+        }
+        return 0;
+    }
+
+    private long _mk_timer_create() {
+        if (log.isDebugEnabled()) {
+            log.debug("_mk_timer_create");
+        }
+        return STATIC_PORT;
     }
 
     private long mkdir(Emulator emulator) {
@@ -1587,7 +1611,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 NotifyServerRegisterMachPortReply reply = new NotifyServerRegisterMachPortReply(request);
                 reply.unpack();
 
-                header.msgh_bits &= 0xff;
+                header.setMsgBits(false);
                 header.msgh_size = header.size() + reply.size();
                 header.msgh_remote_port = header.msgh_local_port;
                 header.msgh_local_port = 0;
@@ -1610,7 +1634,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 MachPortReply reply = new MachPortReply(request);
                 reply.unpack();
 
-                header.setComplex();
+                header.setMsgBits(true);
                 header.msgh_size = header.size() + reply.size();
                 header.msgh_remote_port = header.msgh_local_port;
                 header.msgh_local_port = 0;
@@ -1640,7 +1664,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 MachPortReply reply = new MachPortReply(request);
                 reply.unpack();
 
-                header.setComplex();
+                header.setMsgBits(true);
                 header.msgh_size = header.size() + reply.size();
                 header.msgh_remote_port = header.msgh_local_port;
                 header.msgh_local_port = 0;
@@ -1657,6 +1681,119 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
                 if (log.isDebugEnabled()) {
                     log.debug("io_service_get_matching_service reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3218: { // _kernelrpc_mach_port_set_attributes
+                MachPortSetAttributesRequest args = new MachPortSetAttributesRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_port_set_attributes args=" + args);
+                }
+
+                MachPortSetAttributesReply reply = new MachPortSetAttributesReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_port_set_attributes reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3201: { // _kernelrpc_mach_port_type
+                MachPortTypeRequest args = new MachPortTypeRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_port_type args=" + args);
+                }
+
+                MachPortTypeReply reply = new MachPortTypeReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 0;
+                reply.ptype = 0x70000;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_port_set_attributes reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 2868: { // io_service_add_notification
+                IOServiceAddNotificationRequest args = new IOServiceAddNotificationRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("io_service_add_notification args=" + args + ", matching=" + args.getMatching());
+                }
+
+                MachPortReply reply = new MachPortReply(request);
+                reply.unpack();
+
+                header.setMsgBits(true);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.body.msgh_descriptor_count = 1;
+                reply.port.name = STATIC_PORT;
+                reply.port.pad1 = 0;
+                reply.port.pad2 = 0;
+                reply.port.disposition = 17;
+                reply.port.type = MACH_MSG_PORT_DESCRIPTOR;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("io_service_add_notification reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3405: { // task_info
+                TaskInfoRequest args = new TaskInfoRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("task_info args=" + args);
+                }
+
+                if (args.flavor == TaskInfoRequest.TASK_DYLD_INFO) {
+                    TaskInfoReply reply = new TaskInfoReply(request);
+                    reply.unpack();
+
+                    header.setMsgBits(false);
+                    header.msgh_size = header.size() + reply.size();
+                    header.msgh_remote_port = header.msgh_local_port;
+                    header.msgh_local_port = 0;
+                    header.msgh_id += 100; // reply Id always equals reqId+100
+                    header.pack();
+
+                    reply.retCode = 0;
+                    reply.task_info_outCnt = 5;
+                    reply.pack();
+
+                    log.info("task_info TASK_DYLD_INFO reply=" + reply);
+                    return MACH_MSG_VM_SPACE;
+                }
+            }
+            case 78: { // _dispatch_send_wakeup_runloop_thread
+                if (log.isDebugEnabled()) {
+                    log.debug("_dispatch_send_wakeup_runloop_thread");
                 }
                 return MACH_MSG_SUCCESS;
             }

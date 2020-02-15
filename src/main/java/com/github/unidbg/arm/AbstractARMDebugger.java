@@ -331,15 +331,24 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
             }
         }
-        if ("vm".equals(line)) {
+        if (line.startsWith("vm")) {
             Memory memory = emulator.getMemory();
             String maxLengthSoName = memory.getMaxLengthLibraryName();
             StringBuilder sb = new StringBuilder();
+            String filter = null;
+            {
+                int index = line.indexOf(' ');
+                if (index != -1) {
+                    filter = line.substring(index + 1).trim();
+                }
+            }
             int index = 0;
             for (Module module : memory.getLoadedModules()) {
-                sb.append(String.format("[%2s][%" + maxLengthSoName.length() + "s] ", index++, module.name));
-                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x-0x%x]", module.base, module.base + module.size));
-                sb.append("\n");
+                if (filter == null || module.name.contains(filter)) {
+                    sb.append(String.format("[%2s][%" + maxLengthSoName.length() + "s] ", index++, module.name));
+                    sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x-0x%x]", module.base, module.base + module.size));
+                    sb.append("\n");
+                }
             }
             System.out.println(sb);
             return false;

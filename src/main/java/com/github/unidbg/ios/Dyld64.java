@@ -114,7 +114,7 @@ public class Dyld64 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             int image_index = emulator.getContext().getIntArg(0);
-                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             if (image_index < 0 || image_index >= modules.length) {
                                 return 0;
                             }
@@ -131,7 +131,7 @@ public class Dyld64 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             int image_index = emulator.getContext().getIntArg(0);
-                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             if (image_index < 0 || image_index >= modules.length) {
                                 return 0;
                             }
@@ -162,7 +162,7 @@ public class Dyld64 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             int image_index = emulator.getContext().getIntArg(0);
-                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             if (image_index < 0 || image_index >= modules.length) {
                                 if (log.isDebugEnabled()) {
                                     log.debug("__dyld_get_image_vmaddr_slide index=" + image_index);
@@ -185,7 +185,7 @@ public class Dyld64 extends Dyld {
                     __dyld_image_count = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator emulator) {
-                            return loader.getLoadedModules().size();
+                            return loader.getLoadedModulesNoVirtual().size();
                         }
                     });
                 }
@@ -438,7 +438,7 @@ public class Dyld64 extends Dyld {
                                 if (callback != null && !loader.addImageCallbacks.contains(callback)) {
                                     loader.addImageCallbacks.add(callback);
 
-                                    for (Module md : loader.getLoadedModules()) {
+                                    for (Module md : loader.getLoadedModulesNoVirtual()) {
                                         Log log = LogFactory.getLog("com.github.unidbg.ios." + md.name);
                                         MachOModule mm = (MachOModule) md;
                                         if (mm.executable) {
@@ -451,10 +451,11 @@ public class Dyld64 extends Dyld {
                                         pointer = pointer.share(-8);
                                         pointer.setLong(0, computeSlide(emulator, mm.machHeader));
 
+                                        String msg = "[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader);
                                         if (log.isDebugEnabled()) {
-                                            log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader));
+                                            log.debug(msg);
                                         } else if (Dyld64.log.isDebugEnabled()) {
-                                            Dyld64.log.debug("[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader));
+                                            Dyld64.log.debug(msg);
                                         }
                                         pointer = pointer.share(-8); // callback
                                         pointer.setPointer(0, callback);

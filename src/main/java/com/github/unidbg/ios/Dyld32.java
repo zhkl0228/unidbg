@@ -93,7 +93,7 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             long ret;
                             if (image_index < 0 || image_index >= modules.length) {
                                 ret = 0;
@@ -116,7 +116,7 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             long ret;
                             if (image_index < 0 || image_index >= modules.length) {
                                 ret = 0;
@@ -154,7 +154,7 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator emulator) {
                             int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            Module[] modules = loader.getLoadedModules().toArray(new Module[0]);
+                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             long ret;
                             if (image_index < 0 || image_index >= modules.length) {
                                 ret = 0;
@@ -174,7 +174,7 @@ public class Dyld32 extends Dyld {
                     __dyld_image_count = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator emulator) {
-                            int ret = loader.getLoadedModules().size();
+                            int ret = loader.getLoadedModulesNoVirtual().size();
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_image_count size=" + ret);
                             }
@@ -400,7 +400,7 @@ public class Dyld32 extends Dyld {
                                 if (callback != null && !loader.addImageCallbacks.contains(callback)) {
                                     loader.addImageCallbacks.add(callback);
 
-                                    for (Module md : loader.getLoadedModules()) {
+                                    for (Module md : loader.getLoadedModulesNoVirtual()) {
                                         Log log = LogFactory.getLog("com.github.unidbg.ios." + md.name);
                                         MachOModule mm = (MachOModule) md;
                                         if (mm.executable) {

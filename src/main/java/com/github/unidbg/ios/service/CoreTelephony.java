@@ -76,6 +76,11 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
             throw new IllegalStateException("__CTServerConnectionCarrierSettingsCopyValue is null");
         }
 
+        Symbol __CTServerConnectionCopyNextCall = module.findSymbolByName("__CTServerConnectionCopyNextCall", false);
+        if (__CTServerConnectionCopyNextCall == null) {
+            throw new IllegalStateException("__CTServerConnectionCopyNextCall is null");
+        }
+
         ISubstrate substrate = Substrate.getInstance(emulator);
         substrate.hookFunction(__CTServerConnectionCopyProviderNameUsingCarrierBundle, new ReplaceCallback() {
             @Override
@@ -183,6 +188,15 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
                     log.debug("[CTTelephonyNetworkInfo queryCTSignalStrengthNotification] self=" + self + ", selector=" + selector);
                 }
                 return HookStatus.LR(emulator, 0);
+            }
+        });
+        substrate.hookFunction(__CTServerConnectionCopyNextCall, new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator emulator, long originFunction) {
+                if (log.isDebugEnabled()) {
+                    log.debug("__CTServerConnectionCopyNextCall");
+                }
+                return HookStatus.LR(emulator, Long.MAX_VALUE);
             }
         });
     }

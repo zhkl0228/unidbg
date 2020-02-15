@@ -1,6 +1,10 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.*;
+import com.github.unidbg.Alignment;
+import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
+import com.github.unidbg.Symbol;
+import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -68,8 +72,12 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.loader = loader;
 
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
-        this.routines = parseRoutines(machO);
-        this.initFunctionList = parseInitFunction(machO, buffer.duplicate(), name, emulator);
+        this.routines = machO == null ? Collections.<InitFunction>emptyList() : parseRoutines(machO);
+        this.initFunctionList = machO == null ? Collections.<InitFunction>emptyList() : parseInitFunction(machO, buffer.duplicate(), name, emulator);
+
+        if (machO == null) {
+            return;
+        }
 
         final Map<String, ExportSymbol> exportSymbols = processExportNode(log, dyldInfoCommand, buffer);
 
@@ -482,5 +490,54 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     @Override
     public void registerSymbol(String symbolName, long address) {
         throw new UnsupportedOperationException();
+    }
+
+    static MachOModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator emulator) {
+        if (symbols.isEmpty()) {
+            throw new IllegalArgumentException("symbols is empty");
+        }
+
+        List<UnicornPointer> list = new ArrayList<>(symbols.values());
+        Collections.sort(list, new Comparator<UnicornPointer>() {
+            @Override
+            public int compare(UnicornPointer o1, UnicornPointer o2) {
+                return (int) (o1.peer - o2.peer);
+            }
+        });
+        UnicornPointer first = list.get(0);
+        UnicornPointer last = list.get(list.size() - 1);
+        Alignment alignment = emulator.align(first.peer, last.peer - first.peer);
+        final long base = alignment.address;
+        final long size = alignment.size;
+
+        Log log = LogFactory.getLog(MachOModule.class);
+        if (log.isDebugEnabled()) {
+            log.debug("createVirtualModule first=0x" + Long.toHexString(first.peer) + ", last=0x" + Long.toHexString(last.peer) + ", base=0x" + Long.toHexString(base) + ", size=0x" + Long.toHexString(size));
+        }
+
+        MachOModule module = new MachOModule(null, name, base, size, Collections.<String, Module>emptyMap(),
+                Collections.<MemRegion>emptyList(),
+                null, null, null,
+                Collections.<NeedLibrary>emptyList(),
+                Collections.<String, Module>emptyMap(),
+                Collections.<String, Module>emptyMap(),
+                name, emulator, null, null, null, null, 0L, false, null) {
+            @Override
+            public Symbol findSymbolByName(String name, boolean withDependencies) {
+                UnicornPointer pointer = symbols.get(name);
+                if (pointer != null) {
+                    return new VirtualSymbol(name, this, pointer.peer);
+                } else {
+                    return null;
+                }
+            }
+            @Override
+            public void registerSymbol(String symbolName, long address) {
+            }
+        };
+        for (Map.Entry<String, UnicornPointer> entry : symbols.entrySet()) {
+            module.registerSymbol(entry.getKey(), entry.getValue().peer);
+        }
+        return module;
     }
 }
