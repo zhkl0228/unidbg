@@ -1,6 +1,8 @@
 package com.github.unidbg.linux.android;
 
 import com.github.unidbg.arm.AbstractARMEmulator;
+import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.linux.LinuxFileSystem;
 import com.github.unidbg.linux.ARMSyscallHandler;
 import com.github.unidbg.linux.AndroidElfLoader;
 import com.github.unidbg.linux.android.dvm.DalvikVM;
@@ -31,11 +33,24 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     private static final Log log = LogFactory.getLog(AndroidARMEmulator.class);
 
     public AndroidARMEmulator() {
-        this(null);
+        this(null, null);
     }
 
     public AndroidARMEmulator(String processName) {
-        super(processName);
+        this(processName, null);
+    }
+
+    public AndroidARMEmulator(File rootDir) {
+        this(null, rootDir);
+    }
+
+    public AndroidARMEmulator(String processName, File rootDir) {
+        super(processName, rootDir);
+    }
+
+    @Override
+    protected FileSystem createFileSystem(File rootDir) {
+        return new LinuxFileSystem(this, rootDir);
     }
 
     @Override

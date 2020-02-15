@@ -3,6 +3,7 @@ package com.github.unidbg.spi;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
@@ -263,9 +264,9 @@ public abstract class AbstractLoader implements Memory, Loader {
         /*
          * 注意打开顺序很重要
          */
-        syscallHandler.open(emulator, IO.STDIN, FileIO.O_RDONLY);
-        syscallHandler.open(emulator, IO.STDOUT, FileIO.O_WRONLY);
-        syscallHandler.open(emulator, IO.STDERR, FileIO.O_WRONLY);
+        syscallHandler.open(emulator, IO.STDIN, IOConstants.O_RDONLY, true);
+        syscallHandler.open(emulator, IO.STDOUT, IOConstants.O_WRONLY, true);
+        syscallHandler.open(emulator, IO.STDERR, IOConstants.O_WRONLY, true);
     }
 
     @Override

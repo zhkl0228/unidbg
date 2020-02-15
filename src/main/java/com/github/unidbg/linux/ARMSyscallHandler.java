@@ -9,6 +9,7 @@ import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.IOResolver;
+import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
 import com.github.unidbg.linux.struct.SysInfo32;
@@ -1306,8 +1307,13 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     private int getcwd(Unicorn u, Emulator emulator) {
         UnicornPointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-        File workDir = emulator.getWorkDir();
-        String path = workDir == null ? "/" : workDir.getAbsolutePath();
+        File workDir = emulator.getFileSystem().createWorkDir();
+        if (workDir == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
+            return 0;
+        }
+
+        String path = workDir.getAbsolutePath();
         if (log.isDebugEnabled()) {
             log.debug("getcwd buf=" + buf + ", size=" + size + ", path=" + path);
         }
@@ -1563,7 +1569,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int faccessat(Emulator emulator, String pathname) {
-        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (io != null) {
             return 0;
         }
@@ -1617,7 +1623,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
             log.debug(msg);
         }
         if (pathname.startsWith("/")) {
-            int fd = open(emulator, pathname, oflags);
+            int fd = open(emulator, pathname, oflags, (oflags & IOConstants.O_CREAT) != 0);
             if (fd == -1) {
                 log.info(msg);
             }
@@ -1642,7 +1648,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
         if (log.isDebugEnabled()) {
             log.debug(msg);
         }
-        int fd = open(emulator, pathname, oflags);
+        int fd = open(emulator, pathname, oflags, (oflags & IOConstants.O_CREAT) != 0);
         if (fd == -1) {
             log.info(msg);
         }

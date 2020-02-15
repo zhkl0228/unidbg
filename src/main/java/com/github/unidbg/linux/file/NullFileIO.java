@@ -3,6 +3,7 @@ package com.github.unidbg.linux.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.AbstractFileIO;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.linux.IOConstants;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -14,7 +15,7 @@ public class NullFileIO extends AbstractFileIO implements FileIO {
     private final String path;
 
     public NullFileIO(String path) {
-        super(O_RDWR);
+        super(IOConstants.O_RDWR);
 
         this.path = path;
     }

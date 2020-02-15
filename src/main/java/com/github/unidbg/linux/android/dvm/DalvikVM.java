@@ -273,7 +273,7 @@ public class DalvikVM extends BaseVM implements VM {
             @Override
             public long handle(Emulator emulator) {
                 UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                DvmObject<?> dvmObject = getObject(object.toUIntPeer());
+                DvmObject<?> dvmObject = object == null ? null : getObject(object.toUIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("GetObjectClass object=" + object + ", dvmObject=" + dvmObject);
                 }

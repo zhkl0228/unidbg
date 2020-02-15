@@ -31,8 +31,7 @@ public class CrackMe {
 
     public CrackMe() throws IOException {
         executable = new File("src/test/resources/example_binaries/crackme1");
-        emulator = new AndroidARMEmulator(executable.getName());
-        emulator.setWorkDir(executable.getParentFile());
+        emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs"));
         Memory memory = emulator.getMemory();
         LibraryResolver resolver = new AndroidResolver(19);
         memory.setLibraryResolver(resolver);

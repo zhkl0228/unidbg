@@ -3,6 +3,7 @@ package com.github.unidbg;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.debugger.DebuggerType;
+import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.listener.TraceReadListener;
@@ -115,8 +116,7 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
 
     Debugger attach(long begin, long end, DebuggerType type);
 
-    void setWorkDir(File dir);
-    File getWorkDir();
+    FileSystem getFileSystem();
 
     SvcMemory getSvcMemory();
 

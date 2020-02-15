@@ -11,6 +11,7 @@ import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
 import com.github.unidbg.memory.MemoryBlock;
@@ -24,7 +25,6 @@ import com.github.unidbg.unix.file.SocketIO;
 import com.github.unidbg.unix.file.TcpSocket;
 import com.github.unidbg.unix.file.UdpSocket;
 import com.sun.jna.Pointer;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,7 +33,6 @@ import unicorn.Unicorn;
 import unicorn.UnicornConst;
 import unicorn.UnicornException;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -527,14 +526,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private int unlink(Emulator emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         String path = FilenameUtils.normalize(pathname.getString(0));
-
-        String fileName = FilenameUtils.getName(path);
-        String dir = FilenameUtils.getFullPath(path);
-        if ("/tmp/".equals(dir)) {
-            FileUtils.deleteQuietly(new File("target", fileName));
-        } else {
-            log.info("unlink path=" + path);
-        }
+        emulator.getFileSystem().unlink(path);
         return 0;
     }
 
@@ -579,7 +571,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int faccessat(Emulator emulator, String pathname) {
-        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (io != null) {
             return 0;
         }
@@ -617,7 +609,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     @Override
     protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
-        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (io != null) {
             return io.fstat(emulator, new Stat(statbuf));
         }
@@ -1721,11 +1713,11 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int oflags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         String pathname = pathname_p.getString(0);
-        int fd = open(emulator, pathname, oflags);
+        int fd = open(emulator, pathname, oflags, (oflags & IOConstants.O_CREAT) != 0);
         if (fd == -1) {
-            log.info("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.info("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=0x" + Integer.toHexString(mode));
         } else if (log.isDebugEnabled()) {
-            log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", fd=" + fd);
+            log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=0x" + Integer.toHexString(mode) + ", fd=" + fd);
         }
         return fd;
     }

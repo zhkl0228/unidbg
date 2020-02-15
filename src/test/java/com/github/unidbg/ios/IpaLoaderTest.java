@@ -24,7 +24,7 @@ public class IpaLoaderTest extends EmulatorTest {
 
     @Override
     protected Emulator createARMEmulator() {
-        return new DarwinARM64Emulator();
+        return new DarwinARM64Emulator(new File("target/rootfs/ipa"));
     }
 
     public void testLoader() throws Exception {

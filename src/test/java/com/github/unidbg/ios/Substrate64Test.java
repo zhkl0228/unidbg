@@ -33,7 +33,7 @@ public class Substrate64Test extends EmulatorTest {
 
     @Override
     protected Emulator createARMEmulator() {
-        return new DarwinARM64Emulator();
+        return new DarwinARM64Emulator(new File("target/rootfs/substrate"));
     }
 
     public void testMS() throws Exception {

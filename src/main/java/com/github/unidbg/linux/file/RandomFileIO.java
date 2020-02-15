@@ -2,6 +2,7 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.linux.IOConstants;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -12,7 +13,7 @@ public class RandomFileIO extends DriverFileIO {
     private final Random random = new Random();
 
     RandomFileIO(Emulator emulator, String path) {
-        super(emulator, FileIO.O_RDONLY, path);
+        super(emulator, IOConstants.O_RDONLY, path);
     }
 
     @Override

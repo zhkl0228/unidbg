@@ -18,6 +18,6 @@ public interface SyscallHandler extends InterruptHook {
      */
     void addIOResolver(IOResolver resolver);
 
-    int open(Emulator emulator, String pathname, int oflags);
+    int open(Emulator emulator, String pathname, int oflags, boolean canCreate);
 
 }

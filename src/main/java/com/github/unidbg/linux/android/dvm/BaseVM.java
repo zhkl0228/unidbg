@@ -295,8 +295,6 @@ public abstract class BaseVM implements VM {
 
     @Override
     public final DalvikModule loadLibrary(File elfFile, boolean forceCallInit) throws IOException {
-        emulator.setWorkDir(elfFile.getParentFile());
-
         Module module = emulator.getMemory().load(new ElfLibraryFile(elfFile), forceCallInit);
         return new DalvikModule(this, module);
     }

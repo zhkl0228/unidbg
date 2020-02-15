@@ -3,12 +3,12 @@ package com.github.unidbg.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
-import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.linux.LinuxModule;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.unix.UnixEmulator;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
 import org.apache.commons.io.IOUtils;
@@ -19,8 +19,7 @@ import java.io.IOException;
 class RunExecutable {
 
     static void run(File executable, ModuleListener listener, String[] preloads, Object...args) throws IOException {
-        final Emulator emulator = new AndroidARMEmulator(executable.getName());
-        emulator.setWorkDir(executable.getParentFile());
+        final Emulator emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs"));
         try {
             long start = System.currentTimeMillis();
             Memory memory = emulator.getMemory();

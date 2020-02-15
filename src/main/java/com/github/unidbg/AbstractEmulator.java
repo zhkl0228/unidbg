@@ -7,6 +7,7 @@ import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.debugger.DebuggerType;
 import com.github.unidbg.debugger.gdb.GdbStub;
 import com.github.unidbg.debugger.ida.AndroidServer;
+import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.listener.TraceReadListener;
@@ -62,8 +63,20 @@ public abstract class AbstractEmulator implements Emulator {
 
     private final RegisterContext registerContext;
 
-    public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName) {
+    private final FileSystem fileSystem;
+
+    public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, File rootDir) {
         super();
+
+        if (rootDir != null) {
+            if (rootDir.isFile()) {
+                throw new IllegalArgumentException("rootDir must be directory: " + rootDir);
+            }
+            if (!rootDir.exists() && !rootDir.mkdirs()) {
+                throw new IllegalStateException("mkdirs failed: " + rootDir);
+            }
+        }
+        this.fileSystem = createFileSystem(rootDir);
 
         this.unicorn = new Unicorn(unicorn_arch, unicorn_mode);
         this.processName = processName == null ? "unidbg" : processName;
@@ -79,6 +92,13 @@ public abstract class AbstractEmulator implements Emulator {
 
         EMULATOR_THREAD_LOCAL.set(this);
     }
+
+    @Override
+    public final FileSystem getFileSystem() {
+        return fileSystem;
+    }
+
+    protected abstract FileSystem createFileSystem(File rootDir);
 
     @Override
     public boolean is64Bit() {
@@ -403,18 +423,6 @@ public abstract class AbstractEmulator implements Emulator {
     @Override
     public String getProcessName() {
         return processName == null ? "unidbg" : processName;
-    }
-
-    private File workDir;
-
-    @Override
-    public void setWorkDir(File dir) {
-        this.workDir = dir;
-    }
-
-    @Override
-    public File getWorkDir() {
-        return workDir;
     }
 
     protected final Number[] eFunc(long begin, Arguments args, long lr, boolean entry) {

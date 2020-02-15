@@ -14,6 +14,8 @@ import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
 import com.sun.jna.Pointer;
 
+import java.io.File;
+
 public class ClassDumpTest extends EmulatorTest {
 
     @Override
@@ -23,7 +25,7 @@ public class ClassDumpTest extends EmulatorTest {
 
     @Override
     protected Emulator createARMEmulator() {
-        return new DarwinARMEmulator();
+        return new DarwinARMEmulator(new File("target/rootfs/classdump"));
     }
 
     public void testClassDump() {

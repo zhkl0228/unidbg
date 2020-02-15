@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.IOResolver;
+import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
@@ -54,19 +55,15 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public FileIO resolve(Emulator emulator, File workDir, String path, int oflags) {
-        if (workDir == null) {
-            workDir = new File("target");
+    public FileIO resolve(Emulator emulator, String path, int oflags) {
+        final File rootDir = emulator.getFileSystem().getRootDir();
+        if (rootDir == null) {
+            return null;
         }
-
-        final boolean create = (oflags & FileIO.O_CREAT) != 0;
 
         if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
             try {
-                if (!workDir.exists() && !workDir.mkdir()) {
-                    throw new IOException("mkdir failed: " + workDir);
-                }
-                File stdio = new File(workDir, path);
+                File stdio = new File(rootDir, path + ".txt");
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
@@ -81,28 +78,14 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
         }
 
         if (".".equals(path)) {
-            return createFileIO(workDir, path, oflags);
+            return createFileIO(emulator.getFileSystem().createWorkDir(), path, oflags);
         }
 
-        File file;
-        if (path.startsWith(workDir.getAbsolutePath()) && ((file = new File(path)).canRead() || create)) {
-            if (file.canRead()) {
-                return createFileIO(file, path, oflags);
-            }
-            try {
-                if (!file.exists() && !file.createNewFile()) {
-                    throw new IOException("create file failed: " + file);
-                }
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-            return createFileIO(file, path, oflags);
-        }
-
-        file = new File(workDir, path);
+        File file = new File(rootDir, path);
         if (file.canRead()) {
             return createFileIO(file, path, oflags);
         }
+        final boolean create = (oflags & IOConstants.O_CREAT) != 0;
         if (file.getParentFile().exists() && create) {
             return createFileIO(file, path, oflags);
         }

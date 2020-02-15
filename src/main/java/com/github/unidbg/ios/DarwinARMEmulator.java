@@ -1,6 +1,8 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.arm.AbstractARMEmulator;
+import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.ios.DarwinFileSystem;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -9,16 +11,30 @@ import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 
+import java.io.File;
 import java.net.URL;
 
 public class DarwinARMEmulator extends AbstractARMEmulator {
 
     public DarwinARMEmulator() {
-        this(null);
+        this(null, null);
     }
 
     public DarwinARMEmulator(String processName) {
-        super(processName);
+        this(processName, null);
+    }
+
+    public DarwinARMEmulator(File rootDir) {
+        this(null, rootDir);
+    }
+
+    public DarwinARMEmulator(String processName, File rootDir) {
+        super(processName, rootDir);
+    }
+
+    @Override
+    protected FileSystem createFileSystem(File rootDir) {
+        return new DarwinFileSystem(this, rootDir);
     }
 
     @Override

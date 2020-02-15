@@ -1,18 +1,15 @@
 package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 import java.io.IOException;
 
 public abstract class AbstractFileIO implements FileIO {
-
-    private static final Log log = LogFactory.getLog(AbstractFileIO.class);
 
     private static final int F_GETFD = 1; /* get file descriptor flags */
     private static final int F_SETFD = 2; /* set file descriptor flags */
@@ -32,7 +29,7 @@ public abstract class AbstractFileIO implements FileIO {
     }
 
     protected boolean isAppendMode() {
-        return (oflags & O_APPEND) != 0;
+        return (oflags & IOConstants.O_APPEND) != 0;
     }
 
     @Override
@@ -49,14 +46,14 @@ public abstract class AbstractFileIO implements FileIO {
             case F_GETFL:
                 return oflags;
             case F_SETFL:
-                if ((O_APPEND & arg) != 0) {
-                    oflags |= O_APPEND;
+                if ((IOConstants.O_APPEND & arg) != 0) {
+                    oflags |= IOConstants.O_APPEND;
                 }
-                if ((O_RDWR & arg) != 0) {
-                    oflags |= O_RDWR;
+                if ((IOConstants.O_RDWR & arg) != 0) {
+                    oflags |= IOConstants.O_RDWR;
                 }
-                if ((O_NONBLOCK & arg) != 0) {
-                    oflags |= O_NONBLOCK;
+                if ((IOConstants.O_NONBLOCK & arg) != 0) {
+                    oflags |= IOConstants.O_NONBLOCK;
                 }
                 return 0;
             case F_SETLK:

@@ -4,8 +4,11 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.IOResolver;
+import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.LinuxThread;
-import com.github.unidbg.linux.file.*;
+import com.github.unidbg.linux.file.ByteArrayFileIO;
+import com.github.unidbg.linux.file.DriverFileIO;
+import com.github.unidbg.linux.file.LocalSocketIO;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.struct.TimeVal32;
@@ -13,11 +16,9 @@ import com.github.unidbg.unix.struct.TimeVal64;
 import com.github.unidbg.unix.struct.TimeZone;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -52,8 +53,13 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     }
 
     protected final FileIO resolve(Emulator emulator, String pathname, int oflags) {
+        FileIO io = emulator.getFileSystem().open(pathname, oflags);
+        if (io != null) {
+            return io;
+        }
+
         for (IOResolver resolver : resolvers) {
-            FileIO io = resolver.resolve(emulator, emulator.getWorkDir(), pathname, oflags);
+            io = resolver.resolve(emulator, pathname, oflags);
             if (io != null) {
                 return io;
             }
@@ -70,9 +76,6 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
                     }
                 }
             }
-        }
-        if ("/tmp".equals(pathname) || "/tmp/".equals(pathname)) {
-            return new DirectoryFileIO(oflags, pathname);
         }
         return null;
     }
@@ -183,42 +186,24 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     }
 
     @Override
-    public final int open(Emulator emulator, String pathname, int oflags) {
+    public final int open(Emulator emulator, String pathname, int oflags, boolean canCreate) {
         int minFd = this.getMinFd();
 
-        FileIO io = resolve(emulator, pathname, oflags);
+        FileIO io = emulator.getFileSystem().open(pathname, oflags);
         if (io != null) {
             this.fdMap.put(minFd, io);
             return minFd;
         }
 
-        if ("/dev/tty".equals(pathname)) {
-            io = new NullFileIO(pathname);
+        io = resolve(emulator, pathname, oflags);
+        if (io != null) {
             this.fdMap.put(minFd, io);
             return minFd;
         }
 
-        if ("/proc/self/maps".equals(pathname) || ("/proc/" + emulator.getPid() + "/maps").equals(pathname)) {
-            io = new MapsFileIO(oflags, pathname, emulator.getMemory().getLoadedModules());
-            this.fdMap.put(minFd, io);
-            return minFd;
-        }
         FileIO driverIO = DriverFileIO.create(emulator, oflags, pathname);
         if (driverIO != null) {
             this.fdMap.put(minFd, driverIO);
-            return minFd;
-        }
-        if (IO.STDIN.equals(pathname)) {
-            io = new Stdin(oflags);
-            this.fdMap.put(minFd, io);
-            return minFd;
-        }
-
-        String fileName = FilenameUtils.getName(pathname);
-        String dir = FilenameUtils.getFullPath(pathname);
-        if ("/tmp/".equals(dir)) {
-            io = new SimpleFileIO(oflags, new File("target", fileName), pathname);
-            this.fdMap.put(minFd, io);
             return minFd;
         }
 
@@ -355,7 +340,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     }
 
     protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
-        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (io != null) {
             return io.fstat(emulator, emulator.getUnicorn(), statbuf);
         }

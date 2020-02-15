@@ -1,6 +1,7 @@
 package com.github.unidbg.linux.android;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileIO;
@@ -61,19 +62,17 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public FileIO resolve(Emulator emulator, File workDir, String path, int oflags) {
-        if (workDir == null) {
-            workDir = new File("target");
+    public FileIO resolve(Emulator emulator, String path, int oflags) {
+        File rootDir = emulator.getFileSystem().getRootDir();
+        if (rootDir == null) {
+            return null;
         }
 
-        final boolean create = (oflags & FileIO.O_CREAT) != 0;
+        final boolean create = (oflags & IOConstants.O_CREAT) != 0;
 
         if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
             try {
-                if (!workDir.exists() && !workDir.mkdir()) {
-                    throw new IOException("mkdir failed: " + workDir);
-                }
-                File stdio = new File(workDir, path);
+                File stdio = new File(rootDir, path + ".txt");
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
@@ -84,7 +83,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         }
         if (path.startsWith("/dev/log/")) {
             try {
-                File log = new File(workDir, path);
+                File log = new File(rootDir, path);
                 File logDir = log.getParentFile();
                 if (!logDir.exists() && !logDir.mkdirs()) {
                     throw new IOException("mkdirs failed: " + logDir);
@@ -99,30 +98,10 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         }
 
         if (".".equals(path)) {
-            return createFileIO(workDir, path, oflags);
+            return createFileIO(emulator.getFileSystem().createWorkDir(), path, oflags);
         }
 
-        File file;
-        String workPath = workDir.getAbsolutePath();
-        if (path.startsWith(workPath) && ((file = new File(path)).canRead() || create)) {
-            if (file.canRead()) {
-                return createFileIO(file, path, oflags);
-            }
-            try {
-                File parent = file.getParentFile();
-                if (!parent.exists() && !parent.mkdirs()) {
-                    throw new IOException("mkdirs failed: " + parent);
-                }
-                if (!file.exists() && !file.createNewFile()) {
-                    throw new IOException("create file failed: " + file);
-                }
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-            return createFileIO(file, path, oflags);
-        }
-
-        file = new File(workDir, path);
+        File file = new File(rootDir, path);
         if (file.canRead()) {
             return createFileIO(file, path, oflags);
         }

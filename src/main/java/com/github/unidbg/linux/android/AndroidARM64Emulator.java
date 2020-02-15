@@ -1,5 +1,7 @@
 package com.github.unidbg.linux.android;
 
+import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.linux.LinuxFileSystem;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.AbstractARM64Emulator;
@@ -29,11 +31,24 @@ import java.nio.ByteBuffer;
 public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEmulator {
 
     public AndroidARM64Emulator() {
-        this(null);
+        this(null, null);
     }
 
     public AndroidARM64Emulator(String processName) {
-        super(processName);
+        this(processName, null);
+    }
+
+    @Override
+    protected FileSystem createFileSystem(File rootDir) {
+        return new LinuxFileSystem(this, rootDir);
+    }
+
+    public AndroidARM64Emulator(File rootDir) {
+        this(null, rootDir);
+    }
+
+    public AndroidARM64Emulator(String processName, File rootDir) {
+        super(processName, rootDir);
 
         setupTraps();
     }

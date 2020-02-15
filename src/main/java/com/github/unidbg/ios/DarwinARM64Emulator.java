@@ -1,6 +1,8 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.arm.AbstractARM64Emulator;
+import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.ios.DarwinFileSystem;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -14,19 +16,33 @@ import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.UnicornConst;
 
+import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
 
 public class DarwinARM64Emulator extends AbstractARM64Emulator {
 
     public DarwinARM64Emulator() {
-        this(null);
+        this(null, null);
     }
 
     public DarwinARM64Emulator(String processName) {
-        super(processName);
+        this(processName, null);
+    }
+
+    public DarwinARM64Emulator(File rootDir) {
+        this(null, rootDir);
+    }
+
+    public DarwinARM64Emulator(String processName, File rootDir) {
+        super(processName, rootDir);
 
         setupTraps();
+    }
+
+    @Override
+    protected FileSystem createFileSystem(File rootDir) {
+        return new DarwinFileSystem(this, rootDir);
     }
 
     private void setupTraps() {

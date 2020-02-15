@@ -11,6 +11,7 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
 import com.github.unidbg.memory.MemoryBlock;
@@ -546,7 +547,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(0);
         String path = FilenameUtils.normalize(pathname.getString(0));
-        log.info("unlink path=" + path);
+        emulator.getFileSystem().unlink(path);
         return 0;
     }
 
@@ -594,7 +595,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int faccessat(Emulator emulator, String pathname) {
-        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (io != null) {
             return 0;
         }
@@ -616,7 +617,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     @Override
     protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
-        FileIO io = resolve(emulator, pathname, FileIO.O_RDONLY);
+        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (io != null) {
             return io.fstat(emulator, new Stat64(statbuf));
         }
@@ -1908,7 +1909,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         int oflags = context.getIntArg(offset + 1);
         int mode = context.getIntArg(offset + 2);
         String pathname = pathname_p.getString(0);
-        int fd = open(emulator, pathname, oflags);
+        int fd = open(emulator, pathname, oflags, (oflags & IOConstants.O_CREAT) != 0);
         if (fd == -1) {
             log.info("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
         } else if (log.isDebugEnabled()) {

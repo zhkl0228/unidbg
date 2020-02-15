@@ -8,7 +8,6 @@ import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.fishhook.IFishHook;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.HookZz;
 import com.github.unidbg.hook.hookzz.IHookZz;
@@ -37,7 +36,7 @@ public class SubstrateTest extends EmulatorTest {
 
     @Override
     protected Emulator createARMEmulator() {
-        return new DarwinARMEmulator("com.substrate.test");
+        return new DarwinARMEmulator("com.substrate.test", new File("target/rootfs/substrate"));
     }
 
     public void testMS() throws Exception {
@@ -53,7 +52,7 @@ public class SubstrateTest extends EmulatorTest {
 
 //        emulator.traceCode();
 
-        IFishHook fishHook = FishHook.getInstance(emulator);
+        /*IFishHook fishHook = FishHook.getInstance(emulator);
         fishHook.rebindSymbol("memcpy", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -64,7 +63,7 @@ public class SubstrateTest extends EmulatorTest {
                 System.err.println("fishhook memcpy dest=" + dest + ", src=" + src + ", size=" + size);
                 return HookStatus.RET(emulator, originFunction);
             }
-        });
+        });*/
 
         IWhale whale = Whale.getInstance(emulator);
         /*whale.WImportHookFunction("_malloc", new ReplaceCallback() {
@@ -193,8 +192,8 @@ public class SubstrateTest extends EmulatorTest {
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         start = System.currentTimeMillis();
-//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-//        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x4128F000, 0x41339000).addBreakPoint(null, 0x4128F000 + 0x0001E9B8);

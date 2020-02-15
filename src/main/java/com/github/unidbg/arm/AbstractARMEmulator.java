@@ -44,8 +44,8 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
 
     private final Dlfcn dlfcn;
 
-    public AbstractARMEmulator(String processName) {
-        super(UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM, processName);
+    public AbstractARMEmulator(String processName, File rootDir) {
+        super(UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM, processName, rootDir);
 
         Cpsr.getArm(unicorn).switchUserMode();
 

@@ -3,6 +3,7 @@ package com.github.unidbg.unix.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.AbstractFileIO;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -49,7 +50,7 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
     private static final int TCP_MAXSEG = 2;
 
     protected SocketIO() {
-        super(O_RDWR);
+        super(IOConstants.O_RDWR);
     }
 
     @Override
