@@ -10,4 +10,9 @@ public interface FileSystem {
     FileIO open(String pathname, int oflags);
     void unlink(String path);
 
+    /**
+     * @return <code>true</code>表示创建成功
+     */
+    boolean mkdir(String path);
+
 }

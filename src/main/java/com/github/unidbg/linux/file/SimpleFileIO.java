@@ -43,7 +43,7 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
             randomAccessFile = new RandomAccessFile(file, "rws");
             onCreate(randomAccessFile);
         } catch (IOException e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("process file failed: " + file.getAbsolutePath(), e);
         }
     }
 

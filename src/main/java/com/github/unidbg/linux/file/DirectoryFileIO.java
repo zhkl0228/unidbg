@@ -25,9 +25,26 @@ public class DirectoryFileIO extends AbstractFileIO {
         }
     }
 
+    private static DirectoryEntry[] createEntries(File dir) {
+        List<DirectoryEntry> list = new ArrayList<>();
+        list.add(new DirectoryEntry(false, "."));
+        list.add(new DirectoryEntry(false, ".."));
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                list.add(new DirectoryEntry(file.isFile(), file.getName()));
+            }
+        }
+        return list.toArray(new DirectoryEntry[0]);
+    }
+
     private final String path;
 
     private final List<DirectoryEntry> entries;
+
+    public DirectoryFileIO(int oflags, String path, File dir) {
+        this(oflags, path, createEntries(dir));
+    }
 
     public DirectoryFileIO(int oflags, String path, DirectoryEntry...entries) {
         super(oflags);

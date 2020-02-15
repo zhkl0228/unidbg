@@ -370,9 +370,17 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(0);
         int mode = context.getIntArg(1);
-        log.info("mkdir pathname=" + pathname.getString(0) + ", mode=" + mode);
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
-        return -1;
+        String path = pathname.getString(0);
+        if (emulator.getFileSystem().mkdir(path)) {
+            if (log.isDebugEnabled()) {
+                log.debug("mkdir pathname=" + path + ", mode=" + mode);
+            }
+            return 0;
+        } else {
+            log.info("mkdir pathname=" + path + ", mode=" + mode);
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
+            return -1;
+        }
     }
 
     private boolean handleIndirect(Emulator emulator, Unicorn u, int indirectNR) {

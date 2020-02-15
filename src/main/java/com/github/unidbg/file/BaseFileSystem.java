@@ -72,11 +72,15 @@ public abstract class BaseFileSystem implements FileSystem {
             return null;
         }
 
+        boolean create = hasCreat(oflags);
         if (file.exists()) {
+            if (create) {
+                return null;
+            }
             return file.isDirectory() ? createDirectoryFileIO(file, oflags, path) : createSimpleFileIO(file, oflags, path);
         }
 
-        if (!hasCreat(oflags) || !file.getParentFile().exists()) {
+        if (!create || !file.getParentFile().exists()) {
             return null;
         }
 
@@ -97,12 +101,24 @@ public abstract class BaseFileSystem implements FileSystem {
         }
     }
 
+    @Override
+    public boolean mkdir(String path) {
+        if (rootDir != null) {
+            File dir = new File(rootDir, path);
+            if (dir.exists()) {
+                return false;
+            }
+            return dir.mkdirs();
+        }
+        return false;
+    }
+
     protected FileIO createSimpleFileIO(File file, int oflags, String path) {
         return new SimpleFileIO(oflags, file, path);
     }
 
     protected FileIO createDirectoryFileIO(File file, int oflags, String path) {
-        return new DirectoryFileIO(oflags, path);
+        return new DirectoryFileIO(oflags, path, file);
     }
 
     protected abstract boolean hasCreat(int oflags);
