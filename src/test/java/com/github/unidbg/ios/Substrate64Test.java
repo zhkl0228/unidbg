@@ -157,7 +157,7 @@ public class Substrate64Test extends EmulatorTest {
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x102984000L, 0x102998000L).addBreakPoint(null, 0x102984000L + 0x000000000000A0A4);
-        new CTTelephonyNetworkInfo(emulator).tryHook();
+        new CTTelephonyNetworkInfo(emulator, "中国电信", "460", "cn", "01", false).tryHook();
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

@@ -26,7 +26,16 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
     private final Symbol __CTServerConnectionCarrierSettingsCopyValue;
 
     public CTTelephonyNetworkInfo(Emulator emulator) {
+        this(emulator, "中国联通", "460", "cn", "01", true);
+    }
+
+    public CTTelephonyNetworkInfo(Emulator emulator, String carrierName, String countryCode, String isoCountryCode, String mobileNetworkCode, boolean allowsVoIP) {
         super(emulator, "CoreTelephony");
+        this.carrierName = carrierName;
+        this.countryCode = countryCode;
+        this.isoCountryCode = isoCountryCode;
+        this.mobileNetworkCode = mobileNetworkCode;
+        this.allowsVoIP = allowsVoIP;
 
         __CTServerConnectionCopyProviderNameUsingCarrierBundle = module.findSymbolByName("__CTServerConnectionCopyProviderNameUsingCarrierBundle", false);
         if (__CTServerConnectionCopyProviderNameUsingCarrierBundle == null) {
@@ -49,17 +58,23 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
         }
     }
 
+    private final String carrierName;
+    private final String countryCode;
+    private final String isoCountryCode;
+    private final String mobileNetworkCode;
+    private final boolean allowsVoIP;
+
     @Override
     public void tryHook() {
         ObjC objc = ObjC.getInstance(emulator);
         ObjcClass cCTTelephonyNetworkInfo = objc.getClass("CTTelephonyNetworkInfo");
         ObjcClass cNSString = objc.getClass("NSString");
         ObjcClass cNSNumber = objc.getClass("NSNumber");
-        final ObjcObject fakeCarrierName = cNSString.callObjc("stringWithCString:encoding:", "中国联通", NSUTF8StringEncoding);
-        final ObjcObject fakeCountryCode = cNSString.callObjc("stringWithCString:", "460");
-        final ObjcObject fakeIsoCountryCode = cNSString.callObjc("stringWithCString:", "cn");
-        final ObjcObject fakeMobileNetworkCode = cNSString.callObjc("stringWithCString:", "01");
-        final ObjcObject fakeAllowsVoIP = cNSNumber.callObjc("numberWithBool:", YES);
+        final ObjcObject fakeCarrierName = cNSString.callObjc("stringWithCString:encoding:", carrierName, NSUTF8StringEncoding);
+        final ObjcObject fakeCountryCode = cNSString.callObjc("stringWithCString:", countryCode);
+        final ObjcObject fakeIsoCountryCode = cNSString.callObjc("stringWithCString:", isoCountryCode);
+        final ObjcObject fakeMobileNetworkCode = cNSString.callObjc("stringWithCString:", mobileNetworkCode);
+        final ObjcObject fakeAllowsVoIP = cNSNumber.callObjc("numberWithBool:", allowsVoIP ? YES : NO);
 
         ISubstrate substrate = Substrate.getInstance(emulator);
         substrate.hookFunction(__CTServerConnectionCopyProviderNameUsingCarrierBundle, new ReplaceCallback() {
