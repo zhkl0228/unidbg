@@ -85,6 +85,11 @@ public abstract class AbstractEmulator implements Emulator {
         return getPointerSize() == 8;
     }
 
+    @Override
+    public boolean is32Bit() {
+        return getPointerSize() == 4;
+    }
+
     protected abstract RegisterContext createRegisterContext(Unicorn unicorn);
 
     @SuppressWarnings("unchecked")

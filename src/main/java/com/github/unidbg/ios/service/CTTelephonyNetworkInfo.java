@@ -66,10 +66,16 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
-                Pointer connection = context.getPointerArg(0);
-                Pointer carrierName = context.getPointerArg(1);
+                int index = 0;
+                if (emulator.is32Bit()) {
+                    Pointer error = context.getPointerArg(index++);
+                    error.setInt(0, 0);
+                    error.setInt(4, 0);
+                }
+                Pointer connection = context.getPointerArg(index++);
+                Pointer carrierName = context.getPointerArg(index);
                 if (log.isDebugEnabled()) {
-                    log.debug("__CTServerConnectionCopyProviderNameUsingCarrierBundle connection=" + connection + ", carrierName=" + carrierName);
+                    log.debug("__CTServerConnectionCopyProviderNameUsingCarrierBundle connection=" + connection + ", carrierName=" + carrierName + ", LR=" + context.getLRPointer());
                 }
                 carrierName.setPointer(0, fakeCarrierName.getPointer());
                 return HookStatus.LR(emulator, 0);
@@ -79,9 +85,15 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
-                Pointer connection = context.getPointerArg(0);
-                Pointer countryCode = context.getPointerArg(1);
-                Pointer isoCountryCode = context.getPointerArg(2);
+                int index = 0;
+                if (emulator.is32Bit()) {
+                    Pointer error = context.getPointerArg(index++);
+                    error.setInt(0, 0);
+                    error.setInt(4, 0);
+                }
+                Pointer connection = context.getPointerArg(index++);
+                Pointer countryCode = context.getPointerArg(index++);
+                Pointer isoCountryCode = context.getPointerArg(index);
                 if (log.isDebugEnabled()) {
                     log.debug("__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes connection=" + connection + ", countryCode=" + countryCode + ", isoCountryCode=" + isoCountryCode);
                 }
@@ -94,8 +106,14 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
-                Pointer connection = context.getPointerArg(0);
-                Pointer mobileNetworkCode = context.getPointerArg(1);
+                int index = 0;
+                if (emulator.is32Bit()) {
+                    Pointer error = context.getPointerArg(index++);
+                    error.setInt(0, 0);
+                    error.setInt(4, 0);
+                }
+                Pointer connection = context.getPointerArg(index++);
+                Pointer mobileNetworkCode = context.getPointerArg(index);
                 if (log.isDebugEnabled()) {
                     log.debug("__CTServerConnectionCopyMobileSubscriberNetworkCode connection=" + connection + ", mobileNetworkCode=" + mobileNetworkCode);
                 }
@@ -107,9 +125,15 @@ public class CTTelephonyNetworkInfo extends ServiceHook implements Constants {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
-                Pointer connection = context.getPointerArg(0);
-                Pointer key = context.getPointerArg(1);
-                Pointer value = context.getPointerArg(2);
+                int index = 0;
+                if (emulator.is32Bit()) {
+                    Pointer error = context.getPointerArg(index++);
+                    error.setInt(0, 0);
+                    error.setInt(4, 0);
+                }
+                Pointer connection = context.getPointerArg(index++);
+                Pointer key = context.getPointerArg(index++);
+                Pointer value = context.getPointerArg(index);
                 CFString keyStr = new CFString(key);
                 String keyName = keyStr.getData();
                 if (log.isDebugEnabled()) {

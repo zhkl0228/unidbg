@@ -196,6 +196,7 @@ public class SubstrateTest extends EmulatorTest {
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
+//        emulator.attach(0x4128F000, 0x41339000).addBreakPoint(null, 0x4128F000 + 0x0001E9B8);
         new CTTelephonyNetworkInfo(emulator).tryHook();
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");

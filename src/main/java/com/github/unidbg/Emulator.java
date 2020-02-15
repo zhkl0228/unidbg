@@ -27,6 +27,7 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
     int getPointerSize();
 
     boolean is64Bit();
+    boolean is32Bit();
 
     int getPageAlign();
 
