@@ -18,7 +18,6 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.unix.UnixSyscallHandler;
-import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -53,9 +52,12 @@ public abstract class AbstractEmulator implements Emulator {
 
     protected long timeout = DEFAULT_TIMEOUT;
 
-    public static final ThreadLocal<Integer> POINTER_SIZE = new ThreadLocal<>();
-    static {
-        POINTER_SIZE.set(Native.POINTER_SIZE);
+    private static final ThreadLocal<Emulator> EMULATOR_THREAD_LOCAL = new ThreadLocal<>();
+    public static Emulator getContextEmulator() {
+        return EMULATOR_THREAD_LOCAL.get();
+    }
+    public static void setContextEmulator(Emulator emulator) {
+        EMULATOR_THREAD_LOCAL.set(emulator);
     }
 
     private final RegisterContext registerContext;
@@ -75,7 +77,7 @@ public abstract class AbstractEmulator implements Emulator {
         String pid = name.split("@")[0];
         this.pid = Integer.parseInt(pid);
 
-        POINTER_SIZE.set(getPointerSize());
+        EMULATOR_THREAD_LOCAL.set(this);
     }
 
     @Override
@@ -276,7 +278,7 @@ public abstract class AbstractEmulator implements Emulator {
         long start = 0;
         PrintStream redirect = null;
         try {
-            POINTER_SIZE.set(getPointerSize());
+            EMULATOR_THREAD_LOCAL.set(this);
 
             if (traceOutFile != null) {
                 try {

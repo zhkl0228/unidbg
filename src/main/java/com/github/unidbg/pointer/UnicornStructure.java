@@ -1,6 +1,8 @@
 package com.github.unidbg.pointer;
 
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.Emulator;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
@@ -44,7 +46,8 @@ public abstract class UnicornStructure extends Structure {
     @Override
     protected int getNativeSize(Class<?> nativeType, Object value) {
         if (Pointer.class.isAssignableFrom(nativeType)) {
-            return AbstractEmulator.POINTER_SIZE.get();
+            Emulator emulator = AbstractEmulator.getContextEmulator();
+            return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
         }
 
         return super.getNativeSize(nativeType, value);
@@ -53,7 +56,8 @@ public abstract class UnicornStructure extends Structure {
     @Override
     protected int getNativeAlignment(Class<?> type, Object value, boolean isFirstElement) {
         if (Pointer.class.isAssignableFrom(type)) {
-            return AbstractEmulator.POINTER_SIZE.get();
+            Emulator emulator = AbstractEmulator.getContextEmulator();
+            return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
         }
 
         return super.getNativeAlignment(type, value, isFirstElement);
