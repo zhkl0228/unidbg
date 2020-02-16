@@ -18,4 +18,6 @@ public interface DarwinSyscall {
 
     int NOTIFY_STATUS_OK = 0;
 
+    int MAXCOMLEN = 16; /* max command name remembered */
+
 }

@@ -711,6 +711,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private static final int PROC_INFO_CALL_SETCONTROL = 0x5;
     private static final int PROC_SELFSET_THREADNAME = 2;
 
+    private static final int PROC_INFO_CALL_PIDINFO = 0x2;
+    private static final int PROC_PIDT_SHORTBSDINFO = 13;
+
     private int proc_info(Emulator emulator) {
         Unicorn unicorn = emulator.getUnicorn();
         int callNum = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
@@ -728,6 +731,31 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
             log.debug(msg);
             ((Dyld) emulator.getDlfcn()).pthread_setname_np(threadName);
             return 0;
+        } else if (PROC_INFO_CALL_PIDINFO == callNum && PROC_PIDT_SHORTBSDINFO == flavor) {
+            ProcBsdShortInfo info = new ProcBsdShortInfo(buffer);
+            info.unpack();
+
+            String processName = emulator.getProcessName();
+            if (processName == null) {
+                processName = "unidbg";
+            }
+            info.pbsi_pid = pid;
+            info.pbsi_status = ProcBsdShortInfo.SRUN;
+            info.pbsi_comm = Arrays.copyOf(Arrays.copyOf(processName.getBytes(), DarwinSyscall.MAXCOMLEN-1), DarwinSyscall.MAXCOMLEN);
+            info.pbsi_flags = 0x24090;
+            info.pbsi_uid = 0;
+            info.pbsi_ruid = 0;
+            info.pbsi_svuid = 0;
+            info.pbsi_gid = 0;
+            info.pbsi_rgid = 0;
+            info.pbsi_svgid = 0;
+            info.pbsi_pgid = 0;
+            info.pbsi_ppid = pid - 1;
+            info.pack();
+            if (log.isDebugEnabled()) {
+                log.debug(msg + ", info=" + info);
+            }
+            return info.size();
         } else {
             log.info(msg);
             return 1;

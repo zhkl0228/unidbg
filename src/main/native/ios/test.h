@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/sysctl.h>
+#include <sys/proc.h>
 
 static void test_printf() {
   char buf[0x40];
@@ -40,8 +41,38 @@ void test_sysctl_KERN_PROC() {
   printf("sysctl_KERN_PROC ret=%d, pid=%d, p_realtimer=0x%lx, e_spare=0x%lx\n", ret, pid, ((long) &p_info->kp_proc.p_realtimer - (long) p_info), ((long) &p_info->kp_eproc.e_spare - (long) &p_info->kp_eproc));
 }
 
+#define PROC_PIDT_SHORTBSDINFO		13
+#define PROC_PIDT_SHORTBSDINFO_SIZE	(sizeof(struct proc_bsdshortinfo))
+
+struct proc_bsdshortinfo {
+        uint32_t                pbsi_pid;		/* process id */
+        uint32_t                pbsi_ppid;		/* process parent id */
+        uint32_t                pbsi_pgid;		/* process perp id */
+	uint32_t                pbsi_status;		/* p_stat value, SZOMB, SRUN, etc */
+	char                    pbsi_comm[MAXCOMLEN];	/* upto 16 characters of process name */
+	uint32_t                pbsi_flags;              /* 64bit; emulated etc */
+        uid_t                   pbsi_uid;		/* current uid on process */
+        gid_t                   pbsi_gid;		/* current gid on process */
+        uid_t                   pbsi_ruid;		/* current ruid on process */
+        gid_t                   pbsi_rgid;		/* current tgid on process */
+        uid_t                   pbsi_svuid;		/* current svuid on process */
+        gid_t                   pbsi_svgid;		/* current svgid on process */
+        uint32_t                pbsi_rfu;		/* reserved for future use*/
+};
+
+extern int proc_pidinfo(int pid, int flavor, uint64_t arg,  void *buffer, int buffersize);
+
+void test_proc_pidinfo() {
+  struct proc_bsdshortinfo bsdinfo;
+
+  pid_t pid = getpid();
+  int ret = proc_pidinfo(pid, PROC_PIDT_SHORTBSDINFO, 1, &bsdinfo, sizeof(bsdinfo));
+  printf("proc_pidinfo ret=%d, pid=%d, size=%lu, pbsi_comm=%s, pbsi_flags=0x%x, pbsi_status=%d\n", ret, pid, sizeof(bsdinfo), bsdinfo.pbsi_comm, bsdinfo.pbsi_flags, bsdinfo.pbsi_status);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_KERN_USRSTACK();
   test_sysctl_KERN_PROC();
+  test_proc_pidinfo();
 }
