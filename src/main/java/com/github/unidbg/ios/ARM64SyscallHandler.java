@@ -14,6 +14,7 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
+import com.github.unidbg.ios.struct.sysctl.KInfoProc64;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
@@ -939,9 +940,15 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         int subType = name.getInt(8);
                         if (subType == KERN_PROC_PID) {
                             int pid = name.getInt(0xc);
-                            log.info(msg + ", subType=" + subType + ", pid=" + pid);
-//                            emulator.attach().debug(emulator);
-                            return 1;
+                            KInfoProc64 kInfoProc = new KInfoProc64(buffer);
+                            kInfoProc.unpack();
+
+                            kInfoProc.kp_eproc.e_ucred.cr_uid = 0;
+                            kInfoProc.pack();
+                            if (log.isDebugEnabled()) {
+                                log.debug(msg + ", subType=" + subType + ", pid=" + pid + ", kInfoProc=" + kInfoProc);
+                            }
+                            return 0;
                         }
                         log.info(msg + ", subType=" + subType);
                         break;
