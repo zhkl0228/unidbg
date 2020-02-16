@@ -729,7 +729,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (PROC_INFO_CALL_SETCONTROL == callNum && PROC_SELFSET_THREADNAME == flavor) {
             String threadName = buffer.getString(0);
             log.debug(msg);
-            ((Dyld) emulator.getDlfcn()).pthread_setname_np(threadName);
+            ((Dyld) emulator.getDlfcn()).setThreadName(threadName);
             return 0;
         } else if (PROC_INFO_CALL_PIDINFO == callNum && PROC_PIDT_SHORTBSDINFO == flavor) {
             ProcBsdShortInfo info = new ProcBsdShortInfo(buffer);

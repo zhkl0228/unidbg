@@ -64,7 +64,7 @@ abstract class Dyld extends Dlfcn {
 
     private String threadName = "main";
 
-    final void pthread_setname_np(String threadName) {
+    final void setThreadName(String threadName) {
         this.threadName = threadName;
         if (log.isDebugEnabled()) {
             log.debug("pthread_setname_np=" + threadName);
