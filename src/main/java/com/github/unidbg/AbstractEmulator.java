@@ -68,16 +68,16 @@ public abstract class AbstractEmulator implements Emulator {
     public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, File rootDir) {
         super();
 
-        if (rootDir != null) {
-            if (rootDir.isFile()) {
-                throw new IllegalArgumentException("rootDir must be directory: " + rootDir);
-            }
-            if (!rootDir.exists() && !rootDir.mkdirs()) {
-                throw new IllegalStateException("mkdirs failed: " + rootDir);
-            }
+        if (rootDir == null) {
+            rootDir = new File(FileSystem.DEFAULT_ROOT_FS);
+        }
+        if (rootDir.isFile()) {
+            throw new IllegalArgumentException("rootDir must be directory: " + rootDir);
+        }
+        if (!rootDir.exists() && !rootDir.mkdirs()) {
+            throw new IllegalStateException("mkdirs failed: " + rootDir);
         }
         this.fileSystem = createFileSystem(rootDir);
-
         this.unicorn = new Unicorn(unicorn_arch, unicorn_mode);
         this.processName = processName == null ? "unidbg" : processName;
         this.registerContext = createRegisterContext(unicorn);
@@ -90,7 +90,7 @@ public abstract class AbstractEmulator implements Emulator {
         String pid = name.split("@")[0];
         this.pid = Integer.parseInt(pid);
 
-        EMULATOR_THREAD_LOCAL.set(this);
+        setContextEmulator(this);
     }
 
     @Override
@@ -303,7 +303,7 @@ public abstract class AbstractEmulator implements Emulator {
         long start = 0;
         PrintStream redirect = null;
         try {
-            EMULATOR_THREAD_LOCAL.set(this);
+            setContextEmulator(this);
 
             if (traceOutFile != null) {
                 try {

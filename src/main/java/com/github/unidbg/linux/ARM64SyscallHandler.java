@@ -1117,15 +1117,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         UnicornPointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         File workDir = emulator.getFileSystem().createWorkDir();
-        if (workDir == null) {
-            emulator.getMemory().setErrno(UnixEmulator.EACCES);
-            return 0;
-        }
         String path = workDir.getAbsolutePath();
         if (log.isDebugEnabled()) {
             log.debug("getcwd buf=" + buf + ", size=" + size + ", path=" + path);
         }
-        buf.setString(0, path);
+        buf.setString(0, ".");
         return (int) buf.toUIntPeer();
     }
 

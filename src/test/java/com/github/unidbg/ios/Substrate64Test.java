@@ -8,7 +8,6 @@ import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.fishhook.IFishHook;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.HookZz;
 import com.github.unidbg.hook.hookzz.IHookZz;
@@ -41,12 +40,13 @@ public class Substrate64Test extends EmulatorTest {
         loader.setCallInitFunction();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);
-//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 
-        IFishHook fishHook = FishHook.getInstance(emulator);
+        /*IFishHook fishHook = FishHook.getInstance(emulator);
         fishHook.rebindSymbol("memcpy", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -57,7 +57,7 @@ public class Substrate64Test extends EmulatorTest {
                 System.err.println("fishhook memcpy dest=" + dest + ", src=" + src + ", size=" + size);
                 return HookStatus.RET(emulator, originFunction);
             }
-        });
+        });*/
 
         IWhale whale = Whale.getInstance(emulator);
 //        Logger.getLogger("com.github.emulator.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
@@ -75,14 +75,14 @@ public class Substrate64Test extends EmulatorTest {
         });*/
 
         IHookZz hookZz = HookZz.getInstance(emulator);
-        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
+//        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
 //        Module libhookzz = emulator.getMemory().findModule("libhookzz.dylib");
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(libhookzz, 0x0000000000007850);
 //        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode(libhookzz.base, libhookzz.base + libhookzz.size);
-        hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
+        /*hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -91,7 +91,7 @@ public class Substrate64Test extends EmulatorTest {
                 System.err.println("HookZz _malloc_zone_malloc zone=" + zone + ", size=" + size);
                 return HookStatus.RET(emulator, originFunction);
             }
-        });
+        });*/
 //        emulator.attach().debug();
 
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
@@ -153,8 +153,6 @@ public class Substrate64Test extends EmulatorTest {
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         start = System.currentTimeMillis();
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x102984000L, 0x102998000L).addBreakPoint(null, 0x102984000L + 0x000000000000A0A4);

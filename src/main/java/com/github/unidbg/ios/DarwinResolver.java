@@ -57,10 +57,6 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
     @Override
     public FileIO resolve(Emulator emulator, String path, int oflags) {
         final File rootDir = emulator.getFileSystem().getRootDir();
-        if (rootDir == null) {
-            return null;
-        }
-
         if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
             try {
                 File stdio = new File(rootDir, path + ".txt");

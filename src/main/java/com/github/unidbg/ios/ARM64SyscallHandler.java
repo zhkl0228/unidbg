@@ -746,6 +746,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private static final int PROC_SELFSET_THREADNAME = 2;
 
     private static final int PROC_INFO_CALL_PIDINFO = 0x2;
+    private static final int PROC_PIDT_SHORTBSDINFO = 13;
 
     private int proc_info(Emulator emulator) {
         RegisterContext context = emulator.getContext();
@@ -876,6 +877,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private static final int KERN_PROC = 14; /* struct: process entries */
     private static final int KERN_USRSTACK32 = 35; /* int: address of USRSTACK */
     private static final int KERN_PROCARGS2 = 49;
+    private static final int KERN_USRSTACK64 = 59;/* LP64 user stack query */
     private static final int KERN_OSVERSION = 65; /* for build number i.e. 9A127 */
 
     private static final int HW_NCPU = 3; /* int: number of cpus */
@@ -884,13 +886,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private static final int KERN_PROC_PID = 1; /* by process id */
 
     private int sysctl(Emulator emulator) {
-        Unicorn unicorn = emulator.getUnicorn();
-        Pointer name = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-        int namelen = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-        Pointer buffer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-        Pointer bufferSize = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
-        Pointer set0 = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
-        int set1 = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).intValue();
+        RegisterContext context = emulator.getContext();
+        Pointer name = context.getPointerArg(0);
+        int namelen = context.getIntArg(1);
+        Pointer buffer = context.getPointerArg(2);
+        Pointer bufferSize = context.getPointerArg(3);
+        Pointer set0 = context.getPointerArg(4);
+        int set1 = context.getIntArg(5);
 
         int top = name.getInt(0);
         switch (top) {
@@ -917,7 +919,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 switch (action) {
                     case KERN_USRSTACK32:
                     case KERN_PROCARGS2:
-                        log.debug(msg);
+                        log.info(msg);
                         return 1;
                     case KERN_OSRELEASE:
                         log.debug(msg);
@@ -963,8 +965,19 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                             buffer.setString(0, hostName);
                         }
                         return 0;
+                    case KERN_USRSTACK64:
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 8);
+                        }
+                        if (buffer != null) {
+                            buffer.setLong(0, emulator.getMemory().getStackBase());
+                        }
+                        return 0;
                     default:
                         log.info(msg);
+                        if (log.isDebugEnabled()) {
+                            emulator.attach().debug();
+                        }
                         break;
                 }
                 break;

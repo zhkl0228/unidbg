@@ -851,7 +851,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 switch (action) {
                     case KERN_USRSTACK32:
                     case KERN_PROCARGS2:
-                        log.debug(msg);
+                        log.info(msg);
                         return 1;
                     case KERN_OSRELEASE:
                         log.debug(msg);

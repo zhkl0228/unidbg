@@ -25,9 +25,7 @@ public abstract class BaseFileSystem implements FileSystem {
         this.rootDir = rootDir;
 
         try {
-            if (rootDir != null) {
-                initialize(rootDir);
-            }
+            initialize(this.rootDir);
         } catch (IOException e) {
             throw new IllegalStateException("initialize file system failed", e);
         }
@@ -41,10 +39,6 @@ public abstract class BaseFileSystem implements FileSystem {
     public FileIO open(String pathname, int oflags) {
         if (IO.STDIN.equals(pathname)) {
             return new Stdin(oflags);
-        }
-
-        if (rootDir == null) {
-            return null;
         }
 
         if (IO.STDOUT.equals(pathname) || IO.STDERR.equals(pathname)) {
@@ -103,14 +97,12 @@ public abstract class BaseFileSystem implements FileSystem {
 
     @Override
     public boolean mkdir(String path) {
-        if (rootDir != null) {
-            File dir = new File(rootDir, path);
-            if (dir.exists()) {
-                return false;
-            }
+        File dir = new File(rootDir, path);
+        if (dir.exists()) {
+            return false;
+        } else {
             return dir.mkdirs();
         }
-        return false;
     }
 
     protected FileIO createSimpleFileIO(File file, int oflags, String path) {
@@ -127,14 +119,10 @@ public abstract class BaseFileSystem implements FileSystem {
 
     @Override
     public void unlink(String path) {
-        if (rootDir == null) {
-            log.info("unlink path=" + path);
-        } else {
-            File file = new File(rootDir, path);
-            FileUtils.deleteQuietly(file);
-            if (log.isDebugEnabled()) {
-                log.debug("unlink path=" + path + ", file=" + file);
-            }
+        File file = new File(rootDir, path);
+        FileUtils.deleteQuietly(file);
+        if (log.isDebugEnabled()) {
+            log.debug("unlink path=" + path + ", file=" + file);
         }
     }
 
@@ -145,15 +133,11 @@ public abstract class BaseFileSystem implements FileSystem {
 
     @Override
     public File createWorkDir() {
-        if (rootDir == null) {
-            return null;
-        } else {
-            File workDir = new File(rootDir, "unidbg_work");
-            if (!workDir.exists() && !workDir.mkdirs()) {
-                throw new IllegalStateException("mkdirs failed: " + workDir);
-            }
-            return workDir;
+        File workDir = new File(rootDir, DEFAULT_WORK_DIR);
+        if (!workDir.exists() && !workDir.mkdirs()) {
+            throw new IllegalStateException("mkdirs failed: " + workDir);
         }
+        return workDir;
     }
 
 }

@@ -64,12 +64,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
     @Override
     public FileIO resolve(Emulator emulator, String path, int oflags) {
         File rootDir = emulator.getFileSystem().getRootDir();
-        if (rootDir == null) {
-            return null;
-        }
-
         final boolean create = (oflags & IOConstants.O_CREAT) != 0;
-
         if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
             try {
                 File stdio = new File(rootDir, path + ".txt");

@@ -5,27 +5,14 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.android.EmulatorTest;
-import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.HookEntryInfo;
-import com.github.unidbg.hook.hookzz.HookZz;
-import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.WrapCallback;
-import com.github.unidbg.hook.whale.IWhale;
-import com.github.unidbg.hook.whale.Whale;
 import com.github.unidbg.ios.service.CFNetwork;
 import com.github.unidbg.ios.service.CoreTelephony;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import junit.framework.AssertionFailedError;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.util.Arrays;
 
 public class SubstrateTest extends EmulatorTest {
 
@@ -65,7 +52,7 @@ public class SubstrateTest extends EmulatorTest {
             }
         });*/
 
-        IWhale whale = Whale.getInstance(emulator);
+//        IWhale whale = Whale.getInstance(emulator);
         /*whale.WImportHookFunction("_malloc", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
@@ -99,9 +86,9 @@ public class SubstrateTest extends EmulatorTest {
 
         free.call(emulator, block);
 
-        IHookZz hookZz = HookZz.getInstance(emulator);
+//        IHookZz hookZz = HookZz.getInstance(emulator);
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-        hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
+        /*hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -110,43 +97,18 @@ public class SubstrateTest extends EmulatorTest {
                 System.err.println("_malloc_zone_malloc zone=" + zone + ", size=" + size);
                 return HookStatus.RET(emulator, originFunction);
             }
-        });
+        });*/
 
 //        emulator.traceCode();
-        hookZz.wrap(module.findSymbolByName("_free"), new WrapCallback<RegisterContext>() {
+        /*hookZz.wrap(module.findSymbolByName("_free"), new WrapCallback<RegisterContext>() {
             @Override
             public void preCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("preCall _free=" + ctx.getPointerArg(0));
             }
-        });
+        });*/
 
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
-
-//        emulator.attach().addBreakPoint(null, 0x40235d2a);
-//        emulator.traceCode();
-
-        MemoryBlock memoryBlock = emulator.getMemory().malloc(0x40, false);
-        UnicornPointer memory = memoryBlock.getPointer();
-        Symbol _snprintf = module.findSymbolByName("_snprintf", true);
-        assertNotNull(_snprintf);
-
-        byte[] before = memory.getByteArray(0, 0x40);
-        Inspector.inspect(before, "Before memory=" + memory);
-//        emulator.traceCode();
-//        emulator.traceWrite(memory.peer, memory.peer + 0x40);
-//        emulator.traceWrite();
-        String fmt = "Test snprintf=%p\n";
-//        emulator.traceRead(0xbffff9b8L, 0xbffff9b8L + fmt.length() + 1);
-//        emulator.attach().addBreakPoint(null, 0x401622c2);
-        _snprintf.call(emulator, memory, 0x40, fmt, memory);
-        byte[] after = memory.getByteArray(0, 0x40);
-        Inspector.inspect(after, "After");
-        if (Arrays.equals(before, after)) {
-            throw new AssertionFailedError();
-        }
-//        emulator.attach().addBreakPoint(null, 0x40234c1e);
-        memoryBlock.free(false);
 
         start = System.currentTimeMillis();
 
@@ -154,7 +116,7 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
 //        emulator.traceCode();
 
-        whale.inlineHookFunction(module.findSymbolByName("_malloc"), new ReplaceCallback() {
+        /*whale.inlineHookFunction(module.findSymbolByName("_malloc"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -162,7 +124,7 @@ public class SubstrateTest extends EmulatorTest {
                 System.err.println("onCall _malloc size=" + size + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
                 return HookStatus.RET(emulator, originFunction);
             }
-        });
+        });*/
 
 //        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.traceCode();
@@ -192,8 +154,8 @@ public class SubstrateTest extends EmulatorTest {
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         start = System.currentTimeMillis();
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x4128F000, 0x41339000).addBreakPoint(null, 0x4128F000 + 0x0001E9B8);
