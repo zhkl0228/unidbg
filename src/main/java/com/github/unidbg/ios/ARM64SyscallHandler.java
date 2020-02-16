@@ -324,8 +324,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, guarded_kqueue_np(emulator));
                     return;
                 case 0x80000000:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_set_self(emulator));
-                    return;
+                    NR = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X3)).intValue();
+                    if(handleMachineDependentSyscall(emulator, u, NR)) {
+                        return;
+                    }
                 default:
                     break;
             }
@@ -347,6 +349,41 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private boolean handleMachineDependentSyscall(Emulator emulator, Unicorn u, int NR) {
+        switch (NR) {
+            case 0:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, sys_icache_invalidate(emulator));
+                return true;
+            case 1:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, sys_dcache_flush(emulator));
+                return true;
+            case 2:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_set_self(emulator));
+                return true;
+        }
+        return false;
+    }
+
+    private long sys_dcache_flush(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer address = context.getPointerArg(0);
+        long size = context.getLongArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("sys_dcache_flush address=" + address + ", size=" + size);
+        }
+        return 0;
+    }
+
+    private long sys_icache_invalidate(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer address = context.getPointerArg(0);
+        long size = context.getLongArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("sys_icache_invalidate address=" + address + ", size=" + size);
+        }
+        return 0;
     }
 
     private long _mach_port_insert_member(Emulator emulator) {
@@ -443,7 +480,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     private int pthread_set_self(Emulator emulator) {
         // TODO: implement
         Pointer self = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-        log.info("pthread_set_self=" + self);
+        log.info("pthread_set_self=" + self + ", LR=" + emulator.getContext().getLRPointer());
         return 0;
     }
 

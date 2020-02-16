@@ -8,7 +8,6 @@ import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.ios.service.CFNetwork;
 import com.github.unidbg.ios.service.CoreTelephony;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -62,29 +61,6 @@ public class SubstrateTest extends EmulatorTest {
                 return HookStatus.RET(unicorn, originFunction);
             }
         });*/
-
-        Symbol malloc_num_zones = module.findSymbolByName("_malloc_num_zones");
-        assertNotNull(malloc_num_zones);
-        System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0));
-        Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
-        Symbol malloc_size = module.findSymbolByName("_malloc_size");
-        Symbol free = module.findSymbolByName("_free");
-        assertNotNull(malloc_default_zone);
-        Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
-        assertNotNull(zone);
-        Pointer malloc = zone.getPointer(0xc);
-        Pointer block = UnicornPointer.pointer(emulator, MachOModule.emulateFunction(emulator, ((UnicornPointer) malloc).peer, zone, 1)[0].intValue());
-        assertNotNull(block);
-        Pointer sizeFun = zone.getPointer(0x8);
-        int size = MachOModule.emulateFunction(emulator, ((UnicornPointer) sizeFun).peer, zone, block)[0].intValue();
-        int mSize = malloc_size.call(emulator, block)[0].intValue();
-        System.out.println("malloc_num_zones=" + malloc_num_zones.createPointer(emulator).getInt(0) + ", version=" + zone.getInt(0x34) + ", free_definite_size=" + zone.getPointer(0x3c));
-
-        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
-        System.err.println("malloc_default_zone=" + malloc_default_zone + ", zone=" + zone + ", malloc=" + malloc +
-                ", sizeFun=" + sizeFun + ", block=" + block + ", size=" + size + ", mSize=" + mSize + ", malloc_zone_malloc=0x" + Long.toHexString(malloc_zone_malloc.getAddress()));
-
-        free.call(emulator, block);
 
 //        IHookZz hookZz = HookZz.getInstance(emulator);
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);

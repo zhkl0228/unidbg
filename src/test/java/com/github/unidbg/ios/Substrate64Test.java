@@ -5,19 +5,9 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.android.EmulatorTest;
-import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.HookEntryInfo;
-import com.github.unidbg.hook.hookzz.HookZz;
-import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.WrapCallback;
-import com.github.unidbg.hook.whale.IWhale;
-import com.github.unidbg.hook.whale.Whale;
 import com.github.unidbg.ios.service.CFNetwork;
 import com.github.unidbg.ios.service.CoreTelephony;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -59,7 +49,7 @@ public class Substrate64Test extends EmulatorTest {
             }
         });*/
 
-        IWhale whale = Whale.getInstance(emulator);
+//        IWhale whale = Whale.getInstance(emulator);
 //        Logger.getLogger("com.github.emulator.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.DEBUG);
 //        Module libwhale = emulator.getMemory().findModule("libwhale.dylib");
@@ -74,7 +64,7 @@ public class Substrate64Test extends EmulatorTest {
             }
         });*/
 
-        IHookZz hookZz = HookZz.getInstance(emulator);
+//        IHookZz hookZz = HookZz.getInstance(emulator);
 //        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
 //        Module libhookzz = emulator.getMemory().findModule("libhookzz.dylib");
 //        Debugger debugger = emulator.attach();
@@ -98,7 +88,7 @@ public class Substrate64Test extends EmulatorTest {
         assertNotNull(symbol);
 
 //        emulator.traceCode();
-        hookZz.wrap(symbol, new WrapCallback<RegisterContext>() {
+        /*hookZz.wrap(symbol, new WrapCallback<RegisterContext>() {
             @Override
             public void preCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("HookZz preCall _MSGetImageByName=" + ctx.getPointerArg(0).getString(0));
@@ -108,7 +98,7 @@ public class Substrate64Test extends EmulatorTest {
                 super.postCall(emulator, ctx, info);
                 System.err.println("HookZz postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getLongArg(0)));
             }
-        });
+        });*/
 
         long start = System.currentTimeMillis();
 
@@ -116,7 +106,7 @@ public class Substrate64Test extends EmulatorTest {
 //        emulator.attach().addBreakPoint(null, 0x401495dc);
 //        emulator.traceCode();
 
-        whale.inlineHookFunction(symbol, new ReplaceCallback() {
+        /*whale.inlineHookFunction(symbol, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -124,7 +114,7 @@ public class Substrate64Test extends EmulatorTest {
                 System.err.println("IWhale onCall _MSGetImageByName=" + pointer.getString(0) + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
                 return HookStatus.RET(emulator, originFunction);
             }
-        });
+        });*/
 
 //        emulator.traceCode();
         /*whale.importHookFunction("_strcmp", new ReplaceCallback() {

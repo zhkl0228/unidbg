@@ -316,8 +316,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(ArmConst.UC_ARM_REG_R0, guarded_kqueue_np(emulator));
                     return;
                 case 0x80000000:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, semaphore_signal_trap(emulator));
-                    return;
+                    NR = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
+                    if(handleMachineDependentSyscall(emulator, u, NR)) {
+                        return;
+                    }
                 default:
                     break;
             }
@@ -336,6 +338,49 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private boolean handleMachineDependentSyscall(Emulator emulator, Unicorn u, int NR) {
+        switch (NR) {
+            case 0:
+                u.reg_write(ArmConst.UC_ARM_REG_R0, sys_icache_invalidate(emulator));
+                return true;
+            case 1:
+                u.reg_write(ArmConst.UC_ARM_REG_R0, sys_dcache_flush(emulator));
+                return true;
+            case 2:
+                u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_set_self(emulator));
+                return true;
+        }
+        return false;
+    }
+
+    private int pthread_set_self(Emulator emulator) {
+        // TODO: implement
+        RegisterContext context = emulator.getContext();
+        Pointer self = context.getPointerArg(0);
+        log.info("pthread_set_self=" + self + ", LR=" + emulator.getContext().getLRPointer());
+        return 0;
+    }
+
+    private int sys_dcache_flush(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer address = context.getPointerArg(0);
+        long size = context.getLongArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("sys_dcache_flush address=" + address + ", size=" + size);
+        }
+        return 0;
+    }
+
+    private int sys_icache_invalidate(Emulator emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer address = context.getPointerArg(0);
+        long size = context.getLongArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("sys_icache_invalidate address=" + address + ", size=" + size);
+        }
+        return 0;
     }
 
     private int pthread_getugid_np(Emulator emulator) {
