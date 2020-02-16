@@ -11,16 +11,18 @@ static void test_printf() {
   fprintf(stderr, "printf[%p] test: %s", buf, buf);
 }
 
-void test_sysctl() {
-  int ctl[] = { 1, 59 };
-  int *name = &ctl[0];
-  void *buffer = NULL;
-  size_t bufferSize = 8;
-  int ret = sysctl(name, 2, &buffer, &bufferSize, NULL, 0);
-  printf("sysctl ret=%d, buffer=%p, name=%p, pos=0x%lx\n", ret, buffer, name, ((long) buffer - (long) name));
+void test_sysctl_KERN_USRSTACK() {
+  int mib[2];
+  void *stack = NULL;
+  size_t size = sizeof(stack);
+
+  mib[0] = CTL_KERN;
+  mib[1] = KERN_USRSTACK;
+  int ret = sysctl(mib, 2, &stack, &size, NULL, 0);
+  printf("sysctl ret=%d, stack=%p, mib=%p, offset=0x%lx\n", ret, stack, mib, ((long) stack - (long) mib));
 }
 
 void do_test() {
   test_printf();
-  test_sysctl();
+  test_sysctl_KERN_USRSTACK();
 }

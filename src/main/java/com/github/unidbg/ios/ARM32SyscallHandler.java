@@ -849,7 +849,6 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                 action = name.getInt(4);
                 String msg = "sysctl CTL_KERN action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 switch (action) {
-                    case KERN_USRSTACK32:
                     case KERN_PROCARGS2:
                         log.info(msg);
                         return 1;
@@ -894,6 +893,14 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                         }
                         if (buffer != null) {
                             buffer.setString(0, osVersion);
+                        }
+                        return 0;
+                    case KERN_USRSTACK32:
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, (int) emulator.getMemory().getStackBase());
                         }
                         return 0;
                     default:
