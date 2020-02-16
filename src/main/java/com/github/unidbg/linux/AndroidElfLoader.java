@@ -141,7 +141,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
 
         long sp = getStackPoint();
-        sp &= (~15);
+        sp &= (~(emulator.is64Bit() ? 15 : 7));
         setStackPoint(sp);
 
         if (log.isDebugEnabled()) {

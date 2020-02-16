@@ -2,7 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -55,7 +55,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public FileIO resolve(Emulator emulator, String path, int oflags) {
+    public FileResult resolve(Emulator emulator, String path, int oflags) {
         final File rootDir = emulator.getFileSystem().getRootDir();
         if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
             try {
@@ -63,7 +63,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
-                return new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback);
+                return FileResult.success(new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -113,9 +113,9 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
         return null;
     }
 
-    private FileIO createFileIO(File file, String pathname, int oflags) {
+    private FileResult createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {
-            return file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname);
+            return FileResult.success(file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname));
         }
 
         return null;

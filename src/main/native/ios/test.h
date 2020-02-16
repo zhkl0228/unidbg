@@ -3,7 +3,9 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <pthread.h>
+#include <errno.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
 
@@ -12,6 +14,7 @@ static void test_printf() {
   memset(buf, 0, 0x40);
   snprintf(buf, 0x40, "snprintf: %p\n", buf);
   fprintf(stderr, "printf[%p] test: %s", buf, buf);
+  fprintf(stdout, "ENOTDIR=0x%x, O_WRONLY=0x%x, O_RDWR=0x%x, O_NONBLOCK=0x%x, O_APPEND=0x%x, O_CREAT=0x%x, O_DIRECTORY=0x%x\n", ENOTDIR, O_WRONLY, O_RDWR, O_NONBLOCK, O_APPEND, O_CREAT, O_DIRECTORY);
 }
 
 void test_sysctl_KERN_USRSTACK() {
@@ -78,7 +81,17 @@ void test_pthread() {
   memset(name, 0, 64);
   pthread_t thread = pthread_self();
   pthread_getname_np(thread, name, sizeof(name));
-  printf("pthread name=%s\n", name);
+  printf("pthread[%p] name=%s\n", thread, name);
+}
+
+void test_open() {
+  int fd = open("abc", O_RDWR);
+  if(fd == -1) {
+    printf("open errno=%d, msg=%s\n", errno, strerror(errno));
+  } else {
+    printf("open success fd=%d\n", fd);
+    close(fd);
+  }
 }
 
 void do_test() {
@@ -87,4 +100,5 @@ void do_test() {
   test_sysctl_KERN_PROC();
   test_proc_pidinfo();
   test_pthread();
+  test_open();
 }

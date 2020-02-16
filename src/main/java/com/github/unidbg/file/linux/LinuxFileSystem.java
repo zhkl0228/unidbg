@@ -2,8 +2,8 @@ package com.github.unidbg.file.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileSystem;
-import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.FileResult;
 import com.github.unidbg.linux.file.MapsFileIO;
 import com.github.unidbg.linux.file.NullFileIO;
 
@@ -16,12 +16,12 @@ public class LinuxFileSystem extends BaseFileSystem implements FileSystem, IOCon
     }
 
     @Override
-    public FileIO open(String pathname, int oflags) {
+    public FileResult open(String pathname, int oflags) {
         if ("/dev/tty".equals(pathname)) {
-            return new NullFileIO(pathname);
+            return FileResult.success(new NullFileIO(pathname));
         }
         if ("/proc/self/maps".equals(pathname) || ("/proc/" + emulator.getPid() + "/maps").equals(pathname)) {
-            return new MapsFileIO(oflags, pathname, emulator.getMemory().getLoadedModules());
+            return FileResult.success(new MapsFileIO(oflags, pathname, emulator.getMemory().getLoadedModules()));
         }
 
         return super.open(pathname, oflags);

@@ -8,6 +8,7 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DyldImageInfo;
 import com.github.unidbg.ios.struct.kernel.Pthread;
+import com.github.unidbg.ios.struct.kernel.Pthread32;
 import com.github.unidbg.ios.struct.kernel.Pthread64;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.*;
@@ -109,7 +110,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         vars.setPointer(3 * emulator.getPointerSize(), _NSGetEnviron);
         vars.setPointer(4 * emulator.getPointerSize(), _NSGetProgname);
 
-        final UnicornPointer thread = allocateStack(UnicornStructure.calculateSize(Pthread64.class)); // reserve space for pthread_internal_t
+        final UnicornPointer thread = allocateStack(UnicornStructure.calculateSize(emulator.is64Bit() ? Pthread64.class : Pthread32.class)); // reserve space for pthread_internal_t
         Pthread pthread = Pthread.create(emulator, thread);
 
         /* 0xa4必须固定，否则初始化objc会失败 */
@@ -126,7 +127,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
 
         long sp = getStackPoint();
-        sp &= (~15);
+        sp &= (~(emulator.is64Bit() ? 15 : 7));
         setStackPoint(sp);
 
         if (log.isDebugEnabled()) {

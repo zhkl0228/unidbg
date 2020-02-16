@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.IOResolver;
+import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.LinuxThread;
 import com.github.unidbg.linux.file.ByteArrayFileIO;
@@ -52,16 +53,16 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         }
     }
 
-    protected final FileIO resolve(Emulator emulator, String pathname, int oflags) {
-        FileIO io = emulator.getFileSystem().open(pathname, oflags);
-        if (io != null) {
-            return io;
+    protected final FileResult resolve(Emulator emulator, String pathname, int oflags) {
+        FileResult result = emulator.getFileSystem().open(pathname, oflags);
+        if (result != null && result.isSuccess()) {
+            return result;
         }
 
         for (IOResolver resolver : resolvers) {
-            io = resolver.resolve(emulator, pathname, oflags);
-            if (io != null) {
-                return io;
+            result = resolver.resolve(emulator, pathname, oflags);
+            if (result != null && result.isSuccess()) {
+                return result;
             }
         }
         if (pathname.endsWith(emulator.getLibraryExtension())) {
@@ -69,7 +70,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
                 for (MemRegion memRegion : module.getRegions()) {
                     if (pathname.equals(memRegion.getName())) {
                         try {
-                            return new ByteArrayFileIO(oflags, pathname, memRegion.readLibrary());
+                            return FileResult.success(new ByteArrayFileIO(oflags, pathname, memRegion.readLibrary()));
                         } catch (IOException e) {
                             throw new IllegalStateException(e);
                         }
@@ -189,15 +190,15 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     public final int open(Emulator emulator, String pathname, int oflags, boolean canCreate) {
         int minFd = this.getMinFd();
 
-        FileIO io = emulator.getFileSystem().open(pathname, oflags);
-        if (io != null) {
-            this.fdMap.put(minFd, io);
+        FileResult result = emulator.getFileSystem().open(pathname, oflags);
+        if (result != null && result.isSuccess()) {
+            this.fdMap.put(minFd, result.io);
             return minFd;
         }
 
-        io = resolve(emulator, pathname, oflags);
-        if (io != null) {
-            this.fdMap.put(minFd, io);
+        result = resolve(emulator, pathname, oflags);
+        if (result != null && result.isSuccess()) {
+            this.fdMap.put(minFd, result.io);
             return minFd;
         }
 
@@ -207,7 +208,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
             return minFd;
         }
 
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
         return -1;
     }
 
@@ -340,13 +341,13 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     }
 
     protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
-        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (io != null) {
-            return io.fstat(emulator, emulator.getUnicorn(), statbuf);
+        FileResult result = resolve(emulator, pathname, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
+            return result.io.fstat(emulator, emulator.getUnicorn(), statbuf);
         }
 
         log.info("stat64 pathname=" + pathname);
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
         return -1;
     }
 

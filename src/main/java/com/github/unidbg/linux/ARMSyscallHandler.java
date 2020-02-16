@@ -8,6 +8,7 @@ import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -1564,12 +1565,12 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     }
 
     private int faccessat(Emulator emulator, String pathname) {
-        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (io != null) {
+        FileResult result = resolve(emulator, pathname, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
             return 0;
         }
 
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
         return -1;
     }
 

@@ -11,6 +11,7 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
@@ -651,12 +652,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int faccessat(Emulator emulator, String pathname) {
-        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (io != null) {
+        FileResult result = resolve(emulator, pathname, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
             return 0;
         }
 
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
         return -1;
     }
 
@@ -673,12 +674,12 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     @Override
     protected int stat64(Emulator emulator, String pathname, Pointer statbuf) {
-        FileIO io = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (io != null) {
-            return io.fstat(emulator, new Stat64(statbuf));
+        FileResult result = resolve(emulator, pathname, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
+            return result.io.fstat(emulator, new Stat64(statbuf));
         }
 
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
         return -1;
     }
 

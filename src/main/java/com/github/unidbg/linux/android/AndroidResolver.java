@@ -1,13 +1,13 @@
 package com.github.unidbg.linux.android;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.file.linux.IOConstants;
-import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
-import com.github.unidbg.unix.IO;
+import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.file.*;
+import com.github.unidbg.spi.LibraryFile;
+import com.github.unidbg.unix.IO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -62,7 +62,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public FileIO resolve(Emulator emulator, String path, int oflags) {
+    public FileResult resolve(Emulator emulator, String path, int oflags) {
         File rootDir = emulator.getFileSystem().getRootDir();
         final boolean create = (oflags & IOConstants.O_CREAT) != 0;
         if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
@@ -71,7 +71,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
-                return new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback);
+                return FileResult.success(new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -86,7 +86,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
                 if (!log.exists() && !log.createNewFile()) {
                     throw new IOException("create new file failed: " + log);
                 }
-                return new LogCatFileIO(oflags, log, path);
+                return FileResult.success(new LogCatFileIO(oflags, log, path));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -119,7 +119,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
                 }
 
                 if (tmp.isDirectory()) {
-                    return new DirectoryFileIO(oflags, path);
+                    return FileResult.success(new DirectoryFileIO(oflags, path));
                 }
 
                 outputStream = new FileOutputStream(tmp);
@@ -136,9 +136,9 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         return null;
     }
 
-    private FileIO createFileIO(File file, String pathname, int oflags) {
+    private FileResult createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {
-            return file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname);
+            return FileResult.success(file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname));
         }
 
         return null;

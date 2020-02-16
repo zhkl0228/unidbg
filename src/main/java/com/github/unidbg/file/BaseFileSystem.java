@@ -6,6 +6,7 @@ import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.linux.file.Stdin;
 import com.github.unidbg.linux.file.Stdout;
 import com.github.unidbg.unix.IO;
+import com.github.unidbg.unix.UnixEmulator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,9 +37,9 @@ public abstract class BaseFileSystem implements FileSystem {
     }
 
     @Override
-    public FileIO open(String pathname, int oflags) {
+    public FileResult open(String pathname, int oflags) {
         if (IO.STDIN.equals(pathname)) {
-            return new Stdin(oflags);
+            return FileResult.success(new Stdin(oflags));
         }
 
         if (IO.STDOUT.equals(pathname) || IO.STDERR.equals(pathname)) {
@@ -47,7 +48,7 @@ public abstract class BaseFileSystem implements FileSystem {
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
-                return new Stdout(oflags, stdio, pathname, IO.STDERR.equals(pathname), null); // TODO support callback
+                return FileResult.success(new Stdout(oflags, stdio, pathname, IO.STDERR.equals(pathname), null)); // TODO support callback
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -57,25 +58,22 @@ public abstract class BaseFileSystem implements FileSystem {
         return createFileIO(file, oflags, pathname);
     }
 
-    private FileIO createFileIO(File file, int oflags, String path) {
+    private FileResult createFileIO(File file, int oflags, String path) {
         boolean directory = hasDirectory(oflags);
-        if (file.isDirectory() && !directory) {
-            return null;
-        }
         if (file.isFile() && directory) {
-            return null;
+            return FileResult.failed(UnixEmulator.ENOTDIR);
         }
 
         boolean create = hasCreat(oflags);
         if (file.exists()) {
             if (create) {
-                return null;
+                return FileResult.failed(UnixEmulator.EEXIST);
             }
             return file.isDirectory() ? createDirectoryFileIO(file, oflags, path) : createSimpleFileIO(file, oflags, path);
         }
 
         if (!create || !file.getParentFile().exists()) {
-            return null;
+            return FileResult.failed(UnixEmulator.ENOENT);
         }
 
         try {
@@ -105,12 +103,12 @@ public abstract class BaseFileSystem implements FileSystem {
         }
     }
 
-    protected FileIO createSimpleFileIO(File file, int oflags, String path) {
-        return new SimpleFileIO(oflags, file, path);
+    protected FileResult createSimpleFileIO(File file, int oflags, String path) {
+        return FileResult.success(new SimpleFileIO(oflags, file, path));
     }
 
-    protected FileIO createDirectoryFileIO(File file, int oflags, String path) {
-        return new DirectoryFileIO(oflags, path, file);
+    protected FileResult createDirectoryFileIO(File file, int oflags, String path) {
+        return FileResult.success(new DirectoryFileIO(oflags, path, file));
     }
 
     protected abstract boolean hasCreat(int oflags);
