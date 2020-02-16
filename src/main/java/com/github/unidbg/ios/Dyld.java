@@ -2,8 +2,6 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.ios.struct.*;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -15,7 +13,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 abstract class Dyld extends Dlfcn {
@@ -62,31 +59,7 @@ abstract class Dyld extends Dlfcn {
         return 0;
     }
 
-    private String threadName = "main";
-
-    final void setThreadName(String threadName) {
-        this.threadName = threadName;
-        if (log.isDebugEnabled()) {
-            log.debug("pthread_setname_np=" + threadName);
-        }
-    }
-
     abstract int _dyld_func_lookup(Emulator emulator, String name, Pointer address);
-
-    long _pthread_getname_np;
-
-    final HookStatus _pthread_getname_np(Emulator emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer thread = context.getPointerArg(0);
-        Pointer threadName = context.getPointerArg(1);
-        int len = context.getIntArg(2);
-        if (log.isDebugEnabled()) {
-            log.debug("_pthread_getname_np thread=" + thread + ", threadName=" + threadName + ", len=" + len);
-        }
-        byte[] data = Arrays.copyOf(Dyld.this.threadName.getBytes(), len);
-        threadName.write(0, data, 0, data.length);
-        return HookStatus.LR(emulator, 0);
-    }
 
     protected final DyldImageInfo[] registerImageStateBatchChangeHandler(MachOLoader loader, int state, UnicornPointer handler, Emulator emulator) {
         if (log.isDebugEnabled()) {

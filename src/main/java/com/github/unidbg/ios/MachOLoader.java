@@ -7,6 +7,8 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DyldImageInfo;
+import com.github.unidbg.ios.struct.kernel.Pthread;
+import com.github.unidbg.ios.struct.kernel.Pthread64;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.*;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -52,7 +54,6 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         setStackPoint(stackBase);
         initializeTSD();
-        this.setErrno(0);
     }
 
     @Override
@@ -66,6 +67,11 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
     private UnicornPointer vars;
     private Pointer errno;
+
+    final void setErrnoPointer(Pointer errno) {
+        this.errno = errno.getPointer(0);
+        this.setErrno(0);
+    }
 
     private static final int __TSD_THREAD_SELF = 0;
     private static final int __TSD_ERRNO = 1;
@@ -103,28 +109,28 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         vars.setPointer(3 * emulator.getPointerSize(), _NSGetEnviron);
         vars.setPointer(4 * emulator.getPointerSize(), _NSGetProgname);
 
-        errno = allocateStack(emulator.getPointerSize());
-
-        final UnicornPointer thread = allocateStack(0x1000); // reserve space for pthread_internal_t
+        final UnicornPointer thread = allocateStack(UnicornStructure.calculateSize(Pthread64.class)); // reserve space for pthread_internal_t
+        Pthread pthread = Pthread.create(emulator, thread);
 
         /* 0xa4必须固定，否则初始化objc会失败 */
-        final UnicornPointer tsd = (UnicornPointer) thread.share(emulator.is64Bit() ? 0xe0 : 0xa4); // tsd size
+        final UnicornPointer tsd = pthread.getTSD(); // tsd size
         assert tsd != null;
         tsd.setPointer(__TSD_THREAD_SELF * emulator.getPointerSize(), thread);
         tsd.setPointer(__TSD_ERRNO * emulator.getPointerSize(), errno);
         tsd.setPointer(__TSD_MIG_REPLY * emulator.getPointerSize(), null);
-
-        Pointer locale = allocateStack(emulator.getPointerSize());
-
-        Pointer gap = allocateStack(emulator.getPointerSize());
 
         if (emulator.getPointerSize() == 4) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDRRO_EL0, tsd.peer);
         }
+
+        long sp = getStackPoint();
+        sp &= (~15);
+        setStackPoint(sp);
+
         if (log.isDebugEnabled()) {
-            log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", locale=" + locale + ", sp=0x" + Long.toHexString(getStackPoint()) + ", errno=" + errno + ", gap=" + gap);
+            log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", sp=0x" + Long.toHexString(getStackPoint()) + ", errno=" + errno);
         }
     }
 

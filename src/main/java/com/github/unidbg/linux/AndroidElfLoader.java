@@ -139,6 +139,11 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
+
+        long sp = getStackPoint();
+        sp &= (~15);
+        setStackPoint(sp);
+
         if (log.isDebugEnabled()) {
             log.debug("initializeTLS tls=" + tls + ", argv=" + argv + ", auxv=" + auxv + ", thread=" + thread + ", environ=" + environ + ", sp=0x" + Long.toHexString(getStackPoint()));
         }

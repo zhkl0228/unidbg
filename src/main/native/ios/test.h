@@ -3,6 +3,7 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
 
@@ -70,9 +71,20 @@ void test_proc_pidinfo() {
   printf("proc_pidinfo ret=%d, pid=%d, size=%lu, pbsi_comm=%s, pbsi_flags=0x%x, pbsi_ppid=%d\n", ret, pid, sizeof(bsdinfo), bsdinfo.pbsi_comm, bsdinfo.pbsi_flags, bsdinfo.pbsi_ppid);
 }
 
+void test_pthread() {
+  char name[64];
+  sprintf(name, "thread: %p", name);
+  pthread_setname_np(name);
+  memset(name, 0, 64);
+  pthread_t thread = pthread_self();
+  pthread_getname_np(thread, name, sizeof(name));
+  printf("pthread name=%s\n", name);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_KERN_USRSTACK();
   test_sysctl_KERN_PROC();
   test_proc_pidinfo();
+  test_pthread();
 }

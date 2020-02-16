@@ -137,4 +137,12 @@ public class PropertiesTest extends TestCase {
         }
     }
 
+    public void testAlignment() {
+        for (int i = 200; i >= 100; i--) {
+            int v = i;
+            v &= (~15);
+            System.out.println("i=" + i + ", v=" + v);
+        }
+    }
+
 }

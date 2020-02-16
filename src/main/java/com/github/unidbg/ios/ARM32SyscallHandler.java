@@ -356,10 +356,19 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int pthread_set_self(Emulator emulator) {
-        // TODO: implement
         RegisterContext context = emulator.getContext();
         Pointer self = context.getPointerArg(0);
-        log.info("pthread_set_self=" + self + ", LR=" + emulator.getContext().getLRPointer());
+        Pthread pthread = new Pthread32(self.getPointer(0));
+        pthread.unpack();
+        UnicornPointer tsd = pthread.getTSD();
+        emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
+        MachOLoader loader = (MachOLoader) emulator.getMemory();
+        loader.setErrnoPointer(pthread.getErrno());
+
+        if (log.isDebugEnabled()) {
+            String threadName = pthread.getName();
+            log.debug("pthread_set_self=" + self + ", pthread=" + pthread + ", threadName=" + threadName + ", LR=" + emulator.getContext().getLRPointer());
+        }
         return 0;
     }
 
@@ -773,8 +782,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         String msg = "proc_info callNum=" + callNum + ", pid=" + pid + ", flavor=" + flavor + ", arg=" + arg + ", buffer=" + buffer + ", bufferSize=" + bufferSize;
         if (PROC_INFO_CALL_SETCONTROL == callNum && PROC_SELFSET_THREADNAME == flavor) {
             String threadName = buffer.getString(0);
-            log.debug(msg);
-            ((Dyld) emulator.getDlfcn()).setThreadName(threadName);
+            if (log.isDebugEnabled()) {
+                log.debug(msg + ", threadName=" + threadName);
+            }
             return 0;
         } else if (PROC_INFO_CALL_PIDINFO == callNum && PROC_PIDT_SHORTBSDINFO == flavor) {
             ProcBsdShortInfo info = new ProcBsdShortInfo(buffer);

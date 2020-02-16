@@ -604,18 +604,6 @@ public class Dyld32 extends Dyld {
                 }
                 return _abort;
             }
-        } else if ("libsystem_pthread.dylib".equals(libraryName)) {
-            if ("_pthread_getname_np".equals(symbolName)) {
-                if (_pthread_getname_np == 0) {
-                    _pthread_getname_np = svcMemory.registerSvc(new ArmHook() {
-                        @Override
-                        protected HookStatus hook(Emulator emulator) {
-                            return _pthread_getname_np(emulator);
-                        }
-                    }).peer;
-                }
-                return _pthread_getname_np;
-            }
         } else if ("libsystem_asl.dylib".equals(libraryName)) {
             if ("_asl_open".equals(symbolName)) {
                 if (_asl_open == 0) {
