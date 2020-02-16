@@ -54,17 +54,17 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     }
 
     protected final FileResult resolve(Emulator emulator, String pathname, int oflags) {
+        for (IOResolver resolver : resolvers) {
+            FileResult result = resolver.resolve(emulator, pathname, oflags);
+            if (result != null && result.isSuccess()) {
+                return result;
+            }
+        }
         FileResult result = emulator.getFileSystem().open(pathname, oflags);
         if (result != null && result.isSuccess()) {
             return result;
         }
 
-        for (IOResolver resolver : resolvers) {
-            result = resolver.resolve(emulator, pathname, oflags);
-            if (result != null && result.isSuccess()) {
-                return result;
-            }
-        }
         if (pathname.endsWith(emulator.getLibraryExtension())) {
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 for (MemRegion memRegion : module.getRegions()) {
@@ -190,13 +190,13 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
     public final int open(Emulator emulator, String pathname, int oflags, boolean canCreate) {
         int minFd = this.getMinFd();
 
-        FileResult result = emulator.getFileSystem().open(pathname, oflags);
+        FileResult result = resolve(emulator, pathname, oflags);
         if (result != null && result.isSuccess()) {
             this.fdMap.put(minFd, result.io);
             return minFd;
         }
 
-        result = resolve(emulator, pathname, oflags);
+        result = emulator.getFileSystem().open(pathname, oflags);
         if (result != null && result.isSuccess()) {
             this.fdMap.put(minFd, result.io);
             return minFd;

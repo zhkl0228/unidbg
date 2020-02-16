@@ -5,9 +5,11 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.IOConstants;
-import com.github.unidbg.linux.file.*;
+import com.github.unidbg.linux.file.DirectoryFileIO;
+import com.github.unidbg.linux.file.LogCatFileIO;
+import com.github.unidbg.linux.file.SimpleFileIO;
+import com.github.unidbg.linux.file.StdoutCallback;
 import com.github.unidbg.spi.LibraryFile;
-import com.github.unidbg.unix.IO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -65,17 +67,6 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
     public FileResult resolve(Emulator emulator, String path, int oflags) {
         File rootDir = emulator.getFileSystem().getRootDir();
         final boolean create = (oflags & IOConstants.O_CREAT) != 0;
-        if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
-            try {
-                File stdio = new File(rootDir, path + ".txt");
-                if (!stdio.exists() && !stdio.createNewFile()) {
-                    throw new IOException("create new file failed: " + stdio);
-                }
-                return FileResult.success(new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback));
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        }
         if (path.startsWith("/dev/log/")) {
             try {
                 File log = new File(rootDir, path);

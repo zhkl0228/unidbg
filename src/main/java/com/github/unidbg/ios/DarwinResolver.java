@@ -8,10 +8,9 @@ import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
-import com.github.unidbg.linux.file.Stdout;
 import com.github.unidbg.linux.file.StdoutCallback;
 import com.github.unidbg.spi.LibraryFile;
-import com.github.unidbg.unix.IO;
+import com.github.unidbg.unix.UnixEmulator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -56,27 +55,15 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
 
     @Override
     public FileResult resolve(Emulator emulator, String path, int oflags) {
-        final File rootDir = emulator.getFileSystem().getRootDir();
-        if (IO.STDOUT.equals(path) || IO.STDERR.equals(path)) {
-            try {
-                File stdio = new File(rootDir, path + ".txt");
-                if (!stdio.exists() && !stdio.createNewFile()) {
-                    throw new IOException("create new file failed: " + stdio);
-                }
-                return FileResult.success(new Stdout(oflags, stdio, path, IO.STDERR.equals(path), callback));
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-
         if ("".equals(path)) {
-            return null;
+            return FileResult.failed(UnixEmulator.EINVAL);
         }
 
         if (".".equals(path)) {
             return createFileIO(emulator.getFileSystem().createWorkDir(), path, oflags);
         }
 
+        final File rootDir = emulator.getFileSystem().getRootDir();
         File file = new File(rootDir, path);
         if (file.canRead()) {
             return createFileIO(file, path, oflags);
