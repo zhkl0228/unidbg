@@ -6,15 +6,14 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.SyscallHandler;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class ARMSvcMemory implements SvcMemory {
 
@@ -102,6 +101,20 @@ public class ARMSvcMemory implements SvcMemory {
             throw new IllegalStateException();
         }
         return svc.onRegister(this, number);
+    }
+
+    @Override
+    public final UnicornPointer writeStackString(String str) {
+        byte[] data = str.getBytes(StandardCharsets.UTF_8);
+        return writeStackBytes(Arrays.copyOf(data, data.length + 1));
+    }
+
+    @Override
+    public final UnicornPointer writeStackBytes(byte[] data) {
+        UnicornPointer pointer = allocate(data.length, "writeStackBytes: " + Hex.encodeHexString(data));
+        assert pointer != null;
+        pointer.write(0, data, 0, data.length);
+        return pointer;
     }
 
 }

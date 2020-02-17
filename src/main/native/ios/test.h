@@ -9,6 +9,9 @@
 #include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
+#include <mach-o/dyld.h>
+#include <mach-o/dyld_images.h>
+#include <mach/mach.h>
 #include <mach/mach_time.h>
 
 static void test_printf() {
@@ -118,6 +121,21 @@ static void test_time() {
   printf("time end=%llu, elapsed=%llu, elapsedNanoSeconds=%lluns\n", end, elapsed, elapsedNanoSeconds);
 }
 
+static void test_task_info() {
+  struct task_dyld_info dyld_info;
+  mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
+  task_t task = mach_task_self();
+  int ret = task_info(task, TASK_DYLD_INFO, (task_info_t)&dyld_info, &count);
+  printf("task_info task=%d, ret=%d, all_image_info_addr=%p, all_image_info_size=%llu, all_image_info_format=%d\n", task, ret, (void*)dyld_info.all_image_info_addr, dyld_info.all_image_info_size, dyld_info.all_image_info_format);
+  printf("task_info size=%ld, all_image_info_addr=%ld, all_image_info_size=%ld, all_image_info_format=%ld\n", sizeof(dyld_info), (long) &dyld_info.all_image_info_addr - (long) &dyld_info, (long) &dyld_info.all_image_info_size - (long) &dyld_info, (long) &dyld_info.all_image_info_format - (long) &dyld_info);
+
+  struct dyld_all_image_infos* infos = (struct dyld_all_image_infos*)(uintptr_t)dyld_info.all_image_info_addr;
+  printf("infos=%p, size=%lu, version=%d, libSystemInitialized=%d, jitInfo=%p, dyldVersion=%s, errorMessage=%s, dyldAllImageInfosAddress=%p, uuidArrayCount=%lu, uuidArray=%p, initialImageCount=%ld, libSystemInitialized=0x%lx\n", infos, sizeof(struct dyld_all_image_infos), infos->version, infos->libSystemInitialized, infos->jitInfo, infos->dyldVersion, infos->errorMessage, infos->dyldAllImageInfosAddress, infos->uuidArrayCount, infos->uuidArray, infos->initialImageCount, (long) &infos->libSystemInitialized - (long) infos);
+  for(int i=0; i < infos->infoArrayCount; ++i) {
+    fprintf(stderr, "[%02d][0x%08lx] %s\n", i, (long) infos->infoArray[i].imageLoadAddress, infos->infoArray[i].imageFilePath);
+  }
+}
+
 void do_test() {
   test_printf();
   test_sysctl_KERN_USRSTACK();
@@ -126,4 +144,5 @@ void do_test() {
   test_pthread();
   test_file();
   test_time();
+  test_task_info();
 }

@@ -16,10 +16,12 @@ import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc32;
+import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -235,10 +237,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_getugid_np(emulator));
                     return;
                 case 301:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_mutexwait());
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_mutexwait(emulator));
                     return;
                 case 302:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_mutexdrop());
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_mutexdrop(emulator));
                     return;
                 case 305:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
@@ -408,7 +410,6 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         RegisterContext context = emulator.getContext();
         Pointer pointer = context.getPointerArg(0);
         MachTimebaseInfo info = new MachTimebaseInfo(pointer);
-        info.unpack();
         info.denom = 1;
         info.numer = 1;
         info.pack();
@@ -433,15 +434,30 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return path.length() + 1;
     }
 
-    private int psynch_mutexdrop() {
-        // TODO: implement
-        log.info("psynch_mutexdrop");
+    private int psynch_mutexdrop(Emulator emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        Pointer mutex = context.getPointerArg(0);
+        int mgen = context.getIntArg(1);
+        int ugen = context.getIntArg(2);
+        long tid = context.getR3Int();
+        int flags = context.getR5Int();
+        if (log.isDebugEnabled()) {
+            log.debug("psynch_mutexdrop mutex=" + mutex + ", mgen=" + mgen + ", ugen=" + ugen + ", tid=" + tid + ", flags=0x" + Integer.toHexString(flags) + ", LR=" + context.getLRPointer());
+        }
         return 0;
     }
 
-    private int psynch_mutexwait() {
+    private int psynch_mutexwait(Emulator emulator) {
         // TODO: implement
-        log.info("psynch_mutexwait");
+        Arm32RegisterContext context = emulator.getContext();
+        Pointer mutex = context.getPointerArg(0);
+        int mgen = context.getIntArg(1);
+        int ugen = context.getIntArg(2);
+        long tid = context.getR3Int();
+        int flags = context.getR5Int();
+        if (log.isDebugEnabled()) {
+            log.debug("psynch_mutexwait mutex=" + mutex + ", mgen=" + mgen + ", ugen=" + ugen + ", tid=" + tid + ", flags=0x" + Integer.toHexString(flags) + ", LR=" + context.getLRPointer());
+        }
         return 0;
     }
 
@@ -472,18 +488,26 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int kevent64(Emulator emulator) {
-        // TODO: implement
-        log.info("kevent64");
-        return 0;
-    }
-
     private int guarded_kqueue_np(Emulator emulator) {
         // TODO: implement
         Unicorn unicorn = emulator.getUnicorn();
         Pointer guard = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int guardFlags = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         log.info("guarded_kqueue_np guard=" + guard + ", guardFlags=0x" + Integer.toHexString(guardFlags));
+        return 0;
+    }
+
+    private int kevent64(Emulator emulator) {
+        // TODO: implement
+        Arm32RegisterContext context = emulator.getContext();
+        int kq = context.getIntArg(0);
+        Pointer changelist = context.getPointerArg(1);
+        int nchanges = context.getIntArg(2);
+        Pointer eventlist = context.getPointerArg(3);
+        int nevents = context.getR4Int();
+        int flags = context.getR5Int();
+        Pointer timeout = context.getR6Pointer();
+        log.info("kevent64 kq=" + kq + ", changelist=" + changelist + ", nchanges=" + nchanges + ", eventlist=" + eventlist + ", nevents=" + nevents + ", flags=0x" + Integer.toHexString(flags) + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
         return 0;
     }
 
@@ -1717,6 +1741,35 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     log.debug("io_service_get_matching_service reply=" + reply);
                 }
                 return MACH_MSG_SUCCESS;
+            }
+            case 3405: { // task_info
+                TaskInfoRequest args = new TaskInfoRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("task_info args=" + args);
+                }
+
+                if (args.flavor == TaskInfoRequest.TASK_DYLD_INFO) {
+                    TaskInfoReply reply = new TaskInfoReply(request);
+                    reply.unpack();
+
+                    header.setMsgBits(false);
+                    header.msgh_size = header.size() + reply.size();
+                    header.msgh_remote_port = header.msgh_local_port;
+                    header.msgh_local_port = 0;
+                    header.msgh_id += 100; // reply Id always equals reqId+100
+                    header.pack();
+
+                    reply.retCode = 0;
+                    reply.task_info_outCnt = UnicornStructure.calculateSize(TaskDyldInfo.class) / 4;
+                    reply.dyldInfo.allocateAllImage(emulator);
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("task_info TASK_DYLD_INFO reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
             }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));

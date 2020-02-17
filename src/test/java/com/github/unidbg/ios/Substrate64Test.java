@@ -150,6 +150,8 @@ public class Substrate64Test extends EmulatorTest {
         new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
         new CFNetwork().processHook(emulator);
 
+//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+//        emulator.attach(0x100464000L, 0x1004a8000L).addBreakPoint(null, 0x100464000L + 0x0000053e0);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

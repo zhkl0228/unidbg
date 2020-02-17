@@ -903,7 +903,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         }
         module.lazyPointerProcessed = true;
 
-        if (module.machO == null) { // virtual module
+        if (module.isVirtual()) { // virtual module
             return;
         }
 
@@ -1389,7 +1389,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
     final Collection<Module> getLoadedModulesNoVirtual() {
         List<Module> list = new ArrayList<>(modules.size());
         for (MachOModule mm : modules.values()) {
-            if (mm.machO != null) {
+            if (!mm.isVirtual()) {
                 list.add(mm);
             }
         }
@@ -1426,7 +1426,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
     final List<UnicornPointer> initializedHandlers = new ArrayList<>();
 
     private void notifySingle(int state, MachOModule module) {
-        if (module.machO == null) { // virtual module
+        if (module.isVirtual()) { // virtual module
             return;
         }
 

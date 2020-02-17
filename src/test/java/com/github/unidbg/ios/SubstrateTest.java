@@ -32,9 +32,8 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.traceCode();
 //        emulator.attach().addBreakPoint(null, 0x402ffd10);
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
-        long start = System.currentTimeMillis();
+        long start;
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
-        System.err.println("loadLibrary offset=" + (System.currentTimeMillis() - start) + "ms");
 
 //        emulator.traceCode();
 

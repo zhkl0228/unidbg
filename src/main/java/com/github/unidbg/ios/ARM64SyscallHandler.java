@@ -16,10 +16,12 @@ import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc64;
+import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -287,10 +289,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, bsdthread_register(emulator));
                     return;
                 case 367:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _workq_open());
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _workq_open(emulator));
                     return;
                 case 368:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _workq_kernreturn());
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _workq_kernreturn(emulator));
                     return;
                 case 369:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, kevent64(emulator));
@@ -508,7 +510,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         RegisterContext context = emulator.getContext();
         Pointer pointer = context.getPointerArg(0);
         MachTimebaseInfo info = new MachTimebaseInfo(pointer);
-        info.unpack();
         info.denom = 1;
         info.numer = 1;
         info.pack();
@@ -530,15 +531,32 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
+    /**
+     * psynch_mutexwait: This system call is used for contended psynch mutexes to block.
+     */
     private int psynch_mutexwait(Emulator emulator) {
-        // TODO: implement
-        log.info("psynch_mutexwait LR=" + emulator.getContext().getLRPointer());
+        RegisterContext context = emulator.getContext();
+        Pointer mutex = context.getPointerArg(0);
+        int mgen = context.getIntArg(1);
+        int ugen = context.getIntArg(2);
+        long tid = context.getLongArg(3);
+        int flags = context.getIntArg(4);
+        if (log.isDebugEnabled()) {
+            log.debug("psynch_mutexwait mutex=" + mutex + ", mgen=" + mgen + ", ugen=" + ugen + ", tid=" + tid + ", flags=0x" + Integer.toHexString(flags) + ", LR=" + context.getLRPointer());
+        }
         return 0;
     }
 
     private int psynch_mutexdrop(Emulator emulator) {
-        // TODO: implement
-        log.info("psynch_mutexdrop LR=" + emulator.getContext().getLRPointer());
+        RegisterContext context = emulator.getContext();
+        Pointer mutex = context.getPointerArg(0);
+        int mgen = context.getIntArg(1);
+        int ugen = context.getIntArg(2);
+        long tid = context.getLongArg(3);
+        int flags = context.getIntArg(4);
+        if (log.isDebugEnabled()) {
+            log.debug("psynch_mutexdrop mutex=" + mutex + ", mgen=" + mgen + ", ugen=" + ugen + ", tid=" + tid + ", flags=0x" + Integer.toHexString(flags) + ", LR=" + context.getLRPointer());
+        }
         return 0;
     }
 
@@ -1165,12 +1183,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         UnicornPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
         pointer.write(0, new byte[(int) size], 0, (int) size);
         address.setPointer(0, pointer);
+        String msg = "_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag);
         if (log.isDebugEnabled()) {
-            log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
+            log.debug(msg);
         } else {
             Log log = LogFactory.getLog("com.github.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug("_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=" + anywhere + ", tag=0x" + Integer.toHexString(tag));
+                log.debug(msg);
             }
         }
         return 0;
@@ -1186,26 +1205,22 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int _workq_open() {
+    private int _workq_open(Emulator emulator) {
         // TODO: implement
-        log.info("_workq_open");
+        RegisterContext context = emulator.getContext();
+        log.info("_workq_open LR=" + context.getLRPointer());
         return 0;
     }
 
-    private int _workq_kernreturn() {
+    private int _workq_kernreturn(Emulator emulator) {
         // TODO: implement
-        log.info("_workq_kernreturn");
-        return 0;
-    }
-
-    private int kevent64(Emulator emulator) {
-        // TODO: implement
-        log.info("kevent64");
+        RegisterContext context = emulator.getContext();
+        log.info("_workq_kernreturn LR=" + context.getLRPointer());
         return 0;
     }
 
     // https://github.com/lunixbochs/usercorn/blob/master/go/kernel/mach/thread.go
-    private int thread_selfid() {
+    private long thread_selfid() {
         log.debug("thread_selfid");
         return 1;
     }
@@ -1887,11 +1902,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     header.pack();
 
                     reply.retCode = 0;
-                    reply.task_info_outCnt = 5;
+                    reply.task_info_outCnt = UnicornStructure.calculateSize(TaskDyldInfo.class) / 4;
+                    reply.dyldInfo.allocateAllImage(emulator);
                     reply.pack();
 
-                    log.info("task_info TASK_DYLD_INFO reply=" + reply);
-                    return MACH_MSG_VM_SPACE;
+                    if (log.isDebugEnabled()) {
+                        log.debug("task_info TASK_DYLD_INFO reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
                 }
             }
             case 78: { // _dispatch_send_wakeup_runloop_thread
@@ -1947,7 +1965,21 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         RegisterContext context = emulator.getContext();
         Pointer guard = context.getPointerArg(0);
         int guardFlags = context.getIntArg(1);
-        log.info("guarded_kqueue_np guard=" + guard + ", guardFlags=0x" + Integer.toHexString(guardFlags));
+        log.info("guarded_kqueue_np guard=" + guard + ", guardFlags=0x" + Integer.toHexString(guardFlags) + ", LR=" + context.getLRPointer());
+        return 0;
+    }
+
+    private int kevent64(Emulator emulator) {
+        // TODO: implement
+        RegisterContext context = emulator.getContext();
+        int kq = context.getIntArg(0);
+        Pointer changelist = context.getPointerArg(1);
+        int nchanges = context.getIntArg(2);
+        Pointer eventlist = context.getPointerArg(3);
+        int nevents = context.getIntArg(4);
+        int flags = context.getIntArg(5);
+        Pointer timeout = context.getPointerArg(6);
+        log.info("kevent64 kq=" + kq + ", changelist=" + changelist + ", nchanges=" + nchanges + ", eventlist=" + eventlist + ", nevents=" + nevents + ", flags=0x" + Integer.toHexString(flags) + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
         return 0;
     }
 

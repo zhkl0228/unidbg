@@ -58,6 +58,10 @@ public class LinuxModule extends Module {
             public ElfSymbol getELFSymbolByName(String name) {
                 return null;
             }
+            @Override
+            public boolean isVirtual() {
+                return true;
+            }
         };
         for (Map.Entry<String, UnicornPointer> entry : symbols.entrySet()) {
             module.registerSymbol(entry.getKey(), entry.getValue().peer);

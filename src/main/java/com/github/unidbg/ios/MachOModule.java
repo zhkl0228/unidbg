@@ -37,7 +37,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final List<InitFunction> routines;
     final List<InitFunction> initFunctionList;
 
-    final long machHeader;
+    public final long machHeader;
 
     boolean indirectSymbolBound;
     boolean lazyPointerProcessed;
@@ -533,6 +533,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             }
             @Override
             public void registerSymbol(String symbolName, long address) {
+            }
+            @Override
+            public boolean isVirtual() {
+                return true;
             }
         };
         for (Map.Entry<String, UnicornPointer> entry : symbols.entrySet()) {

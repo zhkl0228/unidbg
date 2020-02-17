@@ -121,7 +121,7 @@ public abstract class Module {
     public final UnicornPointer createPathMemory(SvcMemory svcMemory) {
         if (this.pathPointer == null) {
             byte[] path = getPath().getBytes();
-            this.pathPointer = svcMemory.allocate(path.length + 1, "Module.path");
+            this.pathPointer = svcMemory.allocate(path.length + 1, "Module.path: " + getPath());
             this.pathPointer.write(0, path, 0, path.length);
             this.pathPointer.setByte(path.length, (byte) 0);
         }
@@ -152,6 +152,10 @@ public abstract class Module {
             }
         }
         return emulator.eFunc(address, list.toArray(new Number[0]));
+    }
+
+    public boolean isVirtual() {
+        return false;
     }
 
 }

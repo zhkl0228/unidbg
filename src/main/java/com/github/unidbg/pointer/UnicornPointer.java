@@ -162,7 +162,9 @@ public class UnicornPointer extends Pointer {
 
     @Override
     public void write(long offset, long[] buf, int index, int length) {
-        throw new AbstractMethodError();
+        for (int i = index; i < length; i++) {
+            setLong((i - index) * 8 + offset, buf[i]);
+        }
     }
 
     @Override

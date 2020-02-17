@@ -13,4 +13,7 @@ public interface SvcMemory {
 
     MemRegion findRegion(long addr);
 
+    UnicornPointer writeStackString(String str);
+    UnicornPointer writeStackBytes(byte[] data);
+
 }
