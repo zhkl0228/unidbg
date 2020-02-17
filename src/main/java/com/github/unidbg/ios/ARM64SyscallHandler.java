@@ -187,7 +187,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
                     return;
                 case 48:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sigprocmask(u, emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sigprocmask(emulator));
                     return;
                 case 58:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, readlink(emulator));
@@ -209,7 +209,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(u, emulator));
                     return;
                 case 98:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(u, emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
                     return;
                 case 116:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
@@ -239,10 +239,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_getugid_np(emulator));
                     return;
                 case 301:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_mutexwait());
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_mutexwait(emulator));
                     return;
                 case 302:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_mutexdrop());
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_mutexdrop(emulator));
                     return;
                 case 305:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_cvwait(emulator));
@@ -266,7 +266,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, stat64(emulator));
                     return;
                 case 339:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(u, emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(emulator));
                     return;
                 case 340:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator, 0));
@@ -505,38 +505,46 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int _mach_timebase_info(Emulator emulator) {
-        // TODO: implement
-        log.info("_mach_timebase_info");
+        RegisterContext context = emulator.getContext();
+        Pointer pointer = context.getPointerArg(0);
+        MachTimebaseInfo info = new MachTimebaseInfo(pointer);
+        info.unpack();
+        info.denom = 1;
+        info.numer = 1;
+        info.pack();
+        if (log.isDebugEnabled()) {
+            log.debug("_mach_timebase_info info=" + info + ", LR=" + context.getLRPointer());
+        }
         return 0;
     }
 
     private long psynch_rw_unlock(Emulator emulator) {
         // TODO: implement
-        log.info("psynch_rw_unlock");
+        log.info("psynch_rw_unlock LR=" + emulator.getContext().getLRPointer());
         return 0;
     }
 
     private long psynch_rw_wrlock(Emulator emulator) {
         // TODO: implement
-        log.info("psynch_rw_wrlock");
+        log.info("psynch_rw_wrlock LR=" + emulator.getContext().getLRPointer());
         return 0;
     }
 
-    private int psynch_mutexwait() {
+    private int psynch_mutexwait(Emulator emulator) {
         // TODO: implement
-        log.info("psynch_mutexwait");
+        log.info("psynch_mutexwait LR=" + emulator.getContext().getLRPointer());
         return 0;
     }
 
-    private int psynch_mutexdrop() {
+    private int psynch_mutexdrop(Emulator emulator) {
         // TODO: implement
-        log.info("psynch_mutexdrop");
+        log.info("psynch_mutexdrop LR=" + emulator.getContext().getLRPointer());
         return 0;
     }
 
     private int psynch_cvwait(Emulator emulator) {
         // TODO: implement
-        log.info("psynch_cvwait");
+        log.info("psynch_cvwait LR=" + emulator.getContext().getLRPointer());
         return 0;
     }
 
@@ -710,7 +718,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return ret;
     }
 
-    private int fstat(Unicorn u, Emulator emulator) {
+    private int fstat(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         int fd = context.getIntArg(0);
         Pointer stat = context.getPointerArg(1);
@@ -902,14 +910,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         long offset = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X5)).longValue();
         if (log.isDebugEnabled()) {
             log.debug("bsdthread_register thread_start=" + thread_start + ", start_wqthread=" + start_wqthread + ", PTHREAD_SIZE=" + PTHREAD_SIZE + ", data=" + data + ", dataSize=" + dataSize + ", offset=0x" + Long.toHexString(offset));
-        }
-        return 0;
-    }
-
-    private int semaphore_signal_trap(Emulator emulator) {
-        Pointer sema = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        if (log.isDebugEnabled()) {
-            log.debug("semaphore_signal_trap sema=" + sema);
         }
         return 0;
     }
@@ -1951,7 +1951,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return 0;
     }
 
-    private int sigprocmask(Unicorn u, Emulator emulator) {
+    private int sigprocmask(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         int how = context.getIntArg(0);
         Pointer set = context.getPointerArg(1);
@@ -1973,7 +1973,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private long mach_absolute_time() {
         long nanoTime = System.nanoTime();
-        log.debug("mach_absolute_time nanoTime=" + nanoTime);
+        if (log.isDebugEnabled()) {
+            log.debug("mach_absolute_time nanoTime=" + nanoTime);
+        }
         return nanoTime;
     }
 
@@ -2038,7 +2040,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         return sendto(emulator, sockfd, buf, len, flags, dest_addr, addrlen);
     }
 
-    private int connect(Unicorn u, Emulator emulator) {
+    private int connect(Emulator emulator) {
         RegisterContext context = emulator.getContext();
         int sockfd = context.getIntArg(0);
         Pointer addr = context.getPointerArg(1);

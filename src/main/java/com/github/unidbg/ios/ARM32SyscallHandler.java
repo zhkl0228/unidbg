@@ -405,8 +405,16 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
     }
 
     private int _mach_timebase_info(Emulator emulator) {
-        // TODO: implement
-        log.info("_mach_timebase_info");
+        RegisterContext context = emulator.getContext();
+        Pointer pointer = context.getPointerArg(0);
+        MachTimebaseInfo info = new MachTimebaseInfo(pointer);
+        info.unpack();
+        info.denom = 1;
+        info.numer = 1;
+        info.pack();
+        if (log.isDebugEnabled()) {
+            log.debug("_mach_timebase_info info=" + info + ", LR=" + context.getLRPointer());
+        }
         return 0;
     }
 
@@ -1773,7 +1781,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
 
     private int mach_absolute_time(Emulator emulator) {
         long nanoTime = System.nanoTime();
-        log.debug("mach_absolute_time nanoTime=" + nanoTime);
+        if (log.isDebugEnabled()) {
+            log.debug("mach_absolute_time nanoTime=" + nanoTime);
+        }
         emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (nanoTime >> 32));
         return (int) (nanoTime);
     }
