@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
 
@@ -84,13 +85,24 @@ void test_pthread() {
   printf("pthread[%p] name=%s\n", thread, name);
 }
 
-void test_open() {
-  int fd = open("abc", O_RDWR);
+void test_file() {
+  const char *file = "/tmp/test_file.txt";
+  int fd = open(file, O_RDWR | O_CREAT);
   if(fd == -1) {
-    printf("open errno=%d, msg=%s\n", errno, strerror(errno));
+    printf("open file errno=%d, msg=%s\n", errno, strerror(errno));
   } else {
-    printf("open success fd=%d\n", fd);
     close(fd);
+    FILE *fp = fopen(file, "r");
+    fseek(fp, 0, SEEK_END);
+    struct stat statbuf;
+    stat(file, &statbuf);
+    char buf[256];
+    sprintf(buf, "open file success fd=%d, fp=%p, seek_size=%ld, stat_size=%lld\n", fd, fp, ftell(fp), statbuf.st_size);
+    fprintf(stdout, "%s", buf);
+    FILE *wfp = fopen(file, "a");
+    fwrite(buf, 1, strlen(buf), wfp);
+    fclose(wfp);
+    fclose(fp);
   }
 }
 
@@ -100,5 +112,5 @@ void do_test() {
   test_sysctl_KERN_PROC();
   test_proc_pidinfo();
   test_pthread();
-  test_open();
+  test_file();
 }

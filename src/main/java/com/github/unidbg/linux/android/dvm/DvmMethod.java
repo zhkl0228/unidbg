@@ -46,6 +46,15 @@ class DvmMethod implements Hashable {
         return vm.jni.callObjectMethod(vm, dvmObject, signature, varArg);
     }
 
+    long callLongMethod(DvmObject<?>  dvmObject, VarArg varArg) {
+        String signature = dvmClass.getClassName() + "->" + methodName + args;
+        if (log.isDebugEnabled()) {
+            log.debug("callLongMethod signature=" + signature + ", dvmObject=" + dvmObject);
+        }
+        BaseVM vm = dvmClass.vm;
+        return vm.jni.callLongMethod(vm, dvmObject, signature, varArg);
+    }
+
     long callLongMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         String signature = dvmClass.getClassName() + "->" + methodName + args;
         if (log.isDebugEnabled()) {

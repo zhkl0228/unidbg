@@ -13,4 +13,8 @@ public class DvmInteger extends DvmObject<Integer> {
         super(vm.resolveClass("java/lang/Integer"), value);
     }
 
+    @Override
+    public String toString() {
+        return "0x" + Integer.toHexString(value);
+    }
 }

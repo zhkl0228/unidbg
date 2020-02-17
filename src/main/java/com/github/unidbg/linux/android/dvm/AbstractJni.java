@@ -6,6 +6,7 @@ import com.github.unidbg.linux.android.dvm.wrapper.DvmBoolean;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmInteger;
 import com.github.unidbg.linux.android.dvm.api.*;
 import com.github.unidbg.linux.android.dvm.api.ClassLoader;
+import com.github.unidbg.linux.android.dvm.wrapper.DvmLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -112,6 +113,16 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public long callLongMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
+        if ("java/lang/Long->longValue()J".equals(signature)) {
+            DvmLong val = (DvmLong) dvmObject;
+            return val.value;
+        }
+
         throw new AbstractMethodError(signature);
     }
 
@@ -453,6 +464,14 @@ public abstract class AbstractJni implements Jni {
                     return new StringObject(vm, sig.toCharsString());
                 }
                 break;
+            }
+            case "java/lang/Class->getName()Ljava/lang/String;": {
+                DvmClass clazz = (DvmClass) dvmObject;
+                return new StringObject(vm, clazz.getName());
+            }
+            case "java/lang/String->getClass()Ljava/lang/Class;":
+            case "java/lang/Integer->getClass()Ljava/lang/Class;": {
+                return dvmObject.getObjectType();
             }
         }
 

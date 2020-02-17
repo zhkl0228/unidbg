@@ -13,4 +13,8 @@ public class DvmBoolean extends DvmObject<Boolean> {
         super(vm.resolveClass("java/lang/Boolean"), value);
     }
 
+    @Override
+    public String toString() {
+        return Boolean.toString(value);
+    }
 }

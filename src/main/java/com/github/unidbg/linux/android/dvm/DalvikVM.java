@@ -337,10 +337,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    DvmObject ret = dvmMethod.callObjectMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallObjectMethod(%s, %s%s) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                        System.out.println(String.format("JNIEnv->CallObjectMethod(%s, %s%s => %s) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                     }
-                    return addObject(dvmMethod.callObjectMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this)), false);
+                    return addObject(ret, false);
                 }
             }
         });
@@ -384,10 +385,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    int ret = dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallBooleanMethod(%s, %s%s) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                        System.out.println(String.format("JNIEnv->CallBooleanMethod(%s, %s%s => %s) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret == VM.JNI_TRUE, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                     }
-                    return dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
+                    return ret;
                 }
             }
         });
@@ -431,10 +433,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
+                    int ret = dvmMethod.callIntMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallIntMethod(%s, %s%s) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                        System.out.println(String.format("JNIEnv->CallIntMethod(%s, %s%s => 0x%x) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                     }
-                    return dvmMethod.callIntMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
+                    return ret;
                 }
             }
         });
@@ -464,6 +467,30 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallLongMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                UnicornPointer jmethodID = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallLongMethod object=" + object + ", jmethodID=" + jmethodID);
+                }
+                DvmObject<?> dvmObject = getObject(object.toUIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.objectType;
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toUIntPeer());
+                if (dvmMethod == null) {
+                    throw new UnicornException();
+                } else {
+                    long ret = dvmMethod.callLongMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
+                    if (verbose) {
+                        System.out.println(String.format("JNIEnv->CallLongMethod(%s, %s%s => 0x%xL) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                    }
+                    emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (ret >> 32));
+                    return (ret & 0xffffffffL);
+                }
+            }
+        });
+
         Pointer _CallLongMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
@@ -482,7 +509,7 @@ public class DalvikVM extends BaseVM implements VM {
                     VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     long ret = dvmMethod.callLongMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.println(String.format("JNIEnv->CallLongMethodV(%s, %s(%s) => 0x%x) was called from %s", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                        System.out.println(String.format("JNIEnv->CallLongMethodV(%s, %s(%s) => 0x%xL) was called from %s", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                     }
                     emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_R1, (int) (ret >> 32));
                     return (ret & 0xffffffffL);
@@ -1717,6 +1744,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x98, _CallBooleanMethodV);
         impl.setPointer(0xc4, _CallIntMethod);
         impl.setPointer(0xc8, _CallIntMethodV);
+        impl.setPointer(0xd0, _CallLongMethod);
         impl.setPointer(0xd4, _CallLongMethodV);
         impl.setPointer(0xe0, _CallFloatMethodV);
         impl.setPointer(0xf4, _CallVoidMethod);

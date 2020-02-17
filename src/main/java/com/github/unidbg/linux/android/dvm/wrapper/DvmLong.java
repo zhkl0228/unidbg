@@ -13,4 +13,8 @@ public class DvmLong extends DvmObject<Long> {
         super(vm.resolveClass("java/lang/Long"), value);
     }
 
+    @Override
+    public String toString() {
+        return "0x" + Long.toHexString(value) + "L";
+    }
 }
