@@ -9,10 +9,10 @@ import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.ios.struct.DyldImageInfo;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
@@ -514,7 +514,7 @@ public class Dyld64 extends Dyld {
                             int state = context.getIntArg(0);
                             int batch = context.getIntArg(1);
                             UnicornPointer handler = context.getPointerArg(2);
-                            DyldImageInfo[] imageInfos;
+                            UnicornStructure[] imageInfos;
                             if (batch == 1) {
                                 imageInfos = registerImageStateBatchChangeHandler(loader, state, handler, emulator);
                             } else {

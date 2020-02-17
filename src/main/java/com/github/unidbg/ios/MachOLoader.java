@@ -6,10 +6,11 @@ import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.hook.HookListener;
-import com.github.unidbg.ios.struct.DyldImageInfo;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
 import com.github.unidbg.ios.struct.kernel.Pthread64;
+import com.github.unidbg.ios.struct.sysctl.DyldImageInfo32;
+import com.github.unidbg.ios.struct.sysctl.DyldImageInfo64;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.*;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -1425,18 +1426,34 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
     final List<UnicornPointer> boundHandlers = new ArrayList<>();
     final List<UnicornPointer> initializedHandlers = new ArrayList<>();
 
+    private UnicornStructure createDyldImageInfo(MachOModule module) {
+        if (emulator.is64Bit()) {
+            int elementSize = UnicornStructure.calculateSize(DyldImageInfo64.class);
+            Pointer pointer = emulator.getSvcMemory().allocate(elementSize, "notifySingle");
+            DyldImageInfo64 info = new DyldImageInfo64(pointer);
+            info.imageFilePath = module.createPathMemory(emulator.getSvcMemory());
+            info.imageLoadAddress = UnicornPointer.pointer(emulator, module.machHeader);
+            info.imageFileModDate = 0;
+            info.pack();
+            return info;
+        } else {
+            int elementSize = UnicornStructure.calculateSize(DyldImageInfo32.class);
+            Pointer pointer = emulator.getSvcMemory().allocate(elementSize, "notifySingle");
+            DyldImageInfo32 info = new DyldImageInfo32(pointer);
+            info.imageFilePath = module.createPathMemory(emulator.getSvcMemory());
+            info.imageLoadAddress = UnicornPointer.pointer(emulator, module.machHeader);
+            info.imageFileModDate = 0;
+            info.pack();
+            return info;
+        }
+    }
+
     private void notifySingle(int state, MachOModule module) {
         if (module.isVirtual()) { // virtual module
             return;
         }
 
-        int elementSize = UnicornStructure.calculateSize(DyldImageInfo.class);
-        Pointer pointer = emulator.getSvcMemory().allocate(elementSize, "notifySingle");
-        DyldImageInfo info = new DyldImageInfo(pointer);
-        info.imageFilePath = module.createPathMemory(emulator.getSvcMemory());
-        info.imageLoadAddress = UnicornPointer.pointer(emulator, module.machHeader);
-        info.imageFileModDate = 0;
-        info.pack();
+        UnicornStructure info = createDyldImageInfo(module);
         switch (state) {
             case Dyld.dyld_image_state_bound:
                 long slide = Dyld.computeSlide(emulator, module.machHeader);
@@ -1455,7 +1472,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                         if (log.isDebugEnabled()) {
                             log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
                         }
-                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
                 }
                 break;
@@ -1465,7 +1482,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                         if (log.isDebugEnabled()) {
                             log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
                         }
-                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
                 }
                 break;
@@ -1474,7 +1491,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                     if (log.isDebugEnabled()) {
                         log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
                     }
-                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, pointer);
+                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
                 }
                 break;
             default:

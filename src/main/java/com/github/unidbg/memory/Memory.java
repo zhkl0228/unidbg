@@ -1,14 +1,14 @@
 package com.github.unidbg.memory;
 
+import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.unix.IO;
-import com.github.unidbg.pointer.UnicornPointer;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
-public interface Memory extends IO, Loader {
+public interface Memory extends IO, Loader, StackMemory {
 
     long HEAP_BASE = 0x8048000;
     long STACK_BASE = 0xc0000000L;
@@ -17,8 +17,6 @@ public interface Memory extends IO, Loader {
     long MMAP_BASE = 0x40000000L;
 
     UnicornPointer allocateStack(int size);
-    UnicornPointer writeStackString(String str);
-    UnicornPointer writeStackBytes(byte[] data);
     UnicornPointer pointer(long address);
     void setStackPoint(long sp);
     long getStackPoint();

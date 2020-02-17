@@ -9,10 +9,10 @@ import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
-import com.github.unidbg.ios.struct.DyldImageInfo;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
@@ -461,7 +461,7 @@ public class Dyld32 extends Dyld {
                             int state = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                             int batch = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
                             UnicornPointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-                            DyldImageInfo[] imageInfos;
+                            UnicornStructure[] imageInfos;
                             if (batch == 1) {
                                 imageInfos = registerImageStateBatchChangeHandler(loader, state, handler, emulator);
                             } else {
