@@ -280,7 +280,6 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
         stat.st_uid = 0;
         stat.st_gid = 0;
         stat.pack();
-        System.out.println(stat);
         return 0;
     }
 }
