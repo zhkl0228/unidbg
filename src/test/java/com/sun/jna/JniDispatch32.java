@@ -89,9 +89,8 @@ public class JniDispatch32 extends AbstractJni {
                 return HookStatus.RET(emulator, originFunction);
             }
             @Override
-            public long postCall(Emulator emulator, HookContext context, long returnValue) {
-                System.out.println("malloc=" + context.get("size") + ", ret=" + UnicornPointer.pointer(emulator, returnValue));
-                return super.postCall(emulator, context, returnValue);
+            public void postCall(Emulator emulator, HookContext context) {
+                System.out.println("malloc=" + context.get("size") + ", ret=" + context.getPointerArg(0));
             }
         });
         xHook.refresh();

@@ -13,8 +13,7 @@ public abstract class ReplaceCallback {
         return onCall(emulator, originFunction);
     }
 
-    public long postCall(Emulator emulator, HookContext context, long returnValue) {
-        return returnValue;
+    public void postCall(Emulator emulator, HookContext context) {
     }
 
 }

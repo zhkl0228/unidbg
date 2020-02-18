@@ -99,9 +99,8 @@ public class TTEncrypt {
                 return HookStatus.RET(emulator, originFunction);
             }
             @Override
-            public long postCall(Emulator emulator, HookContext context, long returnValue) {
-                System.out.println("ss_encrypted_size.postCall ret=" + returnValue);
-                return super.postCall(emulator, context, returnValue);
+            public void postCall(Emulator emulator, HookContext context) {
+                System.out.println("ss_encrypted_size.postCall ret=" + context.getIntArg(0));
             }
         });
         hookZz.disable_arm_arm64_b_branch();
@@ -117,9 +116,8 @@ public class TTEncrypt {
                 return HookStatus.RET(emulator, originFunction);
             }
             @Override
-            public long postCall(Emulator emulator, HookContext context, long returnValue) {
-                System.out.println("strlen=" + context.get("str") + ", ret=" + returnValue);
-                return super.postCall(emulator, context, returnValue);
+            public void postCall(Emulator emulator, HookContext context) {
+                System.out.println("strlen=" + context.get("str") + ", ret=" + context.getIntArg(0));
             }
         });
         xHook.register("libttEncrypt.so", "memmove", new ReplaceCallback() {

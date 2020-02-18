@@ -28,12 +28,11 @@ public abstract class ArmHook extends ArmSvc {
                     "svc #0x" + Integer.toHexString(svcNumber),
                     "pop {r7}",
                     "cmp r7, #0",
-                    "popeq {r1, r4-r7, pc}",
-                    "pop {r7}",
+                    "popeq {r4-r7, pc}",
                     "blx r7",
                     "mov r7, #0",
+                    "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
                     "mov r4, #0x" + Integer.toHexString(svcNumber),
-                    "mov r12, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
                     "svc #0",
                     "pop {r4-r7, pc}"));
             byte[] code = encoded.getMachineCode();
@@ -55,18 +54,12 @@ public abstract class ArmHook extends ArmSvc {
             if (status.forward) {
                 sp = sp.share(-4);
                 sp.setInt(0, (int) status.jump);
-
-                sp = sp.share(-4);
-                sp.setInt(0, 1);
             } else {
-                sp = sp.share(-4);
-                sp.setInt(0, (int) status.r1);
-
                 sp = sp.share(-4);
                 sp.setInt(0, 0);
             }
 
-            return status.r0;
+            return status.returnValue;
         } finally {
             u.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) sp).peer);
         }

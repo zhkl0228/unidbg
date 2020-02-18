@@ -65,7 +65,7 @@ public abstract class Arm64Hook extends Arm64Svc {
                 sp.setLong(0, 0);
             }
 
-            return status.r0;
+            return status.returnValue;
         } finally {
             u.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnicornPointer) sp).peer);
         }
