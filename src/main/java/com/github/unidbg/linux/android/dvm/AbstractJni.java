@@ -1,11 +1,11 @@
 package com.github.unidbg.linux.android.dvm;
 
+import com.github.unidbg.linux.android.dvm.api.ClassLoader;
+import com.github.unidbg.linux.android.dvm.api.*;
 import com.github.unidbg.linux.android.dvm.array.ArrayObject;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmBoolean;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmInteger;
-import com.github.unidbg.linux.android.dvm.api.*;
-import com.github.unidbg.linux.android.dvm.api.ClassLoader;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,6 +21,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
 
 public abstract class AbstractJni implements Jni {
@@ -137,6 +138,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public DvmObject<?> callObjectMethodA(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
     public DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "android/app/Application->getAssets()Landroid/content/res/AssetManager;":
@@ -152,6 +158,7 @@ public abstract class AbstractJni implements Jni {
             }
             case "android/app/Application->getSystemService(Ljava/lang/String;)Ljava/lang/Object;":
                 StringObject serviceName = vaList.getObject(0);
+                assert serviceName != null;
                 return new SystemService(vm, serviceName.getValue());
             case "java/lang/String->toString()Ljava/lang/String;":
                 return dvmObject;
@@ -252,6 +259,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public DvmObject<?> callStaticObjectMethodA(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
     public DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         switch (signature) {
             case "com/android/internal/os/BinderInternal->getContextObject()Landroid/os/IBinder;":
@@ -302,6 +314,10 @@ public abstract class AbstractJni implements Jni {
                     return sig.getHashCode();
                 }
                 break;
+            }
+            case "java/lang/Integer->intValue()I": {
+                DvmInteger integer = (DvmInteger) dvmObject;
+                return integer.value;
             }
         }
 
@@ -361,6 +377,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public void callStaticVoidMethodA(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
     public void setObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature, DvmObject<?> value) {
         throw new AbstractMethodError(signature);
     }
@@ -391,9 +412,26 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
-        if ("java/io/ByteArrayInputStream-><init>([B)V".equals(signature)) {
-            ByteArray array = vaList.getObject(0);
-            return new DvmObject<>(vm.resolveClass("java/io/ByteArrayInputStream"), new ByteArrayInputStream(array.value));
+        switch (signature) {
+            case "java/io/ByteArrayInputStream-><init>([B)V": {
+                ByteArray array = vaList.getObject(0);
+                assert array != null;
+                return new DvmObject<>(vm.resolveClass("java/io/ByteArrayInputStream"), new ByteArrayInputStream(array.value));
+            }
+            case "java/lang/String-><init>([B)V": {
+                ByteArray array = vaList.getObject(0);
+                assert array != null;
+                return new StringObject(vm, new String(array.value));
+            }
+        }
+
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public DvmObject<?> allocObject(BaseVM vm, DvmClass dvmClass, String signature) {
+        if ("java/util/HashMap->allocObject".equals(signature)) {
+            return dvmClass.newObject(new HashMap<>());
         }
 
         throw new AbstractMethodError(signature);
@@ -495,6 +533,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        throw new AbstractMethodError(signature);
+    }
+
+    @Override
+    public void callVoidMethodA(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         throw new AbstractMethodError(signature);
     }
 

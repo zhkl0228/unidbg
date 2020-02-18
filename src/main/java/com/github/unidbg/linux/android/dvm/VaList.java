@@ -1,24 +1,47 @@
 package com.github.unidbg.linux.android.dvm;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class VaList {
 
-    public abstract <T extends DvmObject<?>> T getObject(int offset);
-
-    public abstract int getInt(int offset);
-
-    public abstract long getLong(int offset);
-
-    public abstract float getFloat(int offset);
-
-    public abstract double getDouble(int offset);
-
+    private final BaseVM vm;
     private final DvmMethod method;
+    final ByteBuffer buffer;
 
-    protected VaList(DvmMethod method) {
+    protected VaList(BaseVM vm, DvmMethod method, String shorty) {
+        this.vm = vm;
         this.method = method;
+
+        char[] chars = shorty.toCharArray();
+        if (chars.length == 0) {
+            buffer = ByteBuffer.allocate(0);
+        } else {
+            int total = 0;
+            for (char c : chars) {
+                switch (c) {
+                    case 'B':
+                    case 'C':
+                    case 'I':
+                    case 'S':
+                    case 'Z':
+                    case 'F':
+                    case 'L':
+                        total += 4;
+                        break;
+                    case 'D':
+                    case 'J':
+                        total += 8;
+                        break;
+                    default:
+                        throw new IllegalStateException("c=" + c);
+                }
+            }
+            buffer = ByteBuffer.allocate(total);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
     }
 
     final String formatArgs() {
@@ -86,6 +109,35 @@ public abstract class VaList {
             sb.append(", ").append(str);
         }
         return String.format(sb.toString(), args.toArray());
+    }
+
+    public final  <T extends DvmObject<?>> T getObject(int offset) {
+        long p = getInt(offset);
+        if (p == 0) {
+            return null;
+        } else {
+            return vm.getObject(p & 0xffffffffL);
+        }
+    }
+
+    public final int getInt(int offset) {
+        buffer.position(offset);
+        return buffer.getInt();
+    }
+
+    public final long getLong(int offset) {
+        buffer.position(offset);
+        return buffer.getLong();
+    }
+
+    public final float getFloat(int offset) {
+        buffer.position(offset);
+        return buffer.getFloat();
+    }
+
+    public final double getDouble(int offset) {
+        buffer.position(offset);
+        return buffer.getDouble();
     }
 
 }

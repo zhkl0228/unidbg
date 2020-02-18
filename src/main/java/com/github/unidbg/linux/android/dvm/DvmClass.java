@@ -37,6 +37,15 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return obj;
     }
 
+    DvmObject<?> allocObject() {
+        String signature = this.getClassName() + "->allocObject";
+        if (log.isDebugEnabled()) {
+            log.debug("allocObject signature=" + signature);
+        }
+        BaseVM vm = this.vm;
+        return vm.jni.allocObject(vm, this, signature);
+    }
+
     private final Map<Long, DvmMethod> staticMethodMap = new HashMap<>();
 
     final DvmMethod getStaticMethod(long hash) {

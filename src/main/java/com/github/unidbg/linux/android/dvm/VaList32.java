@@ -7,50 +7,18 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-public class VaList32 extends VaList {
+class VaList32 extends VaList {
 
     private static final Log log = LogFactory.getLog(VaList32.class);
 
-    private final BaseVM vm;
-    private final ByteBuffer buffer;
-
     VaList32(Emulator emulator, BaseVM vm, UnicornPointer va_list, DvmMethod method) {
-        super(method);
-        this.vm = vm;
+        super(vm, method, method.decodeArgsShorty());
 
         String shorty = method.decodeArgsShorty();
 
         char[] chars = shorty.toCharArray();
-        if (chars.length == 0) {
-            buffer = ByteBuffer.allocate(0);
-        } else {
-            int total = 0;
-            for (char c : chars) {
-                switch (c) {
-                    case 'B':
-                    case 'C':
-                    case 'I':
-                    case 'S':
-                    case 'Z':
-                    case 'F':
-                    case 'L':
-                        total += 4;
-                        break;
-                    case 'D':
-                    case 'J':
-                        total += 8;
-                        break;
-                    default:
-                        throw new IllegalStateException("c=" + c);
-                }
-            }
-
+        if (chars.length > 0) {
             UnicornPointer pointer = va_list;
-            buffer = ByteBuffer.allocate(total);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
             for (char c : chars) {
                 switch (c) {
                     case 'L':
@@ -94,39 +62,5 @@ public class VaList32 extends VaList {
         if (log.isDebugEnabled()) {
             log.debug(Inspector.inspectString(buffer.array(), "VaList64 args=" + method.args + ", shorty=" + shorty));
         }
-    }
-
-    @Override
-    public <T extends DvmObject<?>> T getObject(int offset) {
-        long p = getInt(offset);
-        if (p == 0) {
-            return null;
-        } else {
-            return vm.getObject(p & 0xffffffffL);
-        }
-    }
-
-    @Override
-    public int getInt(int offset) {
-        buffer.position(offset);
-        return buffer.getInt();
-    }
-
-    @Override
-    public long getLong(int offset) {
-        buffer.position(offset);
-        return buffer.getLong();
-    }
-
-    @Override
-    public float getFloat(int offset) {
-        buffer.position(offset);
-        return buffer.getFloat();
-    }
-
-    @Override
-    public double getDouble(int offset) {
-        buffer.position(offset);
-        return buffer.getDouble();
     }
 }

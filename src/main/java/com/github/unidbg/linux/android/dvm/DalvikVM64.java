@@ -341,7 +341,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new UnicornException();
                 } else {
-                    DvmObject ret = dvmMethod.callObjectMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM64.this));
+                    DvmObject<?> ret = dvmMethod.callObjectMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM64.this));
                     if (verbose) {
                         System.out.println(String.format("JNIEnv->CallObjectMethod(%s, %s%s => %s) was called from %s", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                     }

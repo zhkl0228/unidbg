@@ -797,6 +797,11 @@ public class ARMSyscallHandler extends UnixSyscallHandler implements SyscallHand
     private int access(Unicorn u, Emulator emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         int mode = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+        if (pathname == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EINVAL);
+            return -1;
+        }
+
         String path = pathname.getString(0);
         if (log.isDebugEnabled()) {
             log.debug("access pathname=" + path + ", mode=" + mode);
