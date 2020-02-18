@@ -83,8 +83,18 @@ public class HookZz extends BaseHook implements IHookZz {
 
     @Override
     public void replace(long functionAddress, final ReplaceCallback callback) {
+        replace(functionAddress, callback, false);
+    }
+
+    @Override
+    public void replace(Symbol symbol, ReplaceCallback callback) {
+        replace(symbol, callback, false);
+    }
+
+    @Override
+    public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replaceCall = createReplacePointer(callback, originCall);
+        Pointer replaceCall = createReplacePointer(callback, originCall, enablePostCall);
         int ret = zzReplace.call(emulator, UnicornPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
@@ -92,8 +102,8 @@ public class HookZz extends BaseHook implements IHookZz {
     }
 
     @Override
-    public void replace(Symbol symbol, ReplaceCallback callback) {
-        replace(symbol.getAddress(), callback);
+    public void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall) {
+        replace(symbol.getAddress(), callback, enablePostCall);
     }
 
     @Override

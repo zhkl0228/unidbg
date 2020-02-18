@@ -102,7 +102,7 @@ public class TTEncrypt {
             public void postCall(Emulator emulator, HookContext context) {
                 System.out.println("ss_encrypted_size.postCall ret=" + context.getIntArg(0));
             }
-        });
+        }, true);
         hookZz.disable_arm_arm64_b_branch();
 
         IxHook xHook = XHookImpl.getInstance(emulator);
@@ -119,7 +119,7 @@ public class TTEncrypt {
             public void postCall(Emulator emulator, HookContext context) {
                 System.out.println("strlen=" + context.get("str") + ", ret=" + context.getIntArg(0));
             }
-        });
+        }, true);
         xHook.register("libttEncrypt.so", "memmove", new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator emulator, long originFunction) {

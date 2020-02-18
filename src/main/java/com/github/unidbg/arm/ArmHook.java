@@ -20,21 +20,38 @@ public abstract class ArmHook extends ArmSvc {
 
     private static final Log log = LogFactory.getLog(ArmHook.class);
 
+    private final boolean enablePostCall;
+
+    protected ArmHook() {
+        this(false);
+    }
+
+    protected ArmHook(boolean enablePostCall) {
+        this.enablePostCall = enablePostCall;
+    }
+
     @Override
     public final UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                    "push {r4-r7, lr}",
-                    "svc #0x" + Integer.toHexString(svcNumber),
-                    "pop {r7}",
-                    "cmp r7, #0",
-                    "popeq {r4-r7, pc}",
-                    "blx r7",
-                    "mov r7, #0",
-                    "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
-                    "mov r4, #0x" + Integer.toHexString(svcNumber),
-                    "svc #0",
-                    "pop {r4-r7, pc}"));
+            KeystoneEncoded encoded;
+            if (enablePostCall) {
+                encoded = keystone.assemble(Arrays.asList(
+                        "push {r4-r7, lr}",
+                        "svc #0x" + Integer.toHexString(svcNumber),
+                        "pop {r7}",
+                        "cmp r7, #0",
+                        "popeq {r4-r7, pc}",
+                        "blx r7",
+                        "mov r7, #0",
+                        "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                        "mov r4, #0x" + Integer.toHexString(svcNumber),
+                        "svc #0",
+                        "pop {r4-r7, pc}"));
+            } else {
+                encoded = keystone.assemble(Arrays.asList(
+                        "svc #0x" + Integer.toHexString(svcNumber),
+                        "pop {pc}")); // manipulated stack in handle
+            }
             byte[] code = encoded.getMachineCode();
             UnicornPointer pointer = svcMemory.allocate(code.length, "ArmHook");
             pointer.write(0, code, 0, code.length);
@@ -51,7 +68,7 @@ public abstract class ArmHook extends ArmSvc {
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
             HookStatus status = hook(emulator);
-            if (status.forward) {
+            if (status.forward || !enablePostCall) {
                 sp = sp.share(-4);
                 sp.setInt(0, (int) status.jump);
             } else {

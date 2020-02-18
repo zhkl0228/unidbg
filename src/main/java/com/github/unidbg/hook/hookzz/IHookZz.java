@@ -18,4 +18,7 @@ public interface IHookZz extends IHook {
     void replace(long functionAddress, ReplaceCallback callback);
     void replace(Symbol symbol, ReplaceCallback callback);
 
+    void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall);
+    void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall);
+
 }

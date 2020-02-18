@@ -30,6 +30,8 @@ public interface ISubstrate extends IHook {
      */
     void hookFunction(Symbol symbol, ReplaceCallback callback);
     void hookFunction(long address, ReplaceCallback callback);
+    void hookFunction(Symbol symbol, ReplaceCallback callback, boolean enablePostCall);
+    void hookFunction(long address, ReplaceCallback callback, boolean enablePostCall);
 
     /**
      * void MSHookMessageEx(Class _class, SEL message, IMP hook, IMP *old);
@@ -38,5 +40,7 @@ public interface ISubstrate extends IHook {
      */
     void hookMessageEx(Pointer _class, Pointer message, ReplaceCallback callback);
     void hookMessageEx(ObjcClass _class, Pointer message, ReplaceCallback callback);
+    void hookMessageEx(Pointer _class, Pointer message, ReplaceCallback callback, boolean enablePostCall);
+    void hookMessageEx(ObjcClass _class, Pointer message, ReplaceCallback callback, boolean enablePostCall);
 
 }

@@ -27,10 +27,10 @@ public abstract class BaseHook implements IHook {
         this.module = emulator.getMemory().load(resolveLibrary(libName));
     }
 
-    protected Pointer createReplacePointer(final ReplaceCallback callback, final Pointer backup) {
+    protected Pointer createReplacePointer(final ReplaceCallback callback, final Pointer backup, boolean enablePostCall) {
         SvcMemory svcMemory = emulator.getSvcMemory();
         final Map<String, Object> context = new HashMap<>();
-        return svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Hook() {
+        return svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Hook(enablePostCall) {
             @Override
             protected HookStatus hook(Emulator emulator) {
                 context.clear();
@@ -41,7 +41,7 @@ public abstract class BaseHook implements IHook {
                 EditableArm64RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm64HookContext(context, registerContext));
             }
-        } : new ArmHook() {
+        } : new ArmHook(enablePostCall) {
             @Override
             protected HookStatus hook(Emulator emulator) {
                 context.clear();

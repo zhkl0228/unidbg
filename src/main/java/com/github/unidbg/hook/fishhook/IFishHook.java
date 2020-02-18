@@ -20,11 +20,13 @@ public interface IFishHook extends IHook {
      * is rebound more than once, the later rebinding will take precedence.
      */
     void rebindSymbol(String symbol, ReplaceCallback callback);
+    void rebindSymbol(String symbol, ReplaceCallback callback, boolean enablePostCall);
 
     /**
      * Rebinds as above, but only in the specified image. The header should point
      * to the mach-o header, the slide should be the slide offset. Others as above.
      */
     void rebindSymbolImage(Module module, String symbol, ReplaceCallback callback);
+    void rebindSymbolImage(Module module, String symbol, ReplaceCallback callback, boolean enablePostCall);
 
 }

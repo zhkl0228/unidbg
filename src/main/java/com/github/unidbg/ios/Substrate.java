@@ -101,25 +101,45 @@ public class Substrate extends BaseHook implements ISubstrate {
 
     @Override
     public void hookFunction(Symbol symbol, ReplaceCallback callback) {
-        hookFunction(symbol.getAddress(), callback);
+        hookFunction(symbol, callback, false);
     }
 
     @Override
     public void hookFunction(long address, ReplaceCallback callback) {
+        hookFunction(address, callback, false);
+    }
+
+    @Override
+    public void hookFunction(Symbol symbol, ReplaceCallback callback, boolean enablePostCall) {
+        hookFunction(symbol.getAddress(), callback, false);
+    }
+
+    @Override
+    public void hookFunction(long address, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replace = createReplacePointer(callback, backup);
+        Pointer replace = createReplacePointer(callback, backup, enablePostCall);
         _MSHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
     }
 
     @Override
     public void hookMessageEx(Pointer _class, Pointer message, ReplaceCallback callback) {
-        final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replace = createReplacePointer(callback, backup);
-        _MSHookMessageEx.call(emulator, _class, message, replace, backup);
+        hookMessageEx(_class, message, callback, false);
     }
 
     @Override
     public void hookMessageEx(ObjcClass _class, Pointer message, ReplaceCallback callback) {
         hookMessageEx(_class.getPointer(), message, callback);
+    }
+
+    @Override
+    public void hookMessageEx(Pointer _class, Pointer message, ReplaceCallback callback, boolean enablePostCall) {
+        final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer replace = createReplacePointer(callback, backup, enablePostCall);
+        _MSHookMessageEx.call(emulator, _class, message, replace, backup);
+    }
+
+    @Override
+    public void hookMessageEx(ObjcClass _class, Pointer message, ReplaceCallback callback, boolean enablePostCall) {
+        hookMessageEx(_class.getPointer(), message, callback, enablePostCall);
     }
 }

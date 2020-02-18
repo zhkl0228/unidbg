@@ -51,20 +51,25 @@ public class FishHook extends BaseHook implements IFishHook {
 
     @Override
     public void rebindSymbol(String symbol, ReplaceCallback callback) {
-        Pointer rebinding = createRebinding(symbol, callback);
+        rebindSymbol(symbol, callback, false);
+    }
+
+    @Override
+    public void rebindSymbol(String symbol, ReplaceCallback callback, boolean enablePostCall) {
+        Pointer rebinding = createRebinding(symbol, callback, enablePostCall);
         int ret = rebind_symbols.call(emulator, rebinding, 1)[0].intValue();
         if (ret != RET_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
     }
 
-    private Pointer createRebinding(String symbol, ReplaceCallback callback) {
+    private Pointer createRebinding(String symbol, ReplaceCallback callback, boolean withCallback) {
         Memory memory = emulator.getMemory();
         Pointer symbolPointer = memory.malloc(symbol.length() + 1, false).getPointer();
         symbolPointer.setString(0, symbol);
 
         final Pointer originCall = memory.malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replaceCall = createReplacePointer(callback, originCall);
+        Pointer replaceCall = createReplacePointer(callback, originCall, withCallback);
 
         Pointer rebinding = memory.malloc(emulator.getPointerSize() * 3, false).getPointer();
         rebinding.setPointer(0, symbolPointer);
@@ -75,14 +80,18 @@ public class FishHook extends BaseHook implements IFishHook {
 
     @Override
     public void rebindSymbolImage(Module module, String symbol, ReplaceCallback callback) {
+        rebindSymbolImage(module, symbol, callback, false);
+    }
+
+    @Override
+    public void rebindSymbolImage(Module module, String symbol, ReplaceCallback callback, boolean enablePostCall) {
         MachOModule mm = (MachOModule) module;
         long header = mm.machHeader;
         long slide = Dyld.computeSlide(emulator, header);
-        Pointer rebinding = createRebinding(symbol, callback);
+        Pointer rebinding = createRebinding(symbol, callback, enablePostCall);
         int ret = rebind_symbols_image.call(emulator, UnicornPointer.pointer(emulator, header), UnicornPointer.pointer(emulator, slide), rebinding, 1)[0].intValue();
         if (ret != RET_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
     }
-
 }

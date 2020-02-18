@@ -59,7 +59,7 @@ public class ClassDumpTest extends EmulatorTest {
             public void postCall(Emulator emulator, HookContext context) {
                 System.err.println("postCall className=" + context.get("className"));
             }
-        });
+        }, true);
 
         String objcClass = classDumper.dumpClass("NSLocale");
         System.out.println(objcClass);

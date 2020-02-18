@@ -48,9 +48,7 @@ public class Whale extends BaseHook implements IWhale {
 
     @Override
     public void inlineHookFunction(long address, final ReplaceCallback callback) {
-        final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replace = createReplacePointer(callback, backup);
-        WInlineHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
+        inlineHookFunction(address, callback, false);
     }
 
     @Override
@@ -59,10 +57,26 @@ public class Whale extends BaseHook implements IWhale {
     }
 
     @Override
-    public void importHookFunction(String symbol, final ReplaceCallback callback) {
+    public void inlineHookFunction(long address, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replace = createReplacePointer(callback, backup);
-        WImportHookFunction.call(emulator, symbol, null, replace, backup);
+        Pointer replace = createReplacePointer(callback, backup, enablePostCall);
+        WInlineHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
     }
 
+    @Override
+    public void inlineHookFunction(Symbol symbol, ReplaceCallback callback, boolean enablePostCall) {
+        inlineHookFunction(symbol.getAddress(), callback, enablePostCall);
+    }
+
+    @Override
+    public void importHookFunction(String symbol, final ReplaceCallback callback) {
+        importHookFunction(symbol, callback, false);
+    }
+
+    @Override
+    public void importHookFunction(String symbol, ReplaceCallback callback, boolean enablePostCall) {
+        final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer replace = createReplacePointer(callback, backup, enablePostCall);
+        WImportHookFunction.call(emulator, symbol, null, replace, backup);
+    }
 }
