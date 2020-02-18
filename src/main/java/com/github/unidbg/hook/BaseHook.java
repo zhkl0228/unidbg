@@ -5,6 +5,8 @@ import com.github.unidbg.Module;
 import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.context.EditableArm32RegisterContext;
+import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.linux.android.URLibraryFile;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.spi.LibraryFile;
@@ -12,6 +14,8 @@ import com.sun.jna.Pointer;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class BaseHook implements IHook {
 
@@ -25,15 +29,28 @@ public abstract class BaseHook implements IHook {
 
     protected Pointer createReplacePointer(final ReplaceCallback callback, final Pointer backup) {
         SvcMemory svcMemory = emulator.getSvcMemory();
+        final Map<String, Object> context = new HashMap<>();
         return svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Hook() {
             @Override
             protected HookStatus hook(Emulator emulator) {
-                return callback.onCall(emulator, backup.getLong(0));
+                context.clear();
+                return callback.onCall(emulator, new Arm64HookContext(context, emulator.<EditableArm64RegisterContext>getContext()), backup.getLong(0));
+            }
+            @Override
+            public long handleCallback(Emulator emulator) {
+                EditableArm64RegisterContext registerContext = emulator.getContext();
+                return callback.postCall(emulator, new Arm64HookContext(context, registerContext), registerContext.getLongArg(0));
             }
         } : new ArmHook() {
             @Override
             protected HookStatus hook(Emulator emulator) {
-                return callback.onCall(emulator, backup.getInt(0) & 0xffffffffL);
+                context.clear();
+                return callback.onCall(emulator, new Arm32HookContext(context, emulator.<EditableArm32RegisterContext>getContext()), backup.getInt(0) & 0xffffffffL);
+            }
+            @Override
+            public long handleCallback(Emulator emulator) {
+                EditableArm32RegisterContext registerContext = emulator.getContext();
+                return callback.postCall(emulator, new Arm32HookContext(context, registerContext), registerContext.getLongArg(0));
             }
         });
     }

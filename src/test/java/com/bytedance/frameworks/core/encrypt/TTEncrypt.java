@@ -7,6 +7,7 @@ import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.HookZz;
@@ -93,9 +94,14 @@ public class TTEncrypt {
         hookZz.enable_arm_arm64_b_branch();
         hookZz.replace(module.findSymbolByName("ss_encrypted_size"), new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                System.out.println("ss_encrypted_size.onCall arg0=" + emulator.getContext().getIntArg(0) + ", originFunction=0x" + Long.toHexString(originFunction));
+            public HookStatus onCall(Emulator emulator, HookContext context, long originFunction) {
+                System.out.println("ss_encrypted_size.onCall arg0=" + context.getIntArg(0) + ", originFunction=0x" + Long.toHexString(originFunction));
                 return HookStatus.RET(emulator, originFunction);
+            }
+            @Override
+            public long postCall(Emulator emulator, HookContext context, long returnValue) {
+                System.out.println("ss_encrypted_size.postCall ret=" + returnValue);
+                return super.postCall(emulator, context, returnValue);
             }
         });
         hookZz.disable_arm_arm64_b_branch();
@@ -103,10 +109,17 @@ public class TTEncrypt {
         IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libttEncrypt.so", "strlen", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                Pointer pointer = emulator.getContext().getPointerArg(0);
-                System.out.println("strlen=" + pointer.getString(0));
+            public HookStatus onCall(Emulator emulator, HookContext context, long originFunction) {
+                Pointer pointer = context.getPointerArg(0);
+                String str = pointer.getString(0);
+                System.out.println("strlen=" + str);
+                context.set("str", str);
                 return HookStatus.RET(emulator, originFunction);
+            }
+            @Override
+            public long postCall(Emulator emulator, HookContext context, long returnValue) {
+                System.out.println("strlen=" + context.get("str") + ", ret=" + returnValue);
+                return super.postCall(emulator, context, returnValue);
             }
         });
         xHook.register("libttEncrypt.so", "memmove", new ReplaceCallback() {

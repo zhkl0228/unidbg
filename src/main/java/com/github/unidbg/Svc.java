@@ -9,4 +9,6 @@ public interface Svc {
 
     long handle(Emulator emulator);
 
+    long handleCallback(Emulator emulator);
+
 }

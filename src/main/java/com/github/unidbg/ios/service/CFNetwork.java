@@ -36,7 +36,8 @@ public class CFNetwork extends FrameworkHooker {
                 if (log.isDebugEnabled()) {
                     log.debug("_CFNetworkCopySystemProxySettings");
                 }
-                return HookStatus.LR(emulator, (UnicornPointer) fakeProxySettings.getPointer());
+                UnicornPointer pointer = (UnicornPointer) fakeProxySettings.getPointer();
+                return HookStatus.LR(emulator, pointer.peer);
             }
         });
     }

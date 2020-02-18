@@ -138,6 +138,8 @@ public class SubstrateTest extends EmulatorTest {
         new CoreTelephony().processHook(emulator);
         new CFNetwork().processHook(emulator);
 
+//        emulator.attach(0xfffe0000L, 0xfffe0000L + 0x10000).addBreakPoint(null, 0xfffe0080L);
+//        emulator.traceCode(0xfffe0000L, 0xfffe0000L + 0x10000);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

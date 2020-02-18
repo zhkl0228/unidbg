@@ -2,53 +2,34 @@ package com.github.unidbg.arm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.pointer.UnicornPointer;
-import unicorn.Arm64Const;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 public class HookStatus {
 
-    final long returnValue;
+    final long r0;
+    final long r1;
     final long jump;
+    final boolean forward;
 
-    private HookStatus(long returnValue, long jump) {
-        this.returnValue = returnValue;
+    private HookStatus(long r0, long r1, long jump, boolean forward) {
+        this.r0 = r0;
+        this.r1 = r1;
         this.jump = jump;
+        this.forward = forward;
     }
 
     public static HookStatus RET(Emulator emulator, long pc) {
         RegisterContext context = emulator.getContext();
-        return new HookStatus(context.getLongArg(0), pc);
+        return new HookStatus(context.getLongArg(0), context.getLongArg(1), pc, true);
     }
 
     public static HookStatus LR(Emulator emulator, long returnValue) {
         RegisterContext context = emulator.getContext();
-        return new HookStatus(returnValue, context.getLR());
+        return LR(emulator, returnValue, context.getLongArg(1));
     }
 
-    public static HookStatus LR(Emulator emulator, UnicornPointer pointer) {
-        return LR(emulator, pointer.peer);
-    }
-
-    @Deprecated
-    public static HookStatus RET(Unicorn u, long pc) {
-        return new HookStatus(((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue(), pc);
-    }
-
-    @Deprecated
-    public static HookStatus LR(Unicorn u, int returnValue) {
-        return new HookStatus(returnValue, ((Number) u.reg_read(ArmConst.UC_ARM_REG_LR)).intValue() & 0xffffffffL);
-    }
-
-    @Deprecated
-    public static HookStatus RET64(Unicorn u, long pc) {
-        return new HookStatus(((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).longValue(), pc);
-    }
-
-    @Deprecated
-    public static HookStatus LR64(Unicorn u, long returnValue) {
-        return new HookStatus(returnValue, ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue());
+    public static HookStatus LR(Emulator emulator, long r0, long r1) {
+        RegisterContext context = emulator.getContext();
+        return new HookStatus(r0, r1, context.getLR(), false);
     }
 
 }

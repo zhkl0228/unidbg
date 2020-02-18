@@ -1,5 +1,6 @@
 package com.github.unidbg.arm;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.Svc;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -27,6 +28,11 @@ public abstract class ArmSvc implements Svc {
             pointer.write(0, code, 0, code.length);
             return pointer;
         }
+    }
+
+    @Override
+    public long handleCallback(Emulator emulator) {
+        return emulator.getContext().getLongArg(0);
     }
 
 }
