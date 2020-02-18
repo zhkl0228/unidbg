@@ -28,7 +28,9 @@ public abstract class ArmHook extends ArmSvc {
             byte[] code = encoded.getMachineCode();
             UnicornPointer pointer = svcMemory.allocate(code.length, "ArmHook");
             pointer.write(0, code, 0, code.length);
-            log.debug("ARM hook: pointer=" + pointer);
+            if (log.isDebugEnabled()) {
+                log.debug("ARM hook: pointer=" + pointer);
+            }
             return pointer;
         }
     }

@@ -46,7 +46,7 @@ Simple tests under src/test directory
 
 ## TODO
 - ~~Working iOS emulation.~~
-- ~~Working iOS objc.~~
+- ~~Add more iOS syscall.~~
 
 ## Thanks
 - [unicorn](https://github.com/unicorn-engine/unicorn)

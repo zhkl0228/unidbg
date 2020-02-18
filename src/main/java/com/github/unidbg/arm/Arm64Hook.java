@@ -29,7 +29,9 @@ public abstract class Arm64Hook extends Arm64Svc {
             byte[] code = encoded.getMachineCode();
             UnicornPointer pointer = svcMemory.allocate(code.length, "Arm64Hook");
             pointer.write(0, code, 0, code.length);
-            log.debug("ARM64 hook: pointer=" + pointer);
+            if (log.isDebugEnabled()) {
+                log.debug("ARM64 hook: pointer=" + pointer);
+            }
             return pointer;
         }
     }
