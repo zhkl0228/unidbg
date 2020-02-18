@@ -93,7 +93,7 @@ public class DirectoryFileIO extends AbstractFileIO {
     public int fstat(Emulator emulator, StatStructure stat) {
         stat.st_dev = 1;
         stat.st_mode = IO.S_IFDIR | 0x777;
-        stat.st_size = null;
+        stat.setSize(0);
         stat.st_blksize = 0;
         stat.st_ino = 1;
         stat.pack();

@@ -1282,7 +1282,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
     @Override
     public void setErrno(int errno) {
-        this.errno.setInt(0, errno);
+        if (this.errno != null) {
+            this.errno.setInt(0, errno);
+        }
     }
 
     @Override

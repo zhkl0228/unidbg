@@ -151,8 +151,8 @@ public class Substrate64Test extends EmulatorTest {
         new CFNetwork().processHook(emulator);
 
 //        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-//        emulator.attach(0x100464000L, 0x1004a8000L).addBreakPoint(null, 0x100464000L + 0x0000053e0);
-//        emulator.traceCode(0xfffe0000L, 0xfffe0000L + 0x10000);
+//        emulator.attach(0xffffe0000L, 0xffffe0000L + 0x10000).addBreakPoint(null, 0xffffe0094L);
+//        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

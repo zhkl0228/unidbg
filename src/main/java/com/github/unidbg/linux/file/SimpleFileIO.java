@@ -4,7 +4,6 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.AbstractFileIO;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.StatStructure;
-import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -274,13 +273,14 @@ public class SimpleFileIO extends AbstractFileIO implements FileIO {
         int blockSize = emulator.getPageAlign();
         stat.st_dev = 1;
         stat.st_mode = (short) (IO.S_IFREG | 0x777);
-        stat.st_size = UnicornPointer.pointer(emulator, file.length());
-        stat.st_blocks = UnicornPointer.pointer(emulator, file.length() / blockSize);
+        stat.setSize(file.length());
+        stat.setBlockCount((file.length() + blockSize - 1) / blockSize);
         stat.st_blksize = blockSize;
         stat.st_ino = 1;
         stat.st_uid = 0;
         stat.st_gid = 0;
         stat.pack();
+        System.out.println(stat);
         return 0;
     }
 }

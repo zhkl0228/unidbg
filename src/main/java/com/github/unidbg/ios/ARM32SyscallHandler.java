@@ -88,7 +88,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler implements SyscallHa
         String syscall = null;
         Throwable exception = null;
         try {
-            if (svcNumber == 0 && (((Number) u.reg_read(ArmConst.UC_ARM_REG_R7)).intValue()) == 0) { // callback
+            if (svcNumber == 0 && NR == Svc.CALLBACK_SYSCALL_NUMBER && (((Number) u.reg_read(ArmConst.UC_ARM_REG_R7)).intValue()) == 0) { // callback
                 int number = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R4)).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {

@@ -57,11 +57,13 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
         for (IOResolver resolver : resolvers) {
             FileResult result = resolver.resolve(emulator, pathname, oflags);
             if (result != null && result.isSuccess()) {
+                emulator.getMemory().setErrno(0);
                 return result;
             }
         }
         FileResult result = emulator.getFileSystem().open(pathname, oflags);
         if (result != null && result.isSuccess()) {
+            emulator.getMemory().setErrno(0);
             return result;
         }
 
@@ -70,6 +72,7 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
                 for (MemRegion memRegion : module.getRegions()) {
                     if (pathname.equals(memRegion.getName())) {
                         try {
+                            emulator.getMemory().setErrno(0);
                             return FileResult.success(new ByteArrayFileIO(oflags, pathname, memRegion.readLibrary()));
                         } catch (IOException e) {
                             throw new IllegalStateException(e);
@@ -192,18 +195,21 @@ public abstract class UnixSyscallHandler implements SyscallHandler {
 
         FileResult result = resolve(emulator, pathname, oflags);
         if (result != null && result.isSuccess()) {
+            emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, result.io);
             return minFd;
         }
 
         result = emulator.getFileSystem().open(pathname, oflags);
         if (result != null && result.isSuccess()) {
+            emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, result.io);
             return minFd;
         }
 
         FileIO driverIO = DriverFileIO.create(emulator, oflags, pathname);
         if (driverIO != null) {
+            emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, driverIO);
             return minFd;
         }

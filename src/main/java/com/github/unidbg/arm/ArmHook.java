@@ -1,6 +1,7 @@
 package com.github.unidbg.arm;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Svc;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
@@ -32,6 +33,7 @@ public abstract class ArmHook extends ArmSvc {
                     "blx r7",
                     "mov r7, #0",
                     "mov r4, #0x" + Integer.toHexString(svcNumber),
+                    "mov r12, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
                     "svc #0",
                     "pop {r4-r7, pc}"));
             byte[] code = encoded.getMachineCode();

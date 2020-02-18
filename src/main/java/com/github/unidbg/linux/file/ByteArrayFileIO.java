@@ -91,8 +91,8 @@ public class ByteArrayFileIO extends AbstractFileIO {
         int blockSize = emulator.getPageAlign();
         stat.st_dev = 1;
         stat.st_mode = (short) (IO.S_IFREG | 0x777);
-        stat.st_size = UnicornPointer.pointer(emulator, bytes.length);
-        stat.st_blocks = UnicornPointer.pointer(emulator, bytes.length / blockSize);
+        stat.setSize(bytes.length);
+        stat.setBlockCount(bytes.length / blockSize);
         stat.st_blksize = blockSize;
         stat.st_ino = 1;
         stat.st_uid = 0;

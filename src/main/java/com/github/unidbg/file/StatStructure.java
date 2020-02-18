@@ -18,11 +18,19 @@ public abstract class StatStructure extends UnicornStructure {
     public int st_gid; /* [XSI] Group ID of the file */
     public int st_rdev; /* [XSI] Device ID */
 
-    public Pointer st_size; /* [XSI] file size, in bytes */
-    public Pointer st_blocks; /* [XSI] blocks allocated for file */
+    public long st_size; /* [XSI] file size, in bytes */
+    public long st_blocks; /* [XSI] blocks allocated for file */
     public int st_blksize; /* [XSI] optimal blocksize for I/O */
 
     public int st_flags; /* user defined flags for file */
     public int st_gen; /* file generation number */
+
+    public void setSize(long size) {
+        this.st_size = size;
+    }
+
+    public void setBlockCount(long count) {
+        this.st_blocks = count;
+    }
 
 }

@@ -7,6 +7,7 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.HookZz;
@@ -81,10 +82,16 @@ public class JniDispatch32 extends AbstractJni {
         IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libjnidispatch.so", "malloc", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
-                int size = emulator.getContext().getIntArg(0);
+            public HookStatus onCall(Emulator emulator, HookContext context, long originFunction) {
+                int size = context.getIntArg(0);
                 System.out.println("malloc=" + size);
+                context.set("size", size);
                 return HookStatus.RET(emulator, originFunction);
+            }
+            @Override
+            public long postCall(Emulator emulator, HookContext context, long returnValue) {
+                System.out.println("malloc=" + context.get("size") + ", ret=" + UnicornPointer.pointer(emulator, returnValue));
+                return super.postCall(emulator, context, returnValue);
             }
         });
         xHook.refresh();

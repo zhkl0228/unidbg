@@ -101,7 +101,9 @@ static void test_file() {
     struct stat statbuf;
     stat(file, &statbuf);
     char buf[256];
-    sprintf(buf, "open file success fd=%d, fp=%p, seek_size=%ld, stat_size=%lld\n", fd, fp, ftell(fp), statbuf.st_size);
+    printf("stat st_size=0x%lx, st_blocks=0x%lx, st_blksize=0x%lx, st_gid=0x%lx, st_flags=0x%lx\n", (long)&statbuf.st_size - (long) &statbuf, (long)&statbuf.st_blocks - (long) &statbuf, (long)&statbuf.st_blksize - (long) &statbuf, (long)&statbuf.st_gid - (long) &statbuf, (long)&statbuf.st_flags - (long) &statbuf);
+    int ret = ftell(fp);
+    sprintf(buf, "open file success fd=%d, fp=%p, seek_size=%d, stat_size=%lld, err=%s\n", fd, fp, ret, statbuf.st_size, strerror(errno));
     fprintf(stdout, "%s", buf);
     FILE *wfp = fopen(file, "a");
     fwrite(buf, 1, strlen(buf), wfp);

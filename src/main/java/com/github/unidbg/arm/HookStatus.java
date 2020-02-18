@@ -24,7 +24,7 @@ public class HookStatus {
 
     public static HookStatus LR(Emulator emulator, long returnValue) {
         RegisterContext context = emulator.getContext();
-        return LR(emulator, returnValue, context.getLongArg(1));
+        return new HookStatus(returnValue, context.getLongArg(1), context.getLR(), false);
     }
 
     public static HookStatus LR(Emulator emulator, long r0, long r1) {

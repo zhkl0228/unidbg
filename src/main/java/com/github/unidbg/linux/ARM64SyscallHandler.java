@@ -72,6 +72,16 @@ public class ARM64SyscallHandler extends UnixSyscallHandler implements SyscallHa
         String syscall = null;
         Throwable exception = null;
         try {
+            if (svcNumber == 0 && NR == 0 && ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X16)).intValue() == Svc.CALLBACK_SYSCALL_NUMBER) { // callback
+                int number = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X4)).intValue();
+                Svc svc = svcMemory.getSvc(number);
+                if (svc != null) {
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, svc.handleCallback(emulator));
+                    return;
+                }
+                u.emu_stop();
+                throw new IllegalStateException("svc number: " + svcNumber);
+            }
             if (svcNumber != 0) {
                 Svc svc = svcMemory.getSvc(svcNumber);
                 if (svc != null) {
