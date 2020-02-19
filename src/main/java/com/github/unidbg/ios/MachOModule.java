@@ -121,7 +121,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     strBuffer.position(nlist.value().intValue());
                     String indirectSymbol = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
                     if (!symbolName.equals(indirectSymbol)) {
-                        log.debug("nlist indirect symbolName=" + symbolName + ", indirectSymbol=" + indirectSymbol);
+                        if (log.isDebugEnabled()) {
+                            log.debug("nlist indirect symbolName=" + symbolName + ", indirectSymbol=" + indirectSymbol);
+                        }
                         symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol));
                     }
                 }
@@ -347,8 +349,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                         buffer.limit((int) (section.offset() + section.size()));
                         buffer.position((int) section.offset());
                         for (int i = 0; i < elementCount; i++) {
-                            long address = emulator.getPointerSize() == 4 ? buffer.getInt() : buffer.getLong();
-                            log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
+                            long address = emulator.is32Bit() ? buffer.getInt() : buffer.getLong();
+                            if (log.isDebugEnabled()) {
+                                log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
+                            }
                             initFunctionList.add(new MachOModuleInit(this, envp, apple, vars, true, address));
                         }
                     }
@@ -366,8 +370,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                         buffer.limit((int) (section.offset() + section.size()));
                         buffer.position((int) section.offset());
                         for (int i = 0; i < elementCount; i++) {
-                            long address = emulator.getPointerSize() == 4 ? buffer.getInt() : buffer.getLong();
-                            log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
+                            long address = emulator.is32Bit() ? buffer.getInt() : buffer.getLong();
+                            if (log.isDebugEnabled()) {
+                                log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(section.offset()) + ", elementCount=" + elementCount);
+                            }
                             initFunctionList.add(new MachOModuleInit(this, envp, apple, vars, true, address));
                         }
                     }
@@ -401,9 +407,18 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         return new MachOSymbol(this, nlist, symbolName);
     }
 
+    private final Set<String> failedSymbols = new HashSet<>();
+
     @Override
     public Symbol findSymbolByName(String name, boolean withDependencies) {
+        if (withDependencies && failedSymbols.contains(name)) {
+            return null;
+        }
         Symbol symbol = findSymbolByNameInternal(name, withDependencies);
+        if (withDependencies && symbol == null) {
+            failedSymbols.add(name);
+        }
+
         if (symbol != null) {
             if (symbol instanceof IndirectSymbol) {
                 IndirectSymbol indirectSymbol = (IndirectSymbol) symbol;
@@ -418,36 +433,27 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
-    private final Map<String, Symbol> symbolCache = new HashMap<>();
-
     private Symbol findSymbolByNameInternal(String name, boolean withDependencies) {
         Symbol symbol = symbolMap.get(name);
         if (symbol != null) {
             return symbol;
         }
 
-        if (withDependencies && symbolCache.containsKey(name)) {
-            return symbolCache.get(name);
-        }
-
-        Set<Module> list = new LinkedHashSet<>(exportModules.values());
         if (withDependencies) {
-            list.addAll(upwardLibraries.values());
-            list.addAll(neededLibraries.values());
-            list.addAll(loader.getLoadedModules());
-        }
-
-        for (Module module : list) {
-            symbol = module.findSymbolByName(name, false);
-            if (symbol != null) {
-                break;
+            Set<Module> findSet = new LinkedHashSet<>(loader.getLoadedModules().size());
+            findSet.addAll(exportModules.values());
+            findSet.addAll(upwardLibraries.values());
+            findSet.addAll(neededLibraries.values());
+            findSet.addAll(loader.getLoadedModules());
+            for (Module module : findSet) {
+                symbol = module.findSymbolByName(name, false);
+                if (symbol != null) {
+                    return symbol;
+                }
             }
         }
 
-        if (withDependencies) {
-            symbolCache.put(name, symbol);
-        }
-        return symbol;
+        return null;
     }
 
     @Override
@@ -481,6 +487,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final Set<UnicornPointer> addImageCallSet = new HashSet<>();
     final Set<UnicornPointer> boundCallSet = new HashSet<>();
     final Set<UnicornPointer> dependentsInitializedCallSet = new HashSet<>();
+    final Set<UnicornPointer> initializedCallSet = new HashSet<>();
 
     @Override
     public String getPath() {

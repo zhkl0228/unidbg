@@ -446,7 +446,7 @@ public class ARM {
     };
 
     private static int[] getRegArgs(Emulator emulator) {
-        return emulator.getPointerSize() == 4 ? ARM_ARG_REGS : ARM64_ARG_REGS;
+        return emulator.is32Bit() ? ARM_ARG_REGS : ARM64_ARG_REGS;
     }
 
     private static int[] getAllRegisters(boolean thumb) {

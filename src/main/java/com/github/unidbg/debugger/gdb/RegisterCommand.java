@@ -12,7 +12,7 @@ class RegisterCommand implements GdbStubCommand {
         if (command.startsWith("p")) {
             int reg = Integer.parseInt(command.substring(1), 16);
             long val = readRegister(unicorn, stub, reg);
-            if (emulator.getPointerSize() == 4) {
+            if (emulator.is32Bit()) {
                 stub.makePacketAndSend(String.format("%08x", Integer.reverseBytes((int) (val & 0xffffffffL))));
             } else {
                 stub.makePacketAndSend(String.format("%016x", Long.reverseBytes(val)));
@@ -48,7 +48,7 @@ class RegisterCommand implements GdbStubCommand {
 
     private void writeRegister(Emulator emulator, Unicorn unicorn, GdbStub stub, int reg, long val) {
         if (reg >= 0 && reg < stub.registers.length) {
-            if (emulator.getPointerSize() == 4) {
+            if (emulator.is32Bit()) {
                 unicorn.reg_write(stub.registers[reg], (int) (val & 0xffffffffL));
             } else {
                 unicorn.reg_write(stub.registers[reg], val);

@@ -101,7 +101,7 @@ public class ModuleSymbol {
         } else {
             value = load_base + (symbol == null ? 0 : symbol.value) + offset;
         }
-        if (emulator.getPointerSize() == 8) {
+        if (emulator.is64Bit()) {
             relocationAddr.setLong(0, value);
         } else {
             relocationAddr.setInt(0, (int) value);

@@ -75,7 +75,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
                     }
                 } else {
                     unicorn.context_restore(thread.context);
-                    long pc = ((Number) unicorn.reg_read(emulator.getPointerSize() == 4 ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC)).intValue() & 0xffffffffL;
+                    long pc = ((Number) unicorn.reg_read(emulator.is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC)).intValue() & 0xffffffffL;
                     log.info("resume thread: fn=" + thread.fn + ", arg=" + thread.arg + ", child_stack=" + thread.child_stack + ", pc=0x" + Long.toHexString(pc));
                     unicorn.emu_start(pc, 0, 0, 0);
                 }
@@ -111,7 +111,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
         final Pointer auxv = allocateStack(0x100);
         assert auxv != null;
-        if (emulator.getPointerSize() == 4) {
+        if (emulator.is32Bit()) {
             auxv.setInt(0, 25); // AT_RANDOM is a pointer to 16 bytes of randomness on the stack.
         } else {
             auxv.setLong(0, 25); // AT_RANDOM is a pointer to 16 bytes of randomness on the stack.
@@ -134,7 +134,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         this.errno = tls.share(emulator.getPointerSize() * 2);
         tls.setPointer(emulator.getPointerSize() * 3, argv);
 
-        if (emulator.getPointerSize() == 4) {
+        if (emulator.is32Bit()) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
@@ -278,10 +278,10 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
     private LinuxModule loadInternal(LibraryFile libraryFile, final WriteHook unpackHook) throws IOException {
         final ElfFile elfFile = ElfFile.fromBytes(libraryFile.readToByteArray());
 
-        if (emulator.getPointerSize() == 4 && elfFile.objectSize != ElfFile.CLASS_32) {
+        if (emulator.is32Bit() && elfFile.objectSize != ElfFile.CLASS_32) {
             throw new ElfException("Must be 32-bit");
         }
-        if (emulator.getPointerSize() == 8 && elfFile.objectSize != ElfFile.CLASS_64) {
+        if (emulator.is64Bit() && elfFile.objectSize != ElfFile.CLASS_64) {
             throw new ElfException("Must be 64-bit");
         }
 
@@ -289,11 +289,11 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
             throw new ElfException("Must be LSB");
         }
 
-        if (emulator.getPointerSize() == 4 && elfFile.arch != ElfFile.ARCH_ARM) {
+        if (emulator.is32Bit() && elfFile.arch != ElfFile.ARCH_ARM) {
             throw new ElfException("Must be ARM arch.");
         }
 
-        if (emulator.getPointerSize() == 8 && elfFile.arch != ElfFile.ARCH_AARCH64) {
+        if (emulator.is64Bit() && elfFile.arch != ElfFile.ARCH_AARCH64) {
             throw new ElfException("Must be ARM64 arch.");
         }
 

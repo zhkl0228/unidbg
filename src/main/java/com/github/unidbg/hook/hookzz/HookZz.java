@@ -116,7 +116,7 @@ public class HookZz extends BaseHook implements IHookZz {
     public <T extends RegisterContext> void wrap(long functionAddress, final WrapCallback<T> callback) {
         SvcMemory svcMemory = emulator.getSvcMemory();
         final Map<String, Object> context = new HashMap<>();
-        Pointer preCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
+        Pointer preCall = svcMemory.registerSvc(emulator.is32Bit() ? new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
                 context.clear();
@@ -131,7 +131,7 @@ public class HookZz extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        Pointer postCall = svcMemory.registerSvc(emulator.getPointerSize() == 4 ? new ArmSvc() {
+        Pointer postCall = svcMemory.registerSvc(emulator.is32Bit() ? new ArmSvc() {
             @Override
             public long handle(Emulator emulator) {
                 callback.postCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));

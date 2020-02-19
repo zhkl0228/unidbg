@@ -131,7 +131,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         tsd.setPointer(__TSD_ERRNO * emulator.getPointerSize(), errno);
         tsd.setPointer(__TSD_MIG_REPLY * emulator.getPointerSize(), null);
 
-        if (emulator.getPointerSize() == 4) {
+        if (emulator.is32Bit()) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDRRO_EL0, tsd.peer);
@@ -196,7 +196,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             case FAT_BE:
                 Map<Long, MachO.FatArch> archMap = new HashMap<>();
                 for (MachO.FatArch arch : machO.fatHeader().fatArchs()) {
-                    if ((arch.cputype() == MachO.CpuType.ARM && emulator.getPointerSize() == 4) || (arch.cputype() == MachO.CpuType.ARM64 && emulator.getPointerSize() == 8)) {
+                    if ((arch.cputype() == MachO.CpuType.ARM && emulator.is32Bit()) || (arch.cputype() == MachO.CpuType.ARM64 && emulator.is64Bit())) {
                         archMap.put(arch.cpusubtype(), arch);
                     }
                 }
@@ -210,7 +210,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 if (arch != null) {
                     buffer.limit((int) (arch.offset() + arch.size()));
                     buffer.position((int) arch.offset());
-                    log.debug("loadFatArch=" + arch.cputype() + ", cpuSubType=" + arch.cpusubtype());
+                    if (log.isDebugEnabled()) {
+                        log.debug("loadFatArch=" + arch.cputype() + ", cpuSubType=" + arch.cpusubtype());
+                    }
                     return loadInternalPhase(libraryFile, buffer.slice(), loadNeeded, checkBootstrap);
                 }
                 throw new IllegalArgumentException("find arch failed");
@@ -482,7 +484,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         for (MachO.DylibCommand dylibCommand : exportDylibs) {
             String neededLibrary = dylibCommand.name();
-            log.debug(dyId + " need export dependency " + neededLibrary);
+            if (log.isDebugEnabled()) {
+                log.debug(dyId + " need export dependency " + neededLibrary);
+            }
 
             MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
             if (loaded != null) {
@@ -498,7 +502,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 MachOModule needed = loadInternalPhase(neededLibraryFile, false, false);
                 needed.addReferenceCount();
                 exportModules.put(FilenameUtils.getBaseName(needed.name), needed);
-            } else {
+            } else if(log.isDebugEnabled()) {
                 log.debug(dyId + " load export dependency " + neededLibrary + " failed");
             }
         }
@@ -510,7 +514,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             lazyLoadNeededList = Collections.emptyList();
             for (NeedLibrary library : neededList) {
                 String neededLibrary = library.path;
-                log.debug(dyId + " need dependency " + neededLibrary);
+                if (log.isDebugEnabled()) {
+                    log.debug(dyId + " need dependency " + neededLibrary);
+                }
 
                 MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
                 if (loaded != null) {
@@ -584,7 +590,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             if (_NSSetLogCStringFunction == null) {
                 throw new IllegalStateException("__NSSetLogCStringFunction is null");
             } else {
-                Svc svc = !emulator.is64Bit() ? new ArmHook() {
+                Svc svc = emulator.is32Bit() ? new ArmHook() {
                     @Override
                     protected HookStatus hook(Emulator emulator) {
                         Arm32RegisterContext context = emulator.getContext();
@@ -613,7 +619,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             module.setEntryPoint(entryPointCommand.entryOff());
         }
 
-        log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
+        if (log.isDebugEnabled()) {
+            log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
         if (moduleListener != null) {
             moduleListener.onLoaded(emulator, module);
         }
@@ -696,7 +704,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             default:
                 boolean isObjc = sectName.startsWith("__objc_");
                 if (isObjc) {
-                    log.debug("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
+                    if (log.isDebugEnabled()) {
+                        log.debug("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
+                    }
                 } else {
                     log.info("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
                 }
@@ -838,14 +848,14 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         for (int i = 0; i < dysymtabCommand.nLocRel(); i++) {
             Relocation relocation = Relocation.create(slice);
             if (relocation.pcRel || relocation.extern || relocation.scattered ||
-                    relocation.length != (emulator.getPointerSize() == 8 ? 3 : 2) ||
+                    relocation.length != (emulator.is64Bit() ? 3 : 2) ||
                     relocation.type != ARM_RELOC_VANILLA) {
                 throw new IllegalStateException("Unexpected relocation found.");
             }
 
             buffer.limit(relocation.address + emulator.getPointerSize());
             buffer.position(relocation.address);
-            long target = emulator.getPointerSize() == 8 ? buffer.getLong() : buffer.getInt();
+            long target = emulator.is64Bit() ? buffer.getLong() : buffer.getInt();
             Pointer pointer = UnicornPointer.pointer(emulator, module.base + relocation.address);
             if (pointer == null) {
                 throw new IllegalStateException();
@@ -875,7 +885,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         for (int i = 0; i < dysymtabCommand.nExtRel(); i++) {
             Relocation relocation = Relocation.create(slice);
             if (relocation.pcRel || !relocation.extern || relocation.scattered ||
-                    relocation.length != (emulator.getPointerSize() == 8 ? 3 : 2) ||
+                    relocation.length != (emulator.is64Bit() ? 3 : 2) ||
                     relocation.type != ARM_RELOC_VANILLA) {
                 throw new IllegalStateException("Unexpected relocation found.");
             }
@@ -1510,7 +1520,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 break;
             case Dyld.dyld_image_state_initialized:
                 for (UnicornPointer handler : boundHandlers) {
-                    if (module.dependentsInitializedCallSet.add(handler)) {
+                    if (module.initializedCallSet.add(handler)) {
                         if (log.isDebugEnabled()) {
                             log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
                         }

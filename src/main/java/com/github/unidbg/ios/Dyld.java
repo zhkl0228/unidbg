@@ -41,7 +41,7 @@ abstract class Dyld extends Dlfcn {
     static long computeSlide(Emulator emulator, long machHeader) {
         Pointer pointer = UnicornPointer.pointer(emulator, machHeader);
         assert pointer != null;
-        MachHeader header = emulator.getPointerSize() == 4 ? new MachHeader(pointer) : new MachHeader64(pointer);
+        MachHeader header = emulator.is32Bit() ? new MachHeader(pointer) : new MachHeader64(pointer);
         header.unpack();
         Pointer loadPointer = pointer.share(header.size());
         for (int i = 0; i < header.ncmds; i++) {
@@ -116,6 +116,7 @@ abstract class Dyld extends Dlfcn {
 
             if (state == dyld_image_state_bound) {
                 mm.boundCallSet.add(handler);
+                mm.initializedCallSet.add(handler);
             } else if (state == dyld_image_state_dependents_initialized) {
                 mm.dependentsInitializedCallSet.add(handler);
             }

@@ -31,8 +31,10 @@ public class IpaLoaderTest extends EmulatorTest {
         emulator.getMemory().setCallInitFunction();
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
 //        emulator.attach(0x1035cc000L, 0x105e20000L).addBreakPoint(null, 0x1035cc000L + 0x001717f54);
+        long start = System.currentTimeMillis();
         IpaLoader loader = IpaLoader.load(emulator, new File("src/test/resources/app/TelegramMessenger-5.11..ipa"),
                 "TelegramCore", "TelegramUI");
+        System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
         Module module = loader.getExecutable();
         assertNotNull(module);
         IClassDumper classDumper = ClassDumper.getInstance(emulator);

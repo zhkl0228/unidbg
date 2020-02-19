@@ -47,6 +47,10 @@ public class IpaLibraryFile implements LibraryFile {
 
     @Override
     public LibraryFile resolveLibrary(Emulator emulator, String soName) throws IOException {
+        if (!soName.contains("@rpath")) {
+            return null;
+        }
+
         String path = soName.replace("@rpath", appDir + "Frameworks");
         if (log.isDebugEnabled()) {
             log.debug("Try resolve library soName=" + soName + ", path=" + path);

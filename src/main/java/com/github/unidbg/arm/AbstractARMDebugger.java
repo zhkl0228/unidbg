@@ -170,7 +170,7 @@ public abstract class AbstractARMDebugger implements Debugger {
     public void debug() {
         Unicorn unicorn = emulator.getUnicorn();
         long address;
-        if (emulator.getPointerSize() == 4) {
+        if (emulator.is32Bit()) {
             address = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
         } else {
             address = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();

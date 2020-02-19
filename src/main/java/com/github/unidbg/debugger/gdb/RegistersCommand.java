@@ -14,7 +14,7 @@ class RegistersCommand implements GdbStubCommand {
     public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
         Unicorn unicorn = emulator.getUnicorn();
         if (log.isDebugEnabled()) {
-            if (emulator.getPointerSize() == 4) {
+            if (emulator.is32Bit()) {
                 ARM.showRegs(emulator, null);
             } else {
                 ARM.showRegs64(emulator, null);
@@ -25,7 +25,7 @@ class RegistersCommand implements GdbStubCommand {
             StringBuilder sb = new StringBuilder();
             for(int i = 0; i < stub.registers.length; i++) {
                 long value = ((Number) unicorn.reg_read(stub.registers[i])).longValue();
-                if (emulator.getPointerSize() == 4) {
+                if (emulator.is32Bit()) {
                     String hex = String.format("%08x", Integer.reverseBytes((int) (value & 0xffffffffL)));
                     sb.append(hex);
                 } else {
@@ -37,7 +37,7 @@ class RegistersCommand implements GdbStubCommand {
             return true;
         } else {
             for (int i = 0; i < stub.registers.length; i++) {
-                if (emulator.getPointerSize() == 4) {
+                if (emulator.is32Bit()) {
                     long value = Long.parseLong(command.substring(1 + 8 * i, 9 + 8 * i), 16);
                     unicorn.reg_write(stub.registers[i], Integer.reverseBytes((int) (value & 0xffffffffL)));
                 } else {

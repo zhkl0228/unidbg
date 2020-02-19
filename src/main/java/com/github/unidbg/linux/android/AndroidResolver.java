@@ -54,7 +54,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
     }
 
     static LibraryFile resolveLibrary(Emulator emulator, String libraryName, int sdk) {
-        final String lib = emulator.getPointerSize() == 4 ? "lib" : "lib64";
+        final String lib = emulator.is32Bit() ? "lib" : "lib64";
         String name = "/android/sdk" + sdk + "/" + lib + "/" + libraryName.replace('+', 'p');
         URL url = AndroidResolver.class.getResource(name);
         if (url != null) {

@@ -9,7 +9,6 @@ import com.github.unidbg.Module;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinResolver;
 import com.github.unidbg.memory.Memory;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
@@ -82,15 +81,11 @@ public abstract class IpaLoader {
     }
 
     static byte[] loadZip(File file, String path) throws IOException {
-        String absolutePath = FilenameUtils.normalize(path);
         try (JarFile jarFile = new JarFile(file)) {
-            Enumeration<JarEntry> enumeration = jarFile.entries();
-            while (enumeration.hasMoreElements()) {
-                JarEntry entry = enumeration.nextElement();
-                if (absolutePath.equals(entry.getName())) {
-                    try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                        return IOUtils.toByteArray(inputStream);
-                    }
+            JarEntry entry = jarFile.getJarEntry(path);
+            if (entry != null) {
+                try (InputStream inputStream = jarFile.getInputStream(entry)) {
+                    return IOUtils.toByteArray(inputStream);
                 }
             }
         }

@@ -32,7 +32,7 @@ public final class GdbStub extends AbstractDebugServer {
 
         currentInputPacket = new StringBuilder();
 
-        if (emulator.getPointerSize() == 4) { // arm32
+        if (emulator.is32Bit()) { // arm32
             registers = new int[] {
                     ArmConst.UC_ARM_REG_R0,
                     ArmConst.UC_ARM_REG_R1,

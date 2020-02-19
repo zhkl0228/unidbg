@@ -310,7 +310,7 @@ public abstract class AbstractLoader implements Memory, Loader {
             this.stackBase = sp;
         }
         this.sp = sp;
-        if (emulator.getPointerSize() == 4) {
+        if (emulator.is32Bit()) {
             unicorn.reg_write(ArmConst.UC_ARM_REG_SP, sp);
         } else {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_SP, sp);
@@ -331,7 +331,7 @@ public abstract class AbstractLoader implements Memory, Loader {
 
     @Override
     public final File dumpStack() throws IOException {
-        UnicornPointer sp = UnicornPointer.register(emulator, emulator.getPointerSize() == 4 ? ArmConst.UC_ARM_REG_SP : Arm64Const.UC_ARM64_REG_SP);
+        UnicornPointer sp = UnicornPointer.register(emulator, emulator.is32Bit() ? ArmConst.UC_ARM_REG_SP : Arm64Const.UC_ARM64_REG_SP);
         File outFile = File.createTempFile("stack_0x" + Long.toHexString(sp.peer) + "_", ".dat");
         dump(sp, STACK_BASE - sp.peer, outFile);
         return outFile;
