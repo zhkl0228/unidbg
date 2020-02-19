@@ -483,7 +483,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final Set<UnicornPointer> dependentsInitializedCallSet = new HashSet<>();
 
     @Override
-    protected String getPath() {
+    public String getPath() {
         return path;
     }
 

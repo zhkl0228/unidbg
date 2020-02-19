@@ -54,7 +54,7 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected Memory createMemory(UnixSyscallHandler syscallHandler) {
+    protected Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs) {
         return new AndroidElfLoader(this, syscallHandler);
     }
 

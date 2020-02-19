@@ -109,7 +109,7 @@ public abstract class Module {
 
     private UnicornPointer pathPointer;
 
-    protected abstract String getPath();
+    public abstract String getPath();
 
     /**
      * 注册符号

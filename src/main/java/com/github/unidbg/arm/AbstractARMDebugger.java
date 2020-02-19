@@ -14,6 +14,7 @@ import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -22,6 +23,8 @@ import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
 
 public abstract class AbstractARMDebugger implements Debugger {
@@ -218,8 +221,23 @@ public abstract class AbstractARMDebugger implements Debugger {
                 Inspector.inspect(pointer.getByteArray(0, _length), label + ", find NULL-terminated failed");
             }
         } else {
+            StringBuilder sb = new StringBuilder(label);
             byte[] data = pointer.getByteArray(0, _length);
-            Inspector.inspect(data, data.length >= 1024 ? (label + ", hex=" + Hex.encodeHexString(data)) : label);
+            if (_length == 4) {
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                int value = buffer.getInt();
+                sb.append(", value=0x").append(Integer.toHexString(value));
+            } else if (_length == 8) {
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                long value = buffer.getLong();
+                sb.append(", value=0x").append(Long.toHexString(value));
+            }
+            if (data.length >= 1024) {
+                sb.append(", hex=").append(Hex.encodeHexString(data));
+            }
+            Inspector.inspect(data, sb.toString());
         }
     }
 
@@ -345,8 +363,9 @@ public abstract class AbstractARMDebugger implements Debugger {
             int index = 0;
             for (Module module : memory.getLoadedModules()) {
                 if (filter == null || module.name.contains(filter)) {
-                    sb.append(String.format("[%2s][%" + maxLengthSoName.length() + "s] ", index++, module.name));
+                    sb.append(String.format("[%2s][%" + maxLengthSoName.length() + "s] ", index++, FilenameUtils.getName(module.name)));
                     sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x-0x%x]", module.base, module.base + module.size));
+                    sb.append(module.getPath());
                     sb.append("\n");
                 }
             }
@@ -462,7 +481,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                         throw new UnsupportedOperationException();
                     }
                     @Override
-                    protected String getPath() {
+                    public String getPath() {
                         throw new UnsupportedOperationException();
                     }
                     @Override

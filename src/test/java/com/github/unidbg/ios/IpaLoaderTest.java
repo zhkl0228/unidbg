@@ -19,7 +19,7 @@ public class IpaLoaderTest extends EmulatorTest {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
-        return new DarwinResolver();
+        return new DarwinResolver("UIKit");
     }
 
     @Override
@@ -29,8 +29,8 @@ public class IpaLoaderTest extends EmulatorTest {
 
     public void testLoader() throws Exception {
         emulator.getMemory().setCallInitFunction();
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-//        emulator.attach(0x102a594f0L - 1000, 0x102a594f0L + 1000).addBreakPoint(null, 0x102a594f0L);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+//        emulator.attach(0x1035cc000L, 0x105e20000L).addBreakPoint(null, 0x1035cc000L + 0x001717f54);
         IpaLoader loader = IpaLoader.load(emulator, new File("src/test/resources/app/TelegramMessenger-5.11..ipa"),
                 "TelegramCore", "TelegramUI");
         Module module = loader.getExecutable();

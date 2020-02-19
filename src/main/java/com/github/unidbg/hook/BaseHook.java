@@ -14,6 +14,7 @@ import com.sun.jna.Pointer;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,7 +63,7 @@ public abstract class BaseHook implements IHook {
         }
 
         boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
-        return isIOS ? new com.github.unidbg.ios.URLibraryFile(url, libName, null) : new URLibraryFile(url, libName, -1);
+        return isIOS ? new com.github.unidbg.ios.URLibraryFile(url, libName, null, Collections.<String>emptyList()) : new URLibraryFile(url, libName, -1);
     }
 
     protected final long numberToAddress(Number number) {

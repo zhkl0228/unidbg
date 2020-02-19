@@ -189,7 +189,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    protected String getPath() {
+    public String getPath() {
         return name;
     }
 

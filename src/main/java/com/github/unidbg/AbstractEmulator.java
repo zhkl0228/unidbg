@@ -118,7 +118,7 @@ public abstract class AbstractEmulator implements Emulator {
         return (T) registerContext;
     }
 
-    protected  abstract Memory createMemory(UnixSyscallHandler syscallHandler);
+    protected  abstract Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs);
 
     protected abstract Dlfcn createDyld(SvcMemory svcMemory);
 

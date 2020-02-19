@@ -13,6 +13,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Collections;
 
 public class DarwinARMEmulator extends AbstractARMEmulator {
 
@@ -28,8 +29,8 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
         this(null, rootDir);
     }
 
-    public DarwinARMEmulator(String processName, File rootDir) {
-        super(processName, rootDir);
+    public DarwinARMEmulator(String processName, File rootDir, String... envs) {
+        super(processName, rootDir, envs);
     }
 
     @Override
@@ -73,8 +74,8 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected Memory createMemory(UnixSyscallHandler syscallHandler) {
-        return new MachOLoader(this, syscallHandler);
+    protected Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs) {
+        return new MachOLoader(this, syscallHandler, envs);
     }
 
     @Override
@@ -99,7 +100,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
 
     @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, null);
+        return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
     }
 
     @Override

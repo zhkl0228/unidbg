@@ -42,7 +42,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
 
     private final Dlfcn dlfcn;
 
-    public AbstractARM64Emulator(String processName, File rootDir) {
+    public AbstractARM64Emulator(String processName, File rootDir, String... envs) {
         super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName, rootDir);
 
         Cpsr.getArm64(unicorn).switchUserMode();
@@ -59,7 +59,7 @@ public abstract class AbstractARM64Emulator extends AbstractEmulator implements 
         this.syscallHandler = createSyscallHandler(svcMemory);
 
         enableVFP();
-        this.memory = createMemory(syscallHandler);
+        this.memory = createMemory(syscallHandler, envs);
         this.dlfcn = createDyld(svcMemory);
         this.memory.addHookListener(dlfcn);
 

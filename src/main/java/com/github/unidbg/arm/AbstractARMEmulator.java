@@ -44,7 +44,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
 
     private final Dlfcn dlfcn;
 
-    public AbstractARMEmulator(String processName, File rootDir) {
+    public AbstractARMEmulator(String processName, File rootDir, String... envs) {
         super(UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM, processName, rootDir);
 
         Cpsr.getArm(unicorn).switchUserMode();
@@ -61,7 +61,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
         this.syscallHandler = createSyscallHandler(svcMemory);
 
         enableVFP();
-        this.memory = createMemory(syscallHandler);
+        this.memory = createMemory(syscallHandler, envs);
         this.dlfcn = createDyld(svcMemory);
         this.memory.addHookListener(dlfcn);
 

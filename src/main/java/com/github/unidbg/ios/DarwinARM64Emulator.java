@@ -19,6 +19,7 @@ import unicorn.UnicornConst;
 import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 
 public class DarwinARM64Emulator extends AbstractARM64Emulator {
 
@@ -34,8 +35,8 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator {
         this(null, rootDir);
     }
 
-    public DarwinARM64Emulator(String processName, File rootDir) {
-        super(processName, rootDir);
+    public DarwinARM64Emulator(String processName, File rootDir, String... envs) {
+        super(processName, rootDir, envs);
 
         setupTraps();
     }
@@ -89,8 +90,8 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator {
     }
 
     @Override
-    protected Memory createMemory(UnixSyscallHandler syscallHandler) {
-        return new MachOLoader(this, syscallHandler);
+    protected Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs) {
+        return new MachOLoader(this, syscallHandler, envs);
     }
 
     @Override
@@ -115,7 +116,7 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator {
 
     @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, null);
+        return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
     }
 
     @Override

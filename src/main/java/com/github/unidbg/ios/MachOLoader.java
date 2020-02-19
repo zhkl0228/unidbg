@@ -42,7 +42,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
     private boolean objcRuntime;
 
-    MachOLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
+    MachOLoader(Emulator emulator, UnixSyscallHandler syscallHandler, String[] envs) {
         super(emulator, syscallHandler);
 
         // init stack
@@ -55,7 +55,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
         unicorn.mem_map(stackBase - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
 
         setStackPoint(stackBase);
-        initializeTSD();
+        initializeTSD(envs);
     }
 
     @Override
@@ -80,14 +80,24 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
     private static final int __TSD_MIG_REPLY = 2;
 //    private static final int __PTK_FRAMEWORK_OBJC_KEY5 = 0x2d;
 
-    private void initializeTSD() {
-        final Pointer environ = allocateStack(emulator.getPointerSize() * 3);
+    private void initializeTSD(String[] envs) {
+        List<String> envList = new ArrayList<>();
+        envList.add("MallocCorruptionAbort=0");
+        for (String env : envs) {
+            int index = env.indexOf('=');
+            if (index != -1) {
+                envList.add(env);
+            }
+        }
+        final Pointer environ = allocateStack(emulator.getPointerSize() * (envList.size() + 1));
         assert environ != null;
-        final Pointer pMallocCorruptionAbort = writeStackString("MallocCorruptionAbort=0");
-        environ.setPointer(0, pMallocCorruptionAbort);
-//        final Pointer pMallocStackLogging = writeStackString("MallocStackLogging=malloc"); // malloc, vm, all
-        environ.setPointer(emulator.getPointerSize(), null); // pMallocStackLogging
-        environ.setPointer(emulator.getPointerSize() * 2, null);
+        Pointer pointer = environ;
+        for (String env : envList) {
+            Pointer envPointer = writeStackString(env);
+            pointer.setPointer(0, envPointer);
+            pointer = pointer.share(emulator.getPointerSize());
+        }
+        pointer.setPointer(0, null);
 
         UnicornPointer _NSGetEnviron = allocateStack(emulator.getPointerSize());
         _NSGetEnviron.setPointer(0, environ);
@@ -146,7 +156,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         for (MachOModule export : modules.values()) {
             if (!export.lazyLoadNeededList.isEmpty()) {
-                log.info("Export module resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
+                if (log.isDebugEnabled()) {
+                    log.debug("Export module resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
+                }
             }
         }
 
@@ -165,7 +177,9 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             }
         }
 
-        notifySingle(Dyld.dyld_image_state_initialized, module);
+        for (MachOModule m : modules.values()) {
+            notifySingle(Dyld.dyld_image_state_initialized, m);
+        }
 
         return module;
     }
@@ -227,7 +241,7 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
 
         if (checkBootstrap && !isExecutable && executableModule == null) {
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
-            loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION), false, false);
+            loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION, Collections.<String>emptyList()), false, false);
         }
 
         long start = System.currentTimeMillis();
@@ -672,6 +686,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
             case "__thread_vars":
             case "__thread_bss":
             case "__thread_data":
+            case "__mod_term_func":
+            case "__dof_CoreImage":
+            case "__dof_opencl_ap":
+            case "__dof_AudioHAL_":
+            case "__dof_AudioHAL_0":
+            case "__dof_AudioHAL_1":
                 break;
             default:
                 boolean isObjc = sectName.startsWith("__objc_");
@@ -1490,10 +1510,12 @@ public class MachOLoader extends AbstractLoader implements Memory, Loader, com.g
                 break;
             case Dyld.dyld_image_state_initialized:
                 for (UnicornPointer handler : boundHandlers) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
+                    if (module.dependentsInitializedCallSet.add(handler)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
+                        }
+                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
-                    MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
                 }
                 break;
             default:

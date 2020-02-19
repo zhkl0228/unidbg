@@ -17,6 +17,9 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class DarwinResolver implements LibraryResolver, IOResolver {
 
@@ -24,31 +27,36 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
 
     private final String version;
 
-    public DarwinResolver() {
-        this(LIB_VERSION);
+    private final List<String> excludeLibs = new ArrayList<>();
+
+    public DarwinResolver(String... excludeLibs) {
+        this(LIB_VERSION, excludeLibs);
     }
 
-    private DarwinResolver(String version) {
+    private DarwinResolver(String version, String... excludeLibs) {
         this.version = version;
+
+        Collections.addAll(this.excludeLibs, excludeLibs);
     }
 
     @Override
     public LibraryFile resolveLibrary(Emulator emulator, String libraryName) {
-        return resolveLibrary(libraryName, version);
+        return resolveLibrary(libraryName, version, excludeLibs);
     }
-
-    private StdoutCallback callback;
 
     @Override
     public void setStdoutCallback(StdoutCallback callback) {
-        this.callback = callback;
     }
 
-    static LibraryFile resolveLibrary(String libraryName, String version) {
+    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs) {
+        if (!excludeLibs.isEmpty() && excludeLibs.contains(FilenameUtils.getName(libraryName))) {
+            return null;
+        }
+
         String name = "/ios/" + version + libraryName.replace('+', 'p');
         URL url = DarwinResolver.class.getResource(name);
         if (url != null) {
-            return new URLibraryFile(url, libraryName, version);
+            return new URLibraryFile(url, libraryName, version, excludeLibs);
         }
         return null;
     }
@@ -80,7 +88,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
             try {
                 File tmp = new File(FileUtils.getTempDirectory(), path);
                 File dir = tmp.getParentFile();
-                if (!dir.exists() && !dir.mkdirs()) {
+                if (!dir.exists() && !dir.mkdirs() && !dir.exists()) {
                     throw new IOException("mkdirs failed: " + dir);
                 }
                 if (!tmp.exists() && !tmp.createNewFile()) {

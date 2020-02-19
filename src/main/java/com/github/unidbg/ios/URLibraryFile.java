@@ -9,17 +9,20 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public class URLibraryFile implements LibraryFile {
 
     private final URL url;
     private final String path;
     private final String version;
+    private final List<String> excludeLibs;
 
-    public URLibraryFile(URL url, String path, String version) {
+    public URLibraryFile(URL url, String path, String version, List<String> excludeLibs) {
         this.url = url;
         this.path = path;
         this.version = version;
+        this.excludeLibs = excludeLibs;
     }
 
     @Override
@@ -37,7 +40,7 @@ public class URLibraryFile implements LibraryFile {
         if (version == null) {
             return null;
         }
-        return DarwinResolver.resolveLibrary(dylibName, version);
+        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs);
     }
 
     @Override

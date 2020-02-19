@@ -54,7 +54,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator implements ARMEm
     }
 
     @Override
-    protected Memory createMemory(UnixSyscallHandler syscallHandler) {
+    protected Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs) {
         return new AndroidElfLoader(this, syscallHandler);
     }
 
