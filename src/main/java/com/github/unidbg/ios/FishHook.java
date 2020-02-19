@@ -63,13 +63,13 @@ public class FishHook extends BaseHook implements IFishHook {
         }
     }
 
-    private Pointer createRebinding(String symbol, ReplaceCallback callback, boolean withCallback) {
+    private Pointer createRebinding(String symbol, ReplaceCallback callback, boolean enablePostCall) {
         Memory memory = emulator.getMemory();
         Pointer symbolPointer = memory.malloc(symbol.length() + 1, false).getPointer();
         symbolPointer.setString(0, symbol);
 
         final Pointer originCall = memory.malloc(emulator.getPointerSize(), false).getPointer();
-        Pointer replaceCall = createReplacePointer(callback, originCall, withCallback);
+        Pointer replaceCall = createReplacePointer(callback, originCall, enablePostCall);
 
         Pointer rebinding = memory.malloc(emulator.getPointerSize() * 3, false).getPointer();
         rebinding.setPointer(0, symbolPointer);

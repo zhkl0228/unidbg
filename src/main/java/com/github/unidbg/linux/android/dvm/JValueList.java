@@ -21,20 +21,38 @@ class JValueList extends VaList {
             for (char c : chars) {
                 switch (c) {
                     case 'L':
-                    case 'B':
-                    case 'C':
-                    case 'I':
-                    case 'S':
-                    case 'Z': {
-                        buffer.putInt(pointer.getInt(0));
+                        UnicornPointer ptr = (UnicornPointer) pointer.getPointer(0);
+                        buffer.putInt((int) ptr.toUIntPeer());
+                        break;
+                    case 'B': {
+                        byte val = pointer.getByte(0);
+                        buffer.putInt(val & 1);
                         break;
                     }
-                    case 'D': {
-                        buffer.putDouble(pointer.getDouble(0));
+                    case 'Z': {
+                        byte val = pointer.getByte(0);
+                        buffer.putInt(val & 0xff);
+                        break;
+                    }
+                    case 'C': {
+                        char val = pointer.getChar(0);
+                        buffer.putInt(val);
+                        break;
+                    }
+                    case 'S': {
+                        buffer.putInt(pointer.getShort(0));
+                        break;
+                    }
+                    case 'I': {
+                        buffer.putInt(pointer.getInt(0));
                         break;
                     }
                     case 'F': {
                         buffer.putFloat((float) pointer.getDouble(0));
+                        break;
+                    }
+                    case 'D': {
+                        buffer.putDouble(pointer.getDouble(0));
                         break;
                     }
                     case 'J': {
