@@ -9,7 +9,7 @@ class SetThreadCommand implements GdbStubCommand {
     private static final Log log = LogFactory.getLog(SetThreadCommand.class);
 
     @Override
-    public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
+    public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
         char type = command.charAt(1);
         int thread = Integer.parseInt(command.substring(2), 16);
         if (log.isDebugEnabled()) {

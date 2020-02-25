@@ -2,15 +2,21 @@ package com.github.unidbg.file.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileSystem;
+import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.ios.file.DirectoryFileIO;
+import com.github.unidbg.ios.file.SimpleFileIO;
+import com.github.unidbg.file.Stdin;
+import com.github.unidbg.ios.file.Stdout;
+import com.github.unidbg.unix.IO;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 
-public class DarwinFileSystem extends BaseFileSystem implements FileSystem, IOConstants {
+public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements FileSystem<DarwinFileIO>, IOConstants {
 
-    public DarwinFileSystem(Emulator emulator, File rootDir) {
+    public DarwinFileSystem(Emulator<DarwinFileIO> emulator, File rootDir) {
         super(emulator, rootDir);
     }
 
@@ -20,6 +26,26 @@ public class DarwinFileSystem extends BaseFileSystem implements FileSystem, IOCo
 
         FileUtils.forceMkdir(new File(rootDir, "private"));
         FileUtils.forceMkdir(new File(rootDir, "etc"));
+    }
+
+    @Override
+    public FileResult<DarwinFileIO> createSimpleFileIO(File file, int oflags, String path) {
+        return FileResult.<DarwinFileIO>success(new SimpleFileIO(oflags, file, path));
+    }
+
+    @Override
+    public FileResult<DarwinFileIO> createDirectoryFileIO(File file, int oflags, String path) {
+        return FileResult.<DarwinFileIO>success(new DirectoryFileIO(oflags, path, file));
+    }
+
+    @Override
+    protected DarwinFileIO createStdin(int oflags) {
+        return new Stdin(oflags);
+    }
+
+    @Override
+    protected DarwinFileIO createStdout(int oflags, File stdio, String pathname) {
+        return new Stdout(oflags, stdio, pathname, IO.STDERR.equals(pathname), null);
     }
 
     @Override

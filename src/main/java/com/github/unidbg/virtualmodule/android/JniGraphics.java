@@ -24,44 +24,44 @@ public class JniGraphics extends VirtualModule {
 
     private static final Log log = LogFactory.getLog(JniGraphics.class);
 
-    public JniGraphics(Emulator emulator, VM vm) {
+    public JniGraphics(Emulator<?> emulator, VM vm) {
         super(emulator, vm, "libjnigraphics.so");
     }
 
     @Override
-    protected void onInitialize(Emulator emulator, final VM vm, Map<String, UnicornPointer> symbols) {
+    protected void onInitialize(Emulator<?> emulator, final VM vm, Map<String, UnicornPointer> symbols) {
         boolean is64Bit = emulator.is64Bit();
         SvcMemory svcMemory = emulator.getSvcMemory();
         symbols.put("AndroidBitmap_getInfo", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return getInfo(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return getInfo(emulator, vm);
             }
         }));
         symbols.put("AndroidBitmap_lockPixels", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return lockPixels(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return lockPixels(emulator, vm);
             }
         }));
         symbols.put("AndroidBitmap_unlockPixels", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return unlockPixels(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return unlockPixels(emulator, vm);
             }
         }));
@@ -70,7 +70,7 @@ public class JniGraphics extends VirtualModule {
     private static final int ANDROID_BITMAP_FORMAT_RGBA_8888 = 1;
     private static final int ANDROID_BITMAP_RESULT_SUCCESS = 0;
 
-    private static long getInfo(Emulator emulator, VM vm) {
+    private static long getInfo(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         Pointer env = context.getPointerArg(0);
         UnicornPointer jbitmap = context.getPointerArg(1);
@@ -88,7 +88,7 @@ public class JniGraphics extends VirtualModule {
         return ANDROID_BITMAP_RESULT_SUCCESS;
     }
 
-    private static long lockPixels(Emulator emulator, VM vm) {
+    private static long lockPixels(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         Pointer env = context.getPointerArg(0);
         UnicornPointer jbitmap = context.getPointerArg(1);
@@ -127,7 +127,7 @@ public class JniGraphics extends VirtualModule {
         return ANDROID_BITMAP_RESULT_SUCCESS;
     }
 
-    private static long unlockPixels(Emulator emulator, VM vm) {
+    private static long unlockPixels(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         Pointer env = context.getPointerArg(0);
         UnicornPointer jbitmap = context.getPointerArg(1);

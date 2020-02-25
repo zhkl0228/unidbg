@@ -1,8 +1,8 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.file.AbstractFileIO;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
@@ -10,7 +10,7 @@ import unicorn.Unicorn;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class NullFileIO extends AbstractFileIO implements FileIO {
+public class NullFileIO extends BaseAndroidFileIO implements FileIO {
 
     private final String path;
 
@@ -65,14 +65,14 @@ public class NullFileIO extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
         stat.setLong(0x30, 0); // st_size
         stat.setInt(0x38, 0); // st_blksize
         return 0;
     }
 
     @Override
-    public int ioctl(Emulator emulator, long request, long argp) {
+    public int ioctl(Emulator<?> emulator, long request, long argp) {
         return 0;
     }
 

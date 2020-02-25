@@ -1,13 +1,9 @@
 package com.github.unidbg;
 
-import com.github.unidbg.file.IOResolver;
-import com.github.unidbg.linux.file.StdoutCallback;
 import com.github.unidbg.spi.LibraryFile;
 
-public interface LibraryResolver extends IOResolver {
+public interface LibraryResolver {
 
-    LibraryFile resolveLibrary(Emulator emulator, String libraryName);
-
-    void setStdoutCallback(StdoutCallback callback);
+    LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName);
 
 }

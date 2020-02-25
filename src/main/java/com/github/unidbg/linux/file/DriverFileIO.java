@@ -2,18 +2,22 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.AbstractFileIO;
-import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.NewFileIO;
+import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.file.ios.StatStructure;
+import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
-public class DriverFileIO extends AbstractFileIO implements FileIO {
+public class DriverFileIO extends AbstractFileIO implements NewFileIO, AndroidFileIO, DarwinFileIO {
 
     private static final Log log = LogFactory.getLog(DriverFileIO.class);
 
-    public static DriverFileIO create(Emulator emulator, int oflags, String pathname) {
+    public static DriverFileIO create(Emulator<?> emulator, int oflags, String pathname) {
         if ("/dev/urandom".equals(pathname) || "/dev/random".equals(pathname) || "/dev/srandom".equals(pathname)) {
             return new RandomFileIO(emulator, pathname);
         }
@@ -26,10 +30,10 @@ public class DriverFileIO extends AbstractFileIO implements FileIO {
         return null;
     }
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private final String path;
 
-    DriverFileIO(Emulator emulator, int oflags, String path) {
+    DriverFileIO(Emulator<?> emulator, int oflags, String path) {
         super(oflags);
         this.emulator = emulator;
         this.path = path;
@@ -71,7 +75,7 @@ public class DriverFileIO extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int ioctl(Emulator emulator, long request, long argp) {
+    public int ioctl(Emulator<?> emulator, long request, long argp) {
         if ("/dev/alarm".equals(path)) {
             long ioc = request;
             long nr = ioc & 0xff;
@@ -123,6 +127,21 @@ public class DriverFileIO extends AbstractFileIO implements FileIO {
 
         log.info("androidAlarm argp=0x" + Long.toHexString(argp) + ", c=" + c + ", type=" + type + ", size=" + size + ", dir=" + dir);
         return -1;
+    }
+
+    @Override
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fstatfs(StatFS statFS) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

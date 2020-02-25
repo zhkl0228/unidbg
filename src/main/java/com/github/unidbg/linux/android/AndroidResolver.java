@@ -4,11 +4,11 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
+import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.LogCatFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
-import com.github.unidbg.linux.file.StdoutCallback;
 import com.github.unidbg.spi.LibraryFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -19,7 +19,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
-public class AndroidResolver implements LibraryResolver, IOResolver {
+public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileIO> {
 
     private final int sdk;
     private final List<String> needed;
@@ -29,19 +29,12 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         this.needed = needed == null ? null : Arrays.asList(needed);
     }
 
-    private StdoutCallback callback;
-
-    @Override
-    public void setStdoutCallback(StdoutCallback callback) {
-        this.callback = callback;
-    }
-
     public int getSdk() {
         return sdk;
     }
 
     @Override
-    public LibraryFile resolveLibrary(Emulator emulator, String libraryName) {
+    public LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName) {
         if (needed == null) {
             return null;
         }
@@ -53,7 +46,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         return resolveLibrary(emulator, libraryName, sdk);
     }
 
-    static LibraryFile resolveLibrary(Emulator emulator, String libraryName, int sdk) {
+    static LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName, int sdk) {
         final String lib = emulator.is32Bit() ? "lib" : "lib64";
         String name = "/android/sdk" + sdk + "/" + lib + "/" + libraryName.replace('+', 'p');
         URL url = AndroidResolver.class.getResource(name);
@@ -64,7 +57,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public FileResult resolve(Emulator emulator, String path, int oflags) {
+    public FileResult<AndroidFileIO> resolve(Emulator<AndroidFileIO> emulator, String path, int oflags) {
         File rootDir = emulator.getFileSystem().getRootDir();
         final boolean create = (oflags & IOConstants.O_CREAT) != 0;
         if (path.startsWith("/dev/log/")) {
@@ -77,7 +70,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
                 if (!log.exists() && !log.createNewFile()) {
                     throw new IOException("create new file failed: " + log);
                 }
-                return FileResult.success(new LogCatFileIO(oflags, log, path));
+                return FileResult.<AndroidFileIO>success(new LogCatFileIO(oflags, log, path));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -110,7 +103,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
                 }
 
                 if (tmp.isDirectory()) {
-                    return FileResult.success(new DirectoryFileIO(oflags, path));
+                    return FileResult.<AndroidFileIO>success(new DirectoryFileIO(oflags, path));
                 }
 
                 outputStream = new FileOutputStream(tmp);
@@ -127,9 +120,10 @@ public class AndroidResolver implements LibraryResolver, IOResolver {
         return null;
     }
 
-    private FileResult createFileIO(File file, String pathname, int oflags) {
+    private FileResult<AndroidFileIO> createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {
-            return FileResult.success(file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname));
+            AndroidFileIO io = file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname);
+            return FileResult.success(io);
         }
 
         return null;

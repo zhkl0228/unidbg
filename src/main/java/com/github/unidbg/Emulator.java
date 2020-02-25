@@ -4,7 +4,7 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.debugger.DebuggerType;
 import com.github.unidbg.file.FileSystem;
-import com.github.unidbg.linux.android.dvm.VM;
+import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
@@ -23,7 +23,7 @@ import java.net.URL;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public interface Emulator extends Closeable, Disassembler, ValuePair {
+public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, ValuePair {
 
     int getPointerSize();
 
@@ -35,16 +35,20 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
     /**
      * trace memory read
      */
-    Emulator traceRead();
-    Emulator traceRead(long begin, long end);
-    Emulator traceRead(long begin, long end, TraceReadListener listener);
+    @SuppressWarnings("unused")
+    Emulator<T> traceRead();
+    Emulator<T> traceRead(long begin, long end);
+    @SuppressWarnings("unused")
+    Emulator<T> traceRead(long begin, long end, TraceReadListener listener);
 
     /**
      * trace memory write
      */
-    Emulator traceWrite();
-    Emulator traceWrite(long begin, long end);
-    Emulator traceWrite(long begin, long end, TraceWriteListener listener);
+    @SuppressWarnings("unused")
+    Emulator<T> traceWrite();
+    Emulator<T> traceWrite(long begin, long end);
+    @SuppressWarnings("unused")
+    Emulator<T> traceWrite(long begin, long end, TraceWriteListener listener);
 
     /**
      * trace instruction
@@ -57,8 +61,10 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
     /**
      * redirect trace out
      */
+    @SuppressWarnings("unused")
     void redirectTrace(File outFile);
 
+    @SuppressWarnings("unused")
     void runAsm(String...asm);
 
     Number[] eFunc(long begin, Number... arguments);
@@ -77,6 +83,7 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
     /**
      * 是否正在运行
      */
+    @SuppressWarnings("unused")
     boolean isRunning();
 
     /**
@@ -116,20 +123,15 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
 
     Debugger attach(long begin, long end, DebuggerType type);
 
-    FileSystem getFileSystem();
+    FileSystem<T> getFileSystem();
 
     SvcMemory getSvcMemory();
 
-    SyscallHandler getSyscallHandler();
-
-    /**
-     * @param apkFile 可为null
-     */
-    VM createDalvikVM(File apkFile);
-    VM getDalvikVM();
+    SyscallHandler<T> getSyscallHandler();
 
     String getLibraryExtension();
     String getLibraryPath();
+    @SuppressWarnings("unused")
     LibraryFile createURLibraryFile(URL url, String libName);
 
     Dlfcn getDlfcn();
@@ -139,6 +141,6 @@ public interface Emulator extends Closeable, Disassembler, ValuePair {
      */
     void setTimeout(long timeout);
 
-    <T extends RegisterContext> T getContext();
+    <V extends RegisterContext> V getContext();
 
 }

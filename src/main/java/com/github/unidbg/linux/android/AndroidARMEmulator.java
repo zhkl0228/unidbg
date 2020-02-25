@@ -1,7 +1,9 @@
 package com.github.unidbg.linux.android;
 
+import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.LinuxFileSystem;
 import com.github.unidbg.linux.ARMSyscallHandler;
 import com.github.unidbg.linux.AndroidElfLoader;
@@ -28,7 +30,7 @@ import java.util.Arrays;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public class AndroidARMEmulator extends AbstractARMEmulator {
+public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> implements AndroidEmulator {
 
     private static final Log log = LogFactory.getLog(AndroidARMEmulator.class);
 
@@ -49,12 +51,12 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected FileSystem createFileSystem(File rootDir) {
+    protected FileSystem<AndroidFileIO> createFileSystem(File rootDir) {
         return new LinuxFileSystem(this, rootDir);
     }
 
     @Override
-    protected Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs) {
+    protected Memory createMemory(UnixSyscallHandler<AndroidFileIO> syscallHandler, String[] envs) {
         return new AndroidElfLoader(this, syscallHandler);
     }
 
@@ -64,12 +66,11 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected UnixSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
+    protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
         return new ARMSyscallHandler(svcMemory);
     }
 
-    @Override
-    public VM createDalvikVMInternal(File apkFile) {
+    private VM createDalvikVMInternal(File apkFile) {
         return new DalvikVM(this, apkFile);
     }
 
@@ -128,5 +129,21 @@ public class AndroidARMEmulator extends AbstractARMEmulator {
     @Override
     protected boolean isPaddingArgument() {
         return true;
+    }
+
+    private VM vm;
+
+    @Override
+    public final VM createDalvikVM(File apkFile) {
+        if (vm != null) {
+            throw new IllegalStateException("vm is already created");
+        }
+        vm = createDalvikVMInternal(apkFile);
+        return vm;
+    }
+
+    @Override
+    public final VM getDalvikVM() {
+        return vm;
     }
 }

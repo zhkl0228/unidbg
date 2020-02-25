@@ -22,9 +22,9 @@ public class TcpSocket extends SocketIO implements FileIO {
 
     private final Socket socket = new Socket();
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
 
-    public TcpSocket(Emulator emulator) {
+    public TcpSocket(Emulator<?> emulator) {
         this.emulator = emulator;
     }
 
@@ -171,9 +171,6 @@ public class TcpSocket extends SocketIO implements FileIO {
     public int shutdown(int how) {
         switch (how) {
             case SHUT_RD:
-                IOUtils.closeQuietly(outputStream);
-                outputStream = null;
-                return 0;
             case SHUT_WR:
                 IOUtils.closeQuietly(outputStream);
                 outputStream = null;

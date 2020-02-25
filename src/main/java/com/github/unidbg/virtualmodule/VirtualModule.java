@@ -18,17 +18,17 @@ public abstract class VirtualModule {
     private final String name;
     private final Map<String, UnicornPointer> symbols = new HashMap<>();
 
-    protected VirtualModule(Emulator emulator, String name) {
+    protected VirtualModule(Emulator<?> emulator, String name) {
         this(emulator, null, name);
     }
 
-    protected VirtualModule(Emulator emulator, VM vm, String name) {
+    protected VirtualModule(Emulator<?> emulator, VM vm, String name) {
         this.name = name;
 
         onInitialize(emulator, vm, symbols);
     }
 
-    protected abstract void onInitialize(Emulator emulator, VM vm, Map<String, UnicornPointer> symbols);
+    protected abstract void onInitialize(Emulator<?> emulator, VM vm, Map<String, UnicornPointer> symbols);
 
     public Module register(Memory memory) {
         if (name == null || name.trim().length() < 1) {

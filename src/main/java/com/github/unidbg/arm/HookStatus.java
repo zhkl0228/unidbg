@@ -15,12 +15,12 @@ public class HookStatus {
         this.forward = forward;
     }
 
-    public static HookStatus RET(Emulator emulator, long pc) {
+    public static HookStatus RET(Emulator<?> emulator, long pc) {
         RegisterContext context = emulator.getContext();
         return new HookStatus(context.getLongArg(0), pc, true);
     }
 
-    public static HookStatus LR(Emulator emulator, long returnValue) {
+    public static HookStatus LR(Emulator<?> emulator, long returnValue) {
         RegisterContext context = emulator.getContext();
         return new HookStatus(returnValue, context.getLR(), false);
     }

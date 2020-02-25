@@ -11,7 +11,7 @@ public interface LibraryFile {
 
     String getMapRegionName();
 
-    LibraryFile resolveLibrary(Emulator emulator, String soName) throws IOException;
+    LibraryFile resolveLibrary(Emulator<?> emulator, String soName) throws IOException;
 
     byte[] readToByteArray() throws IOException;
 

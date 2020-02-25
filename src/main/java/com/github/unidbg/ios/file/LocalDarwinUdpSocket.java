@@ -13,7 +13,7 @@ public class LocalDarwinUdpSocket extends LocalUdpSocket {
 
     private static final Log log = LogFactory.getLog(LocalDarwinUdpSocket.class);
 
-    public LocalDarwinUdpSocket(Emulator emulator) {
+    public LocalDarwinUdpSocket(Emulator<?> emulator) {
         super(emulator);
     }
 
@@ -27,15 +27,14 @@ public class LocalDarwinUdpSocket extends LocalUdpSocket {
 
     @Override
     protected int connect(String path) {
-        switch (path) {
-            case "/var/run/syslog":
-                handler = new UdpHandler() {
-                    @Override
-                    public void handle(byte[] request) {
-                        System.err.print("syslog: " + new String(request, StandardCharsets.UTF_8));
-                    }
-                };
-                return 0;
+        if ("/var/run/syslog".equals(path)) {
+            handler = new UdpHandler() {
+                @Override
+                public void handle(byte[] request) {
+                    System.err.print("syslog: " + new String(request, StandardCharsets.UTF_8));
+                }
+            };
+            return 0;
         }
 
         emulator.getMemory().setErrno(UnixEmulator.EPERM);

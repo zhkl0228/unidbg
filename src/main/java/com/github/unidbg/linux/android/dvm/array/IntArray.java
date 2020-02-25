@@ -26,7 +26,7 @@ public class IntArray extends BaseArray<int[]> implements PrimitiveArray<int[]> 
     }
 
     @Override
-    public UnicornPointer _GetArrayCritical(Emulator emulator, Pointer isCopy) {
+    public UnicornPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
         if (isCopy != null) {
             isCopy.setInt(0, VM.JNI_TRUE);
         }

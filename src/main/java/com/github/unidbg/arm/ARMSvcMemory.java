@@ -19,10 +19,10 @@ public class ARMSvcMemory implements SvcMemory {
 
     private static final Log log = LogFactory.getLog(ARMSvcMemory.class);
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private UnicornPointer base;
 
-    ARMSvcMemory(Unicorn unicorn, long base, int size, Emulator emulator) {
+    ARMSvcMemory(Unicorn unicorn, long base, int size, Emulator<?> emulator) {
         this.emulator = emulator;
         this.base = UnicornPointer.pointer(emulator, base);
         assert this.base != null;

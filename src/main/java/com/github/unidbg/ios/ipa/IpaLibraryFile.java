@@ -46,7 +46,7 @@ public class IpaLibraryFile implements LibraryFile {
     }
 
     @Override
-    public LibraryFile resolveLibrary(Emulator emulator, String soName) throws IOException {
+    public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) throws IOException {
         if (!soName.contains("@rpath")) {
             return null;
         }

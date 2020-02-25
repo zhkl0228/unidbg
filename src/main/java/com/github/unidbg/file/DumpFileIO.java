@@ -1,8 +1,15 @@
 package com.github.unidbg.file;
 
+import com.github.unidbg.Emulator;
+import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.file.ios.StatStructure;
+import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.utils.Inspector;
+import com.sun.jna.Pointer;
+import unicorn.Unicorn;
 
-public class DumpFileIO extends AbstractFileIO {
+public class DumpFileIO extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
 
     private final int fd;
 
@@ -25,5 +32,20 @@ public class DumpFileIO extends AbstractFileIO {
     @Override
     public FileIO dup2() {
         return this;
+    }
+
+    @Override
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fstatfs(StatFS statFS) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
+        throw new UnsupportedOperationException();
     }
 }

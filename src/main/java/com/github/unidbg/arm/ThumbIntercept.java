@@ -47,13 +47,10 @@ public class ThumbIntercept extends ThumbSvc {
             List<String> asm = new ArrayList<>(2);
             asm.add("svc #0x" + Integer.toHexString(svcNumber));
             if (isThumb32) {
-                switch (insn.mnemonic) {
-                    case "bl":
-                        asm.add("pop {pc}");
-                        break;
-                    default:
-                        asm.add("nop");
-                        break;
+                if ("bl".equals(insn.mnemonic)) {
+                    asm.add("pop {pc}");
+                } else {
+                    asm.add("nop");
                 }
             }
             KeystoneEncoded encoded = keystone.assemble(asm);
@@ -64,7 +61,7 @@ public class ThumbIntercept extends ThumbSvc {
     }
 
     @Override
-    public long handle(Emulator emulator) {
+    public long handle(Emulator<?> emulator) {
         Unicorn u = emulator.getUnicorn();
         if (callback != null) {
             callback.onIntercept(emulator);
@@ -73,7 +70,7 @@ public class ThumbIntercept extends ThumbSvc {
         return ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
     }
 
-    private void eval(Unicorn u, Emulator emulator) {
+    private void eval(Unicorn u, Emulator<?> emulator) {
         switch (insn.mnemonic) {
             case "push":
                 evalPush(u, emulator);
@@ -100,7 +97,7 @@ public class ThumbIntercept extends ThumbSvc {
         }
     }
 
-    private void evalBL(Unicorn u, boolean x, Emulator emulator) {
+    private void evalBL(Unicorn u, boolean x, Emulator<?> emulator) {
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
             Pointer pc = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
@@ -193,7 +190,7 @@ public class ThumbIntercept extends ThumbSvc {
         }
     }
 
-    private void evalPush(Unicorn u, Emulator emulator) {
+    private void evalPush(Unicorn u, Emulator<?> emulator) {
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         Arm.OpInfo opInfo = (Arm.OpInfo) this.insn.operands;
         List<Arm.Operand> operandList = new ArrayList<>(opInfo.op.length);

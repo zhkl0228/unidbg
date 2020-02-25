@@ -2,12 +2,11 @@ package com.github.unidbg.android;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
 import junit.framework.TestCase;
 
-public abstract class EmulatorTest extends TestCase {
+public abstract class EmulatorTest<T extends Emulator<?>> extends TestCase {
 
-    protected Emulator emulator;
+    protected T emulator;
 
     private long start;
 
@@ -20,9 +19,7 @@ public abstract class EmulatorTest extends TestCase {
         emulator.getMemory().setLibraryResolver(createLibraryResolver());
     }
 
-    protected Emulator createARMEmulator() {
-        return new AndroidARMEmulator();
-    }
+    protected abstract T createARMEmulator();
 
     protected abstract LibraryResolver createLibraryResolver();
 

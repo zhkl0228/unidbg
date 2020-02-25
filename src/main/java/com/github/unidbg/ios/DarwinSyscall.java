@@ -1,5 +1,6 @@
 package com.github.unidbg.ios;
 
+@SuppressWarnings("unused")
 public interface DarwinSyscall {
 
     int MACH_MSG_SUCCESS = 0x00000000;

@@ -16,7 +16,7 @@ abstract class BaseArray<T> extends DvmObject<T> implements Array<T> {
     private MemoryBlock memoryBlock;
 
     @Override
-    public UnicornPointer allocateMemoryBlock(Emulator emulator, int length) {
+    public UnicornPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
         if (memoryBlock != null) {
             throw new IllegalStateException("Already allocated array memory");
         }

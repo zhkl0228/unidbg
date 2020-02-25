@@ -10,7 +10,7 @@ import unicorn.UnicornException;
 class MemoryCommand implements GdbStubCommand {
 
     @Override
-    public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
+    public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
         try {
             int divider = command.indexOf(",");
             long address = Long.parseLong(command.substring(1, divider), 16);

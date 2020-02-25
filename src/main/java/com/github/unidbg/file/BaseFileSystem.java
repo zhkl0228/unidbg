@@ -1,10 +1,6 @@
 package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.linux.file.DirectoryFileIO;
-import com.github.unidbg.linux.file.SimpleFileIO;
-import com.github.unidbg.linux.file.Stdin;
-import com.github.unidbg.linux.file.Stdout;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import org.apache.commons.io.FileUtils;
@@ -14,14 +10,14 @@ import org.apache.commons.logging.LogFactory;
 import java.io.File;
 import java.io.IOException;
 
-public abstract class BaseFileSystem implements FileSystem {
+public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<T> {
 
     private static final Log log = LogFactory.getLog(BaseFileSystem.class);
 
-    protected final Emulator emulator;
+    protected final Emulator<T> emulator;
     protected final File rootDir;
 
-    public BaseFileSystem(Emulator emulator, File rootDir) {
+    public BaseFileSystem(Emulator<T> emulator, File rootDir) {
         this.emulator = emulator;
         this.rootDir = rootDir;
 
@@ -37,9 +33,9 @@ public abstract class BaseFileSystem implements FileSystem {
     }
 
     @Override
-    public FileResult open(String pathname, int oflags) {
+    public FileResult<T> open(String pathname, int oflags) {
         if (IO.STDIN.equals(pathname)) {
-            return FileResult.success(new Stdin(oflags));
+            return FileResult.success(createStdin(oflags));
         }
 
         if (IO.STDOUT.equals(pathname) || IO.STDERR.equals(pathname)) {
@@ -48,7 +44,7 @@ public abstract class BaseFileSystem implements FileSystem {
                 if (!stdio.exists() && !stdio.createNewFile()) {
                     throw new IOException("create new file failed: " + stdio);
                 }
-                return FileResult.success(new Stdout(oflags, stdio, pathname, IO.STDERR.equals(pathname), null)); // TODO support callback
+                return FileResult.success(createStdout(oflags, stdio, pathname));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -58,7 +54,11 @@ public abstract class BaseFileSystem implements FileSystem {
         return createFileIO(file, oflags, pathname);
     }
 
-    private FileResult createFileIO(File file, int oflags, String path) {
+    protected abstract T createStdout(int oflags, File stdio, String pathname);
+
+    protected abstract T createStdin(int oflags);
+
+    private FileResult<T> createFileIO(File file, int oflags, String path) {
         boolean directory = hasDirectory(oflags);
         if (file.isFile() && directory) {
             return FileResult.failed(UnixEmulator.ENOTDIR);
@@ -101,14 +101,6 @@ public abstract class BaseFileSystem implements FileSystem {
         } else {
             return dir.mkdirs();
         }
-    }
-
-    protected FileResult createSimpleFileIO(File file, int oflags, String path) {
-        return FileResult.success(new SimpleFileIO(oflags, file, path));
-    }
-
-    protected FileResult createDirectoryFileIO(File file, int oflags, String path) {
-        return FileResult.success(new DirectoryFileIO(oflags, path, file));
     }
 
     protected abstract boolean hasCreat(int oflags);

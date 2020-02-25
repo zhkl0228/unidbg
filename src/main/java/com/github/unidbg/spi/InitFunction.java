@@ -16,6 +16,6 @@ public abstract class InitFunction {
 
     public abstract long getAddress();
 
-    public abstract void call(Emulator emulator);
+    public abstract void call(Emulator<?> emulator);
 
 }

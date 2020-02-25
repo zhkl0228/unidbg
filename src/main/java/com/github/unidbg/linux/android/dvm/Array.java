@@ -10,7 +10,7 @@ public interface Array<T> {
 
     void setData(int start, T data);
 
-    UnicornPointer allocateMemoryBlock(Emulator emulator, int length);
+    UnicornPointer allocateMemoryBlock(Emulator<?> emulator, int length);
     void freeMemoryBlock(Pointer pointer);
 
 }

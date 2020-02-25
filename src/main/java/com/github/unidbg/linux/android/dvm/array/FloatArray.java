@@ -26,7 +26,7 @@ public class FloatArray extends BaseArray<float[]> implements PrimitiveArray<flo
     }
 
     @Override
-    public UnicornPointer _GetArrayCritical(Emulator emulator, Pointer isCopy) {
+    public UnicornPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
         if (isCopy != null) {
             isCopy.setInt(0, VM.JNI_TRUE);
         }

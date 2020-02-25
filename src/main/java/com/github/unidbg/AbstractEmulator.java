@@ -8,7 +8,7 @@ import com.github.unidbg.debugger.DebuggerType;
 import com.github.unidbg.debugger.gdb.GdbStub;
 import com.github.unidbg.debugger.ida.AndroidServer;
 import com.github.unidbg.file.FileSystem;
-import com.github.unidbg.linux.android.dvm.VM;
+import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public abstract class AbstractEmulator implements Emulator {
+public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<T> {
 
     private static final Log log = LogFactory.getLog(AbstractEmulator.class);
 
@@ -53,17 +53,17 @@ public abstract class AbstractEmulator implements Emulator {
 
     protected long timeout = DEFAULT_TIMEOUT;
 
-    private static final ThreadLocal<Emulator> EMULATOR_THREAD_LOCAL = new ThreadLocal<>();
-    public static Emulator getContextEmulator() {
+    private static final ThreadLocal<Emulator<?>> EMULATOR_THREAD_LOCAL = new ThreadLocal<>();
+    public static Emulator<?> getContextEmulator() {
         return EMULATOR_THREAD_LOCAL.get();
     }
-    public static void setContextEmulator(Emulator emulator) {
+    public static void setContextEmulator(Emulator<?> emulator) {
         EMULATOR_THREAD_LOCAL.set(emulator);
     }
 
     private final RegisterContext registerContext;
 
-    private final FileSystem fileSystem;
+    private final FileSystem<T> fileSystem;
 
     public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, File rootDir) {
         super();
@@ -94,11 +94,11 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     @Override
-    public final FileSystem getFileSystem() {
+    public final FileSystem<T> getFileSystem() {
         return fileSystem;
     }
 
-    protected abstract FileSystem createFileSystem(File rootDir);
+    protected abstract FileSystem<T> createFileSystem(File rootDir);
 
     @Override
     public boolean is64Bit() {
@@ -114,15 +114,15 @@ public abstract class AbstractEmulator implements Emulator {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends RegisterContext> T getContext() {
-        return (T) registerContext;
+    public <V extends RegisterContext> V getContext() {
+        return (V) registerContext;
     }
 
-    protected  abstract Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs);
+    protected  abstract Memory createMemory(UnixSyscallHandler<T> syscallHandler, String[] envs);
 
     protected abstract Dlfcn createDyld(SvcMemory svcMemory);
 
-    protected abstract UnixSyscallHandler createSyscallHandler(SvcMemory svcMemory);
+    protected abstract UnixSyscallHandler<T> createSyscallHandler(SvcMemory svcMemory);
 
     @Override
     public void runAsm(String... asm) {
@@ -209,7 +209,7 @@ public abstract class AbstractEmulator implements Emulator {
     private TraceCodeListener traceCodeListener;
 
     @Override
-    public final Emulator traceRead(long begin, long end) {
+    public final Emulator<T> traceRead(long begin, long end) {
         traceMemoryRead = true;
         traceMemoryReadBegin = begin;
         traceMemoryReadEnd = end;
@@ -217,13 +217,13 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     @Override
-    public Emulator traceRead(long begin, long end, TraceReadListener listener) {
+    public Emulator<T> traceRead(long begin, long end, TraceReadListener listener) {
         this.traceReadListener = listener;
         return traceRead(begin, end);
     }
 
     @Override
-    public final Emulator traceWrite(long begin, long end) {
+    public final Emulator<T> traceWrite(long begin, long end) {
         traceMemoryWrite = true;
         traceMemoryWriteBegin = begin;
         traceMemoryWriteEnd = end;
@@ -231,18 +231,18 @@ public abstract class AbstractEmulator implements Emulator {
     }
 
     @Override
-    public Emulator traceWrite(long begin, long end, TraceWriteListener listener) {
+    public Emulator<T> traceWrite(long begin, long end, TraceWriteListener listener) {
         this.traceWriteListener = listener;
         return traceWrite(begin, end);
     }
 
     @Override
-    public final Emulator traceRead() {
+    public final Emulator<T> traceRead() {
         return traceRead(1, 0);
     }
 
     @Override
-    public final Emulator traceWrite() {
+    public final Emulator<T> traceWrite() {
         return traceWrite(1, 0);
     }
 
@@ -446,28 +446,8 @@ public abstract class AbstractEmulator implements Emulator {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(String key) {
-        return (T) context.get(key);
-    }
-
-    private VM vm;
-
-    @Override
-    public final VM createDalvikVM(File apkFile) {
-        if (vm != null) {
-            throw new IllegalStateException("vm is already created");
-        }
-        vm = createDalvikVMInternal(apkFile);
-        return vm;
-    }
-
-    protected VM createDalvikVMInternal(File apkFile) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public final VM getDalvikVM() {
-        return vm;
+    public <V> V get(String key) {
+        return (V) context.get(key);
     }
 
     protected abstract boolean isPaddingArgument();

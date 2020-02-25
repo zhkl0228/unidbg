@@ -15,9 +15,9 @@ import java.util.Arrays;
 
 class AssemblyCodeDumper implements CodeHook {
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
 
-    AssemblyCodeDumper(Emulator emulator) {
+    AssemblyCodeDumper(Emulator<?> emulator) {
         super();
 
         this.emulator = emulator;

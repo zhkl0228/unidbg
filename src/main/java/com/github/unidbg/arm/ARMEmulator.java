@@ -1,13 +1,14 @@
 package com.github.unidbg.arm;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.file.NewFileIO;
 
 /**
  * arm emulator
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public interface ARMEmulator extends Emulator {
+public interface ARMEmulator<T extends NewFileIO> extends Emulator<T> {
 
     // From http://infocenter.arm.com/help/topic/com.arm.doc.ihi0044f/IHI0044F_aaelf.pdf
 

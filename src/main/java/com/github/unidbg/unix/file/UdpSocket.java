@@ -16,10 +16,10 @@ public class UdpSocket extends SocketIO implements FileIO {
 
     private static final Log log = LogFactory.getLog(UdpSocket.class);
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private final DatagramSocket datagramSocket;
 
-    public UdpSocket(Emulator emulator) {
+    public UdpSocket(Emulator<?> emulator) {
         this.emulator = emulator;
         try {
             this.datagramSocket = new DatagramSocket();

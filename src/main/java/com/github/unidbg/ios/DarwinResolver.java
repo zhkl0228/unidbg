@@ -4,11 +4,11 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
+import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
+import com.github.unidbg.ios.file.DirectoryFileIO;
+import com.github.unidbg.ios.file.SimpleFileIO;
 import com.github.unidbg.linux.android.AndroidResolver;
-import com.github.unidbg.linux.file.DirectoryFileIO;
-import com.github.unidbg.linux.file.SimpleFileIO;
-import com.github.unidbg.linux.file.StdoutCallback;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixEmulator;
 import org.apache.commons.io.FileUtils;
@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DarwinResolver implements LibraryResolver, IOResolver {
+public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO> {
 
     static final String LIB_VERSION = "7.1";
 
@@ -40,12 +40,8 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public LibraryFile resolveLibrary(Emulator emulator, String libraryName) {
+    public LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName) {
         return resolveLibrary(libraryName, version, excludeLibs);
-    }
-
-    @Override
-    public void setStdoutCallback(StdoutCallback callback) {
     }
 
     static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs) {
@@ -62,7 +58,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
     }
 
     @Override
-    public FileResult resolve(Emulator emulator, String path, int oflags) {
+    public FileResult<DarwinFileIO> resolve(Emulator<DarwinFileIO> emulator, String path, int oflags) {
         if ("".equals(path)) {
             return FileResult.failed(UnixEmulator.EINVAL);
         }
@@ -108,9 +104,10 @@ public class DarwinResolver implements LibraryResolver, IOResolver {
         return null;
     }
 
-    private FileResult createFileIO(File file, String pathname, int oflags) {
+    private FileResult<DarwinFileIO> createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {
-            return FileResult.success(file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname));
+            DarwinFileIO io = file.isDirectory() ? new DirectoryFileIO(oflags, pathname, file) : new SimpleFileIO(oflags, file, pathname);
+            return FileResult.success(io);
         }
 
         return null;

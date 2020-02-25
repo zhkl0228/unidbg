@@ -9,7 +9,7 @@ import com.sun.jna.Pointer;
 
 class ObjcImpl extends ObjC {
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
 
     private final Symbol _objc_msgSend;
 
@@ -18,7 +18,7 @@ class ObjcImpl extends ObjC {
     private final Symbol _objc_lookUpClass;
     private final Symbol _sel_registerName;
 
-    public ObjcImpl(Emulator emulator) {
+    public ObjcImpl(Emulator<?> emulator) {
         this.emulator = emulator;
         Module module = emulator.getMemory().findModule("libobjc.A.dylib");
         if (module == null) {
@@ -89,7 +89,7 @@ class ObjcImpl extends ObjC {
     }
 
     @Override
-    public Number msgSend(Emulator emulator, Object... args) {
+    public Number msgSend(Emulator<?> emulator, Object... args) {
         return _objc_msgSend.call(emulator, args)[0];
     }
 }

@@ -1,6 +1,6 @@
 package com.github.unidbg.android;
 
-import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.xhook.IxHook;
@@ -10,7 +10,6 @@ import com.github.unidbg.linux.android.XHookImpl;
 import com.github.unidbg.linux.android.dvm.*;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.*;
 import com.github.unidbg.utils.Inspector;
 
 import javax.crypto.Cipher;
@@ -29,11 +28,11 @@ public class QDReaderJni extends AbstractJni implements ModuleListener {
         return new AndroidResolver(SDK);
     }
 
-    private static ARMEmulator createARMEmulator() {
+    private static AndroidEmulator createARMEmulator() {
         return new AndroidARMEmulator("a.d.c");
     }
 
-    private final ARMEmulator emulator;
+    private final AndroidEmulator emulator;
     private final VM vm;
 
     private final DvmClass d;
@@ -67,7 +66,7 @@ public class QDReaderJni extends AbstractJni implements ModuleListener {
     }
 
     @Override
-    public void onLoaded(Emulator emulator, Module module) {
+    public void onLoaded(Emulator<?> emulator, Module module) {
         if ("libcrypto.so".equals(module.name)) {
             Symbol DES_set_key = module.findSymbolByName("DES_set_key", false);
             Symbol DES_set_key_unchecked = module.findSymbolByName("DES_set_key_unchecked", false);
@@ -81,7 +80,7 @@ public class QDReaderJni extends AbstractJni implements ModuleListener {
         IxHook xHook = XHookImpl.getInstance(emulator);
         xHook.register("libd-lib.so", "free", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 return HookStatus.LR(emulator, 0);
             }
         });

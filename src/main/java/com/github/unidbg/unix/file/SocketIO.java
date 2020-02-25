@@ -1,9 +1,12 @@
 package com.github.unidbg.unix.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.file.AbstractFileIO;
-import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.BaseFileIO;
+import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.file.ios.StatStructure;
+import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
+import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -14,7 +17,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
-public abstract class SocketIO extends AbstractFileIO implements FileIO {
+public abstract class SocketIO extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
 
     private static final Log log = LogFactory.getLog(SocketIO.class);
 
@@ -58,19 +61,17 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
         try {
             switch (level) {
                 case SOL_SOCKET:
-                    switch (optname) {
-                        case SO_ERROR:
-                            optlen.setInt(0, 4);
-                            optval.setInt(0, 0);
-                            return 0;
+                    if (optname == SO_ERROR) {
+                        optlen.setInt(0, 4);
+                        optval.setInt(0, 0);
+                        return 0;
                     }
                     break;
                 case IPPROTO_TCP:
-                    switch (optname) {
-                        case TCP_NODELAY:
-                            optlen.setInt(0, 4);
-                            optval.setInt(0, getTcpNoDelay());
-                            return 0;
+                    if (optname == TCP_NODELAY) {
+                        optlen.setInt(0, 4);
+                        optval.setInt(0, getTcpNoDelay());
+                        return 0;
                     }
                     break;
             }
@@ -200,7 +201,7 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
         int st_mode = IO.S_IFSOCK;
         /*
          * 0x00: st_dev
@@ -218,5 +219,15 @@ public abstract class SocketIO extends AbstractFileIO implements FileIO {
         stat.setInt(0x38, 0); // st_blksize
         stat.setLong(0x60, 0); // st_ino
         return 0;
+    }
+
+    @Override
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fstatfs(StatFS statFS) {
+        throw new UnsupportedOperationException();
     }
 }

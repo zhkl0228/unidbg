@@ -14,7 +14,7 @@ public class CodeHistory {
         this.thumb = thumb;
     }
 
-    Capstone.CsInsn disassemble(Emulator emulator) {
+    Capstone.CsInsn disassemble(Emulator<?> emulator) {
         return emulator.disassemble(address, emulator.getUnicorn().mem_read(address, size), thumb)[0];
     }
 

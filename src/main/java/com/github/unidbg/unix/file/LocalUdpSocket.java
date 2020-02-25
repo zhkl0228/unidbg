@@ -17,9 +17,9 @@ public abstract class LocalUdpSocket extends SocketIO implements FileIO {
         void handle(byte[] request) throws IOException;
     }
 
-    protected final Emulator emulator;
+    protected final Emulator<?> emulator;
 
-    protected LocalUdpSocket(Emulator emulator) {
+    protected LocalUdpSocket(Emulator<?> emulator) {
         this.emulator = emulator;
     }
 

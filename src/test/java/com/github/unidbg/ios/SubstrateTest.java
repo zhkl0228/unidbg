@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
@@ -13,7 +12,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 
-public class SubstrateTest extends EmulatorTest {
+public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -21,7 +20,7 @@ public class SubstrateTest extends EmulatorTest {
     }
 
     @Override
-    protected Emulator createARMEmulator() {
+    protected DarwinARMEmulator createARMEmulator() {
         return new DarwinARMEmulator("com.substrate.test", new File("target/rootfs/substrate"));
     }
 
@@ -40,7 +39,7 @@ public class SubstrateTest extends EmulatorTest {
         /*IFishHook fishHook = FishHook.getInstance(emulator);
         fishHook.rebindSymbol("memcpy", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer dest = context.getPointerArg(0);
                 Pointer src = context.getPointerArg(1);
@@ -53,7 +52,7 @@ public class SubstrateTest extends EmulatorTest {
 //        IWhale whale = Whale.getInstance(emulator);
         /*whale.WImportHookFunction("_malloc", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 Unicorn unicorn = emulator.getUnicorn();
                 int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
                 System.err.println("IWhale hook _malloc size=" + size);
@@ -65,7 +64,7 @@ public class SubstrateTest extends EmulatorTest {
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
         /*hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer zone = context.getPointerArg(0);
                 int size = context.getIntArg(1);
@@ -77,7 +76,7 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.traceCode();
         /*hookZz.wrap(module.findSymbolByName("_free"), new WrapCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("preCall _free=" + ctx.getPointerArg(0));
             }
         });*/
@@ -93,7 +92,7 @@ public class SubstrateTest extends EmulatorTest {
 
         /*whale.inlineHookFunction(module.findSymbolByName("_malloc"), new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 int size = context.getIntArg(0);
                 System.err.println("onCall _malloc size=" + size + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
@@ -105,7 +104,7 @@ public class SubstrateTest extends EmulatorTest {
 //        emulator.traceCode();
         /*whale.importHookFunction("_strcmp", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer pointer1 = context.getPointerArg(0);
                 Pointer pointer2 = context.getPointerArg(1);

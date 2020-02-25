@@ -42,14 +42,14 @@ class TraceMemoryHook implements MemHook {
         } else {
             value = Hex.encodeHexString(data);
         }
-        Emulator emulator = (Emulator) user;
+        Emulator<?> emulator = (Emulator<?>) user;
         printMsg("### Memory READ at 0x", emulator, address, size, value);
         if (traceReadListener != null) {
             traceReadListener.onRead(emulator, address, data, value);
         }
     }
 
-    private void printMsg(String type, Emulator emulator, long address, int size, String value) {
+    private void printMsg(String type, Emulator<?> emulator, long address, int size, String value) {
         RegisterContext context = emulator.getContext();
         UnicornPointer pc = context.getPCPointer();
         UnicornPointer lr = context.getLRPointer();
@@ -69,7 +69,7 @@ class TraceMemoryHook implements MemHook {
             return;
         }
 
-        Emulator emulator = (Emulator) user;
+        Emulator<?> emulator = (Emulator<?>) user;
         printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
         if (traceWriteListener != null) {
             traceWriteListener.onWrite(emulator, address, size, value);

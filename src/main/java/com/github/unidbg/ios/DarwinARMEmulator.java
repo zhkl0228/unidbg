@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.DarwinFileSystem;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
@@ -15,12 +16,13 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collections;
 
-public class DarwinARMEmulator extends AbstractARMEmulator {
+public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
 
     public DarwinARMEmulator() {
         this(null, null);
     }
 
+    @SuppressWarnings("unused")
     public DarwinARMEmulator(String processName) {
         this(processName, null);
     }
@@ -34,7 +36,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected FileSystem createFileSystem(File rootDir) {
+    protected FileSystem<DarwinFileIO> createFileSystem(File rootDir) {
         return new DarwinFileSystem(this, rootDir);
     }
 
@@ -74,7 +76,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected Memory createMemory(UnixSyscallHandler syscallHandler, String[] envs) {
+    protected Memory createMemory(UnixSyscallHandler<DarwinFileIO> syscallHandler, String[] envs) {
         return new MachOLoader(this, syscallHandler, envs);
     }
 
@@ -84,7 +86,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator {
     }
 
     @Override
-    protected UnixSyscallHandler createSyscallHandler(SvcMemory svcMemory) {
+    protected UnixSyscallHandler<DarwinFileIO> createSyscallHandler(SvcMemory svcMemory) {
         return new ARM32SyscallHandler(svcMemory);
     }
 

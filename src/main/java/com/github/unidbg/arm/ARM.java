@@ -44,11 +44,11 @@ public class ARM {
         return (ins & 0xe000) == 0xe000 && (ins & 0x1800) != 0x0000;
     }
 
-    public static void showThumbRegs(Emulator emulator) {
+    public static void showThumbRegs(Emulator<?> emulator) {
         showRegs(emulator, ARM.THUMB_REGS);
     }
 
-    public static void showRegs(Emulator emulator, int[] regs) {
+    public static void showRegs(Emulator<?> emulator, int[] regs) {
         Unicorn unicorn = emulator.getUnicorn();
         boolean thumb = isThumb(unicorn);
         if (regs == null || regs.length < 1) {
@@ -153,7 +153,7 @@ public class ARM {
         System.out.println(builder.toString());
     }
 
-    public static void showRegs64(Emulator emulator, int[] regs) {
+    public static void showRegs64(Emulator<?> emulator, int[] regs) {
         Unicorn unicorn = emulator.getUnicorn();
         if (regs == null || regs.length < 1) {
             regs = ARM.getAll64Registers();
@@ -445,7 +445,7 @@ public class ARM {
             Arm64Const.UC_ARM64_REG_NZCV
     };
 
-    private static int[] getRegArgs(Emulator emulator) {
+    private static int[] getRegArgs(Emulator<?> emulator) {
         return emulator.is32Bit() ? ARM_ARG_REGS : ARM64_ARG_REGS;
     }
 
@@ -494,11 +494,11 @@ public class ARM {
 
     private static final Pattern MEM_PATTERN = Pattern.compile("\\w+,\\s\\[(\\w+),\\s#(-)?(0x)?(\\w+)]");
 
-    static String assembleDetail(Emulator emulator, Capstone.CsInsn ins, long address, boolean thumb) {
+    static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
         return assembleDetail(emulator, ins, address, thumb, false);
     }
 
-    static String assembleDetail(Emulator emulator, Capstone.CsInsn ins, long address, boolean thumb, boolean current) {
+    static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb, boolean current) {
         Memory memory = emulator.getMemory();
         char space = current ? '*' : ' ';
         StringBuilder sb = new StringBuilder();
@@ -651,7 +651,7 @@ public class ARM {
 
     private static final Log log = LogFactory.getLog(ARM.class);
 
-    static Arguments initArgs(Emulator emulator, boolean padding, Number... arguments) {
+    static Arguments initArgs(Emulator<?> emulator, boolean padding, Number... arguments) {
         Unicorn unicorn = emulator.getUnicorn();
         Memory memory = emulator.getMemory();
 

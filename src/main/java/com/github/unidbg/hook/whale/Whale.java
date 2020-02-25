@@ -15,7 +15,7 @@ public class Whale extends BaseHook implements IWhale {
 
     private static final Log log = LogFactory.getLog(Whale.class);
 
-    public static IWhale getInstance(Emulator emulator) {
+    public static IWhale getInstance(Emulator<?> emulator) {
         IWhale whale = emulator.get(Whale.class.getName());
         if (whale == null) {
             try {
@@ -30,7 +30,7 @@ public class Whale extends BaseHook implements IWhale {
 
     private final Symbol WInlineHookFunction, WImportHookFunction;
 
-    private Whale(Emulator emulator) throws IOException {
+    private Whale(Emulator<?> emulator) throws IOException {
         super(emulator, "libwhale");
 
         boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());

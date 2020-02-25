@@ -13,7 +13,7 @@ class SubstrateSymbol extends Symbol {
     }
 
     @Override
-    public Number[] call(Emulator emulator, Object... args) {
+    public Number[] call(Emulator<?> emulator, Object... args) {
         return MachOModule.emulateFunction(emulator, address, args);
     }
 

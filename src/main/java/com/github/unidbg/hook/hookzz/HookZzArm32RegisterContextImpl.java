@@ -11,9 +11,9 @@ import java.util.Map;
 public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implements RegisterContext, HookZzArm32RegisterContext {
 
     private final Pointer reg_ctx;
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
 
-    HookZzArm32RegisterContextImpl(Emulator emulator, final Map<String, Object> context) {
+    HookZzArm32RegisterContextImpl(Emulator<?> emulator, final Map<String, Object> context) {
         super(context);
         this.reg_ctx = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0).share(8); // skip dummy
         this.emulator = emulator;

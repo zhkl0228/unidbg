@@ -21,6 +21,7 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
         super(oflags, path, getMapsData(modules, null));
     }
 
+    @SuppressWarnings("unused")
     protected MapsFileIO(int oflags, String path, Collection<Module> modules, String additionContent) {
         super(oflags, path, getMapsData(modules, additionContent));
     }
@@ -70,7 +71,7 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
     }
 
     @Override
-    public int ioctl(Emulator emulator, long request, long argp) {
+    public int ioctl(Emulator<?> emulator, long request, long argp) {
         return 0;
     }
 }

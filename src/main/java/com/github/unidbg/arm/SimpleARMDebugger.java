@@ -20,12 +20,12 @@ import java.util.Scanner;
 
 class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
 
-    SimpleARMDebugger(Emulator emulator, boolean softBreakpoint) {
+    SimpleARMDebugger(Emulator<?> emulator, boolean softBreakpoint) {
         super(emulator, softBreakpoint);
     }
 
     @Override
-    protected final void loop(Emulator emulator, long address, int size) {
+    protected final void loop(Emulator<?> emulator, long address, int size) {
         System.out.println("debugger break at: 0x" + Long.toHexString(address));
         Unicorn u = emulator.getUnicorn();
         boolean thumb = ARM.isThumb(u);

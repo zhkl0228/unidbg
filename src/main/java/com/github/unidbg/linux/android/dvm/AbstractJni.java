@@ -156,10 +156,11 @@ public abstract class AbstractJni implements Jni {
                 ArrayListObject arrayList = (ArrayListObject) dvmObject;
                 return arrayList.getValue().get(index);
             }
-            case "android/app/Application->getSystemService(Ljava/lang/String;)Ljava/lang/Object;":
+            case "android/app/Application->getSystemService(Ljava/lang/String;)Ljava/lang/Object;": {
                 StringObject serviceName = vaList.getObject(0);
                 assert serviceName != null;
                 return new SystemService(vm, serviceName.getValue());
+            }
             case "java/lang/String->toString()Ljava/lang/String;":
                 return dvmObject;
             case "java/lang/Class->getName()Ljava/lang/String;":
@@ -174,9 +175,12 @@ public abstract class AbstractJni implements Jni {
             case "java/util/Locale->getCountry()Ljava/lang/String;":
                 locale = (Locale) dvmObject.getValue();
                 return new StringObject(vm, locale.getCountry());
-            case "android/os/IServiceManager->getService(Ljava/lang/String;)Landroid/os/IBinder;":
+            case "android/os/IServiceManager->getService(Ljava/lang/String;)Landroid/os/IBinder;": {
                 ServiceManager serviceManager = (ServiceManager) dvmObject;
-                return serviceManager.getService(vm, vaList.<StringObject>getObject(0).getValue());
+                StringObject serviceName = vaList.getObject(0);
+                assert serviceName != null;
+                return serviceManager.getService(vm, serviceName.getValue());
+            }
             case "java/io/File->getAbsolutePath()Ljava/lang/String;":
                 File file = (File) dvmObject.getValue();
                 return new StringObject(vm, file.getAbsolutePath());
@@ -187,6 +191,7 @@ public abstract class AbstractJni implements Jni {
                 return clazz.newObject(signature);
             case "android/content/pm/PackageManager->getPackageInfo(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;": {
                 StringObject packageName = vaList.getObject(0);
+                assert packageName != null;
                 int flags = vaList.getInt(4);
                 if (log.isDebugEnabled()) {
                     log.debug("getPackageInfo packageName=" + packageName.getValue() + ", flags=0x" + Integer.toHexString(flags));
@@ -217,6 +222,7 @@ public abstract class AbstractJni implements Jni {
             case "java/lang/String->getBytes(Ljava/lang/String;)[B":
                 String str = (String) dvmObject.getValue();
                 StringObject charsetName = vaList.getObject(0);
+                assert charsetName != null;
                 try {
                     return new ByteArray(str.getBytes(charsetName.value));
                 } catch (UnsupportedEncodingException e) {
@@ -224,7 +230,9 @@ public abstract class AbstractJni implements Jni {
                 }
             case "java/security/cert/CertificateFactory->generateCertificate(Ljava/io/InputStream;)Ljava/security/cert/Certificate;":
                 CertificateFactory factory = (CertificateFactory) dvmObject.value;
-                InputStream inputStream = (InputStream) vaList.getObject(0).value;
+                DvmObject<?> stream = vaList.getObject(0);
+                assert stream != null;
+                InputStream inputStream = (InputStream) stream.value;
                 try {
                     return new DvmObject<>(vm.resolveClass("java/security/cert/Certificate"), factory.generateCertificate(inputStream));
                 } catch (CertificateException e) {
@@ -241,6 +249,7 @@ public abstract class AbstractJni implements Jni {
             case "java/security/MessageDigest->digest([B)[B": {
                 MessageDigest messageDigest = (MessageDigest) dvmObject.value;
                 ByteArray array = vaList.getObject(0);
+                assert array != null;
                 return new ByteArray(messageDigest.digest(array.value));
             }
             case "java/util/ArrayList->remove(I)Ljava/lang/Object;": {
@@ -280,6 +289,7 @@ public abstract class AbstractJni implements Jni {
                 return vaList.getObject(0);
             case "java/security/cert/CertificateFactory->getInstance(Ljava/lang/String;)Ljava/security/cert/CertificateFactory;": {
                 StringObject type = vaList.getObject(0);
+                assert type != null;
                 try {
                     return new DvmObject<>(vm.resolveClass("java/security/cert/CertificateFactory"), CertificateFactory.getInstance(type.value));
                 } catch (CertificateException e) {
@@ -288,6 +298,7 @@ public abstract class AbstractJni implements Jni {
             }
             case "java/security/MessageDigest->getInstance(Ljava/lang/String;)Ljava/security/MessageDigest;": {
                 StringObject type = vaList.getObject(0);
+                assert type != null;
                 try {
                     return new DvmObject<>(vm.resolveClass("java/security/MessageDigest"), MessageDigest.getInstance(type.value));
                 } catch (NoSuchAlgorithmException e) {
@@ -304,7 +315,9 @@ public abstract class AbstractJni implements Jni {
         switch (signature) {
             case "android/os/Bundle->getInt(Ljava/lang/String;)I":
                 Bundle bundle = (Bundle) dvmObject;
-                return bundle.getInt(vaList.<StringObject>getObject(0).getValue());
+                StringObject key = vaList.getObject(0);
+                assert key != null;
+                return bundle.getInt(key.getValue());
             case "java/util/ArrayList->size()I":
                 ArrayListObject list = (ArrayListObject) dvmObject;
                 return list.size();

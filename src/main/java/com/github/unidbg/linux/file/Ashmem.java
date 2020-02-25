@@ -10,7 +10,7 @@ class Ashmem extends DriverFileIO {
 
     private static final Log log = LogFactory.getLog(Ashmem.class);
 
-    Ashmem(Emulator emulator, int oflags, String path) {
+    Ashmem(Emulator<?> emulator, int oflags, String path) {
         super(emulator, oflags, path);
     }
 
@@ -21,7 +21,7 @@ class Ashmem extends DriverFileIO {
     private int size;
 
     @Override
-    public int ioctl(Emulator emulator, long request, long argp) {
+    public int ioctl(Emulator<?> emulator, long request, long argp) {
         if (request == ASHMEM_SET_NAME) {
             Pointer pointer = UnicornPointer.pointer(emulator, argp);
             assert pointer != null;

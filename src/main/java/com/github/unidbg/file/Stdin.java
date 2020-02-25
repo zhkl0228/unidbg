@@ -1,15 +1,17 @@
-package com.github.unidbg.linux.file;
+package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.file.AbstractFileIO;
-import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.file.ios.StatStructure;
+import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-public class Stdin extends AbstractFileIO implements FileIO {
+public class Stdin extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
 
     public Stdin(int oflags) {
         super(oflags);
@@ -41,7 +43,7 @@ public class Stdin extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
         stat.setInt(0x10, 0); // st_mode
         stat.setLong(0x30, 0); // st_size
         return 0;
@@ -53,7 +55,17 @@ public class Stdin extends AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int ioctl(Emulator emulator, long request, long argp) {
+    public int ioctl(Emulator<?> emulator, long request, long argp) {
         return 0;
+    }
+
+    @Override
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fstatfs(StatFS statFS) {
+        throw new UnsupportedOperationException();
     }
 }

@@ -35,7 +35,7 @@ class MachOModuleInit extends InitFunction {
     /**
      * initializer(int argc, const char* argv[], const char* envp[], const char* apple[], const struct ProgramVars* vars)
      */
-    public void call(Emulator emulator) {
+    public void call(Emulator<?> emulator) {
 //        emulator.traceCode();
         if (isModInit) {
             log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address));
@@ -56,7 +56,7 @@ class MachOModuleInit extends InitFunction {
     }
 
     // (int argc, const char* argv[], const char* envp[], const char* apple[], const struct ProgramVars* vars)
-    private static void callModInit(Emulator emulator, long address, int argc, UnicornPointer argv, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars) {
+    private static void callModInit(Emulator<?> emulator, long address, int argc, UnicornPointer argv, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars) {
         List<Number> list = new ArrayList<>(5);
         list.add(argc);
         list.add(argv == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, argv.peer)));

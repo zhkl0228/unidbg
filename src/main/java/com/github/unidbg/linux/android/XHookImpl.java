@@ -15,7 +15,7 @@ public class XHookImpl extends BaseHook implements IxHook {
 
     private static final Log log = LogFactory.getLog(XHookImpl.class);
 
-    public static IxHook getInstance(Emulator emulator) {
+    public static IxHook getInstance(Emulator<?> emulator) {
         IxHook ixHook = emulator.get(XHookImpl.class.getName());
         if (ixHook == null) {
             try {
@@ -31,7 +31,7 @@ public class XHookImpl extends BaseHook implements IxHook {
     private final Symbol xhook_register;
     private final Symbol xhook_refresh;
 
-    private XHookImpl(Emulator emulator) throws IOException {
+    private XHookImpl(Emulator<?> emulator) throws IOException {
         super(emulator, "libxhook");
 
         xhook_register = module.findSymbolByName("xhook_register", false);

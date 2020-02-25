@@ -4,6 +4,7 @@ import capstone.Capstone;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.arm.context.UnicornArm32RegisterContext;
+import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -30,14 +31,14 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 
-public abstract class AbstractARMEmulator extends AbstractEmulator implements ARMEmulator {
+public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
     private static final Log log = LogFactory.getLog(AbstractARMEmulator.class);
 
     public static final long LR = 0xffff0000L;
 
     protected final Memory memory;
-    private final UnixSyscallHandler syscallHandler;
+    private final UnixSyscallHandler<T> syscallHandler;
     private final SvcMemory svcMemory;
 
     private final Capstone capstoneArm, capstoneThumb;
@@ -149,7 +150,7 @@ public abstract class AbstractARMEmulator extends AbstractEmulator implements AR
     }
 
     @Override
-    public SyscallHandler getSyscallHandler() {
+    public SyscallHandler<T> getSyscallHandler() {
         return syscallHandler;
     }
 

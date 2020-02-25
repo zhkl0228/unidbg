@@ -33,9 +33,9 @@ public abstract class Module {
         return regions;
     }
 
-    public abstract Number[] callFunction(Emulator emulator, long offset, Object... args);
+    public abstract Number[] callFunction(Emulator<?> emulator, long offset, Object... args);
 
-    public final Number[] callFunction(Emulator emulator, String symbolName, Object... args) {
+    public final Number[] callFunction(Emulator<?> emulator, String symbolName, Object... args) {
         Symbol symbol = findSymbolByName(symbolName, false);
         if (symbol == null) {
             throw new IllegalStateException("find symbol failed: " + symbolName);
@@ -81,6 +81,7 @@ public abstract class Module {
         return forceCallInit;
     }
 
+    @SuppressWarnings("unused")
     public void setForceCallInit() {
         this.forceCallInit = true;
     }
@@ -105,7 +106,7 @@ public abstract class Module {
         this.entryPoint = entryPoint;
     }
 
-    public  abstract int callEntry(Emulator emulator, Object... args);
+    public  abstract int callEntry(Emulator<?> emulator, Object... args);
 
     private UnicornPointer pathPointer;
 
@@ -128,7 +129,7 @@ public abstract class Module {
         return this.pathPointer;
     }
 
-    public static Number[] emulateFunction(Emulator emulator, long address, Object... args) {
+    public static Number[] emulateFunction(Emulator<?> emulator, long address, Object... args) {
         List<Number> list = new ArrayList<>(args.length);
         for (Object arg : args) {
             if (arg instanceof String) {

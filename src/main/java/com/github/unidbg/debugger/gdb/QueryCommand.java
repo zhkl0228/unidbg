@@ -14,7 +14,7 @@ class QueryCommand implements GdbStubCommand {
     private static final Log log = LogFactory.getLog(QueryCommand.class);
 
     @Override
-    public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
+    public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
         if (command.startsWith("qSupported")) {
             stub.makePacketAndSend("PacketSize=" + DebugServer.PACKET_SIZE + ";vContSupported+;multiprocess-;xmlRegisters=arm");
             return true;

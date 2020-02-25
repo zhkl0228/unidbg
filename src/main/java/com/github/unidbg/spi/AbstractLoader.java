@@ -1,18 +1,19 @@
 package com.github.unidbg.spi;
 
+import com.github.unidbg.*;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
-import com.github.unidbg.*;
-import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -20,7 +21,6 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
-import unicorn.WriteHook;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,13 +28,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public abstract class AbstractLoader implements Memory, Loader {
+public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loader {
 
     private static final Log log = LogFactory.getLog(AbstractLoader.class);
 
     protected final Unicorn unicorn;
-    protected final Emulator emulator;
-    protected final UnixSyscallHandler syscallHandler;
+    protected final Emulator<T> emulator;
+    protected final UnixSyscallHandler<T> syscallHandler;
 
     protected long sp;
     protected long mmapBaseAddress;
@@ -48,7 +48,7 @@ public abstract class AbstractLoader implements Memory, Loader {
         }
     }
 
-    public AbstractLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
+    public AbstractLoader(Emulator<T> emulator, UnixSyscallHandler<T> syscallHandler) {
         this.unicorn = emulator.getUnicorn();
         this.emulator = emulator;
         this.syscallHandler = syscallHandler;
@@ -227,17 +227,17 @@ public abstract class AbstractLoader implements Memory, Loader {
 
     @Override
     public final Module load(File elfFile, boolean forceCallInit) throws IOException {
-        return loadInternal(createLibraryFile(elfFile), null, forceCallInit);
+        return loadInternal(createLibraryFile(elfFile), forceCallInit);
     }
 
     protected abstract LibraryFile createLibraryFile(File file);
 
     @Override
     public final Module load(LibraryFile libraryFile, boolean forceCallInit) throws IOException {
-        return loadInternal(libraryFile, null, forceCallInit);
+        return loadInternal(libraryFile, forceCallInit);
     }
 
-    protected abstract Module loadInternal(LibraryFile libraryFile, WriteHook unpackHook, boolean forceCallInit) throws IOException;
+    protected abstract Module loadInternal(LibraryFile libraryFile, boolean forceCallInit) throws IOException;
 
     protected boolean callInitFunction;
 
@@ -256,10 +256,8 @@ public abstract class AbstractLoader implements Memory, Loader {
     protected LibraryResolver libraryResolver;
 
     @Override
-    public final void setLibraryResolver(LibraryResolver libraryResolver) {
+    public void setLibraryResolver(LibraryResolver libraryResolver) {
         this.libraryResolver = libraryResolver;
-
-        syscallHandler.addIOResolver(libraryResolver);
 
         /*
          * 注意打开顺序很重要

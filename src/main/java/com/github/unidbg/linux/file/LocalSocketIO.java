@@ -23,10 +23,10 @@ public class LocalSocketIO extends SocketIO implements FileIO {
         int fstat(Pointer stat);
     }
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private final int sdk;
 
-    public LocalSocketIO(Emulator emulator, int sdk) {
+    public LocalSocketIO(Emulator<?> emulator, int sdk) {
         this.emulator = emulator;
         this.sdk = sdk;
     }
@@ -72,7 +72,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
     }
 
     @Override
-    public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
         return handler.fstat(stat);
     }
 

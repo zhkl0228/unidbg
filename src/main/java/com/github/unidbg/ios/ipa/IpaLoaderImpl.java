@@ -5,10 +5,10 @@ import com.github.unidbg.Module;
 
 class IpaLoaderImpl extends IpaLoader {
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private final Module executable;
 
-    IpaLoaderImpl(Emulator emulator, Module executable) {
+    IpaLoaderImpl(Emulator<?> emulator, Module executable) {
         this.emulator = emulator;
         this.executable = executable;
     }
@@ -24,7 +24,7 @@ class IpaLoaderImpl extends IpaLoader {
     }
 
     @Override
-    public Emulator getEmulator() {
+    public Emulator<?> getEmulator() {
         return emulator;
     }
 }

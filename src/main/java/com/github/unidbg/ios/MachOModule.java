@@ -52,7 +52,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
-                String path, Emulator emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
+                String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
                 long machHeader, boolean executable, MachOLoader loader) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
@@ -132,7 +132,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     @Override
-    public int callEntry(Emulator emulator, Object... args) {
+    public int callEntry(Emulator<?> emulator, Object... args) {
         if (entryPoint <= 0) {
             throw new IllegalStateException("Invalid entry point");
         }
@@ -182,7 +182,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 //        return emulator.eFunc(machHeader + entryPoint, argc, argvPointer)[0].intValue();
     }
 
-    final void doInitialization(Emulator emulator) {
+    final void doInitialization(Emulator<?> emulator) {
         if (loader.executableModule == null) {
             vars.setPointer(0, UnicornPointer.pointer(emulator, machHeader)); // _NSGetMachExecuteHeader
         }
@@ -195,7 +195,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         callInitFunction(emulator);
     }
 
-    final void callRoutines(Emulator emulator) {
+    final void callRoutines(Emulator<?> emulator) {
         Log log = LogFactory.getLog(MachOModule.class);
         if (log.isDebugEnabled() && !routines.isEmpty()) {
             log.debug("callRoutines name=" + name);
@@ -206,7 +206,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
-    final void callInitFunction(Emulator emulator) {
+    final void callInitFunction(Emulator<?> emulator) {
         /*if (!initFunctionList.isEmpty() && "libSystem.B.dylib".equals(name)) {
             Module libsystem_c = loader.findModule("libsystem_c.dylib");
             if (libsystem_c != null) {
@@ -332,7 +332,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         return routines;
     }
 
-    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, String libName, Emulator emulator) {
+    private List<InitFunction> parseInitFunction(MachO machO, ByteBuffer buffer, String libName, Emulator<?> emulator) {
         List<InitFunction> initFunctionList = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -391,7 +391,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     @Override
-    public Number[] callFunction(Emulator emulator, long offset, Object... args) {
+    public Number[] callFunction(Emulator<?> emulator, long offset, Object... args) {
         return emulateFunction(emulator, base + offset, args);
     }
 
@@ -499,7 +499,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         throw new UnsupportedOperationException();
     }
 
-    static MachOModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator emulator) {
+    static MachOModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator<?> emulator) {
         if (symbols.isEmpty()) {
             throw new IllegalArgumentException("symbols is empty");
         }

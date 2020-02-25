@@ -27,7 +27,7 @@ public class ElfLibraryFile implements LibraryFile {
     }
 
     @Override
-    public LibraryFile resolveLibrary(Emulator emulator, String soName) {
+    public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
         File file = new File(elfFile.getParentFile(), soName);
         return file.canRead() ? new ElfLibraryFile(file) : null;
     }

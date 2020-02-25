@@ -19,7 +19,7 @@ public class CFNetwork extends FrameworkHooker {
     private static final Log log = LogFactory.getLog(CFNetwork.class);
 
     @Override
-    protected void doHook(Emulator emulator, Module module) {
+    protected void doHook(Emulator<?> emulator, Module module) {
         Symbol _CFNetworkCopySystemProxySettings = module.findSymbolByName("_CFNetworkCopySystemProxySettings", false);
         if (_CFNetworkCopySystemProxySettings == null) {
             throw new IllegalStateException("_CFNetworkCopySystemProxySettings is null");
@@ -32,7 +32,7 @@ public class CFNetwork extends FrameworkHooker {
         ISubstrate substrate = Substrate.getInstance(emulator);
         substrate.hookFunction(_CFNetworkCopySystemProxySettings, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 if (log.isDebugEnabled()) {
                     log.debug("_CFNetworkCopySystemProxySettings");
                 }

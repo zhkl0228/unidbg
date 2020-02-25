@@ -2,20 +2,20 @@ package com.github.unidbg.linux;
 
 import com.github.unidbg.*;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.HookListener;
+import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.ElfLibraryFile;
-import com.github.unidbg.memory.*;
 import com.github.unidbg.memory.MemRegion;
+import com.github.unidbg.memory.*;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.unix.UnixSyscallHandler;
-import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.*;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -23,17 +23,15 @@ import unicorn.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.*;
 
-public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
+public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements Memory, Loader {
 
     private static final Log log = LogFactory.getLog(AndroidElfLoader.class);
 
     private Symbol malloc, free;
 
-    public AndroidElfLoader(Emulator emulator, UnixSyscallHandler syscallHandler) {
+    public AndroidElfLoader(Emulator<AndroidFileIO> emulator, UnixSyscallHandler<AndroidFileIO> syscallHandler) {
         super(emulator, syscallHandler);
 
         // init stack
@@ -43,6 +41,12 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         setStackPoint(STACK_BASE);
         initializeTLS();
         this.setErrno(0);
+    }
+
+    @Override
+    public void setLibraryResolver(LibraryResolver libraryResolver) {
+        syscallHandler.addIOResolver((AndroidResolver) libraryResolver);
+        super.setLibraryResolver(libraryResolver);
     }
 
     @Override
@@ -151,25 +155,8 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
     private final Map<String, LinuxModule> modules = new LinkedHashMap<>();
 
-    @Override
-    public byte[] unpack(File elfFile) throws IOException {
-        final byte[] fileData = FileUtils.readFileToByteArray(elfFile);
-        LinuxModule module = loadInternal(new ElfLibraryFile(elfFile), new WriteHook() {
-            @Override
-            public void hook(Unicorn u, long address, int size, long value, Object user) {
-                byte[] data = Arrays.copyOf(ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(value).array(), size);
-                if (log.isDebugEnabled()) {
-                    Inspector.inspect(data, "### Unpack WRITE at 0x" + Long.toHexString(address));
-                }
-                System.arraycopy(data, 0, fileData, (int) address, data.length);
-            }
-        }, true);
-        emulator.createDalvikVM(null).callJNI_OnLoad(emulator, module);
-        return fileData;
-    }
-
-    protected final LinuxModule loadInternal(LibraryFile libraryFile, WriteHook unpackHook, boolean forceCallInit) throws IOException {
-        LinuxModule module = loadInternal(libraryFile, unpackHook);
+    protected final LinuxModule loadInternal(LibraryFile libraryFile, boolean forceCallInit) throws IOException {
+        LinuxModule module = loadInternal(libraryFile);
         resolveSymbols();
         if (callInitFunction || forceCallInit) {
             for (LinuxModule m : modules.values().toArray(new LinuxModule[0])) {
@@ -225,10 +212,10 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         }
 
         if (calInit) {
-            return loadInternal(file, null, false);
+            return loadInternal(file, false);
         }
 
-        LinuxModule module = loadInternal(file, null);
+        LinuxModule module = loadInternal(file);
         resolveSymbols();
         if (!callInitFunction) { // No need call init array
             for (LinuxModule m : modules.values()) {
@@ -275,7 +262,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
         return false;
     }
 
-    private LinuxModule loadInternal(LibraryFile libraryFile, final WriteHook unpackHook) throws IOException {
+    private LinuxModule loadInternal(LibraryFile libraryFile) throws IOException {
         final ElfFile elfFile = ElfFile.fromBytes(libraryFile.readToByteArray());
 
         if (emulator.is32Bit() && elfFile.objectSize != ElfFile.CLASS_32) {
@@ -334,12 +321,12 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
 
-                    if (unpackHook != null && (prot & UnicornConst.UC_PROT_EXEC) != 0) { // unpack executable code
+                    if (null != null && (prot & UnicornConst.UC_PROT_EXEC) != 0) { // unpack executable code
                         unicorn.hook_add(new WriteHook() {
                             @Override
                             public void hook(Unicorn u, long address, int size, long value, Object user) {
                                 if (address >= begin && address < end) {
-                                    unpackHook.hook(u, address - load_base, size, value, user);
+                                    ((WriteHook) null).hook(u, address - load_base, size, value, user);
                                 }
                             }
                         }, begin, end, null);
@@ -382,7 +369,7 @@ public class AndroidElfLoader extends AbstractLoader implements Memory, Loader {
                 neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
             }
             if (neededLibraryFile != null) {
-                LinuxModule needed = loadInternal(neededLibraryFile, null);
+                LinuxModule needed = loadInternal(neededLibraryFile);
                 needed.addReferenceCount();
                 neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
             } else {

@@ -46,7 +46,7 @@ public abstract class UnicornStructure extends Structure {
     @Override
     protected int getNativeSize(Class<?> nativeType, Object value) {
         if (Pointer.class.isAssignableFrom(nativeType)) {
-            Emulator emulator = AbstractEmulator.getContextEmulator();
+            Emulator<?> emulator = AbstractEmulator.getContextEmulator();
             return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
         }
 
@@ -56,7 +56,7 @@ public abstract class UnicornStructure extends Structure {
     @Override
     protected int getNativeAlignment(Class<?> type, Object value, boolean isFirstElement) {
         if (Pointer.class.isAssignableFrom(type)) {
-            Emulator emulator = AbstractEmulator.getContextEmulator();
+            Emulator<?> emulator = AbstractEmulator.getContextEmulator();
             return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
         }
 

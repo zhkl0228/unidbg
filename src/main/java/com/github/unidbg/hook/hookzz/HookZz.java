@@ -21,7 +21,7 @@ public class HookZz extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(HookZz.class);
 
-    public static HookZz getInstance(Emulator emulator) {
+    public static HookZz getInstance(Emulator<?> emulator) {
         HookZz hookZz = emulator.get(HookZz.class.getName());
         if (hookZz == null) {
             try {
@@ -39,7 +39,7 @@ public class HookZz extends BaseHook implements IHookZz {
     private final Symbol zzReplace;
     private final Symbol zzWrap;
 
-    private HookZz(Emulator emulator) throws IOException {
+    private HookZz(Emulator<?> emulator) throws IOException {
         super(emulator, "libhookzz");
 
         boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
@@ -118,14 +118,14 @@ public class HookZz extends BaseHook implements IHookZz {
         final Map<String, Object> context = new HashMap<>();
         Pointer preCall = svcMemory.registerSvc(emulator.is32Bit() ? new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 context.clear();
                 callback.preCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 context.clear();
                 callback.preCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
@@ -133,13 +133,13 @@ public class HookZz extends BaseHook implements IHookZz {
         });
         Pointer postCall = svcMemory.registerSvc(emulator.is32Bit() ? new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 callback.postCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 callback.postCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }

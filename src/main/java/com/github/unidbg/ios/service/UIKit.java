@@ -16,12 +16,12 @@ public class UIKit extends FrameworkHooker {
     private static final Log log = LogFactory.getLog(UIKit.class);
 
     @Override
-    protected void doHook(Emulator emulator, Module module) {
+    protected void doHook(Emulator<?> emulator, Module module) {
         ObjC objc = ObjC.getInstance(emulator);
         ISubstrate substrate = Substrate.getInstance(emulator);
         substrate.hookMessageEx(objc.getClass("UIDevice"), objc.registerName("setBatteryMonitoringEnabled:"), new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 int status = context.getIntArg(2);
                 if (log.isDebugEnabled()) {

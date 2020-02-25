@@ -29,6 +29,7 @@ public interface ISubstrate extends IHook {
      * @param symbol The address of code to instrument with replacement code. This is normally, but need not be, a function.
      */
     void hookFunction(Symbol symbol, ReplaceCallback callback);
+    @SuppressWarnings("unused")
     void hookFunction(long address, ReplaceCallback callback);
     void hookFunction(Symbol symbol, ReplaceCallback callback, boolean enablePostCall);
     void hookFunction(long address, ReplaceCallback callback, boolean enablePostCall);

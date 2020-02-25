@@ -19,6 +19,7 @@ import java.util.Date;
  * @author unidbg
  * 
  */
+@SuppressWarnings("unused")
 public class Inspector {
 
 	public static void inspectMapData(String label, byte[] data, int mode) {

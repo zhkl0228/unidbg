@@ -23,7 +23,7 @@ public class LinuxSymbol extends Symbol {
     }
 
     @Override
-    public Number[] call(Emulator emulator, Object... args) {
+    public Number[] call(Emulator<?> emulator, Object... args) {
         return module.callFunction(emulator, getValue(), args);
     }
 

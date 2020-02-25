@@ -16,7 +16,7 @@ public abstract class FrameworkHooker {
         this.moduleName = moduleName;
     }
 
-    public final void processHook(Emulator emulator) {
+    public final void processHook(Emulator<?> emulator) {
         Memory memory = emulator.getMemory();
         String moduleName = this.moduleName == null ? getClass().getSimpleName() : this.moduleName;
         Module module = memory.findModule(moduleName);
@@ -26,6 +26,6 @@ public abstract class FrameworkHooker {
         doHook(emulator, module);
     }
 
-    protected abstract void doHook(Emulator emulator, Module module);
+    protected abstract void doHook(Emulator<?> emulator, Module module);
 
 }

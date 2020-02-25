@@ -19,12 +19,13 @@ import java.util.Arrays;
 /**
  * Use HookZz
  */
+@SuppressWarnings("unused")
 public class InlineHook {
 
     /**
      * 只能hook thumb指令: PUSH {R4-R7,LR}，即函数入口
      */
-    public static void simpleThumbHook(Emulator emulator, long address, final HookCallback callback) {
+    public static void simpleThumbHook(Emulator<?> emulator, long address, final HookCallback callback) {
         Unicorn unicorn = emulator.getUnicorn();
         final Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
@@ -63,7 +64,7 @@ public class InlineHook {
                     }
                 }
                 @Override
-                public long handle(Emulator emulator) {
+                public long handle(Emulator<?> emulator) {
                     if (callback != null) {
                         return callback.onHook(emulator);
                     }
@@ -80,7 +81,7 @@ public class InlineHook {
     /**
      * 只能hook arm指令：STMFD SP!, {R4-R9,LR}或STMFD SP!, {R4-R11,LR}，即函数入口
      */
-    public static void simpleArmHook(Emulator emulator, long address, final HookCallback callback) {
+    public static void simpleArmHook(Emulator<?> emulator, long address, final HookCallback callback) {
         final Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalArgumentException();
@@ -114,7 +115,7 @@ public class InlineHook {
                     }
                 }
                 @Override
-                public long handle(Emulator emulator) {
+                public long handle(Emulator<?> emulator) {
                     if (callback != null) {
                         return callback.onHook(emulator);
                     }
@@ -137,7 +138,7 @@ public class InlineHook {
         }
     }
 
-    public static void simpleThumbIntercept(Emulator emulator, long address, InterceptCallback callback) {
+    public static void simpleThumbIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalArgumentException();
@@ -161,7 +162,7 @@ public class InlineHook {
         }
     }
 
-    public static void simpleArmIntercept(Emulator emulator, long address, InterceptCallback callback) {
+    public static void simpleArmIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalArgumentException();

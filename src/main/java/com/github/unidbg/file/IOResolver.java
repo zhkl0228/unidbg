@@ -2,8 +2,8 @@ package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
 
-public interface IOResolver {
+public interface IOResolver<T extends NewFileIO> {
 
-    FileResult resolve(Emulator emulator, String pathname, int oflags);
+    FileResult<T> resolve(Emulator<T> emulator, String pathname, int oflags);
 
 }

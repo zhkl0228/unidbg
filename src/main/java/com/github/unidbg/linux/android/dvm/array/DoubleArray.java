@@ -22,7 +22,7 @@ public class DoubleArray extends BaseArray<double[]> implements PrimitiveArray<d
     }
 
     @Override
-    public UnicornPointer _GetArrayCritical(Emulator emulator, Pointer isCopy) {
+    public UnicornPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
         throw new UnicornException();
     }
 

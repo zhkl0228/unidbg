@@ -41,11 +41,11 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
     private final boolean allowsVoIP;
 
     @Override
-    protected final void doHook(Emulator emulator, Module module) {
+    protected final void doHook(Emulator<?> emulator, Module module) {
         patchCTTelephonyNetworkInfo(emulator, module);
     }
 
-    private void patchCTTelephonyNetworkInfo(Emulator emulator, Module module) {
+    private void patchCTTelephonyNetworkInfo(Emulator<?> emulator, Module module) {
         ObjC objc = ObjC.getInstance(emulator);
         ObjcClass cCTTelephonyNetworkInfo = objc.getClass("CTTelephonyNetworkInfo");
         ObjcClass cNSString = objc.getClass("NSString");
@@ -84,7 +84,7 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
         ISubstrate substrate = Substrate.getInstance(emulator);
         substrate.hookFunction(__CTServerConnectionCopyProviderNameUsingCarrierBundle, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 int index = 0;
                 if (emulator.is32Bit()) {
@@ -103,7 +103,7 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
         });
         substrate.hookFunction(__CTServerConnectionCopyMobileSubscriberAndIsoCountryCodes, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 int index = 0;
                 if (emulator.is32Bit()) {
@@ -124,7 +124,7 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
         });
         substrate.hookFunction(__CTServerConnectionCopyMobileSubscriberNetworkCode, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 int index = 0;
                 if (emulator.is32Bit()) {
@@ -143,7 +143,7 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
         });
         substrate.hookFunction(__CTServerConnectionCarrierSettingsCopyValue, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 int index = 0;
                 if (emulator.is32Bit()) {
@@ -168,7 +168,7 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
         });
         substrate.hookMessageEx(cCTTelephonyNetworkInfo, objc.registerName("queryDataMode"), new ReplaceCallback() { // updateRadioAccessTechnology
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer self = context.getPointerArg(0);
                 Pointer selector = context.getPointerArg(1);
@@ -180,7 +180,7 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
         });
         substrate.hookMessageEx(cCTTelephonyNetworkInfo, objc.registerName("queryCTSignalStrengthNotification"), new ReplaceCallback() { // updateSignalStrength
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer self = context.getPointerArg(0);
                 Pointer selector = context.getPointerArg(1);
@@ -192,7 +192,7 @@ public class CoreTelephony extends FrameworkHooker implements Constants {
         });
         substrate.hookFunction(__CTServerConnectionCopyNextCall, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 if (log.isDebugEnabled()) {
                     log.debug("__CTServerConnectionCopyNextCall");
                 }

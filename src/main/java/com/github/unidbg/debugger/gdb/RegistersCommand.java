@@ -11,7 +11,7 @@ class RegistersCommand implements GdbStubCommand {
     private static final Log log = LogFactory.getLog(RegistersCommand.class);
 
     @Override
-    public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
+    public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
         Unicorn unicorn = emulator.getUnicorn();
         if (log.isDebugEnabled()) {
             if (emulator.is32Bit()) {

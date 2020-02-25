@@ -45,7 +45,7 @@ public class ArmIntercept extends ArmSvc {
     }
 
     @Override
-    public long handle(Emulator emulator) {
+    public long handle(Emulator<?> emulator) {
         Unicorn u = emulator.getUnicorn();
         if (callback != null) {
             callback.onIntercept(emulator);
@@ -54,17 +54,15 @@ public class ArmIntercept extends ArmSvc {
         return ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
     }
 
-    private void eval(Unicorn u, Emulator emulator) {
-        switch (insn.mnemonic) {
-            case "push":
-                evalPush(u, emulator);
-                break;
-            default:
-                throw new UnicornException(insn.mnemonic + " " + insn.opStr);
+    private void eval(Unicorn u, Emulator<?> emulator) {
+        if ("push".equals(insn.mnemonic)) {
+            evalPush(u, emulator);
+        } else {
+            throw new UnicornException(insn.mnemonic + " " + insn.opStr);
         }
     }
 
-    private void evalPush(Unicorn u, Emulator emulator) {
+    private void evalPush(Unicorn u, Emulator<?> emulator) {
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         Arm.OpInfo opInfo = (Arm.OpInfo) this.insn.operands;
         List<Arm.Operand> operandList = new ArrayList<>(opInfo.op.length);

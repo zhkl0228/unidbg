@@ -12,7 +12,7 @@ import java.util.List;
 
 public class ObjcObject extends UnicornStructure {
 
-    public static ObjcObject create(Emulator emulator, Pointer pointer) {
+    public static ObjcObject create(Emulator<?> emulator, Pointer pointer) {
         if (pointer == null) {
             return null;
         } else {
@@ -22,9 +22,9 @@ public class ObjcObject extends UnicornStructure {
         }
     }
 
-    final Emulator emulator;
+    final Emulator<?> emulator;
 
-    ObjcObject(Emulator emulator, Pointer p) {
+    ObjcObject(Emulator<?> emulator, Pointer p) {
         super(p);
         this.emulator = emulator;
     }

@@ -20,10 +20,10 @@ import java.util.Map;
 
 public abstract class BaseHook implements IHook {
 
-    protected final Emulator emulator;
+    protected final Emulator<?> emulator;
     protected final Module module;
 
-    public BaseHook(Emulator emulator, String libName) throws IOException {
+    public BaseHook(Emulator<?> emulator, String libName) throws IOException {
         this.emulator = emulator;
         this.module = emulator.getMemory().load(resolveLibrary(libName));
     }
@@ -33,23 +33,23 @@ public abstract class BaseHook implements IHook {
         final Map<String, Object> context = new HashMap<>();
         return svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Hook(enablePostCall) {
             @Override
-            protected HookStatus hook(Emulator emulator) {
+            protected HookStatus hook(Emulator<?> emulator) {
                 context.clear();
                 return callback.onCall(emulator, new Arm64HookContext(context, emulator.<EditableArm64RegisterContext>getContext()), backup.getLong(0));
             }
             @Override
-            public void handleCallback(Emulator emulator) {
+            public void handleCallback(Emulator<?> emulator) {
                 EditableArm64RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm64HookContext(context, registerContext));
             }
         } : new ArmHook(enablePostCall) {
             @Override
-            protected HookStatus hook(Emulator emulator) {
+            protected HookStatus hook(Emulator<?> emulator) {
                 context.clear();
                 return callback.onCall(emulator, new Arm32HookContext(context, emulator.<EditableArm32RegisterContext>getContext()), backup.getInt(0) & 0xffffffffL);
             }
             @Override
-            public void handleCallback(Emulator emulator) {
+            public void handleCallback(Emulator<?> emulator) {
                 EditableArm32RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm32HookContext(context, registerContext));
             }
@@ -70,7 +70,7 @@ public abstract class BaseHook implements IHook {
         return numberToAddress(emulator, number);
     }
 
-    public static long numberToAddress(Emulator emulator, Number number) {
+    public static long numberToAddress(Emulator<?> emulator, Number number) {
         if (emulator.is64Bit()) {
             return number.longValue();
         } else {

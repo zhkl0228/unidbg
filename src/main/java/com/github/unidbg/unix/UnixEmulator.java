@@ -1,8 +1,6 @@
 package com.github.unidbg.unix;
 
-import com.github.unidbg.Emulator;
-
-public interface UnixEmulator extends Emulator {
+public interface UnixEmulator {
 
     int EPERM = 1; /* Operation not permitted */
     int ENOENT = 2; /* No such file or directory */

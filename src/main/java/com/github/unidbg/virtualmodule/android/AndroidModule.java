@@ -22,83 +22,83 @@ public class AndroidModule extends VirtualModule {
 
     private static final Log log = LogFactory.getLog(AndroidModule.class);
 
-    public AndroidModule(Emulator emulator, VM vm) {
+    public AndroidModule(Emulator<?> emulator, VM vm) {
         super(emulator, vm, "libandroid.so");
     }
 
     @Override
-    protected void onInitialize(Emulator emulator, final VM vm, Map<String, UnicornPointer> symbols) {
+    protected void onInitialize(Emulator<?> emulator, final VM vm, Map<String, UnicornPointer> symbols) {
         boolean is64Bit = emulator.is64Bit();
         SvcMemory svcMemory = emulator.getSvcMemory();
         symbols.put("AAssetManager_fromJava", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return fromJava(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return fromJava(emulator, vm);
             }
         }));
         symbols.put("AAssetManager_open", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return open(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return open(emulator, vm);
             }
         }));
         symbols.put("AAsset_close", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return close(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return close(emulator, vm);
             }
         }));
         symbols.put("AAsset_getBuffer", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return getBuffer(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return getBuffer(emulator, vm);
             }
         }));
         symbols.put("AAsset_getLength", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return getLength(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return getLength(emulator, vm);
             }
         }));
         symbols.put("AAsset_read", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 throw new UnicornException();
             }
         } : new ArmSvc() {
             @Override
-            public long handle(Emulator emulator) {
+            public long handle(Emulator<?> emulator) {
                 return read(emulator, vm);
             }
         }));
     }
 
-    private static long fromJava(Emulator emulator, VM vm) {
+    private static long fromJava(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         Pointer env = context.getPointerArg(0);
         UnicornPointer assetManager = context.getPointerArg(1);
@@ -109,7 +109,7 @@ public class AndroidModule extends VirtualModule {
         return assetManager.peer;
     }
 
-    private static long open(Emulator emulator, VM vm) {
+    private static long open(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         Pointer amgr = context.getPointerArg(0);
         String filename = context.getPointerArg(1).getString(0);
@@ -133,7 +133,7 @@ public class AndroidModule extends VirtualModule {
         throw new UnicornException("filename=" + filename + ", mode=" + mode);
     }
 
-    private static long close(Emulator emulator, VM vm) {
+    private static long close(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         UnicornPointer asset = context.getPointerArg(0);
         DvmObject<?> obj = vm.getObject(asset.toUIntPeer());
@@ -145,7 +145,7 @@ public class AndroidModule extends VirtualModule {
         return 0;
     }
 
-    private static long getBuffer(Emulator emulator, VM vm) {
+    private static long getBuffer(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         UnicornPointer asset = context.getPointerArg(0);
         DvmObject<?> obj = vm.getObject(asset.toUIntPeer());
@@ -157,7 +157,7 @@ public class AndroidModule extends VirtualModule {
         return buffer.peer;
     }
 
-    private static long getLength(Emulator emulator, VM vm) {
+    private static long getLength(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         UnicornPointer asset = context.getPointerArg(0);
         DvmObject<?> obj = vm.getObject(asset.toUIntPeer());
@@ -169,7 +169,7 @@ public class AndroidModule extends VirtualModule {
         return length;
     }
 
-    private static long read(Emulator emulator, VM vm) {
+    private static long read(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         UnicornPointer asset = context.getPointerArg(0);
         Pointer buf = context.getPointerArg(1);

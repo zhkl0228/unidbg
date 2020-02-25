@@ -2,19 +2,16 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
-import com.github.unidbg.file.AbstractFileIO;
-import com.github.unidbg.file.StatStructure;
-import com.github.unidbg.ios.struct.kernel.StatFS;
+import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
-import org.apache.commons.io.FilenameUtils;
 import unicorn.Unicorn;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class DirectoryFileIO extends AbstractFileIO {
+public class DirectoryFileIO extends BaseAndroidFileIO {
 
     public static class DirectoryEntry {
         private final boolean isFile;
@@ -85,27 +82,11 @@ public class DirectoryFileIO extends AbstractFileIO {
     }
 
     @Override
-    public int fstatfs(StatFS statFS) {
-        return 0;
-    }
-
-    @Override
-    public int fstat(Emulator emulator, StatStructure stat) {
-        stat.st_dev = 1;
-        stat.st_mode = IO.S_IFDIR | 0x777;
-        stat.setSize(0);
-        stat.st_blksize = 0;
-        stat.st_ino = 1;
-        stat.pack();
-        return 0;
-    }
-
-    @Override
     public void close() {
     }
 
     @Override
-    public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
         int st_mode = IO.S_IFDIR | 0x777;
         /*
          * 0x00: st_dev
@@ -130,10 +111,6 @@ public class DirectoryFileIO extends AbstractFileIO {
 
     @Override
     public String getPath() {
-        if (".".equals(path)) {
-            return FilenameUtils.normalize(new File("target").getAbsolutePath());
-        }
-
         return path;
     }
 }

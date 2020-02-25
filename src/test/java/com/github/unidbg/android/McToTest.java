@@ -1,14 +1,17 @@
 package com.github.unidbg.android;
 
+import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.ARM;
+import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
+import com.github.unidbg.virtualmodule.android.AndroidModule;
 import unicorn.Unicorn;
 
 import java.io.File;
 
-public class McToTest extends EmulatorTest {
+public class McToTest extends EmulatorTest<AndroidEmulator> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -19,6 +22,7 @@ public class McToTest extends EmulatorTest {
         long start = System.currentTimeMillis();
         emulator.getMemory().setCallInitFunction();
         Unicorn unicorn = emulator.getUnicorn();
+        new AndroidModule(emulator, emulator.createDalvikVM(null)).register(emulator.getMemory());
         Module module = emulator.loadLibrary(new File("src/test/resources/mcto/libmcto_media_player.so"));
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
         start = System.currentTimeMillis();
@@ -29,4 +33,8 @@ public class McToTest extends EmulatorTest {
         System.err.println("eFunc offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
+    @Override
+    protected AndroidEmulator createARMEmulator() {
+        return new AndroidARMEmulator();
+    }
 }

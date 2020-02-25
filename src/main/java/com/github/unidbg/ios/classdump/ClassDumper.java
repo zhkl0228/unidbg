@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class ClassDumper extends BaseHook implements IClassDumper {
 
-    public static ClassDumper getInstance(Emulator emulator) {
+    public static ClassDumper getInstance(Emulator<?> emulator) {
         ClassDumper classDumper = emulator.get(ClassDumper.class.getName());
         if (classDumper == null) {
             try {
@@ -23,7 +23,7 @@ public class ClassDumper extends BaseHook implements IClassDumper {
         return classDumper;
     }
 
-    private ClassDumper(Emulator emulator) throws IOException {
+    private ClassDumper(Emulator<?> emulator) throws IOException {
         super(emulator, "libclassdump");
     }
 

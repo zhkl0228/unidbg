@@ -34,7 +34,7 @@ class IndirectSymbol extends Symbol {
     }
 
     @Override
-    public Number[] call(Emulator emulator, Object... args) {
+    public Number[] call(Emulator<?> emulator, Object... args) {
         return checkSymbol().call(emulator, args);
     }
 

@@ -67,7 +67,7 @@ public class Dyld64 extends Dyld {
     private long sandbox_check;
 
     @Override
-    final int _dyld_func_lookup(Emulator emulator, String name, Pointer address) {
+    final int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address) {
         if (log.isDebugEnabled()) {
             log.debug("_dyld_func_lookup name=" + name);
         }
@@ -77,7 +77,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_fast_stub_entry == null) {
                     __dyld_fast_stub_entry = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
                             Pointer loaderCache = context.getPointerArg(0);
                             long lazyInfo = context.getLongArg(1);
@@ -94,7 +94,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld__NSGetExecutablePath == null) {
                     __dyld__NSGetExecutablePath = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
                             Pointer buf = context.getPointerArg(0);
                             int bufSize = context.getIntArg(1);
@@ -112,7 +112,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_get_image_name == null) {
                     __dyld_get_image_name = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             int image_index = emulator.getContext().getIntArg(0);
                             Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             if (image_index < 0 || image_index >= modules.length) {
@@ -129,7 +129,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_get_image_header == null) {
                     __dyld_get_image_header = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             int image_index = emulator.getContext().getIntArg(0);
                             Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             if (image_index < 0 || image_index >= modules.length) {
@@ -146,7 +146,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_get_image_slide == null) {
                     __dyld_get_image_slide = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             UnicornPointer mh = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             long slide = mh == null ? 0 : computeSlide(emulator, mh.peer);
                             log.debug("__dyld_get_image_slide mh=" + mh + ", slide=0x" + Long.toHexString(slide));
@@ -160,7 +160,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_get_image_vmaddr_slide == null) {
                     __dyld_get_image_vmaddr_slide = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             int image_index = emulator.getContext().getIntArg(0);
                             Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             if (image_index < 0 || image_index >= modules.length) {
@@ -184,7 +184,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_image_count == null) {
                     __dyld_image_count = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             return loader.getLoadedModulesNoVirtual().size();
                         }
                     });
@@ -222,7 +222,7 @@ public class Dyld64 extends Dyld {
                             }
                         }
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
                             Pointer path = context.getPointerArg(0);
                             int mode = context.getIntArg(1);
@@ -240,7 +240,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_dladdr == null) {
                     __dyld_dladdr = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
                             long addr = context.getLongArg(0);
                             Pointer info = context.getPointerArg(1);
@@ -272,7 +272,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_dlsym == null) {
                     __dyld_dlsym = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
                             long handle = context.getLongArg(0);
                             Pointer symbol = context.getPointerArg(1);
@@ -285,7 +285,7 @@ public class Dyld64 extends Dyld {
                                 if (_os_trace_redirect_func == 0) {
                                     _os_trace_redirect_func = svcMemory.registerSvc(new Arm64Svc() {
                                         @Override
-                                        public long handle(Emulator emulator) {
+                                        public long handle(Emulator<?> emulator) {
                                             Pointer msg = emulator.getContext().getPointerArg(0);
 //                                            Inspector.inspect(msg.getByteArray(0, 16), "_os_trace_redirect_func msg=" + msg);
                                             System.err.println("_os_trace_redirect_func msg=" + msg.getString(0));
@@ -299,7 +299,7 @@ public class Dyld64 extends Dyld {
                                 if (sandbox_check == 0) {
                                     sandbox_check = svcMemory.registerSvc(new Arm64Svc() {
                                         @Override
-                                        public long handle(Emulator emulator) {
+                                        public long handle(Emulator<?> emulator) {
                                             RegisterContext ctx = emulator.getContext();
                                             int pid = ctx.getIntArg(0);
                                             Pointer operation = ctx.getPointerArg(1);
@@ -324,7 +324,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_register_thread_helpers == null) {
                     __dyld_register_thread_helpers = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             // the table passed to dyld containing thread helpers
                             Pointer helpers = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             if (log.isDebugEnabled()) {
@@ -340,7 +340,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_image_path_containing_address == null) {
                     __dyld_image_path_containing_address = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             UnicornPointer address = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             MachOModule module = (MachOModule) loader.findModuleByAddress(address.peer);
                             if (log.isDebugEnabled()) {
@@ -365,7 +365,7 @@ public class Dyld64 extends Dyld {
                 if (__dyld_register_func_for_remove_image == null) {
                     __dyld_register_func_for_remove_image = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             Pointer callback = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_register_func_for_remove_image callback=" + callback);
@@ -419,7 +419,7 @@ public class Dyld64 extends Dyld {
                         }
 
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             EditableArm64RegisterContext context = emulator.getContext();
 
                             UnicornPointer callback = context.getPointerArg(0);
@@ -509,7 +509,7 @@ public class Dyld64 extends Dyld {
                             }
                         }
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             EditableArm64RegisterContext context = emulator.getContext();
                             int state = context.getIntArg(0);
                             int batch = context.getIntArg(1);
@@ -562,7 +562,7 @@ public class Dyld64 extends Dyld {
         return 0;
     }
 
-    private long dlopen(Emulator emulator, String path, int mode) {
+    private long dlopen(Emulator<?> emulator, String path, int mode) {
         Memory memory = emulator.getMemory();
         EditableArm64RegisterContext context = emulator.getContext();
         Pointer pointer = context.getStackPointer();
@@ -646,7 +646,7 @@ public class Dyld64 extends Dyld {
                 if (_abort == 0) {
                     _abort = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
-                        public long handle(Emulator emulator) {
+                        public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
                             emulator.getUnicorn().reg_write(Arm64Const.UC_ARM64_REG_LR, AbstractARMEmulator.LR);
                             return 0;
@@ -660,7 +660,7 @@ public class Dyld64 extends Dyld {
                 if (_asl_open == 0) {
                     _asl_open = svcMemory.registerSvc(new Arm64Hook() {
                         @Override
-                        protected HookStatus hook(Emulator emulator) {
+                        protected HookStatus hook(Emulator<?> emulator) {
                             EditableArm64RegisterContext context = emulator.getContext();
                             Pointer ident = context.getPointerArg(0);
                             Pointer facility = context.getPointerArg(1);

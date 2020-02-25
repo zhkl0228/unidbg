@@ -19,6 +19,7 @@ public interface IFishHook extends IHook {
      * rebind are added to the existing list of rebindings, and if a given symbol
      * is rebound more than once, the later rebinding will take precedence.
      */
+    @SuppressWarnings("unused")
     void rebindSymbol(String symbol, ReplaceCallback callback);
     void rebindSymbol(String symbol, ReplaceCallback callback, boolean enablePostCall);
 

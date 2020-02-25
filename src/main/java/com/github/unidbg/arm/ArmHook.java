@@ -63,7 +63,7 @@ public abstract class ArmHook extends ArmSvc {
     }
 
     @Override
-    public final long handle(Emulator emulator) {
+    public final long handle(Emulator<?> emulator) {
         Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
@@ -82,6 +82,6 @@ public abstract class ArmHook extends ArmSvc {
         }
     }
 
-    protected abstract HookStatus hook(Emulator emulator);
+    protected abstract HookStatus hook(Emulator<?> emulator);
 
 }

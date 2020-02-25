@@ -31,7 +31,7 @@ public abstract class Arm64Svc implements Svc {
     }
 
     @Override
-    public void handleCallback(Emulator emulator) {
+    public void handleCallback(Emulator<?> emulator) {
     }
 
 }

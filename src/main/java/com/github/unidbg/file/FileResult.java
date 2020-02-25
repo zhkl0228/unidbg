@@ -1,30 +1,30 @@
 package com.github.unidbg.file;
 
-public class FileResult {
+public class FileResult<T extends NewFileIO> {
 
-    public static FileResult success(FileIO io) {
+    public static <T extends NewFileIO> FileResult<T> success(T io) {
         if (io == null) {
             throw new NullPointerException("io is null");
         }
 
-        return new FileResult(io, 0);
+        return new FileResult<>(io, 0);
     }
-    public static FileResult failed(int errno) {
+    public static <T extends NewFileIO> FileResult<T> failed(int errno) {
         if (errno == 0) {
             throw new IllegalArgumentException("errno=" + errno);
         }
 
-        return new FileResult(null, errno);
+        return new FileResult<>(null, errno);
     }
 
-    public final FileIO io;
+    public final T io;
     public final int errno;
 
     public boolean isSuccess() {
         return io != null && errno == 0;
     }
 
-    private FileResult(FileIO io, int errno) {
+    private FileResult(T io, int errno) {
         this.io = io;
         this.errno = errno;
     }

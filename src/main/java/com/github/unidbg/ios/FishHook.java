@@ -18,7 +18,7 @@ public class FishHook extends BaseHook implements IFishHook {
 
     private static final Log log = LogFactory.getLog(FishHook.class);
 
-    public static IFishHook getInstance(Emulator emulator) {
+    public static IFishHook getInstance(Emulator<?> emulator) {
         IFishHook fishHook = emulator.get(FishHook.class.getName());
         if (fishHook == null) {
             try {
@@ -33,7 +33,7 @@ public class FishHook extends BaseHook implements IFishHook {
 
     private final Symbol rebind_symbols, rebind_symbols_image;
 
-    private FishHook(Emulator emulator) throws IOException {
+    private FishHook(Emulator<?> emulator) throws IOException {
         super(emulator, "libfishhook");
 
         rebind_symbols = module.findSymbolByName("_rebind_symbols", false);

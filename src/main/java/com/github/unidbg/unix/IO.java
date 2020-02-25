@@ -1,5 +1,6 @@
 package com.github.unidbg.unix;
 
+@SuppressWarnings("unused")
 public interface IO {
 
     String STDIN = "stdin";

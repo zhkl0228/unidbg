@@ -5,7 +5,7 @@ import com.github.unidbg.Emulator;
 class BreakpointCommand implements GdbStubCommand {
 
     @Override
-    public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
+    public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
         int divider = command.substring(3).indexOf(",");
         long address = Long.parseLong(command.substring(3, divider + 3), 16);
 

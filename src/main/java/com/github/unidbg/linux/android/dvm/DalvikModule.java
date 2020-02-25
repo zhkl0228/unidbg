@@ -22,7 +22,7 @@ public class DalvikModule {
         return module;
     }
 
-    public void callJNI_OnLoad(Emulator emulator) {
+    public void callJNI_OnLoad(Emulator<?> emulator) {
         Symbol onLoad = module.findSymbolByName("JNI_OnLoad", false);
         if (onLoad != null) {
             long start = System.currentTimeMillis();

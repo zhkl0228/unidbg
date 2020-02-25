@@ -24,7 +24,7 @@ public class UnicornPointer extends Pointer {
 
     private static final Log log = LogFactory.getLog(UnicornPointer.class);
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private final Unicorn unicorn;
     public final long peer;
     private final int pointerSize;
@@ -33,7 +33,7 @@ public class UnicornPointer extends Pointer {
         return peer & 0xffffffffL;
     }
 
-    private UnicornPointer(Emulator emulator, long peer, int pointerSize) {
+    private UnicornPointer(Emulator<?> emulator, long peer, int pointerSize) {
         super(0);
 
         this.emulator = emulator;
@@ -56,15 +56,15 @@ public class UnicornPointer extends Pointer {
         return size;
     }
 
-    public static UnicornPointer pointer(Emulator emulator, long addr) {
+    public static UnicornPointer pointer(Emulator<?> emulator, long addr) {
         return addr == 0 ? null : new UnicornPointer(emulator, addr, emulator.getPointerSize());
     }
 
-    public static UnicornPointer pointer(Emulator emulator, Number number) {
+    public static UnicornPointer pointer(Emulator<?> emulator, Number number) {
         return pointer(emulator, BaseHook.numberToAddress(emulator, number));
     }
 
-    public static UnicornPointer register(Emulator emulator, int reg) {
+    public static UnicornPointer register(Emulator<?> emulator, int reg) {
         return pointer(emulator, (Number) emulator.getUnicorn().reg_read(reg));
     }
 

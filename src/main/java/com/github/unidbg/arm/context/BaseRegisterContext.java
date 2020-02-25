@@ -5,11 +5,11 @@ import com.github.unidbg.pointer.UnicornPointer;
 
 public abstract class BaseRegisterContext extends AbstractRegisterContext implements RegisterContext {
 
-    protected final Emulator emulator;
+    protected final Emulator<?> emulator;
     private final int firstArgReg;
     private final int regArgCount;
 
-    BaseRegisterContext(Emulator emulator, int firstArgReg, int regArgCount) {
+    BaseRegisterContext(Emulator<?> emulator, int firstArgReg, int regArgCount) {
         this.emulator = emulator;
         this.firstArgReg = firstArgReg;
         this.regArgCount = regArgCount;

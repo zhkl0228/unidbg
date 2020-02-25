@@ -21,9 +21,9 @@ public class SystemPropertyHook implements HookListener {
 
     private static final int PROP_VALUE_MAX = 92;
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
 
-    public SystemPropertyHook(Emulator emulator) {
+    public SystemPropertyHook(Emulator<?> emulator) {
         this.emulator = emulator;
     }
 
@@ -33,14 +33,14 @@ public class SystemPropertyHook implements HookListener {
             if (emulator.is64Bit()) {
                 return svcMemory.registerSvc(new Arm64Hook() {
                     @Override
-                    protected HookStatus hook(Emulator emulator) {
+                    protected HookStatus hook(Emulator<?> emulator) {
                         return __system_property_get(old);
                     }
                 }).peer;
             } else {
                 return svcMemory.registerSvc(new ArmHook() {
                     @Override
-                    protected HookStatus hook(Emulator emulator) {
+                    protected HookStatus hook(Emulator<?> emulator) {
                         return __system_property_get(old);
                     }
                 }).peer;

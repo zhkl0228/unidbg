@@ -6,7 +6,7 @@ import com.sun.jna.Pointer;
 
 public abstract class ObjC {
 
-    public static ObjC getInstance(Emulator emulator) {
+    public static ObjC getInstance(Emulator<?> emulator) {
         ObjC objc = emulator.get(ObjC.class.getName());
         if (objc == null) {
             objc = new ObjcImpl(emulator);
@@ -23,6 +23,6 @@ public abstract class ObjC {
 
     public abstract Pointer registerName(String selectorName);
 
-    public abstract Number msgSend(Emulator emulator, Object... args);
+    public abstract Number msgSend(Emulator<?> emulator, Object... args);
 
 }

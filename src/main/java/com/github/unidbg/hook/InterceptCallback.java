@@ -4,6 +4,6 @@ import com.github.unidbg.Emulator;
 
 public interface InterceptCallback {
 
-    void onIntercept(Emulator emulator);
+    void onIntercept(Emulator<?> emulator);
 
 }

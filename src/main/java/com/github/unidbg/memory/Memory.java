@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+@SuppressWarnings("unused")
 public interface Memory extends IO, Loader, StackMemory {
 
     long HEAP_BASE = 0x8048000;

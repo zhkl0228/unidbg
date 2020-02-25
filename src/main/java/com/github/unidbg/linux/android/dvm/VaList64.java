@@ -11,7 +11,7 @@ class VaList64 extends VaList {
 
     private static final Log log = LogFactory.getLog(VaList64.class);
 
-    VaList64(Emulator emulator, BaseVM vm, UnicornPointer va_list, DvmMethod method) {
+    VaList64(Emulator<?> emulator, BaseVM vm, UnicornPointer va_list, DvmMethod method) {
         super(vm, method, method.decodeArgsShorty());
 
         long base_p = va_list.getLong(0);

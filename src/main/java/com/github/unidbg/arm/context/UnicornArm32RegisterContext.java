@@ -10,7 +10,7 @@ public class UnicornArm32RegisterContext extends BaseRegisterContext implements 
 
     private final Unicorn unicorn;
 
-    public UnicornArm32RegisterContext(Unicorn unicorn, Emulator emulator) {
+    public UnicornArm32RegisterContext(Unicorn unicorn, Emulator<?> emulator) {
         super(emulator, ArmConst.UC_ARM_REG_R0, 4);
         this.unicorn = unicorn;
     }

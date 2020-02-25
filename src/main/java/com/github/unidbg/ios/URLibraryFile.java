@@ -36,7 +36,7 @@ public class URLibraryFile implements LibraryFile {
     }
 
     @Override
-    public LibraryFile resolveLibrary(Emulator emulator, String dylibName) {
+    public LibraryFile resolveLibrary(Emulator<?> emulator, String dylibName) {
         if (version == null) {
             return null;
         }

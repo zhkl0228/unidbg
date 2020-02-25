@@ -17,7 +17,7 @@ public class MachOSymbol extends Symbol implements com.github.unidbg.ios.MachO {
     }
 
     @Override
-    public Number[] call(Emulator emulator, Object... args) {
+    public Number[] call(Emulator<?> emulator, Object... args) {
         return module.callFunction(emulator, getValue(), args);
     }
 

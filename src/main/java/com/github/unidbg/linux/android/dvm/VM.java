@@ -7,6 +7,7 @@ import com.sun.jna.Pointer;
 import java.io.File;
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 public interface VM {
 
     int JNI_FALSE = 0;
@@ -42,7 +43,7 @@ public interface VM {
 
     int addLocalObject(DvmObject<?> object);
 
-    void callJNI_OnLoad(Emulator emulator, Module module);
+    void callJNI_OnLoad(Emulator<?> emulator, Module module);
 
     /**
      * 设置apkFile以后，可调用该值获取apk对应的packageName

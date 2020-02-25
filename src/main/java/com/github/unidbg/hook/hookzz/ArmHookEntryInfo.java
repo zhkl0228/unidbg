@@ -9,7 +9,7 @@ public class ArmHookEntryInfo implements HookEntryInfo {
 
     private final Pointer info;
 
-    ArmHookEntryInfo(Emulator emulator) {
+    ArmHookEntryInfo(Emulator<?> emulator) {
         info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
     }
 

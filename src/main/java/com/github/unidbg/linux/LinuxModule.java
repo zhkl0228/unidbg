@@ -20,7 +20,7 @@ public class LinuxModule extends Module {
 
     private static final Log log = LogFactory.getLog(LinuxModule.class);
 
-    static LinuxModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator emulator) {
+    static LinuxModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator<?> emulator) {
         if (symbols.isEmpty()) {
             throw new IllegalArgumentException("symbols is empty");
         }
@@ -82,7 +82,7 @@ public class LinuxModule extends Module {
         this.initFunctionList = initFunctionList;
     }
 
-    void callInitFunction(Emulator emulator, boolean mustCallInit) throws IOException {
+    void callInitFunction(Emulator<?> emulator, boolean mustCallInit) throws IOException {
         if (!mustCallInit && !unresolvedSymbol.isEmpty()) {
             for (ModuleSymbol moduleSymbol : unresolvedSymbol) {
                 log.info("[" + name + "]" + moduleSymbol.getSymbol().getName() + " symbol is missing before init relocationAddr=" + moduleSymbol.getRelocationAddr());
@@ -127,7 +127,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public int callEntry(Emulator emulator, Object... args) {
+    public int callEntry(Emulator<?> emulator, Object... args) {
         if (entryPoint <= 0) {
             throw new IllegalStateException("Invalid entry point");
         }
@@ -184,7 +184,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public Number[] callFunction(Emulator emulator, long offset, Object... args) {
+    public Number[] callFunction(Emulator<?> emulator, long offset, Object... args) {
         return emulateFunction(emulator, base + offset, args);
     }
 

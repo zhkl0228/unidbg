@@ -24,7 +24,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
 
     private final List<ByteBuffer> pendingWrites;
 
-    public AbstractDebugServer(Emulator emulator) {
+    public AbstractDebugServer(Emulator<?> emulator) {
         super(emulator, false);
 
         pendingWrites = new LinkedList<>();
@@ -226,14 +226,14 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     private Semaphore semaphore;
 
     @Override
-    protected final void loop(Emulator emulator, long address, int size) throws Exception {
+    protected final void loop(Emulator<?> emulator, long address, int size) throws Exception {
         semaphore = new Semaphore(0);
 
         onHitBreakPoint(emulator, address);
         semaphore.acquire();
     }
 
-    protected abstract void onHitBreakPoint(Emulator emulator, long address);
+    protected abstract void onHitBreakPoint(Emulator<?> emulator, long address);
 
     public final void resumeRun() {
         if (semaphore != null) {

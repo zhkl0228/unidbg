@@ -18,7 +18,7 @@ public class Substrate extends BaseHook implements ISubstrate {
 
     private static final Log log = LogFactory.getLog(Substrate.class);
 
-    public static ISubstrate getInstance(Emulator emulator) {
+    public static ISubstrate getInstance(Emulator<?> emulator) {
         Substrate substrate = emulator.get(Substrate.class.getName());
         if (substrate == null) {
             try {
@@ -36,7 +36,7 @@ public class Substrate extends BaseHook implements ISubstrate {
     private final Symbol _MSHookFunction;
     private final Symbol _MSHookMessageEx;
 
-    private Substrate(Emulator emulator) throws IOException {
+    private Substrate(Emulator<?> emulator) throws IOException {
         super(emulator, "libsubstrate");
 
         _MSGetImageByName = module.findSymbolByName("_MSGetImageByName", false);

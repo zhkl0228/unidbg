@@ -1,9 +1,9 @@
 package org.aeonlucid;
 
-import com.github.unidbg.Emulator;
-import com.github.unidbg.android.EmulatorTest;
+import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import unicorn.ArmConst;
@@ -11,7 +11,7 @@ import unicorn.Unicorn;
 
 import java.io.File;
 
-public class AndroidNativeEmuTest extends EmulatorTest {
+public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -44,7 +44,7 @@ public class AndroidNativeEmuTest extends EmulatorTest {
     }
 
     @Override
-    protected Emulator createARMEmulator() {
+    protected AndroidEmulator createARMEmulator() {
         return new AndroidARMEmulator(getClass().getSimpleName());
     }
 }

@@ -33,10 +33,10 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private final Map<Long, Module> breakMap = new HashMap<>();
 
-    protected final Emulator emulator;
+    protected final Emulator<?> emulator;
     private final boolean softBreakpoint;
 
-    protected AbstractARMDebugger(Emulator emulator, boolean softBreakpoint) {
+    protected AbstractARMDebugger(Emulator<?> emulator, boolean softBreakpoint) {
         this.emulator = emulator;
         this.softBreakpoint = softBreakpoint;
     }
@@ -135,7 +135,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public final void hook(Unicorn u, long address, int size, Object user) {
-        Emulator emulator = (Emulator) user;
+        Emulator<?> emulator = (Emulator<?>) user;
 
         while (historyList.size() > 10) {
             historyList.remove(0);
@@ -186,7 +186,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     String breakMnemonic;
 
-    protected abstract void loop(Emulator emulator, long address, int size) throws Exception;
+    protected abstract void loop(Emulator<?> emulator, long address, int size) throws Exception;
 
     final void dumpMemory(Pointer pointer, int _length, String label, boolean nullTerminated) {
         if (nullTerminated) {
@@ -399,7 +399,7 @@ public abstract class AbstractARMDebugger implements Debugger {
     /**
      * @return next address
      */
-    final long disassemble(Emulator emulator, long address, int size, boolean thumb) {
+    final long disassemble(Emulator<?> emulator, long address, int size, boolean thumb) {
         long next = 0;
         boolean on = false;
         StringBuilder sb = new StringBuilder();
@@ -437,7 +437,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         return next;
     }
 
-    final void disassembleBlock(Emulator emulator, long address, boolean thumb) {
+    final void disassembleBlock(Emulator<?> emulator, long address, boolean thumb) {
         StringBuilder sb = new StringBuilder();
         long nextAddr = address;
         UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
@@ -465,7 +465,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
                 module = new Module(name, region.begin, region.end - region.begin, Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList()) {
                     @Override
-                    public Number[] callFunction(Emulator emulator, long offset, Object... args) {
+                    public Number[] callFunction(Emulator<?> emulator, long offset, Object... args) {
                         throw new UnsupportedOperationException();
                     }
                     @Override
@@ -477,7 +477,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                         throw new UnsupportedOperationException();
                     }
                     @Override
-                    public int callEntry(Emulator emulator, Object... args) {
+                    public int callEntry(Emulator<?> emulator, Object... args) {
                         throw new UnsupportedOperationException();
                     }
                     @Override
@@ -497,15 +497,13 @@ public abstract class AbstractARMDebugger implements Debugger {
     @Override
     public final void brk(Pointer pc, int svcNumber) {
         SoftBreakPoint breakPoint = softBreakpointMap.get(svcNumber);
-        if (breakPoint == null) {
-            debug();
-        } else {
+        if (breakPoint != null) {
             if (log.isDebugEnabled()) {
                 log.debug(Inspector.inspectString(breakPoint.backup, "brk pc=" + pc + ", svcNumber=" + svcNumber + ", address=0x" + Long.toHexString(breakPoint.address)));
             }
             pc.write(0, breakPoint.backup, 0, breakPoint.backup.length);
-            debug();
         }
+        debug();
     }
 
     @Override

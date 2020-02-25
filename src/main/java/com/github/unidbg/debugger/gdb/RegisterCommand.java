@@ -7,7 +7,7 @@ import unicorn.Unicorn;
 class RegisterCommand implements GdbStubCommand {
 
     @Override
-    public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
+    public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
         Unicorn unicorn = emulator.getUnicorn();
         if (command.startsWith("p")) {
             int reg = Integer.parseInt(command.substring(1), 16);
@@ -46,7 +46,7 @@ class RegisterCommand implements GdbStubCommand {
         }
     }
 
-    private void writeRegister(Emulator emulator, Unicorn unicorn, GdbStub stub, int reg, long val) {
+    private void writeRegister(Emulator<?> emulator, Unicorn unicorn, GdbStub stub, int reg, long val) {
         if (reg >= 0 && reg < stub.registers.length) {
             if (emulator.is32Bit()) {
                 unicorn.reg_write(stub.registers[reg], (int) (val & 0xffffffffL));

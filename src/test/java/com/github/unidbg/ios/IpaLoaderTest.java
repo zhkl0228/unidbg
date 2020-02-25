@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
@@ -15,7 +14,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 
-public class IpaLoaderTest extends EmulatorTest {
+public class IpaLoaderTest extends EmulatorTest<DarwinARM64Emulator> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -23,7 +22,7 @@ public class IpaLoaderTest extends EmulatorTest {
     }
 
     @Override
-    protected Emulator createARMEmulator() {
+    protected DarwinARM64Emulator createARMEmulator() {
         return new DarwinARM64Emulator(new File("target/rootfs/ipa"));
     }
 

@@ -19,7 +19,7 @@ class LinuxInitFunction extends InitFunction {
     }
 
     @Override
-    public void call(Emulator emulator) {
+    public void call(Emulator<?> emulator) {
         if (address == 0 || address == -1) {
             return;
         }

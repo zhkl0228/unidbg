@@ -2,14 +2,13 @@ package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.linux.IOConstants;
-import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
 import java.io.IOException;
 
-public abstract class AbstractFileIO implements FileIO {
+public abstract class AbstractFileIO implements NewFileIO {
 
     private static final int F_GETFD = 1; /* get file descriptor flags */
     private static final int F_SETFD = 2; /* set file descriptor flags */
@@ -65,7 +64,7 @@ public abstract class AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int ioctl(Emulator emulator, long request, long argp) {
+    public int ioctl(Emulator<?> emulator, long request, long argp) {
         throw new AbstractMethodError(getClass().getName() + ": request=0x" + Long.toHexString(request) + ", argp=0x" + Long.toHexString(argp));
     }
 
@@ -132,7 +131,7 @@ public abstract class AbstractFileIO implements FileIO {
     }
 
     @Override
-    public int llseek(long offset_high, long offset_low, Pointer result, int whence) {
+    public int llseek(long offset, Pointer result, int whence) {
         throw new AbstractMethodError();
     }
 
@@ -153,21 +152,6 @@ public abstract class AbstractFileIO implements FileIO {
 
     @Override
     public int read(Unicorn unicorn, Pointer buffer, int count) {
-        throw new AbstractMethodError(getClass().getName());
-    }
-
-    @Override
-    public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
-        throw new AbstractMethodError(getClass().getName());
-    }
-
-    @Override
-    public int fstat(Emulator emulator, StatStructure stat) {
-        throw new AbstractMethodError(getClass().getName());
-    }
-
-    @Override
-    public int fstatfs(StatFS statFS) {
         throw new AbstractMethodError(getClass().getName());
     }
 

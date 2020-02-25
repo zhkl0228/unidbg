@@ -2,14 +2,11 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
-import com.github.unidbg.file.AbstractFileIO;
-import com.github.unidbg.file.StatStructure;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.unix.IO;
+import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
-public class ByteArrayFileIO extends AbstractFileIO {
+public class ByteArrayFileIO extends BaseAndroidFileIO {
 
     private final byte[] bytes;
     private final String path;
@@ -64,7 +61,7 @@ public class ByteArrayFileIO extends AbstractFileIO {
     }
 
     @Override
-    public int fstat(Emulator emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
         stat.setLong(0x30, bytes.length); // st_size
         stat.setInt(0x38, (int) ARM.alignSize(bytes.length, emulator.getPageAlign())); // st_blksize
         return 0;
@@ -82,22 +79,7 @@ public class ByteArrayFileIO extends AbstractFileIO {
     }
 
     @Override
-    public int ioctl(Emulator emulator, long request, long argp) {
-        return 0;
-    }
-
-    @Override
-    public int fstat(Emulator emulator, StatStructure stat) {
-        int blockSize = emulator.getPageAlign();
-        stat.st_dev = 1;
-        stat.st_mode = (short) (IO.S_IFREG | 0x777);
-        stat.setSize(bytes.length);
-        stat.setBlockCount(bytes.length / blockSize);
-        stat.st_blksize = blockSize;
-        stat.st_ino = 1;
-        stat.st_uid = 0;
-        stat.st_gid = 0;
-        stat.pack();
+    public int ioctl(Emulator<?> emulator, long request, long argp) {
         return 0;
     }
 

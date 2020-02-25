@@ -16,7 +16,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 
-public class XpcTest extends EmulatorTest {
+public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -24,7 +24,7 @@ public class XpcTest extends EmulatorTest {
     }
 
     @Override
-    protected Emulator createARMEmulator() {
+    protected DarwinARMEmulator createARMEmulator() {
         return new DarwinARMEmulator();
     }
 
@@ -83,7 +83,7 @@ public class XpcTest extends EmulatorTest {
         assertNotNull(_MSFindSymbol);
         substrate.hookFunction(_MSFindSymbol, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 long image = context.getLongArg(0);
                 Pointer symbol = context.getPointerArg(1);

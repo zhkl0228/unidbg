@@ -30,7 +30,7 @@ public class DvmObject<T> implements Hashable {
         throw new UnicornException("isInstanceOf vm=" + vm + ", dvmClass=" + dvmClass);
     }
 
-    public Number callJniMethod(Emulator emulator, String method, Object...args) {
+    public Number callJniMethod(Emulator<?> emulator, String method, Object...args) {
         UnicornPointer fnPtr = objectType.findNativeFunction(emulator, method);
         List<Object> list = new ArrayList<>(10);
         list.add(objectType.vm.getJNIEnv());

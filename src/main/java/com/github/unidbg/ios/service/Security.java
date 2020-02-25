@@ -20,7 +20,7 @@ public class Security extends FrameworkHooker {
     private static final int errSecItemNotFound                       = -25300; /* The specified item could not be found in the keychain. */
 
     @Override
-    protected void doHook(Emulator emulator, Module module) {
+    protected void doHook(Emulator<?> emulator, Module module) {
         Symbol _SecItemCopyMatching = module.findSymbolByName("_SecItemCopyMatching", false);
         if (_SecItemCopyMatching == null) {
             throw new IllegalStateException("_SecItemCopyMatching is null");
@@ -37,7 +37,7 @@ public class Security extends FrameworkHooker {
         ISubstrate substrate = Substrate.getInstance(emulator);
         substrate.hookFunction(_SecItemCopyMatching, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer query = context.getPointerArg(0);
                 Pointer result = context.getPointerArg(1);
@@ -49,7 +49,7 @@ public class Security extends FrameworkHooker {
         });
         substrate.hookFunction(_SecItemDelete, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer query = context.getPointerArg(0);
                 if (log.isDebugEnabled()) {
@@ -60,7 +60,7 @@ public class Security extends FrameworkHooker {
         });
         substrate.hookFunction(_SecItemAdd, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer attributes = context.getPointerArg(0);
                 Pointer result = context.getPointerArg(1);

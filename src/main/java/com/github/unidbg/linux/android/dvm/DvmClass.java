@@ -182,7 +182,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
 
     final Map<String, UnicornPointer> nativesMap = new HashMap<>();
 
-    UnicornPointer findNativeFunction(Emulator emulator, String method) {
+    UnicornPointer findNativeFunction(Emulator<?> emulator, String method) {
         UnicornPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index != -1) {
@@ -204,7 +204,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
         return fnPtr;
     }
 
-    public Number callStaticJniMethod(Emulator emulator, String method, Object...args) {
+    public Number callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
         UnicornPointer fnPtr = findNativeFunction(emulator, method);
         List<Object> list = new ArrayList<>(10);
         list.add(vm.getJNIEnv());

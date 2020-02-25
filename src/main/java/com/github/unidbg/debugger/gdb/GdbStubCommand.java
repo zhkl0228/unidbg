@@ -4,6 +4,6 @@ import com.github.unidbg.Emulator;
 
 interface GdbStubCommand {
 
-    boolean processCommand(Emulator emulator, GdbStub stub, String command);
+    boolean processCommand(Emulator<?> emulator, GdbStub stub, String command);
 
 }

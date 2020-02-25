@@ -13,13 +13,13 @@ import java.util.List;
  */
 public class ObjcClass extends ObjcObject implements ObjcConstants {
 
-    public static ObjcClass create(Emulator emulator, Pointer pointer) {
+    public static ObjcClass create(Emulator<?> emulator, Pointer pointer) {
         ObjcClass objcClass = new ObjcClass(emulator, pointer);
         objcClass.unpack();
         return objcClass;
     }
 
-    private ObjcClass(Emulator emulator, Pointer p) {
+    private ObjcClass(Emulator<?> emulator, Pointer p) {
         super(emulator, p);
     }
 

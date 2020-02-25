@@ -4,6 +4,6 @@ import com.github.unidbg.Emulator;
 
 public interface HookCallback {
 
-    int onHook(Emulator emulator);
+    int onHook(Emulator<?> emulator);
 
 }

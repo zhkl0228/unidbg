@@ -7,7 +7,7 @@ import com.sun.jna.Pointer;
 
 public interface PrimitiveArray<T> extends Array<T> {
 
-    UnicornPointer _GetArrayCritical(Emulator emulator, Pointer isCopy);
+    UnicornPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy);
 
     void _ReleaseArrayCritical(Pointer elems, int mode);
 

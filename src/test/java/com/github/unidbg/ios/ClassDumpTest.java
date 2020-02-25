@@ -16,7 +16,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 
-public class ClassDumpTest extends EmulatorTest {
+public class ClassDumpTest extends EmulatorTest<DarwinARMEmulator> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -24,7 +24,7 @@ public class ClassDumpTest extends EmulatorTest {
     }
 
     @Override
-    protected Emulator createARMEmulator() {
+    protected DarwinARMEmulator createARMEmulator() {
         return new DarwinARMEmulator(new File("target/rootfs/classdump"));
     }
 
@@ -40,7 +40,7 @@ public class ClassDumpTest extends EmulatorTest {
         assertNotNull(oClassDump);
         substrate.hookMessageEx(oClassDump.getMeta(), objc.registerName("my_dump_class:"), new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, HookContext context, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
                 Pointer id = context.getPointerArg(0);
                 Pointer SEL = context.getPointerArg(1);
                 Pointer name = context.getPointerArg(2);
@@ -56,7 +56,7 @@ public class ClassDumpTest extends EmulatorTest {
                 return HookStatus.RET(emulator, originFunction);
             }
             @Override
-            public void postCall(Emulator emulator, HookContext context) {
+            public void postCall(Emulator<?> emulator, HookContext context) {
                 System.err.println("postCall className=" + context.get("className"));
             }
         }, true);

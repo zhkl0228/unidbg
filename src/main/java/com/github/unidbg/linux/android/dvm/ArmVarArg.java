@@ -5,14 +5,14 @@ import com.github.unidbg.pointer.UnicornPointer;
 
 public class ArmVarArg implements VarArg {
 
-    static VarArg create(Emulator emulator, BaseVM vm) {
+    static VarArg create(Emulator<?> emulator, BaseVM vm) {
         return new ArmVarArg(emulator, vm);
     }
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private final BaseVM vm;
 
-    private ArmVarArg(Emulator emulator, BaseVM vm) {
+    private ArmVarArg(Emulator<?> emulator, BaseVM vm) {
         this.emulator = emulator;
         this.vm = vm;
     }

@@ -1,4 +1,4 @@
-package com.github.unidbg.file;
+package com.github.unidbg.file.ios;
 
 import com.github.unidbg.pointer.UnicornStructure;
 import com.sun.jna.Pointer;

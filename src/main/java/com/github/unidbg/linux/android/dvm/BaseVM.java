@@ -49,7 +49,7 @@ public abstract class BaseVM implements VM {
         this.jni = jni;
     }
 
-    private final Emulator emulator;
+    private final Emulator<?> emulator;
     private final File apkFile;
 
     final Set<String> notFoundClassSet = new HashSet<>();
@@ -59,7 +59,7 @@ public abstract class BaseVM implements VM {
         notFoundClassSet.add(className);
     }
 
-    BaseVM(Emulator emulator, File apkFile) {
+    BaseVM(Emulator<?> emulator, File apkFile) {
         this.emulator = emulator;
         this.apkFile = apkFile;
     }
@@ -145,7 +145,7 @@ public abstract class BaseVM implements VM {
             return "/data/app-lib/" + packageName + "-1/" + soName;
         }
         @Override
-        public LibraryFile resolveLibrary(Emulator emulator, String soName) throws IOException {
+        public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) throws IOException {
             byte[] libData = findLibrary(apkFile, soName);
             return libData == null ? null : new ApkLibraryFile(apkFile, soName, libData);
         }
@@ -321,7 +321,7 @@ public abstract class BaseVM implements VM {
     }
 
     @Override
-    public void callJNI_OnLoad(Emulator emulator, Module module) {
+    public void callJNI_OnLoad(Emulator<?> emulator, Module module) {
         new DalvikModule(this, module).callJNI_OnLoad(emulator);
     }
 }

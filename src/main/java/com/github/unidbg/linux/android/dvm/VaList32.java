@@ -11,7 +11,7 @@ class VaList32 extends VaList {
 
     private static final Log log = LogFactory.getLog(VaList32.class);
 
-    VaList32(Emulator emulator, BaseVM vm, UnicornPointer va_list, DvmMethod method) {
+    VaList32(Emulator<?> emulator, BaseVM vm, UnicornPointer va_list, DvmMethod method) {
         super(vm, method, method.decodeArgsShorty());
 
         String shorty = method.decodeArgsShorty();

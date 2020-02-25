@@ -29,21 +29,21 @@ public abstract class IpaLoader {
 
     public abstract Module getExecutable();
 
-    public abstract Emulator getEmulator();
+    public abstract Emulator<?> getEmulator();
 
     public static IpaLoader load(File ipa, String... loads) throws IOException {
-        Emulator emulator = new DarwinARM64Emulator();
+        Emulator<?> emulator = new DarwinARM64Emulator();
         Memory memory = emulator.getMemory();
         memory.setCallInitFunction();
         memory.setLibraryResolver(new DarwinResolver());
         return load(emulator, ipa, false, loads);
     }
 
-    public static IpaLoader load(Emulator emulator, File ipa, String... loads) throws IOException {
+    public static IpaLoader load(Emulator<?> emulator, File ipa, String... loads) throws IOException {
         return load(emulator, ipa, false, loads);
     }
 
-    public static IpaLoader load(Emulator emulator, File ipa, boolean forceCallInit, String... loads) throws IOException {
+    public static IpaLoader load(Emulator<?> emulator, File ipa, boolean forceCallInit, String... loads) throws IOException {
         try {
             String appDir = parseApp(ipa);
             byte[] data = loadZip(ipa, appDir + "Info.plist");

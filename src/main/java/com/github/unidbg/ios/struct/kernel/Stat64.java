@@ -1,6 +1,6 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.file.StatStructure;
+import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.unix.struct.TimeSpec64;
 import com.sun.jna.Pointer;
 

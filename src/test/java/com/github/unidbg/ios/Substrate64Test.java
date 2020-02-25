@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
@@ -13,7 +12,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 
-public class Substrate64Test extends EmulatorTest {
+public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -21,7 +20,7 @@ public class Substrate64Test extends EmulatorTest {
     }
 
     @Override
-    protected Emulator createARMEmulator() {
+    protected DarwinARM64Emulator createARMEmulator() {
         return new DarwinARM64Emulator(new File("target/rootfs/substrate"));
     }
 
@@ -39,7 +38,7 @@ public class Substrate64Test extends EmulatorTest {
         /*IFishHook fishHook = FishHook.getInstance(emulator);
         fishHook.rebindSymbol("memcpy", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer dest = context.getPointerArg(0);
                 Pointer src = context.getPointerArg(1);
@@ -56,7 +55,7 @@ public class Substrate64Test extends EmulatorTest {
 //        emulator.attach(libwhale.base, libwhale.base + libwhale.size).addBreakPoint(libwhale, 0x0000184b0);
         /*whale.importHookFunction("_malloc", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 int size = context.getIntArg(0);
                 System.err.println("IWhale hook _malloc size=" + size);
@@ -74,7 +73,7 @@ public class Substrate64Test extends EmulatorTest {
 //        emulator.traceCode(libhookzz.base, libhookzz.base + libhookzz.size);
         /*hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer zone = context.getPointerArg(0);
                 int size = context.getIntArg(1);
@@ -90,11 +89,11 @@ public class Substrate64Test extends EmulatorTest {
 //        emulator.traceCode();
         /*hookZz.wrap(symbol, new WrapCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("HookZz preCall _MSGetImageByName=" + ctx.getPointerArg(0).getString(0));
             }
             @Override
-            public void postCall(Emulator emulator, RegisterContext ctx, HookEntryInfo info) {
+            public void postCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
                 System.err.println("HookZz postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getLongArg(0)));
             }
@@ -108,7 +107,7 @@ public class Substrate64Test extends EmulatorTest {
 
         /*whale.inlineHookFunction(symbol, new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer pointer = context.getPointerArg(0);
                 System.err.println("IWhale onCall _MSGetImageByName=" + pointer.getString(0) + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
@@ -119,7 +118,7 @@ public class Substrate64Test extends EmulatorTest {
 //        emulator.traceCode();
         /*whale.importHookFunction("_strcmp", new ReplaceCallback() {
             @Override
-            public HookStatus onCall(Emulator emulator, long originFunction) {
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
                 Pointer pointer1 = context.getPointerArg(0);
                 Pointer pointer2 = context.getPointerArg(1);

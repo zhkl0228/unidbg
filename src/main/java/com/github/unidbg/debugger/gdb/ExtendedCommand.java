@@ -5,7 +5,7 @@ import com.github.unidbg.Emulator;
 class ExtendedCommand implements GdbStubCommand {
 
     @Override
-    public boolean processCommand(Emulator emulator, GdbStub stub, String command) {
+    public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
         if ("vCont?".equals(command)) {
             stub.makePacketAndSend("vCont;c;s");
             return true;

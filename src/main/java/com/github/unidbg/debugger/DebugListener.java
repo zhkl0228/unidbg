@@ -5,6 +5,6 @@ import com.github.unidbg.arm.CodeHistory;
 
 public interface DebugListener {
 
-    boolean canDebug(Emulator emulator, CodeHistory currentCode);
+    boolean canDebug(Emulator<?> emulator, CodeHistory currentCode);
 
 }

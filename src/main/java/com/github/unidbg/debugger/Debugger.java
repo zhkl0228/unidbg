@@ -20,6 +20,7 @@ public interface Debugger extends CodeHook, Closeable {
 
     void brk(Pointer pc, int svcNumber);
 
+    @SuppressWarnings("unused")
     void setDebugListener(DebugListener listener);
 
     boolean isSoftBreakpoint();

@@ -27,7 +27,7 @@ public final class GdbStub extends AbstractDebugServer {
     private final StringBuilder currentInputPacket;
     private int packetChecksum, packetFinished;
 
-    public GdbStub(Emulator emulator) {
+    public GdbStub(Emulator<?> emulator) {
         super(emulator);
 
         currentInputPacket = new StringBuilder();
@@ -192,7 +192,7 @@ public final class GdbStub extends AbstractDebugServer {
     }
 
     @Override
-    protected void onHitBreakPoint(Emulator emulator, long address) {
+    protected void onHitBreakPoint(Emulator<?> emulator, long address) {
         if (isDebuggerConnected()) {
             makePacketAndSend("S" + SIGTRAP);
         }

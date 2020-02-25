@@ -1,5 +1,6 @@
 package com.github.unidbg.ios;
 
+@SuppressWarnings("unused")
 public interface MachO {
 
     long CPU_SUBTYPE_ARM_V7 = 9;

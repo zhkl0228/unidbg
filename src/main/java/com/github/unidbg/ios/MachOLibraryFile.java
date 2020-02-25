@@ -29,7 +29,7 @@ public class MachOLibraryFile implements LibraryFile {
     }
 
     @Override
-    public LibraryFile resolveLibrary(Emulator emulator, String soName) {
+    public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
         File file = new File(this.file.getParentFile(), soName);
         return file.canRead() ? new MachOLibraryFile(file) : null;
     }

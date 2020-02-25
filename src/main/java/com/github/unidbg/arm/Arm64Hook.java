@@ -70,7 +70,7 @@ public abstract class Arm64Hook extends Arm64Svc {
     }
 
     @Override
-    public final long handle(Emulator emulator) {
+    public final long handle(Emulator<?> emulator) {
         Unicorn u = emulator.getUnicorn();
         Pointer sp = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
@@ -89,6 +89,6 @@ public abstract class Arm64Hook extends Arm64Svc {
         }
     }
 
-    protected abstract HookStatus hook(Emulator emulator);
+    protected abstract HookStatus hook(Emulator<?> emulator);
 
 }

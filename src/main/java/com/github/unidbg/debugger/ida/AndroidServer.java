@@ -15,7 +15,7 @@ public class AndroidServer extends AbstractDebugServer {
 
     private final byte protocolVersion;
 
-    public AndroidServer(Emulator emulator, byte protocolVersion) {
+    public AndroidServer(Emulator<?> emulator, byte protocolVersion) {
         super(emulator);
         this.protocolVersion = protocolVersion;
     }
@@ -132,7 +132,7 @@ public class AndroidServer extends AbstractDebugServer {
     }
 
     @Override
-    protected void onHitBreakPoint(Emulator emulator, long address) {
+    protected void onHitBreakPoint(Emulator<?> emulator, long address) {
     }
 
     @Override

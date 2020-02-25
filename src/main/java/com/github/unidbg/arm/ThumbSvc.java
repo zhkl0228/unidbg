@@ -18,7 +18,7 @@ public abstract class ThumbSvc implements Svc {
     }
 
     @Override
-    public void handleCallback(Emulator emulator) {
+    public void handleCallback(Emulator<?> emulator) {
     }
 
 }
