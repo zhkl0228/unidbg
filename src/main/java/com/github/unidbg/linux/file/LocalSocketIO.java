@@ -2,6 +2,7 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.file.SocketIO;
 import com.sun.jna.Pointer;
@@ -20,7 +21,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
 
     public interface SocketHandler {
         byte[] handle(byte[] request) throws IOException;
-        int fstat(Pointer stat);
+        int fstat(StatStructure stat);
     }
 
     private final Emulator<?> emulator;
@@ -72,7 +73,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
     }
 
     @Override
-    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
         return handler.fstat(stat);
     }
 

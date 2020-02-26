@@ -1,8 +1,9 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
+import com.github.unidbg.file.linux.StatStructure;
+import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
 
@@ -61,9 +62,16 @@ public class ByteArrayFileIO extends BaseAndroidFileIO {
     }
 
     @Override
-    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
-        stat.setLong(0x30, bytes.length); // st_size
-        stat.setInt(0x38, (int) ARM.alignSize(bytes.length, emulator.getPageAlign())); // st_blksize
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
+        stat.st_dev = 0;
+        stat.st_mode = IO.S_IFREG;
+        stat.st_uid = 0;
+        stat.st_gid = 0;
+        stat.st_size = bytes.length;
+        stat.st_blksize = emulator.getPageAlign();
+        stat.st_blocks = ((bytes.length + emulator.getPageAlign() - 1) / emulator.getPageAlign());
+        stat.st_ino = 0;
+        stat.pack();
         return 0;
     }
 

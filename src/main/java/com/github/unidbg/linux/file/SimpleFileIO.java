@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
+import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -146,35 +147,22 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
     }
 
     @Override
-    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
         int st_mode;
         if (IO.STDOUT.equals(file.getName())) {
             st_mode = IO.S_IFCHR | 0x777;
         } else {
             st_mode = IO.S_IFREG;
         }
-        /*
-         * 0x00: st_dev
-         * 0x18: st_uid
-         * 0x1c: st_gid
-         * 0x30: st_size
-         * 0x38: st_blksize
-         * 0x3c: st_blocks
-         * 0x44: st_atime
-         * 0x48: st_atime_nsec
-         * 0x4c: st_mtime
-         * 0x50: st_mtime_nsec
-         * 0x54: st_ctime
-         * 0x58: st_ctime_nsec
-         * 0x60: st_ino
-         */
-        stat.setLong(0x0, 0); // st_dev
-        stat.setInt(0x10, st_mode); // st_mode
-        stat.setInt(0x18, 0); // st_uid
-        stat.setInt(0x1c, 0); // st_gid
-        stat.setLong(0x30, file.length()); // st_size
-        stat.setInt(0x38, emulator.getPageAlign()); // st_blksize
-        stat.setLong(0x60, 0); // st_ino
+        stat.st_dev = 0;
+        stat.st_mode = st_mode;
+        stat.st_uid = 0;
+        stat.st_gid = 0;
+        stat.st_size = file.length();
+        stat.st_blksize = emulator.getPageAlign();
+        stat.st_ino = 0;
+        stat.st_blocks = ((file.length() + emulator.getPageAlign() - 1) / emulator.getPageAlign());
+        stat.pack();
         return 0;
     }
 

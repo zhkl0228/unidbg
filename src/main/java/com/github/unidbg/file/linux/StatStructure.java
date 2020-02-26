@@ -11,7 +11,13 @@ public abstract class StatStructure extends UnicornStructure {
 
     public long st_dev;
     public long st_ino;
-    public long st_size;
+    public int st_mode;
+    public int st_nlink;
+    public int st_uid;
+    public int st_gid;
     public long st_rdev;
+    public long st_size;
+    public int st_blksize;
+    public long st_blocks;
 
 }

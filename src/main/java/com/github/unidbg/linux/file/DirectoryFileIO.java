@@ -3,9 +3,9 @@ package com.github.unidbg.linux.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
+import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -86,21 +86,13 @@ public class DirectoryFileIO extends BaseAndroidFileIO {
     }
 
     @Override
-    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
-        int st_mode = IO.S_IFDIR | 0x777;
-        /*
-         * 0x00: st_dev
-         * 0x18: st_uid
-         * 0x1c: st_gid
-         * 0x30: st_size
-         * 0x38: st_blksize
-         * 0x60: st_ino
-         */
-        stat.setLong(0x0, 0); // st_dev
-        stat.setInt(0x10, st_mode); // st_mode
-        stat.setLong(0x30, 0); // st_size
-        stat.setInt(0x38, 0); // st_blksize
-        stat.setLong(0x60, 0); // st_ino
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
+        stat.st_mode = IO.S_IFDIR | 0x777;
+        stat.st_dev = 0;
+        stat.st_size = 0;
+        stat.st_blksize = 0;
+        stat.st_ino = 0;
+        stat.pack();
         return 0;
     }
 

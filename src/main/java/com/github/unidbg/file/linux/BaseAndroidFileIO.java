@@ -2,8 +2,6 @@ package com.github.unidbg.file.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileIO;
-import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 public abstract class BaseAndroidFileIO extends BaseFileIO implements AndroidFileIO {
 
@@ -12,7 +10,7 @@ public abstract class BaseAndroidFileIO extends BaseFileIO implements AndroidFil
     }
 
     @Override
-    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, StatStructure stat) {
         throw new AbstractMethodError(getClass().getName());
     }
 

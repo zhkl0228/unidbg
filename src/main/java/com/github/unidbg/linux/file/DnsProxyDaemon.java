@@ -1,8 +1,8 @@
 package com.github.unidbg.linux.file;
 
+import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.file.SocketIO;
 import com.github.unidbg.utils.Inspector;
-import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -30,9 +30,9 @@ class DnsProxyDaemon implements LocalSocketIO.SocketHandler {
     }
 
     @Override
-    public int fstat(Pointer stat) {
-        stat.setLong(0x30, 0); // st_size
-        stat.setInt(0x38, 0); // st_blksize
+    public int fstat(StatStructure stat) {
+        stat.st_size = 0;
+        stat.st_blksize = 0;
         return 0;
     }
 

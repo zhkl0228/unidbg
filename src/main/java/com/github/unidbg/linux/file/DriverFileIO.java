@@ -140,7 +140,7 @@ public class DriverFileIO extends AbstractFileIO implements NewFileIO, AndroidFi
     }
 
     @Override
-    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
+    public int fstat(Emulator<?> emulator, com.github.unidbg.file.linux.StatStructure stat) {
         throw new UnsupportedOperationException();
     }
 

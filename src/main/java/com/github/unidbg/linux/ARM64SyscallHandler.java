@@ -16,6 +16,7 @@ import com.github.unidbg.linux.file.ByteArrayFileIO;
 import com.github.unidbg.linux.file.DriverFileIO;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
 import com.github.unidbg.linux.file.LocalSocketIO;
+import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.SyscallHandler;
@@ -681,7 +682,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
     protected int stat64(Emulator<AndroidFileIO> emulator, String pathname, Pointer statbuf) {
         FileResult<AndroidFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (result != null && result.isSuccess()) {
-            return result.io.fstat(emulator, emulator.getUnicorn(), statbuf);
+            return result.io.fstat(emulator, new Stat64(statbuf));
         }
 
         log.info("stat64 pathname=" + pathname);
@@ -1556,7 +1557,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         if (log.isDebugEnabled()) {
             log.debug("fstat file=" + file + ", stat=" + stat + ", from=" + emulator.getContext().getLRPointer());
         }
-        return file.fstat(emulator, emulator.getUnicorn(), stat);
+        return file.fstat(emulator, new Stat64(stat));
     }
 
     private int ioctl(Emulator<?> emulator) {

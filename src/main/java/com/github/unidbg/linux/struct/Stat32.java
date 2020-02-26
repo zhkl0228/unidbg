@@ -15,13 +15,7 @@ public class Stat32 extends StatStructure {
 
     public byte[] __pad0 = new byte[4];
     public int __st_ino;
-    public int st_mode;
-    public int st_nlink;
-    public int st_uid;
-    public int st_gid;
     public byte[] __pad3 = new byte[4];
-    public int st_blksize;
-    public long st_blocks;
     public TimeSpec st_atim;
     public TimeSpec st_mtim;
     public TimeSpec st_ctim;

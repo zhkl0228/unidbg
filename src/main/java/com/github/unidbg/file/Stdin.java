@@ -23,7 +23,7 @@ public class Stdin extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
 
     @Override
     public int write(byte[] data) {
-        throw new AbstractMethodError();
+        throw new AbstractMethodError(new String(data));
     }
 
     @Override
@@ -43,9 +43,10 @@ public class Stdin extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
     }
 
     @Override
-    public int fstat(Emulator<?> emulator, Unicorn unicorn, Pointer stat) {
-        stat.setInt(0x10, 0); // st_mode
-        stat.setLong(0x30, 0); // st_size
+    public int fstat(Emulator<?> emulator, com.github.unidbg.file.linux.StatStructure stat) {
+        stat.st_mode = 0x0;
+        stat.st_size = 0;
+        stat.pack();
         return 0;
     }
 
