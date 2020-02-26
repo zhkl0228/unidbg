@@ -114,8 +114,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                 case 2888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fork(emulator));
                     return;
-                case 4888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
+                case 64:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, write(emulator));
                     return;
                 case 5888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, open(u, emulator));
@@ -1580,10 +1580,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         return ret;
     }
 
-    private int write(Unicorn u, Emulator<?> emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer buffer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+    private int write(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        Pointer buffer = context.getPointerArg(1);
+        int count = context.getIntArg(2);
         return write(emulator, fd, buffer, count);
     }
 

@@ -6,3 +6,4 @@
 **/dev/log
 /src/test/resources/example_binaries/stdout
 /src/test/resources/example_binaries/stderr
+/src/test/native/android/obj/
