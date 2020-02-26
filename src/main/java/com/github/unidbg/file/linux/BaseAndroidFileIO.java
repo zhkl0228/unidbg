@@ -2,6 +2,7 @@ package com.github.unidbg.file.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileIO;
+import com.sun.jna.Pointer;
 
 public abstract class BaseAndroidFileIO extends BaseFileIO implements AndroidFileIO {
 
@@ -14,4 +15,8 @@ public abstract class BaseAndroidFileIO extends BaseFileIO implements AndroidFil
         throw new AbstractMethodError(getClass().getName());
     }
 
+    @Override
+    public int getdents64(Pointer dirp, int size) {
+        throw new UnsupportedOperationException();
+    }
 }

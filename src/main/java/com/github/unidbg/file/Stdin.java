@@ -69,4 +69,9 @@ public class Stdin extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
     public int fstatfs(StatFS statFS) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int getdents64(Pointer dirp, int size) {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -402,7 +402,7 @@ public class UnicornPointer extends Pointer {
         UnicornPointer pointer = new UnicornPointer(emulator, peer + offset, pointerSize);
         if (size > 0) {
             if (offset > size) {
-                throw new InvalidMemoryAccessException();
+                throw new InvalidMemoryAccessException("offset=" + offset + ", size=" + size);
             }
 
             long newSize = size - offset;

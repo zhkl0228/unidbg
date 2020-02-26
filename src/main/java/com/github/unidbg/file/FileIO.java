@@ -46,8 +46,6 @@ public interface FileIO {
 
     int llseek(long offset, Pointer result, int whence);
 
-    int getdents64(Pointer dirp, int count);
-
     int recvfrom(Unicorn unicorn, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen);
 
     String getPath();

@@ -1,17 +1,17 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.unix.IO;
-import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class DirectoryFileIO extends BaseDarwinFileIO {
 
@@ -58,31 +58,6 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
         if (entries != null) {
             Collections.addAll(this.entries, entries);
         }
-    }
-
-    private static final int DT_DIR = 4;
-    private static final int DT_REG = 8;
-
-    @Override
-    public int getdents64(Pointer dirp, int count) {
-        int read = 0;
-        Pointer entryPointer = dirp;
-        for (Iterator<DirectoryEntry> iterator = this.entries.iterator(); iterator.hasNext(); ) {
-            DirectoryEntry entry = iterator.next();
-            byte[] data = entry.name.getBytes(StandardCharsets.UTF_8);
-            long d_reclen = ARM.alignSize(data.length + 20, 8);
-
-            entryPointer.setLong(0, 0); // d_ino
-            entryPointer.setLong(8, 0); // d_off
-            entryPointer.setShort(16, (short) d_reclen);
-            entryPointer.setByte(18, (byte) (entry.isFile ? DT_REG : DT_DIR));
-            entryPointer.write(19, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
-            read += d_reclen;
-            entryPointer = entryPointer.share(d_reclen);
-            iterator.remove();
-        }
-
-        return read;
     }
 
     @Override

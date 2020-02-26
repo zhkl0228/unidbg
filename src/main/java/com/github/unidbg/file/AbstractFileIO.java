@@ -136,11 +136,6 @@ public abstract class AbstractFileIO implements NewFileIO {
     }
 
     @Override
-    public int getdents64(Pointer dirp, int count) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public void close() {
         throw new AbstractMethodError(getClass().getName());
     }

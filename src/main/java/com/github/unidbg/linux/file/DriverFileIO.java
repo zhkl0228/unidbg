@@ -145,6 +145,11 @@ public class DriverFileIO extends AbstractFileIO implements NewFileIO, AndroidFi
     }
 
     @Override
+    public int getdents64(Pointer dirp, int size) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String toString() {
         return path;
     }

@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.file.linux.StatStructure;
+import com.github.unidbg.linux.struct.Dirent;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 
@@ -55,29 +56,31 @@ public class DirectoryFileIO extends BaseAndroidFileIO {
         }
     }
 
-    private static final int DT_DIR = 4;
-    private static final int DT_REG = 8;
-
     @Override
-    public int getdents64(Pointer dirp, int count) {
-        int read = 0;
-        Pointer entryPointer = dirp;
+    public int getdents64(Pointer dirp, int size) {
+        int offset = 0;
         for (Iterator<DirectoryEntry> iterator = this.entries.iterator(); iterator.hasNext(); ) {
             DirectoryEntry entry = iterator.next();
             byte[] data = entry.name.getBytes(StandardCharsets.UTF_8);
-            long d_reclen = ARM.alignSize(data.length + 20, 8);
+            long d_reclen = ARM.alignSize(data.length + 24, 8);
 
-            entryPointer.setLong(0, 0); // d_ino
-            entryPointer.setLong(8, 0); // d_off
-            entryPointer.setShort(16, (short) d_reclen);
-            entryPointer.setByte(18, (byte) (entry.isFile ? DT_REG : DT_DIR));
-            entryPointer.write(19, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
-            read += d_reclen;
-            entryPointer = entryPointer.share(d_reclen);
+            if (offset + d_reclen >= size) {
+                break;
+            }
+
+            Dirent dirent = new Dirent(dirp.share(offset));
+            dirent.d_ino = 0;
+            dirent.d_off = 0;
+            dirent.d_reclen = (short) d_reclen;
+            dirent.d_type = entry.isFile ? Dirent.DT_REG : Dirent.DT_DIR;
+            dirent.d_name = Arrays.copyOf(data, data.length + 1);
+            dirent.pack();
+            offset += d_reclen;
+
             iterator.remove();
         }
 
-        return read;
+        return offset;
     }
 
     @Override

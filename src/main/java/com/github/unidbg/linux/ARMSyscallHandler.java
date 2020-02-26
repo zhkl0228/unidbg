@@ -1734,20 +1734,21 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         }
     }
 
-    private int getdents64(Unicorn u, Emulator<?> emulator) {
+    private int getdents64(Unicorn u, Emulator<AndroidFileIO> emulator) {
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer dirp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int count = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+        UnicornPointer dirp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         if (log.isDebugEnabled()) {
-            log.debug("getdents64 fd=" + fd + ", dirp=" + dirp + ", count=" + count);
+            log.debug("getdents64 fd=" + fd + ", dirp=" + dirp + ", size=" + size);
         }
 
-        FileIO io = fdMap.get(fd);
+        AndroidFileIO io = fdMap.get(fd);
         if (io == null) {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         } else {
-            return io.getdents64(dirp, count);
+            dirp.setSize(size);
+            return io.getdents64(dirp, size);
         }
     }
 
