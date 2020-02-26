@@ -1,7 +1,6 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.unix.IO;
@@ -89,6 +88,7 @@ public class ByteArrayFileIO extends BaseDarwinFileIO {
         stat.st_ino = 1;
         stat.st_uid = 0;
         stat.st_gid = 0;
+        stat.setLastModification(System.currentTimeMillis());
         stat.pack();
         return 0;
     }

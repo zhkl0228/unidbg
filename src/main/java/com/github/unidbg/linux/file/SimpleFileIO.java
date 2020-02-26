@@ -15,6 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
@@ -151,17 +152,20 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
         int st_mode;
         if (IO.STDOUT.equals(file.getName())) {
             st_mode = IO.S_IFCHR | 0x777;
+        } else if(Files.isSymbolicLink(file.toPath())) {
+            st_mode = IO.S_IFLNK;
         } else {
             st_mode = IO.S_IFREG;
         }
-        stat.st_dev = 0;
+        stat.st_dev = 1;
         stat.st_mode = st_mode;
         stat.st_uid = 0;
         stat.st_gid = 0;
         stat.st_size = file.length();
         stat.st_blksize = emulator.getPageAlign();
-        stat.st_ino = 0;
+        stat.st_ino = 1;
         stat.st_blocks = ((file.length() + emulator.getPageAlign() - 1) / emulator.getPageAlign());
+        stat.setLastModification(file.lastModified());
         stat.pack();
         return 0;
     }

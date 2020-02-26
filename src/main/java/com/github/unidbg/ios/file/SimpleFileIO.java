@@ -14,6 +14,7 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
@@ -233,14 +234,23 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     @Override
     public int fstat(Emulator<?> emulator, StatStructure stat) {
         int blockSize = emulator.getPageAlign();
+        int st_mode;
+        if (IO.STDOUT.equals(file.getName())) {
+            st_mode = IO.S_IFCHR | 0x777;
+        } else if(Files.isSymbolicLink(file.toPath())) {
+            st_mode = IO.S_IFLNK;
+        } else {
+            st_mode = IO.S_IFREG;
+        }
         stat.st_dev = 1;
-        stat.st_mode = (short) (IO.S_IFREG | 0x777);
+        stat.st_mode = (short) (st_mode);
         stat.setSize(file.length());
         stat.setBlockCount((file.length() + blockSize - 1) / blockSize);
         stat.st_blksize = blockSize;
         stat.st_ino = 1;
         stat.st_uid = 0;
         stat.st_gid = 0;
+        stat.setLastModification(file.lastModified());
         stat.pack();
         return 0;
     }

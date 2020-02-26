@@ -63,14 +63,15 @@ public class ByteArrayFileIO extends BaseAndroidFileIO {
 
     @Override
     public int fstat(Emulator<?> emulator, StatStructure stat) {
-        stat.st_dev = 0;
+        stat.st_dev = 1;
         stat.st_mode = IO.S_IFREG;
         stat.st_uid = 0;
         stat.st_gid = 0;
         stat.st_size = bytes.length;
         stat.st_blksize = emulator.getPageAlign();
         stat.st_blocks = ((bytes.length + emulator.getPageAlign() - 1) / emulator.getPageAlign());
-        stat.st_ino = 0;
+        stat.st_ino = 1;
+        stat.setLastModification(System.currentTimeMillis());
         stat.pack();
         return 0;
     }

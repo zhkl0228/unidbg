@@ -3,9 +3,9 @@ package com.github.unidbg.linux.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileResult;
+import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
-import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.LogCatFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
@@ -58,8 +58,8 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
 
     @Override
     public FileResult<AndroidFileIO> resolve(Emulator<AndroidFileIO> emulator, String path, int oflags) {
-        File rootDir = emulator.getFileSystem().getRootDir();
-        final boolean create = (oflags & IOConstants.O_CREAT) != 0;
+        FileSystem<AndroidFileIO> fileSystem = emulator.getFileSystem();
+        File rootDir = fileSystem.getRootDir();
         if (path.startsWith("/dev/log/")) {
             try {
                 File log = new File(rootDir, path);
@@ -77,15 +77,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         }
 
         if (".".equals(path)) {
-            return createFileIO(emulator.getFileSystem().createWorkDir(), path, oflags);
-        }
-
-        File file = new File(rootDir, path);
-        if (file.canRead()) {
-            return createFileIO(file, path, oflags);
-        }
-        if (file.getParentFile().exists() && create) {
-            return createFileIO(file, path, oflags);
+            return createFileIO(fileSystem.createWorkDir(), path, oflags);
         }
 
         String androidResource = FilenameUtils.normalize("/android/sdk" + sdk + "/" + path, true);

@@ -22,6 +22,14 @@ public final class Stat extends StatStructure {
     public TimeSpec st_birthtimespec; /* time of file creation(birth) */
 
     @Override
+    public void setLastModification(long lastModified) {
+        for (TimeSpec spec : Arrays.asList(st_atimespec, st_mtimespec, st_ctimespec, st_birthtimespec)) {
+            spec.tv_sec = (int) (lastModified / 1000L);
+            spec.tv_nsec = (int) ((lastModified % 1000) * 1000);
+        }
+    }
+
+    @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("st_dev", "st_mode", "st_nlink", "st_ino", "st_uid", "st_gid", "st_rdev",
                 "st_atimespec", "st_mtimespec", "st_ctimespec", "st_birthtimespec",

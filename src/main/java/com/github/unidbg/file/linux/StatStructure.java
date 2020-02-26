@@ -20,4 +20,6 @@ public abstract class StatStructure extends UnicornStructure {
     public int st_blksize;
     public long st_blocks;
 
+    public abstract void setLastModification(long lastModified);
+
 }

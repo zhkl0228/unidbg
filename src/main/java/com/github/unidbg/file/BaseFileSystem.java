@@ -105,6 +105,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
     protected abstract boolean hasCreat(int oflags);
     protected abstract boolean hasDirectory(int oflags);
+    @SuppressWarnings("unused")
     protected abstract boolean hasAppend(int oflags);
 
     @Override

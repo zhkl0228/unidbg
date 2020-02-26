@@ -8,7 +8,6 @@ import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
-import unicorn.Unicorn;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -27,10 +26,9 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
 
     private static DirectoryEntry[] createEntries(File dir) {
         List<DirectoryEntry> list = new ArrayList<>();
-        list.add(new DirectoryEntry(false, "."));
-        list.add(new DirectoryEntry(false, ".."));
         File[] files = dir.listFiles();
         if (files != null) {
+            Arrays.sort(files);
             for (File file : files) {
                 list.add(new DirectoryEntry(file.isFile(), file.getName()));
             }

@@ -22,6 +22,14 @@ public class Stat64 extends StatStructure {
     public int __unused5;
 
     @Override
+    public void setLastModification(long lastModified) {
+        for (TimeSpec64 spec : Arrays.asList(st_atim, st_mtim, st_ctim)) {
+            spec.tv_sec = lastModified / 1000L;
+            spec.tv_nsec = (lastModified % 1000) * 1000;
+        }
+    }
+
+    @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("st_dev", "st_ino", "st_mode", "st_nlink", "st_uid", "st_gid", "st_rdev", "__pad1", "st_size", "st_blksize",
                 "__pad2", "st_blocks", "st_atim", "st_mtim", "st_ctim", "__unused4", "__unused5");

@@ -33,4 +33,6 @@ public abstract class StatStructure extends UnicornStructure {
         this.st_blocks = count;
     }
 
+    public abstract void setLastModification(long lastModified);
+
 }

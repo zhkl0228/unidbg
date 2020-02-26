@@ -3,9 +3,9 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileResult;
+import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.ios.DarwinFileIO;
-import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -63,18 +63,9 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
             return FileResult.failed(UnixEmulator.EINVAL);
         }
 
+        FileSystem<DarwinFileIO> fileSystem = emulator.getFileSystem();
         if (".".equals(path)) {
-            return createFileIO(emulator.getFileSystem().createWorkDir(), path, oflags);
-        }
-
-        final File rootDir = emulator.getFileSystem().getRootDir();
-        File file = new File(rootDir, path);
-        if (file.canRead()) {
-            return createFileIO(file, path, oflags);
-        }
-        final boolean create = (oflags & IOConstants.O_CREAT) != 0;
-        if (file.getParentFile().exists() && create) {
-            return createFileIO(file, path, oflags);
+            return createFileIO(fileSystem.createWorkDir(), path, oflags);
         }
 
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
