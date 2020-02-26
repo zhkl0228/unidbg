@@ -6,7 +6,6 @@ import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.ElfLibraryFile;
-import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.*;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.AbstractLoader;
@@ -19,7 +18,10 @@ import net.fornwall.jelf.*;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.*;
+import unicorn.Arm64Const;
+import unicorn.ArmConst;
+import unicorn.Unicorn;
+import unicorn.UnicornConst;
 
 import java.io.File;
 import java.io.IOException;
@@ -315,23 +317,10 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     }
 
                     final long begin = load_base + ph.virtual_address;
-                    final long end = begin + ph.mem_size;
                     Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName());
                     unicorn.mem_write(begin, ph.getPtLoadData());
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
-
-                    if (null != null && (prot & UnicornConst.UC_PROT_EXEC) != 0) { // unpack executable code
-                        unicorn.hook_add(new WriteHook() {
-                            @Override
-                            public void hook(Unicorn u, long address, int size, long value, Object user) {
-                                if (address >= begin && address < end) {
-                                    ((WriteHook) null).hook(u, address - load_base, size, value, user);
-                                }
-                            }
-                        }, begin, end, null);
-                    }
-
                     break;
                 case ElfSegment.PT_DYNAMIC:
                     dynamicStructure = ph.getDynamicStructure();
@@ -382,7 +371,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 ModuleSymbol moduleSymbol = iterator.next();
                 ModuleSymbol resolved = moduleSymbol.resolve(module.getNeededLibraries(), false, hookListeners, emulator.getSvcMemory());
                 if (resolved != null) {
-                    log.debug("[" + moduleSymbol.soName + "]" + moduleSymbol.symbol.getName() + " symbol resolved to " + resolved.toSoName);
+                    if (log.isDebugEnabled()) {
+                        log.debug("[" + moduleSymbol.soName + "]" + moduleSymbol.symbol.getName() + " symbol resolved to " + resolved.toSoName);
+                    }
                     resolved.relocation(emulator);
                     iterator.remove();
                 }
@@ -409,8 +400,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
             ModuleSymbol moduleSymbol;
             switch (type) {
-                case ARMEmulator.R_ARM_ABS32:
-                    long offset = relocationAddr.getInt(0);
+                case ARMEmulator.R_ARM_ABS32: {
+                    int offset = relocationAddr.getInt(0);
                     moduleSymbol = resolveSymbol(load_base, symbol, relocationAddr, soName, neededLibraries.values(), offset);
                     if (moduleSymbol == null) {
                         list.add(new ModuleSymbol(soName, load_base, symbol, relocationAddr, null, offset));
@@ -418,8 +409,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                         moduleSymbol.relocation(emulator);
                     }
                     break;
-                case ARMEmulator.R_AARCH64_ABS64:
-                    offset = relocationAddr.getLong(0);
+                }
+                case ARMEmulator.R_AARCH64_ABS64: {
+                    long offset = relocationAddr.getLong(0) + relocation.addend();
                     moduleSymbol = resolveSymbol(load_base, symbol, relocationAddr, soName, neededLibraries.values(), offset);
                     if (moduleSymbol == null) {
                         list.add(new ModuleSymbol(soName, load_base, symbol, relocationAddr, null, offset));
@@ -427,13 +419,16 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                         moduleSymbol.relocation(emulator);
                     }
                     break;
-                case ARMEmulator.R_ARM_RELATIVE:
+                }
+                case ARMEmulator.R_ARM_RELATIVE: {
+                    int offset = relocationAddr.getInt(0);
                     if (sym_value == 0) {
-                        relocationAddr.setInt(0, (int) load_base + relocationAddr.getInt(0));
+                        relocationAddr.setInt(0, (int) load_base + offset);
                     } else {
                         throw new IllegalStateException("sym_value=0x" + Long.toHexString(sym_value));
                     }
                     break;
+                }
                 case ARMEmulator.R_AARCH64_RELATIVE:
                     if (sym_value == 0) {
                         relocationAddr.setLong(0, load_base + relocation.addend());

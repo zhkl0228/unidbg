@@ -3,6 +3,7 @@ package com.github.unidbg.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.Symbol;
 import com.github.unidbg.android.struct.File32;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -34,21 +35,29 @@ public class AndroidTest {
 
         module = emulator.loadLibrary(executable);
 
-        Pointer pointer = memory.allocateStack(0x100);
-        System.out.println(new Stat32(pointer));
+        {
+            Pointer pointer = memory.allocateStack(0x100);
+            System.out.println(new Stat32(pointer));
+        }
     }
 
     private void test() {
         System.err.println("exit code: " + module.callEntry(emulator));
 
-        Pointer stdin = UnicornPointer.pointer(emulator, 0x40051184);
-        System.out.println(new File32(stdin));
+        Symbol __sF = module.findSymbolByName("__sF", true);
+        Pointer pointer = UnicornPointer.pointer(emulator, __sF.getAddress());
+        assert pointer != null;
 
-        Pointer stdout = UnicornPointer.pointer(emulator, 0x400511d8);
-        System.out.println(new File32(stdout));
+        File32 stdin = new File32(pointer);
+        System.out.println(stdin);
 
-        Pointer stderr = UnicornPointer.pointer(emulator, 0x4005122c);
-        System.out.println(new File32(stderr));
+        pointer = pointer.share(stdin.size());
+        File32 stdout = new File32(pointer);
+        System.out.println(stdout);
+
+        pointer = pointer.share(stdout.size());
+        File32 stderr = new File32(pointer);
+        System.out.println(stderr);
     }
 
 }
