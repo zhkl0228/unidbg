@@ -175,7 +175,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         try {
             if (breakMap.containsKey(address)) {
                 BreakPointCallback callback = breakMap.get(address);
-                if (callback == null || !callback.onHit(emulator, address)) {
+                if (callback == null || callback.onHit(emulator, address)) {
                     loop(emulator, address, size);
                 }
             } else if (singleStep == 0) {

@@ -132,7 +132,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                             str = str.substring(2);
                             radix = 16;
                         }
-                        value = Integer.parseInt(str, radix);
+                        value = (int) Long.parseLong(str, radix);
                     } catch(NumberFormatException e) {
                         e.printStackTrace();
                         continue;
