@@ -8,6 +8,7 @@ public interface IOConstants {
     int O_NONBLOCK = 0x0004; /* no delay */
     int O_APPEND = 0x0008; /* set append mode */
     int O_CREAT = 0x0200; /* create if nonexistant */
+    int O_EXCL = 0x0800; /* error if already exists */
 
     int O_DIRECTORY = 0x100000;
 

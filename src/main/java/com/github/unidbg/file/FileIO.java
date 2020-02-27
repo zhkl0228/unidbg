@@ -26,6 +26,10 @@ public interface FileIO {
 
     int connect(Pointer addr, int addrlen);
 
+    int bind(Pointer addr, int addrlen);
+
+    int listen(int backlog);
+
     int setsockopt(int level, int optname, Pointer optval, int optlen);
 
     int sendto(byte[] data, int flags, Pointer dest_addr, int addrlen);

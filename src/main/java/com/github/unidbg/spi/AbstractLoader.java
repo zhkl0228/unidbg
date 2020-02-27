@@ -262,9 +262,9 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         /*
          * 注意打开顺序很重要
          */
-        syscallHandler.open(emulator, IO.STDIN, IOConstants.O_RDONLY, true);
-        syscallHandler.open(emulator, IO.STDOUT, IOConstants.O_WRONLY, true);
-        syscallHandler.open(emulator, IO.STDERR, IOConstants.O_WRONLY, true);
+        syscallHandler.open(emulator, IO.STDIN, IOConstants.O_RDONLY);
+        syscallHandler.open(emulator, IO.STDOUT, IOConstants.O_WRONLY);
+        syscallHandler.open(emulator, IO.STDERR, IOConstants.O_WRONLY);
     }
 
     @Override

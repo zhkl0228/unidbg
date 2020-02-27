@@ -61,4 +61,9 @@ public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements Fi
     protected boolean hasAppend(int oflags) {
         return (oflags & O_APPEND) != 0;
     }
+
+    @Override
+    protected boolean hasExcl(int oflags) {
+        return (oflags & O_EXCL) != 0;
+    }
 }

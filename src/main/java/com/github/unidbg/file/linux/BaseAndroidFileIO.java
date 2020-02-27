@@ -17,6 +17,11 @@ public abstract class BaseAndroidFileIO extends BaseFileIO implements AndroidFil
 
     @Override
     public int getdents64(Pointer dirp, int size) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    @Override
+    public AndroidFileIO accept(Pointer addr, Pointer addrlen) {
+        throw new AbstractMethodError(getClass().getName());
     }
 }

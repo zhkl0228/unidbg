@@ -15,6 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.util.Arrays;
 
@@ -258,4 +259,16 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
 
         return super.llseek(offset, result, whence);
     }
+
+    @Override
+    public int ftruncate(int length) {
+        try (FileChannel channel = new FileOutputStream(file, true).getChannel()) {
+            channel.truncate(length);
+            return 0;
+        } catch (IOException e) {
+            log.debug("ftruncate failed", e);
+            return -1;
+        }
+    }
+
 }

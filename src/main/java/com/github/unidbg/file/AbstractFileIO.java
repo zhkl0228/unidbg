@@ -1,6 +1,7 @@
 package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -69,6 +70,16 @@ public abstract class AbstractFileIO implements NewFileIO {
     }
 
     @Override
+    public int bind(Pointer addr, int addrlen) {
+        throw new AbstractMethodError(getClass().getName());
+    }
+
+    @Override
+    public int listen(int backlog) {
+        throw new AbstractMethodError(getClass().getName());
+    }
+
+    @Override
     public int connect(Pointer addr, int addrlen) {
         throw new AbstractMethodError(getClass().getName());
     }
@@ -105,7 +116,7 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int ftruncate(int length) {
-        throw new AbstractMethodError();
+        throw new AbstractMethodError(getClass().getName());
     }
 
     @Override
@@ -159,4 +170,9 @@ public abstract class AbstractFileIO implements NewFileIO {
     public String getPath() {
         throw new AbstractMethodError(getClass().getName());
     }
+
+    public AndroidFileIO accept(Pointer addr, Pointer addrlen) {
+        throw new AbstractMethodError(getClass().getName());
+    }
+
 }

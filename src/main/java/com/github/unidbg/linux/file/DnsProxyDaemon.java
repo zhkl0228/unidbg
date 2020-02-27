@@ -33,6 +33,7 @@ class DnsProxyDaemon implements LocalSocketIO.SocketHandler {
     public int fstat(StatStructure stat) {
         stat.st_size = 0;
         stat.st_blksize = 0;
+        stat.pack();
         return 0;
     }
 

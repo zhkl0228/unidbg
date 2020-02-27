@@ -186,17 +186,26 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 case 54:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, ioctl(u, emulator));
                     return;
+                case 57:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, setpgid(emulator));
+                    return;
                 case 60:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, umask(u));
                     return;
                 case 63:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, dup2(u, emulator));
                     return;
+                case 64:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getppid(emulator));
+                    return;
                 case 67:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(u, emulator));
                     return;
                 case 78:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
+                    return;
+                case 85:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, readlink(emulator));
                     return;
                 case 88:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, reboot(u, emulator));
@@ -260,6 +269,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 case 146:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, writev(u, emulator));
                     return;
+                case 147:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getsid(emulator));
+                    return;
                 case 162:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
                     return;
@@ -309,6 +321,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 case 210:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, setresgid32(u));
                     return;
+                case 214:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, setgid32(emulator));
+                    return;
                 case 217:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getdents64(u, emulator));
                     return;
@@ -321,6 +336,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                     return;
                 case 230:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lgetxattr(u, emulator));
+                    return;
+                case 238:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, tkill(emulator));
                     return;
                 case 240:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, futex(u, emulator));
@@ -343,8 +361,17 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 case 281:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, socket(u, emulator));
                     return;
+                case 282:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, bind(emulator));
+                    return;
                 case 283:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, connect(u, emulator));
+                    return;
+                case 284:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, listen(emulator));
+                    return;
+                case 285:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, accept(emulator));
                     return;
                 case 286:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getsockname(u, emulator));
@@ -379,17 +406,26 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 case 328:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, unlinkat(emulator));
                     return;
+                case 332:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, readlinkat(emulator));
+                    return;
                 case 329:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, renameat(emulator));
                     return;
                 case 334:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, faccessat(u, emulator));
                     return;
+                case 335:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, pselect6(emulator));
+                    return;
                 case 345:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getcpu(emulator));
                     return;
                 case 348:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
+                    return;
+                case 366:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, accept4(emulator));
                     return;
                 case 0xf0002:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, cacheflush(u, emulator));
@@ -417,6 +453,72 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         if (exception instanceof UnicornException) {
             throw (UnicornException) exception;
         }
+    }
+
+    private int tkill(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int tid = context.getIntArg(0);
+        int sig = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("tkill tid=" + tid + ", sig=" + sig);
+        }
+        return 0;
+    }
+
+    private int setpgid(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int pgid = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("setpgid pid=" + pid + ", pgid=" + pgid);
+        }
+        return 0;
+    }
+
+    private int getsid(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("getsid pid=" + pid);
+        }
+        return emulator.getPid();
+    }
+
+    private int readlinkat(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname = context.getPointerArg(1);
+        Pointer buf = context.getPointerArg(2);
+        int bufSize = context.getIntArg(3);
+        String path = pathname.getString(0);
+        if (log.isDebugEnabled()) {
+            log.debug("readlinkat dirfd=" + dirfd + ", path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
+        }
+        if (dirfd != IO.AT_FDCWD) {
+            throw new UnicornException();
+        }
+        buf.setString(0, path);
+        return path.length() + 1;
+    }
+
+    private int readlink(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathname = context.getPointerArg(0);
+        Pointer buf = context.getPointerArg(1);
+        int bufSize = context.getIntArg(2);
+        String path = pathname.getString(0);
+        if (log.isDebugEnabled()) {
+            log.debug("readlink path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
+        }
+        buf.setString(0, path);
+        return path.length() + 1;
+    }
+
+    private int getppid(Emulator<AndroidFileIO> emulator) {
+        if (log.isDebugEnabled()) {
+            log.debug("getppid");
+        }
+        return emulator.getPid();
     }
 
     private int getcpu(Emulator<?> emulator) {
@@ -482,7 +584,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         throw new UnicornException();
     }
 
-    private int ptrace(Unicorn u, Emulator<?> emulator) {
+    protected int ptrace(Unicorn u, Emulator<?> emulator) {
         int request = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         int pid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
@@ -592,8 +694,8 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return 0;
     }
 
-    private int fork(Emulator<?> emulator) {
-        log.debug("fork");
+    protected int fork(Emulator<?> emulator) {
+        log.info("fork");
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
     }
@@ -976,6 +1078,44 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return count;
     }
 
+    private int pselect6(Emulator<?> emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int nfds = context.getIntArg(0);
+        Pointer readfds = context.getPointerArg(1);
+        Pointer writefds = context.getPointerArg(2);
+        Pointer exceptfds = context.getPointerArg(3);
+        Pointer timeout = context.getR4Pointer();
+        int size = (nfds - 1) / 8 + 1;
+        if (log.isDebugEnabled()) {
+            log.debug("pselect6 nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout);
+            if (readfds != null) {
+                byte[] data = readfds.getByteArray(0, size);
+                Inspector.inspect(data, "readfds");
+            }
+            if (writefds != null) {
+                byte[] data = writefds.getByteArray(0, size);
+                Inspector.inspect(data, "writefds");
+            }
+        }
+        if (exceptfds != null) {
+            emulator.getMemory().setErrno(UnixEmulator.ENOMEM);
+            return -1;
+        }
+        if (writefds != null) {
+            int count = select(nfds, writefds, readfds);
+            if (count > 0) {
+                return count;
+            }
+        }
+        if (readfds != null) {
+            int count = select(nfds, readfds, writefds);
+            if (count > 0) {
+                return count;
+            }
+        }
+        throw new AbstractMethodError();
+    }
+
     private int getpeername(Unicorn u, Emulator<?> emulator) {
         int sockfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
@@ -1042,6 +1182,15 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         int suid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         if (log.isDebugEnabled()) {
             log.debug("setresuid32 ruid=" + ruid + ", euid=" + euid + ", suid=" + suid);
+        }
+        return 0;
+    }
+
+    private int setgid32(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int gid = context.getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("setgid32 gid=" + gid);
         }
         return 0;
     }
@@ -1185,6 +1334,58 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         Pointer addr = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         int addrlen = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
         return connect(emulator, sockfd, addr, addrlen);
+    }
+
+    private int accept(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int sockfd = context.getIntArg(0);
+        Pointer addr = context.getPointerArg(1);
+        Pointer addrlen = context.getPointerArg(2);
+        return accept(emulator, sockfd, addr, addrlen, 0);
+    }
+
+    private int accept4(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int sockfd = context.getIntArg(0);
+        Pointer addr = context.getPointerArg(1);
+        Pointer addrlen = context.getPointerArg(2);
+        int flags = context.getIntArg(3);
+        return accept(emulator, sockfd, addr, addrlen, flags);
+    }
+
+    protected final int accept(Emulator<AndroidFileIO> emulator, int sockfd, Pointer addr, Pointer addrlen, int flags) {
+        if (log.isDebugEnabled()) {
+            log.debug("accept sockfd=" + sockfd + ", addr=" + addr + ", addrlen=" + addrlen + ", flags=" + flags);
+        }
+
+        AndroidFileIO file = fdMap.get(sockfd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        AndroidFileIO newIO = file.accept(addr, addrlen);
+        if (newIO == null) {
+            return -1;
+        } else {
+            int fd = getMinFd();
+            fdMap.put(fd, newIO);
+            return fd;
+        }
+    }
+
+    private int listen(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int sockfd = context.getIntArg(0);
+        int backlog = context.getIntArg(1);
+        return listen(emulator, sockfd, backlog);
+    }
+
+    private int bind(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int sockfd = context.getIntArg(0);
+        Pointer addr = context.getPointerArg(1);
+        int addrlen = context.getIntArg(2);
+        return bind(emulator, sockfd, addr, addrlen);
     }
 
     private int getsockname(Unicorn u, Emulator<?> emulator) {
@@ -1621,17 +1822,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         if (log.isDebugEnabled()) {
             log.debug("fstatat64 dirfd=" + dirfd + ", pathname=" + path + ", statbuf=" + statbuf + ", flags=" + flags);
         }
-        if (path.startsWith("/")) {
-            return stat64(emulator, path, statbuf);
-        } else {
-            if (dirfd != IO.AT_FDCWD) {
-                throw new UnicornException();
-            }
-
-            log.warn("fstatat64 dirfd=" + dirfd + ", pathname=" + path + ", statbuf=" + statbuf + ", flags=" + flags);
-            emulator.getMemory().setErrno(UnixEmulator.EACCES);
-            return -1;
+        if (dirfd != IO.AT_FDCWD && !path.startsWith("/")) {
+            throw new UnicornException();
         }
+        return stat64(emulator, path, statbuf);
     }
 
     private int mkdirat(Unicorn u, Emulator<?> emulator) {
@@ -1657,7 +1851,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
             log.debug(msg);
         }
         if (pathname.startsWith("/")) {
-            int fd = open(emulator, pathname, oflags, (oflags & IOConstants.O_CREAT) != 0);
+            int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
                 log.info(msg);
             }
@@ -1667,9 +1861,11 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 throw new UnicornException();
             }
 
-            log.warn(msg);
-            emulator.getMemory().setErrno(UnixEmulator.EACCES);
-            return -1;
+            int fd = open(emulator, pathname, oflags);
+            if (fd == -1) {
+                log.info(msg);
+            }
+            return fd;
         }
     }
 
@@ -1682,7 +1878,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         if (log.isDebugEnabled()) {
             log.debug(msg);
         }
-        int fd = open(emulator, pathname, oflags, (oflags & IOConstants.O_CREAT) != 0);
+        int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
             log.info(msg);
         }

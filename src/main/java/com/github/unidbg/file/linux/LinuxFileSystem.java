@@ -63,4 +63,8 @@ public class LinuxFileSystem extends BaseFileSystem<AndroidFileIO> implements Fi
         return (oflags & O_APPEND) != 0;
     }
 
+    @Override
+    protected boolean hasExcl(int oflags) {
+        return (oflags & O_EXCL) != 0;
+    }
 }

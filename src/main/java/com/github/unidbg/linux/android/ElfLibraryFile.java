@@ -23,7 +23,12 @@ public class ElfLibraryFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        return "/system/lib/" + getName();
+        String name = getName();
+        if (name.endsWith(".so")) {
+            return "/system/lib/" + name;
+        } else {
+            return "/system/bin/" + name;
+        }
     }
 
     @Override

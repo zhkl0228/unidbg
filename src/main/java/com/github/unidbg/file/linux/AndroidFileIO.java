@@ -13,4 +13,6 @@ public interface AndroidFileIO extends NewFileIO {
 
     int getdents64(Pointer dirp, int size);
 
+    AndroidFileIO accept(Pointer addr, Pointer addrlen);
+
 }

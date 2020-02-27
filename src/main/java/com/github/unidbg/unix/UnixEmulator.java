@@ -14,7 +14,9 @@ public interface UnixEmulator {
     int EINVAL = 22; /* Invalid argument */
     int ENOTTY = 25; /* Inappropriate ioctl for device */
     int ENOSYS = 38; /* Function not implemented */
+    int EOPNOTSUPP = 95; /* Operation not supported on transport endpoint */
     int EAFNOSUPPORT = 97; /* Address family not supported by protocol family */
+    int EADDRINUSE = 98; /* Address already in use */
     int ECONNREFUSED = 111; /* Connection refused */
 
 }

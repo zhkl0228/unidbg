@@ -62,7 +62,6 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
         if (additionContent != null) {
             builder.append(additionContent).append('\n');
         }
-        builder.append("ffff0000-ffff1000 r-xp 00000000 00:00 0          [vectors]");
         if (log.isDebugEnabled()) {
             log.debug("\n" + builder.toString());
         }

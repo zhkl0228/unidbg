@@ -8,23 +8,27 @@ import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.unix.IO;
+import com.github.unidbg.unix.struct.SockAddr;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
+import java.net.*;
+import java.util.Arrays;
 
 public abstract class SocketIO extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
 
     private static final Log log = LogFactory.getLog(SocketIO.class);
 
-    public static final int AF_UNSPEC = 0;
-    public static final int AF_LOCAL = 1; // AF_UNIX
-    public static final int AF_INET = 2;
-    public static final int AF_INET6 = 10;
+    public static final short AF_UNSPEC = 0;
+    public static final short AF_LOCAL = 1; // AF_UNIX
+    public static final short AF_INET = 2;
+    public static final short AF_INET6 = 10;
+
+    protected static final int IPV4_ADDR_LEN = 16;
+    protected static final int IPV6_ADDR_LEN = 28;
 
     public static final int SOCK_STREAM = 1;
     public static final int SOCK_DGRAM = 2;
@@ -157,22 +161,46 @@ public abstract class SocketIO extends BaseFileIO implements AndroidFileIO, Darw
     @Override
     public int getsockname(Pointer addr, Pointer addrlen) {
         InetSocketAddress local = getLocalSocketAddress();
-        addr.setShort(0, (short) AF_INET);
-        addr.setShort(2, Short.reverseBytes((short) local.getPort()));
-        addr.write(4, local.getAddress().getAddress(), 0, 4); // ipv4
-        addr.setLong(8, 0);
-        addrlen.setInt(0, 16);
+        fillAddress(local, addr, addrlen);
         return 0;
+    }
+
+    protected final void fillAddress(InetSocketAddress socketAddress, Pointer addr, Pointer addrlen) {
+        InetAddress address = socketAddress.getAddress();
+        SockAddr sockAddr = new SockAddr(addr);
+        sockAddr.sin_port = (short) socketAddress.getPort();
+        if (address instanceof Inet4Address) {
+            sockAddr.sin_family = AF_INET;
+            sockAddr.sin_addr = Arrays.copyOf(address.getAddress(), IPV4_ADDR_LEN - 4);
+            addrlen.setInt(0, IPV4_ADDR_LEN);
+        } else if (address instanceof Inet6Address) {
+            sockAddr.sin_family = AF_INET6;
+            sockAddr.sin_addr = Arrays.copyOf(address.getAddress(), IPV6_ADDR_LEN - 4);
+            addrlen.setInt(0, IPV6_ADDR_LEN);
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     protected abstract InetSocketAddress getLocalSocketAddress();
 
     @Override
     public int connect(Pointer addr, int addrlen) {
-        if (addrlen == 16) {
+        if (addrlen == IPV4_ADDR_LEN) {
             return connect_ipv4(addr, addrlen);
-        } else if(addrlen == 28) {
+        } else if(addrlen == IPV6_ADDR_LEN) {
             return connect_ipv6(addr, addrlen);
+        } else {
+            throw new IllegalStateException("addrlen=" + addrlen);
+        }
+    }
+
+    @Override
+    public final int bind(Pointer addr, int addrlen) {
+        if (addrlen == IPV4_ADDR_LEN) {
+            return bind_ipv4(addr, addrlen);
+        } else if(addrlen == IPV6_ADDR_LEN) {
+            return bind_ipv6(addr, addrlen);
         } else {
             throw new IllegalStateException("addrlen=" + addrlen);
         }
@@ -181,6 +209,14 @@ public abstract class SocketIO extends BaseFileIO implements AndroidFileIO, Darw
     protected abstract int connect_ipv6(Pointer addr, int addrlen);
 
     protected abstract int connect_ipv4(Pointer addr, int addrlen);
+
+    protected int bind_ipv6(Pointer addr, int addrlen) {
+        throw new AbstractMethodError(getClass().getName());
+    }
+
+    protected int bind_ipv4(Pointer addr, int addrlen) {
+        throw new AbstractMethodError(getClass().getName());
+    }
 
     @Override
     public int recvfrom(Unicorn unicorn, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {

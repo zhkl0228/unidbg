@@ -2,6 +2,7 @@ package com.github.unidbg.unix.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -20,12 +21,19 @@ public class TcpSocket extends SocketIO implements FileIO {
 
     private static final Log log = LogFactory.getLog(TcpSocket.class);
 
-    private final Socket socket = new Socket();
+    private final Socket socket;
+    private ServerSocket serverSocket;
 
     private final Emulator<?> emulator;
 
     public TcpSocket(Emulator<?> emulator) {
         this.emulator = emulator;
+        this.socket = new Socket();
+    }
+
+    private TcpSocket(Emulator<?> emulator, Socket socket) {
+        this.emulator = emulator;
+        this.socket = socket;
     }
 
     private OutputStream outputStream;
@@ -36,11 +44,15 @@ public class TcpSocket extends SocketIO implements FileIO {
         IOUtils.closeQuietly(outputStream);
         IOUtils.closeQuietly(inputStream);
         IOUtils.closeQuietly(socket);
+        IOUtils.closeQuietly(serverSocket);
     }
 
     @Override
     public int write(byte[] data) {
         try {
+            if (log.isDebugEnabled()) {
+                Inspector.inspect(data, "write");
+            }
             outputStream.write(data);
             return data.length;
         } catch (IOException e) {
@@ -57,7 +69,7 @@ public class TcpSocket extends SocketIO implements FileIO {
             if (receiveBuf == null) {
                 receiveBuf = new byte[socket.getReceiveBufferSize()];
             }
-            int read = inputStream.read(receiveBuf, 0, count);
+            int read = inputStream.read(receiveBuf, 0, Math.min(count, receiveBuf.length));
             if (read <= 0) {
                 return read;
             }
@@ -70,6 +82,59 @@ public class TcpSocket extends SocketIO implements FileIO {
             return data.length;
         } catch (IOException e) {
             log.debug("read failed", e);
+            return -1;
+        }
+    }
+
+    @Override
+    public int listen(int backlog) {
+        try {
+            serverSocket = new ServerSocket();
+            IOUtils.closeQuietly(socket);
+            serverSocket.bind(socket.getLocalSocketAddress(), backlog);
+            return 0;
+        } catch (IOException e) {
+            log.debug("listen failed", e);
+            emulator.getMemory().setErrno(UnixEmulator.EOPNOTSUPP);
+            return -1;
+        }
+    }
+
+    @Override
+    public AndroidFileIO accept(Pointer addr, Pointer addrlen) {
+        try {
+            Socket socket = serverSocket.accept();
+            TcpSocket io = new TcpSocket(emulator, socket);
+            io.inputStream = socket.getInputStream();
+            io.outputStream = socket.getOutputStream();
+            io.getpeername(addr, addrlen);
+            return io;
+        } catch (IOException e) {
+            log.debug("accept failed", e);
+            emulator.getMemory().setErrno(UnixEmulator.EAGAIN);
+            return null;
+        }
+    }
+
+    @Override
+    protected int bind_ipv4(Pointer addr, int addrlen) {
+        int sa_family = addr.getShort(0);
+        if (sa_family != AF_INET) {
+            throw new AbstractMethodError("sa_family=" + sa_family);
+        }
+
+        try {
+            int port = Short.reverseBytes(addr.getShort(2)) & 0xffff;
+            InetSocketAddress address = new InetSocketAddress(InetAddress.getByAddress(addr.getByteArray(4, 4)), port);
+            if (log.isDebugEnabled()) {
+                byte[] data = addr.getByteArray(0, addrlen);
+                Inspector.inspect(data, "address=" + address);
+            }
+            socket.bind(address);
+            return 0;
+        } catch (IOException e) {
+            log.debug("bind ipv4 failed", e);
+            emulator.getMemory().setErrno(UnixEmulator.EADDRINUSE);
             return -1;
         }
     }
@@ -129,11 +194,7 @@ public class TcpSocket extends SocketIO implements FileIO {
     @Override
     public int getpeername(Pointer addr, Pointer addrlen) {
         InetSocketAddress remote = (InetSocketAddress) socket.getRemoteSocketAddress();
-        addr.setShort(0, (short) AF_INET);
-        addr.setShort(2, Short.reverseBytes((short) remote.getPort()));
-        addr.write(4, remote.getAddress().getAddress(), 0, 4); // ipv4
-        addr.setLong(8, 0);
-        addrlen.setInt(0, 16);
+        fillAddress(remote, addr, addrlen);
         return 0;
     }
 

@@ -2072,7 +2072,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         int oflags = context.getIntArg(offset + 1);
         int mode = context.getIntArg(offset + 2);
         String pathname = pathname_p.getString(0);
-        int fd = open(emulator, pathname, oflags, (oflags & IOConstants.O_CREAT) != 0);
+        int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
             log.info("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
         } else if (log.isDebugEnabled()) {

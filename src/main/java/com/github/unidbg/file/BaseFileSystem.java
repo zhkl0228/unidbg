@@ -66,7 +66,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
         boolean create = hasCreat(oflags);
         if (file.exists()) {
-            if (create) {
+            if (create && hasExcl(oflags)) {
                 return FileResult.failed(UnixEmulator.EEXIST);
             }
             return FileResult.success(file.isDirectory() ? createDirectoryFileIO(file, oflags, path) : createSimpleFileIO(file, oflags, path));
@@ -107,6 +107,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     protected abstract boolean hasDirectory(int oflags);
     @SuppressWarnings("unused")
     protected abstract boolean hasAppend(int oflags);
+    protected abstract boolean hasExcl(int oflags);
 
     @Override
     public void unlink(String path) {

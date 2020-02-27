@@ -6,6 +6,7 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
+import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.LinuxThread;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.spi.SyscallHandler;
@@ -192,7 +193,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     }
 
     @Override
-    public final int open(Emulator<T> emulator, String pathname, int oflags, boolean canCreate) {
+    public final int open(Emulator<T> emulator, String pathname, int oflags) {
         int minFd = this.getMinFd();
 
         FileResult<T> resolveResult = resolve(emulator, pathname, oflags);
@@ -249,6 +250,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGBUS = 7; /* BUS error (4.2 BSD).  */
     private static final int SIGFPE = 8; /* Floating-point exception (ANSI).  */
     private static final int SIGSEGV = 11;
+    private static final int SIGUSR2 = 12;
     private static final int SIGPIPE = 13;
     private static final int SIGALRM = 14;
     private static final int SIGTERM = 15;
@@ -286,6 +288,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGBUS:
             case SIGFPE:
             case SIGSEGV:
+            case SIGUSR2:
             case SIGPIPE:
             case SIGALRM:
             case SIGTERM:
@@ -302,6 +305,33 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         }
 
         throw new UnsupportedOperationException("signum=" + signum);
+    }
+
+    protected final int bind(Emulator<?> emulator, int sockfd, Pointer addr, int addrlen) {
+        if (log.isDebugEnabled()) {
+            byte[] data = addr.getByteArray(0, addrlen);
+            Inspector.inspect(data, "bind sockfd=" + sockfd + ", addr=" + addr + ", addrlen=" + addrlen);
+        }
+
+        FileIO file = fdMap.get(sockfd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        return file.bind(addr, addrlen);
+    }
+
+    protected final int listen(Emulator<AndroidFileIO> emulator, int sockfd, int backlog) {
+        if (log.isDebugEnabled()) {
+            log.debug("listen sockfd=" + sockfd + ", backlog=" + backlog);
+        }
+
+        FileIO file = fdMap.get(sockfd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+        return file.listen(backlog);
     }
 
     protected final int connect(Emulator<?> emulator, int sockfd, Pointer addr, int addrlen) {

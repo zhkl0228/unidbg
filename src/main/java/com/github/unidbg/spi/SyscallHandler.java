@@ -19,6 +19,6 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook {
      */
     void addIOResolver(IOResolver<T> resolver);
 
-    int open(Emulator<T> emulator, String pathname, int oflags, boolean canCreate);
+    int open(Emulator<T> emulator, String pathname, int oflags);
 
 }
