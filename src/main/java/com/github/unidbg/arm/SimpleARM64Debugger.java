@@ -253,7 +253,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
-                if(handleCommon(u, line, nextAddress)) {
+                if(handleCommon(u, line, address, size, nextAddress)) {
                     break;
                 }
             } catch (RuntimeException | DecoderException e) {
@@ -289,6 +289,8 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println("r: remove breakpoint of register PC");
         System.out.println("blr: add temporarily breakpoint of register LR");
         System.out.println();
+        System.out.println("p (assembly): patch assembly at PC address");
+        System.out.println();
         System.out.println("vm: view loaded modules");
         System.out.println("d|dis: show disassemble");
         System.out.println("d(0x): show disassemble at specify address");
@@ -296,8 +298,13 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
+    protected Keystone createKeystone(boolean isThumb) {
+        return new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian);
+    }
+
+    @Override
     protected byte[] addSoftBreakPoint(long address, int svcNumber) {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+        try (Keystone keystone = createKeystone(false)) {
             KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
             return encoded.getMachineCode();
         }

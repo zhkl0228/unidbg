@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.AbstractARMDebugger;
 import com.github.unidbg.utils.Inspector;
+import keystone.Keystone;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -272,4 +273,8 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    protected Keystone createKeystone(boolean isThumb) {
+        throw new UnsupportedOperationException();
+    }
 }
