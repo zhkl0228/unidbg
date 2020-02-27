@@ -69,7 +69,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             if (create) {
                 return FileResult.failed(UnixEmulator.EEXIST);
             }
-            return file.isDirectory() ? createDirectoryFileIO(file, oflags, path) : createSimpleFileIO(file, oflags, path);
+            return FileResult.success(file.isDirectory() ? createDirectoryFileIO(file, oflags, path) : createSimpleFileIO(file, oflags, path));
         }
 
         if (!create || !file.getParentFile().exists()) {
@@ -81,12 +81,12 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
                 if (!file.mkdir()) {
                     throw new IllegalStateException("mkdir failed: " + file);
                 }
-                return createDirectoryFileIO(file, oflags, path);
+                return FileResult.success(createDirectoryFileIO(file, oflags, path));
             } else {
                 if (!file.createNewFile()) {
                     throw new IllegalStateException("createNewFile failed: " + file);
                 }
-                return createSimpleFileIO(file, oflags, path);
+                return FileResult.success(createSimpleFileIO(file, oflags, path));
             }
         } catch (IOException e) {
             throw new IllegalStateException("createNewFile failed: " + file, e);

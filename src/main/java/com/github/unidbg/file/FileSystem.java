@@ -18,8 +18,8 @@ public interface FileSystem<T extends NewFileIO> {
      */
     boolean mkdir(String path);
 
-    FileResult<T> createSimpleFileIO(File file, int oflags, String path);
+    T createSimpleFileIO(File file, int oflags, String path);
 
-    FileResult<T> createDirectoryFileIO(File file, int oflags, String path);
+    T createDirectoryFileIO(File file, int oflags, String path);
 
 }

@@ -2,8 +2,8 @@ package com.github.unidbg.file.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileSystem;
-import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.FileResult;
+import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.Stdin;
 import com.github.unidbg.linux.file.*;
 import com.github.unidbg.unix.IO;
@@ -29,13 +29,13 @@ public class LinuxFileSystem extends BaseFileSystem<AndroidFileIO> implements Fi
     }
 
     @Override
-    public FileResult<AndroidFileIO> createSimpleFileIO(File file, int oflags, String path) {
-        return FileResult.<AndroidFileIO>success(new SimpleFileIO(oflags, file, path));
+    public AndroidFileIO createSimpleFileIO(File file, int oflags, String path) {
+        return new SimpleFileIO(oflags, file, path);
     }
 
     @Override
-    public FileResult<AndroidFileIO> createDirectoryFileIO(File file, int oflags, String path) {
-        return FileResult.<AndroidFileIO>success(new DirectoryFileIO(oflags, path, file));
+    public AndroidFileIO createDirectoryFileIO(File file, int oflags, String path) {
+        return new DirectoryFileIO(oflags, path, file);
     }
 
     @Override

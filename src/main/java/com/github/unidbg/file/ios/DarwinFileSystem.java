@@ -2,11 +2,10 @@ package com.github.unidbg.file.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileSystem;
-import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.file.Stdin;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
-import com.github.unidbg.file.Stdin;
 import com.github.unidbg.ios.file.Stdout;
 import com.github.unidbg.unix.IO;
 import org.apache.commons.io.FileUtils;
@@ -29,13 +28,13 @@ public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements Fi
     }
 
     @Override
-    public FileResult<DarwinFileIO> createSimpleFileIO(File file, int oflags, String path) {
-        return FileResult.<DarwinFileIO>success(new SimpleFileIO(oflags, file, path));
+    public DarwinFileIO createSimpleFileIO(File file, int oflags, String path) {
+        return new SimpleFileIO(oflags, file, path);
     }
 
     @Override
-    public FileResult<DarwinFileIO> createDirectoryFileIO(File file, int oflags, String path) {
-        return FileResult.<DarwinFileIO>success(new DirectoryFileIO(oflags, path, file));
+    public DarwinFileIO createDirectoryFileIO(File file, int oflags, String path) {
+        return new DirectoryFileIO(oflags, path, file);
     }
 
     @Override

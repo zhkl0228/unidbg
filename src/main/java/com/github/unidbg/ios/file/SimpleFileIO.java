@@ -21,8 +21,8 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
 
     private static final Log log = LogFactory.getLog(SimpleFileIO.class);
 
-    final File file;
-    final String path;
+    protected final File file;
+    protected final String path;
     private final RandomAccessFile randomAccessFile;
 
     public SimpleFileIO(int oflags, File file, String path) {
