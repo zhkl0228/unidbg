@@ -4,6 +4,7 @@ import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.debugger.DebugListener;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.MemRegion;
@@ -31,7 +32,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private static final Log log = LogFactory.getLog(AbstractARMDebugger.class);
 
-    private final Map<Long, Module> breakMap = new HashMap<>();
+    private final Map<Long, BreakPointCallback> breakMap = new HashMap<>();
 
     protected final Emulator<?> emulator;
     private final boolean softBreakpoint;
@@ -56,9 +57,24 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
+    public final void addBreakPoint(Module module, String symbol, BreakPointCallback callback) {
+        Symbol sym = module.findSymbolByName(symbol, false);
+        if (sym == null) {
+            throw new IllegalStateException("find symbol failed: " + symbol);
+        }
+        addBreakPoint(module, sym.getValue(), callback);
+    }
+
+    @Override
     public final void addBreakPoint(Module module, long offset) {
         long address = module == null ? offset : module.base + offset;
         addBreakPoint(address);
+    }
+
+    @Override
+    public final void addBreakPoint(Module module, long offset, BreakPointCallback callback) {
+        long address = module == null ? offset : module.base + offset;
+        addBreakPoint(address, callback);
     }
 
     private static class SoftBreakPoint {
@@ -76,7 +92,16 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public void addBreakPoint(long address) {
+        addBreakPoint(address, null);
+    }
+
+    @Override
+    public void addBreakPoint(long address, BreakPointCallback callback) {
         if (softBreakpoint) {
+            if (callback != null) {
+                throw new UnsupportedOperationException();
+            }
+
             int svcNumber = ++this.svcNumber; // begin with 2
             byte[] code = addSoftBreakPoint(address, svcNumber);
 
@@ -92,7 +117,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             if (log.isDebugEnabled()) {
                 log.debug("addBreakPoint address=0x" + Long.toHexString(address));
             }
-            breakMap.put(address, emulator.getMemory().findModuleByAddress(address));
+            breakMap.put(address, callback);
         }
     }
 
@@ -149,7 +174,10 @@ public abstract class AbstractARMDebugger implements Debugger {
 
         try {
             if (breakMap.containsKey(address)) {
-                loop(emulator, address, size);
+                BreakPointCallback callback = breakMap.get(address);
+                if (callback == null || !callback.onHit(emulator, address)) {
+                    loop(emulator, address, size);
+                }
             } else if (singleStep == 0) {
                 loop(emulator, address, size);
             } else if (breakMnemonic != null) {

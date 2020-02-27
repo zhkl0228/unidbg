@@ -6,7 +6,7 @@ import com.github.unidbg.arm.HookStatus;
 public abstract class ReplaceCallback {
 
     public  HookStatus onCall(Emulator<?> emulator, long originFunction) {
-        return HookStatus.LR(emulator, originFunction);
+        return HookStatus.RET(emulator, originFunction);
     }
 
     public  HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
