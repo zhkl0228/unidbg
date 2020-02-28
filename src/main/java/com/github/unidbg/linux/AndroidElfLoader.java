@@ -41,7 +41,10 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         unicorn.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
 
         setStackPoint(STACK_BASE);
-        initializeTLS();
+        initializeTLS(new String[] {
+                "ANDROID_DATA=/data",
+                "ANDROID_ROOT=/system"
+        });
         this.setErrno(0);
     }
 
@@ -104,7 +107,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         return outFile;
     }
 
-    private void initializeTLS() {
+    private void initializeTLS(String[] envs) {
         final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
 
         final Pointer __stack_chk_guard = allocateStack(emulator.getPointerSize());
@@ -124,9 +127,22 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
         auxv.setPointer(emulator.getPointerSize(), __stack_chk_guard);
 
-        final Pointer environ = allocateStack(0x10);
+        List<String> envList = new ArrayList<>();
+        for (String env : envs) {
+            int index = env.indexOf('=');
+            if (index != -1) {
+                envList.add(env);
+            }
+        }
+        final Pointer environ = allocateStack(emulator.getPointerSize() * (envList.size() + 1));
         assert environ != null;
-        environ.setInt(0, 0);
+        Pointer pointer = environ;
+        for (String env : envList) {
+            Pointer envPointer = writeStackString(env);
+            pointer.setPointer(0, envPointer);
+            pointer = pointer.share(emulator.getPointerSize());
+        }
+        pointer.setPointer(0, null);
 
         final Pointer argv = allocateStack(0x100);
         assert argv != null;

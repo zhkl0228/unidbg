@@ -1,4 +1,4 @@
-package com.github.unidbg.android;
+package com.github.unidbg.android.ida;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;

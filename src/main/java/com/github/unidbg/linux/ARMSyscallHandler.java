@@ -491,14 +491,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         Pointer buf = context.getPointerArg(2);
         int bufSize = context.getIntArg(3);
         String path = pathname.getString(0);
-        if (log.isDebugEnabled()) {
-            log.debug("readlinkat dirfd=" + dirfd + ", path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
-        }
         if (dirfd != IO.AT_FDCWD) {
             throw new UnicornException();
         }
-        buf.setString(0, path);
-        return path.length() + 1;
+        return readlink(emulator, path, buf, bufSize);
     }
 
     private int readlink(Emulator<AndroidFileIO> emulator) {
@@ -507,6 +503,10 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         Pointer buf = context.getPointerArg(1);
         int bufSize = context.getIntArg(2);
         String path = pathname.getString(0);
+        return readlink(emulator, path, buf, bufSize);
+    }
+
+    protected int readlink(Emulator<?> emulator, String path, Pointer buf, int bufSize) {
         if (log.isDebugEnabled()) {
             log.debug("readlink path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
         }

@@ -7,8 +7,10 @@ import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.Stdin;
 import com.github.unidbg.linux.file.*;
 import com.github.unidbg.unix.IO;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 public class LinuxFileSystem extends BaseFileSystem<AndroidFileIO> implements FileSystem<AndroidFileIO>, IOConstants {
 
@@ -26,6 +28,14 @@ public class LinuxFileSystem extends BaseFileSystem<AndroidFileIO> implements Fi
         }
 
         return super.open(pathname, oflags);
+    }
+
+    @Override
+    protected void initialize(File rootDir) throws IOException {
+        super.initialize(rootDir);
+
+        FileUtils.forceMkdir(new File(rootDir, "system"));
+        FileUtils.forceMkdir(new File(rootDir, "data"));
     }
 
     @Override
