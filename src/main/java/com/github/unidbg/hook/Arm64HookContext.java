@@ -84,4 +84,14 @@ class Arm64HookContext extends HookContext implements EditableArm64RegisterConte
     public UnicornPointer getStackPointer() {
         return registerContext.getStackPointer();
     }
+
+    @Override
+    public int getInt(int regId) {
+        return registerContext.getInt(regId);
+    }
+
+    @Override
+    public long getLong(int regId) {
+        return registerContext.getLong(regId);
+    }
 }

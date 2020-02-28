@@ -30,4 +30,7 @@ public interface RegisterContext {
      */
     UnicornPointer getStackPointer();
 
+    int getInt(int regId);
+    long getLong(int regId);
+
 }

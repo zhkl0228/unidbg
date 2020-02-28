@@ -3,12 +3,15 @@ package com.github.unidbg.android.ida;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.ReplaceCallback;
+import com.github.unidbg.hook.hookzz.*;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.XHookImpl;
@@ -17,10 +20,15 @@ import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.MapsFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.codec.binary.Hex;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
 
@@ -84,14 +92,83 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
                 Pointer addr = context.getPointerArg(2);
                 Pointer data = context.getPointerArg(3);
                 if (request != PTrace.PTRACE_PEEKTEXT && request != PTrace.PTRACE_POKEDATA) {
-                    System.err.println("ptrace request=" + request + ", addr=" + addr + ", data=" + data + ", LR=" + context.getLRPointer());
+                    System.out.println("ptrace request=" + request + ", addr=" + addr + ", data=" + data + ", LR=" + context.getLRPointer());
                 }
                 return super.onCall(emulator, originFunction);
             }
         });
+        /*ixHook.register(executable.getName(), "__aeabi_memcpy", new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
+                RegisterContext context = emulator.getContext();
+                Pointer dest = context.getPointerArg(0);
+                Pointer src = context.getPointerArg(1);
+                int size = context.getIntArg(2);
+                Inspector.inspect(src.getByteArray(0, size), "qmemcpy dest=" + dest + ", src=" + src + ", LR=" + context.getLRPointer());
+                return super.onCall(emulator, originFunction);
+            }
+        });*/
         ixHook.refresh();
 
-        emulator.attach().addBreakPoint(null, 0x4006816C);
+        IHookZz hookZz = HookZz.getInstance(emulator);
+        /*hookZz.replace(0x4005DA2D, new ReplaceCallback() {
+            @Override
+            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
+                RegisterContext context = emulator.getContext();
+                Pointer pointer = context.getPointerArg(1);
+                Pointer buf = pointer.getPointer(0);
+                int size = pointer.getInt(4);
+                System.out.println("sendto buf=" + buf + ", size=" + size + ", LR=" + context.getLRPointer());
+                return super.onCall(emulator, originFunction);
+            }
+        });*/
+        Symbol pack_dd = module.findSymbolByName("pack_dd", false);
+        hookZz.wrap(pack_dd, new WrapCallback<HookZzArm32RegisterContext>() {
+            @Override
+            public void preCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+                Pointer data = ctx.getPointerArg(0);
+                int value = ctx.getIntArg(2);
+                ctx.set("data", data);
+                ctx.set("value", value & 0xffffffffL);
+            }
+            @Override
+            public void postCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+                super.postCall(emulator, ctx, info);
+                UnicornPointer data = ctx.get("data");
+                UnicornPointer end = ctx.getPointerArg(0);
+                long value = ctx.get("value");
+                int size = (int) (end.toUIntPeer() - data.toUIntPeer());
+                byte[] my = Utils.pack_dd(value);
+                byte[] ida = data.getByteArray(0, size);
+                long unpack = Utils.unpack_dd(ByteBuffer.wrap(ida));
+                if (!Arrays.equals(my, ida) || unpack != value) {
+                    Inspector.inspect(ida, "pack_dd value=0x" + Long.toHexString(value) + ", unpack=0x" + Long.toHexString(unpack) + ", my=" + Hex.encodeHexString(my));
+                }
+            }
+        });
+        Symbol unpack_dd = module.findSymbolByName("unpack_dd", false);
+        hookZz.wrap(unpack_dd, new WrapCallback<HookZzArm32RegisterContext>() {
+            @Override
+            public void preCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+                Pointer pointer = ctx.getPointerArg(0);
+                Pointer data = pointer.getPointer(0);
+                Pointer end = ctx.getPointerArg(1);
+                ctx.set("data", data);
+                ctx.set("end", end);
+            }
+            @Override
+            public void postCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+                super.postCall(emulator, ctx, info);
+                UnicornPointer data = ctx.get("data");
+                UnicornPointer end = ctx.get("end");
+                long value = ctx.getR0Long();
+                int size = (int) (end.toUIntPeer() - data.toUIntPeer());
+                Inspector.inspect(data.getByteArray(0, size), "unpack_dd data=" + data + ", value=0x" + Long.toHexString(value) + ", LR=" + ctx.getLRPointer());
+            }
+        });
+//        emulator.traceWrite(0x804c538, 0x804c538 + 15);
+
+//        emulator.attach().addBreakPoint(null, 0x4006816C);
 
         System.err.println("exit code: " + module.callEntry(emulator, "--verbose"));
     }

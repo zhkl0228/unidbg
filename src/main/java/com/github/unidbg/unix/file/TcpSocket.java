@@ -27,8 +27,7 @@ public class TcpSocket extends SocketIO implements FileIO {
     private final Emulator<?> emulator;
 
     public TcpSocket(Emulator<?> emulator) {
-        this.emulator = emulator;
-        this.socket = new Socket();
+        this(emulator, new Socket());
     }
 
     private TcpSocket(Emulator<?> emulator, Socket socket) {
@@ -107,7 +106,9 @@ public class TcpSocket extends SocketIO implements FileIO {
             TcpSocket io = new TcpSocket(emulator, socket);
             io.inputStream = socket.getInputStream();
             io.outputStream = socket.getOutputStream();
-            io.getpeername(addr, addrlen);
+            if (addr != null) {
+                io.getpeername(addr, addrlen);
+            }
             return io;
         } catch (IOException e) {
             log.debug("accept failed", e);

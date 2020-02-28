@@ -30,4 +30,14 @@ public abstract class HookZzRegisterContext extends AbstractRegisterContext impl
     public UnicornPointer getPCPointer() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int getInt(int regId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long getLong(int regId) {
+        throw new UnsupportedOperationException();
+    }
 }

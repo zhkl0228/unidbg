@@ -59,11 +59,11 @@ public abstract class BaseHook implements IHook {
     private LibraryFile resolveLibrary(String libName) {
         URL url = BaseHook.class.getResource(emulator.getLibraryPath() + libName + emulator.getLibraryExtension());
         if (url == null) {
-            throw new IllegalStateException("resolve library failed: " + libName);
+            throw new IllegalStateException("resolve library failed: " + libName + emulator.getLibraryExtension());
         }
 
         boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
-        return isIOS ? new com.github.unidbg.ios.URLibraryFile(url, libName, null, Collections.<String>emptyList()) : new URLibraryFile(url, libName, -1);
+        return isIOS ? new com.github.unidbg.ios.URLibraryFile(url, libName + emulator.getLibraryExtension(), null, Collections.<String>emptyList()) : new URLibraryFile(url, libName + emulator.getLibraryExtension(), -1);
     }
 
     protected final long numberToAddress(Number number) {

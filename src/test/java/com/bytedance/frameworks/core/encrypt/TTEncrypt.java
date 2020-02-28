@@ -7,6 +7,7 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.debugger.DebuggerType;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
@@ -146,7 +147,7 @@ public class TTEncrypt {
 
         long start = System.currentTimeMillis();
         byte[] data = new byte[16];
-//        emulator.attach(DebuggerType.GDB_SERVER);
+        emulator.attach(DebuggerType.ANDROID_SERVER_V73);
         Number ret = TTEncryptUtils.callStaticJniMethod(emulator, "ttEncrypt([BI)[B", vm.addLocalObject(new ByteArray(data)), data.length);
         long hash = ret.intValue() & 0xffffffffL;
         ByteArray array = vm.getObject(hash);

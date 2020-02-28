@@ -78,6 +78,7 @@ class MyARMSyscallHandler extends ARMSyscallHandler {
                 ArmRegister register = new ArmRegister(data);
                 register.fill(u);
                 register.pack();
+                System.out.println(register);
                 break;
             }
             case PTrace.PTRACE_PEEKUSR: {
