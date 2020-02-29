@@ -1,7 +1,6 @@
 package com.github.unidbg.debugger;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.Module;
 import com.github.unidbg.arm.AbstractARMDebugger;
 import com.github.unidbg.utils.Inspector;
 import keystone.Keystone;
@@ -16,7 +15,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 public abstract class AbstractDebugServer extends AbstractARMDebugger implements DebugServer {
@@ -73,17 +74,8 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         serverShutdown = false;
         serverRunning = true;
 
-        System.err.println("Start debugger server successfully on port: " + DEFAULT_PORT);
-        List<Module> loaded = new ArrayList<>(emulator.getMemory().getLoadedModules());
-        Collections.sort(loaded, new Comparator<Module>() {
-            @Override
-            public int compare(Module o1, Module o2) {
-                return (int) (o1.base - o2.base);
-            }
-        });
-        for (Module module : loaded) {
-            System.err.println("[0x" + Long.toHexString(module.base) + "]" + module.name);
-        }
+        System.err.println("Start " + this + " server on port: " + DEFAULT_PORT);
+        onServerStart();
 
         while(serverRunning) {
             try {
@@ -123,6 +115,8 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         selector = null;
         closeSocketChannel();
     }
+
+    protected abstract void onServerStart();
 
     protected abstract void processInput(ByteBuffer input);
 

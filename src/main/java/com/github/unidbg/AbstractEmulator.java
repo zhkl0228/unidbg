@@ -168,8 +168,8 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             case GDB_SERVER:
                 debugger = new GdbStub(this);
                 break;
-            case ANDROID_SERVER_V73:
-                debugger = new AndroidServer(this, DebugServer.IDA_PROTOCOL_VERSION_73);
+            case ANDROID_SERVER_V7:
+                debugger = new AndroidServer(this, DebugServer.IDA_PROTOCOL_VERSION_V7);
                 break;
             case SIMPLE:
             default:

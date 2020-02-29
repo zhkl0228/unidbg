@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
-@Deprecated
 public class AndroidServer extends AbstractDebugServer implements ModuleListener {
 
     private static final Log log = LogFactory.getLog(AndroidServer.class);
@@ -33,6 +32,10 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         super(emulator);
         this.protocolVersion = protocolVersion;
         emulator.getMemory().addModuleListener(this);
+    }
+
+    @Override
+    protected void onServerStart() {
     }
 
     @Override
@@ -66,8 +69,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug(Inspector.inspectString(data, "processCommand type=0x" + Integer.toHexString(type)));
         }
 
-        if (type == 0x0 && data.length == 0) {
-            return; // ack
+        if (type == 0x0 && data.length == 0) { // ack
+            return;
         }
 
         ByteBuffer buffer = ByteBuffer.wrap(data);
@@ -390,4 +393,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         });
     }
 
+    @Override
+    public String toString() {
+        return "IDA android";
+    }
 }

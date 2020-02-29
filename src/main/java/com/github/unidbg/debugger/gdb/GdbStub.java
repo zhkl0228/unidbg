@@ -1,6 +1,7 @@
 package com.github.unidbg.debugger.gdb;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
 import com.github.unidbg.debugger.AbstractDebugServer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -8,8 +9,7 @@ import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * GdbStub class
@@ -62,6 +62,20 @@ public final class GdbStub extends AbstractDebugServer {
             registers[31] = Arm64Const.UC_ARM64_REG_SP;
             registers[32] = Arm64Const.UC_ARM64_REG_PC;
             registers[33] = Arm64Const.UC_ARM64_REG_NZCV;
+        }
+    }
+
+    @Override
+    protected void onServerStart() {
+        List<Module> loaded = new ArrayList<>(emulator.getMemory().getLoadedModules());
+        Collections.sort(loaded, new Comparator<Module>() {
+            @Override
+            public int compare(Module o1, Module o2) {
+                return (int) (o1.base - o2.base);
+            }
+        });
+        for (Module module : loaded) {
+            System.err.println("[0x" + Long.toHexString(module.base) + "]" + module.name);
         }
     }
 
@@ -255,5 +269,10 @@ public final class GdbStub extends AbstractDebugServer {
 
         GdbStubCommand commandVCont = new ExtendedCommand();
         commands.put("vCont", commandVCont);
+    }
+
+    @Override
+    public String toString() {
+        return "gdb";
     }
 }

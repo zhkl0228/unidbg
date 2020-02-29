@@ -13,9 +13,8 @@ public enum  DebuggerType {
     GDB_SERVER,
 
     /**
-     * ida android server v7.3
+     * ida android server v7.x
      */
-    @Deprecated
-    ANDROID_SERVER_V73
+    ANDROID_SERVER_V7
 
 }
