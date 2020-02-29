@@ -37,7 +37,7 @@ public class LoadModuleEvent extends DebuggerEvent {
         buffer.put((byte) 0);
         buffer.put(Utils.pack_dd(0));
         buffer.put((byte) 1);
-        return flipBuffer(buffer);
+        return Utils.flipBuffer(buffer);
     }
 
     @Override

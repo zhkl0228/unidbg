@@ -34,6 +34,8 @@ public class Utils {
     }
 
     public static byte[] pack_dd(long value) {
+        value &= 0xffffffffL; // unsigned int
+
         ByteBuffer buffer = ByteBuffer.allocate(0x10);
         if (value <= 0x7f) {
             buffer.put((byte) value);
@@ -55,7 +57,7 @@ public class Utils {
         return flipBuffer(buffer);
     }
 
-    private static byte[] flipBuffer(ByteBuffer buffer) {
+    public static byte[] flipBuffer(ByteBuffer buffer) {
         buffer.flip();
         byte[] data = new byte[buffer.remaining()];
         buffer.get(data);

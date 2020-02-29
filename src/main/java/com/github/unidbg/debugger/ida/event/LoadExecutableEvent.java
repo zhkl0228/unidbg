@@ -33,7 +33,7 @@ public class LoadExecutableEvent extends DebuggerEvent {
         buffer.put((byte) 0);
         buffer.put(Utils.pack_dd(1)); // base
         buffer.put((byte) 0);
-        return flipBuffer(buffer);
+        return Utils.flipBuffer(buffer);
     }
 
     @Override
