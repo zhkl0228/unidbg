@@ -215,8 +215,9 @@ public final class GdbStub extends AbstractDebugServer {
     }
 
     @Override
-    protected void onDebuggerExit() {
+    protected boolean onDebuggerExit() {
         makePacketAndSend("W00");
+        return true;
     }
 
     @Override

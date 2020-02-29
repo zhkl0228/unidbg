@@ -50,6 +50,18 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         sendData(buffer.array());
     }
 
+    private void sendProcessWillTerminated(int exitStatus) {
+        ByteBuffer buffer = ByteBuffer.allocate(0x20);
+        buffer.put(Utils.pack_dd(0x2));
+        buffer.put(Utils.pack_dd(emulator.getPid()));
+        buffer.put(Utils.pack_dd(emulator.getPid()));
+        buffer.put(Utils.pack_dd(0x0));
+        buffer.put(Utils.pack_dd(0x1));
+        buffer.put(Utils.pack_dd(0x0));
+        buffer.put(Utils.pack_dd(exitStatus));
+        sendPacket(0x4, Utils.flipBuffer(buffer));
+    }
+
     @Override
     protected void onServerStart() {
     }
@@ -166,13 +178,12 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         sendAck();
     }
 
-    private boolean processExitRequested;
+    private int processExitStatus;
 
     private void ackProcessExit() {
         if (log.isDebugEnabled()) {
             log.debug("ackProcessExit");
         }
-        processExitRequested = true;
     }
 
     private void notifyDebuggerDetached() {
@@ -182,8 +193,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
 
         sendAck();
         shutdownServer();
-        if (processExitRequested) {
-            System.exit(TERMINATE_PROCESS_STATUS);
+        if (processExitStatus != 0) {
+            System.exit(processExitStatus);
         } else {
             resumeRun();
         }
@@ -204,7 +215,9 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
                     ", b4=" + b4 + ", b5=" + b5 + ", status=" + status + ", b6=" + b6);
         }
 
-        if (action == 1) {
+        if (action == 0) {
+            removeBreakPoint(address);
+        } else if (action == 1) {
             addBreakPoint(address);
         }
 
@@ -220,7 +233,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         sendAck(Utils.flipBuffer(newBuf));
     }
 
-    public static final int TERMINATE_PROCESS_STATUS = 9;
+    private static final int TERMINATE_PROCESS_STATUS = 9;
 
     private void requestTerminateProcess() {
         if (log.isDebugEnabled()) {
@@ -228,15 +241,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         }
 
         notifyDebugEvent();
-        ByteBuffer buffer = ByteBuffer.allocate(0x20);
-        buffer.put(Utils.pack_dd(0x2));
-        buffer.put(Utils.pack_dd(-1));
-        buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put(Utils.pack_dd(0x0));
-        buffer.put(Utils.pack_dd(0x1));
-        buffer.put(Utils.pack_dd(0x0));
-        buffer.put(Utils.pack_dd(TERMINATE_PROCESS_STATUS));
-        sendPacket(0x4, Utils.flipBuffer(buffer));
+        sendProcessWillTerminated(TERMINATE_PROCESS_STATUS);
     }
 
     private void requestDetach() {
@@ -399,6 +404,9 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             case 0x400:
                 notifyProcessEvent(buffer, type);
                 break;
+            case 0x2:
+                notifyProcessExit(buffer);
+                break;
             case 0x80:
                 notifyLoadModule(buffer);
                 break;
@@ -407,6 +415,20 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
                 break;
         }
         notifyDebugEvent();
+    }
+
+    private void notifyProcessExit(ByteBuffer buffer) {
+        int pid = (int) Utils.unpack_dd(buffer);
+        long tid = Utils.unpack_dd(buffer);
+        long b1 = Utils.unpack_dd(buffer);
+        long b2 = Utils.unpack_dd(buffer);
+        long b3 = Utils.unpack_dd(buffer);
+        long exitStatus = Utils.unpack_dd(buffer);
+        if (log.isDebugEnabled()) {
+            log.debug("notifyProcessExit pid=" + pid + ", tid=" + tid + ", b1=" + b1 +
+                    ", b2=" + b2 + ", b3=" + b3 + ", exitStatus=" + exitStatus);
+        }
+        this.processExitStatus = (int) exitStatus;
     }
 
     /**
@@ -496,10 +518,12 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     }
 
     @Override
-    protected void onDebuggerExit() {
+    protected boolean onDebuggerExit() {
         if (log.isDebugEnabled()) {
             log.debug("onDebuggerExit");
         }
+        sendProcessWillTerminated(0);
+        return false;
     }
 
     @Override

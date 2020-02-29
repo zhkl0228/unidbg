@@ -245,11 +245,12 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     public final void close() {
         super.close();
 
-        onDebuggerExit();
-        shutdownServer();
+        if (onDebuggerExit()) {
+            shutdownServer();
+        }
     }
 
-    protected abstract void onDebuggerExit();
+    protected abstract boolean onDebuggerExit();
 
     public final void shutdownServer() {
         serverShutdown = true;
