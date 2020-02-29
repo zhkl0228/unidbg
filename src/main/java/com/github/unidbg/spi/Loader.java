@@ -31,7 +31,7 @@ public interface Loader {
     boolean dlclose(long handle);
     Symbol dlsym(long handle, String symbol) throws IOException;
 
-    void setModuleListener(ModuleListener listener);
+    void addModuleListener(ModuleListener listener);
 
     void addHookListener(HookListener listener);
 

@@ -2,10 +2,14 @@ package com.github.unidbg.debugger.ida;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.ModuleListener;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.debugger.AbstractDebugServer;
+import com.github.unidbg.debugger.ida.event.AttachEvent;
+import com.github.unidbg.debugger.ida.event.DetachEvent;
+import com.github.unidbg.debugger.ida.event.LoadModuleEvent;
+import com.github.unidbg.debugger.ida.event.TryAttachEvent;
 import com.github.unidbg.memory.MemRegion;
-import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,9 +20,10 @@ import unicorn.UnicornException;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @Deprecated
-public class AndroidServer extends AbstractDebugServer {
+public class AndroidServer extends AbstractDebugServer implements ModuleListener {
 
     private static final Log log = LogFactory.getLog(AndroidServer.class);
 
@@ -27,6 +32,14 @@ public class AndroidServer extends AbstractDebugServer {
     public AndroidServer(Emulator<?> emulator, byte protocolVersion) {
         super(emulator);
         this.protocolVersion = protocolVersion;
+        emulator.getMemory().addModuleListener(this);
+    }
+
+    @Override
+    public void onLoaded(Emulator<?> emulator, Module module) {
+        if (log.isDebugEnabled()) {
+            log.debug("onLoaded module=" + module);
+        }
     }
 
     @Override
@@ -60,7 +73,7 @@ public class AndroidServer extends AbstractDebugServer {
         ByteBuffer buffer = ByteBuffer.wrap(data);
         switch (type) {
             case 0x0:
-                sendPacket(0x0, new byte[] { 0x1 });
+                notifyDebugEvent();
                 break;
             case 0xa: {
                 long value = Utils.unpack_dd(buffer);
@@ -71,6 +84,10 @@ public class AndroidServer extends AbstractDebugServer {
                 sendPacket(0x0, new byte[]{0x5});
                 break;
             }
+            case 0xb: {
+                notifyDebuggerDetached();
+                break;
+            }
             case 0xc: {
                 requestRunningProcesses();
                 break;
@@ -79,26 +96,20 @@ public class AndroidServer extends AbstractDebugServer {
                 requestTerminateProcess();
                 break;
             case 0xf: {
-                long pid = Utils.unpack_dd(buffer);
-                int value = (int) Utils.unpack_dd(buffer);
-                long b = Utils.unpack_dd(buffer);
-                if (log.isDebugEnabled()) {
-                    log.debug("requestAttach pid=" + pid + ", value=" + value + ", b=" + b);
-                }
-                requestAttach();
+                requestAttach(buffer);
                 break;
             }
-            case 0x11:
-                requestModuleInfo(buffer);
-                break;
-            case 0x12:
+            case 0x10:
                 requestDetach();
+                break;
+            case 0x11:
+                syncDebuggerEvent(buffer);
                 break;
             case 0x13:
                 requestSymbols(buffer);
                 break;
             case 0x14:
-                confirmModuleInfo(buffer);
+                ackDebuggerEvent(buffer);
                 break;
             case 0x18:
                 requestMemoryRegions(buffer);
@@ -114,13 +125,26 @@ public class AndroidServer extends AbstractDebugServer {
                 break;
             case 0x22:
                 parseSignal(buffer);
-                sendPacket(0x0, new byte[0]);
                 break;
             default:
                 log.warn(Inspector.inspectString(data, "Not handler command type=0x" + Integer.toHexString(type)));
-                sendPacket(0x0, new byte[0]);
+                sendAck();
                 break;
         }
+    }
+
+    private void notifyDebuggerDetached() {
+        if (log.isDebugEnabled()) {
+            log.debug("notifyDebuggerDetached");
+        }
+
+        sendAck();
+        shutdownServer();
+        resumeRun();
+    }
+
+    private void sendAck() {
+        sendPacket(0x0, new byte[0]);
     }
 
     private void requestAddBreakPoint(ByteBuffer buffer) {
@@ -133,12 +157,21 @@ public class AndroidServer extends AbstractDebugServer {
         if (log.isDebugEnabled()) {
             log.debug("requestTerminateProcess");
         }
+
+        notifyDebugEvent();
     }
 
     private void requestDetach() {
         if (log.isDebugEnabled()) {
             log.debug("requestDetach");
         }
+
+        eventQueue.add(new DetachEvent());
+        notifyDebugEvent();
+    }
+
+    private void notifyDebugEvent() {
+        sendPacket(0x0, new byte[]{ 0x1 });
     }
 
     private void requestMemoryRegions(ByteBuffer buffer) {
@@ -225,7 +258,7 @@ public class AndroidServer extends AbstractDebugServer {
         if (log.isDebugEnabled()) {
             log.debug("requestSymbols buffer=" + buffer);
         }
-        sendPacket(0x0, new byte[] { 1 });
+        sendAck();
     }
 
     private void requestReadMemory(ByteBuffer buffer) {
@@ -250,7 +283,7 @@ public class AndroidServer extends AbstractDebugServer {
             if (log.isDebugEnabled()) {
                 log.debug("read memory failed: address=0x" + Long.toHexString(address), e);
             }
-            sendPacket(0x0, new byte[] { 1 });
+            sendAck();
         }
     }
 
@@ -265,134 +298,58 @@ public class AndroidServer extends AbstractDebugServer {
                 log.debug("signal index=" + index + ", mask=0x" + Long.toHexString(mask) + ", sig=" + sig + ", desc=" + desc);
             }
         }
+        sendAck();
     }
 
-    private void requestModuleInfo(ByteBuffer buffer) {
+    private Queue<DebuggerEvent> eventQueue = new LinkedBlockingQueue<>();
+    private DebuggerEvent lastEvent;
+
+    private void syncDebuggerEvent(ByteBuffer buffer) {
         long b = Utils.unpack_dd(buffer);
         if (log.isDebugEnabled()) {
-            log.debug("requestModuleInfo b=" + b);
+            log.debug("syncDebuggerEvent b=" + b);
         }
 
-        if (modules == null) {
-            ByteBuffer newBuf = ByteBuffer.allocate(0x100);
-            newBuf.put(Utils.pack_dd(0x1));
-            newBuf.put(Utils.pack_dd(0x400));
-            newBuf.put(Utils.pack_dd(emulator.getPid()));
-            newBuf.put(Utils.pack_dd(emulator.getPid()));
-            UnicornPointer pc = emulator.getContext().getPCPointer();
-            if (emulator.is32Bit()) {
-                newBuf.put(Utils.pack_dd(pc.toUIntPeer()));
-            } else {
-                newBuf.put(Utils.pack_dd(pc.peer));
-            }
-            newBuf.putShort((short) 1);
-            byte[] data = "unidbg".getBytes();
-            newBuf.put(Arrays.copyOf(data, data.length + 1));
-            newBuf.put(Utils.pack_dd(1)); // base
-            newBuf.put((byte) 0);
-            newBuf.put(Utils.pack_dd(emulator.getPageAlign() + 1));
-            newBuf.put((byte) 0);
-            newBuf.put(Utils.pack_dd(1)); // base
-            newBuf.put((byte) 0);
-
-            newBuf.flip();
-            byte[] packet = new byte[newBuf.remaining()];
-            newBuf.get(packet);
-            sendPacket(0x0, packet);
-            return;
-        }
-
-        if (modules.isEmpty()) {
-            ByteBuffer newBuf = ByteBuffer.allocate(0x100);
-            newBuf.put(Utils.pack_dd(0x2));
-            newBuf.put(Utils.pack_dd(0x1));
-            newBuf.put(Utils.pack_dd(emulator.getPid()));
-            newBuf.put(Utils.pack_dd(emulator.getPid()));
-            UnicornPointer pc = emulator.getContext().getPCPointer();
-            if (emulator.is32Bit()) {
-                newBuf.put(Utils.pack_dd(pc.toUIntPeer()));
-            } else {
-                newBuf.put(Utils.pack_dd(pc.peer));
-            }
-            newBuf.putShort((short) 1);
-            byte[] data = "unidbg".getBytes();
-            newBuf.put(Arrays.copyOf(data, data.length + 1));
-            newBuf.put(Utils.pack_dd(1)); // base
-            newBuf.put((byte) 0);
-            newBuf.put(Utils.pack_dd(emulator.getPageAlign() + 1));
-            newBuf.put((byte) 0);
-            newBuf.put(Utils.pack_dd(1)); // base
-            newBuf.put((byte) 0);
-
-            newBuf.flip();
-            byte[] packet = new byte[newBuf.remaining()];
-            newBuf.get(packet);
-            sendPacket(0x0, packet);
-            modules = null;
+        lastEvent = eventQueue.poll();
+        if (lastEvent == null) {
+            sendAck();
         } else {
-            Module module = modules.pop();
-            ByteBuffer newBuf = ByteBuffer.allocate(0x100);
-            newBuf.put(Utils.pack_dd(0x2));
-            newBuf.put(Utils.pack_dd(0x80));
-            newBuf.put(Utils.pack_dd(emulator.getPid()));
-            newBuf.put(Utils.pack_dd(emulator.getPid()));
-            newBuf.put(Utils.pack_dd(module.base + 1));
-            newBuf.putShort((short) 1);
-            byte[] data = module.getPath().getBytes();
-            newBuf.put(Arrays.copyOf(data, data.length + 1));
-            newBuf.put(Utils.pack_dd(module.base + 1));
-            newBuf.put((byte) 0);
-            newBuf.put(Utils.pack_dd(module.size + 1));
-            newBuf.put((byte) 0);
-            newBuf.put(Utils.pack_dd(0));
-            newBuf.put((byte) 1);
-
-            newBuf.flip();
-            byte[] packet = new byte[newBuf.remaining()];
-            newBuf.get(packet);
+            byte[] packet = lastEvent.pack(emulator);
             sendPacket(0x0, packet);
         }
     }
 
-    private void confirmModuleInfo(ByteBuffer buffer) {
-        long mask = Utils.unpack_dd(buffer);
-        long pid = Utils.unpack_dd(buffer);
-        long tid = Utils.unpack_dd(buffer);
-        long address = Utils.unpack_dd(buffer);
-        short s1 = buffer.getShort();
-        String path = Utils.readCString(buffer);
-        long base = Utils.unpack_dd(buffer);
-        byte b1 = buffer.get();
-        long size = Utils.unpack_dd(buffer);
-        long b2 = Utils.unpack_dd(buffer);
-        long a1 = Utils.unpack_dd(buffer);
-        long b3 = Utils.unpack_dd(buffer);
-        if (log.isDebugEnabled()) {
-            log.debug("confirmModuleInfo mask=0x" + Long.toHexString(mask) + ", pid=" + pid + ", tid=" + tid +
-                    ", address=0x" + Long.toHexString(address) + ", s1=" + s1 + ", path=" + path +
-                    ", base=0x" + Long.toHexString(base) + ", b1=" + b1 + ", size=0x" + Long.toHexString(size) +
-                    ", b2=" + b2 + ", a1=0x" + Long.toHexString(a1) + ", b3=" + b3);
+    private void ackDebuggerEvent(ByteBuffer buffer) {
+        if (lastEvent != null) {
+            lastEvent.onAck(buffer);
         }
-        sendPacket(0x0, new byte[] { 0x1 });
+        notifyDebugEvent();
     }
 
-    private Stack<Module> modules;
+    private void requestAttach(ByteBuffer buffer) {
+        long pid = Utils.unpack_dd(buffer);
+        int value = (int) Utils.unpack_dd(buffer);
+        long b = Utils.unpack_dd(buffer);
+        if (log.isDebugEnabled()) {
+            log.debug("requestAttach pid=" + pid + ", value=" + value + ", b=" + b);
+        }
 
-    private void requestAttach() {
-        ByteBuffer buffer = ByteBuffer.allocate(16);
-        buffer.put((byte) 0x1);
-        buffer.put((byte) 0x4);
-        buffer.put("linux".getBytes());
-        buffer.put((byte) 0);
-        buffer.flip();
-        byte[] packet = new byte[buffer.remaining()];
-        buffer.get(packet);
+        for (Module module : emulator.getMemory().getLoadedModules()) {
+            eventQueue.offer(new LoadModuleEvent(module));
+        }
+
+        ByteBuffer newBuf = ByteBuffer.allocate(16);
+        newBuf.put((byte) 0x1);
+        newBuf.put((byte) 0x4);
+        newBuf.put("linux".getBytes());
+        newBuf.put((byte) 0);
+        newBuf.flip();
+        byte[] packet = new byte[newBuf.remaining()];
+        newBuf.get(packet);
         sendPacket(0x0, packet);
 
-        modules = new Stack<>();
-        for (Module module : emulator.getMemory().getLoadedModules()) {
-            modules.push(module);
-        }
+        eventQueue.add(new TryAttachEvent());
+        eventQueue.add(new AttachEvent());
     }
 
     private void requestRunningProcesses() {

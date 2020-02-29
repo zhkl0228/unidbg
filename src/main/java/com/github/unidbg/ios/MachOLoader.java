@@ -631,10 +631,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (log.isDebugEnabled()) {
             log.debug("Load library " + dyId + " offset=" + (System.currentTimeMillis() - start) + "ms");
         }
-        if (moduleListener != null) {
-            moduleListener.onLoaded(emulator, module);
-        }
-
+        notifyModuleLoaded(module);
         return module;
     }
 
@@ -1629,9 +1626,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         modules.put(name, module);
         if (maxDylibName == null || name.length() > maxDylibName.length()) {
             maxDylibName = name;
-        }
-        if (moduleListener != null) {
-            moduleListener.onLoaded(emulator, module);
         }
         return module;
     }

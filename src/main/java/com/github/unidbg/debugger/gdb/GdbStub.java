@@ -168,7 +168,9 @@ public final class GdbStub extends AbstractDebugServer {
             int checksum = Integer.parseInt(currentInputPacket.substring(currentInputPacket.length() - 2), 16);
             return checksum == (packetChecksum & 0xff);
         } catch(NumberFormatException ex) {
-            log.debug("checkPacket currentInputPacket=" + currentInputPacket, ex);
+            if (log.isDebugEnabled()) {
+                log.debug("checkPacket currentInputPacket=" + currentInputPacket, ex);
+            }
             return false;
         }
     }

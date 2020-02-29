@@ -6,6 +6,7 @@ import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,7 +51,7 @@ public class TcpSocket extends SocketIO implements FileIO {
     public int write(byte[] data) {
         try {
             if (log.isDebugEnabled()) {
-                Inspector.inspect(data, "write");
+                Inspector.inspect(data, "write hex=" + Hex.encodeHexString(data));
             }
             outputStream.write(data);
             return data.length;

@@ -27,7 +27,7 @@ class RunExecutable {
 
             memory.setCallInitFunction();
             if (listener != null) {
-                memory.setModuleListener(listener);
+                memory.addModuleListener(listener);
             }
             if (preloads != null) {
                 for (String preload : preloads) {

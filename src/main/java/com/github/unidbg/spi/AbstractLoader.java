@@ -320,11 +320,17 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         return sp;
     }
 
-    protected ModuleListener moduleListener;
+    protected final List<ModuleListener> moduleListeners = new ArrayList<>();
 
     @Override
-    public final void setModuleListener(ModuleListener listener) {
-        moduleListener = listener;
+    public final void addModuleListener(ModuleListener listener) {
+        moduleListeners.add(listener);
+    }
+
+    protected final void notifyModuleLoaded(Module module) {
+        for (ModuleListener listener : moduleListeners) {
+            listener.onLoaded(emulator, module);
+        }
     }
 
     @Override

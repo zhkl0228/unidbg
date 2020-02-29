@@ -553,9 +553,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
         module.setEntryPoint(elfFile.entry_point);
         log.debug("Load library " + soName + " offset=" + (System.currentTimeMillis() - start) + "ms" + ", entry_point=0x" + Long.toHexString(elfFile.entry_point));
-        if (moduleListener != null) {
-            moduleListener.onLoaded(emulator, module);
-        }
+        notifyModuleLoaded(module);
         return module;
     }
 
@@ -565,9 +563,6 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         modules.put(name, module);
         if (maxSoName == null || name.length() > maxSoName.length()) {
             maxSoName = name;
-        }
-        if (moduleListener != null) {
-            moduleListener.onLoaded(emulator, module);
         }
         return module;
     }
