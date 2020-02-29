@@ -9,4 +9,6 @@ public interface DebugServer extends Debugger, Runnable {
     byte IDA_PROTOCOL_VERSION_73 = 0x19; // IDA Pro v7.3
     byte IDA_DEBUGGER_ID = 0xb; // armlinux
 
+    String DEBUG_EXEC_NAME = "unidbg";
+
 }

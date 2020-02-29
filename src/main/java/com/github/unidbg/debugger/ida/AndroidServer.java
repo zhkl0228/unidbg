@@ -5,10 +5,10 @@ import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.debugger.AbstractDebugServer;
-import com.github.unidbg.debugger.ida.event.AttachEvent;
+import com.github.unidbg.debugger.ida.event.AttachExecutableEvent;
 import com.github.unidbg.debugger.ida.event.DetachEvent;
+import com.github.unidbg.debugger.ida.event.LoadExecutableEvent;
 import com.github.unidbg.debugger.ida.event.LoadModuleEvent;
-import com.github.unidbg.debugger.ida.event.TryAttachEvent;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
@@ -348,8 +348,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         newBuf.get(packet);
         sendPacket(0x0, packet);
 
-        eventQueue.add(new TryAttachEvent());
-        eventQueue.add(new AttachEvent());
+        eventQueue.add(new LoadExecutableEvent());
+        eventQueue.add(new AttachExecutableEvent());
     }
 
     private void requestRunningProcesses() {
@@ -357,7 +357,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         buffer.put((byte) 0x1);
         buffer.put((byte) 0x1); // process count
         buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put(("[" + (emulator.is32Bit() ? "32" : "64") + "] unidbg").getBytes());
+        buffer.put(("[" + (emulator.is32Bit() ? "32" : "64") + "] " + DEBUG_EXEC_NAME).getBytes());
         buffer.put((byte) 0);
         buffer.flip();
         byte[] packet = new byte[buffer.remaining()];

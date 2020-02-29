@@ -1,6 +1,7 @@
 package com.github.unidbg.debugger.ida.event;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.debugger.DebugServer;
 import com.github.unidbg.debugger.ida.DebuggerEvent;
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -8,7 +9,7 @@ import com.github.unidbg.pointer.UnicornPointer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class TryAttachEvent extends DebuggerEvent {
+public class LoadExecutableEvent extends DebuggerEvent {
 
     @Override
     public byte[] pack(Emulator<?> emulator) {
@@ -24,7 +25,7 @@ public class TryAttachEvent extends DebuggerEvent {
             buffer.put(Utils.pack_dd(pc.peer + 1));
         }
         buffer.putShort((short) 1);
-        byte[] data = "unidbg".getBytes();
+        byte[] data = DebugServer.DEBUG_EXEC_NAME.getBytes();
         buffer.put(Arrays.copyOf(data, data.length + 1));
         buffer.put(Utils.pack_dd(1)); // base
         buffer.put((byte) 0);
