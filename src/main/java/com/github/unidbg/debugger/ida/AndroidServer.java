@@ -311,10 +311,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             newBuf.put(Arrays.copyOf(data, data.length + 1));
             newBuf.put((byte) 0);
         }
-        newBuf.flip();
-        byte[] data = new byte[newBuf.remaining()];
-        newBuf.get(data);
-        sendAck(data);
+        sendAck(Utils.flipBuffer(newBuf));
     }
 
     private void requestReadRegisters(ByteBuffer buffer) {
@@ -328,7 +325,6 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             Arm32RegisterContext context = emulator.getContext();
             ByteBuffer newBuf = ByteBuffer.allocate(0x100);
             newBuf.put(Utils.pack_dd(0x1));
-
             for (int value : Arrays.asList(context.getR0Int(),
                     context.getR1Int(), context.getR2Int(),
                     context.getR3Int(), context.getR4Int(),
@@ -345,11 +341,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
                 newBuf.put(Utils.pack_dd((value & 0xffffffffL) + 1));
                 newBuf.put(Utils.pack_dd(0x0));
             }
-
-            newBuf.flip();
-            byte[] data = new byte[newBuf.remaining()];
-            newBuf.get(data);
-            sendAck(data);
+            sendAck(Utils.flipBuffer(newBuf));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -375,11 +367,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             ByteBuffer newBuf = ByteBuffer.allocate(data.length + 0x10);
             newBuf.put(Utils.pack_dd(size));
             newBuf.put(data);
-
-            newBuf.flip();
-            data = new byte[newBuf.remaining()];
-            newBuf.get(data);
-            sendAck(data);
+            sendAck(Utils.flipBuffer(newBuf));
         } catch (UnicornException e) {
             if (log.isDebugEnabled()) {
                 log.debug("read memory failed: address=0x" + Long.toHexString(address), e);
@@ -422,8 +410,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     private void onDebuggerEvent(ByteBuffer buffer) {
         int type = (int) Utils.unpack_dd(buffer);
         switch (type) {
-            case 0x1:
-            case 0x400:
+            case 0x1: // notify attach success
+            case 0x400: // notify continue run
                 notifyProcessEvent(buffer, type);
                 break;
             case 0x10:
@@ -539,10 +527,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         newBuf.put((byte) 0x4);
         newBuf.put("linux".getBytes());
         newBuf.put((byte) 0);
-        newBuf.flip();
-        byte[] packet = new byte[newBuf.remaining()];
-        newBuf.get(packet);
-        sendAck(packet);
+        sendAck(Utils.flipBuffer(newBuf));
 
         eventQueue.add(new LoadExecutableEvent());
         eventQueue.add(new AttachExecutableEvent());
@@ -555,10 +540,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         buffer.put(Utils.pack_dd(emulator.getPid()));
         buffer.put(("[" + emulator.getPointerSize() * 8 + "] " + DEBUG_EXEC_NAME).getBytes());
         buffer.put((byte) 0);
-        buffer.flip();
-        byte[] packet = new byte[buffer.remaining()];
-        buffer.get(packet);
-        sendAck(packet);
+        sendAck(Utils.flipBuffer(buffer));
     }
 
     @Override
