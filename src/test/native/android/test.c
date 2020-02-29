@@ -16,5 +16,7 @@ int main() {
   fprintf(stderr, "Start test, stdin=%p, stdout=%p, stderr=%p, size=%lu\n", stdin, stdout, stderr, (unsigned long) sizeof(*stdout));
   test_stat();
   test_dirent();
+  printf("Press any key to exit\n");
+  getchar();
   return 0;
 }
