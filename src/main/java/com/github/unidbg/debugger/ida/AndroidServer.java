@@ -553,7 +553,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         buffer.put((byte) 0x1);
         buffer.put((byte) 0x1); // process count
         buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put(("[" + (emulator.is32Bit() ? "32" : "64") + "] " + DEBUG_EXEC_NAME).getBytes());
+        buffer.put(("[" + emulator.getPointerSize() * 8 + "] " + DEBUG_EXEC_NAME).getBytes());
         buffer.put((byte) 0);
         buffer.flip();
         byte[] packet = new byte[buffer.remaining()];
