@@ -35,8 +35,4 @@ public class LoadExecutableEvent extends DebuggerEvent {
         buffer.put((byte) 0);
         return Utils.flipBuffer(buffer);
     }
-
-    @Override
-    public void onAck(ByteBuffer buffer) {
-    }
 }

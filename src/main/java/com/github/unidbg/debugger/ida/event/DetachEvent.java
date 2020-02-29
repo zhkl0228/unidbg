@@ -20,8 +20,4 @@ public class DetachEvent extends DebuggerEvent {
         buffer.put((byte) 1);
         return Utils.flipBuffer(buffer);
     }
-
-    @Override
-    public void onAck(ByteBuffer buffer) {
-    }
 }

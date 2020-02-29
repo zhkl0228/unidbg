@@ -63,9 +63,9 @@ class MyARMSyscallHandler extends ARMSyscallHandler {
             case PTrace.PTRACE_CONT:
             case PTrace.PTRACE_DETACH:
             case PTrace.PTRACE_KILL:
+            case PTrace.PTRACE_POKETEXT:
                 break;
-            case PTrace.PTRACE_POKEDATA:
-            case PTrace.PTRACE_POKETEXT: {
+            case PTrace.PTRACE_POKEDATA: {
                 addr.setPointer(0, data);
                 break;
             }

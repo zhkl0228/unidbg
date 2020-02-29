@@ -24,6 +24,8 @@ import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -169,6 +171,7 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
 //        emulator.traceWrite(0x804c538, 0x804c538 + 15);
 
 //        emulator.attach().addBreakPoint(null, 0x4006816C);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 
         System.err.println("exit code: " + module.callEntry(emulator, "--verbose"));
     }
