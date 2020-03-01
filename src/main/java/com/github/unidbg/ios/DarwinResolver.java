@@ -65,7 +65,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
 
         FileSystem<DarwinFileIO> fileSystem = emulator.getFileSystem();
         if (".".equals(path)) {
-            return createFileIO(fileSystem.createWorkDir(), path, oflags);
+            return FileResult.success(createFileIO(fileSystem.createWorkDir(), path, oflags));
         }
 
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
@@ -81,9 +81,14 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
                 if (!tmp.exists() && !tmp.createNewFile()) {
                     throw new IOException("createNewFile failed: " + tmp);
                 }
+
+                if (tmp.isDirectory()) {
+                    return FileResult.<DarwinFileIO>fallback(new DirectoryFileIO(oflags, path, tmp));
+                }
+
                 outputStream = new FileOutputStream(tmp);
                 IOUtils.copy(inputStream, outputStream);
-                return createFileIO(tmp, path, oflags);
+                return FileResult.fallback(createFileIO(tmp, path, oflags));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             } finally {
@@ -95,10 +100,9 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         return null;
     }
 
-    private FileResult<DarwinFileIO> createFileIO(File file, String pathname, int oflags) {
+    private DarwinFileIO createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {
-            DarwinFileIO io = file.isDirectory() ? new DirectoryFileIO(oflags, pathname, file) : new SimpleFileIO(oflags, file, pathname);
-            return FileResult.success(io);
+            return file.isDirectory() ? new DirectoryFileIO(oflags, pathname, file) : new SimpleFileIO(oflags, file, pathname);
         }
 
         return null;

@@ -4,6 +4,7 @@ import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.debugger.DebugListener;
 import com.github.unidbg.debugger.Debugger;
@@ -35,7 +36,19 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private static final Log log = LogFactory.getLog(AbstractARMDebugger.class);
 
-    private final Map<Long, BreakPointCallback> breakMap = new HashMap<>();
+    private static class BreakPointImpl implements BreakPoint {
+        final BreakPointCallback callback;
+        boolean isTemporary;
+        public BreakPointImpl(BreakPointCallback callback) {
+            this.callback = callback;
+        }
+        @Override
+        public void setTemporary(boolean temporary) {
+            this.isTemporary = true;
+        }
+    }
+
+    private final Map<Long, BreakPointImpl> breakMap = new HashMap<>();
 
     protected final Emulator<?> emulator;
     private final boolean softBreakpoint;
@@ -51,36 +64,36 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    public final void addBreakPoint(Module module, String symbol) {
+    public final BreakPoint addBreakPoint(Module module, String symbol) {
         Symbol sym = module.findSymbolByName(symbol, false);
         if (sym == null) {
             throw new IllegalStateException("find symbol failed: " + symbol);
         }
-        addBreakPoint(module, sym.getValue());
+        return addBreakPoint(module, sym.getValue());
     }
 
     @Override
-    public final void addBreakPoint(Module module, String symbol, BreakPointCallback callback) {
+    public final BreakPoint addBreakPoint(Module module, String symbol, BreakPointCallback callback) {
         Symbol sym = module.findSymbolByName(symbol, false);
         if (sym == null) {
             throw new IllegalStateException("find symbol failed: " + symbol);
         }
-        addBreakPoint(module, sym.getValue(), callback);
+        return addBreakPoint(module, sym.getValue(), callback);
     }
 
     @Override
-    public final void addBreakPoint(Module module, long offset) {
+    public final BreakPoint addBreakPoint(Module module, long offset) {
         long address = module == null ? offset : module.base + offset;
-        addBreakPoint(address);
+        return addBreakPoint(address);
     }
 
     @Override
-    public final void addBreakPoint(Module module, long offset, BreakPointCallback callback) {
+    public final BreakPoint addBreakPoint(Module module, long offset, BreakPointCallback callback) {
         long address = module == null ? offset : module.base + offset;
-        addBreakPoint(address, callback);
+        return addBreakPoint(address, callback);
     }
 
-    private static class SoftBreakPoint {
+    private static class SoftBreakPoint implements BreakPoint {
         final long address;
         final byte[] backup;
         final BreakPointCallback callback;
@@ -89,6 +102,10 @@ public abstract class AbstractARMDebugger implements Debugger {
             this.backup = backup;
             this.callback = callback;
         }
+        @Override
+        public void setTemporary(boolean temporary) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private final Map<Integer, SoftBreakPoint> softBreakpointMap = new HashMap<>();
@@ -96,12 +113,12 @@ public abstract class AbstractARMDebugger implements Debugger {
     private int svcNumber = 1;
 
     @Override
-    public void addBreakPoint(long address) {
-        addBreakPoint(address, null);
+    public BreakPoint addBreakPoint(long address) {
+        return addBreakPoint(address, null);
     }
 
     @Override
-    public void addBreakPoint(long address, BreakPointCallback callback) {
+    public BreakPoint addBreakPoint(long address, BreakPointCallback callback) {
         if (softBreakpoint) {
             int svcNumber = ++this.svcNumber; // begin with 2
             byte[] code = addSoftBreakPoint(address, svcNumber);
@@ -111,14 +128,18 @@ public abstract class AbstractARMDebugger implements Debugger {
             assert pointer != null;
             byte[] backup = pointer.getByteArray(0, code.length);
             pointer.write(0, code, 0, code.length);
-            softBreakpointMap.put(svcNumber, new SoftBreakPoint(address, backup, callback));
+            SoftBreakPoint breakPoint = new SoftBreakPoint(address, backup, callback);
+            softBreakpointMap.put(svcNumber, breakPoint);
+            return breakPoint;
         } else {
             address &= (~1);
 
             if (log.isDebugEnabled()) {
                 log.debug("addBreakPoint address=0x" + Long.toHexString(address));
             }
-            breakMap.put(address, callback);
+            BreakPointImpl breakPoint = new BreakPointImpl(callback);
+            breakMap.put(address, breakPoint);
+            return breakPoint;
         }
     }
 
@@ -177,8 +198,11 @@ public abstract class AbstractARMDebugger implements Debugger {
 
         try {
             if (breakMap.containsKey(address)) {
-                BreakPointCallback callback = breakMap.get(address);
-                if (callback == null || callback.onHit(emulator, address)) {
+                BreakPointImpl breakPoint = breakMap.get(address);
+                if (breakPoint != null && breakPoint.isTemporary) {
+                    breakMap.remove(address);
+                }
+                if (breakPoint != null && (breakPoint.callback == null || breakPoint.callback.onHit(emulator, address))) {
                     loop(emulator, address, size);
                 }
             } else if (singleStep == 0) {
@@ -332,7 +356,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 System.out.println("Next address failed.");
                 return false;
             } else {
-                addBreakPoint(nextAddress);
+                addBreakPoint(nextAddress).setTemporary(true);
                 return true;
             }
         }

@@ -76,7 +76,7 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
         emulator = new MyAndroidARMEmulator(executable);
         emulator.getSyscallHandler().addIOResolver(this);
         Memory memory = emulator.getMemory();
-        LibraryResolver resolver = new AndroidResolver(19);
+        LibraryResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
 
         memory.setCallInitFunction();
@@ -165,12 +165,16 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
                 UnicornPointer end = ctx.get("end");
                 long value = ctx.getR0Long();
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
-                Inspector.inspect(data.getByteArray(0, size), "unpack_dd data=" + data + ", value=0x" + Long.toHexString(value) + ", LR=" + ctx.getLRPointer());
+                byte[] bytes = data.getByteArray(0, size);
+                long my = Utils.unpack_dd(ByteBuffer.wrap(bytes));
+                if (value != my) {
+                    Inspector.inspect(bytes, "unpack_dd data=" + data + ", value=0x" + Long.toHexString(value) + ", LR=" + ctx.getLRPointer());
+                }
             }
         });
 //        emulator.traceWrite(0x804c538, 0x804c538 + 15);
 
-//        emulator.attach().addBreakPoint(null, 0x4006816C);
+//        emulator.attach().addBreakPoint(null, 0x40066A58);
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 
         System.err.println("exit code: " + module.callEntry(emulator, "--verbose"));

@@ -59,7 +59,9 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
                 emulator.getMemory().setErrno(0);
                 return result;
             } else if (result != null) {
-                failResult = result;
+                if (failResult == null || !failResult.isFallback()) {
+                    failResult = result;
+                }
             }
         }
         FileResult<T> result = emulator.getFileSystem().open(pathname, oflags);
@@ -81,6 +83,10 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
                     }
                 }
             }
+        }
+
+        if (failResult != null && failResult.isFallback()) {
+            return FileResult.success(failResult.io);
         }
         return failResult;
     }
@@ -239,6 +245,14 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return file.fcntl(cmd, arg);
     }
 
+    protected int readlink(Emulator<?> emulator, String path, Pointer buf, int bufSize) {
+        if (log.isDebugEnabled()) {
+            log.debug("readlink path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
+        }
+        buf.setString(0, path);
+        return path.length() + 1;
+    }
+
     private final Map<Integer, byte[]> sigMap = new HashMap<>();
 
     private static final int SIGHUP = 1;
@@ -254,7 +268,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGPIPE = 13;
     private static final int SIGALRM = 14;
     private static final int SIGTERM = 15;
-    private static final int SIGCHLD = 17;
+    protected static final int SIGCHLD = 17;
     private static final int SIGTSTP = 20;
     private static final int SIGTTIN = 21;
     private static final int SIGTTOU = 22;

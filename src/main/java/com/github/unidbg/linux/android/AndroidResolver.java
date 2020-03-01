@@ -77,7 +77,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         }
 
         if (".".equals(path)) {
-            return createFileIO(fileSystem.createWorkDir(), path, oflags);
+            return FileResult.success(createFileIO(fileSystem.createWorkDir(), path, oflags));
         }
 
         String androidResource = FilenameUtils.normalize("/android/sdk" + sdk + "/" + path, true);
@@ -95,12 +95,12 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
                 }
 
                 if (tmp.isDirectory()) {
-                    return FileResult.<AndroidFileIO>success(new DirectoryFileIO(oflags, path));
+                    return FileResult.<AndroidFileIO>fallback(new DirectoryFileIO(oflags, path));
                 }
 
                 outputStream = new FileOutputStream(tmp);
                 IOUtils.copy(inputStream, outputStream);
-                return createFileIO(tmp, path, oflags);
+                return FileResult.fallback(createFileIO(tmp, path, oflags));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             } finally {
@@ -112,10 +112,10 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         return null;
     }
 
-    private FileResult<AndroidFileIO> createFileIO(File file, String pathname, int oflags) {
+    private AndroidFileIO createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {
             AndroidFileIO io = file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname);
-            return FileResult.success(io);
+            return io;
         }
 
         return null;

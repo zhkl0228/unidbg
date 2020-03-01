@@ -8,16 +8,16 @@ import java.io.Closeable;
 
 public interface Debugger extends CodeHook, Closeable {
 
-    void addBreakPoint(Module module, String symbol);
-    void addBreakPoint(Module module, String symbol, BreakPointCallback callback);
-    void addBreakPoint(Module module, long offset);
-    void addBreakPoint(Module module, long offset, BreakPointCallback callback);
+    BreakPoint addBreakPoint(Module module, String symbol);
+    BreakPoint addBreakPoint(Module module, String symbol, BreakPointCallback callback);
+    BreakPoint addBreakPoint(Module module, long offset);
+    BreakPoint addBreakPoint(Module module, long offset, BreakPointCallback callback);
 
     /**
      * @param address 奇数地址表示thumb断点
      */
-    void addBreakPoint(long address);
-    void addBreakPoint(long address, BreakPointCallback callback);
+    BreakPoint addBreakPoint(long address);
+    BreakPoint addBreakPoint(long address, BreakPointCallback callback);
 
     void debug();
 

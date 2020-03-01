@@ -451,7 +451,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         return 0;
     }
 
-    private int fork(Emulator<?> emulator) {
+    protected int fork(Emulator<?> emulator) {
         log.debug("fork");
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
@@ -1655,14 +1655,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         Pointer buf = context.getPointerArg(2);
         int bufSize = context.getIntArg(3);
         String path = pathname.getString(0);
-        if (log.isDebugEnabled()) {
-            log.debug("readlinkat dirfd=" + dirfd + ", path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
-        }
         if (dirfd != IO.AT_FDCWD) {
             throw new UnicornException();
         }
-        buf.setString(0, path);
-        return path.length() + 1;
+        return readlink(emulator, path, buf, bufSize);
     }
 
     private int fstat(Unicorn u, Emulator<?> emulator) {

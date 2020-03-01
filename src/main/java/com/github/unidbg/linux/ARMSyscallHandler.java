@@ -232,14 +232,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
                     return;
                 case 120:
-                    Pointer child_stack = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-                    int fn = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R5)).intValue();
-                    int arg = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R6)).intValue();
-                    if (child_stack != null && child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, bionic_clone(u, emulator));
-                    } else {
-                        u.reg_write(ArmConst.UC_ARM_REG_R0, pthread_clone(u, emulator));
-                    }
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, clone(u, emulator));
                     return;
                 case 122:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
@@ -325,7 +318,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                     u.reg_write(ArmConst.UC_ARM_REG_R0, setgid32(emulator));
                     return;
                 case 217:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, getdents64(u, emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getdents64(emulator));
                     return;
                 case 220:
                     syscall = "madvise";
@@ -455,6 +448,27 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         }
     }
 
+    private int clone(Unicorn u, Emulator<AndroidFileIO> emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int flags = context.getIntArg(0);
+        Pointer child_stack = context.getPointerArg(1);
+        if ((flags & CLONE_CHILD_SETTID) != 0 && (flags & CLONE_CHILD_CLEARTID) != 0 && (flags & SIGCHLD) != 0 &&
+                child_stack == null &&
+                context.getPointerArg(2) == null) {
+            // http://androidxref.com/6.0.1_r10/xref/bionic/libc/bionic/fork.cpp#47
+            return fork(emulator);
+        }
+
+        int fn = context.getR5Int();
+        int arg = context.getR6Int();
+        if (child_stack != null && child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
+            // http://androidxref.com/6.0.1_r10/xref/bionic/libc/arch-arm/bionic/__bionic_clone.S#49
+            return bionic_clone(u, emulator);
+        } else {
+            return pthread_clone(u, emulator);
+        }
+    }
+
     private int tkill(Emulator<AndroidFileIO> emulator) {
         RegisterContext context = emulator.getContext();
         int tid = context.getIntArg(0);
@@ -504,14 +518,6 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         int bufSize = context.getIntArg(2);
         String path = pathname.getString(0);
         return readlink(emulator, path, buf, bufSize);
-    }
-
-    protected int readlink(Emulator<?> emulator, String path, Pointer buf, int bufSize) {
-        if (log.isDebugEnabled()) {
-            log.debug("readlink path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
-        }
-        buf.setString(0, path);
-        return path.length() + 1;
     }
 
     private int getppid(Emulator<AndroidFileIO> emulator) {
@@ -1930,10 +1936,11 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         }
     }
 
-    private int getdents64(Unicorn u, Emulator<AndroidFileIO> emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        UnicornPointer dirp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int size = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+    private int getdents64(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        UnicornPointer dirp = context.getPointerArg(1);
+        int size = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             log.debug("getdents64 fd=" + fd + ", dirp=" + dirp + ", size=" + size);
         }
