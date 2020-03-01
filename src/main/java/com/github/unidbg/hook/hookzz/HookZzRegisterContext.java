@@ -1,29 +1,29 @@
 package com.github.unidbg.hook.hookzz;
 
-import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.arm.context.AbstractRegisterContext;
+import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.hook.InvocationContext;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.spi.ValuePair;
 
-import java.util.Map;
+import java.util.Stack;
 
-public abstract class HookZzRegisterContext extends AbstractRegisterContext implements RegisterContext, ValuePair {
+public abstract class HookZzRegisterContext extends AbstractRegisterContext implements RegisterContext, InvocationContext {
 
-    private final Map<String, Object> context;
+    private final Stack<Object> stack;
 
-    HookZzRegisterContext(Map<String, Object> context) {
-        this.context = context;
+    HookZzRegisterContext(Stack<Object> stack) {
+        this.stack = stack;
     }
 
     @Override
-    public void set(String key, Object value) {
-        context.put(key, value);
+    public void push(Object obj) {
+        stack.push(obj);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(String key) {
-        return (T) context.get(key);
+    public <T> T pop() {
+        return (T) stack.pop();
     }
 
     @Override

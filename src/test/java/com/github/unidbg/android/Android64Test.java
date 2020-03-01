@@ -5,7 +5,7 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
-import com.github.unidbg.linux.struct.Dirent;
+import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.memory.Memory;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -38,7 +38,7 @@ public class Android64Test {
 
         {
             Pointer pointer = memory.allocateStack(0x100);
-            System.out.println(new Dirent(pointer));
+            System.out.println(new Stat64(pointer));
         }
     }
 

@@ -554,7 +554,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                         throw new UnsupportedOperationException();
                     }
                     @Override
-                    public int callEntry(Emulator<?> emulator, Object... args) {
+                    public int callEntry(Emulator<?> emulator, String... args) {
                         throw new UnsupportedOperationException();
                     }
                     @Override

@@ -14,8 +14,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Stack;
 
 public class HookZz extends BaseHook implements IHookZz {
 
@@ -115,7 +114,7 @@ public class HookZz extends BaseHook implements IHookZz {
     @Override
     public <T extends RegisterContext> void wrap(long functionAddress, final WrapCallback<T> callback) {
         SvcMemory svcMemory = emulator.getSvcMemory();
-        final Map<String, Object> context = new HashMap<>();
+        final Stack<Object> context = new Stack<>();
         Pointer preCall = svcMemory.registerSvc(emulator.is32Bit() ? new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {

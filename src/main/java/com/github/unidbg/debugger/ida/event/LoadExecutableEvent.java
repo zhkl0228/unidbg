@@ -7,7 +7,6 @@ import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.pointer.UnicornPointer;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class LoadExecutableEvent extends DebuggerEvent {
 
@@ -20,19 +19,15 @@ public class LoadExecutableEvent extends DebuggerEvent {
         buffer.put(Utils.pack_dd(emulator.getPid()));
         UnicornPointer pc = emulator.getContext().getPCPointer();
         if (emulator.is32Bit()) {
-            buffer.put(Utils.pack_dd(pc.toUIntPeer() + 1));
+            buffer.put(Utils.pack_dq(pc.toUIntPeer() + 1));
         } else {
-            buffer.put(Utils.pack_dd(pc.peer + 1));
+            buffer.put(Utils.pack_dq(pc.peer + 1));
         }
-        buffer.putShort((short) 1);
-        byte[] data = DebugServer.DEBUG_EXEC_NAME.getBytes();
-        buffer.put(Arrays.copyOf(data, data.length + 1));
-        buffer.put(Utils.pack_dd(1)); // base
-        buffer.put((byte) 0);
-        buffer.put(Utils.pack_dd(emulator.getPageAlign() + 1));
-        buffer.put((byte) 0);
-        buffer.put(Utils.pack_dd(1)); // base
-        buffer.put((byte) 0);
+        buffer.put((byte) 1);
+        Utils.writeCString(buffer, DebugServer.DEBUG_EXEC_NAME);
+        buffer.put(Utils.pack_dq(1)); // base
+        buffer.put(Utils.pack_dq(emulator.getPageAlign() + 1));
+        buffer.put(Utils.pack_dq(1)); // base
         return Utils.flipBuffer(buffer);
     }
 }

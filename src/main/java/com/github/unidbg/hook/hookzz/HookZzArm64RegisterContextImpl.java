@@ -5,14 +5,14 @@ import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
 
-import java.util.Map;
+import java.util.Stack;
 
 public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implements HookZzArm64RegisterContext {
 
     private final Pointer reg_ctx;
     private final Emulator<?> emulator;
 
-    HookZzArm64RegisterContextImpl(Emulator<?> emulator, final Map<String, Object> context) {
+    HookZzArm64RegisterContextImpl(Emulator<?> emulator, Stack<Object> context) {
         super(context);
         this.reg_ctx = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0).share(8); // skip dummy
         this.emulator = emulator;

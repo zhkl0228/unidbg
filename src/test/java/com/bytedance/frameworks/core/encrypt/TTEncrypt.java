@@ -113,12 +113,12 @@ public class TTEncrypt {
                 Pointer pointer = context.getPointerArg(0);
                 String str = pointer.getString(0);
                 System.out.println("strlen=" + str);
-                context.set("str", str);
+                context.push(str);
                 return HookStatus.RET(emulator, originFunction);
             }
             @Override
             public void postCall(Emulator<?> emulator, HookContext context) {
-                System.out.println("strlen=" + context.get("str") + ", ret=" + context.getIntArg(0));
+                System.out.println("strlen=" + context.pop() + ", ret=" + context.getIntArg(0));
             }
         }, true);
         xHook.register("libttEncrypt.so", "memmove", new ReplaceCallback() {

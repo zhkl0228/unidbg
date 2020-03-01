@@ -232,8 +232,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                 case 142888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, newselect(u, emulator));
                     return;
-                case 143888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, flock(u));
+                case 32:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, flock(emulator));
                     return;
                 case 146888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, writev(u, emulator));
@@ -554,9 +554,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         throw new AbstractMethodError();
     }
 
-    private int flock(Unicorn u) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int operation = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+    private int flock(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int operation = context.getIntArg(1);
         if (log.isDebugEnabled()) {
             log.debug("flock fd=" + fd + ", operation=" + operation);
         }

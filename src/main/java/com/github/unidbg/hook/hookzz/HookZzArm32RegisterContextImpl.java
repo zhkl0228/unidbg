@@ -6,14 +6,14 @@ import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import unicorn.ArmConst;
 
-import java.util.Map;
+import java.util.Stack;
 
 public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implements RegisterContext, HookZzArm32RegisterContext {
 
     private final Pointer reg_ctx;
     private final Emulator<?> emulator;
 
-    HookZzArm32RegisterContextImpl(Emulator<?> emulator, final Map<String, Object> context) {
+    HookZzArm32RegisterContextImpl(Emulator<?> emulator, Stack<Object> context) {
         super(context);
         this.reg_ctx = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0).share(8); // skip dummy
         this.emulator = emulator;

@@ -4,14 +4,14 @@ import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 
-import java.util.Map;
+import java.util.Stack;
 
 class Arm32HookContext extends HookContext implements EditableArm32RegisterContext {
 
     private final EditableArm32RegisterContext registerContext;
 
-    Arm32HookContext(Map<String, Object> context, EditableArm32RegisterContext registerContext) {
-        super(context);
+    Arm32HookContext(Stack<Object> stack, EditableArm32RegisterContext registerContext) {
+        super(stack);
         this.registerContext = registerContext;
     }
 

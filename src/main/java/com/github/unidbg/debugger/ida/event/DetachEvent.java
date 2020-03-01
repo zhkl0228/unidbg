@@ -15,8 +15,7 @@ public class DetachEvent extends DebuggerEvent {
         buffer.put(Utils.pack_dd(0x800));
         buffer.put(Utils.pack_dd(emulator.getPid()));
         buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put((byte) 0);
-        buffer.put((byte) 1);
+        buffer.put(Utils.pack_dq(0x100000000L));
         buffer.put((byte) 1);
         return Utils.flipBuffer(buffer);
     }

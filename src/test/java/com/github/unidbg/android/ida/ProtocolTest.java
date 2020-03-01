@@ -29,12 +29,11 @@ public class ProtocolTest extends TestCase {
 
         long count = Utils.unpack_dd(buffer);
         for (int i = 0; i < count; i++) {
-            long address = Utils.unpack_dd(buffer);
-            long b1 = Utils.unpack_dd(buffer);
+            long address = Utils.unpack_dq(buffer);
             long b2 = Utils.unpack_dd(buffer);
             long b3 = Utils.unpack_dd(buffer);
             String name = Utils.readCString(buffer);
-            System.out.println("address=0x" + Long.toHexString(address) + ", b1=" + b1 + ", b2=" + b2 + ", b3=" + b3 + ", name=" + name);
+            System.out.println("address=0x" + Long.toHexString(address) + ", b2=" + b2 + ", b3=" + b3 + ", name=" + name);
         }
 
         data = new byte[buffer.remaining()];

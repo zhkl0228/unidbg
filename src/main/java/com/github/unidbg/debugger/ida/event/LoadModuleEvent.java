@@ -6,7 +6,6 @@ import com.github.unidbg.debugger.ida.DebuggerEvent;
 import com.github.unidbg.debugger.ida.Utils;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class LoadModuleEvent extends DebuggerEvent {
 
@@ -23,16 +22,12 @@ public class LoadModuleEvent extends DebuggerEvent {
         buffer.put(Utils.pack_dd(0x80));
         buffer.put(Utils.pack_dd(emulator.getPid()));
         buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put(Utils.pack_dd(module.base + 1));
-        buffer.putShort((short) 1);
-        byte[] data = module.getPath().getBytes();
-        buffer.put(Arrays.copyOf(data, data.length + 1));
-        buffer.put(Utils.pack_dd(module.base + 1));
-        buffer.put((byte) 0);
-        buffer.put(Utils.pack_dd(module.size + 1));
-        buffer.put((byte) 0);
-        buffer.put(Utils.pack_dd(0));
-        buffer.put((byte) 1);
+        buffer.put(Utils.pack_dq(module.base + 1));
+        buffer.put(Utils.pack_dd(0x1));
+        Utils.writeCString(buffer, module.getPath());
+        buffer.put(Utils.pack_dq(module.base + 1));
+        buffer.put(Utils.pack_dq(module.size + 1));
+        buffer.put(Utils.pack_dq(0x100000000L));
         return Utils.flipBuffer(buffer);
     }
 

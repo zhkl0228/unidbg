@@ -132,7 +132,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     @Override
-    public int callEntry(Emulator<?> emulator, Object... args) {
+    public int callEntry(Emulator<?> emulator, String... args) {
         if (entryPoint <= 0) {
             throw new IllegalStateException("Invalid entry point");
         }
@@ -147,7 +147,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         argc++;
 
         for (int i = 0; args != null && i < args.length; i++) {
-            String arg = String.valueOf(args[i]);
+            String arg = args[i];
             argv.add(memory.writeStackString(arg));
             argc++;
         }

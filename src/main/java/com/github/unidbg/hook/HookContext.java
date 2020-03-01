@@ -1,27 +1,25 @@
 package com.github.unidbg.hook;
 
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.spi.ValuePair;
 
-import java.util.Map;
+import java.util.Stack;
 
-public abstract class HookContext implements RegisterContext, ValuePair {
+public abstract class HookContext implements RegisterContext, InvocationContext {
 
-    private final Map<String, Object> context;
+    private final Stack<Object> stack;
 
-    HookContext(Map<String, Object> context) {
-        this.context = context;
+    HookContext(Stack<Object> stack) {
+        this.stack = stack;
     }
 
     @Override
-    public void set(String key, Object value) {
-        context.put(key, value);
+    public void push(Object obj) {
+        stack.push(obj);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(String key) {
-        return (T) context.get(key);
+    public <T> T pop() {
+        return (T) stack.pop();
     }
-
 }

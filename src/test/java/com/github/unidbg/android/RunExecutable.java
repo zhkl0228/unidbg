@@ -18,7 +18,7 @@ import java.io.IOException;
 
 class RunExecutable {
 
-    static void run(File executable, ModuleListener listener, String[] preloads, Object...args) throws IOException {
+    static void run(File executable, ModuleListener listener, String[] preloads, String...args) throws IOException {
         final Emulator<?> emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs"));
         try {
             long start = System.currentTimeMillis();

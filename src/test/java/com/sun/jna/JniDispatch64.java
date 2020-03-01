@@ -81,12 +81,12 @@ public class JniDispatch64 extends AbstractJni {
             public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
                 int size = context.getIntArg(0);
                 System.out.println("malloc=" + size);
-                context.set("size", size);
+                context.push(size);
                 return HookStatus.RET(emulator, originFunction);
             }
             @Override
             public void postCall(Emulator<?> emulator, HookContext context) {
-                System.out.println("malloc=" + context.get("size") + ", ret=" + context.getPointerArg(0));
+                System.out.println("malloc=" + context.pop() + ", ret=" + context.getPointerArg(0));
             }
         });
         xHook.refresh();

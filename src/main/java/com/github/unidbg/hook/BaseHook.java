@@ -15,8 +15,7 @@ import com.sun.jna.Pointer;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Stack;
 
 public abstract class BaseHook implements IHook {
 
@@ -30,7 +29,7 @@ public abstract class BaseHook implements IHook {
 
     protected Pointer createReplacePointer(final ReplaceCallback callback, final Pointer backup, boolean enablePostCall) {
         SvcMemory svcMemory = emulator.getSvcMemory();
-        final Map<String, Object> context = new HashMap<>();
+        final Stack<Object> context = new Stack<>();
         return svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Hook(enablePostCall) {
             @Override
             protected HookStatus hook(Emulator<?> emulator) {

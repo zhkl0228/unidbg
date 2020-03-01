@@ -80,15 +80,16 @@ public class JniDispatch32 extends AbstractJni {
             @Override
             public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
                 int size = context.getIntArg(0);
+                context.push(size);
                 System.out.println("malloc=" + size);
-                context.set("size", size);
                 return HookStatus.RET(emulator, originFunction);
             }
             @Override
             public void postCall(Emulator<?> emulator, HookContext context) {
-                System.out.println("malloc=" + context.get("size") + ", ret=" + context.getPointerArg(0));
+                int size = context.pop();
+                System.out.println("malloc=" + size + ", ret=" + context.getPointerArg(0));
             }
-        });
+        }, true);
         xHook.refresh();
 
         IWhale whale = Whale.getInstance(emulator);

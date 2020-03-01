@@ -89,7 +89,7 @@ public class DirectoryFileIO extends BaseAndroidFileIO {
 
     @Override
     public int fstat(Emulator<?> emulator, StatStructure stat) {
-        stat.st_mode = IO.S_IFDIR | 0x777;
+        stat.st_mode = IO.S_IFDIR;
         stat.st_dev = 0;
         stat.st_size = 0;
         stat.st_blksize = 0;

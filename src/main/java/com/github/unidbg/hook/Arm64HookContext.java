@@ -4,14 +4,14 @@ import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 
-import java.util.Map;
+import java.util.Stack;
 
 class Arm64HookContext extends HookContext implements EditableArm64RegisterContext {
 
     private final EditableArm64RegisterContext registerContext;
 
-    Arm64HookContext(Map<String, Object> context, EditableArm64RegisterContext registerContext) {
-        super(context);
+    Arm64HookContext(Stack<Object> stack, EditableArm64RegisterContext registerContext) {
+        super(stack);
         this.registerContext = registerContext;
     }
 

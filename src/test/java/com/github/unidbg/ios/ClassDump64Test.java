@@ -45,7 +45,7 @@ public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
                 Pointer SEL = context.getPointerArg(1);
                 Pointer name = context.getPointerArg(2);
                 String className = name.getString(0);
-                context.set("className", className);
+                context.push(className);
                 if ("NSTimeZone".equals(className)) {
                     return HookStatus.RET(emulator, originFunction);
                 }
@@ -57,7 +57,7 @@ public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
             }
             @Override
             public void postCall(Emulator<?> emulator, HookContext context) {
-                System.err.println("postCall className=" + context.get("className"));
+                System.err.println("postCall className=" + context.pop());
             }
         }, true);
 

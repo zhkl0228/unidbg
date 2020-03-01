@@ -106,7 +106,7 @@ public abstract class Module {
         this.entryPoint = entryPoint;
     }
 
-    public  abstract int callEntry(Emulator<?> emulator, Object... args);
+    public  abstract int callEntry(Emulator<?> emulator, String... args);
 
     private UnicornPointer pathPointer;
 

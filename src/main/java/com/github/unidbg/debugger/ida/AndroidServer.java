@@ -219,15 +219,14 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     private void requestBreakPointAction(ByteBuffer buffer) {
         long action = Utils.unpack_dd(buffer); // 0表示删除断点，1表示设置断点
         long b2 = Utils.unpack_dd(buffer);
-        long address = Utils.unpack_dd(buffer);
-        long b3 = Utils.unpack_dd(buffer);
+        long address = Utils.unpack_dq(buffer);
         long b4 = Utils.unpack_dd(buffer);
         long size = Utils.unpack_dd(buffer);
         int status = (int) Utils.unpack_dd(buffer);
         long b6 = Utils.unpack_dd(buffer);
 
         if (log.isDebugEnabled()) {
-            log.debug("requestBreakPointAction action=" + action + ", b2=" + b2 + ", address=0x" + Long.toHexString(address) + ", b3=" + b3 +
+            log.debug("requestBreakPointAction action=" + action + ", b2=" + b2 + ", address=0x" + Long.toHexString(address) +
                     ", b4=" + b4 + ", size=" + size + ", status=" + status + ", b6=" + b6);
         }
 
@@ -291,11 +290,10 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         newBuf.put(Utils.pack_dd(0x5));
         newBuf.put(Utils.pack_dd(list.size()));
         for (MemRegion region : list) {
-            newBuf.putShort((short) 0x100);
-            newBuf.put(Utils.pack_dd(region.begin + 1));
-            newBuf.put((byte) 0);
+            newBuf.put(Utils.pack_dq(0x1));
+            newBuf.put(Utils.pack_dq(region.begin + 1));
             long size = region.end - region.begin;
-            newBuf.put(Utils.pack_dd(size + 1));
+            newBuf.put(Utils.pack_dq(size + 1));
             int mask = 1 << 4; // data
             if ((region.perms & UnicornConst.UC_PROT_READ) != 0) {
                 mask |= (1 << 2);
@@ -306,9 +304,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             if ((region.perms & UnicornConst.UC_PROT_EXEC) != 0) {
                 mask |= 1;
             }
-            newBuf.putShort((short) mask);
-            byte[] data = region.getName().getBytes();
-            newBuf.put(Arrays.copyOf(data, data.length + 1));
+            newBuf.put((byte) mask);
+            Utils.writeCString(newBuf, region.getName());
             newBuf.put((byte) 0);
         }
         sendAck(Utils.flipBuffer(newBuf));
@@ -338,8 +335,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
                     context.getInt(ArmConst.UC_ARM_REG_PC),
                     context.getInt(ArmConst.UC_ARM_REG_CPSR))) {
                 newBuf.put(Utils.pack_dd(0x1));
-                newBuf.put(Utils.pack_dd((value & 0xffffffffL) + 1));
-                newBuf.put(Utils.pack_dd(0x0));
+                newBuf.put(Utils.pack_dq((value & 0xffffffffL) + 1));
             }
             sendAck(Utils.flipBuffer(newBuf));
         } else {
@@ -355,11 +351,10 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     }
 
     private void requestReadMemory(ByteBuffer buffer) {
-        long address = Utils.unpack_dd(buffer);
-        long b = Utils.unpack_dd(buffer);
+        long address = Utils.unpack_dq(buffer);
         long size = Utils.unpack_dd(buffer);
         if (log.isDebugEnabled()) {
-            log.debug("requestReadMemory address=0x" + Long.toHexString(address) + ", b=" + b + ", size=" + size);
+            log.debug("requestReadMemory address=0x" + Long.toHexString(address) + ", size=" + size);
         }
         try {
             Unicorn u = emulator.getUnicorn();
@@ -436,7 +431,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     private void notifyProcessSingleStep(ByteBuffer buffer) {
         long pid = Utils.unpack_dd(buffer);
         long tid = Utils.unpack_dd(buffer);
-        long pc = Utils.unpack_dd(buffer);
+        long pc = Utils.unpack_dq(buffer);
         if (log.isDebugEnabled()) {
             log.debug("notifyProcessSingleStep pid=" + pid + ", tid=" + tid + ", pc=0x" + Long.toHexString(pc));
         }
@@ -476,13 +471,16 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     private void notifyProcessEvent(ByteBuffer buffer, int type) {
         long pid = Utils.unpack_dd(buffer);
         long tid = Utils.unpack_dd(buffer);
-        long pc = Utils.unpack_dd(buffer);
-        long b1 = Utils.unpack_dd(buffer);
+        long pc = Utils.unpack_dq(buffer);
         long b2 = Utils.unpack_dd(buffer);
         String executable = Utils.readCString(buffer);
+        long base = Utils.unpack_dq(buffer);
+        long size = Utils.unpack_dq(buffer);
+        long test = Utils.unpack_dq(buffer);
         if (log.isDebugEnabled()) {
-            log.debug("notifyProcessEvent type=0x" + Integer.toHexString(type) + ", pid=" + pid + ", tid=" + tid + ", pc=0x" + Long.toHexString(pc) + ", b1=" + b1 +
-                    ", b2=" + b2 + ", executable=" + executable);
+            log.debug("notifyProcessEvent type=0x" + Integer.toHexString(type) + ", pid=" + pid + ", tid=" + tid + ", pc=0x" + Long.toHexString(pc) +
+                    ", b2=" + b2 + ", executable=" + executable + ", base=0x" + Long.toHexString(base) + ", size=0x" + Long.toHexString(size) +
+                    ", test=0x" + Long.toHexString(test));
         }
 
         if (type == 0x400) {
@@ -493,20 +491,17 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     private void notifyLoadModule(ByteBuffer buffer) {
         long pid = Utils.unpack_dd(buffer);
         long tid = Utils.unpack_dd(buffer);
-        long address = Utils.unpack_dd(buffer);
-        short s1 = buffer.getShort();
+        long address = Utils.unpack_dq(buffer);
+        long s1 = Utils.unpack_dd(buffer);
         String path = Utils.readCString(buffer);
-        long base = Utils.unpack_dd(buffer);
-        byte b1 = buffer.get();
-        long size = Utils.unpack_dd(buffer);
-        long b2 = Utils.unpack_dd(buffer);
-        long a1 = Utils.unpack_dd(buffer);
-        long b3 = Utils.unpack_dd(buffer);
+        long base = Utils.unpack_dq(buffer);
+        long size = Utils.unpack_dq(buffer);
+        long l1 = Utils.unpack_dq(buffer);
         if (log.isDebugEnabled()) {
             log.debug("notifyLoadModule pid=" + pid + ", tid=" + tid +
                     ", address=0x" + Long.toHexString(address) + ", s1=" + s1 + ", path=" + path +
-                    ", base=0x" + Long.toHexString(base) + ", b1=" + b1 + ", size=0x" + Long.toHexString(size) +
-                    ", b2=" + b2 + ", a1=0x" + Long.toHexString(a1) + ", b3=" + b3);
+                    ", base=0x" + Long.toHexString(base) + ", size=0x" + Long.toHexString(size) +
+                    ", l1=0x" + Long.toHexString(l1));
         }
     }
 
@@ -525,8 +520,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         ByteBuffer newBuf = ByteBuffer.allocate(16);
         newBuf.put((byte) 0x1);
         newBuf.put((byte) 0x4);
-        newBuf.put("linux".getBytes());
-        newBuf.put((byte) 0);
+        Utils.writeCString(newBuf, "linux");
         sendAck(Utils.flipBuffer(newBuf));
 
         eventQueue.add(new LoadExecutableEvent());
@@ -538,8 +532,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         buffer.put((byte) 0x1);
         buffer.put((byte) 0x1); // process count
         buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put(("[" + emulator.getPointerSize() * 8 + "] " + DEBUG_EXEC_NAME).getBytes());
-        buffer.put((byte) 0);
+        Utils.writeCString(buffer, "[" + emulator.getPointerSize() * 8 + "] " + DEBUG_EXEC_NAME);
         sendAck(Utils.flipBuffer(buffer));
     }
 
@@ -549,15 +542,18 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug("onHitBreakPoint address=0x" + Long.toHexString(address));
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(0x20);
-        buffer.put(Utils.pack_dd(0x10));
-        buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put(Utils.pack_dd(emulator.getPid()));
-        buffer.put(Utils.pack_dd(address + 1));
-        buffer.putInt(0x1);
-        buffer.put(Utils.pack_dd(0x0));
-        buffer.put(Utils.pack_dd(0x1));
-        sendPacket(0x4, Utils.flipBuffer(buffer));
+        if (debuggerConnected) {
+            ByteBuffer buffer = ByteBuffer.allocate(0x20);
+            buffer.put(Utils.pack_dd(0x10));
+            buffer.put(Utils.pack_dd(emulator.getPid()));
+            buffer.put(Utils.pack_dd(emulator.getPid()));
+            buffer.put(Utils.pack_dq(address + 1));
+            buffer.put(Utils.pack_dq(0x0));
+            buffer.put(Utils.pack_dd(0x1));
+            buffer.put(Utils.pack_dd(0x0));
+            buffer.put(Utils.pack_dd(0x1));
+            sendPacket(0x4, Utils.flipBuffer(buffer));
+        }
     }
 
     @Override
@@ -566,8 +562,11 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug("onDebuggerExit");
         }
         sendProcessWillTerminated(0);
+        debuggerConnected = false;
         return false;
     }
+
+    private boolean debuggerConnected;
 
     @Override
     protected void onDebuggerConnected() {
@@ -576,6 +575,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
                 IDA_DEBUGGER_ID,
                 (byte) emulator.getPointerSize()
         });
+        debuggerConnected = true;
     }
 
     @Override
