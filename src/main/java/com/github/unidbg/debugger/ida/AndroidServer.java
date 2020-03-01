@@ -176,11 +176,9 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         long tid = Utils.unpack_dd(buffer);
         long b1 = Utils.unpack_dd(buffer);
         long b2 = Utils.unpack_dd(buffer);
-        long pc = Utils.unpack_dd(buffer);
-        long b3 = Utils.unpack_dd(buffer);
+        long pc = Utils.unpack_dq(buffer);
         if (log.isDebugEnabled()) {
-            log.debug("requestResetProgramCounter tid=" + tid + ", b1=" + b1 + ", b2=" + b2 + ", pc=0x" + Long.toHexString(pc) +
-                    ", b3=" + b3);
+            log.debug("requestResetProgramCounter tid=" + tid + ", b1=" + b1 + ", b2=" + b2 + ", pc=0x" + Long.toHexString(pc));
         }
         notifyDebugEvent();
     }
@@ -216,20 +214,21 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
 
     private void requestBreakPointAction(ByteBuffer buffer) {
         long action = Utils.unpack_dd(buffer); // 0表示删除断点，1表示设置断点
-        long b2 = Utils.unpack_dd(buffer);
-        long address = Utils.unpack_dq(buffer);
-        long b4 = Utils.unpack_dd(buffer);
-        long size = Utils.unpack_dd(buffer);
-        int status = (int) Utils.unpack_dd(buffer);
-        long b6 = Utils.unpack_dd(buffer);
-
-        if (log.isDebugEnabled()) {
-            log.debug("requestBreakPointAction action=" + action + ", b2=" + b2 + ", address=0x" + Long.toHexString(address) +
-                    ", b4=" + b4 + ", size=" + size + ", status=" + status + ", b6=" + b6);
-        }
-
-        address -= 1;
         if (action == 0) {
+            long b2 = Utils.unpack_dd(buffer);
+            long address = Utils.unpack_dq(buffer);
+            long size = Utils.unpack_dd(buffer);
+            byte[] backup = new byte[(int) size];
+            buffer.get(backup);
+            long b3 = Utils.unpack_dd(buffer);
+            long value = Utils.unpack_dq(buffer);
+
+            if (log.isDebugEnabled()) {
+                log.debug(Inspector.inspectString(backup, "requestBreakPointAction action=" + action + ", b2=" + b2 + ", address=0x" + Long.toHexString(address) +
+                        ", size=" + size + ", b3=" + b3 + ", value=0x" + Long.toHexString(value)));
+            }
+
+            address -= 1;
             removeBreakPoint(address);
 
             ByteBuffer newBuf = ByteBuffer.allocate(0x10);
@@ -238,6 +237,18 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             newBuf.put(Utils.pack_dd(0x0));
             sendAck(Utils.flipBuffer(newBuf));
         } else if (action == 1) {
+            long b2 = Utils.unpack_dd(buffer);
+            long address = Utils.unpack_dq(buffer);
+            long b3 = Utils.unpack_dd(buffer);
+            long size = Utils.unpack_dd(buffer);
+            long value = Utils.unpack_dq(buffer);
+
+            if (log.isDebugEnabled()) {
+                log.debug("requestBreakPointAction action=" + action + ", b2=" + b2 + ", address=0x" + Long.toHexString(address) + ", b3=" + b3 +
+                        ", size=" + size + ", value=0x" + Long.toHexString(value));
+            }
+
+            address -= 1;
             addBreakPoint(address);
 
             ByteBuffer newBuf = ByteBuffer.allocate(0x10);
@@ -249,6 +260,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             newBuf.put(Utils.pack_dd(data.length));
             newBuf.put(data);
             sendAck(Utils.flipBuffer(newBuf));
+        } else {
+            throw new UnsupportedOperationException("action=" + action);
         }
     }
 
@@ -310,10 +323,10 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
     }
 
     private void requestReadRegisters(ByteBuffer buffer) {
-        long reg = Utils.unpack_dd(buffer);
+        long tid = Utils.unpack_dd(buffer);
         long b = Utils.unpack_dd(buffer);
         if (log.isDebugEnabled()) {
-            log.debug("requestReadRegisters reg=0x" + Long.toHexString(reg) + ", b=" + b);
+            log.debug("requestReadRegisters tid=0x" + Long.toHexString(tid) + ", b=" + b);
         }
 
         if (emulator.is32Bit()) {
@@ -564,10 +577,14 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             buffer.put(Utils.pack_dd(emulator.getPid()));
             buffer.put(Utils.pack_dd(emulator.getPid()));
             buffer.put(Utils.pack_dq(address + 1));
-            buffer.put(Utils.pack_dq(0x0));
-            buffer.put(Utils.pack_dd(0x1));
-            buffer.put(Utils.pack_dd(0x0));
-            buffer.put(Utils.pack_dd(0x1));
+            if (emulator.is32Bit()) {
+                buffer.put(Utils.pack_dq(0x0));
+                buffer.put(Utils.pack_dd(0x1));
+                buffer.put(Utils.pack_dd(0x0));
+                buffer.put(Utils.pack_dd(0x1));
+            } else {
+                buffer.put(new byte[]{ 0, 0, 0, 0, 0});
+            }
             sendPacket(0x4, Utils.flipBuffer(buffer));
         }
     }
