@@ -264,11 +264,6 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     }
 
     @Override
-    protected final byte[] addSoftBreakPoint(long address, int svcNumber) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected Keystone createKeystone(boolean isThumb) {
         throw new UnsupportedOperationException();
     }

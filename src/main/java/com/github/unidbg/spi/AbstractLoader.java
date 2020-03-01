@@ -296,10 +296,16 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     }
 
     private long stackBase;
+    protected int stackSize;
 
     @Override
     public long getStackBase() {
         return stackBase;
+    }
+
+    @Override
+    public int getStackSize() {
+        return stackSize;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.github.unidbg;
 
+import com.github.unidbg.arm.ARMSvcMemory;
 import com.github.unidbg.arm.Arguments;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebugServer;
@@ -64,8 +65,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     private final RegisterContext registerContext;
 
     private final FileSystem<T> fileSystem;
+    protected final SvcMemory svcMemory;
 
-    public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, File rootDir) {
+    public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, long svcBase, int svcSize, File rootDir) {
         super();
 
         if (rootDir == null) {
@@ -91,6 +93,11 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         this.pid = Integer.parseInt(pid);
 
         setContextEmulator(this);
+        this.svcMemory = new ARMSvcMemory(unicorn, svcBase, svcSize, this);
+    }
+
+    public final SvcMemory getSvcMemory() {
+        return svcMemory;
     }
 
     @Override

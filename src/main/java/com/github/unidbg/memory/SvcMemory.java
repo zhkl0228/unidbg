@@ -13,4 +13,7 @@ public interface SvcMemory extends StackMemory {
 
     MemRegion findRegion(long addr);
 
+    long getBase();
+    int getSize();
+
 }

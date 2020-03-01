@@ -22,13 +22,29 @@ public class ARMSvcMemory implements SvcMemory {
     private final Emulator<?> emulator;
     private UnicornPointer base;
 
-    ARMSvcMemory(Unicorn unicorn, long base, int size, Emulator<?> emulator) {
+    public ARMSvcMemory(Unicorn unicorn, long base, int size, Emulator<?> emulator) {
         this.emulator = emulator;
         this.base = UnicornPointer.pointer(emulator, base);
         assert this.base != null;
         this.base.setSize(size);
 
+        this.baseAddr = base;
+        this.size = size;
+
         unicorn.mem_map(base, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+    }
+
+    private final long baseAddr;
+    private final int size;
+
+    @Override
+    public long getBase() {
+        return baseAddr;
+    }
+
+    @Override
+    public int getSize() {
+        return size;
     }
 
     private final List<MemRegion> memRegions = new ArrayList<>();

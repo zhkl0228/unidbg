@@ -2,18 +2,17 @@ package com.github.unidbg.arm;
 
 import capstone.Capstone;
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.Module;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.arm.context.UnicornArm64RegisterContext;
-import com.github.unidbg.file.NewFileIO;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.spi.Dlfcn;
-import com.github.unidbg.unix.UnixSyscallHandler;
-import com.github.unidbg.Module;
-import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.spi.Dlfcn;
+import com.github.unidbg.spi.SyscallHandler;
+import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -36,7 +35,6 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     protected final Memory memory;
     private final UnixSyscallHandler<T> syscallHandler;
-    private final SvcMemory svcMemory;
 
     private final Capstone capstoneArm64;
     protected static final long LR = 0xffffff80001f0000L;
@@ -44,7 +42,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     private final Dlfcn dlfcn;
 
     public AbstractARM64Emulator(String processName, File rootDir, String... envs) {
-        super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName, rootDir);
+        super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName, 0xffffe0000L, 0x10000, rootDir);
 
         Cpsr.getArm64(unicorn).switchUserMode();
 
@@ -56,7 +54,6 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             }
         }, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED | UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED | UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, null);
 
-        this.svcMemory = new ARMSvcMemory(unicorn, 0xffffe0000L, 0x10000, this);
         this.syscallHandler = createSyscallHandler(svcMemory);
 
         enableVFP();
@@ -115,10 +112,6 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     @Override
     public Module loadLibrary(File libraryFile, boolean forceCallInit) throws IOException {
         return memory.load(libraryFile, forceCallInit);
-    }
-
-    public SvcMemory getSvcMemory() {
-        return svcMemory;
     }
 
     @Override

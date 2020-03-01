@@ -1,8 +1,10 @@
 package com.github.unidbg.memory;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.spi.LibraryFile;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class MemRegion implements Comparable<MemRegion> {
 
@@ -11,6 +13,35 @@ public class MemRegion implements Comparable<MemRegion> {
     public final int perms;
     private final LibraryFile libraryFile;
     public final long offset;
+
+    public static MemRegion create(long begin, int size, int perms, final String name) {
+        return new MemRegion(begin, begin + size, perms, new LibraryFile() {
+            @Override
+            public String getName() {
+                return name;
+            }
+            @Override
+            public String getMapRegionName() {
+                return name;
+            }
+            @Override
+            public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public byte[] readToByteArray() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ByteBuffer mapBuffer() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public String getPath() {
+                return name;
+            }
+        }, 0);
+    }
 
     public MemRegion(long begin, long end, int perms, LibraryFile libraryFile, long offset) {
         this.begin = begin;
@@ -30,6 +61,6 @@ public class MemRegion implements Comparable<MemRegion> {
 
     @Override
     public int compareTo(MemRegion o) {
-        return (int) (begin - o.begin);
+        return Long.compare(begin, o.begin);
     }
 }

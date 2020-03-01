@@ -54,7 +54,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             stackBase += 0xf00000000L;
         }
 
-        final long stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
+        stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
         unicorn.mem_map(stackBase - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
 
         setStackPoint(stackBase);

@@ -11,6 +11,8 @@ import com.github.unidbg.debugger.ida.event.DetachEvent;
 import com.github.unidbg.debugger.ida.event.LoadExecutableEvent;
 import com.github.unidbg.debugger.ida.event.LoadModuleEvent;
 import com.github.unidbg.memory.MemRegion;
+import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -295,6 +297,10 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         for (Module module : modules) {
             list.addAll(module.getRegions());
         }
+        SvcMemory svcMemory = emulator.getSvcMemory();
+        list.add(MemRegion.create(svcMemory.getBase(), svcMemory.getSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC, "[kernel]"));
+        Memory memory = emulator.getMemory();
+        list.add(MemRegion.create(memory.getStackBase() - memory.getStackSize(), memory.getStackSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE, "[stack]"));
         Collections.sort(list);
 
         ByteBuffer newBuf = ByteBuffer.allocate(0x100 * list.size());
@@ -571,19 +577,21 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug("onHitBreakPoint address=0x" + Long.toHexString(address));
         }
 
-        if (debuggerConnected) {
+        if (isDebuggerConnected()) {
             ByteBuffer buffer = ByteBuffer.allocate(0x20);
             buffer.put(Utils.pack_dd(0x10));
             buffer.put(Utils.pack_dd(emulator.getPid()));
             buffer.put(Utils.pack_dd(emulator.getPid()));
             buffer.put(Utils.pack_dq(address + 1));
+            buffer.put(Utils.pack_dq(0x0));
             if (emulator.is32Bit()) {
-                buffer.put(Utils.pack_dq(0x0));
                 buffer.put(Utils.pack_dd(0x1));
                 buffer.put(Utils.pack_dd(0x0));
                 buffer.put(Utils.pack_dd(0x1));
             } else {
-                buffer.put(new byte[]{ 0, 0, 0, 0, 0});
+                buffer.put(Utils.pack_dd(0x0));
+                buffer.put(Utils.pack_dd(0x0));
+                buffer.put(Utils.pack_dd(0x0));
             }
             sendPacket(0x4, Utils.flipBuffer(buffer));
         }
@@ -595,11 +603,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug("onDebuggerExit");
         }
         sendProcessWillTerminated(0);
-        debuggerConnected = false;
         return false;
     }
-
-    private boolean debuggerConnected;
 
     @Override
     protected void onDebuggerConnected() {
@@ -608,7 +613,6 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
                 IDA_DEBUGGER_ID,
                 (byte) emulator.getPointerSize()
         });
-        debuggerConnected = true;
     }
 
     @Override

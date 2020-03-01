@@ -22,6 +22,7 @@ public interface Memory extends IO, Loader, StackMemory {
     void setStackPoint(long sp);
     long getStackPoint();
     long getStackBase();
+    int getStackSize();
 
     void setCallInitFunction();
 

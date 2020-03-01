@@ -37,7 +37,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         super(emulator, syscallHandler);
 
         // init stack
-        final long stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
+        stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
         unicorn.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
 
         setStackPoint(STACK_BASE);

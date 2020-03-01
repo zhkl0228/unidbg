@@ -143,7 +143,20 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    protected abstract byte[] addSoftBreakPoint(long address, int svcNumber);
+    protected final byte[] addSoftBreakPoint(long address, int svcNumber) {
+        if (emulator.is64Bit()) {
+            try (Keystone keystone = createKeystone(false)) {
+                KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
+                return encoded.getMachineCode();
+            }
+        } else {
+            boolean isThumb = (address & 1) != 0;
+            try (Keystone keystone = createKeystone(isThumb)) {
+                KeystoneEncoded encoded = keystone.assemble("bkpt #" + svcNumber);
+                return encoded.getMachineCode();
+            }
+        }
+    }
 
     protected abstract Keystone createKeystone(boolean isThumb);
 
