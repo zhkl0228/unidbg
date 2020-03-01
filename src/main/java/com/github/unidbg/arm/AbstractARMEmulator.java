@@ -113,7 +113,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    protected Debugger createDebugger() {
+    protected Debugger createConsoleDebugger() {
         return new SimpleARMDebugger(this, false);
     }
 

@@ -3,9 +3,9 @@ package com.github.unidbg.debugger;
 public enum  DebuggerType {
 
     /**
-     * simple debugger
+     * console debugger
      */
-    SIMPLE,
+    CONSOLE,
 
     /**
      * gdb server

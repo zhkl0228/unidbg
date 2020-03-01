@@ -157,7 +157,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     @Override
     public Debugger attach() {
-        return attach(DebuggerType.SIMPLE);
+        return attach(DebuggerType.CONSOLE);
     }
 
     @Override
@@ -178,9 +178,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             case ANDROID_SERVER_V7:
                 debugger = new AndroidServer(this, DebugServer.IDA_PROTOCOL_VERSION_V7);
                 break;
-            case SIMPLE:
+            case CONSOLE:
             default:
-                debugger = createDebugger();
+                debugger = createConsoleDebugger();
                 break;
         }
         if (debugger == null) {
@@ -196,10 +196,10 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     @Override
     public Debugger attach(long begin, long end) {
-        return attach(begin, end, DebuggerType.SIMPLE);
+        return attach(begin, end, DebuggerType.CONSOLE);
     }
 
-    protected abstract Debugger createDebugger();
+    protected abstract Debugger createConsoleDebugger();
 
     @Override
     public int getPid() {

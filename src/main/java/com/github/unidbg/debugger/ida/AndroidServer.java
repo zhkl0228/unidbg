@@ -292,14 +292,14 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug("requestMemoryRegions buffer=" + buffer);
         }
 
-        Collection<Module> modules = emulator.getMemory().getLoadedModules();
+        Memory memory = emulator.getMemory();
+        Collection<Module> modules = memory.getLoadedModules();
         List<MemRegion> list = new ArrayList<>(modules.size());
         for (Module module : modules) {
             list.addAll(module.getRegions());
         }
         SvcMemory svcMemory = emulator.getSvcMemory();
-        list.add(MemRegion.create(svcMemory.getBase(), svcMemory.getSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC, "[kernel]"));
-        Memory memory = emulator.getMemory();
+        list.add(MemRegion.create(svcMemory.getBase(), svcMemory.getSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC, "[svc]"));
         list.add(MemRegion.create(memory.getStackBase() - memory.getStackSize(), memory.getStackSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE, "[stack]"));
         Collections.sort(list);
 
