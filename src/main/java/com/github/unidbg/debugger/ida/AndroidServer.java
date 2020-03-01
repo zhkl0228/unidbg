@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
+import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.debugger.AbstractDebugServer;
 import com.github.unidbg.debugger.ida.event.AttachExecutableEvent;
 import com.github.unidbg.debugger.ida.event.DetachEvent;
@@ -13,10 +14,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
-import unicorn.UnicornException;
+import unicorn.*;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -339,7 +337,23 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             }
             sendAck(Utils.flipBuffer(newBuf));
         } else {
-            throw new UnsupportedOperationException();
+            Arm64RegisterContext context = emulator.getContext();
+            ByteBuffer newBuf = ByteBuffer.allocate(0x200);
+            newBuf.put(Utils.pack_dd(0x1));
+            for (int i = 0; i < 29; i++) {
+                int regId = Arm64Const.UC_ARM64_REG_X0 + i;
+                newBuf.put(Utils.pack_dd(0x1));
+                newBuf.put(Utils.pack_dq(context.getLong(regId) + 1));
+            }
+            for (long value : Arrays.asList(context.getLong(Arm64Const.UC_ARM64_REG_X29),
+                    context.getLong(Arm64Const.UC_ARM64_REG_X30),
+                    context.getLong(Arm64Const.UC_ARM64_REG_SP),
+                    context.getLong(Arm64Const.UC_ARM64_REG_PC),
+                    context.getLong(Arm64Const.UC_ARM64_REG_NZCV))) {
+                newBuf.put(Utils.pack_dd(0x1));
+                newBuf.put(Utils.pack_dq(value + 1));
+            }
+            sendAck(Utils.flipBuffer(newBuf));
         }
     }
 
@@ -513,13 +527,15 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug("requestAttach pid=" + pid + ", value=" + value + ", b=" + b);
         }
 
-        for (Module module : emulator.getMemory().getLoadedModules()) {
+        List<Module> modules = new ArrayList<>(emulator.getMemory().getLoadedModules());
+        Collections.reverse(modules);
+        for (Module module : modules) {
             eventQueue.offer(new LoadModuleEvent(module));
         }
 
         ByteBuffer newBuf = ByteBuffer.allocate(16);
         newBuf.put((byte) 0x1);
-        newBuf.put((byte) 0x4);
+        newBuf.put((byte) emulator.getPointerSize());
         Utils.writeCString(newBuf, "linux");
         sendAck(Utils.flipBuffer(newBuf));
 

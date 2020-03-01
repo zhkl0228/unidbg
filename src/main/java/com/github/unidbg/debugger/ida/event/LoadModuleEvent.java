@@ -27,7 +27,7 @@ public class LoadModuleEvent extends DebuggerEvent {
         Utils.writeCString(buffer, module.getPath());
         buffer.put(Utils.pack_dq(module.base + 1));
         buffer.put(Utils.pack_dq(module.size + 1));
-        buffer.put(Utils.pack_dq(0x100000000L));
+        buffer.put(Utils.pack_dq(0x0));
         return Utils.flipBuffer(buffer);
     }
 

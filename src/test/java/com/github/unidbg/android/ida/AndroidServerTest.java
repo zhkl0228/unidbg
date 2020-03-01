@@ -218,7 +218,7 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
                 byte[] bytes = data.getByteArray(0, size);
                 long my = Utils.unpack_dq(ByteBuffer.wrap(bytes));
-                if (value != my || Thread.currentThread() != null) {
+                if (value != my) {
                     Inspector.inspect(bytes, "unpack_dq data=" + data + ", value=0x" + Long.toHexString(value) + ", LR=" + ctx.getLRPointer());
                 }
             }

@@ -3,6 +3,7 @@ package com.sun.jna;
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.debugger.DebuggerType;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
@@ -133,7 +134,7 @@ public class JniDispatch64 extends AbstractJni {
         vm.deleteLocalRefs();
         System.out.println("getAPIChecksum checksum=" + checksum.getValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-//        emulator.attach(DebuggerType.GDB_SERVER);
+        emulator.attach(DebuggerType.ANDROID_SERVER_V7);
         ret = Native.callStaticJniMethod(emulator, "sizeof(I)I", 0);
         vm.deleteLocalRefs();
         System.out.println("sizeof POINTER_SIZE=" + ret.intValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");

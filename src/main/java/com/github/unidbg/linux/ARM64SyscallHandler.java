@@ -5,6 +5,7 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileResult;
@@ -205,13 +206,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fsync(u));
                     return;
                 case 220: {
-                    RegisterContext context = emulator.getContext();
-                    int flags = context.getIntArg(0);
-                    if ((flags & CLONE_VFORK) != 0) {
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, vfork(emulator));
-                    } else {
-                        u.reg_write(Arm64Const.UC_ARM64_REG_X0, bionic_clone(emulator));
-                    }
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, clone(emulator));
                     return;
                 }
                 case 160:
@@ -269,6 +264,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lstat(emulator));
                     return;
                 case 174: // getuid
+                case 175: // geteuid
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, 0);
                     return;
                 case 200:
@@ -319,6 +315,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                     return;
                 case 113:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, clock_gettime(emulator));
+                    return;
+                case 117:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, ptrace(emulator));
                     return;
                 case 266888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, statfs(emulator));
@@ -393,8 +392,94 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         }
     }
 
-    protected long vfork(Emulator<?> emulator) {
-        throw new UnicornException("vfork emulator=" + emulator);
+    private long clone(Emulator<AndroidFileIO> emulator) {
+        Arm64RegisterContext context = emulator.getContext();
+        int flags = context.getIntArg(0);
+        Pointer child_stack = context.getPointerArg(1);
+        if ((flags & CLONE_CHILD_SETTID) != 0 && (flags & CLONE_CHILD_CLEARTID) != 0 && (flags & SIGCHLD) != 0 &&
+                child_stack == null &&
+                context.getPointerArg(2) == null) {
+            // http://androidxref.com/6.0.1_r10/xref/bionic/libc/bionic/fork.cpp#47
+            return fork(emulator);
+        }
+
+        long fn = context.getXLong(5);
+        long arg = context.getXLong(6);
+        if (child_stack != null && child_stack.getLong(-8) == fn && child_stack.getLong(-16) == arg) {
+            // http://androidxref.com/6.0.1_r10/xref/bionic/libc/arch-arm/bionic/__bionic_clone.S#49
+            return bionic_clone(emulator);
+        } else {
+            return pthread_clone(emulator);
+        }
+    }
+
+    private int pthread_clone(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int flags = context.getIntArg(0);
+        Pointer child_stack = context.getPointerArg(1);
+        List<String> list = new ArrayList<>();
+        if ((flags & CLONE_VM) != 0) {
+            list.add("CLONE_VM");
+        }
+        if ((flags & CLONE_FS) != 0) {
+            list.add("CLONE_FS");
+        }
+        if ((flags & CLONE_FILES) != 0) {
+            list.add("CLONE_FILES");
+        }
+        if ((flags & CLONE_SIGHAND) != 0) {
+            list.add("CLONE_SIGHAND");
+        }
+        if ((flags & CLONE_PTRACE) != 0) {
+            list.add("CLONE_PTRACE");
+        }
+        if ((flags & CLONE_VFORK) != 0) {
+            list.add("CLONE_VFORK");
+        }
+        if ((flags & CLONE_PARENT) != 0) {
+            list.add("CLONE_PARENT");
+        }
+        if ((flags & CLONE_THREAD) != 0) {
+            list.add("CLONE_THREAD");
+        }
+        if ((flags & CLONE_NEWNS) != 0) {
+            list.add("CLONE_NEWNS");
+        }
+        if ((flags & CLONE_SYSVSEM) != 0) {
+            list.add("CLONE_SYSVSEM");
+        }
+        if ((flags & CLONE_SETTLS) != 0) {
+            list.add("CLONE_SETTLS");
+        }
+        if ((flags & CLONE_PARENT_SETTID) != 0) {
+            list.add("CLONE_PARENT_SETTID");
+        }
+        if ((flags & CLONE_CHILD_CLEARTID) != 0) {
+            list.add("CLONE_CHILD_CLEARTID");
+        }
+        if ((flags & CLONE_DETACHED) != 0) {
+            list.add("CLONE_DETACHED");
+        }
+        if ((flags & CLONE_UNTRACED) != 0) {
+            list.add("CLONE_UNTRACED");
+        }
+        if ((flags & CLONE_CHILD_SETTID) != 0) {
+            list.add("CLONE_CHILD_SETTID");
+        }
+        if ((flags & CLONE_STOPPED) != 0) {
+            list.add("CLONE_STOPPED");
+        }
+        int threadId = ++this.threadId;
+
+        Pointer fn = child_stack.getPointer(0);
+        child_stack = child_stack.share(4);
+        Pointer arg = child_stack.getPointer(0);
+        child_stack = child_stack.share(4);
+
+        log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
+        threadMap.put(threadId, new LinuxThread(child_stack, fn, arg));
+        lastThread = threadId;
+        return threadId;
     }
 
     private int fsync(Unicorn u) {
@@ -467,6 +552,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         }
         return 0;
     }
+
+    private int threadId;
 
     private static final int CLONE_VM = 0x00000100;
     private static final int CLONE_FS = 0x00000200;
@@ -1358,6 +1445,16 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                 return 0;
         }
         throw new UnsupportedOperationException("clk_id=" + clk_id);
+    }
+
+    protected long ptrace(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int request = context.getIntArg(0);
+        int pid = context.getIntArg(1);
+        Pointer addr = context.getPointerArg(2);
+        Pointer data = context.getPointerArg(3);
+        log.info("ptrace request=0x" + Integer.toHexString(request) + ", pid=" + pid + ", addr=" + addr + ", data=" + data);
+        return 0;
     }
 
     private int fcntl(Emulator<?> emulator) {

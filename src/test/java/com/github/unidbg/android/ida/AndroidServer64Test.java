@@ -94,7 +94,7 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
                 Pointer addr = context.getPointerArg(2);
                 Pointer data = context.getPointerArg(3);
                 if (request != PTrace.PTRACE_PEEKTEXT && request != PTrace.PTRACE_POKEDATA) {
-                    System.out.println("ptrace request=" + request + ", addr=" + addr + ", data=" + data + ", LR=" + context.getLRPointer());
+                    System.out.println("ptrace request=0x" + Integer.toHexString(request) + ", addr=" + addr + ", data=" + data + ", LR=" + context.getLRPointer());
                 }
                 return super.onCall(emulator, originFunction);
             }
@@ -138,16 +138,16 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             }
         });
         Symbol pack_dq = module.findSymbolByName("pack_dq", false);
-        hookZz.wrap(pack_dq, new WrapCallback<HookZzArm32RegisterContext>() {
+        hookZz.wrap(pack_dq, new WrapCallback<HookZzArm64RegisterContext>() {
             @Override
-            public void preCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 Pointer data = ctx.getPointerArg(0);
                 long value = ctx.getLongArg(2);
                 ctx.push(data);
                 ctx.push(value);
             }
             @Override
-            public void postCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+            public void postCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
                 long value = ctx.pop();
                 UnicornPointer data = ctx.pop();
@@ -162,9 +162,9 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             }
         });
         Symbol unpack_dd = module.findSymbolByName("unpack_dd", false);
-        hookZz.wrap(unpack_dd, new WrapCallback<HookZzArm32RegisterContext>() {
+        hookZz.wrap(unpack_dd, new WrapCallback<HookZzArm64RegisterContext>() {
             @Override
-            public void preCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 Pointer pointer = ctx.getPointerArg(0);
                 Pointer data = pointer.getPointer(0);
                 Pointer end = ctx.getPointerArg(1);
@@ -172,11 +172,11 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
                 ctx.push(end);
             }
             @Override
-            public void postCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+            public void postCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
                 UnicornPointer end = ctx.pop();
                 UnicornPointer data = ctx.pop();
-                long value = ctx.getR0Long();
+                long value = ctx.getLongArg(0);
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
                 byte[] bytes = data.getByteArray(0, size);
                 long my = Utils.unpack_dd(ByteBuffer.wrap(bytes));
@@ -186,9 +186,9 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             }
         });
         Symbol unpack_dq = module.findSymbolByName("unpack_dq", false);
-        hookZz.wrap(unpack_dq, new WrapCallback<HookZzArm32RegisterContext>() {
+        hookZz.wrap(unpack_dq, new WrapCallback<HookZzArm64RegisterContext>() {
             @Override
-            public void preCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+            public void preCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 Pointer pointer = ctx.getPointerArg(0);
                 Pointer data = pointer.getPointer(0);
                 Pointer end = ctx.getPointerArg(1);
@@ -196,11 +196,11 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
                 ctx.push(end);
             }
             @Override
-            public void postCall(Emulator<?> emulator, HookZzArm32RegisterContext ctx, HookEntryInfo info) {
+            public void postCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
                 UnicornPointer end = ctx.pop();
                 UnicornPointer data = ctx.pop();
-                long value = ctx.getR0Long();
+                long value = ctx.getLongArg(0);
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
                 byte[] bytes = data.getByteArray(0, size);
                 long my = Utils.unpack_dq(ByteBuffer.wrap(bytes));

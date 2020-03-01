@@ -40,13 +40,13 @@ class MyARMSyscallHandler extends ARMSyscallHandler {
         int pid = emulator.getPid();
         int attachPid = pid - 1;
         if (("/proc/" + pid + "/exe").equals(path) || ("/proc/" + attachPid + "/exe").equals(path)) {
-            String newPath = "/system/bin/android_server_7.4";
+            String newPath = "/system/bin/android_server_7.4\n";
             buf.setString(0, newPath);
-            System.out.println("readlinke: path=" + path + ", newPath=" + newPath);
-            return newPath.length() + 1;
+            System.out.println("readlink: path=" + path + ", newPath=" + newPath);
+            return newPath.length();
         }
 
-        System.out.println("readlinke: path=" + path);
+        System.out.println("readlink: path=" + path);
         return super.readlink(emulator, path, buf, bufSize);
     }
 

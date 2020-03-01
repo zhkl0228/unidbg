@@ -12,4 +12,8 @@ public interface PTrace {
     int PTRACE_ATTACH = 16;
     int PTRACE_DETACH = 17;
 
+    int PTRACE_GETREGSET = 0x4204;
+
+    int NT_PRSTATUS	= 1;		/* Contains copy of prstatus struct */
+
 }
