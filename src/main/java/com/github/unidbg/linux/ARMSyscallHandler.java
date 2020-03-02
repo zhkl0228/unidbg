@@ -450,13 +450,11 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
 
     private int clone(Unicorn u, Emulator<AndroidFileIO> emulator) {
         Arm32RegisterContext context = emulator.getContext();
-        int flags = context.getIntArg(0);
         Pointer child_stack = context.getPointerArg(1);
-        if ((flags & CLONE_CHILD_SETTID) != 0 && (flags & CLONE_CHILD_CLEARTID) != 0 && (flags & SIGCHLD) != 0 &&
-                child_stack == null &&
+        if (child_stack == null &&
                 context.getPointerArg(2) == null) {
             // http://androidxref.com/6.0.1_r10/xref/bionic/libc/bionic/fork.cpp#47
-            return fork(emulator);
+            return fork(emulator); // vfork
         }
 
         int fn = context.getR5Int();

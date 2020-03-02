@@ -44,7 +44,7 @@ class MyARM64SyscallHandler extends ARM64SyscallHandler {
     }
 
     @Override
-    protected int fork(Emulator<?> emulator) {
+    protected long fork(Emulator<?> emulator) {
         return emulator.getPid();
     }
 

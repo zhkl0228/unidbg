@@ -394,13 +394,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
 
     private long clone(Emulator<AndroidFileIO> emulator) {
         Arm64RegisterContext context = emulator.getContext();
-        int flags = context.getIntArg(0);
         Pointer child_stack = context.getPointerArg(1);
-        if ((flags & CLONE_CHILD_SETTID) != 0 && (flags & CLONE_CHILD_CLEARTID) != 0 && (flags & SIGCHLD) != 0 &&
-                child_stack == null &&
+        if (child_stack == null &&
                 context.getPointerArg(2) == null) {
             // http://androidxref.com/6.0.1_r10/xref/bionic/libc/bionic/fork.cpp#47
-            return fork(emulator);
+            return fork(emulator); // vfork
         }
 
         long fn = context.getXLong(5);
@@ -536,7 +534,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         return 0;
     }
 
-    protected int fork(Emulator<?> emulator) {
+    protected long fork(Emulator<?> emulator) {
         log.debug("fork");
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
