@@ -69,6 +69,8 @@ public class ClassDumpTest extends EmulatorTest<DarwinARMEmulator> {
 
         ObjcObject str = oClassDump.callObjc("my_dump_class:", "NSDictionary");
         System.out.println(str.getDescription());
+
+        classDumper.searchClass("ClassD");
     }
 
     public static void main(String[] args) throws Exception {

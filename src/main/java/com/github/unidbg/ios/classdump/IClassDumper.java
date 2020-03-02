@@ -6,4 +6,6 @@ public interface IClassDumper extends IHook {
 
     String dumpClass(String className);
 
+    void searchClass(String keywords);
+
 }

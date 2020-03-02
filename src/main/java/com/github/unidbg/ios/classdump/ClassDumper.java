@@ -34,4 +34,11 @@ public class ClassDumper extends BaseHook implements IClassDumper {
         ObjcObject str = oClassDump.callObjc("my_dump_class:", className);
         return str == null ? null : str.getDescription();
     }
+
+    @Override
+    public void searchClass(String keywords) {
+        ObjC objc = ObjC.getInstance(emulator);
+        ObjcClass oClassDump = objc.getClass("ClassDump");
+        oClassDump.callObjc("search_class:", keywords);
+    }
 }

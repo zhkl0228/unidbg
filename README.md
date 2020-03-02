@@ -6,7 +6,7 @@ This is an educational project to learn more about the ELF file format and ARM a
 
 ## License
 - unidbg uses software libraries from [Apache Software Foundation](http://apache.org). 
-- unidbg developers Idea enterprise licenses are supported by [Jetbrains](https://www.jetbrains.com?from=unidbg).
+- unidbg developer Idea enterprise licenses are supported by [Jetbrains](https://www.jetbrains.com?from=unidbg).
 - [IntelliJ IDEA](https://www.jetbrains.com/idea?from=unidbg) can be used to edit unidbg sources.
 - ![](assets/idea_logo.svg)
 
@@ -39,10 +39,11 @@ Simple tests under src/test directory
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.
 - Support JavaVM, JNIEnv.
 - Emulation of syscalls instruction.
-- Support ARM32 and ARM64 bit ELF.
+- Support ARM32 and ARM64 bit.
 - Inline hook, thanks to HookZz.
-- Import hook, thanks to xHook.
-- Support simple debugger, gdb stub, instruction trace, memory read/write trace.
+- Android import hook, thanks to xHook.
+- IOS fishhook and substrate hook.
+- Support simple console debugger, gdb stub, experimental IDA android debugger server, instruction trace, memory read/write trace.
 
 ## TODO
 - ~~Working iOS emulation.~~

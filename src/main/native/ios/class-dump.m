@@ -518,6 +518,34 @@ BOOL isSystemClass(Class clazz) {
     return nil;
 }
 
++(void) search_class: (const char *) keywords {
+    int classCount = objc_getClassList(NULL, 0);
+
+	if(classCount < 1) {
+	    NSLog(@"Empty objc class.");
+		return;
+	}
+	if(keywords == NULL || strlen(keywords) == 0) {
+	    NSLog(@"Search failed: %s", keywords);
+	    return;
+	}
+
+	__unsafe_unretained Class *classes = (__unsafe_unretained Class *)malloc(sizeof(Class) * classCount);
+	objc_getClassList(classes, classCount);
+
+	int count = 0;
+	for(int i = 0; i < classCount; i++) {
+	    const char *className = class_getName(classes[i]);
+	    if(strstr(className, keywords)) {
+	        NSLog(@"Found class: %s", className);
+	        count++;
+	    }
+	}
+
+	free(classes);
+	NSLog(@"Search class matches count: %d", count);
+}
+
 +(NSString *) class_dump_all_classes: (BOOL) includeSystemClasses {
 	NSMutableString *result = [NSMutableString new];
 	
@@ -529,7 +557,7 @@ BOOL isSystemClass(Class clazz) {
 	
 	__unsafe_unretained Class *classes = (__unsafe_unretained Class *)malloc(sizeof(Class) * classCount);
 	objc_getClassList(classes, classCount);
-	
+
 	for(int i = 0; i < classCount; i++) {
 		if(includeSystemClasses || !isSystemClass(classes[i])) {
 			[result appendString:[ClassDump class_dump_class: classes[i]]];
