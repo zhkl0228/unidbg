@@ -1596,6 +1596,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         throw new UnicornException("statfs64 path=" + path + ", size=" + size + ", buf=" + buf);
     }
 
+    private static final int PR_GET_DUMPABLE = 3;
     private static final int PR_SET_DUMPABLE = 4;
     private static final int PR_SET_NAME = 15;
     private static final int PR_GET_NAME = 16;
@@ -1608,6 +1609,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
             log.debug("prctl option=0x" + Integer.toHexString(option) + ", arg2=0x" + Long.toHexString(arg2));
         }
         switch (option) {
+            case PR_GET_DUMPABLE:
             case PR_SET_DUMPABLE:
                 return 0;
             case PR_SET_NAME: {

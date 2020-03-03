@@ -274,6 +274,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGTTOU = 22;
     private static final int SIGWINCH = 28;
     private static final int SIGSYS = 31; /* Bad system call.  */
+    private static final int SIGRTMIN = 32;
 
     protected final int sigaction(int signum, Pointer act, Pointer oldact) {
         String prefix = "Unknown";
@@ -312,6 +313,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGTTOU:
             case SIGWINCH:
             case SIGSYS:
+            case SIGRTMIN:
                 if (act != null) {
                     sigMap.put(signum, act.getByteArray(0, ACT_SIZE));
                 }
