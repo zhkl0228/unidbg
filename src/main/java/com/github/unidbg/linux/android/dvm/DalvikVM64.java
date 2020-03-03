@@ -1221,6 +1221,31 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _NewObjectArray = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                int size = context.getIntArg(1);
+                UnicornPointer elementClass = context.getPointerArg(2);
+                UnicornPointer initialElement = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("NewObjectArray size=" + size + ", elementClass=" + elementClass + ", initialElement=" + initialElement);
+                }
+                DvmClass dvmClass = classMap.get(elementClass.toUIntPeer());
+                if (dvmClass == null) {
+                    throw new UnicornException("elementClass=" + elementClass);
+                }
+
+                DvmObject<?> obj = size == 0 ? null : getObject(initialElement.toUIntPeer());
+                DvmObject<?>[] array = new DvmObject[size];
+                for (int i = 0; i < size; i++) {
+                    array[i] = obj;
+                }
+
+                return addObject(new ArrayObject(array), false);
+            }
+        });
+
         Pointer _GetObjectArrayElement = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1591,6 +1616,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x548, _GetStringUTFChars);
         impl.setPointer(0x550, _ReleaseStringUTFChars);
         impl.setPointer(0x558, _GetArrayLength);
+        impl.setPointer(0x560, _NewObjectArray);
         impl.setPointer(0x580, _NewByteArray);
         impl.setPointer(0x598, _NewIntArray);
         impl.setPointer(0x5b0, _NewDoubleArray);

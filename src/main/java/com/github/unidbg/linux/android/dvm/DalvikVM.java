@@ -1428,7 +1428,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmObject<?> obj = size == 0 ? null : getObject(initialElement.toUIntPeer());
                 DvmObject<?>[] array = new DvmObject[size];
                 for (int i = 0; i < size; i++) {
-                    array[i] = new DvmObject<>(dvmClass, obj);
+                    array[i] = obj;
                 }
 
                 return addObject(new ArrayObject(array), false);

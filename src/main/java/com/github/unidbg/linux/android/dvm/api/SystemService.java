@@ -13,6 +13,8 @@ public class SystemService extends DvmObject<String> {
     public static final String ACCESSIBILITY_SERVICE = "accessibility";
     public static final String KEYGUARD_SERVICE = "keyguard";
     public static final String ACTIVITY_SERVICE = "activity";
+    public static final String SENSOR_SERVICE = "sensor";
+    public static final String INPUT_METHOD_SERVICE = "input_method";
 
     public SystemService(VM vm, String serviceName) {
         super(getObjectType(vm, serviceName), serviceName);
@@ -31,7 +33,11 @@ public class SystemService extends DvmObject<String> {
             case KEYGUARD_SERVICE:
                 return vm.resolveClass("android/app/KeyguardManager");
             case ACTIVITY_SERVICE:
-                return vm.resolveClass("android.os.BinderProxy"); // android/app/ActivityManager
+                return vm.resolveClass("android/os/BinderProxy"); // android/app/ActivityManager
+            case SENSOR_SERVICE:
+                return vm.resolveClass("android/hardware/SensorManager");
+            case INPUT_METHOD_SERVICE:
+                return vm.resolveClass("android/view/inputmethod/InputMethodManager");
             default:
                 throw new UnicornException("service failed: " + serviceName);
         }
