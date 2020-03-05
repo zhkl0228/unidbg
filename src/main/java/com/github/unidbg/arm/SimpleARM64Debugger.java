@@ -110,6 +110,10 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         continue;
                     }
                 }
+                if ("where".equals(line)) {
+                    new Exception("here").printStackTrace(System.out);
+                    continue;
+                }
                 if (line.startsWith("w")) {
                     String command;
                     String[] tokens = line.split("\\s+");
@@ -289,6 +293,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println("blr: add temporarily breakpoint of register LR");
         System.out.println();
         System.out.println("p (assembly): patch assembly at PC address");
+        System.out.println("where: show java stack trace");
         System.out.println();
         System.out.println("vm: view loaded modules");
         System.out.println("d|dis: show disassemble");
