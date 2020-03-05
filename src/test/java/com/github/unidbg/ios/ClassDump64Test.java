@@ -69,6 +69,8 @@ public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
 
         ObjcObject str = oClassDump.callObjc("my_dump_class:", "NSTimeZone");
         System.out.println(str.getDescription());
+
+        classDumper.searchClass("ClassD");
     }
 
     public static void main(String[] args) throws Exception {

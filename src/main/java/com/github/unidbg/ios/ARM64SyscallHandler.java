@@ -219,6 +219,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, 0);
                     return;
                 case 92:
+                case 406: // fcntl_NOCANCEL
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(emulator));
                     return;
                 case 97:

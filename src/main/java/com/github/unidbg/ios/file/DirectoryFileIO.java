@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.ios.struct.kernel.StatFS;
+import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.unix.IO;
 import org.apache.commons.io.FilenameUtils;
 
@@ -83,6 +84,19 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
     @Override
     public String toString() {
         return path;
+    }
+
+    @Override
+    public int fcntl(Emulator<?> emulator, int cmd, long arg) {
+        if (cmd == F_GETPATH) {
+            UnicornPointer pointer = UnicornPointer.pointer(emulator, arg);
+            if (pointer != null) {
+                pointer.setString(0, getPath());
+            }
+            return 0;
+        }
+
+        return super.fcntl(emulator, cmd, arg);
     }
 
     @Override

@@ -33,7 +33,7 @@ public abstract class AbstractFileIO implements NewFileIO {
     }
 
     @Override
-    public int fcntl(int cmd, long arg) {
+    public int fcntl(Emulator<?> emulator, int cmd, long arg) {
         switch (cmd) {
             case F_GETFD:
                 return op;
@@ -61,7 +61,7 @@ public abstract class AbstractFileIO implements NewFileIO {
             case F_ADDFILESIGS:
                 return 0;
         }
-        throw new UnsupportedOperationException(getClass().getName() + ", cmd=" + cmd + ", arg=0x" + Long.toHexString(arg & 0xffffffffL));
+        throw new UnsupportedOperationException(getClass().getName() + ", cmd=" + cmd + ", arg=0x" + Long.toHexString(arg & 0xffffffffL) + ", this=" + this);
     }
 
     @Override

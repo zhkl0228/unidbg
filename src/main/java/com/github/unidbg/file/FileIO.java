@@ -18,7 +18,7 @@ public interface FileIO {
 
     int read(Unicorn unicorn, Pointer buffer, int count);
 
-    int fcntl(int cmd, long arg);
+    int fcntl(Emulator<?> emulator, int cmd, long arg);
 
     int ioctl(Emulator<?> emulator, long request, long argp);
 

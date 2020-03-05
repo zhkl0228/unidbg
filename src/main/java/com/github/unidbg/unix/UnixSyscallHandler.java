@@ -242,7 +242,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
-        return file.fcntl(cmd, arg);
+        return file.fcntl(emulator, cmd, arg);
     }
 
     protected int readlink(Emulator<?> emulator, String path, Pointer buf, int bufSize) {
