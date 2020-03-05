@@ -1017,7 +1017,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 if (action == 3) {
                     String sub = set0.getString(0);
                     if (log.isDebugEnabled()) {
-                        log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub);
+                        log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub + ", set1=" + set1);
                     }
                     if ("kern.osrelease".equals(sub)) {
                         buffer.setInt(0, CTL_KERN);
@@ -1025,7 +1025,10 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         bufferSize.setLong(0, 8);
                         return 0;
                     }
-                    return 1;
+                    if (log.isDebugEnabled()) {
+                        emulator.attach().debug();
+                    }
+                    return -1;
                 }
                 log.info("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);
                 break;

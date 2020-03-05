@@ -111,7 +111,7 @@ public class Substrate extends BaseHook implements ISubstrate {
 
     @Override
     public void hookFunction(Symbol symbol, ReplaceCallback callback, boolean enablePostCall) {
-        hookFunction(symbol.getAddress(), callback, false);
+        hookFunction(symbol.getAddress(), callback, enablePostCall);
     }
 
     @Override

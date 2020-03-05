@@ -957,7 +957,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         bufferSize.setInt(0, 8);
                         return 0;
                     }
-                    return 1;
+                    if (log.isDebugEnabled()) {
+                        emulator.attach().debug();
+                    }
+                    return -1;
                 }
                 log.info("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);
                 break;

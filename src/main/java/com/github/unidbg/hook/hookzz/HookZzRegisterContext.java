@@ -16,8 +16,10 @@ public abstract class HookZzRegisterContext extends AbstractRegisterContext impl
     }
 
     @Override
-    public void push(Object obj) {
-        stack.push(obj);
+    public void push(Object... objs) {
+        for (int i = objs.length - 1; i >= 0; i--) {
+            stack.push(objs[i]);
+        }
     }
 
     @SuppressWarnings("unchecked")
