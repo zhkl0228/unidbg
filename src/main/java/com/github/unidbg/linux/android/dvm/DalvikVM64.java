@@ -1195,6 +1195,9 @@ public class DalvikVM64 extends BaseVM implements VM {
             public long handle(Emulator<?> emulator) {
                 StringObject string = getObject(UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toUIntPeer());
                 Pointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                if (verbose) {
+                    System.out.println(String.format("JNIEnv->ReleaseStringUTFChars(%s) was called from %s", string, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0)));
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseStringUTFChars string=" + string + ", pointer=" + pointer + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                 }

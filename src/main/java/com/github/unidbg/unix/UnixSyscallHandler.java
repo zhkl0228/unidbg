@@ -32,6 +32,18 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     public final Map<Integer, LinuxThread> threadMap = new HashMap<>(5);
     public int lastThread = -1;
 
+    protected boolean verbose;
+
+    @Override
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+
+    @Override
+    public boolean isVerbose() {
+        return verbose;
+    }
+
     protected final int getMinFd() {
         int last_fd = -1;
         for (int fd : fdMap.keySet()) {
@@ -195,7 +207,25 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
-        return file.read(emulator.getUnicorn(), buffer, count);
+        int read = file.read(emulator.getUnicorn(), buffer, count);
+        if (verbose) {
+            System.out.println(String.format("Read %d bytes from '%s'", read, file));
+        }
+        return read;
+    }
+
+    protected final int close(Emulator<?> emulator, int fd) {
+        FileIO file = fdMap.remove(fd);
+        if (file != null) {
+            file.close();
+            if (verbose) {
+                System.out.println(String.format("File closed '%s'", file));
+            }
+            return 0;
+        } else {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
     }
 
     @Override
@@ -206,6 +236,9 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (resolveResult != null && resolveResult.isSuccess()) {
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, resolveResult.io);
+            if (verbose) {
+                System.out.println(String.format("File opened '%s'", resolveResult.io));
+            }
             return minFd;
         }
 
@@ -213,6 +246,9 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (result != null && result.isSuccess()) {
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, result.io);
+            if (verbose) {
+                System.out.println(String.format("File opened '%s'", result.io));
+            }
             return minFd;
         }
 
@@ -220,6 +256,9 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (driverIO != null) {
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, driverIO);
+            if (verbose) {
+                System.out.println(String.format("File opened '%s'", driverIO));
+            }
             return minFd;
         }
 
@@ -388,7 +427,11 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
-        return file.write(data);
+        int write = file.write(data);
+        if (verbose) {
+            System.out.println(String.format("Write %d bytes to '%s'", write, file));
+        }
+        return write;
     }
 
     @SuppressWarnings("unused")

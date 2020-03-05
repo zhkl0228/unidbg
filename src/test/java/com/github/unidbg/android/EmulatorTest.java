@@ -17,6 +17,7 @@ public abstract class EmulatorTest<T extends Emulator<?>> extends TestCase {
         start = System.currentTimeMillis();
         emulator = createARMEmulator();
         emulator.getMemory().setLibraryResolver(createLibraryResolver());
+        emulator.getSyscallHandler().setVerbose(true);
     }
 
     protected abstract T createARMEmulator();

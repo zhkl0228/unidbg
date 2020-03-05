@@ -21,4 +21,7 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook {
 
     int open(Emulator<T> emulator, String pathname, int oflags);
 
+    void setVerbose(boolean verbose);
+    boolean isVerbose();
+
 }

@@ -180,7 +180,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
                     return;
                 case 6:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, close(u, emulator));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, close(emulator));
                     return;
                 case 10:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
@@ -588,20 +588,14 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         return 0;
     }
 
-    private int close(Unicorn u, Emulator<?> emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+    private int close(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
         if (log.isDebugEnabled()) {
             log.debug("close fd=" + fd);
         }
 
-        FileIO file = fdMap.remove(fd);
-        if (file != null) {
-            file.close();
-            return 0;
-        } else {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
+        return close(emulator, fd);
     }
 
     private int lseek(Unicorn u, Emulator<?> emulator) {
@@ -1852,14 +1846,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.debug("close_NOCANCEL fd=" + fd);
         }
 
-        FileIO file = fdMap.remove(fd);
-        if (file != null) {
-            file.close();
-            return 0;
-        } else {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
+        return close(emulator, fd);
     }
 
     private int read_NOCANCEL(Emulator<?> emulator) {

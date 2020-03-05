@@ -1715,14 +1715,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
             log.debug("close fd=" + fd);
         }
 
-        FileIO file = fdMap.remove(fd);
-        if (file != null) {
-            file.close();
-            return 0;
-        } else {
-            emulator.getMemory().setErrno(UnixEmulator.EBADF);
-            return -1;
-        }
+        return close(emulator, fd);
     }
 
     private int getdents64(Emulator<AndroidFileIO> emulator) {

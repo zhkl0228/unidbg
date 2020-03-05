@@ -110,11 +110,14 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     protected abstract boolean hasExcl(int oflags);
 
     @Override
-    public void unlink(String path) {
+    public final void unlink(String path) {
         File file = new File(rootDir, path);
         FileUtils.deleteQuietly(file);
         if (log.isDebugEnabled()) {
             log.debug("unlink path=" + path + ", file=" + file);
+        }
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.println(String.format("File unlink '%s'", path));
         }
     }
 
