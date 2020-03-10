@@ -38,7 +38,9 @@ public class FishHook extends BaseHook implements IFishHook {
 
         rebind_symbols = module.findSymbolByName("_rebind_symbols", false);
         rebind_symbols_image = module.findSymbolByName("_rebind_symbols_image", false);
-        log.debug("rebind_symbols=" + rebind_symbols + ", rebind_symbols_image=" + rebind_symbols_image);
+        if (log.isDebugEnabled()) {
+            log.debug("rebind_symbols=" + rebind_symbols + ", rebind_symbols_image=" + rebind_symbols_image);
+        }
 
         if (rebind_symbols == null) {
             throw new IllegalStateException("rebind_symbols is null");

@@ -24,10 +24,7 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Arm64Const;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornException;
+import unicorn.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -326,14 +323,14 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                     readHook.redirect = redirect;
                     readHook.traceReadListener = traceReadListener;
                     traceReadListener = null;
-                    unicorn.hook_add(readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
+                    unicorn.hook_add((ReadHook) readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
                 }
                 if (traceMemoryWrite) {
                     traceMemoryWrite = false;
                     writeHook.redirect = redirect;
                     writeHook.traceWriteListener = traceWriteListener;
                     traceWriteListener = null;
-                    unicorn.hook_add(writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
+                    unicorn.hook_add((WriteHook) writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
                 }
             }
             if (traceInstruction) {

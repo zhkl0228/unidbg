@@ -90,7 +90,7 @@ public class ARM {
                 case ArmConst.UC_ARM_REG_R3:
                     number = (Number) unicorn.reg_read(reg);
                     value = number.intValue();
-                    builder.append(String.format(Locale.US, ", r3=0x%x", value));
+                    builder.append(String.format(Locale.US, " r3=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R4:
                     number = (Number) unicorn.reg_read(reg);
@@ -199,7 +199,7 @@ public class ARM {
                 case Arm64Const.UC_ARM64_REG_X3:
                     number = (Number) unicorn.reg_read(reg);
                     value = number.longValue();
-                    builder.append(String.format(Locale.US, ", x3=0x%x", value));
+                    builder.append(String.format(Locale.US, " x3=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X4:
                     number = (Number) unicorn.reg_read(reg);

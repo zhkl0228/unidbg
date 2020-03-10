@@ -36,7 +36,9 @@ public class XHookImpl extends BaseHook implements IxHook {
 
         xhook_register = module.findSymbolByName("xhook_register", false);
         xhook_refresh = module.findSymbolByName("xhook_refresh", false);
-        log.debug("xhook_register=" + xhook_register + ", xhook_refresh=" + xhook_refresh);
+        if (log.isDebugEnabled()) {
+            log.debug("xhook_register=" + xhook_register + ", xhook_refresh=" + xhook_refresh);
+        }
 
         if (xhook_register == null) {
             throw new IllegalStateException("xhook_register is null");
