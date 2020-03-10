@@ -5,11 +5,15 @@ import com.github.unidbg.Emulator;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public abstract class UnicornStructure extends Structure {
+
+    private static final Log log = LogFactory.getLog(UnicornStructure.class);
 
     /** Placeholder pointer to help avoid auto-allocation of memory where a
      * Structure needs a valid pointer but want to avoid actually reading from it.
@@ -47,6 +51,9 @@ public abstract class UnicornStructure extends Structure {
     protected int getNativeSize(Class<?> nativeType, Object value) {
         if (Pointer.class.isAssignableFrom(nativeType)) {
             Emulator<?> emulator = AbstractEmulator.getContextEmulator();
+            if (emulator == null) {
+                log.warn("getNativeSize context emulator is null");
+            }
             return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
         }
 

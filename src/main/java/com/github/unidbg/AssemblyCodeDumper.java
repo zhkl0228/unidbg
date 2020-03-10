@@ -4,6 +4,7 @@ import capstone.Capstone;
 import com.github.unidbg.listener.TraceCodeListener;
 import unicorn.CodeHook;
 import unicorn.Unicorn;
+import unicorn.UnicornException;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -43,16 +44,20 @@ class AssemblyCodeDumper implements CodeHook {
     @Override
     public void hook(Unicorn u, long address, int size, Object user) {
         if (canTrace(address)) {
-            PrintStream out = System.err;
-            if (redirect != null) {
-                out = redirect;
-            }
-            Capstone.CsInsn[] insns = emulator.printAssemble(out, address, size);
-            if (listener != null) {
-                if (insns == null || insns.length != 1) {
-                    throw new IllegalStateException("insns=" + Arrays.toString(insns));
+            try {
+                PrintStream out = System.err;
+                if (redirect != null) {
+                    out = redirect;
                 }
-                listener.onInstruction(emulator, address, insns[0]);
+                Capstone.CsInsn[] insns = emulator.printAssemble(out, address, size);
+                if (listener != null) {
+                    if (insns == null || insns.length != 1) {
+                        throw new IllegalStateException("insns=" + Arrays.toString(insns));
+                    }
+                    listener.onInstruction(emulator, address, insns[0]);
+                }
+            } catch (UnicornException e) {
+                throw new IllegalStateException(e);
             }
         }
     }

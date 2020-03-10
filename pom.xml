@@ -6,7 +6,7 @@
 
     <groupId>com.github</groupId>
     <artifactId>unidbg</artifactId>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -89,10 +89,10 @@
         <dependency>
             <groupId>org.unicorn-engine</groupId>
             <artifactId>unicorn</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.3</version>
             <!--
             <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/unicorn-1.0.1.jar</systemPath>
+            <systemPath>${basedir}/prebuilt/jar/unicorn-1.0.3.jar</systemPath>
             -->
         </dependency>
         <dependency>

@@ -46,10 +46,10 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
         Cpsr.getArm64(unicorn).switchUserMode();
 
-        unicorn.hook_add(new EventMemHook() {
+        unicorn.hook_add_new(new EventMemHook() {
             @Override
             public boolean hook(Unicorn u, long address, int size, long value, Object user) {
-                log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value) + ", user=" + user);
+                log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value));
                 return false;
             }
         }, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED | UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED | UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, null);
@@ -61,7 +61,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         this.dlfcn = createDyld(svcMemory);
         this.memory.addHookListener(dlfcn);
 
-        unicorn.hook_add(syscallHandler, this);
+        unicorn.hook_add_new(syscallHandler, this);
 
         this.capstoneArm64 = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
     }

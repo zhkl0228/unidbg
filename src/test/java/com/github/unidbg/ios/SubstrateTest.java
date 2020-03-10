@@ -24,7 +24,10 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
         return new DarwinARMEmulator("com.substrate.test", new File("target/rootfs/substrate"));
     }
 
-    public void testMS() throws Exception {
+    public void testIgnore() {
+    }
+
+    private void processMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setCallInitFunction();
         loader.setObjcRuntime(true);
@@ -146,7 +149,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
     public static void main(String[] args) throws Exception {
         SubstrateTest test = new SubstrateTest();
         test.setUp();
-        test.testMS();
+        test.processMS();
         test.tearDown();
     }
 

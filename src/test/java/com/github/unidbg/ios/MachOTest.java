@@ -67,16 +67,6 @@ public class MachOTest extends TestCase {
         channel.close();
     }
 
-    public void testFileFormat32() throws Exception {
-        FileChannel channel = FileChannel.open(new File("src/main/resources/ios/6.1/usr/lib/libSystem.B.dylib").toPath(), StandardOpenOption.READ);
-        ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
-
-        MachO machO = new MachO(new ByteBufferKaitaiStream(buffer));
-        checkMachO(buffer, machO, MachO.CpuType.ARM);
-
-        channel.close();
-    }
-
     private void checkMachO(ByteBuffer buffer, MachO machO, MachO.CpuType cpuType) {
         assertNotNull(machO);
         assertNull(machO.fatHeader());

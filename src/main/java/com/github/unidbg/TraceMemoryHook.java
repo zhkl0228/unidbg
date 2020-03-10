@@ -7,6 +7,7 @@ import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.commons.codec.binary.Hex;
 import unicorn.MemHook;
 import unicorn.Unicorn;
+import unicorn.UnicornException;
 
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
@@ -35,17 +36,21 @@ class TraceMemoryHook implements MemHook {
             return;
         }
 
-        byte[] data = u.mem_read(address, size);
-        String value;
-        if (data.length == 4) {
-            value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
-        } else {
-            value = Hex.encodeHexString(data);
-        }
-        Emulator<?> emulator = (Emulator<?>) user;
-        printMsg("### Memory READ at 0x", emulator, address, size, value);
-        if (traceReadListener != null) {
-            traceReadListener.onRead(emulator, address, data, value);
+        try {
+            byte[] data = u.mem_read(address, size);
+            String value;
+            if (data.length == 4) {
+                value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
+            } else {
+                value = Hex.encodeHexString(data);
+            }
+            Emulator<?> emulator = (Emulator<?>) user;
+            printMsg("### Memory READ at 0x", emulator, address, size, value);
+            if (traceReadListener != null) {
+                traceReadListener.onRead(emulator, address, data, value);
+            }
+        } catch (UnicornException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -69,10 +74,14 @@ class TraceMemoryHook implements MemHook {
             return;
         }
 
-        Emulator<?> emulator = (Emulator<?>) user;
-        printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
-        if (traceWriteListener != null) {
-            traceWriteListener.onWrite(emulator, address, size, value);
+        try {
+            Emulator<?> emulator = (Emulator<?>) user;
+            printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
+            if (traceWriteListener != null) {
+                traceWriteListener.onWrite(emulator, address, size, value);
+            }
+        } catch (UnicornException e) {
+            throw new IllegalStateException(e);
         }
     }
 
