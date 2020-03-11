@@ -170,30 +170,45 @@ public class UdpSocket extends SocketIO implements FileIO {
         return super.ioctl(emulator, request, argp);
     }
 
-    private static class NetworkIF {
-        private final NetworkInterface networkInterface;
-        private final Inet4Address inetAddress;
-        public NetworkIF(NetworkInterface networkInterface, Inet4Address inetAddress) {
-            this.networkInterface = networkInterface;
-            this.inetAddress = inetAddress;
+    public static class NetworkIF {
+        private final String ifName;
+        private final Inet4Address ipv4;
+        public NetworkIF(String ifName, Inet4Address ipv4) {
+            this.ifName = ifName;
+            this.ipv4 = ipv4;
         }
+        @Override
+        public String toString() {
+            return ifName;
+        }
+    }
+
+    protected List<NetworkIF> getNetworkIFs() throws SocketException {
+        Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
+        List<NetworkIF> list = new ArrayList<>();
+        while (enumeration.hasMoreElements()) {
+            NetworkInterface networkInterface = enumeration.nextElement();
+            Enumeration<InetAddress> addressEnumeration = networkInterface.getInetAddresses();
+            while (addressEnumeration.hasMoreElements()) {
+                InetAddress address = addressEnumeration.nextElement();
+                if (address instanceof Inet4Address) {
+                    list.add(new NetworkIF(networkInterface.getName(), (Inet4Address) address));
+                    break;
+                }
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Return host network ifs: " + list);
+        }
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.println("Return host network ifs: " + list);
+        }
+        return list;
     }
 
     private int getIFaceList(Emulator<?> emulator, long argp) {
         try {
-            Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
-            List<NetworkIF> list = new ArrayList<>();
-            while (enumeration.hasMoreElements()) {
-                NetworkInterface networkInterface = enumeration.nextElement();
-                Enumeration<InetAddress> inetAddressEnumeration = networkInterface.getInetAddresses();
-                while (inetAddressEnumeration.hasMoreElements()) {
-                    InetAddress address = inetAddressEnumeration.nextElement();
-                    if (address instanceof Inet4Address) {
-                        list.add(new NetworkIF(networkInterface, (Inet4Address) address));
-                        break;
-                    }
-                }
-            }
+            List<NetworkIF> list = getNetworkIFs();
             IFConf conf = new IFConf(UnicornPointer.pointer(emulator, argp));
             IFReq ifReq = IFReq.createIFReq(emulator, conf.ifcu_req);
             if (list.size() * ifReq.size() > conf.ifc_len) {
@@ -206,13 +221,13 @@ public class UdpSocket extends SocketIO implements FileIO {
             Pointer pointer = conf.ifcu_req;
             for (NetworkIF networkIF : list) {
                 ifReq = IFReq.createIFReq(emulator, pointer);
-                ifReq.setName(networkIF.networkInterface.getName());
+                ifReq.setName(networkIF.ifName);
                 ifReq.pack();
 
                 SockAddr sockAddr = new SockAddr(ifReq.getAddrPointer());
                 sockAddr.sin_family = AF_INET;
                 sockAddr.sin_port = 0;
-                sockAddr.sin_addr = Arrays.copyOf(networkIF.inetAddress.getAddress(), IPV4_ADDR_LEN - 4);
+                sockAddr.sin_addr = Arrays.copyOf(networkIF.ipv4.getAddress(), IPV4_ADDR_LEN - 4);
                 sockAddr.pack();
 
                 pointer = pointer.share(ifReq.size());

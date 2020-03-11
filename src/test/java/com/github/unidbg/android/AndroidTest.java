@@ -25,6 +25,7 @@ public class AndroidTest {
         File executable = new File("src/test/native/android/libs/armeabi-v7a/test");
         emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs"));
         Memory memory = emulator.getMemory();
+        emulator.getSyscallHandler().setVerbose(true);
         LibraryResolver resolver = new AndroidResolver(19);
         memory.setLibraryResolver(resolver);
 
