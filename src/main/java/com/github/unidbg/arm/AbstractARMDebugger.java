@@ -517,7 +517,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             nextAddr += ins.size;
         }
         System.out.println(sb);
-        return next;
+        return on ? nextAddr : next;
     }
 
     final void disassembleBlock(Emulator<?> emulator, long address, boolean thumb) {
