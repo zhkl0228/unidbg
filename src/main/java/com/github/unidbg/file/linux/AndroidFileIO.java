@@ -6,8 +6,7 @@ import com.sun.jna.Pointer;
 
 public interface AndroidFileIO extends NewFileIO {
 
-    @SuppressWarnings("unused")
-    int SIOCGIFCONF = 0x8912;
+    int SIOCGIFCONF = 0x8912; /* get iface list		*/
 
     int fstat(Emulator<?> emulator, StatStructure stat);
 
