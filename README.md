@@ -50,7 +50,7 @@ Simple tests under src/test directory
 - ~~Add more iOS syscall.~~
 
 ## Thanks
-- [unicorn](https://github.com/unicorn-engine/unicorn)
+- [unicorn](https://github.com/zhkl0228/unicorn)
 - [HookZz](https://github.com/jmpews/HookZz)
 - [xHook](https://github.com/iqiyi/xHook)
 - [AndroidNativeEmu](https://github.com/AeonLucid/AndroidNativeEmu)

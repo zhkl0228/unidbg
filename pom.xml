@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github</groupId>
+    <groupId>com.github.zhkl0228</groupId>
     <artifactId>unidbg</artifactId>
     <version>0.3.0-SNAPSHOT</version>
     <properties>
@@ -87,41 +87,24 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>org.unicorn-engine</groupId>
+            <groupId>com.github.zhkl0228</groupId>
             <artifactId>unicorn</artifactId>
             <version>1.0.3</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/unicorn-1.0.3.jar</systemPath>
-            -->
         </dependency>
         <dependency>
-            <groupId>org.capstone-engine</groupId>
+            <groupId>com.github.zhkl0228</groupId>
             <artifactId>capstone</artifactId>
             <version>3.0.5</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/capstone-3.0.5.jar</systemPath>
-            -->
         </dependency>
         <dependency>
-            <groupId>keystone</groupId>
-            <artifactId>java-bindings</artifactId>
-            <version>0.9.1-2</version>
-            <!--
-            <scope>system</scope>
-            <systemPath>${basedir}/prebuilt/jar/java-bindings-0.9.1-2.jar</systemPath>
-            -->
+            <groupId>com.github.zhkl0228</groupId>
+            <artifactId>keystone</artifactId>
+            <version>0.9.1</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.6</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>4.5.2</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -179,30 +162,14 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <id>nexus</id>
-            <url>http://p.gzmtx.cn:8081/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
     <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <name>Releases Repository</name>
-            <url>http://p.gzmtx.cn:8081/nexus/content/repositories/releases/</url>
-        </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <name>Snapshots Repository</name>
-            <url>http://p.gzmtx.cn:8081/nexus/content/repositories/snapshots/</url>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
+        <repository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
 </project>
