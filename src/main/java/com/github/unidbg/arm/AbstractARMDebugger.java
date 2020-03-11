@@ -186,8 +186,6 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    private final List<CodeHistory> historyList = new ArrayList<>(15);
-
     private DebugListener listener;
 
     @Override
@@ -198,12 +196,6 @@ public abstract class AbstractARMDebugger implements Debugger {
     @Override
     public final void hook(Unicorn u, long address, int size, Object user) {
         Emulator<?> emulator = (Emulator<?>) user;
-
-        while (historyList.size() > 10) {
-            historyList.remove(0);
-        }
-        CodeHistory history = new CodeHistory(address, size, ARM.isThumb(u));
-        historyList.add(history);
 
         if (singleStep >= 0) {
             singleStep--;
@@ -221,12 +213,13 @@ public abstract class AbstractARMDebugger implements Debugger {
             } else if (singleStep == 0) {
                 loop(emulator, address, size);
             } else if (breakMnemonic != null) {
+                CodeHistory history = new CodeHistory(address, size, ARM.isThumb(u));
                 Capstone.CsInsn ins = history.disassemble(emulator);
                 if (breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
                     loop(emulator, address, size);
                 }
-            } else if (listener != null && listener.canDebug(emulator, history)) {
+            } else if (listener != null && listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(u)))) {
                 loop(emulator, address, size);
             }
         } catch (Exception e) {
@@ -493,7 +486,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         long next = 0;
         boolean on = false;
         StringBuilder sb = new StringBuilder();
-        for (CodeHistory history : historyList) {
+        for (CodeHistory history : Collections.singletonList(new CodeHistory(address, size, ARM.isThumb(emulator.getUnicorn())))) {
             if (history.address == address) {
                 sb.append("=> *");
                 on = true;
