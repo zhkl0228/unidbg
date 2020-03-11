@@ -26,6 +26,4 @@ public interface Debugger extends CodeHook, Closeable {
     @SuppressWarnings("unused")
     void setDebugListener(DebugListener listener);
 
-    boolean isSoftBreakpoint();
-
 }

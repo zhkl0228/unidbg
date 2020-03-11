@@ -135,7 +135,7 @@ public final class GdbStub extends AbstractDebugServer {
                     case '+': // Silently discard '+' packets
                         break;
                     case 0x3: // Ctrl-C requests
-                        singleStep = 1;
+                        setSingleStep(1);
                         break;
                     case '$':
                         currentInputPacket.append(c);

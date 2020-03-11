@@ -51,16 +51,9 @@ public abstract class AbstractARMDebugger implements Debugger {
     private final Map<Long, BreakPointImpl> breakMap = new HashMap<>();
 
     protected final Emulator<?> emulator;
-    private final boolean softBreakpoint;
 
-    protected AbstractARMDebugger(Emulator<?> emulator, boolean softBreakpoint) {
+    protected AbstractARMDebugger(Emulator<?> emulator) {
         this.emulator = emulator;
-        this.softBreakpoint = softBreakpoint;
-    }
-
-    @Override
-    public boolean isSoftBreakpoint() {
-        return softBreakpoint;
     }
 
     @Override
@@ -93,25 +86,6 @@ public abstract class AbstractARMDebugger implements Debugger {
         return addBreakPoint(address, callback);
     }
 
-    private static class SoftBreakPoint implements BreakPoint {
-        final long address;
-        final byte[] backup;
-        final BreakPointCallback callback;
-        SoftBreakPoint(long address, byte[] backup, BreakPointCallback callback) {
-            this.address = address;
-            this.backup = backup;
-            this.callback = callback;
-        }
-        @Override
-        public void setTemporary(boolean temporary) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    private final Map<Integer, SoftBreakPoint> softBreakpointMap = new HashMap<>();
-
-    private int svcNumber = 1;
-
     @Override
     public BreakPoint addBreakPoint(long address) {
         return addBreakPoint(address, null);
@@ -119,43 +93,14 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public BreakPoint addBreakPoint(long address, BreakPointCallback callback) {
-        if (softBreakpoint) {
-            int svcNumber = ++this.svcNumber; // begin with 2
-            byte[] code = addSoftBreakPoint(address, svcNumber);
+        address &= (~1);
 
-            address &= (~1);
-            Pointer pointer = UnicornPointer.pointer(emulator, address);
-            assert pointer != null;
-            byte[] backup = pointer.getByteArray(0, code.length);
-            pointer.write(0, code, 0, code.length);
-            SoftBreakPoint breakPoint = new SoftBreakPoint(address, backup, callback);
-            softBreakpointMap.put(svcNumber, breakPoint);
-            return breakPoint;
-        } else {
-            address &= (~1);
-
-            if (log.isDebugEnabled()) {
-                log.debug("addBreakPoint address=0x" + Long.toHexString(address));
-            }
-            BreakPointImpl breakPoint = new BreakPointImpl(callback);
-            breakMap.put(address, breakPoint);
-            return breakPoint;
+        if (log.isDebugEnabled()) {
+            log.debug("addBreakPoint address=0x" + Long.toHexString(address));
         }
-    }
-
-    protected final byte[] addSoftBreakPoint(long address, int svcNumber) {
-        if (emulator.is64Bit()) {
-            try (Keystone keystone = createKeystone(false)) {
-                KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
-                return encoded.getMachineCode();
-            }
-        } else {
-            boolean isThumb = (address & 1) != 0;
-            try (Keystone keystone = createKeystone(isThumb)) {
-                KeystoneEncoded encoded = keystone.assemble("bkpt #" + svcNumber);
-                return encoded.getMachineCode();
-            }
-        }
+        BreakPointImpl breakPoint = new BreakPointImpl(callback);
+        breakMap.put(address, breakPoint);
+        return breakPoint;
     }
 
     protected abstract Keystone createKeystone(boolean isThumb);
@@ -163,26 +108,11 @@ public abstract class AbstractARMDebugger implements Debugger {
     public final boolean removeBreakPoint(long address) {
         address &= (~1);
 
-        if (softBreakpoint) {
-            for (Iterator<Map.Entry<Integer, SoftBreakPoint>> iterator = softBreakpointMap.entrySet().iterator(); iterator.hasNext(); ) {
-                Map.Entry<Integer, SoftBreakPoint> entry = iterator.next();
-                SoftBreakPoint breakPoint = entry.getValue();
-                if (address == breakPoint.address) {
-                    Pointer pointer = UnicornPointer.pointer(emulator, address);
-                    assert pointer != null;
-                    pointer.write(0, breakPoint.backup, 0, breakPoint.backup.length);
-                    iterator.remove();
-                    return true;
-                }
-            }
-            return false;
+        if (breakMap.containsKey(address)) {
+            breakMap.remove(address);
+            return true;
         } else {
-            if (breakMap.containsKey(address)) {
-                breakMap.remove(address);
-                return true;
-            } else {
-                return false;
-            }
+            return false;
         }
     }
 
@@ -243,9 +173,13 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    protected int singleStep;
+    private int singleStep;
 
-    String breakMnemonic;
+    protected final void setSingleStep(int singleStep) {
+        this.singleStep = singleStep;
+    }
+
+    private String breakMnemonic;
 
     protected abstract void loop(Emulator<?> emulator, long address, int size) throws Exception;
 
@@ -438,12 +372,12 @@ public abstract class AbstractARMDebugger implements Debugger {
             return true;
         }
         if ("s".equals(line) || "si".equals(line)) {
-            singleStep = 1;
+            setSingleStep(1);
             return true;
         }
         if (line.startsWith("s")) {
             try {
-                singleStep = Integer.parseInt(line.substring(1));
+                setSingleStep(Integer.parseInt(line.substring(1)));
                 return true;
             } catch (NumberFormatException e) {
                 breakMnemonic = line.substring(1);
@@ -579,18 +513,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public final void brk(Pointer pc, int svcNumber) {
-        SoftBreakPoint breakPoint = softBreakpointMap.get(svcNumber);
-        if (breakPoint != null) {
-            if (log.isDebugEnabled()) {
-                log.debug(Inspector.inspectString(breakPoint.backup, "brk pc=" + pc + ", svcNumber=" + svcNumber + ", address=0x" + Long.toHexString(breakPoint.address)));
-            }
-            pc.write(0, breakPoint.backup, 0, breakPoint.backup.length);
-        }
-
-        BreakPointCallback callback = breakPoint == null ? null : breakPoint.callback;
-        if (callback == null || callback.onHit(emulator, breakPoint.address)) {
-            debug();
-        }
+        debug();
     }
 
     @Override

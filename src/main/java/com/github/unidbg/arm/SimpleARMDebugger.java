@@ -19,8 +19,8 @@ import java.util.Scanner;
 
 class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
 
-    SimpleARMDebugger(Emulator<?> emulator, boolean softBreakpoint) {
-        super(emulator, softBreakpoint);
+    SimpleARMDebugger(Emulator<?> emulator) {
+        super(emulator);
     }
 
     @Override

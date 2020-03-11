@@ -92,7 +92,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     @Override
     protected Debugger createConsoleDebugger() {
-        return new SimpleARM64Debugger(this, false);
+        return new SimpleARM64Debugger(this);
     }
 
     @Override

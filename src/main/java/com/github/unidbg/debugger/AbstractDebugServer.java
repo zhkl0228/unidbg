@@ -27,12 +27,12 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     private final List<ByteBuffer> pendingWrites;
 
     public AbstractDebugServer(Emulator<?> emulator) {
-        super(emulator, false);
+        super(emulator);
 
         pendingWrites = new LinkedList<>();
         input = ByteBuffer.allocate(PACKET_SIZE);
 
-        singleStep = 1; // break at attach
+        setSingleStep(1); // break at attach
 
         Thread thread = new Thread(this, "dbgserver");
         thread.start();
@@ -237,7 +237,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     }
 
     public final void singleStep() {
-        singleStep = 1;
+        setSingleStep(1);
         resumeRun();
     }
 

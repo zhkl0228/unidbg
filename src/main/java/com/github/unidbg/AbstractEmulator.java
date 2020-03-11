@@ -184,9 +184,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new UnsupportedOperationException();
         }
 
-        if (!debugger.isSoftBreakpoint()) {
-            this.unicorn.hook_add_new(debugger, begin, end, this);
-        }
+        this.unicorn.hook_add_new(debugger, begin, end, this);
         this.timeout = 0;
         return debugger;
     }
