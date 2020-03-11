@@ -10,6 +10,26 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <name>unidbg</name>
+    <description>Allows you to emulate an Android ARM32 and/or ARM64 native library</description>
+    <url>https://github.com/zhkl0228/unidbg</url>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>zhkl0228</name>
+            <email>zhkl0228@gmail.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:zhkl0228/unidbg.git</connection>
+        <developerConnection>scm:git:git@github.com:zhkl0228/unidbg.git</developerConnection>
+        <url>git@github.com:zhkl0228/unidbg.git</url>
+    </scm>
     <profiles>
         <profile>
             <id>osx64</id>
