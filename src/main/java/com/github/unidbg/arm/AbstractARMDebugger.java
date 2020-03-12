@@ -38,9 +38,11 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private static class BreakPointImpl implements BreakPoint {
         final BreakPointCallback callback;
+        final boolean thumb;
         boolean isTemporary;
-        public BreakPointImpl(BreakPointCallback callback) {
+        public BreakPointImpl(BreakPointCallback callback, boolean thumb) {
             this.callback = callback;
+            this.thumb = thumb;
         }
         @Override
         public void setTemporary(boolean temporary) {
@@ -48,7 +50,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    private final Map<Long, BreakPointImpl> breakMap = new HashMap<>();
+    private final Map<Long, BreakPointImpl> breakMap = new LinkedHashMap<>();
 
     protected final Emulator<?> emulator;
 
@@ -93,13 +95,15 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public BreakPoint addBreakPoint(long address, BreakPointCallback callback) {
+        boolean thumb = (address & 1) != 0;
         address &= (~1);
 
         if (log.isDebugEnabled()) {
             log.debug("addBreakPoint address=0x" + Long.toHexString(address));
         }
-        BreakPointImpl breakPoint = new BreakPointImpl(callback);
+        BreakPointImpl breakPoint = new BreakPointImpl(callback, thumb);
         breakMap.put(address, breakPoint);
+        emulator.getUnicorn().addBreakPoint(address);
         return breakPoint;
     }
 
@@ -110,6 +114,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
         if (breakMap.containsKey(address)) {
             breakMap.remove(address);
+            emulator.getUnicorn().removeBreakPoint(address);
             return true;
         } else {
             return false;
@@ -124,33 +129,36 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
+    public void onBreak(Unicorn u, long address, int size, Object user) {
+        BreakPointImpl breakPoint = breakMap.get(address);
+        if (breakPoint != null && breakPoint.isTemporary) {
+            removeBreakPoint(address);
+        }
+        if (breakPoint != null && breakPoint.callback != null && breakPoint.callback.onHit(emulator, address)) {
+            return;
+        }
+        try {
+            if (listener == null || listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(u)))) {
+                loop(emulator, address, size);
+            }
+        } catch (Exception e) {
+            log.warn("process loop failed", e);
+        }
+    }
+
+    @Override
     public final void hook(Unicorn u, long address, int size, Object user) {
         Emulator<?> emulator = (Emulator<?>) user;
 
-        if (singleStep >= 0) {
-            singleStep--;
-        }
-
         try {
-            if (breakMap.containsKey(address)) {
-                BreakPointImpl breakPoint = breakMap.get(address);
-                if (breakPoint != null && breakPoint.isTemporary) {
-                    breakMap.remove(address);
-                }
-                if (breakPoint != null && (breakPoint.callback == null || breakPoint.callback.onHit(emulator, address))) {
-                    loop(emulator, address, size);
-                }
-            } else if (singleStep == 0) {
-                loop(emulator, address, size);
-            } else if (breakMnemonic != null) {
+            if (breakMnemonic != null) {
                 CodeHistory history = new CodeHistory(address, size, ARM.isThumb(u));
                 Capstone.CsInsn ins = history.disassemble(emulator);
                 if (breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
+                    u.setFastDebug(true);
                     loop(emulator, address, size);
                 }
-            } else if (listener != null && listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(u)))) {
-                loop(emulator, address, size);
             }
         } catch (Exception e) {
             log.warn("process hook failed", e);
@@ -173,10 +181,8 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    private int singleStep;
-
     protected final void setSingleStep(int singleStep) {
-        this.singleStep = singleStep;
+        emulator.getUnicorn().setSingleStep(singleStep);
     }
 
     private String breakMnemonic;
@@ -367,6 +373,35 @@ public abstract class AbstractARMDebugger implements Debugger {
             System.out.println(sb);
             return false;
         }
+        if ("vbs".equals(line)) { // view breakpoints
+            Memory memory = emulator.getMemory();
+            StringBuilder sb = new StringBuilder("* means temporary bp:\n");
+            String maxLengthSoName = memory.getMaxLengthLibraryName();
+            for (Map.Entry<Long, BreakPointImpl> entry : breakMap.entrySet()) {
+                address = entry.getKey();
+                BreakPointImpl bp = entry.getValue();
+                Capstone.CsInsn ins = null;
+                try {
+                    byte[] code = u.mem_read(address, 4);
+                    Capstone.CsInsn[] insns = emulator.disassemble(address, code, bp.thumb);
+                    if (insns != null && insns.length > 0) {
+                        ins = insns[0];
+                    }
+                } catch(Exception ignored) {}
+
+                if (ins == null) {
+                    sb.append(String.format("[%" + String.valueOf(maxLengthSoName).length() + "s]", "0x" + Long.toHexString(address)));
+                    if (bp.isTemporary) {
+                        sb.append('*');
+                    }
+                } else {
+                    sb.append(ARM.assembleDetail(emulator, ins, address, bp.thumb, bp.isTemporary));
+                }
+                sb.append("\n");
+            }
+            System.out.println(sb);
+            return false;
+        }
         if ("stop".equals(line)) {
             u.emu_stop();
             return true;
@@ -381,6 +416,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 return true;
             } catch (NumberFormatException e) {
                 breakMnemonic = line.substring(1);
+                u.setFastDebug(false);
                 return true;
             }
         }
@@ -451,7 +487,13 @@ public abstract class AbstractARMDebugger implements Debugger {
             nextAddr += ins.size;
         }
         System.out.println(sb);
-        return on ? nextAddr : next;
+        if (on) {
+            next = nextAddr;
+        }
+        if (thumb) {
+            next |= 1;
+        }
+        return next;
     }
 
     final void disassembleBlock(Emulator<?> emulator, long address, boolean thumb) {

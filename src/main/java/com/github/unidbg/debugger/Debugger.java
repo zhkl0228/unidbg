@@ -2,11 +2,11 @@ package com.github.unidbg.debugger;
 
 import com.github.unidbg.Module;
 import com.sun.jna.Pointer;
-import unicorn.CodeHook;
+import unicorn.DebugHook;
 
 import java.io.Closeable;
 
-public interface Debugger extends CodeHook, Closeable {
+public interface Debugger extends DebugHook, Closeable {
 
     BreakPoint addBreakPoint(Module module, String symbol);
     BreakPoint addBreakPoint(Module module, String symbol, BreakPointCallback callback);

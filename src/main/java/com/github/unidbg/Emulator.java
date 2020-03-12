@@ -109,19 +109,9 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
 
     String getProcessName();
 
-    /**
-     * note: low performance
-     */
     Debugger attach();
 
     Debugger attach(DebuggerType type);
-
-    /**
-     * note: low performance
-     */
-    Debugger attach(long begin, long end);
-
-    Debugger attach(long begin, long end, DebuggerType type);
 
     FileSystem<T> getFileSystem();
 

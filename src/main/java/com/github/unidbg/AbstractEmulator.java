@@ -159,11 +159,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     @Override
     public Debugger attach(DebuggerType type) {
-        return attach(1, 0, type);
-    }
-
-    @Override
-    public Debugger attach(long begin, long end, DebuggerType type) {
         if (debugger != null) {
             return debugger;
         }
@@ -184,14 +179,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new UnsupportedOperationException();
         }
 
-        this.unicorn.hook_add_new(debugger, begin, end, this);
+        this.unicorn.debugger_add(debugger, 1, 0, this);
         this.timeout = 0;
         return debugger;
-    }
-
-    @Override
-    public Debugger attach(long begin, long end) {
-        return attach(begin, end, DebuggerType.CONSOLE);
     }
 
     protected abstract Debugger createConsoleDebugger();
@@ -404,7 +394,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
             closeInternal();
 
-             unicorn.close();
+            unicorn.closeAll();
         } finally {
             closed = true;
         }

@@ -296,6 +296,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println("where: show java stack trace");
         System.out.println();
         System.out.println("vm: view loaded modules");
+        System.out.println("vbs: view breakpoints");
         System.out.println("d|dis: show disassemble");
         System.out.println("d(0x): show disassemble at specify address");
         System.out.println("stop: stop emulation");
