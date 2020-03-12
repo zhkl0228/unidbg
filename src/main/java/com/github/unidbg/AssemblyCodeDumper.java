@@ -45,7 +45,7 @@ class AssemblyCodeDumper implements CodeHook {
     public void hook(Unicorn u, long address, int size, Object user) {
         if (canTrace(address)) {
             try {
-                PrintStream out = System.err;
+                PrintStream out = System.out;
                 if (redirect != null) {
                     out = redirect;
                 }

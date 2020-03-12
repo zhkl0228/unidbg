@@ -175,7 +175,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             address = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
         }
         try {
-            loop(emulator, address, 0);
+            loop(emulator, address, 4);
         } catch (Exception e) {
             log.warn("debug failed", e);
         }
