@@ -30,35 +30,6 @@
         <developerConnection>scm:git:git@github.com:zhkl0228/unidbg.git</developerConnection>
         <url>git@github.com:zhkl0228/unidbg.git</url>
     </scm>
-    <profiles>
-        <profile>
-            <id>osx64</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <dynamic.lib.location>prebuilt/osx64</dynamic.lib.location>
-            </properties>
-        </profile>
-        <profile>
-            <id>linux64</id>
-            <properties>
-                <dynamic.lib.location>prebuilt/linux64</dynamic.lib.location>
-            </properties>
-        </profile>
-        <profile>
-            <id>win32</id>
-            <properties>
-                <dynamic.lib.location>prebuilt/win32</dynamic.lib.location>
-            </properties>
-        </profile>
-        <profile>
-            <id>win64</id>
-            <properties>
-                <dynamic.lib.location>prebuilt/win64</dynamic.lib.location>
-            </properties>
-        </profile>
-    </profiles>
     <build>
         <plugins>
             <plugin>
