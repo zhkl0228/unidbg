@@ -172,8 +172,8 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb) {
-        return thumb ? capstoneThumb.disasm(code, address) : capstoneArm.disasm(code, address);
+    public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb, long count) {
+        return thumb ? capstoneThumb.disasm(code, address, count) : capstoneArm.disasm(code, address, count);
     }
 
     private void printAssemble(PrintStream out, Capstone.CsInsn[] insns, long address, boolean thumb) {

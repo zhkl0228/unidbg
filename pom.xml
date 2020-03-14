@@ -95,7 +95,7 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>capstone</artifactId>
-            <version>3.0.6</version>
+            <version>3.0.7</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>

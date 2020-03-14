@@ -149,11 +149,11 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
-    public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb) {
+    public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb, long count) {
         if (thumb) {
             throw new IllegalStateException();
         }
-        return capstoneArm64.disasm(code, address);
+        return capstoneArm64.disasm(code, address, count);
     }
 
     private void printAssemble(PrintStream out, Capstone.CsInsn[] insns, long address) {

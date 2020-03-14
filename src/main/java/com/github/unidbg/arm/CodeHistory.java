@@ -18,7 +18,7 @@ public class CodeHistory {
     Capstone.CsInsn disassemble(Emulator<?> emulator) {
         Unicorn u = emulator.getUnicorn();
         byte[] code = u.mem_read(address, size);
-        return emulator.disassemble(address, code, thumb)[0];
+        return emulator.disassemble(address, code, thumb, 1)[0];
     }
 
 }

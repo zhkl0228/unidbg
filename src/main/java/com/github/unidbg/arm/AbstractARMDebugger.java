@@ -383,7 +383,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 Capstone.CsInsn ins = null;
                 try {
                     byte[] code = u.mem_read(address, 4);
-                    Capstone.CsInsn[] insns = emulator.disassemble(address, code, bp.thumb);
+                    Capstone.CsInsn[] insns = emulator.disassemble(address, code, bp.thumb, 1);
                     if (insns != null && insns.length > 0) {
                         ins = insns[0];
                     }
@@ -502,7 +502,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
         assert pointer != null;
         byte[] code = pointer.getByteArray(0, 4 * 10);
-        Capstone.CsInsn[] insns = emulator.disassemble(nextAddr, code, thumb);
+        Capstone.CsInsn[] insns = emulator.disassemble(nextAddr, code, thumb, 0);
         for (Capstone.CsInsn ins : insns) {
             sb.append("    ");
             sb.append(ARM.assembleDetail(emulator, ins, nextAddr, thumb, false)).append('\n');

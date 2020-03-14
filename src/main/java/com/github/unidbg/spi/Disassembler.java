@@ -13,6 +13,6 @@ public interface Disassembler {
 
     Capstone.CsInsn[] printAssemble(PrintStream out, long address, int size);
     Capstone.CsInsn[] disassemble(long address, int size, long count);
-    Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb);
+    Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb, long count);
 
 }
