@@ -1,6 +1,7 @@
 package com.github.unidbg.spi;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.debugger.Breaker;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
 import unicorn.InterruptHook;
@@ -23,5 +24,7 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook {
 
     void setVerbose(boolean verbose);
     boolean isVerbose();
+
+    void setBreaker(Breaker breaker);
 
 }

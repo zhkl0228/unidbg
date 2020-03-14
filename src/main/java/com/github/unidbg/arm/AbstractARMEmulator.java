@@ -66,9 +66,9 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
         unicorn.hook_add_new(syscallHandler, this);
 
         this.capstoneArm = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
-        // this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
+        this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
         this.capstoneThumb = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
-        // this.capstoneThumb.setDetail(Capstone.CS_OPT_ON);
+        this.capstoneThumb.setDetail(Capstone.CS_OPT_ON);
 
         setupTraps();
     }

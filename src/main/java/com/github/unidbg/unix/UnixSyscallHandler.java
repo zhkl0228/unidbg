@@ -2,6 +2,7 @@ package com.github.unidbg.unix;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.debugger.Breaker;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
@@ -42,6 +43,17 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     @Override
     public boolean isVerbose() {
         return verbose;
+    }
+
+    private Breaker breaker;
+
+    @Override
+    public void setBreaker(Breaker breaker) {
+        this.breaker = breaker;
+    }
+
+    protected final Breaker createBreaker(Emulator<?> emulator) {
+        return breaker != null ? breaker : emulator.attach();
     }
 
     protected final int getMinFd() {

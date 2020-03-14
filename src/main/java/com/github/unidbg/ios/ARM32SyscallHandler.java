@@ -73,7 +73,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         }
 
         if (intno == ARMEmulator.EXCP_BKPT) { // bkpt
-            emulator.attach().brk(pc, bkpt);
+            createBreaker(emulator).brk(pc, bkpt);
             return;
         }
 
@@ -557,7 +557,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log = LogFactory.getLog(AbstractEmulator.class);
         }
         if (log.isDebugEnabled()) {
-            emulator.attach().debug();
+            createBreaker(emulator).debug();
         }
         return 0;
     }
@@ -958,7 +958,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         return 0;
                     }
                     if (log.isDebugEnabled()) {
-                        emulator.attach().debug();
+                        createBreaker(emulator).debug();
                     }
                     return -1;
                 }
@@ -1776,7 +1776,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");
                 if (log.isDebugEnabled()) {
-                    emulator.attach().debug();
+                    createBreaker(emulator).debug();
                 }
                 break;
         }

@@ -498,7 +498,7 @@ public class ARM {
         return assembleDetail(emulator, ins, address, thumb, false);
     }
 
-    static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb, boolean current) {
+    public static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb, boolean current) {
         Memory memory = emulator.getMemory();
         char space = current ? '*' : ' ';
         StringBuilder sb = new StringBuilder();

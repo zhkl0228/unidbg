@@ -76,7 +76,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         }
 
         if (intno == ARMEmulator.EXCP_BKPT) { // bkpt
-            emulator.attach().brk(pc, bkpt);
+            createBreaker(emulator).brk(pc, bkpt);
             return;
         }
 

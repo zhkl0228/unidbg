@@ -62,7 +62,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         UnicornPointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
 
         if (intno == ARMEmulator.EXCP_BKPT) { // brk
-            emulator.attach().brk(pc, (pc.getInt(0) >> 5) & 0xffff);
+            createBreaker(emulator).brk(pc, (pc.getInt(0) >> 5) & 0xffff);
             return;
         }
 
@@ -107,7 +107,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 if (!handleIndirect(emulator, u, indirectNR)) {
                     log.warn("handleInterrupt intno=" + intno + ", indirectNR=" + indirectNR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc);
                     if (log.isDebugEnabled()) {
-                        emulator.attach().debug();
+                        createBreaker(emulator).debug();
                     }
                 }
                 return;
@@ -361,7 +361,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
         if (log.isDebugEnabled()) {
-            emulator.attach().debug();
+            createBreaker(emulator).debug();
         }
 
         if (exception instanceof UnicornException) {
@@ -478,7 +478,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log = LogFactory.getLog(AbstractEmulator.class);
         }
         if (log.isDebugEnabled()) {
-            emulator.attach().debug();
+            createBreaker(emulator).debug();
         }
         return 0;
     }
@@ -1026,7 +1026,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         return 0;
                     }
                     if (log.isDebugEnabled()) {
-                        emulator.attach().debug();
+                        createBreaker(emulator).debug();
                     }
                     return -1;
                 }
@@ -1101,7 +1101,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     default:
                         log.info(msg);
                         if (log.isDebugEnabled()) {
-                            emulator.attach().debug();
+                            createBreaker(emulator).debug();
                         }
                         break;
                 }
@@ -1946,7 +1946,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                 Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");
                 if (log.isDebugEnabled()) {
-                    emulator.attach().debug();
+                    createBreaker(emulator).debug();
                 }
                 break;
         }

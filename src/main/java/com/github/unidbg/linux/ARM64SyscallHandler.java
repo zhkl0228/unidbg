@@ -65,7 +65,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         UnicornPointer pc = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
 
         if (intno == ARMEmulator.EXCP_BKPT) { // brk
-            emulator.attach().brk(pc, (pc.getInt(0) >> 5) & 0xffff);
+            createBreaker(emulator).brk(pc, (pc.getInt(0) >> 5) & 0xffff);
             return;
         }
 

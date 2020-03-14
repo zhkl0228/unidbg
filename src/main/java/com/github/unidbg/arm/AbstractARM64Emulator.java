@@ -64,6 +64,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         unicorn.hook_add_new(syscallHandler, this);
 
         this.capstoneArm64 = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+        this.capstoneArm64.setDetail(Capstone.CS_OPT_ON);
     }
 
     @Override
