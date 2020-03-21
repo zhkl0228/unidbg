@@ -449,11 +449,11 @@ public class ARM {
         return emulator.is32Bit() ? ARM_ARG_REGS : ARM64_ARG_REGS;
     }
 
-    private static int[] getAllRegisters(boolean thumb) {
+    public static int[] getAllRegisters(boolean thumb) {
         return thumb ? THUMB_REGS : ARM_REGS;
     }
 
-    private static int[] getAll64Registers() {
+    public static int[] getAll64Registers() {
         return ARM64_REGS;
     }
 
