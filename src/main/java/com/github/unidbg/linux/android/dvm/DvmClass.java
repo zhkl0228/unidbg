@@ -14,13 +14,24 @@ public class DvmClass extends DvmObject<String> implements Hashable {
 
     private static final Log log = LogFactory.getLog(DvmClass.class);
 
+    private static final String ROOT_CLASS = "java/lang/Class";
+
     public final BaseVM vm;
     private final DvmClass[] interfaceClasses;
 
     DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
-        super("java/lang/Class".equals(className) ? null : vm.resolveClass("java/lang/Class"), className);
+        super(ROOT_CLASS.equals(className) ? null : vm.resolveClass(ROOT_CLASS), className);
         this.vm = vm;
         this.interfaceClasses = interfaceClasses;
+    }
+
+    @Override
+    public DvmClass getObjectType() {
+        if (ROOT_CLASS.equals(value)) {
+            return this;
+        }
+
+        return super.getObjectType();
     }
 
     public String getClassName() {

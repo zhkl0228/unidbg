@@ -10,7 +10,7 @@ import java.util.List;
 
 public class DvmObject<T> implements Hashable {
 
-    final DvmClass objectType;
+    private final DvmClass objectType;
     protected T value;
 
     protected DvmObject(DvmClass objectType, T value) {
