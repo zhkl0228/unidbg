@@ -142,8 +142,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                     return;
                 case 36888: // sync: causes all pending modifications to filesystem metadata and cached file data to be written to the underlying filesystems.
                     return;
-                case 37888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, kill(u));
+                case 129:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, kill(emulator));
                     return;
                 case 39888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mkdir(u, emulator));
@@ -230,11 +230,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                 case 32:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, flock(emulator));
                     return;
-                case 146888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, writev(u, emulator));
+                case 66:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, writev(emulator));
                     return;
-                case 162888:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
+                case 101:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, nanosleep(emulator));
                     return;
                 case 167:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, prctl(u, emulator));
@@ -1025,10 +1025,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
     }
 
     private int nanosleep(Emulator<?> emulator) {
-        Pointer req = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer rem = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int tv_sec = req.getInt(0);
-        int tv_nsec = req.getInt(4);
+        RegisterContext context = emulator.getContext();
+        Pointer req = context.getPointerArg(0);
+        Pointer rem = context.getPointerArg(1);
+        long tv_sec = req.getLong(0);
+        long tv_nsec = req.getLong(8);
         if (log.isDebugEnabled()) {
             log.debug("nanosleep req=" + req + ", rem=" + rem + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
         }
@@ -1039,13 +1040,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         return 0;
     }
 
-    private int kill(Unicorn u) {
-        int pid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int sig = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+    protected int kill(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int sig = context.getIntArg(1);
         if (log.isDebugEnabled()) {
             log.debug("kill pid=" + pid + ", sig=" + sig);
         }
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig);
     }
 
     private int setitimer(Unicorn u, Emulator<?> emulator) {
@@ -1463,10 +1465,11 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         return fcntl(emulator, fd, cmd, arg);
     }
 
-    private int writev(Unicorn u, Emulator<?> emulator) {
-        int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        Pointer iov = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int iovcnt = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
+    private int writev(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        Pointer iov = context.getPointerArg(1);
+        int iovcnt = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             for (int i = 0; i < iovcnt; i++) {
                 Pointer iov_base = iov.getPointer(i * 8);
@@ -1484,9 +1487,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
 
         int count = 0;
         for (int i = 0; i < iovcnt; i++) {
-            Pointer iov_base = iov.getPointer(i * 8);
-            int iov_len = iov.getInt(i * 8 + 4);
-            byte[] data = iov_base.getByteArray(0, iov_len);
+            Pointer iov_base = iov.getPointer(i * 16);
+            long iov_len = iov.getLong(i * 16 + 8);
+            byte[] data = iov_base.getByteArray(0, (int) iov_len);
             count += file.write(data);
         }
         return count;

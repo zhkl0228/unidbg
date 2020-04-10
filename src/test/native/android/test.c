@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <signal.h>
 
 static void test_stat() {
   struct stat st;
@@ -32,6 +33,63 @@ static void test_ioctl() {
   close(fd);
 }
 
+// 3.不可靠信号的丢失
+static void signal_handler(int signo) {
+    printf("received a signal: %d\n", signo);
+}
+
+static void test_signal() {
+    pid_t pid;
+    sigset_t set;
+    sigset_t oset;
+
+    sigemptyset(&set);          //清空
+    sigaddset(&set, SIGINT);          //添加2号信号
+    sigaddset(&set, SIGRTMIN);         //添加34号信号
+    sigprocmask(SIG_SETMASK, &set, &oset);     //将这个集合设置为这个进程的阻塞信号集
+
+    //绑定信号
+    signal(SIGINT, signal_handler);
+    signal(SIGRTMIN, signal_handler);
+
+    sigprocmask(SIG_SETMASK, &oset, NULL); //解除绑定
+}
+
+static void handler(int signo, siginfo_t *resdata, void *unknowp) {
+    printf("signo=%d\n", signo);
+    printf("return data :%d\n", resdata->si_value.sival_int);
+}
+
+static void test_signalaction() {
+    pid_t pid = fork();
+    if(pid == -1) {
+        perror("create fork");
+        return;
+    } else if(pid == 0) { // 子进程
+        sleep(1);
+        //发送信号
+        int i = 5;
+        while(i--) {
+            kill(getppid(), SIGINT);
+            printf("send signal: %d success!\n", SIGINT);
+            kill(getppid(), SIGRTMIN);
+            printf("send signal: %d success!\n", SIGRTMIN);
+        }
+    } else {
+        struct sigaction act;
+        //初始化sa_mask
+        sigemptyset(&act.sa_mask);
+        act.sa_handler = signal_handler;
+        act.sa_sigaction = handler;
+        //一旦使用了sa_sigaction属性，那么必须设置sa_flags属性的值为SA_SIGINFO
+        act.sa_flags = SA_SIGINFO;
+
+        //注册信号
+        sigaction(SIGINT, &act, NULL);
+        sigaction(SIGRTMIN, &act, NULL);
+    }
+}
+
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -39,6 +97,8 @@ int main() {
   test_stat();
   test_dirent();
   test_ioctl();
+  test_signal();
+  test_signalaction();
   printf("Press any key to exit\n");
   getchar();
   return 0;

@@ -1275,13 +1275,13 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return 0;
     }
 
-    private int kill(Unicorn u) {
+    protected int kill(Unicorn u) {
         int pid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         int sig = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         if (log.isDebugEnabled()) {
             log.debug("kill pid=" + pid + ", sig=" + sig);
         }
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig);
     }
 
     private int setitimer(Emulator<?> emulator) {
