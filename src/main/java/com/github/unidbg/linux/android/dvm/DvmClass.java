@@ -3,12 +3,13 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.linux.LinuxModule;
 import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class DvmClass extends DvmObject<String> implements Hashable {
 
@@ -216,20 +217,7 @@ public class DvmClass extends DvmObject<String> implements Hashable {
     }
 
     public Number callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
-        UnicornPointer fnPtr = findNativeFunction(emulator, method);
-        List<Object> list = new ArrayList<>(10);
-        list.add(vm.getJNIEnv());
-        list.add(this.hashCode());
-        if (args != null) {
-            for (Object arg : args) {
-                list.add(arg);
-
-                if(arg instanceof DvmObject) {
-                    vm.addLocalObject((DvmObject<?>) arg);
-                }
-            }
-        }
-        return LinuxModule.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
+        return callJniMethod(emulator, vm, this, this, method, args);
     }
 
 }

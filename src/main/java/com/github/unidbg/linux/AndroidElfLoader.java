@@ -78,9 +78,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 if (thread.context == 0) {
                     log.info("run thread: fn=" + thread.fn + ", arg=" + thread.arg + ", child_stack=" + thread.child_stack);
                     if (__thread_entry == 0) {
-                        LinuxModule.emulateFunction(emulator, thread.fn.peer, thread.arg);
+                        Module.emulateFunction(emulator, thread.fn.peer, thread.arg);
                     } else {
-                        LinuxModule.emulateFunction(emulator, __thread_entry, thread.fn, thread.arg, thread.child_stack);
+                        Module.emulateFunction(emulator, __thread_entry, thread.fn, thread.arg, thread.child_stack);
                     }
                 } else {
                     unicorn.context_restore(thread.context);

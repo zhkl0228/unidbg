@@ -18,6 +18,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.Semaphore;
 
 public abstract class AbstractDebugServer extends AbstractARMDebugger implements DebugServer {
@@ -81,6 +82,15 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
             try {
                 int count = selector.select(50);
                 if (count <= 0) {
+                    if (!isDebuggerConnected() && System.in.available() > 0) {
+                        String line = new Scanner(System.in).nextLine();
+                        if ("c".equals(line)) {
+                            serverRunning = false;
+                            break;
+                        } else {
+                            System.out.println("c: continue");
+                        }
+                    }
                     continue;
                 }
 
@@ -114,6 +124,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         IOUtils.closeQuietly(selector);
         selector = null;
         closeSocketChannel();
+        resumeRun();
     }
 
     protected abstract void onServerStart();

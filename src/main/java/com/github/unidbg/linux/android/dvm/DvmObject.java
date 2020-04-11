@@ -1,7 +1,7 @@
 package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.linux.LinuxModule;
+import com.github.unidbg.Module;
 import com.github.unidbg.pointer.UnicornPointer;
 import unicorn.UnicornException;
 
@@ -30,22 +30,32 @@ public class DvmObject<T> implements Hashable {
         throw new UnicornException("isInstanceOf vm=" + vm + ", dvmClass=" + dvmClass);
     }
 
+    @SuppressWarnings("unused")
     public Number callJniMethod(Emulator<?> emulator, String method, Object...args) {
+        return callJniMethod(emulator, objectType.vm, objectType, this, method, args);
+    }
+
+    protected static Number callJniMethod(Emulator<?> emulator, VM vm, DvmClass objectType, DvmObject<?> thisObj, String method, Object...args) {
         UnicornPointer fnPtr = objectType.findNativeFunction(emulator, method);
+        vm.addLocalObject(thisObj);
         List<Object> list = new ArrayList<>(10);
-        list.add(objectType.vm.getJNIEnv());
-        list.add(this.hashCode());
-        objectType.vm.addLocalObject(this);
+        list.add(vm.getJNIEnv());
+        list.add(thisObj.hashCode());
         if (args != null) {
             for (Object arg : args) {
+                if (arg instanceof Boolean) {
+                    list.add((Boolean) arg ? VM.JNI_TRUE : VM.JNI_FALSE);
+                    continue;
+                }
+
                 list.add(arg);
 
                 if(arg instanceof DvmObject) {
-                    objectType.vm.addLocalObject((DvmObject<?>) arg);
+                    vm.addLocalObject((DvmObject<?>) arg);
                 }
             }
         }
-        return LinuxModule.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
+        return Module.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
     }
 
     @Override

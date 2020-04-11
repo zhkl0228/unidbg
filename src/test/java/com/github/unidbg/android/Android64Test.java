@@ -34,7 +34,7 @@ public class Android64Test {
         }
         @Override
         protected long fork(Emulator<?> emulator) {
-            return 0;
+            return emulator.getPid();
         }
     }
 

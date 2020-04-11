@@ -1496,7 +1496,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                             if (log.isDebugEnabled()) {
                                 log.debug("notifySingle callback=" + callback + ", module=" + module.name);
                             }
-                            MachOModule.emulateFunction(emulator, callback.peer, UnicornPointer.pointer(emulator, module.machHeader), UnicornPointer.pointer(emulator, slide));
+                            Module.emulateFunction(emulator, callback.peer, UnicornPointer.pointer(emulator, module.machHeader), UnicornPointer.pointer(emulator, slide));
                         }
                     }
                 }
@@ -1505,7 +1505,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         if (log.isDebugEnabled()) {
                             log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
                         }
-                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
+                        Module.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
                 }
                 break;
@@ -1515,7 +1515,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         if (log.isDebugEnabled()) {
                             log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
                         }
-                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
+                        Module.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
                 }
                 break;
@@ -1525,7 +1525,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         if (log.isDebugEnabled()) {
                             log.debug("notifySingle state=" + state + ", handler=" + handler + ", module=" + module.name);
                         }
-                        MachOModule.emulateFunction(emulator, handler.peer, state, 1, info);
+                        Module.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
                 }
                 break;

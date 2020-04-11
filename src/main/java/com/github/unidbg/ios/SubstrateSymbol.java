@@ -1,6 +1,7 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 
 class SubstrateSymbol extends Symbol {
@@ -14,7 +15,7 @@ class SubstrateSymbol extends Symbol {
 
     @Override
     public Number[] call(Emulator<?> emulator, Object... args) {
-        return MachOModule.emulateFunction(emulator, address, args);
+        return Module.emulateFunction(emulator, address, args);
     }
 
     @Override

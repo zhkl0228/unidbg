@@ -12,8 +12,6 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +31,7 @@ public class AndroidTest {
         }
         @Override
         protected int fork(Emulator<?> emulator) {
-            return 0;
+            return emulator.getPid();
         }
     }
 
@@ -47,7 +45,7 @@ public class AndroidTest {
         };
         Memory memory = emulator.getMemory();
         emulator.getSyscallHandler().setVerbose(false);
-        LibraryResolver resolver = new AndroidResolver(19);
+        LibraryResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
 
         memory.setCallInitFunction();
@@ -61,8 +59,8 @@ public class AndroidTest {
     }
 
     private void test() {
-        Logger.getLogger("com.github.unidbg.linux.ARMSyscallHandler").setLevel(Level.DEBUG);
-        Logger.getLogger("com.github.unidbg.unix.UnixSyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.linux.ARMSyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.unix.UnixSyscallHandler").setLevel(Level.DEBUG);
         System.err.println("exit code: " + module.callEntry(emulator));
     }
 
