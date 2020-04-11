@@ -8,8 +8,6 @@ import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
-
 public abstract class Dlfcn implements HookListener {
 
     private static final Log log = LogFactory.getLog(Dlfcn.class);
@@ -23,17 +21,13 @@ public abstract class Dlfcn implements HookListener {
     }
 
     protected final long dlsym(Memory memory, long handle, String symbolName) {
-        try {
-            Symbol symbol = memory.dlsym(handle, symbolName);
-            if (symbol == null) {
-                log.info("Find symbol \"" + symbolName + "\" failed");
-                this.error.setString(0, "Find symbol " + symbolName + " failed");
-                return 0;
-            }
-            return symbol.getAddress();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
+        Symbol symbol = memory.dlsym(handle, symbolName);
+        if (symbol == null) {
+            log.info("Find symbol \"" + symbolName + "\" failed");
+            this.error.setString(0, "Find symbol " + symbolName + " failed");
+            return 0;
         }
+        return symbol.getAddress();
     }
 
 }

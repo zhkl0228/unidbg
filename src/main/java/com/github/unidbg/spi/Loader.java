@@ -8,7 +8,6 @@ import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.pointer.UnicornPointer;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -17,19 +16,19 @@ public interface Loader {
 
     void setLibraryResolver(LibraryResolver libraryResolver);
 
-    Module load(File elfFile) throws IOException;
-    Module load(File elfFile, boolean forceCallInit) throws IOException;
+    Module load(File elfFile);
+    Module load(File elfFile, boolean forceCallInit);
 
-    Module load(LibraryFile libraryFile) throws IOException;
-    Module load(LibraryFile libraryFile, boolean forceCallInit) throws IOException;
+    Module load(LibraryFile libraryFile);
+    Module load(LibraryFile libraryFile, boolean forceCallInit);
 
     Module findModuleByAddress(long address);
     Module findModule(String soName);
 
-    Module dlopen(String filename) throws IOException;
-    Module dlopen(String filename, boolean calInit) throws IOException;
+    Module dlopen(String filename);
+    Module dlopen(String filename, boolean calInit);
     boolean dlclose(long handle);
-    Symbol dlsym(long handle, String symbol) throws IOException;
+    Symbol dlsym(long handle, String symbol);
 
     void addModuleListener(ModuleListener listener);
 

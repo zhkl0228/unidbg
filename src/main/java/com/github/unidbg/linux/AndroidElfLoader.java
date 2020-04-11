@@ -173,22 +173,26 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     private final Map<String, LinuxModule> modules = new LinkedHashMap<>();
 
-    protected final LinuxModule loadInternal(LibraryFile libraryFile, boolean forceCallInit) throws IOException {
-        LinuxModule module = loadInternal(libraryFile);
-        resolveSymbols();
-        if (callInitFunction || forceCallInit) {
-            for (LinuxModule m : modules.values().toArray(new LinuxModule[0])) {
-                boolean forceCall = (forceCallInit && m == module) || m.isForceCallInit();
-                if (callInitFunction) {
-                    m.callInitFunction(emulator, forceCall);
-                } else if(forceCall) {
-                    m.callInitFunction(emulator, true);
+    protected final LinuxModule loadInternal(LibraryFile libraryFile, boolean forceCallInit) {
+        try {
+            LinuxModule module = loadInternal(libraryFile);
+            resolveSymbols();
+            if (callInitFunction || forceCallInit) {
+                for (LinuxModule m : modules.values().toArray(new LinuxModule[0])) {
+                    boolean forceCall = (forceCallInit && m == module) || m.isForceCallInit();
+                    if (callInitFunction) {
+                        m.callInitFunction(emulator, forceCall);
+                    } else if (forceCall) {
+                        m.callInitFunction(emulator, true);
+                    }
+                    m.initFunctionList.clear();
                 }
-                m.initFunctionList.clear();
             }
+            module.addReferenceCount();
+            return module;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
-        module.addReferenceCount();
-        return module;
     }
 
     private void resolveSymbols() throws IOException {
@@ -208,7 +212,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     }
 
     @Override
-    public Module dlopen(String filename, boolean calInit) throws IOException {
+    public Module dlopen(String filename, boolean calInit) {
         LinuxModule loaded = modules.get(FilenameUtils.getName(filename));
         if (loaded != null) {
             loaded.addReferenceCount();
@@ -233,22 +237,26 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             return loadInternal(file, false);
         }
 
-        LinuxModule module = loadInternal(file);
-        resolveSymbols();
-        if (!callInitFunction) { // No need call init array
-            for (LinuxModule m : modules.values()) {
-                m.initFunctionList.clear();
+        try {
+            LinuxModule module = loadInternal(file);
+            resolveSymbols();
+            if (!callInitFunction) { // No need call init array
+                for (LinuxModule m : modules.values()) {
+                    m.initFunctionList.clear();
+                }
             }
+            module.addReferenceCount();
+            return module;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
-        module.addReferenceCount();
-        return module;
     }
 
     /**
      * dlopen调用init_array会崩溃
      */
     @Override
-    public Module dlopen(String filename) throws IOException {
+    public Module dlopen(String filename) {
         return dlopen(filename, true);
     }
 

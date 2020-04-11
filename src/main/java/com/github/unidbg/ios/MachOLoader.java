@@ -156,11 +156,11 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     @Override
-    protected Module loadInternal(LibraryFile libraryFile, boolean forceCallInit) throws IOException {
+    protected Module loadInternal(LibraryFile libraryFile, boolean forceCallInit) {
         return loadInternal(libraryFile, forceCallInit, true);
     }
 
-    private MachOModule loadInternal(LibraryFile libraryFile, boolean forceCallInit, boolean checkBootstrap) throws IOException {
+    private MachOModule loadInternal(LibraryFile libraryFile, boolean forceCallInit, boolean checkBootstrap) {
         MachOModule module = loadInternalPhase(libraryFile, true, checkBootstrap);
 
         for (MachOModule export : modules.values()) {
@@ -193,9 +193,13 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return module;
     }
 
-    private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) throws IOException {
-        ByteBuffer buffer = libraryFile.mapBuffer();
-        return loadInternalPhase(libraryFile, buffer, loadNeeded, checkBootstrap);
+    private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) {
+        try {
+            ByteBuffer buffer = libraryFile.mapBuffer();
+            return loadInternalPhase(libraryFile, buffer, loadNeeded, checkBootstrap);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, ByteBuffer buffer, boolean loadNeeded, boolean checkBootstrap) throws IOException {
@@ -1329,7 +1333,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     @Override
-    public Module dlopen(String path) throws IOException {
+    public Module dlopen(String path) {
         return dlopen(path, true);
     }
 
@@ -1339,7 +1343,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     @Override
-    public Module dlopen(String path, boolean callInit) throws IOException {
+    public Module dlopen(String path, boolean callInit) {
         MachOModule loaded = modules.get(FilenameUtils.getName(path));
         if (loaded != null) {
             loaded.addReferenceCount();

@@ -25,7 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -579,8 +578,6 @@ public class Dyld32 extends Dyld {
 
                 return ((MachOModule) module).machHeader;
             }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         } finally {
             unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) pointer).peer);
         }

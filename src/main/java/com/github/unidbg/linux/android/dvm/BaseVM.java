@@ -126,15 +126,15 @@ public abstract class BaseVM implements VM {
     }
 
     private class ApkLibraryFile implements LibraryFile {
-        private final ApkFile apkFile;
+        private final File apkFile;
         private final String soName;
         private final byte[] soData;
         private final String packageName;
-        ApkLibraryFile(ApkFile apkFile, String soName, byte[] soData) throws IOException {
+        ApkLibraryFile(File apkFile, String soName, byte[] soData, String packageName) {
             this.apkFile = apkFile;
             this.soName = soName;
             this.soData = soData;
-            this.packageName = apkFile.getApkMeta().getPackageName();
+            this.packageName = packageName;
         }
         @Override
         public String getName() {
@@ -146,8 +146,10 @@ public abstract class BaseVM implements VM {
         }
         @Override
         public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) throws IOException {
-            byte[] libData = findLibrary(apkFile, soName);
-            return libData == null ? null : new ApkLibraryFile(apkFile, soName, libData);
+            try (ApkFile apkFile = new ApkFile(this.apkFile)) {
+                byte[] libData = findLibrary(apkFile, soName);
+                return libData == null ? null : new ApkLibraryFile(this.apkFile, soName, libData, packageName);
+            }
         }
         @Override
         public byte[] readToByteArray() {
@@ -166,25 +168,37 @@ public abstract class BaseVM implements VM {
     abstract byte[] findLibrary(ApkFile apkFile, String soName) throws IOException;
 
     @Override
-    public final DalvikModule loadLibrary(String libname, boolean forceCallInit) throws IOException {
+    public final DalvikModule loadLibrary(String libname, boolean forceCallInit) {
         if (apkFile == null) {
             throw new UnsupportedOperationException();
         }
 
         String soName = "lib" + libname + ".so";
-        ApkFile apkFile = null;
-        try {
-            apkFile = new ApkFile(this.apkFile);
+        ApkLibraryFile libraryFile = findLibrary(apkFile, soName);
+        if (libraryFile == null) {
+            File split = new File(apkFile.getParentFile(), emulator.is64Bit() ? "config.arm64_v8a.apk" : "config.armeabi_v7a.apk");
+            if (split.canRead()) {
+                libraryFile = findLibrary(split, soName);
+            }
+        }
+        if (libraryFile == null) {
+            throw new IllegalStateException("load library failed: " + libname);
+        }
 
+        Module module = emulator.getMemory().load(libraryFile, forceCallInit);
+        return new DalvikModule(this, module);
+    }
+
+    private ApkLibraryFile findLibrary(File file, String soName) {
+        try (ApkFile apkFile = new ApkFile(file)) {
             byte[] libData = findLibrary(apkFile, soName);
             if (libData == null) {
-                throw new IOException("load library failed: " + libname);
+                return null;
             }
 
-            Module module = emulator.getMemory().load(new ApkLibraryFile(apkFile, soName, libData), forceCallInit);
-            return new DalvikModule(this, module);
-        } finally {
-            IOUtils.closeQuietly(apkFile);
+            return new ApkLibraryFile(file, soName, libData, apkFile.getApkMeta().getPackageName());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -294,7 +308,7 @@ public abstract class BaseVM implements VM {
     }
 
     @Override
-    public final DalvikModule loadLibrary(File elfFile, boolean forceCallInit) throws IOException {
+    public final DalvikModule loadLibrary(File elfFile, boolean forceCallInit) {
         Module module = emulator.getMemory().load(new ElfLibraryFile(elfFile), forceCallInit);
         return new DalvikModule(this, module);
     }

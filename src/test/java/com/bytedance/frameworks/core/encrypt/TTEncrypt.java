@@ -37,7 +37,7 @@ public class TTEncrypt {
 
     private final DvmClass TTEncryptUtils;
 
-    private TTEncrypt() throws IOException {
+    private TTEncrypt() {
         emulator = new AndroidARMEmulator("com.qidian.dldl.official");
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new AndroidResolver(23));

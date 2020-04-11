@@ -22,7 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 public class ArmLD64 extends Dlfcn {
@@ -206,8 +205,6 @@ public class ArmLD64 extends Dlfcn {
 
                 return module.base;
             }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         } finally {
             unicorn.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnicornPointer) pointer).peer);
         }

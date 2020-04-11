@@ -5,7 +5,6 @@ import com.github.unidbg.Module;
 import com.sun.jna.Pointer;
 
 import java.io.File;
-import java.io.IOException;
 
 @SuppressWarnings("unused")
 public interface VM {
@@ -38,8 +37,8 @@ public interface VM {
 
     void deleteLocalRefs();
 
-    DalvikModule loadLibrary(String libname, boolean forceCallInit) throws IOException;
-    DalvikModule loadLibrary(File elfFile, boolean forceCallInit) throws IOException;
+    DalvikModule loadLibrary(String libname, boolean forceCallInit);
+    DalvikModule loadLibrary(File elfFile, boolean forceCallInit);
 
     int addLocalObject(DvmObject<?> object);
 

@@ -216,28 +216,28 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     }
 
     @Override
-    public final Module load(File elfFile) throws IOException {
+    public final Module load(File elfFile) {
         return load(elfFile,false);
     }
 
     @Override
-    public final Module load(LibraryFile libraryFile) throws IOException {
+    public final Module load(LibraryFile libraryFile) {
         return load(libraryFile, false);
     }
 
     @Override
-    public final Module load(File elfFile, boolean forceCallInit) throws IOException {
+    public final Module load(File elfFile, boolean forceCallInit) {
         return loadInternal(createLibraryFile(elfFile), forceCallInit);
     }
 
     protected abstract LibraryFile createLibraryFile(File file);
 
     @Override
-    public final Module load(LibraryFile libraryFile, boolean forceCallInit) throws IOException {
+    public final Module load(LibraryFile libraryFile, boolean forceCallInit) {
         return loadInternal(libraryFile, forceCallInit);
     }
 
-    protected abstract Module loadInternal(LibraryFile libraryFile, boolean forceCallInit) throws IOException;
+    protected abstract Module loadInternal(LibraryFile libraryFile, boolean forceCallInit);
 
     protected boolean callInitFunction;
 

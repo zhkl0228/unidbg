@@ -24,7 +24,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -629,8 +628,6 @@ public class Dyld64 extends Dyld {
 
                 return ((MachOModule) module).machHeader;
             }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         } finally {
             context.setStackPointer(pointer);
         }
