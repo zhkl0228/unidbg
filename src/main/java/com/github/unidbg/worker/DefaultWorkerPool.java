@@ -21,7 +21,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     DefaultWorkerPool(WorkerFactory factory, int workerCount) {
         this.factory = factory;
         this.workerCount = workerCount;
-        this.workers = new LinkedBlockingQueue<>(workerCount);
+        this.workers = new LinkedBlockingQueue<>(workerCount - 1);
 
         Thread thread = new Thread(this, "worker pool for " + factory);
         thread.start();
