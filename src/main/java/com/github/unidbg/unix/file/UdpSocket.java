@@ -1,6 +1,7 @@
 package com.github.unidbg.unix.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.linux.struct.IFConf;
 import com.github.unidbg.linux.struct.IFReq;
@@ -166,6 +167,9 @@ public class UdpSocket extends SocketIO implements FileIO {
         if (request == SIOCGIFCONF) {
             return getIFaceList(emulator, argp);
         }
+        if (request == SIOCGIFFLAGS) {
+            return getIFaceFlags(emulator, argp);
+        }
 
         return super.ioctl(emulator, request, argp);
     }
@@ -238,4 +242,13 @@ public class UdpSocket extends SocketIO implements FileIO {
             throw new IllegalStateException(e);
         }
     }
+
+    protected int getIFaceFlags(Emulator<?> emulator, long argp) {
+        String ifName = ARM.readCString(emulator.getUnicorn(), argp);
+        if (log.isDebugEnabled()) {
+            log.debug("get iface flags: " + ifName);
+        }
+        return 0;
+    }
+
 }

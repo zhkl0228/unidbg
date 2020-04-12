@@ -1390,6 +1390,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
 
     private static final int PR_SET_NAME = 15;
     private static final int BIONIC_PR_SET_VMA =              0x53564d41;
+    private static final int PR_SET_PTRACER = 0x59616d61;
 
     private int prctl(Unicorn u, Emulator<?> emulator) {
         int option = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
@@ -1409,7 +1410,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                 int len = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X3)).intValue();
                 Pointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
                 if (log.isDebugEnabled()) {
-                    log.debug("prctl addr=" + addr + ", len=" + len + ", pointer=" + pointer + ", name=" + pointer.getString(0));
+                    log.debug("prctl set vma addr=" + addr + ", len=" + len + ", pointer=" + pointer + ", name=" + pointer.getString(0));
+                }
+                return 0;
+            case PR_SET_PTRACER:
+                int pid = (int) arg2;
+                if (log.isDebugEnabled()) {
+                    log.debug("prctl set ptracer: " + pid);
                 }
                 return 0;
         }

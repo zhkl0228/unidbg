@@ -436,6 +436,17 @@ public abstract class AbstractJni implements Jni {
                 assert array != null;
                 return new StringObject(vm, new String(array.value));
             }
+            case "java/lang/String-><init>([BLjava/lang/String;)V": {
+                ByteArray array = vaList.getObject(0);
+                assert array != null;
+                StringObject charsetName = vaList.getObject(4);
+                assert charsetName != null;
+                try {
+                    return new StringObject(vm, new String(array.value, charsetName.value));
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         }
 
         throw new AbstractMethodError(signature);

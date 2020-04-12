@@ -166,7 +166,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 case 36: // sync: causes all pending modifications to filesystem metadata and cached file data to be written to the underlying filesystems.
                     return;
                 case 37:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, kill(u));
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, kill(emulator));
                     return;
                 case 38:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, rename(emulator));
@@ -416,6 +416,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                     return;
                 case 348:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(u, emulator));
+                    return;
+                case 358:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, dup3(emulator));
                     return;
                 case 366:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, accept4(emulator));
@@ -1275,13 +1278,14 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return 0;
     }
 
-    protected int kill(Unicorn u) {
-        int pid = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-        int sig = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+    protected int kill(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int sig = context.getIntArg(1);
         if (log.isDebugEnabled()) {
             log.debug("kill pid=" + pid + ", sig=" + sig);
         }
-        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig);
+        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
     }
 
     private int setitimer(Emulator<?> emulator) {
@@ -1601,6 +1605,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
     private static final int PR_SET_NAME = 15;
     private static final int PR_GET_NAME = 16;
     private static final int BIONIC_PR_SET_VMA =              0x53564d41;
+    private static final int PR_SET_PTRACER = 0x59616d61;
 
     private int prctl(Unicorn u, Emulator<?> emulator) {
         int option = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
@@ -1637,7 +1642,13 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 int len = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
                 Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
                 if (log.isDebugEnabled()) {
-                    log.debug("prctl addr=" + addr + ", len=" + len + ", pointer=" + pointer + ", name=" + pointer.getString(0));
+                    log.debug("prctl set vma addr=" + addr + ", len=" + len + ", pointer=" + pointer + ", name=" + pointer.getString(0));
+                }
+                return 0;
+            case PR_SET_PTRACER:
+                int pid = (int) arg2;
+                if (log.isDebugEnabled()) {
+                    log.debug("prctl set ptracer: " + pid);
                 }
                 return 0;
         }
@@ -2009,6 +2020,33 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         int newfd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
         if (log.isDebugEnabled()) {
             log.debug("dup2 oldfd=" + oldfd + ", newfd=" + newfd);
+        }
+
+        FileIO old = fdMap.get(oldfd);
+        if (old == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+
+        if (oldfd == newfd) {
+            return newfd;
+        }
+        AndroidFileIO _new = fdMap.remove(newfd);
+        if (_new != null) {
+            _new.close();
+        }
+        _new = (AndroidFileIO) old.dup2();
+        fdMap.put(newfd, _new);
+        return newfd;
+    }
+
+    private int dup3(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int oldfd = context.getIntArg(0);
+        int newfd = context.getIntArg(1);
+        int flags = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("dup3 oldfd=" + oldfd + ", newfd=" + newfd + ", flags=0x" + Integer.toHexString(flags));
         }
 
         FileIO old = fdMap.get(oldfd);
