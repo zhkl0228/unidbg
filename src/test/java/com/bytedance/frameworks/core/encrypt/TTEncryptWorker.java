@@ -54,11 +54,13 @@ public class TTEncryptWorker implements Worker {
 
     public TTEncryptWorker() {
         ttEncrypt = new TTEncrypt(false);
+        System.err.println("Create: " + ttEncrypt);
     }
 
     @Override
     public void close() throws IOException {
         ttEncrypt.destroy();
+        System.err.println("Destroy: " + ttEncrypt);
     }
 
     private byte[] doWork() {
