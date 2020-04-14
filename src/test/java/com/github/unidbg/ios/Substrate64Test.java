@@ -26,7 +26,6 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 
     public void testMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
-        loader.setCallInitFunction();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);

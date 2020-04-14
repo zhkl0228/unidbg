@@ -29,7 +29,6 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 
     private void processMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
-        loader.setCallInitFunction();
         loader.setObjcRuntime(true);
 //        emulator.traceCode();
 //        emulator.attach().addBreakPoint(null, 0x402ffd10);

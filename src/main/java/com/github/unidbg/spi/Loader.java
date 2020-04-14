@@ -16,6 +16,8 @@ public interface Loader {
 
     void setLibraryResolver(LibraryResolver libraryResolver);
 
+    void disableCallInitFunction();
+
     Module load(File elfFile);
     Module load(File elfFile, boolean forceCallInit);
 

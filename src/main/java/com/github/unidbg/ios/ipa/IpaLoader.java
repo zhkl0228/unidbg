@@ -34,7 +34,6 @@ public abstract class IpaLoader {
     public static IpaLoader load(File ipa, String... loads) throws IOException {
         Emulator<?> emulator = new DarwinARM64Emulator();
         Memory memory = emulator.getMemory();
-        memory.setCallInitFunction();
         memory.setLibraryResolver(new DarwinResolver());
         return load(emulator, ipa, false, loads);
     }

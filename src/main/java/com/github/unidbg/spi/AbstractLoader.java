@@ -239,11 +239,11 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     protected abstract Module loadInternal(LibraryFile libraryFile, boolean forceCallInit);
 
-    protected boolean callInitFunction;
+    protected boolean callInitFunction = true;
 
     @Override
-    public final void setCallInitFunction() {
-        this.callInitFunction = true;
+    public final void disableCallInitFunction() {
+        this.callInitFunction = false;
     }
 
     protected final List<HookListener> hookListeners = new ArrayList<>();

@@ -526,7 +526,10 @@ public class ARM {
         sb.append(" ]").append(space);
         sb.append(String.format("0x%08x:" + space + "%s %s", ins.address, ins.mnemonic, ins.opStr));
 
-        Arm.OpInfo opInfo = (Arm.OpInfo) ins.operands;
+        Arm.OpInfo opInfo = null;
+        if (ins.operands instanceof Arm.OpInfo) {
+            opInfo = (Arm.OpInfo) ins.operands;
+        }
         if (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) {
             Matcher matcher;
 

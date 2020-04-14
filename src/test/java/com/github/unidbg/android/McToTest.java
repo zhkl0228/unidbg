@@ -20,7 +20,6 @@ public class McToTest extends EmulatorTest<AndroidEmulator> {
 
     public void testMcTo() throws Exception {
         long start = System.currentTimeMillis();
-        emulator.getMemory().setCallInitFunction();
         Unicorn unicorn = emulator.getUnicorn();
         new AndroidModule(emulator, emulator.createDalvikVM(null)).register(emulator.getMemory());
         Module module = emulator.loadLibrary(new File("src/test/resources/mcto/libmcto_media_player.so"));

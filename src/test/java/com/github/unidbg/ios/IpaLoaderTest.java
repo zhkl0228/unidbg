@@ -27,7 +27,6 @@ public class IpaLoaderTest extends EmulatorTest<DarwinARM64Emulator> {
     }
 
     public void testLoader() throws Exception {
-        emulator.getMemory().setCallInitFunction();
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
 //        emulator.attach(0x1035cc000L, 0x105e20000L).addBreakPoint(null, 0x1035cc000L + 0x001717f54);
         long start = System.currentTimeMillis();

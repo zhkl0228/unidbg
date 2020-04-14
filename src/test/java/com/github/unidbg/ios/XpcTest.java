@@ -29,7 +29,6 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
     }
 
     private void processXpcNoPie() throws Exception {
-        emulator.getMemory().setCallInitFunction();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/xpcNP"));
 
         long start = System.currentTimeMillis();
@@ -52,7 +51,6 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
     private void processXpc() throws Exception {
 //        emulator.attach().addBreakPoint(null, 0x403b7dfc);
 //        emulator.traceCode();
-        emulator.getMemory().setCallInitFunction();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/xpc"));
 
         Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
