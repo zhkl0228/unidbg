@@ -233,10 +233,16 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 if (machO.header().cputype() != MachO.CpuType.ARM) {
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
                 }
+                if (emulator.is64Bit()) {
+                    throw new UnsupportedOperationException("NOT 32 bit executable: " + libraryFile.getName());
+                }
                 break;
             case MACHO_LE_X64:
                 if (machO.header().cputype() != MachO.CpuType.ARM64) {
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
+                }
+                if (emulator.is32Bit()) {
+                    throw new UnsupportedOperationException("NOT 64 bit executable: " + libraryFile.getName());
                 }
                 break;
             default:
@@ -352,7 +358,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ENCRYPTION_INFO_64:
                     MachO.EncryptionInfoCommand encryptionInfoCommand = (MachO.EncryptionInfoCommand) command.body();
                     if (encryptionInfoCommand.cryptid() != 0) {
-                        throw new UnsupportedOperationException("Encrypted file");
+                        throw new UnsupportedOperationException("Encrypted file: " + libraryFile.getName());
                     }
                     break;
                 case UUID:

@@ -737,7 +737,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.info("lstat path=" + path + ", stat=" + stat);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("lstat path=" + path + ", stat=" + stat + ", ret=" + ret);
+                log.debug("lstat path=" + path + ", stat=" + stat + ", ret=" + ret + ", LR=" + context.getLRPointer());
             }
         }
         return ret;
