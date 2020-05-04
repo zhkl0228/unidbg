@@ -40,6 +40,7 @@ public class Pthread32 extends Pthread {
     protected List<String> getFieldOrder() {
         return Arrays.asList("sig", "__cleanup_stack", "childrun", "lock", "detached", "thread_id", "fun", "arg",
                 "exit_value", "joiner_notify", "max_tsd_key", "cancel_state", "cancel_error", "err_no", "joiner",
-                "sched_priority", "plist", "pthread_name", "stackaddr", "stacksize", "freeaddr", "freesize", "guardsize", "self", "errno", "mig_reply");
+                "sched_priority", "plist", "pthread_name", "stackaddr", "stacksize", "freeaddr", "freesize", "guardsize",
+                "self", "errno", "mig_reply", "machThreadSelf");
     }
 }

@@ -21,4 +21,27 @@ public interface DarwinSyscall {
 
     int MAXCOMLEN = 16; /* max command name remembered */
 
+    int SIGBUS	= 10;	/* bus error */
+
+    int CTL_UNSPEC = 0; /* unused */
+    int CTL_KERN = 1; /* "high kernel": proc, limits */
+    int CTL_HW = 6; /* generic cpu/io */
+
+    int KERN_OSRELEASE = 2; /* string: system release */
+    int KERN_VERSION =	 	 4;	/* string: compile time info */
+    int KERN_ARGMAX = 8; /* int: max arguments to exec */
+    int KERN_HOSTNAME = 10; /* string: hostname */
+    int KERN_PROC = 14; /* struct: process entries */
+    int KERN_USRSTACK32 = 35; /* int: address of USRSTACK */
+    int KERN_PROCARGS2 = 49;
+    int KERN_USRSTACK64 = 59;/* LP64 user stack query */
+    int KERN_OSVERSION = 65; /* for build number i.e. 9A127 */
+
+    int HW_MACHINE	 = 1;		/* string: machine class */
+    int HW_MODEL =	 2;		/* string: specific machine model */
+    int HW_NCPU = 3; /* int: number of cpus */
+    int HW_PAGESIZE = 7; /* int: software page size */
+
+    int KERN_PROC_PID = 1; /* by process id */
+
 }

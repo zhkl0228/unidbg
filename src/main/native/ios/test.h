@@ -33,6 +33,33 @@ static void test_sysctl_KERN_USRSTACK() {
   printf("sysctl_KERN_USRSTACK ret=%d, stack=%p, mib=%p, offset=0x%lx\n", ret, stack, mib, ((long) stack - (long) mib));
 }
 
+static void test_sysctl_HW_MACHINE() {
+  size_t size;
+  sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+  char *machine = malloc(size);
+  sysctlbyname("hw.machine", machine, &size, NULL, 0);
+  printf("test_sysctl_HW_MACHINE machine=%s\n", machine);
+  free(machine);
+}
+
+static void test_sysctl_HW_MODEL() {
+  size_t size;
+  sysctlbyname("hw.model", NULL, &size, NULL, 0);
+  char *model = malloc(size);
+  sysctlbyname("hw.model", model, &size, NULL, 0);
+  printf("test_sysctl_HW_MODEL model=%s\n", model);
+  free(model);
+}
+
+static void test_sysctl_KERN_VERSION() {
+  size_t size;
+  sysctlbyname("kern.version", NULL, &size, NULL, 0);
+  char *version = malloc(size);
+  sysctlbyname("kern.version", version, &size, NULL, 0);
+  printf("test_sysctl_KERN_VERSION version=%s\n", version);
+  free(version);
+}
+
 static void test_sysctl_KERN_PROC() {
   int mib[4];
   struct kinfo_proc info;
@@ -142,6 +169,9 @@ void do_test() {
   test_printf();
   test_sysctl_KERN_USRSTACK();
   test_sysctl_KERN_PROC();
+  test_sysctl_KERN_VERSION();
+  test_sysctl_HW_MACHINE();
+  test_sysctl_HW_MODEL();
   test_proc_pidinfo();
   test_pthread();
   test_file();

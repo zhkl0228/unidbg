@@ -8,6 +8,7 @@ import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.DarwinSyscall;
 import com.github.unidbg.linux.LinuxThread;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.spi.SyscallHandler;
@@ -352,6 +353,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGTRAP:
             case SIGABRT:
             case SIGBUS:
+            case DarwinSyscall.SIGBUS:
             case SIGFPE:
             case SIGSEGV:
             case SIGUSR2:

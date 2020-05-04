@@ -101,7 +101,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         }
 
         if (dir.exists()) {
-            return false;
+            return true;
         } else {
             return dir.mkdirs();
         }

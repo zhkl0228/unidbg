@@ -523,7 +523,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return readlink(emulator, path, buf, bufSize);
     }
 
-    private int readlink(Emulator<AndroidFileIO> emulator) {
+    private int readlink(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(0);
         Pointer buf = context.getPointerArg(1);
@@ -532,7 +532,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return readlink(emulator, path, buf, bufSize);
     }
 
-    private int getppid(Emulator<AndroidFileIO> emulator) {
+    private int getppid(Emulator<?> emulator) {
         if (log.isDebugEnabled()) {
             log.debug("getppid");
         }
