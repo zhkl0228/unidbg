@@ -26,6 +26,7 @@ public abstract class SocketIO extends BaseFileIO implements AndroidFileIO, Darw
     public static final short AF_LOCAL = 1; // AF_UNIX
     public static final short AF_INET = 2;
     public static final short AF_INET6 = 10;
+    public static final short AF_ROUTE = 17;		/* Internal Routing Protocol */
 
     protected static final int IPV4_ADDR_LEN = 16;
     protected static final int IPV6_ADDR_LEN = 28;

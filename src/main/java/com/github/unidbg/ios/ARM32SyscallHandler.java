@@ -31,11 +31,15 @@ import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unix.file.SocketIO;
 import com.github.unidbg.unix.file.TcpSocket;
 import com.github.unidbg.unix.file.UdpSocket;
+import com.github.unidbg.unix.struct.TimeVal32;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.*;
+import unicorn.ArmConst;
+import unicorn.Unicorn;
+import unicorn.UnicornConst;
+import unicorn.UnicornException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -964,7 +968,8 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             case CTL_UNSPEC:
                 int action = name.getInt(4);
                 if (action == 3) {
-                    String sub = set0.getString(0);
+                    byte[] bytes = set0.getByteArray(0, set1);
+                    String sub = new String(bytes, StandardCharsets.UTF_8);
                     if (log.isDebugEnabled()) {
                         log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub);
                     }
@@ -986,6 +991,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         bufferSize.setInt(0, 8);
                         return 0;
                     }
+                    if ("kern.boottime".equals(sub)) {
+                        buffer.setInt(0, CTL_KERN);
+                        buffer.setInt(4, KERN_BOOTTIME);
+                        bufferSize.setInt(0, 8);
+                        return 0;
+                    }
                     if ("hw.machine".equals(sub)) {
                         buffer.setInt(0, CTL_HW);
                         buffer.setInt(4, HW_MACHINE);
@@ -995,6 +1006,18 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     if ("hw.model".equals(sub)) {
                         buffer.setInt(0, CTL_HW);
                         buffer.setInt(4, HW_MODEL);
+                        bufferSize.setInt(0, 8);
+                        return 0;
+                    }
+                    if ("hw.cputype".equals(sub)) {
+                        buffer.setInt(0, CTL_HW);
+                        buffer.setInt(4, HW_CPU_TYPE);
+                        bufferSize.setInt(0, 8);
+                        return 0;
+                    }
+                    if ("hw.cpusubtype".equals(sub)) {
+                        buffer.setInt(0, CTL_HW);
+                        buffer.setInt(4, HW_CPU_SUBTYPE);
                         bufferSize.setInt(0, 8);
                         return 0;
                     }
@@ -1080,6 +1103,20 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                             buffer.setInt(0, (int) emulator.getMemory().getStackBase());
                         }
                         return 0;
+                    case KERN_BOOTTIME:
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, 8);
+                        }
+                        if (buffer != null) {
+                            long currentTimeMillis = System.currentTimeMillis();
+                            long tv_sec = currentTimeMillis / 1000;
+                            long tv_usec = (currentTimeMillis % 1000) * 1000;
+                            TimeVal32 timeVal = new TimeVal32(buffer);
+                            timeVal.tv_sec = (int) tv_sec;
+                            timeVal.tv_usec = (int) tv_usec;
+                            timeVal.pack();
+                        }
+                        return 0;
                     default:
                         log.info(msg);
                         break;
@@ -1096,6 +1133,24 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         }
                         if (buffer != null) {
                             buffer.setInt(0, emulator.getPageAlign());
+                        }
+                        return 0;
+                    case HW_CPU_TYPE:
+                        log.debug(msg);
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, CPU_TYPE_ARM);
+                        }
+                        return 0;
+                    case HW_CPU_SUBTYPE:
+                        log.debug(msg);
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, CPU_SUBTYPE_ARM_V7);
                         }
                         return 0;
                     case HW_MACHINE:
@@ -1121,6 +1176,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 }
                 log.info(msg);
                 break;
+            case CTL_NET:
+                if (log.isDebugEnabled()) {
+                    createBreaker(emulator).debug();
+                }
             default:
                 log.info("sysctl top=" + name.getInt(0) + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);
                 break;

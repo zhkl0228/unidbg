@@ -25,13 +25,18 @@ public interface DarwinSyscall {
 
     int CTL_UNSPEC = 0; /* unused */
     int CTL_KERN = 1; /* "high kernel": proc, limits */
+    int CTL_NET =	4;		/* network, see socket.h */
     int CTL_HW = 6; /* generic cpu/io */
+
+    int NET_RT_IFLIST =		3;	/* survey interface list */
+    int RTM_IFINFO =	0xe;	/* iface going up/down etc. */
 
     int KERN_OSRELEASE = 2; /* string: system release */
     int KERN_VERSION =	 	 4;	/* string: compile time info */
     int KERN_ARGMAX = 8; /* int: max arguments to exec */
     int KERN_HOSTNAME = 10; /* string: hostname */
     int KERN_PROC = 14; /* struct: process entries */
+    int KERN_BOOTTIME =		21;	/* struct: time kernel was booted */
     int KERN_USRSTACK32 = 35; /* int: address of USRSTACK */
     int KERN_PROCARGS2 = 49;
     int KERN_USRSTACK64 = 59;/* LP64 user stack query */
@@ -41,7 +46,15 @@ public interface DarwinSyscall {
     int HW_MODEL =	 2;		/* string: specific machine model */
     int HW_NCPU = 3; /* int: number of cpus */
     int HW_PAGESIZE = 7; /* int: software page size */
+    int HW_CPU_TYPE = 105;
+    int HW_CPU_SUBTYPE = 106;
 
     int KERN_PROC_PID = 1; /* by process id */
+
+    int CPU_TYPE_ARM = 12;
+    int CPU_SUBTYPE_ARM_V7 = 9;
+
+    int CPU_TYPE_ARM64 = 0x100000c;
+    int CPU_SUBTYPE_ARM64_ALL = 0;
 
 }

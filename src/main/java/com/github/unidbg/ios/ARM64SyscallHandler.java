@@ -1012,7 +1012,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             case CTL_UNSPEC:
                 int action = name.getInt(4);
                 if (action == 3) {
-                    String sub = set0.getString(0);
+                    byte[] bytes = set0.getByteArray(0, set1);
+                    String sub = new String(bytes, StandardCharsets.UTF_8);
                     if (log.isDebugEnabled()) {
                         log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub + ", set1=" + set1);
                     }

@@ -7,12 +7,18 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <net/if_dl.h>
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+
+#define RTM_IFINFO	0xe
 
 static void test_printf() {
   char buf[0x40];
@@ -20,6 +26,51 @@ static void test_printf() {
   snprintf(buf, 0x40, "snprintf: %p\n", buf);
   fprintf(stderr, "printf[%p] test: %s", buf, buf);
   fprintf(stdout, "ENOTDIR=0x%x, O_WRONLY=0x%x, O_RDWR=0x%x, O_NONBLOCK=0x%x, O_APPEND=0x%x, O_CREAT=0x%x, O_DIRECTORY=0x%x\n", ENOTDIR, O_WRONLY, O_RDWR, O_NONBLOCK, O_APPEND, O_CREAT, O_DIRECTORY);
+}
+
+static void test_sysctl_CTL_UNSPEC() {
+  int mib[2];
+  int values[14];
+  size_t size = sizeof(values);
+
+  char *name = "hw.cpusubtype";
+
+  mib[0] = CTL_UNSPEC;
+  mib[1] = 3;
+  int ret = sysctl(mib, 2, values, &size, name, strlen(name));
+  printf("test_sysctl_CTL_UNSPEC ret=%d, ctl=%d, type=%d, size=%zu\n", ret, values[0], values[1], size);
+}
+
+static void test_sysctl_CTL_NET() {
+  size_t buffSize = 0;
+  int					mib[6] = {CTL_NET, AF_ROUTE, 0, 0, NET_RT_IFLIST, 0 };
+  int ret = sysctl(mib, 6, NULL, &buffSize, NULL, 0);
+  char *buf = malloc(buffSize);
+  ret = sysctl(mib, 6, buf, &buffSize, NULL, 0);
+
+  struct if_msghdr	*ifm = (struct if_msghdr *) buf;
+  char *end = buf + buffSize;
+
+  do {
+    if(ifm->ifm_type == RTM_IFINFO) {
+      struct sockaddr_dl	*sdl = (struct sockaddr_dl *) (ifm + 1);
+      char *name = malloc(sdl->sdl_nlen + 1);
+      memcpy(name, sdl->sdl_data, sdl->sdl_nlen);
+      name[sdl->sdl_nlen] = 0;
+      char *mac = malloc(128);
+      int index = 0;
+      for(int i = 0; i < sdl->sdl_alen; i++) {
+        index += sprintf(&mac[index], "%x:", sdl->sdl_data[sdl->sdl_nlen+i] & 0xff);
+      }
+      mac[index-1] = 0;
+      printf("test_sysctl_CTL_NET size=%zu, ifm=%p, data=%s, mac=%s, sdl_alen=%d\n", buffSize, ifm, name, mac, sdl->sdl_alen);
+      free(mac);
+      free(name);
+    }
+    ifm = (struct if_msghdr *)  ((char*)ifm + ifm->ifm_msglen);
+  } while((char*)ifm < end);
+
+  free(buf);
 }
 
 static void test_sysctl_KERN_USRSTACK() {
@@ -58,6 +109,17 @@ static void test_sysctl_KERN_VERSION() {
   sysctlbyname("kern.version", version, &size, NULL, 0);
   printf("test_sysctl_KERN_VERSION version=%s\n", version);
   free(version);
+}
+
+static void test_sysctl_KERN_BOOTTIME() {
+  size_t size;
+  sysctlbyname("kern.boottime", NULL, &size, NULL, 0);
+  char *boot_time = malloc(size);
+  sysctlbyname("kern.boottime", boot_time, &size, NULL, 0);
+  uint32_t timestamp = 0;
+  memcpy(&timestamp, boot_time, sizeof(uint32_t));
+  printf("test_sysctl_KERN_BOOTTIME boot_time=%u, size=%zu\n", timestamp, size);
+  free(boot_time);
 }
 
 static void test_sysctl_KERN_PROC() {
@@ -167,9 +229,12 @@ static void test_task_info() {
 
 void do_test() {
   test_printf();
+  test_sysctl_CTL_UNSPEC();
+  test_sysctl_CTL_NET();
   test_sysctl_KERN_USRSTACK();
   test_sysctl_KERN_PROC();
   test_sysctl_KERN_VERSION();
+  test_sysctl_KERN_BOOTTIME();
   test_sysctl_HW_MACHINE();
   test_sysctl_HW_MODEL();
   test_proc_pidinfo();
