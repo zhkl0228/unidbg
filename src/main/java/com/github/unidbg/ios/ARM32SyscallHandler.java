@@ -235,6 +235,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 136:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mkdir(emulator));
                     return;
+                case 137:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, rmdir(emulator));
+                    return;
                 case 194:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getrlimit(u, emulator));
                     return;
@@ -1911,6 +1914,18 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             emulator.getMemory().setErrno(UnixEmulator.EACCES);
             return -1;
         }
+    }
+
+    private int rmdir(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathname = context.getPointerArg(0);
+        String path = pathname.getString(0);
+
+        emulator.getFileSystem().rmdir(path);
+        if (log.isDebugEnabled()) {
+            log.debug("rmdir pathname=" + path);
+        }
+        return 0;
     }
 
     private int sendto(Unicorn u, Emulator<?> emulator) {
