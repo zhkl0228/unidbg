@@ -35,10 +35,7 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
-import unicorn.UnicornException;
+import unicorn.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -235,6 +232,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 133:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, sendto(u, emulator));
                     return;
+                case 136:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, mkdir(emulator));
+                    return;
                 case 194:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getrlimit(u, emulator));
                     return;
@@ -307,6 +307,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 381:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms(emulator));
                     return;
+                case 3:
                 case 396:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, read_NOCANCEL(emulator));
                     return;
@@ -1893,6 +1894,23 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         int pid = emulator.getPid();
         log.debug("getpid pid=" + pid);
         return pid;
+    }
+
+    private int mkdir(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathname = context.getPointerArg(0);
+        int mode = context.getIntArg(1);
+        String path = pathname.getString(0);
+        if (emulator.getFileSystem().mkdir(path)) {
+            if (log.isDebugEnabled()) {
+                log.debug("mkdir pathname=" + path + ", mode=" + mode);
+            }
+            return 0;
+        } else {
+            log.info("mkdir pathname=" + path + ", mode=" + mode);
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
+            return -1;
+        }
     }
 
     private int sendto(Unicorn u, Emulator<?> emulator) {

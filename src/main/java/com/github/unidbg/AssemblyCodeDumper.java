@@ -14,11 +14,11 @@ import java.util.Arrays;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-class AssemblyCodeDumper implements CodeHook {
+public class AssemblyCodeDumper implements CodeHook {
 
     private final Emulator<?> emulator;
 
-    AssemblyCodeDumper(Emulator<?> emulator) {
+    public AssemblyCodeDumper(Emulator<?> emulator) {
         super();
 
         this.emulator = emulator;
@@ -28,7 +28,7 @@ class AssemblyCodeDumper implements CodeHook {
     private long traceBegin, traceEnd;
     private TraceCodeListener listener;
 
-    void initialize(long begin, long end, TraceCodeListener listener) {
+    public void initialize(long begin, long end, TraceCodeListener listener) {
         this.traceInstruction = true;
         this.traceBegin = begin;
         this.traceEnd = end;
@@ -40,6 +40,10 @@ class AssemblyCodeDumper implements CodeHook {
     }
 
     PrintStream redirect;
+
+    public void setRedirect(PrintStream redirect) {
+        this.redirect = redirect;
+    }
 
     @Override
     public void hook(Unicorn u, long address, int size, Object user) {

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-xcrun -sdk iphoneos clang -o bootstrap bootstrap.m -lobjc -m32 -arch armv7 -miphoneos-version-min=7.1 -framework Foundation -framework CoreTelephony -framework CFNetwork && \
+xcrun -sdk iphoneos clang -o bootstrap bootstrap.m -lobjc -m32 -arch armv7 -miphoneos-version-min=7.1 -framework Foundation -framework CoreTelephony -framework CFNetwork -framework UIKit && \
 mv bootstrap bootstrap32 && \
-xcrun -sdk iphoneos clang -o bootstrap bootstrap.m -lobjc -m64 -arch arm64 -miphoneos-version-min=7.1 -framework Foundation -framework CoreTelephony -framework CFNetwork && \
+xcrun -sdk iphoneos clang -o bootstrap bootstrap.m -lobjc -m64 -arch arm64 -miphoneos-version-min=7.1 -framework Foundation -framework CoreTelephony -framework CFNetwork -framework UIKit && \
 mv bootstrap bootstrap64 && \
 lipo -create bootstrap32 bootstrap64 -output bootstrap_objc && \
 rm bootstrap32 bootstrap64 && \

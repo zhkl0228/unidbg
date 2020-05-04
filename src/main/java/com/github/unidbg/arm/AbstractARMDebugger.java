@@ -1,6 +1,7 @@
 package com.github.unidbg.arm;
 
 import capstone.Capstone;
+import com.github.unidbg.AssemblyCodeDumper;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
@@ -28,6 +29,9 @@ import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -350,6 +354,34 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
             }
         }
+        if (line.startsWith("trace")) { // start trace instructions
+            String redirect = null;
+            {
+                int index = line.indexOf(' ');
+                if (index != -1) {
+                    redirect = line.substring(index + 1).trim();
+                }
+            }
+            AssemblyCodeDumper codeHook = new AssemblyCodeDumper(emulator);
+            File traceFile = null;
+            if (redirect != null && redirect.trim().length() > 0) {
+                File outFile = new File(redirect.trim());
+                try {
+                    if (!outFile.exists() && !outFile.createNewFile()) {
+                        throw new IllegalStateException("createNewFile: " + outFile);
+                    }
+                    codeHook.setRedirect(new PrintStream(outFile));
+                    traceFile = outFile;
+                } catch (IOException e) {
+                    System.err.println("Set trace redirect out file failed: " + outFile);
+                    return false;
+                }
+            }
+            codeHook.initialize(1, 0, null);
+            emulator.getUnicorn().hook_add_new(codeHook, 1, 0, emulator);
+            System.out.println("Set trace instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
+            return false;
+        }
         if (line.startsWith("vm")) {
             Memory memory = emulator.getMemory();
             String maxLengthSoName = memory.getMaxLengthLibraryName();
@@ -370,7 +402,11 @@ public abstract class AbstractARMDebugger implements Debugger {
                     sb.append("\n");
                 }
             }
-            System.out.println(sb);
+            if (index == 0) {
+                System.err.println("Find library failed with filter: " + filter);
+            } else {
+                System.out.println(sb);
+            }
             return false;
         }
         if ("vbs".equals(line)) { // view breakpoints

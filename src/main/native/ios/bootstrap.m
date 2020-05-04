@@ -1,6 +1,7 @@
 #include <objc/runtime.h>
 #import <Foundation/Foundation.h>
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
+#import <UIKit/UIKit.h>
 #include "test.h"
 
 @interface BootstrapTest : NSObject {}
@@ -49,6 +50,13 @@ static BOOL isSystemClass(Class clazz) {
   }
 }
 
+static void test_UIKit() {
+  NSLog(@"UIApplicationDidReceiveMemoryWarningNotification=%@", UIApplicationDidReceiveMemoryWarningNotification);
+  NSLog(@"UIApplicationDidEnterBackgroundNotification=%@", UIApplicationDidEnterBackgroundNotification);
+  NSLog(@"UIApplicationDidBecomeActiveNotification=%@", UIApplicationDidBecomeActiveNotification);
+  NSLog(@"UIApplicationWillEnterForegroundNotification=%@", UIApplicationWillEnterForegroundNotification);
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -75,6 +83,7 @@ int main(int argc, char *argv[]) {
   free(classes);
 
   do_test();
+  test_UIKit();
 
   return 0;
 }
