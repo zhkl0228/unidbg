@@ -17,8 +17,7 @@ import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.ByteArrayFileIO;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
-import com.github.unidbg.ios.struct.sysctl.KInfoProc64;
-import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
+import com.github.unidbg.ios.struct.sysctl.*;
 import com.github.unidbg.linux.file.DriverFileIO;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
@@ -37,8 +36,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.*;
 
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+
+import static com.github.unidbg.unix.file.SocketIO.AF_ROUTE;
 
 /**
  * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
@@ -1183,6 +1186,48 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 }
                 log.info(msg);
                 break;
+            case CTL_NET:
+                action = name.getInt(4); // AF_ROUTE
+                msg = "sysctl CTL_NET action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
+                int family = name.getInt(0xc); // AF_INET
+                int rt = name.getInt(0x10);
+                if(action == AF_ROUTE && rt == NET_RT_IFLIST) {
+                    log.debug(msg);
+                    try {
+                        List<DarwinUtils.NetworkIF> networkIFList = DarwinUtils.getNetworkIFs(isVerbose());
+                        int entrySize = UnicornStructure.calculateSize(IfMsgHeader.class) + UnicornStructure.calculateSize(SockAddrDL.class);
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, entrySize * networkIFList.size());
+                        }
+                        if (buffer != null) {
+                            Pointer pointer = buffer;
+                            for (DarwinUtils.NetworkIF networkIF : networkIFList) {
+                                IfMsgHeader header = new IfMsgHeader(pointer);
+                                SockAddrDL sockAddr = new SockAddrDL(pointer.share(header.size()));
+                                header.ifm_msglen = (short) entrySize;
+                                header.ifm_type = RTM_IFINFO;
+                                header.pack();
+                                byte[] networkInterfaceName = networkIF.networkInterface.getName().getBytes();
+                                sockAddr.sdl_nlen = (byte) networkInterfaceName.length;
+                                System.arraycopy(networkInterfaceName, 0, sockAddr.sdl_data, 0, networkInterfaceName.length);
+                                byte[] macAddress = networkIF.networkInterface.getHardwareAddress();
+                                if (macAddress != null) {
+                                    sockAddr.sdl_alen = (byte) macAddress.length;
+                                    System.arraycopy(macAddress, 0, sockAddr.sdl_data, networkInterfaceName.length, macAddress.length);
+                                }
+                                sockAddr.pack();
+                                pointer = pointer.share(entrySize);
+                            }
+                        }
+                        return 0;
+                    } catch (SocketException e) {
+                        throw new IllegalStateException(e);
+                    }
+                }
+                log.info(msg + ", family=" + family + ", rt=" + rt);
+                if (log.isDebugEnabled()) {
+                    createBreaker(emulator).debug();
+                }
             default:
                 log.info("sysctl top=" + name.getInt(0) + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);
                 break;

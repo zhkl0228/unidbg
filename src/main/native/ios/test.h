@@ -51,7 +51,7 @@ static void test_sysctl_CTL_NET() {
   struct if_msghdr	*ifm = (struct if_msghdr *) buf;
   char *end = buf + buffSize;
 
-  do {
+  while((char*)ifm < end) {
     if(ifm->ifm_type == RTM_IFINFO) {
       struct sockaddr_dl	*sdl = (struct sockaddr_dl *) (ifm + 1);
       char *name = malloc(sdl->sdl_nlen + 1);
@@ -63,12 +63,12 @@ static void test_sysctl_CTL_NET() {
         index += sprintf(&mac[index], "%x:", sdl->sdl_data[sdl->sdl_nlen+i] & 0xff);
       }
       mac[index-1] = 0;
-      printf("test_sysctl_CTL_NET size=%zu, ifm=%p, data=%s, mac=%s, sdl_alen=%d\n", buffSize, ifm, name, mac, sdl->sdl_alen);
+      printf("test_sysctl_CTL_NET ifm_msglen=%hu, ifm=%p, name=%s, mac=%s, sizeof_if_msghdr=%lu, sizeof_sockaddr_dl=%lu\n", ifm->ifm_msglen, ifm, name, mac, sizeof(struct if_msghdr), sizeof(struct sockaddr_dl));
       free(mac);
       free(name);
     }
     ifm = (struct if_msghdr *)  ((char*)ifm + ifm->ifm_msglen);
-  } while((char*)ifm < end);
+  }
 
   free(buf);
 }
