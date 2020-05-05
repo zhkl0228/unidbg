@@ -24,4 +24,6 @@ public interface FileSystem<T extends NewFileIO> {
 
     T createDirectoryFileIO(File file, int oflags, String path);
 
+    void checkProcessName(String processName);
+
 }

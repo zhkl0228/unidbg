@@ -46,6 +46,7 @@ public interface DarwinSyscall {
     int HW_MODEL =	 2;		/* string: specific machine model */
     int HW_NCPU = 3; /* int: number of cpus */
     int HW_PAGESIZE = 7; /* int: software page size */
+    int HW_MEMSIZE =	24;		/* uint64_t: physical ram size */
     int HW_CPU_TYPE = 105;
     int HW_CPU_SUBTYPE = 106;
 

@@ -41,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.github.unidbg.unix.file.SocketIO.AF_LINK;
 import static com.github.unidbg.unix.file.SocketIO.AF_ROUTE;
 
 /**
@@ -358,8 +359,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         } catch (StopEmulatorException e) {
             u.emu_stop();
             return;
-        } catch (UnsupportedOperationException e) {
-            exception = e;
         } catch (Throwable e) {
             u.emu_stop();
             exception = e;
@@ -370,8 +369,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             createBreaker(emulator).debug();
         }
 
-        if (exception instanceof UnicornException) {
-            throw (UnicornException) exception;
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
         }
     }
 
@@ -749,13 +748,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(offset);
         Pointer stat = context.getPointerArg(offset + 1);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String pathStr = pathname.getString(0);
+        String path = FilenameUtils.normalize(pathStr);
         int ret = stat64(emulator, path, stat);
         if (ret == -1) {
-            log.info("lstat path=" + path + ", stat=" + stat);
+            log.info("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("lstat path=" + path + ", stat=" + stat + ", ret=" + ret + ", LR=" + context.getLRPointer());
+                log.debug("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat + ", ret=" + ret + ", LR=" + context.getLRPointer());
             }
         }
         return ret;
@@ -1195,26 +1195,34 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     log.debug(msg);
                     try {
                         List<DarwinUtils.NetworkIF> networkIFList = DarwinUtils.getNetworkIFs(isVerbose());
-                        int entrySize = UnicornStructure.calculateSize(IfMsgHeader.class) + UnicornStructure.calculateSize(SockAddrDL.class);
+                        int sizeOfSDL = UnicornStructure.calculateSize(SockAddrDL.class);
+                        int entrySize = UnicornStructure.calculateSize(IfMsgHeader.class) + sizeOfSDL;
                         if (bufferSize != null) {
                             bufferSize.setLong(0, entrySize * networkIFList.size());
                         }
                         if (buffer != null) {
                             Pointer pointer = buffer;
+                            short index = 0;
                             for (DarwinUtils.NetworkIF networkIF : networkIFList) {
                                 IfMsgHeader header = new IfMsgHeader(pointer);
                                 SockAddrDL sockAddr = new SockAddrDL(pointer.share(header.size()));
                                 header.ifm_msglen = (short) entrySize;
+                                header.ifm_version = 5;
                                 header.ifm_type = RTM_IFINFO;
+                                header.ifm_addrs = 0x10;
+                                header.ifm_index = ++index;
+                                header.ifm_data.ifi_type = 6; // ethernet
                                 header.pack();
                                 byte[] networkInterfaceName = networkIF.networkInterface.getName().getBytes();
+                                sockAddr.sdl_len = (byte) sizeOfSDL;
+                                sockAddr.sdl_family = AF_LINK;
+                                sockAddr.sdl_index = index;
+                                sockAddr.sdl_type = 6; // ethernet
                                 sockAddr.sdl_nlen = (byte) networkInterfaceName.length;
                                 System.arraycopy(networkInterfaceName, 0, sockAddr.sdl_data, 0, networkInterfaceName.length);
                                 byte[] macAddress = networkIF.networkInterface.getHardwareAddress();
-                                if (macAddress != null) {
-                                    sockAddr.sdl_alen = (byte) macAddress.length;
-                                    System.arraycopy(macAddress, 0, sockAddr.sdl_data, networkInterfaceName.length, macAddress.length);
-                                }
+                                sockAddr.sdl_alen = (byte) macAddress.length;
+                                System.arraycopy(macAddress, 0, sockAddr.sdl_data, networkInterfaceName.length, macAddress.length);
                                 sockAddr.pack();
                                 pointer = pointer.share(entrySize);
                             }

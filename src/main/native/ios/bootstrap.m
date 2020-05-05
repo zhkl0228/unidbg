@@ -55,6 +55,13 @@ static void test_UIKit() {
   NSLog(@"UIApplicationDidEnterBackgroundNotification=%@", UIApplicationDidEnterBackgroundNotification);
   NSLog(@"UIApplicationDidBecomeActiveNotification=%@", UIApplicationDidBecomeActiveNotification);
   NSLog(@"UIApplicationWillEnterForegroundNotification=%@", UIApplicationWillEnterForegroundNotification);
+  NSLog(@"UIApplicationWillResignActiveNotification=%@", UIApplicationWillResignActiveNotification);
+}
+
+static void test_Bundle() {
+  NSBundle *bundle = [NSBundle mainBundle];
+  NSURL *url = [bundle appStoreReceiptURL];
+  NSLog(@"bundle=%@, url=%@, path=%@", bundle, url, [url path]);
 }
 
 int main(int argc, char *argv[]) {
@@ -84,6 +91,7 @@ int main(int argc, char *argv[]) {
 
   do_test();
   test_UIKit();
+  test_Bundle();
 
   return 0;
 }

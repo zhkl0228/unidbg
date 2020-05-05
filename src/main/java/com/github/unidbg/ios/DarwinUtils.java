@@ -30,6 +30,9 @@ public class DarwinUtils {
         List<NetworkIF> list = new ArrayList<>();
         while (enumeration.hasMoreElements()) {
             NetworkInterface networkInterface = enumeration.nextElement();
+            if (networkInterface.getHardwareAddress() == null) {
+                continue;
+            }
             Enumeration<InetAddress> addressEnumeration = networkInterface.getInetAddresses();
             if (addressEnumeration.hasMoreElements()) {
                 list.add(new NetworkIF(networkInterface));

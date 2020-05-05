@@ -17,7 +17,10 @@ import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.ByteArrayFileIO;
 import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.struct.kernel.*;
-import com.github.unidbg.ios.struct.sysctl.*;
+import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
+import com.github.unidbg.ios.struct.sysctl.KInfoProc32;
+import com.github.unidbg.ios.struct.sysctl.SockAddrDL;
+import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
 import com.github.unidbg.linux.file.DriverFileIO;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
@@ -35,16 +38,14 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
-import unicorn.UnicornException;
+import unicorn.*;
 
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.github.unidbg.unix.file.SocketIO.AF_LINK;
 import static com.github.unidbg.unix.file.SocketIO.AF_ROUTE;
 
 /**
@@ -150,6 +151,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case -21:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_insert_right_trap(emulator));
                     return;
+                case -22: // _mach_port_insert_member
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, _mach_port_insert_member(emulator));
+                    return;
                 case -24:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_construct_trap(emulator));
                     return;
@@ -182,6 +186,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     return;
                 case -89:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, _mach_timebase_info(emulator));
+                    return;
+                case -91: // mk_timer_create
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, _mk_timer_create());
                     return;
                 case 4:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
@@ -299,6 +306,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 344:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getdirentries64(u, emulator));
                     return;
+                case 345:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, statfs64(emulator));
+                    return;
                 case 346:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fstatfs64(u, emulator));
                     return;
@@ -363,8 +373,6 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         } catch (StopEmulatorException e) {
             u.emu_stop();
             return;
-        } catch (UnsupportedOperationException e) {
-            exception = e;
         } catch (Throwable e) {
             u.emu_stop();
             exception = e;
@@ -372,8 +380,8 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
-        if (exception instanceof UnicornException) {
-            throw (UnicornException) exception;
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
         }
     }
 
@@ -467,6 +475,13 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.debug("_mach_timebase_info info=" + info + ", LR=" + context.getLRPointer());
         }
         return 0;
+    }
+
+    private int _mk_timer_create() {
+        if (log.isDebugEnabled()) {
+            log.debug("_mk_timer_create");
+        }
+        return STATIC_PORT;
     }
 
     private int readlink(Unicorn u, Emulator<?> emulator) {
@@ -589,6 +604,17 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         return 0;
     }
 
+    private int _mach_port_insert_member(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int task = context.getIntArg(0);
+        int name = context.getIntArg(1);
+        int pset = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("_mach_port_insert_member task=" + task + ", name=" + name + ", pset=" + pset);
+        }
+        return 0;
+    }
+
     private long _semaphore_wait_trap(Emulator<?> emulator) {
         int port = emulator.getContext().getIntArg(0);
         log.info("_semaphore_wait_trap port=" + port);
@@ -678,6 +704,22 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         return -1;
     }
 
+    protected int statfs64(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathPointer = context.getPointerArg(0);
+        Pointer buf = context.getPointerArg(1);
+        String path = pathPointer.getString(0);
+        FileResult<DarwinFileIO> result = resolve(emulator, path, IOConstants.O_RDONLY);
+        if (log.isDebugEnabled()) {
+            log.debug("statfs64 pathPointer=" + pathPointer + ", buf=" + buf + ", path=" + path);
+        }
+        if (result != null && result.isSuccess()) {
+            return result.io.fstatfs(new StatFS(buf));
+        }
+        log.info("statfs64 pathPointer=" + pathPointer + ", buf=" + buf + ", path=" + path);
+        throw new UnicornException("statfs64 path=" + path + ", buf=" + buf);
+    }
+
     private int fstatfs64(Unicorn u, Emulator<?> emulator) {
         int fd = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
         Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
@@ -717,11 +759,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
     }
 
     private int stat64(Emulator<DarwinFileIO> emulator) {
-        Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+        RegisterContext context = emulator.getContext();
+        Pointer pathname = context.getPointerArg(0);
+        Pointer statbuf = context.getPointerArg(1);
         String path = pathname.getString(0);
         if (log.isDebugEnabled()) {
-            log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf);
+            log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf + ", LR=" + context.getLRPointer());
         }
         return stat64(emulator, FilenameUtils.normalize(path), statbuf);
     }
@@ -773,9 +816,10 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         Arm32RegisterContext context = emulator.getContext();
         Pointer pathname = context.getR0Pointer();
         Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String pathStr = pathname.getString(0);
+        String path = FilenameUtils.normalize(pathStr);
         if (log.isDebugEnabled()) {
-            log.debug("lstat path=" + path + ", stat=" + stat);
+            log.debug("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat);
         }
         return stat64(emulator, path, stat);
     }
@@ -1024,6 +1068,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         bufferSize.setInt(0, 8);
                         return 0;
                     }
+                    if ("hw.memsize".equals(sub)) {
+                        buffer.setInt(0, CTL_HW);
+                        buffer.setInt(4, HW_MEMSIZE);
+                        bufferSize.setInt(0, 8);
+                        return 0;
+                    }
                     if (log.isDebugEnabled()) {
                         createBreaker(emulator).debug();
                     }
@@ -1176,6 +1226,15 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                             buffer.setString(0, model);
                         }
                         return 0;
+                    case HW_MEMSIZE:
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, 8);
+                        }
+                        if (buffer != null) {
+                            long memSize = 2L * 1024 * 1024 * 1024; // 2G
+                            buffer.setLong(0, memSize);
+                        }
+                        return 0;
                 }
                 log.info(msg);
                 break;
@@ -1187,26 +1246,34 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 if(action == AF_ROUTE && rt == NET_RT_IFLIST) {
                     try {
                         List<DarwinUtils.NetworkIF> networkIFList = DarwinUtils.getNetworkIFs(isVerbose());
-                        int entrySize = UnicornStructure.calculateSize(IfMsgHeader.class) + UnicornStructure.calculateSize(SockAddrDL.class);
+                        int sizeOfSDL = UnicornStructure.calculateSize(SockAddrDL.class);
+                        int entrySize = UnicornStructure.calculateSize(IfMsgHeader.class) + sizeOfSDL;
                         if (bufferSize != null) {
                             bufferSize.setInt(0, entrySize * networkIFList.size());
                         }
                         if (buffer != null) {
                             Pointer pointer = buffer;
+                            short index = 0;
                             for (DarwinUtils.NetworkIF networkIF : networkIFList) {
                                 IfMsgHeader header = new IfMsgHeader(pointer);
                                 SockAddrDL sockAddr = new SockAddrDL(pointer.share(header.size()));
                                 header.ifm_msglen = (short) entrySize;
+                                header.ifm_version = 5;
                                 header.ifm_type = RTM_IFINFO;
+                                header.ifm_addrs = 0x10;
+                                header.ifm_index = ++index;
+                                header.ifm_data.ifi_type = 6; // ethernet
                                 header.pack();
                                 byte[] networkInterfaceName = networkIF.networkInterface.getName().getBytes();
+                                sockAddr.sdl_len = (byte) sizeOfSDL;
+                                sockAddr.sdl_family = AF_LINK;
+                                sockAddr.sdl_index = index;
+                                sockAddr.sdl_type = 6; // ethernet
                                 sockAddr.sdl_nlen = (byte) networkInterfaceName.length;
                                 System.arraycopy(networkInterfaceName, 0, sockAddr.sdl_data, 0, networkInterfaceName.length);
                                 byte[] macAddress = networkIF.networkInterface.getHardwareAddress();
-                                if (macAddress != null) {
-                                    sockAddr.sdl_alen = (byte) macAddress.length;
-                                    System.arraycopy(macAddress, 0, sockAddr.sdl_data, networkInterfaceName.length, macAddress.length);
-                                }
+                                sockAddr.sdl_alen = (byte) macAddress.length;
+                                System.arraycopy(macAddress, 0, sockAddr.sdl_data, networkInterfaceName.length, macAddress.length);
                                 sockAddr.pack();
                                 pointer = pointer.share(entrySize);
                             }
@@ -1224,7 +1291,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 log.info("sysctl top=" + name.getInt(0) + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);
                 break;
         }
-        return 1;
+        return -1;
     }
 
     private int _kernelrpc_mach_vm_deallocate_trap(Emulator<?> emulator) {
@@ -1938,6 +2005,31 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
 
                 if (log.isDebugEnabled()) {
                     log.debug("io_service_get_matching_service reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3218: { // _kernelrpc_mach_port_set_attributes
+                MachPortSetAttributesRequest args = new MachPortSetAttributesRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_port_set_attributes args=" + args);
+                }
+
+                MachPortSetAttributesReply reply = new MachPortSetAttributesReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_port_set_attributes reply=" + reply);
                 }
                 return MACH_MSG_SUCCESS;
             }

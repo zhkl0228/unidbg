@@ -77,6 +77,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new IllegalStateException("mkdirs failed: " + rootDir);
         }
         this.fileSystem = createFileSystem(rootDir);
+        if (processName != null) {
+            this.fileSystem.checkProcessName(processName);
+        }
         this.unicorn = new Unicorn(unicorn_arch, unicorn_mode);
         this.processName = processName == null ? "unidbg" : processName;
         this.registerContext = createRegisterContext(unicorn);

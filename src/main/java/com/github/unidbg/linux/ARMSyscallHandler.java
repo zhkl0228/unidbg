@@ -436,8 +436,6 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         } catch (StopEmulatorException e) {
             u.emu_stop();
             return;
-        } catch (UnsupportedOperationException e) {
-            exception = e;
         } catch (Throwable e) {
             u.emu_stop();
             exception = e;
@@ -449,8 +447,8 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
-        if (exception instanceof UnicornException) {
-            throw (UnicornException) exception;
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
         }
     }
 
@@ -1672,7 +1670,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
     private static final int CLOCK_MONOTONIC_COARSE = 6;
     private static final int CLOCK_BOOTTIME = 7;
 
-    private long nanoTime = System.nanoTime();
+    private final long nanoTime = System.nanoTime();
 
     private int clock_gettime(Unicorn u, Emulator<?> emulator) {
         int clk_id = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();

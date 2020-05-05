@@ -24,7 +24,7 @@ static void test_printf() {
   char buf[0x40];
   memset(buf, 0, 0x40);
   snprintf(buf, 0x40, "snprintf: %p\n", buf);
-  fprintf(stderr, "printf[%p] test: %s", buf, buf);
+  printf("printf[%p] if_nametoindex=%d, test=%s", buf, if_nametoindex("en0"), buf);
   fprintf(stdout, "ENOTDIR=0x%x, O_WRONLY=0x%x, O_RDWR=0x%x, O_NONBLOCK=0x%x, O_APPEND=0x%x, O_CREAT=0x%x, O_DIRECTORY=0x%x\n", ENOTDIR, O_WRONLY, O_RDWR, O_NONBLOCK, O_APPEND, O_CREAT, O_DIRECTORY);
 }
 
@@ -33,7 +33,7 @@ static void test_sysctl_CTL_UNSPEC() {
   int values[14];
   size_t size = sizeof(values);
 
-  char *name = "hw.cpusubtype";
+  char *name = "hw.memsize";
 
   mib[0] = CTL_UNSPEC;
   mib[1] = 3;
@@ -64,6 +64,8 @@ static void test_sysctl_CTL_NET() {
       }
       mac[index-1] = 0;
       printf("test_sysctl_CTL_NET ifm_msglen=%hu, ifm=%p, name=%s, mac=%s, sizeof_if_msghdr=%lu, sizeof_sockaddr_dl=%lu\n", ifm->ifm_msglen, ifm, name, mac, sizeof(struct if_msghdr), sizeof(struct sockaddr_dl));
+      printf("test_sysctl_CTL_NET ifm_version=%d, ifm_type=%d, ifm_addrs=%d, ifm_flags=%d, ifm_index=%d, sdl_family=%d\n", ifm->ifm_version, ifm->ifm_type, ifm->ifm_addrs, ifm->ifm_flags, ifm->ifm_index, sdl->sdl_family);
+      printf("test_sysctl_CTL_NET ifi_type=%d, ifi_typelen=%d, ifi_physical=%d, sdl_len=%d, sdl_index=%d, sdl_type=%d, sdl_slen=%d\n", ifm->ifm_data.ifi_type, ifm->ifm_data.ifi_typelen, ifm->ifm_data.ifi_physical, sdl->sdl_len, sdl->sdl_index, sdl->sdl_type, sdl->sdl_slen);
       free(mac);
       free(name);
     }
@@ -227,6 +229,24 @@ static void test_task_info() {
   }
 }
 
+static void test_NSGetExecutablePath() {
+  char buf[64];
+  uint32_t size = 64;
+  int ret = _NSGetExecutablePath(buf, &size);
+  printf("ExecutablePath: %s, ret=%d\n", buf, ret);
+}
+
+static void test_sysctl_HW_MEMSIZE() {
+  int mib[2];
+  unsigned long long mem_size = 0;
+  size_t size = sizeof(mem_size);
+
+  mib[0] = CTL_HW;
+  mib[1] = HW_MEMSIZE;
+  int ret = sysctl(mib, 2, &mem_size, &size, NULL, 0);
+  printf("test_sysctl_HW_MEMSIZE ret=%d, mem_size=%llu\n", ret, mem_size);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -237,9 +257,11 @@ void do_test() {
   test_sysctl_KERN_BOOTTIME();
   test_sysctl_HW_MACHINE();
   test_sysctl_HW_MODEL();
+  test_sysctl_HW_MEMSIZE();
   test_proc_pidinfo();
   test_pthread();
   test_file();
   test_time();
   test_task_info();
+  test_NSGetExecutablePath();
 }

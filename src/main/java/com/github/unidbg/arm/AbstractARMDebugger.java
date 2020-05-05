@@ -356,6 +356,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         if (line.startsWith("trace")) { // start trace instructions
             String redirect = null;
+            Module module = emulator.getMemory().findModuleByAddress(address);
             {
                 int index = line.indexOf(' ');
                 if (index != -1) {
@@ -377,9 +378,11 @@ public abstract class AbstractARMDebugger implements Debugger {
                     return false;
                 }
             }
-            codeHook.initialize(1, 0, null);
-            emulator.getUnicorn().hook_add_new(codeHook, 1, 0, emulator);
-            System.out.println("Set trace instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
+            long begin = module == null ? 1 : module.base;
+            long end = module == null ? 0 : (module.base + module.size);
+            codeHook.initialize(begin, end, null);
+            emulator.getUnicorn().hook_add_new(codeHook, begin, end, emulator);
+            System.out.println("Set trace " + (module == null ? "all" : module) + " instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
             return false;
         }
         if (line.startsWith("vm")) {

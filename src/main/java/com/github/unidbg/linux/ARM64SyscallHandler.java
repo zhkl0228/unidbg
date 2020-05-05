@@ -377,8 +377,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         } catch (StopEmulatorException e) {
             u.emu_stop();
             return;
-        } catch (UnsupportedOperationException e) {
-            exception = e;
         } catch (Throwable e) {
             u.emu_stop();
             exception = e;
@@ -390,8 +388,8 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", LR=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR) + ", syscall=" + syscall, exception);
 
-        if (exception instanceof UnicornException) {
-            throw (UnicornException) exception;
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
         }
     }
 
@@ -1440,7 +1438,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
     private static final int CLOCK_MONOTONIC_COARSE = 6;
     private static final int CLOCK_BOOTTIME = 7;
 
-    private long nanoTime = System.nanoTime();
+    private final long nanoTime = System.nanoTime();
 
     private int clock_gettime(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
