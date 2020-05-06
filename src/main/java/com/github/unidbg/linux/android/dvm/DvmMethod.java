@@ -3,7 +3,7 @@ package com.github.unidbg.linux.android.dvm;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-class DvmMethod extends Hashable {
+class DvmMethod implements Hashable {
 
     private static final Log log = LogFactory.getLog(DvmMethod.class);
 
@@ -25,7 +25,6 @@ class DvmMethod extends Hashable {
             log.debug("CallStaticObjectMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticObjectMethod(vm, dvmClass, signature, varArg);
     }
 
@@ -35,7 +34,6 @@ class DvmMethod extends Hashable {
             log.debug("CallStaticObjectMethodV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticObjectMethodV(vm, dvmClass, signature, vaList);
     }
 
@@ -45,7 +43,6 @@ class DvmMethod extends Hashable {
             log.debug("CallStaticObjectMethodA signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticObjectMethodA(vm, dvmClass, signature, vaList);
     }
 
@@ -55,7 +52,6 @@ class DvmMethod extends Hashable {
             log.debug("callObjectMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callObjectMethod(vm, dvmObject, signature, varArg);
     }
 
@@ -65,7 +61,6 @@ class DvmMethod extends Hashable {
             log.debug("callLongMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callLongMethod(vm, dvmObject, signature, varArg);
     }
 
@@ -75,7 +70,6 @@ class DvmMethod extends Hashable {
             log.debug("callLongMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callLongMethodV(vm, dvmObject, signature, vaList);
     }
 
@@ -85,7 +79,6 @@ class DvmMethod extends Hashable {
             log.debug("callObjectMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callObjectMethodV(vm, dvmObject, signature, vaList);
     }
 
@@ -95,7 +88,6 @@ class DvmMethod extends Hashable {
             log.debug("callObjectMethodA signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callObjectMethodA(vm, dvmObject, signature, vaList);
     }
 
@@ -105,7 +97,6 @@ class DvmMethod extends Hashable {
             log.debug("callIntMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callIntMethodV(vm, dvmObject, signature, vaList);
     }
 
@@ -114,9 +105,7 @@ class DvmMethod extends Hashable {
         if (log.isDebugEnabled()) {
             log.debug("callBooleanMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
-        BaseVM vm = dvmClass.vm;
-        checkJni(vm);
-        return vm.jni.callBooleanMethod(dvmClass.vm, dvmObject, signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return dvmClass.vm.jni.callBooleanMethod(dvmClass.vm, dvmObject, signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callBooleanMethodV(DvmObject<?>  dvmObject, VaList vaList) {
@@ -124,9 +113,7 @@ class DvmMethod extends Hashable {
         if (log.isDebugEnabled()) {
             log.debug("callBooleanMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
-        BaseVM vm = dvmClass.vm;
-        checkJni(vm);
-        return vm.jni.callBooleanMethodV(dvmClass.vm, dvmObject, signature, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return dvmClass.vm.jni.callBooleanMethodV(dvmClass.vm, dvmObject, signature, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callIntMethod(DvmObject<?>  dvmObject, VarArg varArg) {
@@ -135,7 +122,6 @@ class DvmMethod extends Hashable {
             log.debug("callIntMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callIntMethod(vm, dvmObject, signature, varArg);
     }
 
@@ -145,7 +131,6 @@ class DvmMethod extends Hashable {
             log.debug("callVoidMethod signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         vm.jni.callVoidMethod(vm, dvmObject, signature, varArg);
     }
 
@@ -155,7 +140,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticIntMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticIntMethod(vm, dvmClass, signature, varArg);
     }
 
@@ -165,7 +149,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticIntMethodV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticIntMethodV(vm, dvmClass, signature, vaList);
     }
 
@@ -175,7 +158,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticLongMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticLongMethod(vm, dvmClass, signature, varArg);
     }
 
@@ -185,7 +167,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticLongMethodV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticLongMethodV(vm, dvmClass, signature, vaList);
     }
 
@@ -195,7 +176,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticBooleanMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticBooleanMethod(vm, dvmClass, signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
@@ -205,7 +185,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticBooleanMethodV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callStaticBooleanMethodV(vm, dvmClass, signature, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
@@ -215,7 +194,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticVoidMethodV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         vm.jni.callStaticVoidMethod(vm, dvmClass, signature, varArg);
     }
 
@@ -225,7 +203,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticVoidMethodV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         vm.jni.callStaticVoidMethodV(vm, dvmClass, signature, vaList);
     }
 
@@ -235,7 +212,6 @@ class DvmMethod extends Hashable {
             log.debug("callStaticVoidMethodA signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         vm.jni.callStaticVoidMethodA(vm, dvmClass, signature, vaList);
     }
 
@@ -245,7 +221,6 @@ class DvmMethod extends Hashable {
             log.debug("newObjectV signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.newObjectV(vm, dvmClass, signature, vaList);
     }
 
@@ -255,7 +230,6 @@ class DvmMethod extends Hashable {
             log.debug("newObject signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.addObject(vm.jni.newObject(vm, dvmClass, signature, varArg), false);
     }
 
@@ -265,7 +239,6 @@ class DvmMethod extends Hashable {
             log.debug("callVoidMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         vm.jni.callVoidMethodV(vm, dvmObject, signature, vaList);
     }
 
@@ -275,7 +248,6 @@ class DvmMethod extends Hashable {
             log.debug("callVoidMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         vm.jni.callVoidMethodA(vm, dvmObject, signature, vaList);
     }
 
@@ -285,7 +257,6 @@ class DvmMethod extends Hashable {
             log.debug("callFloatMethodV signature=" + signature + ", dvmObject=" + dvmObject);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.callFloatMethodV(vm, dvmObject, signature, vaList);
     }
 
@@ -295,7 +266,6 @@ class DvmMethod extends Hashable {
             log.debug("toReflectedMethod signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm);
         return vm.jni.toReflectedMethod(vm, signature);
     }
 

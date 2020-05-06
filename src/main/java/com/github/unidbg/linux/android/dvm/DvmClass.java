@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class DvmClass extends DvmObject<String> {
+public class DvmClass extends DvmObject<String> implements Hashable {
 
     private static final Log log = LogFactory.getLog(DvmClass.class);
 
@@ -55,7 +55,6 @@ public class DvmClass extends DvmObject<String> {
             log.debug("allocObject signature=" + signature);
         }
         BaseVM vm = this.vm;
-        checkJni(vm);
         return vm.jni.allocObject(vm, this, signature);
     }
 
@@ -80,7 +79,6 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getStaticMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        checkJni(vm);
         if (vm.jni.acceptMethod(signature, true)) {
             staticMethodMap.put(hash, new DvmMethod(this, methodName, args, true));
             return (int) hash;
@@ -110,7 +108,7 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        if (vm.jni == null || vm.jni.acceptMethod(signature, false)) {
+        if (vm.jni.acceptMethod(signature, false)) {
             methodMap.put(hash, new DvmMethod(this, methodName, args, false));
             return (int) hash;
         } else {
@@ -139,7 +137,7 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        if (vm.jni == null || vm.jni.acceptField(signature, false)) {
+        if (vm.jni != null && vm.jni.acceptField(signature, false)) {
             fieldMap.put(hash, new DvmField(this, fieldName, fieldType));
             return (int) hash;
         } else {
@@ -168,7 +166,7 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getStaticFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        if (vm.jni == null || vm.jni.acceptField(signature, true)) {
+        if (vm.jni.acceptField(signature, true)) {
             staticFieldMap.put(hash, new DvmField(this, fieldName, fieldType));
             return (int) hash;
         } else {

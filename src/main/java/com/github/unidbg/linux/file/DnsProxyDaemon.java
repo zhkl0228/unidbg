@@ -58,7 +58,7 @@ class DnsProxyDaemon implements LocalSocketIO.SocketHandler {
         } else if (command.startsWith("gethostbyaddr")) {
             return gethostbyaddr(command);
         }
-        throw new AbstractMethodError(command);
+        throw new AbstractMethodError();
     }
 
     private byte[] gethostbyaddr(String command) {

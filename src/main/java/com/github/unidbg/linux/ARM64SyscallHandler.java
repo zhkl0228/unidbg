@@ -355,9 +355,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                 case 209:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getsockopt(emulator));
                     return;
-                case 278:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, gerrandom(emulator));
-                    return;
                 case 323888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(u, emulator));
                     return;
@@ -395,15 +392,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         }
     }
 
-    private long gerrandom(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer buf = context.getPointerArg(0);
-        int bufSize = context.getIntArg(1);
-        int flags = context.getIntArg(2);
-        return getrandom(buf, bufSize, flags);
-    }
-
-    private long clone(Emulator<?> emulator) {
+    private long clone(Emulator<AndroidFileIO> emulator) {
         Arm64RegisterContext context = emulator.getContext();
         Pointer child_stack = context.getPointerArg(1);
         if (child_stack == null &&
