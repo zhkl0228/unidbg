@@ -3,10 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.arm.AbstractARMEmulator;
-import com.github.unidbg.arm.Arm64Hook;
-import com.github.unidbg.arm.Arm64Svc;
-import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.*;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.memory.Memory;
@@ -72,22 +69,22 @@ public class Dyld64 extends Dyld {
         }
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
-            case "__dyld_fast_stub_entry":
+            case "__dyld_fast_stub_entry": // fastBindLazySymbol
                 if (__dyld_fast_stub_entry == null) {
                     __dyld_fast_stub_entry = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
-                            Pointer loaderCache = context.getPointerArg(0);
-                            long lazyInfo = context.getLongArg(1);
+                            Pointer imageLoaderCache = context.getPointerArg(0);
+                            long lazyBindingInfoOffset = context.getLongArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("__dyld_fast_stub_entry loaderCache=" + loaderCache + ", lazyInfo=" + lazyInfo);
+                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=" + lazyBindingInfoOffset);
                             }
                             return 0;
                         }
                     });
                 }
-                address.setPointer(0, __dyld__NSGetExecutablePath);
+                address.setPointer(0, __dyld_fast_stub_entry);
                 return 1;
             case "__dyld__NSGetExecutablePath":
                 if (__dyld__NSGetExecutablePath == null) {

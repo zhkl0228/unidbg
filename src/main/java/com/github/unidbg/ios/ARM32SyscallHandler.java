@@ -1246,7 +1246,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     case HW_NCPU:
                         log.debug(msg);
                         if (bufferSize != null) {
-                            bufferSize.setLong(0, 4);
+                            bufferSize.setInt(0, 4);
                         }
                         if (buffer != null) {
                             buffer.setInt(0, 2); // 2 cpus
