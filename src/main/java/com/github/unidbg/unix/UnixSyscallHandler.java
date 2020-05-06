@@ -329,6 +329,11 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGRTMIN = 32;
 
     protected final int sigaction(int signum, Pointer act, Pointer oldact) {
+        final int ACT_SIZE = 16;
+        return sigaction(signum, act, oldact, ACT_SIZE);
+    }
+
+    protected final int sigaction(int signum, Pointer act, Pointer oldact, int sizeOfSigAction) {
         String prefix = "Unknown";
         if (signum > 32) {
             signum -= 32;
@@ -338,10 +343,9 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             log.debug("sigaction signum=" + signum + ", act=" + act + ", oldact=" + oldact + ", prefix=" + prefix);
         }
 
-        final int ACT_SIZE = 16;
         if (oldact != null) {
             byte[] lastAct = sigMap.get(signum);
-            byte[] data = lastAct == null ? new byte[ACT_SIZE] : lastAct;
+            byte[] data = lastAct == null ? new byte[sizeOfSigAction] : lastAct;
             oldact.write(0, data, 0, data.length);
         }
 
@@ -368,7 +372,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGSYS:
             case SIGRTMIN:
                 if (act != null) {
-                    sigMap.put(signum, act.getByteArray(0, ACT_SIZE));
+                    sigMap.put(signum, act.getByteArray(0, sizeOfSigAction));
                 }
                 return 0;
         }

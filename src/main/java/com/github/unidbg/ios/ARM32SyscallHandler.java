@@ -2244,7 +2244,8 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         Pointer act = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         Pointer oldact = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
 
-        return sigaction(signum, act, oldact);
+        final int sizeOfSigAction = 12;
+        return sigaction(signum, act, oldact, sizeOfSigAction);
     }
 
     private int fcntl(Unicorn u, Emulator<?> emulator) {
