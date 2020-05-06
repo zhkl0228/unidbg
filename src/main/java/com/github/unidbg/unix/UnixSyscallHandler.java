@@ -446,6 +446,17 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return write;
     }
 
+    protected int getrandom(Pointer buf, int bufSize, int flags) {
+        Random random = new Random();
+        byte[] bytes = new byte[bufSize];
+        random.nextBytes(bytes);
+        buf.write(0, bytes, 0, bytes.length);
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(bytes, "getrandom buf=" + buf + ", bufSize=" + bufSize + ", flags=0x" + Integer.toHexString(flags)));
+        }
+        return bufSize;
+    }
+
     @SuppressWarnings("unused")
     protected boolean handleSyscall(Emulator<?> emulator, int NR) {
         return false;

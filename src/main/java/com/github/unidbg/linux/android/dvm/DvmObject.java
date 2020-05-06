@@ -8,7 +8,7 @@ import unicorn.UnicornException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DvmObject<T> implements Hashable {
+public class DvmObject<T> extends Hashable {
 
     private final DvmClass objectType;
     protected T value;
