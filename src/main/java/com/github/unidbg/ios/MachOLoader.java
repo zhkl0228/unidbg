@@ -158,6 +158,18 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
     }
 
+    public final void onExecutableLoaded() {
+        if (callInitFunction) {
+            for (MachOModule m : modules.values()) {
+                String path = m.getPath();
+                boolean needCallInit = m.allSymbolBound || (path.startsWith("Payload/") && path.contains("/@rpath/"));
+                if (needCallInit) {
+                    m.doInitialization(emulator);
+                }
+            }
+        }
+    }
+
     @Override
     protected Module loadInternal(LibraryFile libraryFile, boolean forceCallInit) {
         return loadInternal(libraryFile, forceCallInit, true);
@@ -183,7 +195,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if (callInitFunction || forceCallInit) {
             for (MachOModule m : modules.values()) {
-                if (m.allSymbolBond || forceCallInit) {
+                if (m.allSymbolBound || forceCallInit) {
                     m.doInitialization(emulator);
                 }
             }
@@ -1135,19 +1147,19 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             }
 
             ret &= bindExternalRelocations(module);
-            module.allSymbolBond = ret;
+            module.allSymbolBound = ret;
         } else {
             if (dyldInfoCommand.bindSize() > 0) {
                 ByteBuffer buffer = module.buffer.duplicate();
                 buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
                 buffer.position((int) dyldInfoCommand.bindOff());
-                module.allSymbolBond = eachBind(log, buffer.slice(), module, false);
+                module.allSymbolBound = eachBind(log, buffer.slice(), module, false);
             }
             if (dyldInfoCommand.lazyBindSize() > 0) {
                 ByteBuffer buffer = module.buffer.duplicate();
                 buffer.limit((int) (dyldInfoCommand.lazyBindOff() + dyldInfoCommand.lazyBindSize()));
                 buffer.position((int) dyldInfoCommand.lazyBindOff());
-                module.allLazySymbolBond = eachBind(log, buffer.slice(), module, true);
+                module.allLazySymbolBound = eachBind(log, buffer.slice(), module, true);
             }
         }
     }
@@ -1405,7 +1417,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if (callInit) {
             for (MachOModule m : modules.values()) {
-                if (m.allSymbolBond) {
+                if (m.allSymbolBound) {
                     m.doInitialization(emulator);
                 }
             }

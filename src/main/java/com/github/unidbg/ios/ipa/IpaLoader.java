@@ -8,6 +8,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinResolver;
+import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.memory.Memory;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
@@ -54,6 +55,8 @@ public abstract class IpaLoader {
             String executable = bundleExecutable.getContent();
             Memory memory = emulator.getMemory();
             Module module = memory.load(new IpaLibraryFile(appDir, ipa, executable, loads), forceCallInit);
+            MachOLoader loader = (MachOLoader) memory;
+            loader.onExecutableLoaded();
             return new IpaLoaderImpl(emulator, module);
         }  catch (PropertyListFormatException | ParseException | ParserConfigurationException | SAXException e) {
             throw new IllegalStateException("load ipa failed", e);

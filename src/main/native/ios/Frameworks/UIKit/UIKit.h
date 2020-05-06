@@ -13,6 +13,11 @@ typedef enum UIApplicationState : NSInteger {
     UIApplicationStateBackground
 } UIApplicationState;
 
+int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSString *delegateClassName) {
+  NSLog(@"UIApplicationMain argc=%d, argv=%p, principalClassName=%@, delegateClassName=%@", argc, argv, principalClassName, delegateClassName);
+  return 0;
+}
+
 @interface UIApplication : NSObject
 
 + (UIApplication *)sharedApplication;

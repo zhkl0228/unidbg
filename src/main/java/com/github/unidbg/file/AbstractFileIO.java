@@ -116,7 +116,7 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int ftruncate(int length) {
-        throw new AbstractMethodError(getClass().getName());
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override

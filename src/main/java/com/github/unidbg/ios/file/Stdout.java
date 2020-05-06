@@ -16,7 +16,7 @@ public class Stdout extends SimpleFileIO {
     private static final Log log = LogFactory.getLog(Stdout.class);
 
     private final boolean err;
-    private PrintStream out;
+    private final PrintStream out;
     private final StdoutCallback callback;
 
     public Stdout(int oflags, File file, String path, boolean err, StdoutCallback callback) {

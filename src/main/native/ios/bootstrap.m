@@ -2,6 +2,7 @@
 #import <Foundation/Foundation.h>
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <UIKit/UIKit.h>
+#include <SystemConfiguration/SystemConfiguration.h>
 #include "test.h"
 
 @interface BootstrapTest : NSObject {}
@@ -64,6 +65,18 @@ static void test_Bundle() {
   NSLog(@"bundle=%@, url=%@, path=%@", bundle, url, [url path]);
 }
 
+static void test_SCNetworkReachabilityGetFlags() {
+  struct sockaddr_in zeroAddress;
+  bzero(&zeroAddress, sizeof(zeroAddress));
+  zeroAddress.sin_len = sizeof(zeroAddress);
+  zeroAddress.sin_family = AF_INET;
+  SCNetworkReachabilityRef defaultRouteReachability = SCNetworkReachabilityCreateWithAddress(NULL, (struct sockaddr *)&zeroAddress);
+  SCNetworkReachabilityFlags flags = 0;
+  bool didRetrieveFlags = SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags);
+  CFRelease(defaultRouteReachability);
+  printf("test_SCNetworkReachabilityGetFlags didRetrieveFlags=%d, flags=0x%x, kSCNetworkFlagsReachable=0x%x, kSCNetworkFlagsConnectionRequired=0x%x, kSCNetworkReachabilityFlagsIsWWAN=0x%x, kSCNetworkReachabilityFlagsIsLocalAddress=0x%x\n", didRetrieveFlags, flags, kSCNetworkFlagsReachable, kSCNetworkFlagsConnectionRequired, kSCNetworkReachabilityFlagsIsWWAN, kSCNetworkReachabilityFlagsIsLocalAddress);
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -92,6 +105,7 @@ int main(int argc, char *argv[]) {
   do_test();
   test_UIKit();
   test_Bundle();
+  test_SCNetworkReachabilityGetFlags();
 
   return 0;
 }

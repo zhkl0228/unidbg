@@ -478,11 +478,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     boolean hasUnresolvedSymbol() {
-        return !allSymbolBond || !allLazySymbolBond;
+        return !allSymbolBound || !allLazySymbolBound;
     }
 
-    boolean allSymbolBond;
-    boolean allLazySymbolBond;
+    boolean allSymbolBound;
+    boolean allLazySymbolBound;
 
     final Set<UnicornPointer> addImageCallSet = new HashSet<>();
     final Set<UnicornPointer> boundCallSet = new HashSet<>();

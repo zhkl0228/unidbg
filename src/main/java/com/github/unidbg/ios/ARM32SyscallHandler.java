@@ -270,6 +270,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 199:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lseek(u, emulator));
                     return;
+                case 201:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, ftruncate(emulator));
+                    return;
                 case 202:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, sysctl(emulator));
                     return;
@@ -683,6 +686,20 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.debug("lseek fd=" + fd + ", offset=" + offset + ", whence=" + whence + ", pos=" + pos);
         }
         return pos;
+    }
+
+    private int ftruncate(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int length = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("ftruncate fd=" + fd + ", length=" + length);
+        }
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            throw new UnsupportedOperationException();
+        }
+        return file.ftruncate(length);
     }
 
     private int unlink(Emulator<?> emulator) {
@@ -1224,6 +1241,15 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         }
                         if (buffer != null) {
                             buffer.setString(0, model);
+                        }
+                        return 0;
+                    case HW_NCPU:
+                        log.debug(msg);
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 2); // 2 cpus
                         }
                         return 0;
                     case HW_MEMSIZE:
