@@ -141,6 +141,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 
 //        emulator.attach(0xfffe0000L, 0xfffe0000L + 0x10000).addBreakPoint(null, 0xfffe0080L);
 //        emulator.traceCode(0xfffe0000L, 0xfffe0000L + 0x10000);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

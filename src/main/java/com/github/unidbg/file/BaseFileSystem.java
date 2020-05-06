@@ -47,7 +47,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     @Override
     public FileResult<T> open(String pathname, int oflags) {
         if (pathname.length() == 0) {
-            throw new IllegalStateException("open failed");
+            throw new IllegalStateException("open failed: empty pathname");
         }
 
         if (IO.STDIN.equals(pathname)) {
