@@ -313,7 +313,7 @@ public class Dyld64 extends Dyld {
                                 return sandbox_check;
                             }
 
-                            return dlsym(emulator.getMemory(), handle, symbolName);
+                            return dlsym(emulator, handle, "_" + symbolName);
                         }
                     });
                 }

@@ -289,7 +289,7 @@ public class Dyld32 extends Dyld {
                                 return _os_trace_redirect_func;
                             }
 
-                            return dlsym(emulator.getMemory(), (int) handle, symbolName);
+                            return dlsym(emulator, (int) handle, "_" + symbolName);
                         }
                     });
                 }

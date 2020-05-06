@@ -122,7 +122,7 @@ public class ArmLD extends Dlfcn {
                             if (log.isDebugEnabled()) {
                                 log.debug("dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
                             }
-                            return dlsym(emulator.getMemory(), handle, symbol.getString(0));
+                            return dlsym(emulator, handle, symbol.getString(0));
                         }
                     }).peer;
                 case "dl_unwind_find_exidx":

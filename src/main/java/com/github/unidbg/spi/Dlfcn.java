@@ -1,5 +1,6 @@
 package com.github.unidbg.spi;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
@@ -20,11 +21,16 @@ public abstract class Dlfcn implements HookListener {
         error.setMemory(0, 0x80, (byte) 0);
     }
 
-    protected final long dlsym(Memory memory, long handle, String symbolName) {
+    protected final long dlsym(Emulator<?> emulator, long handle, String symbolName) {
+        Memory memory = emulator.getMemory();
         Symbol symbol = memory.dlsym(handle, symbolName);
         if (symbol == null) {
-            log.info("Find symbol \"" + symbolName + "\" failed");
+            log.info("Find symbol \"" + symbolName + "\" failed: handle=0x" + Long.toHexString(handle) + ", LR=" + emulator.getContext().getLRPointer());
             this.error.setString(0, "Find symbol " + symbolName + " failed");
+            Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");
+            if (log.isDebugEnabled()) {
+                emulator.attach().debug();
+            }
             return 0;
         }
         return symbol.getAddress();

@@ -273,6 +273,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         String dyId = libraryFile.getName();
         String dylibPath = libraryFile.getName();
         MachO.DyldInfoCommand dyldInfoCommand = null;
+        MachOModule subModule = null;
         boolean finalSegment = false;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -379,6 +380,15 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ROUTINES:
                 case ROUTINES_64:
                 case LOAD_WEAK_DYLIB:
+                    break;
+                case SUB_CLIENT:
+                    MachO.SubCommand subCommand = (MachO.SubCommand) command.body();
+                    String name = subCommand.name().value();
+                    MachOModule module = (MachOModule) findModule(name);
+                    if (module == null) {
+                        throw new IllegalStateException("Find sub client failed: " + name);
+                    }
+                    subModule = module;
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
@@ -578,6 +588,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             setExecuteModule(module);
         }
         modules.put(dyId, module);
+        if (subModule != null) {
+            subModule.exportModules.put(FilenameUtils.getBaseName(module.name), module);
+        }
 
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
             maxDylibName = dyId;

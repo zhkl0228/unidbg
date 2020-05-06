@@ -30,7 +30,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final ByteBuffer buffer;
     final List<NeedLibrary> lazyLoadNeededList;
     final Map<String, Module> upwardLibraries;
-    private final Map<String, Module> exportModules;
+    final Map<String, Module> exportModules;
     private final String path;
     final MachO.DyldInfoCommand dyldInfoCommand;
 
