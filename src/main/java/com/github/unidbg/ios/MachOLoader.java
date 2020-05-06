@@ -7,6 +7,7 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookListener;
+import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
 import com.github.unidbg.ios.struct.kernel.Pthread64;
@@ -59,6 +60,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         setStackPoint(stackBase);
         initializeTSD(envs);
+
+        addModuleListener(new LibDispatchPatcher());
     }
 
     @Override
