@@ -26,4 +26,5 @@ public interface FileSystem<T extends NewFileIO> {
 
     void checkProcessName(String processName);
 
+    int rename(String oldPath, String newPath);
 }

@@ -46,10 +46,8 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
     @Override
     public FileResult<T> open(String pathname, int oflags) {
-        if (pathname.length() == 0) {
-            if (log.isDebugEnabled()) {
-                throw new IllegalStateException("open failed: empty pathname");
-            }
+        if ("".equals(pathname)) {
+            return FileResult.failed(UnixEmulator.ENOENT); // No such file or directory
         }
 
         if (IO.STDIN.equals(pathname)) {
@@ -167,4 +165,13 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         return workDir;
     }
 
+    @Override
+    public int rename(String oldPath, String newPath) {
+        File oldFile = new File(rootDir, oldPath);
+        File newFile = new File(rootDir, newPath);
+        if (!oldFile.renameTo(newFile)) {
+            throw new IllegalStateException("rename failed: old=" + oldFile + ", new=" + newFile);
+        }
+        return 0;
+    }
 }

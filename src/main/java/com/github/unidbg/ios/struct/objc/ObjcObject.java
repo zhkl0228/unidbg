@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.struct.objc;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.ios.objc.NSData;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
@@ -67,6 +68,10 @@ public class ObjcObject extends UnicornStructure {
     @SuppressWarnings("unused")
     public ObjcClass toClass() {
         return ObjcClass.create(emulator, getPointer());
+    }
+
+    public NSData toNSData() {
+        return NSData.create(this);
     }
 
     public String getDescription() {

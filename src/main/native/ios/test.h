@@ -27,7 +27,8 @@ static void test_printf() {
   snprintf(buf, 0x40, "snprintf: %p\n", buf);
   printf("printf[%p] if_nametoindex=%d, test=%s", buf, if_nametoindex("en0"), buf);
   fprintf(stdout, "ENOTDIR=0x%x, O_WRONLY=0x%x, O_RDWR=0x%x, O_NONBLOCK=0x%x, O_APPEND=0x%x, O_CREAT=0x%x, O_DIRECTORY=0x%x\n", ENOTDIR, O_WRONLY, O_RDWR, O_NONBLOCK, O_APPEND, O_CREAT, O_DIRECTORY);
-  printf("test_printf sizeof(sigaction)=%lu, sizeof(iovec)=%lu\n", sizeof(struct	sigaction), sizeof(struct iovec));
+  int fd = open("", 0);
+  printf("test_printf sizeof(sigaction)=%lu, sizeof(iovec)=%lu, fd=%d, errno=%d, msg=%s\n", sizeof(struct	sigaction), sizeof(struct iovec), fd, errno, strerror(errno));
 }
 
 static void test_sysctl_CTL_UNSPEC() {

@@ -60,7 +60,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
     @Override
     public FileResult<DarwinFileIO> resolve(Emulator<DarwinFileIO> emulator, String path, int oflags) {
         if ("".equals(path)) {
-            return FileResult.failed(UnixEmulator.EINVAL);
+            return FileResult.failed(UnixEmulator.ENOENT);
         }
 
         FileSystem<DarwinFileIO> fileSystem = emulator.getFileSystem();
