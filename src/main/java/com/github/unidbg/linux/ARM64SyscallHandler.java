@@ -1488,9 +1488,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         int iovcnt = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             for (int i = 0; i < iovcnt; i++) {
-                Pointer iov_base = iov.getPointer(i * 8);
-                int iov_len = iov.getInt(i * 8 + 4);
-                byte[] data = iov_base.getByteArray(0, iov_len);
+                Pointer iov_base = iov.getPointer(i * 16);
+                long iov_len = iov.getLong(i * 16 + 8);
+                byte[] data = iov_base.getByteArray(0, (int) iov_len);
                 Inspector.inspect(data, "writev fd=" + fd + ", iov=" + iov + ", iov_base=" + iov_base);
             }
         }

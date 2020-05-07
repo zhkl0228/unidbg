@@ -136,7 +136,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x4128F000, 0x41339000).addBreakPoint(null, 0x4128F000 + 0x0001E9B8);
 
-        new CoreTelephony().processHook(emulator);
+//        new CoreTelephony().processHook(emulator);
         new CFNetwork().processHook(emulator);
 
 //        emulator.attach(0xfffe0000L, 0xfffe0000L + 0x10000).addBreakPoint(null, 0xfffe0080L);

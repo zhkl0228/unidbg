@@ -145,7 +145,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x102984000L, 0x102998000L).addBreakPoint(null, 0x102984000L + 0x000000000000A0A4);
 
-        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
+//        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
         new CFNetwork().processHook(emulator);
 
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);

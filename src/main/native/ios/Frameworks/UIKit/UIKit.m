@@ -11,3 +11,30 @@
 }
 
 @end
+
+@implementation UIDevice
+
++ (UIDevice *)currentDevice {
+    return [[UIDevice alloc] init];
+}
+
+- (NSString *)systemVersion {
+    return @"7.1";
+}
+- (NSString *)model {
+    return @"iPhone";
+}
+- (NSString *)systemName {
+    return @"iPhone OS";
+}
+- (NSUUID *)identifierForVendor {
+    NSUUID *uuid = [NSUUID alloc];
+    [uuid initWithUUIDString:@"00000000-0000-0000-0000-000000000000"];
+    return uuid;
+}
+
+- (UIDeviceBatteryState)batteryState {
+    return UIDeviceBatteryStateUnplugged;
+}
+
+@end

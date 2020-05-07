@@ -25,3 +25,25 @@ int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSStri
 - (UIApplicationState)applicationState;
 
 @end
+
+typedef enum UIDeviceBatteryState : NSInteger {
+  UIDeviceBatteryStateUnknown,
+  UIDeviceBatteryStateUnplugged,
+  UIDeviceBatteryStateCharging,
+  UIDeviceBatteryStateFull
+} UIDeviceBatteryState;
+
+@interface UIDevice : NSObject
+
+@property(nonatomic, getter=isBatteryMonitoringEnabled) BOOL batteryMonitoringEnabled;
+
++ (UIDevice *)currentDevice;
+
+- (NSString *)systemVersion;
+- (NSString *)model;
+- (NSUUID *)identifierForVendor;
+- (NSString *)systemName;
+
+- (UIDeviceBatteryState)batteryState;
+
+@end

@@ -34,6 +34,7 @@ import com.github.unidbg.unix.file.SocketIO;
 import com.github.unidbg.unix.file.TcpSocket;
 import com.github.unidbg.unix.file.UdpSocket;
 import com.github.unidbg.unix.struct.TimeVal32;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
@@ -251,6 +252,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     return;
                 case 116:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
+                    return;
+                case 121:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, writev(emulator));
                     return;
                 case 133:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, sendto(u, emulator));
@@ -2147,6 +2151,36 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.debug("gettimeofday");
         }
         return (int) tv_sec;
+    }
+
+    private int writev(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        Pointer iov = context.getPointerArg(1);
+        int iovcnt = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            for (int i = 0; i < iovcnt; i++) {
+                Pointer iov_base = iov.getPointer(i * 8);
+                int iov_len = iov.getInt(i * 8 + 4);
+                byte[] data = iov_base.getByteArray(0, iov_len);
+                Inspector.inspect(data, "writev fd=" + fd + ", iov=" + iov + ", iov_base=" + iov_base);
+            }
+        }
+
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+
+        int count = 0;
+        for (int i = 0; i < iovcnt; i++) {
+            Pointer iov_base = iov.getPointer(i * 8);
+            int iov_len = iov.getInt(i * 8 + 4);
+            byte[] data = iov_base.getByteArray(0, iov_len);
+            count += file.write(data);
+        }
+        return count;
     }
 
     private int mach_absolute_time(Emulator<?> emulator) {

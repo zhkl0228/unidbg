@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/socket.h>
 #include <CoreFoundation/CoreFoundation.h>
 
-CFStringRef SCNetworkReachabilityCreateWithAddress(void *allocator, void *address) {
+CFStringRef SCNetworkReachabilityCreateWithAddress(CFAllocatorRef allocator, const struct sockaddr *address) {
   printf("SCNetworkReachabilityCreateWithAddress allocator=%p, address=%p\n", allocator, address);
   CFStringRef str = CFStringCreateWithCString(NULL, "SCNetworkReachabilityCreateWithAddress", kCFStringEncodingUTF8);
   return str;
@@ -23,4 +24,9 @@ Boolean SCNetworkReachabilityGetFlags(void *target, SCNetworkReachabilityFlags *
 Boolean SCNetworkReachabilitySetCallback(void *target, void *callback, void *context) {
   printf("SCNetworkReachabilitySetCallback target=%p, callback=%p, context=%p\n", target, callback, context);
   return false;
+}
+
+CFArrayRef CNCopySupportedInterfaces() {
+  printf("CNCopySupportedInterfaces\n");
+  return NULL;
 }
