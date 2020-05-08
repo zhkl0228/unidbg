@@ -28,23 +28,6 @@ public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements Fi
     }
 
     @Override
-    protected void checkProcessNameInternal(String processName) throws IOException {
-        super.checkProcessNameInternal(processName);
-
-        if (processName != null && processName.startsWith("/")) {
-            File process = new File(processName);
-            File appDir = new File(rootDir, process.getParentFile().getAbsolutePath());
-            FileUtils.forceMkdir(appDir);
-            File storeKitDir = new File(appDir.getParentFile(), "StoreKit");
-            FileUtils.forceMkdir(storeKitDir);
-            File receiptFile = new File(storeKitDir, "receipt");
-            if (!receiptFile.exists() && !receiptFile.createNewFile()) {
-                throw new IOException("createNewFile failed: " + receiptFile);
-            }
-        }
-    }
-
-    @Override
     public DarwinFileIO createSimpleFileIO(File file, int oflags, String path) {
         return new SimpleFileIO(oflags, file, path);
     }

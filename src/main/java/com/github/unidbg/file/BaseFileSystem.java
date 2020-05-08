@@ -33,18 +33,6 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     }
 
     @Override
-    public final void checkProcessName(String processName) {
-        try {
-            checkProcessNameInternal(processName);
-        } catch (IOException e) {
-            throw new IllegalStateException("check process name failed", e);
-        }
-    }
-
-    protected void checkProcessNameInternal(String processName) throws IOException {
-    }
-
-    @Override
     public FileResult<T> open(String pathname, int oflags) {
         if ("".equals(pathname)) {
             return FileResult.failed(UnixEmulator.ENOENT); // No such file or directory
