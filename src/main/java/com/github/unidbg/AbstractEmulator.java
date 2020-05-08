@@ -10,6 +10,8 @@ import com.github.unidbg.debugger.gdb.GdbStub;
 import com.github.unidbg.debugger.ida.AndroidServer;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.NewFileIO;
+import com.github.unidbg.linux.android.AndroidARM64Emulator;
+import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
@@ -360,20 +362,23 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         } finally {
             running = false;
 
-            if (readUnHook != null) {
-                readUnHook.unhook();
+            if (this instanceof AndroidARMEmulator || this instanceof AndroidARM64Emulator) {
+                if (readUnHook != null) {
+                    readUnHook.unhook();
+                }
+                if (writeUnHook != null) {
+                    writeUnHook.unhook();
+                }
+                if (codeUnHook != null) {
+                    codeUnHook.unhook();
+                }
+                if (entry) {
+                    readHook.redirect = null;
+                    writeHook.redirect = null;
+                }
+                codeHook.redirect = null;
             }
-            if (writeUnHook != null) {
-                writeUnHook.unhook();
-            }
-            if (codeUnHook != null) {
-                codeUnHook.unhook();
-            }
-            if (entry) {
-                readHook.redirect = null;
-                writeHook.redirect = null;
-            }
-            codeHook.redirect = null;
+
             if (log.isDebugEnabled()) {
                 log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
             }

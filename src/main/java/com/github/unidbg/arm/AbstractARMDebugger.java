@@ -357,6 +357,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             }
         }
         if (line.startsWith("trace")) { // start trace instructions
+            Memory memory = emulator.getMemory();
             Pattern pattern = Pattern.compile("trace\\s+(\\d+)\\s+(\\d+)");
             Matcher matcher = pattern.matcher(line);
             AssemblyCodeDumper codeHook = new AssemblyCodeDumper(emulator);
@@ -367,7 +368,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 System.out.println("Set trace begin->end instructions success.");
             } else {
                 String redirect = null;
-                Module module = emulator.getMemory().findModuleByAddress(address);
+                Module module = memory.findModuleByAddress(address);
                 {
                     int index = line.indexOf(' ');
                     if (index != -1) {
@@ -376,16 +377,21 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
                 File traceFile = null;
                 if (redirect != null && redirect.trim().length() > 0) {
-                    File outFile = new File(redirect.trim());
-                    try {
-                        if (!outFile.exists() && !outFile.createNewFile()) {
-                            throw new IllegalStateException("createNewFile: " + outFile);
+                    Module check = memory.findModule(redirect);
+                    if (check != null) {
+                        module = check;
+                    } else {
+                        File outFile = new File(redirect.trim());
+                        try {
+                            if (!outFile.exists() && !outFile.createNewFile()) {
+                                throw new IllegalStateException("createNewFile: " + outFile);
+                            }
+                            codeHook.setRedirect(new PrintStream(outFile));
+                            traceFile = outFile;
+                        } catch (IOException e) {
+                            System.err.println("Set trace redirect out file failed: " + outFile);
+                            return false;
                         }
-                        codeHook.setRedirect(new PrintStream(outFile));
-                        traceFile = outFile;
-                    } catch (IOException e) {
-                        System.err.println("Set trace redirect out file failed: " + outFile);
-                        return false;
                     }
                 }
                 begin = module == null ? 1 : module.base;

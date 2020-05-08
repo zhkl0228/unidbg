@@ -2,13 +2,14 @@ package com.github.unidbg.ios.ipa;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.file.ios.DarwinFileIO;
 
 class IpaLoaderImpl extends IpaLoader {
 
-    private final Emulator<?> emulator;
+    private final Emulator<DarwinFileIO> emulator;
     private final Module executable;
 
-    IpaLoaderImpl(Emulator<?> emulator, Module executable) {
+    IpaLoaderImpl(Emulator<DarwinFileIO> emulator, Module executable) {
         this.emulator = emulator;
         this.executable = executable;
     }
@@ -24,7 +25,7 @@ class IpaLoaderImpl extends IpaLoader {
     }
 
     @Override
-    public Emulator<?> getEmulator() {
+    public Emulator<DarwinFileIO> getEmulator() {
         return emulator;
     }
 }
