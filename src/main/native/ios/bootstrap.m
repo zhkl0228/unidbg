@@ -57,6 +57,23 @@ static void test_UIKit() {
   NSLog(@"UIApplicationDidBecomeActiveNotification=%@", UIApplicationDidBecomeActiveNotification);
   NSLog(@"UIApplicationWillEnterForegroundNotification=%@", UIApplicationWillEnterForegroundNotification);
   NSLog(@"UIApplicationWillResignActiveNotification=%@", UIApplicationWillResignActiveNotification);
+
+  NSString *path = [[NSBundle mainBundle] bundlePath];
+  NSString *documentPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+  NSString *cachePath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
+  NSString *supportPath = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,   NSUserDomainMask, YES) objectAtIndex:0];
+  NSString *tmpPath = NSTemporaryDirectory();
+  NSString *homePath = NSHomeDirectory();
+  NSLog(@"test_UIKit bundlePath=%@, documentPath=%@, cachePath=%@, supportPath=%@, tmpPath=%@, homePath=%@", path, documentPath, cachePath, supportPath, tmpPath, homePath);
+
+  NSFileManager* fm = [NSFileManager defaultManager];
+  printf("NSFileManager defaultManager\n");
+  NSArray *files = [fm subpathsAtPath: tmpPath];
+  printf("NSFileManager subpathsAtPath, count=%lu\n", (unsigned long) files.count);
+  for (int i = 0;  i < files.count; ++i) {
+    id object = files[i];
+    NSLog(@"test_NSFileManager file=%@", object);
+  }
 }
 
 static void test_Bundle() {

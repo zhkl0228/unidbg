@@ -11,6 +11,8 @@
 #include <sys/sysctl.h>
 #include <sys/proc.h>
 #include <sys/socket.h>
+#include <sys/attr.h>
+#include <sys/dir.h>
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <netinet/in.h>
@@ -250,6 +252,26 @@ static void test_sysctl_HW_MEMSIZE() {
   printf("test_sysctl_HW_MEMSIZE ret=%d, mem_size=%llu\n", ret, mem_size);
 }
 
+static void test_getattrlist() {
+  struct attrlist attrlist;
+  u_int32_t attrbuf[2];	/* Length field and access modes */
+  attrlist.bitmapcount = ATTR_BIT_MAP_COUNT;
+  attrlist.commonattr = ATTR_CMN_USERACCESS;
+  attrlist.volattr = 0;
+  attrlist.dirattr = 0;
+  attrlist.fileattr = 0;
+  attrlist.forkattr = 0;
+  int ret = getattrlist("/", &attrlist, attrbuf, sizeof(attrbuf), 0);
+  printf("test_getattrlist ret=%d, len=%d, attrbuf2=%d\n", ret, attrbuf[0], attrbuf[1]);
+  printf("test_getattrlist X_OK=%d, R_OK=%d, W_OK=%d\n", X_OK, R_OK, W_OK);
+}
+
+static void test_dirent() {
+  struct dirent ent;
+  unsigned long base = (unsigned long) &ent;
+  printf("test_dirent size=%lu, d_fileno=%lu, d_name=%lu, d_name_size=%lu\n", sizeof(struct dirent), (unsigned long) &ent.d_fileno - base, (unsigned long) &ent.d_name - base, sizeof(ent.d_name));
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -267,4 +289,6 @@ void do_test() {
   test_time();
   test_task_info();
   test_NSGetExecutablePath();
+  test_getattrlist();
+  test_dirent();
 }

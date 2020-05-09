@@ -2,8 +2,10 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.file.LocalUdpSocket;
+import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -135,4 +137,13 @@ public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFile
         return -1;
     }
 
+    @Override
+    public int getattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getdirentries64(Pointer buf, int bufSize) {
+        throw new UnsupportedOperationException();
+    }
 }

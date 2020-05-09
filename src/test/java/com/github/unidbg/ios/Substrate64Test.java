@@ -5,7 +5,6 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.ios.service.CFNetwork;
-import com.github.unidbg.ios.service.CoreTelephony;
 import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -151,6 +150,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.attach(0xffffe0000L, 0xffffe0000L + 0x10000).addBreakPoint(null, 0xffffe0094L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
+//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

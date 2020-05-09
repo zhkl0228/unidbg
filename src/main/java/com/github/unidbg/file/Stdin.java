@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
@@ -78,5 +79,15 @@ public class Stdin extends BaseFileIO implements AndroidFileIO, DarwinFileIO {
     @Override
     public String toString() {
         return "stdin";
+    }
+
+    @Override
+    public int getattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getdirentries64(Pointer buf, int bufSize) {
+        throw new UnsupportedOperationException();
     }
 }
