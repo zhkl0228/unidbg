@@ -13,4 +13,7 @@
 - (CTCarrier *)subscriberCellularProvider {
     return [[CTCarrier alloc] init];
 }
+- (NSString *)currentRadioAccessTechnology {
+    return CTRadioAccessTechnologyLTE;
+}
 @end

@@ -2,7 +2,8 @@
 #import <Foundation/Foundation.h>
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <UIKit/UIKit.h>
-#include <SystemConfiguration/SystemConfiguration.h>
+#import <SystemConfiguration/SystemConfiguration.h>
+#import <SystemConfiguration/CaptiveNetwork.h>
 #include "test.h"
 
 @interface BootstrapTest : NSObject {}
@@ -56,7 +57,7 @@ static void test_UIKit() {
   NSLog(@"UIApplicationDidEnterBackgroundNotification=%@", UIApplicationDidEnterBackgroundNotification);
   NSLog(@"UIApplicationDidBecomeActiveNotification=%@", UIApplicationDidBecomeActiveNotification);
   NSLog(@"UIApplicationWillEnterForegroundNotification=%@", UIApplicationWillEnterForegroundNotification);
-  NSLog(@"UIApplicationWillResignActiveNotification=%@", UIApplicationWillResignActiveNotification);
+  NSLog(@"CTRadioAccessTechnologyLTE=%@", CTRadioAccessTechnologyLTE);
 
   NSString *path = [[NSBundle mainBundle] bundlePath];
   NSString *documentPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
@@ -94,6 +95,11 @@ static void test_SCNetworkReachabilityGetFlags() {
   printf("test_SCNetworkReachabilityGetFlags didRetrieveFlags=%d, flags=0x%x, kSCNetworkFlagsReachable=0x%x, kSCNetworkFlagsConnectionRequired=0x%x, kSCNetworkReachabilityFlagsIsWWAN=0x%x, kSCNetworkReachabilityFlagsIsLocalAddress=0x%x\n", didRetrieveFlags, flags, kSCNetworkFlagsReachable, kSCNetworkFlagsConnectionRequired, kSCNetworkReachabilityFlagsIsWWAN, kSCNetworkReachabilityFlagsIsLocalAddress);
 }
 
+static void test_Wifi() {
+  CFArrayRef array = CNCopySupportedInterfaces();
+  NSLog(@"test_Wifi array=%@", array);
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -123,6 +129,7 @@ int main(int argc, char *argv[]) {
   test_UIKit();
   test_Bundle();
   test_SCNetworkReachabilityGetFlags();
+  test_Wifi();
 
   return 0;
 }
