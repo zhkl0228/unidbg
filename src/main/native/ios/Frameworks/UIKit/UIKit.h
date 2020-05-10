@@ -47,3 +47,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 - (UIDeviceBatteryState)batteryState;
 
 @end
+
+@interface NSString (Number)
+- (unsigned int)unsignedIntValue;
+@end

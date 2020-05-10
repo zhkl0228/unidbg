@@ -38,3 +38,10 @@
 }
 
 @end
+
+@implementation NSString (Number)
+- (unsigned int)unsignedIntValue {
+    int value = [self intValue];
+    return (unsigned int) value;
+}
+@end

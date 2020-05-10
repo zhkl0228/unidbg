@@ -1651,6 +1651,27 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     return io.mmap2(unicorn, start, aligned, prot, offset, length);
                 }
             }
+            if ((flags & MAP_MY_FIXED) != 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug("mmap2 NOT VM_FLAGS_ANYWHERE start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=" + prot + ", fd=" + fd + ", offset=0x" + Long.toHexString(offset));
+                }
+
+                MemoryMap mapped = null;
+                for (MemoryMap map : memoryMap.values()) {
+                    if (start >= map.base && start + aligned <= map.base + map.size) {
+                        mapped = map;
+                    }
+                }
+
+                if (mapped != null) {
+                    throw new IllegalStateException("mmap2 NOT VM_FLAGS_ANYWHERE found mapped memory: start=0x" + Long.toHexString(start));
+                }
+                unicorn.mem_map(start, aligned, prot);
+                if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
+                    log.warn("mmap2 NOT VM_FLAGS_ANYWHERE exists memory map addr=0x" + Long.toHexString(start));
+                }
+                return start;
+            }
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

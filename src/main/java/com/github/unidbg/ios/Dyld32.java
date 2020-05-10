@@ -613,6 +613,7 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
+                            emulator.attach().debug();
                             emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_LR, AbstractARMEmulator.LR);
                             return 0;
                         }

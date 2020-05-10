@@ -183,7 +183,17 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
         if(removed.size != aligned) {
             if (aligned >= removed.size) {
-                throw new IllegalStateException("munmap removed=0x" + Long.toHexString(removed.size) + ", aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start));
+                if (log.isDebugEnabled()) {
+                    log.debug("munmap removed=0x" + Long.toHexString(removed.size) + ", aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start));
+                }
+                long address = start + removed.size;
+                long size = aligned - removed.size;
+                while (size != 0) {
+                    MemoryMap remove = memoryMap.remove(address);
+                    address += remove.size;
+                    size -= remove.size;
+                }
+                return 0;
             }
 
             if (memoryMap.put(start + aligned, new MemoryMap(start + aligned, removed.size - aligned, removed.prot)) != null) {

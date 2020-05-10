@@ -50,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.github.unidbg.ios.MachO.MAP_MY_FIXED;
 import static com.github.unidbg.unix.file.SocketIO.AF_LINK;
 import static com.github.unidbg.unix.file.SocketIO.AF_ROUTE;
 
@@ -218,6 +219,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     return;
                 case 33:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, access(u, emulator));
+                    return;
+                case 34:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, chflags(emulator));
                     return;
                 case 39:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getppid(emulator));
@@ -415,6 +419,15 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private int chflags(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer path = context.getPointerArg(0);
+        int flags = context.getIntArg(1);
+        String pathname = path.getString(0);
+        log.info("chflags paht=" + pathname + ", flags=0x" + Integer.toHexString(flags));
+        return -1;
     }
 
     private int open_dprotected_np(Emulator<DarwinFileIO> emulator) {
@@ -1516,7 +1529,14 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         int tag = flags >> 24;
         boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
         if (!anywhere) {
-            throw new UnicornException("_kernelrpc_mach_vm_allocate_trap fixed");
+            long start = address.getInt(0) & 0xffffffffL;
+            emulator.getMemory().mmap2(start, (int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE, MAP_MY_FIXED, -1, 0);
+            Pointer pointer = address.getPointer(0);
+            pointer.write(0, new byte[(int) size], 0, (int) size);
+            if (log.isDebugEnabled()) {
+                log.debug("_kernelrpc_mach_vm_allocate_trap fixed, address=" + pointer + ", size=" + size + ", flags=0x" + Integer.toHexString(flags));
+            }
+            return 0;
         }
 
         Pointer value = address.getPointer(0);
