@@ -1651,7 +1651,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     return io.mmap2(unicorn, start, aligned, prot, offset, length);
                 }
             }
-            if ((flags & MAP_MY_FIXED) != 0) {
+            if (flags == MAP_MY_FIXED) {
                 if (log.isDebugEnabled()) {
                     log.debug("mmap2 NOT VM_FLAGS_ANYWHERE start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=" + prot + ", fd=" + fd + ", offset=0x" + Long.toHexString(offset));
                 }

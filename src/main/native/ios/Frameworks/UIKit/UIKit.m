@@ -18,6 +18,13 @@
     return [[UIDevice alloc] init];
 }
 
+- (id)init {
+    if(self = [super init]) {
+        self.batteryMonitoringEnabled = YES;
+    }
+    return self;
+}
+
 - (NSString *)systemVersion {
     return @"7.1";
 }

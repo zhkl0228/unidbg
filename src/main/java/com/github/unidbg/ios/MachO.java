@@ -81,7 +81,7 @@ public interface MachO {
     int MAP_PRIVATE = 0x0002; /* [MF|SHM] changes are private */
     int MAP_FIXED = 0x0010; /* [MF|SHM] interpret addr exactly */
     int MAP_ANONYMOUS = 0x1000; /* allocated from memory, swap space */
-    int MAP_MY_FIXED = (1 << 25);
+    int MAP_MY_FIXED = 0x1234abcd;
 
     long _COMM_PAGE32_BASE_ADDRESS = (0xffff4000L);
     long _COMM_PAGE64_BASE_ADDRESS = (0xffffff80001fc000L) /* In TTBR0 */;
