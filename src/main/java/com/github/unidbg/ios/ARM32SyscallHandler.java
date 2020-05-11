@@ -1193,7 +1193,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     if ("kern.boottime".equals(sub)) {
                         buffer.setInt(0, CTL_KERN);
                         buffer.setInt(4, KERN_BOOTTIME);
-                        bufferSize.setInt(0, UnicornStructure.calculateSize(TimeVal32.class));
+                        bufferSize.setInt(0, 8);
                         return 0;
                     }
                     if ("hw.machine".equals(sub)) {
