@@ -19,6 +19,9 @@ public interface DarwinFileIO extends NewFileIO {
     int W_OK = 2;
     int R_OK = 4;
 
+    int F_GETPROTECTIONCLASS =	63;	/* Get the protection class of a file from the EA, returns int */
+    int F_SETPROTECTIONCLASS =	64; /* Set the protection class of a file for the EA, requires int */
+
     int fstat(Emulator<?> emulator, StatStructure stat);
 
     int fstatfs(StatFS statFS);

@@ -38,7 +38,7 @@ static void test_sysctl_CTL_UNSPEC() {
   int values[14];
   size_t size = sizeof(values);
 
-  char *name = "hw.memsize";
+  char *name = "hw.cpufamily";
 
   mib[0] = CTL_UNSPEC;
   mib[1] = 3;
@@ -252,6 +252,19 @@ static void test_sysctl_HW_MEMSIZE() {
   printf("test_sysctl_HW_MEMSIZE ret=%d, mem_size=%llu\n", ret, mem_size);
 }
 
+#define HW_CPU_FAMILY 108
+
+static void test_sysctl_HW_CPU_FAMILY() {
+  int mib[2];
+  unsigned int family = 0;
+  size_t size = sizeof(family);
+
+  mib[0] = CTL_HW;
+  mib[1] = HW_CPU_FAMILY;
+  int ret = sysctl(mib, 2, &family, &size, NULL, 0);
+  printf("test_sysctl_HW_CPU_FAMILY ret=%d, family=%u, size=%zu\n", ret, family, size);
+}
+
 static void test_getattrlist() {
   struct attrlist attrlist;
   u_int32_t attrbuf[2];	/* Length field and access modes */
@@ -291,4 +304,5 @@ void do_test() {
   test_NSGetExecutablePath();
   test_getattrlist();
   test_dirent();
+  test_sysctl_HW_CPU_FAMILY();
 }

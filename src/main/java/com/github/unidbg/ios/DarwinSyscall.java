@@ -49,6 +49,7 @@ public interface DarwinSyscall {
     int HW_MEMSIZE =	24;		/* uint64_t: physical ram size */
     int HW_CPU_TYPE = 105;
     int HW_CPU_SUBTYPE = 106;
+    int HW_CPU_FAMILY = 108;
 
     int KERN_PROC_PID = 1; /* by process id */
 

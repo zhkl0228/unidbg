@@ -161,8 +161,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     public final void onExecutableLoaded() {
         if (callInitFunction) {
             for (MachOModule m : modules.values()) {
-                String path = m.getPath();
-                boolean needCallInit = m.allSymbolBound || (path.startsWith("Payload/") && path.contains("/@rpath/"));
+                boolean needCallInit = m.allSymbolBound || isPayloadModule(m);
                 if (needCallInit) {
                     m.doInitialization(emulator);
                 }
@@ -195,6 +194,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if (callInitFunction || forceCallInit) {
             for (MachOModule m : modules.values()) {
+                if (isPayloadModule(m)) {
+                    continue;
+                }
                 if (m.allSymbolBound || forceCallInit) {
                     m.doInitialization(emulator);
                 }
@@ -206,6 +208,11 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         return module;
+    }
+
+    private boolean isPayloadModule(Module module) {
+        String path = module.getPath();
+        return path.startsWith("Payload/") && path.contains("/@rpath/");
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) {
@@ -1664,7 +1671,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
 
                 if (mapped != null) {
-                    throw new IllegalStateException("mmap2 NOT VM_FLAGS_ANYWHERE found mapped memory: start=0x" + Long.toHexString(start));
+                    if (log.isDebugEnabled()) {
+                        log.debug("mmap2 NOT VM_FLAGS_ANYWHERE found mapped memory: start=0x" + Long.toHexString(start));
+                    }
+                    return 0;
                 }
                 unicorn.mem_map(start, aligned, prot);
                 if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {

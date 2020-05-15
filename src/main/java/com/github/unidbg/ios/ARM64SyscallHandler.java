@@ -1165,6 +1165,18 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         bufferSize.setLong(0, 8);
                         return 0;
                     }
+                    if ("hw.cpufamily".equals(sub)) {
+                        buffer.setInt(0, CTL_HW);
+                        buffer.setInt(4, HW_CPU_FAMILY);
+                        bufferSize.setLong(0, 8);
+                        return 0;
+                    }
+                    if ("hw.ncpu".equals(sub)) {
+                        buffer.setInt(0, CTL_HW);
+                        buffer.setInt(4, HW_NCPU);
+                        bufferSize.setLong(0, 8);
+                        return 0;
+                    }
                     if ("hw.memsize".equals(sub)) {
                         buffer.setInt(0, CTL_HW);
                         buffer.setInt(4, HW_MEMSIZE);
@@ -1334,6 +1346,15 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                         }
                         if (buffer != null) {
                             buffer.setInt(0, CPU_SUBTYPE_ARM_V7);
+                        }
+                        return 0;
+                    case HW_CPU_FAMILY:
+                        log.debug(msg);
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 933271106);
                         }
                         return 0;
                     case HW_MEMSIZE:
@@ -1546,7 +1567,13 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
         if (!anywhere) {
             long start = address.getLong(0);
-            emulator.getMemory().mmap2(start, (int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE, MAP_MY_FIXED, -1, 0);
+            long ret = emulator.getMemory().mmap2(start, (int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE, MAP_MY_FIXED, -1, 0);
+            if (ret == 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug("_kernelrpc_mach_vm_allocate_trap fixed, address=" + address.getPointer(0) + ", size=" + size + ", flags=0x" + Integer.toHexString(flags));
+                }
+                return -1;
+            }
             Pointer pointer = address.getPointer(0);
             pointer.write(0, new byte[(int) size], 0, (int) size);
             if (log.isDebugEnabled()) {
