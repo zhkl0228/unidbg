@@ -43,6 +43,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 - (NSString *)model;
 - (NSUUID *)identifierForVendor;
 - (NSString *)systemName;
+- (NSString *)name;
 
 - (UIDeviceBatteryState)batteryState;
 

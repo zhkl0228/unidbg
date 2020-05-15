@@ -39,6 +39,9 @@
     [uuid initWithUUIDString:@"00000000-0000-0000-0000-000000000000"];
     return uuid;
 }
+- (NSString *)name {
+    return @"iPhone5S";
+}
 
 - (UIDeviceBatteryState)batteryState {
     return UIDeviceBatteryStateUnplugged;

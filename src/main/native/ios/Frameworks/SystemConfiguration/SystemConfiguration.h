@@ -98,3 +98,10 @@ Boolean SCNetworkReachabilityScheduleWithRunLoop(SCNetworkReachabilityRef target
   fprintf(stderr, "SCNetworkReachabilityScheduleWithRunLoop target=%p\n", target);
   return TRUE;
 }
+
+typedef void *SCDynamicStoreRef;
+
+CFDictionaryRef SCDynamicStoreCopyProxies(SCDynamicStoreRef store) {
+  fprintf(stderr, "SCDynamicStoreCopyProxies store=%p\n", store);
+  return NULL;
+}
