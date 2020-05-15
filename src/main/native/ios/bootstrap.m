@@ -4,6 +4,7 @@
 #import <UIKit/UIKit.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <SystemConfiguration/CaptiveNetwork.h>
+#import <Security/Security.h>
 #include "test.h"
 
 @interface BootstrapTest : NSObject {}
@@ -100,6 +101,10 @@ static void test_Wifi() {
   NSLog(@"test_Wifi array=%@", array);
 }
 
+static void test_Security() {
+  NSLog(@"test_Security kSecClassGenericPassword=%@, kSecClass=%@, kSecAttrService=%@, kSecValueData=%@", kSecClassGenericPassword, kSecClass, kSecAttrService, kSecValueData);
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -130,6 +135,7 @@ int main(int argc, char *argv[]) {
   test_Bundle();
   test_SCNetworkReachabilityGetFlags();
   test_Wifi();
+  test_Security();
 
   return 0;
 }

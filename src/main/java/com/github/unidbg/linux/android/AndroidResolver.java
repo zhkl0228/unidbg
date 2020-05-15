@@ -10,11 +10,11 @@ import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.LogCatFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.spi.LibraryFile;
-import org.apache.commons.io.FileUtils;
+import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
@@ -81,32 +81,9 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         }
 
         String androidResource = FilenameUtils.normalize("/android/sdk" + sdk + "/" + path, true);
-        InputStream inputStream = AndroidResolver.class.getResourceAsStream(androidResource);
-        if (inputStream != null) {
-            OutputStream outputStream = null;
-            try {
-                File tmp = new File(FileUtils.getTempDirectory(), path);
-                File dir = tmp.getParentFile();
-                if (!dir.exists() && !dir.mkdirs()) {
-                    throw new IOException("mkdirs failed: " + dir);
-                }
-                if (!tmp.exists() && !tmp.createNewFile()) {
-                    throw new IOException("createNewFile failed: " + tmp);
-                }
-
-                if (tmp.isDirectory()) {
-                    return FileResult.<AndroidFileIO>fallback(new DirectoryFileIO(oflags, path));
-                }
-
-                outputStream = new FileOutputStream(tmp);
-                IOUtils.copy(inputStream, outputStream);
-                return FileResult.fallback(createFileIO(tmp, path, oflags));
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            } finally {
-                IOUtils.closeQuietly(outputStream);
-                IOUtils.closeQuietly(inputStream);
-            }
+        File file = ResourceUtils.extractResource(androidResource, path);
+        if (file != null) {
+            return FileResult.fallback(createFileIO(file, path, oflags));
         }
 
         return null;
@@ -114,8 +91,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
 
     private AndroidFileIO createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {
-            AndroidFileIO io = file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname);
-            return io;
+            return file.isDirectory() ? new DirectoryFileIO(oflags, pathname) : new SimpleFileIO(oflags, file, pathname);
         }
 
         return null;

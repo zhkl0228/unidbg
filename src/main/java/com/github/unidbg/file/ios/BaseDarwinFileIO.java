@@ -27,6 +27,6 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
 
     @Override
     public int getdirentries64(Pointer buf, int bufSize) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(getClass().getName());
     }
 }

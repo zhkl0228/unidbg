@@ -83,6 +83,8 @@ public interface MachO {
     int MAP_ANONYMOUS = 0x1000; /* allocated from memory, swap space */
     int MAP_MY_FIXED = 0x1234abcd;
 
+    int VM_MEMORY_REALLOC = 6;
+
     long _COMM_PAGE32_BASE_ADDRESS = (0xffff4000L);
     long _COMM_PAGE64_BASE_ADDRESS = (0xffffff80001fc000L) /* In TTBR0 */;
 

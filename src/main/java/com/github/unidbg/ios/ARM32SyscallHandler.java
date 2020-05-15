@@ -1535,6 +1535,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 if (log.isDebugEnabled()) {
                     log.debug("_kernelrpc_mach_vm_allocate_trap fixed, address=" + address.getPointer(0) + ", size=" + size + ", flags=0x" + Integer.toHexString(flags));
                 }
+                if (tag == MachO.VM_MEMORY_REALLOC) {
+                    throw new IllegalStateException("_kernelrpc_mach_vm_allocate_trap fixed, address=" + address.getPointer(0) + ", size=" + size + ", flags=0x" + Integer.toHexString(flags) + ", tag=" + tag);
+                }
                 return -1;
             }
             Pointer pointer = address.getPointer(0);

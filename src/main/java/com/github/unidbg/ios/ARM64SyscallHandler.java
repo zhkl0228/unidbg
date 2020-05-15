@@ -282,7 +282,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, lseek(emulator));
                     return;
                 case 202:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator, 0));
                     return;
                 case 216:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, open_dprotected_np(emulator));
@@ -525,8 +525,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             case 6:
                 u.reg_write(Arm64Const.UC_ARM64_REG_X0, closeWithOffset(emulator, 1));
                 return true;
+            case 20:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
+                return true;
             case 190:
                 u.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator, 1));
+                return true;
+            case 202:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator, 1));
                 return true;
         }
         return false;
@@ -1098,14 +1104,14 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         return ret;
     }
 
-    private int sysctl(Emulator<?> emulator) {
+    private int sysctl(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        Pointer name = context.getPointerArg(0);
-        int namelen = context.getIntArg(1);
-        Pointer buffer = context.getPointerArg(2);
-        Pointer bufferSize = context.getPointerArg(3);
-        Pointer set0 = context.getPointerArg(4);
-        int set1 = context.getIntArg(5);
+        Pointer name = context.getPointerArg(offset);
+        int namelen = context.getIntArg(offset + 1);
+        Pointer buffer = context.getPointerArg(offset + 2);
+        Pointer bufferSize = context.getPointerArg(offset + 3);
+        Pointer set0 = context.getPointerArg(offset + 4);
+        int set1 = context.getIntArg(offset + 5);
 
         int top = name.getInt(0);
         switch (top) {
@@ -1571,6 +1577,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             if (ret == 0) {
                 if (log.isDebugEnabled()) {
                     log.debug("_kernelrpc_mach_vm_allocate_trap fixed, address=" + address.getPointer(0) + ", size=" + size + ", flags=0x" + Integer.toHexString(flags));
+                }
+                if (tag == MachO.VM_MEMORY_REALLOC) {
+                    throw new IllegalStateException("_kernelrpc_mach_vm_allocate_trap fixed, address=" + address.getPointer(0) + ", size=" + size + ", flags=0x" + Integer.toHexString(flags) + ", tag=" + tag);
                 }
                 return -1;
             }

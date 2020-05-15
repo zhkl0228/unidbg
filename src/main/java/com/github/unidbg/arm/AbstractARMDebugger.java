@@ -416,7 +416,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             int index = 0;
             for (Module module : memory.getLoadedModules()) {
                 if (filter == null || module.name.contains(filter)) {
-                    sb.append(String.format("[%2s][%" + maxLengthSoName.length() + "s] ", index++, FilenameUtils.getName(module.name)));
+                    sb.append(String.format("[%3s][%" + maxLengthSoName.length() + "s] ", index++, FilenameUtils.getName(module.name)));
                     sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x-0x%x]", module.base, module.base + module.size));
                     sb.append(module.getPath());
                     sb.append("\n");

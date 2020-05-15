@@ -10,11 +10,10 @@ import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixEmulator;
-import org.apache.commons.io.FileUtils;
+import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 
-import java.io.*;
+import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,35 +67,9 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
-        InputStream inputStream = DarwinResolver.class.getResourceAsStream(iosResource);
-        if (inputStream != null) {
-            OutputStream outputStream = null;
-            try {
-                File tmp = new File(FileUtils.getTempDirectory(), path);
-                File dir = tmp.getParentFile();
-                if (dir.isFile()) {
-                    FileUtils.deleteQuietly(dir);
-                }
-                if (!dir.exists() && !dir.mkdirs() && !dir.exists()) {
-                    throw new IOException("mkdirs failed: " + dir);
-                }
-                if (!tmp.exists() && !tmp.createNewFile()) {
-                    throw new IOException("createNewFile failed: " + tmp);
-                }
-
-                if (tmp.isDirectory()) {
-                    return FileResult.<DarwinFileIO>fallback(new DirectoryFileIO(oflags, path, tmp));
-                }
-
-                outputStream = new FileOutputStream(tmp);
-                IOUtils.copy(inputStream, outputStream);
-                return FileResult.fallback(createFileIO(tmp, path, oflags));
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            } finally {
-                IOUtils.closeQuietly(outputStream);
-                IOUtils.closeQuietly(inputStream);
-            }
+        File file = ResourceUtils.extractResource(iosResource, path);
+        if (file != null) {
+            return FileResult.fallback(createFileIO(file, path, oflags));
         }
 
         return null;
