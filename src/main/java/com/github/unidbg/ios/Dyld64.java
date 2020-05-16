@@ -604,6 +604,9 @@ public class Dyld64 extends Dyld {
                 if (ret == 0) {
                     log.info("dlopen failed: " + path);
                     this.error.setString(0, "Resolve library " + path + " failed");
+                    if (log.isDebugEnabled()) {
+                        emulator.attach().debug();
+                    }
                 }
                 return 0;
             } else {

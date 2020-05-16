@@ -12,4 +12,4 @@ function build_framework() {
   mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/PrivateFrameworks/"$1".framework/
 }
 
-#build_framework CoreServicesInternal "Foundation"
+build_framework CoreServicesInternal "CoreFoundation"
