@@ -36,7 +36,6 @@ public class Utilities32 {
         emulator = createARMEmulator();
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
-        memory.setCallInitFunction();
 
         vm = emulator.createDalvikVM(null);
         Module module = new JniGraphics(emulator, vm).register(memory);

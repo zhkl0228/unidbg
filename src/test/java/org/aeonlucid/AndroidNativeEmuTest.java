@@ -19,7 +19,6 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
     }
 
     public void testExample() throws Exception {
-        emulator.getMemory().setCallInitFunction();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libnative-lib.so"));
 
         emulator.traceCode();
@@ -36,7 +35,6 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
     }
 
     public void testCallTest() throws Exception {
-        emulator.getMemory().setCallInitFunction();
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libnative-lib.so"));
 
         Number[] numbers = module.callFunction(emulator, "_Z4testv");

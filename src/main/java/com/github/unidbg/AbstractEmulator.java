@@ -294,9 +294,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         final Pointer pointer = UnicornPointer.pointer(this, begin);
         long start = 0;
         PrintStream redirect = null;
-        Unicorn.UnHook readUnHook = null;
-        Unicorn.UnHook writeUnHook = null;
-        Unicorn.UnHook codeUnHook = null;
         try {
             setContextEmulator(this);
 
@@ -314,14 +311,14 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                     readHook.redirect = redirect;
                     readHook.traceReadListener = traceReadListener;
                     traceReadListener = null;
-                    readUnHook = unicorn.hook_add_new((ReadHook) readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
+                    unicorn.hook_add_new((ReadHook) readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
                 }
                 if (traceMemoryWrite) {
                     traceMemoryWrite = false;
                     writeHook.redirect = redirect;
                     writeHook.traceWriteListener = traceWriteListener;
                     traceWriteListener = null;
-                    writeUnHook = unicorn.hook_add_new((WriteHook) writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
+                    unicorn.hook_add_new((WriteHook) writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
                 }
             }
             if (traceInstruction) {
@@ -329,7 +326,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 codeHook.initialize(traceInstructionBegin, traceInstructionEnd, traceCodeListener);
                 traceCodeListener = null;
                 codeHook.redirect = redirect;
-                codeUnHook = unicorn.hook_add_new(codeHook, traceInstructionBegin, traceInstructionEnd, this);
+                unicorn.hook_add_new(codeHook, traceInstructionBegin, traceInstructionEnd, this);
             }
             if (log.isDebugEnabled()) {
                 log.debug("emulate " + pointer + " started sp=" + getStackPointer());
@@ -357,25 +354,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         } finally {
             running = false;
 
-            if (readUnHook != null) {
-                readUnHook.unhook();
-            }
-            if (writeUnHook != null) {
-                writeUnHook.unhook();
-            }
-            if (codeUnHook != null) {
-                codeUnHook.unhook();
-            }
-            if (entry) {
-                readHook.redirect = null;
-                writeHook.redirect = null;
-            }
-            codeHook.redirect = null;
             if (log.isDebugEnabled()) {
                 log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
             }
-
-            IOUtils.closeQuietly(redirect);
         }
     }
 

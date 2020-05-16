@@ -25,7 +25,6 @@ class RunExecutable {
             Memory memory = emulator.getMemory();
             memory.setLibraryResolver(new AndroidResolver(23));
 
-            memory.setCallInitFunction();
             if (listener != null) {
                 memory.addModuleListener(listener);
             }

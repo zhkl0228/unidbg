@@ -235,11 +235,18 @@ public class UnicornPointer extends Pointer {
             throw new InvalidMemoryAccessException();
         }
 
+        if (arraySize < 0 || arraySize >= 0x7ffffff) {
+            throw new InvalidMemoryAccessException("Invalid array size: " + arraySize);
+        }
         return unicorn.mem_read(peer + offset, arraySize);
     }
 
     @Override
     public int[] getIntArray(long offset, int arraySize) {
+        if (arraySize < 0 || arraySize >= 0x7ffffff) {
+            throw new InvalidMemoryAccessException("Invalid array size: " + arraySize);
+        }
+
         int[] array = new int[arraySize];
         for (int i = 0; i < arraySize; i++) {
             array[i] = getInt(offset + i * 4);

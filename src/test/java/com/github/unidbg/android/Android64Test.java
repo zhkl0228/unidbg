@@ -50,8 +50,6 @@ public class Android64Test {
         LibraryResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
 
-        memory.setCallInitFunction();
-
 //        emulator.traceCode();
         module = emulator.loadLibrary(executable);
 

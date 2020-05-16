@@ -36,8 +36,6 @@ public class CrackMe {
         LibraryResolver resolver = new AndroidResolver(19);
         memory.setLibraryResolver(resolver);
 
-        memory.setCallInitFunction();
-
         module = emulator.loadLibrary(executable);
     }
 

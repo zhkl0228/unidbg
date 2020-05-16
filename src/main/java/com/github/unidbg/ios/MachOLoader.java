@@ -7,6 +7,7 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookListener;
+import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
 import com.github.unidbg.ios.struct.kernel.Pthread64;
@@ -59,6 +60,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         setStackPoint(stackBase);
         initializeTSD(envs);
+
+        addModuleListener(new LibDispatchPatcher());
     }
 
     @Override
@@ -155,6 +158,17 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
     }
 
+    public final void onExecutableLoaded() {
+        if (callInitFunction) {
+            for (MachOModule m : modules.values()) {
+                boolean needCallInit = m.allSymbolBound || isPayloadModule(m);
+                if (needCallInit) {
+                    m.doInitialization(emulator);
+                }
+            }
+        }
+    }
+
     @Override
     protected Module loadInternal(LibraryFile libraryFile, boolean forceCallInit) {
         return loadInternal(libraryFile, forceCallInit, true);
@@ -180,7 +194,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if (callInitFunction || forceCallInit) {
             for (MachOModule m : modules.values()) {
-                if (m.allSymbolBond || forceCallInit) {
+                if (isPayloadModule(m)) {
+                    continue;
+                }
+                if (m.allSymbolBound || forceCallInit) {
                     m.doInitialization(emulator);
                 }
             }
@@ -191,6 +208,11 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         return module;
+    }
+
+    private boolean isPayloadModule(Module module) {
+        String path = module.getPath();
+        return path.startsWith("Payload/") && path.contains("/@rpath/");
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) {
@@ -233,10 +255,16 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 if (machO.header().cputype() != MachO.CpuType.ARM) {
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
                 }
+                if (emulator.is64Bit()) {
+                    throw new UnsupportedOperationException("NOT 32 bit executable: " + libraryFile.getName());
+                }
                 break;
             case MACHO_LE_X64:
                 if (machO.header().cputype() != MachO.CpuType.ARM64) {
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
+                }
+                if (emulator.is32Bit()) {
+                    throw new UnsupportedOperationException("NOT 64 bit executable: " + libraryFile.getName());
                 }
                 break;
             default:
@@ -264,6 +292,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         String dyId = libraryFile.getName();
         String dylibPath = libraryFile.getName();
         MachO.DyldInfoCommand dyldInfoCommand = null;
+        MachOModule subModule = null;
         boolean finalSegment = false;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -352,7 +381,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ENCRYPTION_INFO_64:
                     MachO.EncryptionInfoCommand encryptionInfoCommand = (MachO.EncryptionInfoCommand) command.body();
                     if (encryptionInfoCommand.cryptid() != 0) {
-                        throw new UnsupportedOperationException("Encrypted file");
+                        throw new UnsupportedOperationException("Encrypted file: " + libraryFile.getName());
                     }
                     break;
                 case UUID:
@@ -370,6 +399,15 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ROUTINES:
                 case ROUTINES_64:
                 case LOAD_WEAK_DYLIB:
+                    break;
+                case SUB_CLIENT:
+                    MachO.SubCommand subCommand = (MachO.SubCommand) command.body();
+                    String name = subCommand.name().value();
+                    MachOModule module = (MachOModule) findModule(name);
+                    if (module == null) {
+                        throw new IllegalStateException("Find sub client failed: " + name);
+                    }
+                    subModule = module;
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
@@ -569,6 +607,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             setExecuteModule(module);
         }
         modules.put(dyId, module);
+        if (subModule != null) {
+            subModule.exportModules.put(FilenameUtils.getBaseName(module.name), module);
+        }
 
         if (maxDylibName == null || dyId.length() > maxDylibName.length()) {
             maxDylibName = dyId;
@@ -1113,19 +1154,19 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             }
 
             ret &= bindExternalRelocations(module);
-            module.allSymbolBond = ret;
+            module.allSymbolBound = ret;
         } else {
             if (dyldInfoCommand.bindSize() > 0) {
                 ByteBuffer buffer = module.buffer.duplicate();
                 buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
                 buffer.position((int) dyldInfoCommand.bindOff());
-                module.allSymbolBond = eachBind(log, buffer.slice(), module, false);
+                module.allSymbolBound = eachBind(log, buffer.slice(), module, false);
             }
             if (dyldInfoCommand.lazyBindSize() > 0) {
                 ByteBuffer buffer = module.buffer.duplicate();
                 buffer.limit((int) (dyldInfoCommand.lazyBindOff() + dyldInfoCommand.lazyBindSize()));
                 buffer.position((int) dyldInfoCommand.lazyBindOff());
-                module.allLazySymbolBond = eachBind(log, buffer.slice(), module, true);
+                module.allLazySymbolBound = eachBind(log, buffer.slice(), module, true);
             }
         }
     }
@@ -1383,7 +1424,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if (callInit) {
             for (MachOModule m : modules.values()) {
-                if (m.allSymbolBond) {
+                if (m.allSymbolBound) {
                     m.doInitialization(emulator);
                 }
             }
@@ -1616,6 +1657,30 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 if (io != null) {
                     return io.mmap2(unicorn, start, aligned, prot, offset, length);
                 }
+            }
+            if (flags == MAP_MY_FIXED) {
+                if (log.isDebugEnabled()) {
+                    log.debug("mmap2 NOT VM_FLAGS_ANYWHERE start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=" + prot + ", fd=" + fd + ", offset=0x" + Long.toHexString(offset));
+                }
+
+                MemoryMap mapped = null;
+                for (MemoryMap map : memoryMap.values()) {
+                    if (start >= map.base && start + aligned <= map.base + map.size) {
+                        mapped = map;
+                    }
+                }
+
+                if (mapped != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("mmap2 NOT VM_FLAGS_ANYWHERE found mapped memory: start=0x" + Long.toHexString(start));
+                    }
+                    return 0;
+                }
+                unicorn.mem_map(start, aligned, prot);
+                if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
+                    log.warn("mmap2 NOT VM_FLAGS_ANYWHERE exists memory map addr=0x" + Long.toHexString(start));
+                }
+                return start;
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);

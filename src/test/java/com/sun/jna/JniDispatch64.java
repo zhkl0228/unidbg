@@ -45,7 +45,6 @@ public class JniDispatch64 extends AbstractJni {
         emulator = createARMEmulator();
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
-        memory.setCallInitFunction();
 
         vm = emulator.createDalvikVM(null);
         vm.setJni(this);

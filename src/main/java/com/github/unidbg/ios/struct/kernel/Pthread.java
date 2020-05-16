@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 
 public abstract class Pthread extends UnicornStructure {
 
-    public static Pthread create(Emulator emulator, Pointer pointer) {
+    public static Pthread create(Emulator<?> emulator, Pointer pointer) {
         Pthread pthread = emulator.is64Bit() ? new Pthread64(pointer) : new Pthread32(pointer);
         pthread.unpack();
         return pthread;
@@ -27,6 +27,7 @@ public abstract class Pthread extends UnicornStructure {
     public Pointer self;
     public Pointer errno;
     public Pointer mig_reply;
+    public Pointer machThreadSelf;
 
     public String getName() {
         return new String(pthread_name, StandardCharsets.UTF_8).trim();

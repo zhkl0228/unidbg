@@ -3,10 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.arm.AbstractARMEmulator;
-import com.github.unidbg.arm.Arm64Hook;
-import com.github.unidbg.arm.Arm64Svc;
-import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.*;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.memory.Memory;
@@ -52,6 +49,7 @@ public class Dyld64 extends Dyld {
     private Pointer __dyld_image_path_containing_address;
     private Pointer __dyld__NSGetExecutablePath;
     private Pointer __dyld_fast_stub_entry;
+    private Pointer __dyld_find_unwind_sections;
 
     @Override
     final int _stub_binding_helper() {
@@ -72,22 +70,22 @@ public class Dyld64 extends Dyld {
         }
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
-            case "__dyld_fast_stub_entry":
+            case "__dyld_fast_stub_entry": // fastBindLazySymbol
                 if (__dyld_fast_stub_entry == null) {
                     __dyld_fast_stub_entry = svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
-                            Pointer loaderCache = context.getPointerArg(0);
-                            long lazyInfo = context.getLongArg(1);
+                            Pointer imageLoaderCache = context.getPointerArg(0);
+                            long lazyBindingInfoOffset = context.getLongArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("__dyld_fast_stub_entry loaderCache=" + loaderCache + ", lazyInfo=" + lazyInfo);
+                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=" + lazyBindingInfoOffset);
                             }
                             return 0;
                         }
                     });
                 }
-                address.setPointer(0, __dyld__NSGetExecutablePath);
+                address.setPointer(0, __dyld_fast_stub_entry);
                 return 1;
             case "__dyld__NSGetExecutablePath":
                 if (__dyld__NSGetExecutablePath == null) {
@@ -313,7 +311,7 @@ public class Dyld64 extends Dyld {
                                 return sandbox_check;
                             }
 
-                            return dlsym(emulator.getMemory(), handle, symbolName);
+                            return dlsym(emulator, handle, "_" + symbolName);
                         }
                     });
                 }
@@ -374,6 +372,23 @@ public class Dyld64 extends Dyld {
                     });
                 }
                 address.setPointer(0, __dyld_register_func_for_remove_image);
+                return 1;
+            case "__dyld_find_unwind_sections":
+                if (__dyld_find_unwind_sections == null) {
+                    __dyld_find_unwind_sections = svcMemory.registerSvc(new Arm64Svc() {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer addr = context.getPointerArg(0);
+                            Pointer info = context.getPointerArg(1);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_find_unwind_sections addr=" + addr + ", info=" + info);
+                            }
+                            return 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_find_unwind_sections);
                 return 1;
             case "__dyld_register_func_for_add_image":
                 /*
@@ -645,6 +660,7 @@ public class Dyld64 extends Dyld {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
+                            emulator.attach().debug();
                             emulator.getUnicorn().reg_write(Arm64Const.UC_ARM64_REG_LR, AbstractARMEmulator.LR);
                             return 0;
                         }

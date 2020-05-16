@@ -355,6 +355,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
                 case 209:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getsockopt(emulator));
                     return;
+                case 278:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, gerrandom(emulator));
+                    return;
                 case 323888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(u, emulator));
                     return;
@@ -374,8 +377,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         } catch (StopEmulatorException e) {
             u.emu_stop();
             return;
-        } catch (UnsupportedOperationException e) {
-            exception = e;
         } catch (Throwable e) {
             u.emu_stop();
             exception = e;
@@ -387,12 +388,20 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", LR=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR) + ", syscall=" + syscall, exception);
 
-        if (exception instanceof UnicornException) {
-            throw (UnicornException) exception;
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
         }
     }
 
-    private long clone(Emulator<AndroidFileIO> emulator) {
+    private long gerrandom(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer buf = context.getPointerArg(0);
+        int bufSize = context.getIntArg(1);
+        int flags = context.getIntArg(2);
+        return getrandom(buf, bufSize, flags);
+    }
+
+    private long clone(Emulator<?> emulator) {
         Arm64RegisterContext context = emulator.getContext();
         Pointer child_stack = context.getPointerArg(1);
         if (child_stack == null &&
@@ -1429,7 +1438,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
     private static final int CLOCK_MONOTONIC_COARSE = 6;
     private static final int CLOCK_BOOTTIME = 7;
 
-    private long nanoTime = System.nanoTime();
+    private final long nanoTime = System.nanoTime();
 
     private int clock_gettime(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
@@ -1479,9 +1488,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         int iovcnt = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             for (int i = 0; i < iovcnt; i++) {
-                Pointer iov_base = iov.getPointer(i * 8);
-                int iov_len = iov.getInt(i * 8 + 4);
-                byte[] data = iov_base.getByteArray(0, iov_len);
+                Pointer iov_base = iov.getPointer(i * 16);
+                long iov_len = iov.getLong(i * 16 + 8);
+                byte[] data = iov_base.getByteArray(0, (int) iov_len);
                 Inspector.inspect(data, "writev fd=" + fd + ", iov=" + iov + ", iov_base=" + iov_base);
             }
         }

@@ -257,6 +257,7 @@ public class ARM {
                     builder.append(String.format(Locale.US, " x14=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X15:
+                    builder.append("\n>>>");
                     number = (Number) unicorn.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x15=0x%x", value));
@@ -526,7 +527,10 @@ public class ARM {
         sb.append(" ]").append(space);
         sb.append(String.format("0x%08x:" + space + "%s %s", ins.address, ins.mnemonic, ins.opStr));
 
-        Arm.OpInfo opInfo = (Arm.OpInfo) ins.operands;
+        Arm.OpInfo opInfo = null;
+        if (ins.operands instanceof Arm.OpInfo) {
+            opInfo = (Arm.OpInfo) ins.operands;
+        }
         if (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) {
             Matcher matcher;
 

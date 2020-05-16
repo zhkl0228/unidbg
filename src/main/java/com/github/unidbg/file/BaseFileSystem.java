@@ -34,6 +34,10 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
     @Override
     public FileResult<T> open(String pathname, int oflags) {
+        if ("".equals(pathname)) {
+            return FileResult.failed(UnixEmulator.ENOENT); // No such file or directory
+        }
+
         if (IO.STDIN.equals(pathname)) {
             return FileResult.success(createStdin(oflags));
         }
@@ -96,10 +100,24 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     @Override
     public boolean mkdir(String path) {
         File dir = new File(rootDir, path);
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.println(String.format("mkdir '%s'", path));
+        }
+
         if (dir.exists()) {
-            return false;
+            return true;
         } else {
             return dir.mkdirs();
+        }
+    }
+
+    @Override
+    public void rmdir(String path) {
+        File dir = new File(rootDir, path);
+        FileUtils.deleteQuietly(dir);
+
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.println(String.format("rmdir '%s'", path));
         }
     }
 
@@ -117,7 +135,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             log.debug("unlink path=" + path + ", file=" + file);
         }
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.println(String.format("File unlink '%s'", path));
+            System.out.println(String.format("unlink '%s'", path));
         }
     }
 
@@ -135,4 +153,13 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         return workDir;
     }
 
+    @Override
+    public int rename(String oldPath, String newPath) {
+        File oldFile = new File(rootDir, oldPath);
+        File newFile = new File(rootDir, newPath);
+        if (!oldFile.renameTo(newFile)) {
+            throw new IllegalStateException("rename failed: old=" + oldFile + ", new=" + newFile);
+        }
+        return 0;
+    }
 }

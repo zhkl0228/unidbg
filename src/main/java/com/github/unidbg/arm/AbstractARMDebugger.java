@@ -1,6 +1,7 @@
 package com.github.unidbg.arm;
 
 import capstone.Capstone;
+import com.github.unidbg.AssemblyCodeDumper;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
@@ -28,9 +29,14 @@ import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class AbstractARMDebugger implements Debugger {
 
@@ -350,6 +356,52 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
             }
         }
+        if (line.startsWith("trace")) { // start trace instructions
+            Memory memory = emulator.getMemory();
+            Pattern pattern = Pattern.compile("trace\\s+(\\d+)\\s+(\\d+)");
+            Matcher matcher = pattern.matcher(line);
+            AssemblyCodeDumper codeHook = new AssemblyCodeDumper(emulator);
+            long begin, end;
+            if (matcher.find()) {
+                begin = Long.parseLong(matcher.group(1));
+                end = Long.parseLong(matcher.group(2));
+                System.out.println("Set trace begin->end instructions success.");
+            } else {
+                String redirect = null;
+                Module module = memory.findModuleByAddress(address);
+                {
+                    int index = line.indexOf(' ');
+                    if (index != -1) {
+                        redirect = line.substring(index + 1).trim();
+                    }
+                }
+                File traceFile = null;
+                if (redirect != null && redirect.trim().length() > 0) {
+                    Module check = memory.findModule(redirect);
+                    if (check != null) {
+                        module = check;
+                    } else {
+                        File outFile = new File(redirect.trim());
+                        try {
+                            if (!outFile.exists() && !outFile.createNewFile()) {
+                                throw new IllegalStateException("createNewFile: " + outFile);
+                            }
+                            codeHook.setRedirect(new PrintStream(outFile));
+                            traceFile = outFile;
+                        } catch (IOException e) {
+                            System.err.println("Set trace redirect out file failed: " + outFile);
+                            return false;
+                        }
+                    }
+                }
+                begin = module == null ? 1 : module.base;
+                end = module == null ? 0 : (module.base + module.size);
+                System.out.println("Set trace " + (module == null ? "all" : module) + " instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
+            }
+            codeHook.initialize(begin, end, null);
+            emulator.getUnicorn().hook_add_new(codeHook, begin, end, emulator);
+            return false;
+        }
         if (line.startsWith("vm")) {
             Memory memory = emulator.getMemory();
             String maxLengthSoName = memory.getMaxLengthLibraryName();
@@ -370,7 +422,11 @@ public abstract class AbstractARMDebugger implements Debugger {
                     sb.append("\n");
                 }
             }
-            System.out.println(sb);
+            if (index == 0) {
+                System.err.println("Find library failed with filter: " + filter);
+            } else {
+                System.out.println(sb);
+            }
             return false;
         }
         if ("vbs".equals(line)) { // view breakpoints

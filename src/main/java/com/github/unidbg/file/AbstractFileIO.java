@@ -116,7 +116,7 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int ftruncate(int length) {
-        throw new AbstractMethodError(getClass().getName());
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
@@ -153,12 +153,12 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int write(byte[] data) {
-        throw new AbstractMethodError(getClass().getName());
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public int read(Unicorn unicorn, Pointer buffer, int count) {
-        throw new AbstractMethodError(getClass().getName());
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override

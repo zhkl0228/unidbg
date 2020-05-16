@@ -47,7 +47,7 @@ import java.util.List;
 import static unicorn.ArmConst.UC_ARM_REG_C13_C0_3;
 
 /**
- * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
+ * http://androidxref.com/6.0.0_r5/xref/bionic/libc/kernel/uapi/asm-arm/asm/unistd.h
  */
 public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> implements SyscallHandler<AndroidFileIO> {
 
@@ -423,6 +423,9 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
                 case 366:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, accept4(emulator));
                     return;
+                case 384:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getrandom(emulator));
+                    return;
                 case 0xf0002:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, cacheflush(u, emulator));
                     return;
@@ -433,8 +436,6 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         } catch (StopEmulatorException e) {
             u.emu_stop();
             return;
-        } catch (UnsupportedOperationException e) {
-            exception = e;
         } catch (Throwable e) {
             u.emu_stop();
             exception = e;
@@ -446,12 +447,20 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
-        if (exception instanceof UnicornException) {
-            throw (UnicornException) exception;
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
         }
     }
 
-    private int clone(Unicorn u, Emulator<AndroidFileIO> emulator) {
+    private int getrandom(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer buf = context.getPointerArg(0);
+        int bufSize = context.getIntArg(1);
+        int flags = context.getIntArg(2);
+        return getrandom(buf, bufSize, flags);
+    }
+
+    private int clone(Unicorn u, Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         Pointer child_stack = context.getPointerArg(1);
         if (child_stack == null &&
@@ -512,7 +521,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return readlink(emulator, path, buf, bufSize);
     }
 
-    private int readlink(Emulator<AndroidFileIO> emulator) {
+    private int readlink(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(0);
         Pointer buf = context.getPointerArg(1);
@@ -521,7 +530,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         return readlink(emulator, path, buf, bufSize);
     }
 
-    private int getppid(Emulator<AndroidFileIO> emulator) {
+    private int getppid(Emulator<?> emulator) {
         if (log.isDebugEnabled()) {
             log.debug("getppid");
         }
@@ -1025,7 +1034,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
             return result.io.fstat(emulator, new Stat32(statbuf));
         }
 
-        log.info("stat64 pathname=" + pathname);
+        log.info("stat64 pathname=" + pathname + ", LR=" + emulator.getContext().getLRPointer());
         emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
         return -1;
     }
@@ -1661,7 +1670,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
     private static final int CLOCK_MONOTONIC_COARSE = 6;
     private static final int CLOCK_BOOTTIME = 7;
 
-    private long nanoTime = System.nanoTime();
+    private final long nanoTime = System.nanoTime();
 
     private int clock_gettime(Unicorn u, Emulator<?> emulator) {
         int clk_id = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();

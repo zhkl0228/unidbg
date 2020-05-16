@@ -197,11 +197,11 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                         hasTrace = true;
                         StringBuilder sb = new StringBuilder();
                         if (module != null) {
-                            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", module.base));
+                            sb.append(String.format("[0x%08x]", module.base));
                             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
                             sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - module.base + (thumb ? 1 : 0)));
                         } else {
-                            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", 0));
+                            sb.append(String.format("[0x%08x]", 0));
                             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(lr == null ? 0 : lr.peer)));
                             if (lr != null) {
                                 sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 0xfffe0000L + (thumb ? 1 : 0)));
@@ -299,6 +299,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("p (assembly): patch assembly at PC address");
         System.out.println("where: show java stack trace");
         System.out.println();
+        System.out.println("trace [begin end]: Set trace instructions");
         System.out.println("vm: view loaded modules");
         System.out.println("vbs: view breakpoints");
         System.out.println("d|dis: show disassemble");

@@ -33,7 +33,6 @@ public class ClassDumpTest extends EmulatorTest<DarwinARMEmulator> {
 
     private void processClassDump() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
-        loader.setCallInitFunction();
         loader.setObjcRuntime(true);
         IClassDumper classDumper = ClassDumper.getInstance(emulator);
         ISubstrate substrate = Substrate.getInstance(emulator);

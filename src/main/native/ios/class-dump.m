@@ -536,7 +536,7 @@ BOOL isSystemClass(Class clazz) {
 	int count = 0;
 	for(int i = 0; i < classCount; i++) {
 	    const char *className = class_getName(classes[i]);
-	    if(strstr(className, keywords)) {
+	    if(strcasestr(className, keywords)) {
 	        NSLog(@"Found class: %s", className);
 	        count++;
 	    }

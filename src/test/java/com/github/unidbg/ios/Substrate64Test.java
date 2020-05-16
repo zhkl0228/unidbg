@@ -5,7 +5,6 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.ios.service.CFNetwork;
-import com.github.unidbg.ios.service.CoreTelephony;
 import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -26,7 +25,6 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 
     public void testMS() throws Exception {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
-        loader.setCallInitFunction();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
@@ -146,12 +144,13 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x102984000L, 0x102998000L).addBreakPoint(null, 0x102984000L + 0x000000000000A0A4);
 
-        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
+//        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
         new CFNetwork().processHook(emulator);
 
-//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        emulator.attach(0xffffe0000L, 0xffffe0000L + 0x10000).addBreakPoint(null, 0xffffe0094L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
+//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

@@ -9,6 +9,7 @@ import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
+import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -52,6 +53,7 @@ public class Dyld32 extends Dyld {
     private Pointer __dyld_dyld_register_image_state_change_handler;
     private Pointer __dyld_image_path_containing_address;
     private Pointer __dyld__NSGetExecutablePath;
+    private Pointer __dyld_fast_stub_entry;
 
     @Override
     final int _stub_binding_helper() {
@@ -131,6 +133,23 @@ public class Dyld32 extends Dyld {
                     });
                 }
                 address.setPointer(0, __dyld_get_image_header);
+                return 1;
+            case "__dyld_fast_stub_entry": // fastBindLazySymbol
+                if (__dyld_fast_stub_entry == null) {
+                    __dyld_fast_stub_entry = svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer imageLoaderCache = context.getPointerArg(0);
+                            long lazyBindingInfoOffset = context.getLongArg(1);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=" + lazyBindingInfoOffset);
+                            }
+                            return 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_fast_stub_entry);
                 return 1;
             case "__dyld_get_image_slide":
                 if (__dyld_get_image_slide == null) {
@@ -289,7 +308,7 @@ public class Dyld32 extends Dyld {
                                 return _os_trace_redirect_func;
                             }
 
-                            return dlsym(emulator.getMemory(), (int) handle, symbolName);
+                            return dlsym(emulator, (int) handle, "_" + symbolName);
                         }
                     });
                 }
@@ -594,6 +613,7 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
+                            emulator.attach().debug();
                             emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_LR, AbstractARMEmulator.LR);
                             return 0;
                         }

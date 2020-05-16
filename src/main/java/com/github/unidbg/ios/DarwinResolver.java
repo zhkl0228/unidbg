@@ -8,7 +8,6 @@ import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
-import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixEmulator;
 import org.apache.commons.io.FileUtils;
@@ -60,7 +59,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
     @Override
     public FileResult<DarwinFileIO> resolve(Emulator<DarwinFileIO> emulator, String path, int oflags) {
         if ("".equals(path)) {
-            return FileResult.failed(UnixEmulator.EINVAL);
+            return FileResult.failed(UnixEmulator.ENOENT);
         }
 
         FileSystem<DarwinFileIO> fileSystem = emulator.getFileSystem();
@@ -69,12 +68,15 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
-        InputStream inputStream = AndroidResolver.class.getResourceAsStream(iosResource);
+        InputStream inputStream = DarwinResolver.class.getResourceAsStream(iosResource);
         if (inputStream != null) {
             OutputStream outputStream = null;
             try {
                 File tmp = new File(FileUtils.getTempDirectory(), path);
                 File dir = tmp.getParentFile();
+                if (dir.isFile()) {
+                    FileUtils.deleteQuietly(dir);
+                }
                 if (!dir.exists() && !dir.mkdirs() && !dir.exists()) {
                     throw new IOException("mkdirs failed: " + dir);
                 }

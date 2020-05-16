@@ -8,6 +8,7 @@ import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.DarwinSyscall;
 import com.github.unidbg.linux.LinuxThread;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.spi.SyscallHandler;
@@ -328,6 +329,11 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGRTMIN = 32;
 
     protected final int sigaction(int signum, Pointer act, Pointer oldact) {
+        final int ACT_SIZE = 16;
+        return sigaction(signum, act, oldact, ACT_SIZE);
+    }
+
+    protected final int sigaction(int signum, Pointer act, Pointer oldact, int sizeOfSigAction) {
         String prefix = "Unknown";
         if (signum > 32) {
             signum -= 32;
@@ -337,10 +343,9 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             log.debug("sigaction signum=" + signum + ", act=" + act + ", oldact=" + oldact + ", prefix=" + prefix);
         }
 
-        final int ACT_SIZE = 16;
         if (oldact != null) {
             byte[] lastAct = sigMap.get(signum);
-            byte[] data = lastAct == null ? new byte[ACT_SIZE] : lastAct;
+            byte[] data = lastAct == null ? new byte[sizeOfSigAction] : lastAct;
             oldact.write(0, data, 0, data.length);
         }
 
@@ -352,6 +357,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGTRAP:
             case SIGABRT:
             case SIGBUS:
+            case DarwinSyscall.SIGBUS:
             case SIGFPE:
             case SIGSEGV:
             case SIGUSR2:
@@ -366,7 +372,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGSYS:
             case SIGRTMIN:
                 if (act != null) {
-                    sigMap.put(signum, act.getByteArray(0, ACT_SIZE));
+                    sigMap.put(signum, act.getByteArray(0, sizeOfSigAction));
                 }
                 return 0;
         }
@@ -444,6 +450,17 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             System.out.println(String.format("Write %d bytes to '%s'", write, file));
         }
         return write;
+    }
+
+    protected int getrandom(Pointer buf, int bufSize, int flags) {
+        Random random = new Random();
+        byte[] bytes = new byte[bufSize];
+        random.nextBytes(bytes);
+        buf.write(0, bytes, 0, bytes.length);
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(bytes, "getrandom buf=" + buf + ", bufSize=" + bufSize + ", flags=0x" + Integer.toHexString(flags)));
+        }
+        return bufSize;
     }
 
     @SuppressWarnings("unused")

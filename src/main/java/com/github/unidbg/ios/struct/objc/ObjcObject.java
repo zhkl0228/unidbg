@@ -1,14 +1,18 @@
 package com.github.unidbg.ios.struct.objc;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.ios.objc.NSData;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.sun.jna.Pointer;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static com.github.unidbg.ios.objc.Constants.NSUTF8StringEncoding;
 
 public class ObjcObject extends UnicornStructure {
 
@@ -61,13 +65,25 @@ public class ObjcObject extends UnicornStructure {
         return create(emulator, call(selectorName, args));
     }
 
+    @SuppressWarnings("unused")
     public ObjcClass toClass() {
         return ObjcClass.create(emulator, getPointer());
     }
 
+    public NSData toNSData() {
+        return NSData.create(this);
+    }
+
     public String getDescription() {
         ObjcObject str = callObjc("description");
-        return str == null ? null : str.call("UTF8String").getString(0);
+        if (str == null) {
+            return "<description not available>";
+        } else {
+            UnicornPointer pointer = (UnicornPointer) str.call("lengthOfBytesUsingEncoding:", NSUTF8StringEncoding);
+            int length = (int) (pointer.peer & 0x7fffffffL);
+            byte[] bytes = str.call("UTF8String").getByteArray(0, length);
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
     }
 
 }

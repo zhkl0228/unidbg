@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -50,6 +51,16 @@ public class DumpFileIO extends BaseFileIO implements AndroidFileIO, DarwinFileI
 
     @Override
     public int getdents64(Pointer dirp, int size) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getdirentries64(Pointer buf, int bufSize) {
         throw new UnsupportedOperationException();
     }
 }

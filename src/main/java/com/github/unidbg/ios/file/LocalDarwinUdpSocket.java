@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.file.LocalUdpSocket;
 import com.sun.jna.Pointer;
@@ -39,5 +40,15 @@ public class LocalDarwinUdpSocket extends LocalUdpSocket {
 
         emulator.getMemory().setErrno(UnixEmulator.EPERM);
         return -1;
+    }
+
+    @Override
+    public int getattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getdirentries64(Pointer buf, int bufSize) {
+        throw new UnsupportedOperationException();
     }
 }

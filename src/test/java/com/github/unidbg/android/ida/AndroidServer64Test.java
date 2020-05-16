@@ -79,8 +79,6 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
         LibraryResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
 
-        memory.setCallInitFunction();
-
         module = emulator.loadLibrary(executable);
     }
 

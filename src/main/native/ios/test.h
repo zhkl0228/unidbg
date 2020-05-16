@@ -7,19 +7,77 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
+#include <sys/socket.h>
+#include <sys/attr.h>
+#include <sys/dir.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <netinet/in.h>
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 
+#define RTM_IFINFO	0xe
+
 static void test_printf() {
   char buf[0x40];
   memset(buf, 0, 0x40);
   snprintf(buf, 0x40, "snprintf: %p\n", buf);
-  fprintf(stderr, "printf[%p] test: %s", buf, buf);
+  printf("printf[%p] if_nametoindex=%d, test=%s", buf, if_nametoindex("en0"), buf);
   fprintf(stdout, "ENOTDIR=0x%x, O_WRONLY=0x%x, O_RDWR=0x%x, O_NONBLOCK=0x%x, O_APPEND=0x%x, O_CREAT=0x%x, O_DIRECTORY=0x%x\n", ENOTDIR, O_WRONLY, O_RDWR, O_NONBLOCK, O_APPEND, O_CREAT, O_DIRECTORY);
+  int fd = open("", 0);
+  printf("test_printf sizeof(sigaction)=%lu, sizeof(iovec)=%lu, fd=%d, errno=%d, msg=%s\n", sizeof(struct	sigaction), sizeof(struct iovec), fd, errno, strerror(errno));
+}
+
+static void test_sysctl_CTL_UNSPEC() {
+  int mib[2];
+  int values[14];
+  size_t size = sizeof(values);
+
+  char *name = "hw.cpufamily";
+
+  mib[0] = CTL_UNSPEC;
+  mib[1] = 3;
+  int ret = sysctl(mib, 2, values, &size, name, strlen(name));
+  printf("test_sysctl_CTL_UNSPEC ret=%d, ctl=%d, type=%d, size=%zu\n", ret, values[0], values[1], size);
+}
+
+static void test_sysctl_CTL_NET() {
+  size_t buffSize = 0;
+  int					mib[6] = {CTL_NET, AF_ROUTE, 0, 0, NET_RT_IFLIST, 0 };
+  int ret = sysctl(mib, 6, NULL, &buffSize, NULL, 0);
+  char *buf = malloc(buffSize);
+  ret = sysctl(mib, 6, buf, &buffSize, NULL, 0);
+
+  struct if_msghdr	*ifm = (struct if_msghdr *) buf;
+  char *end = buf + buffSize;
+
+  while((char*)ifm < end) {
+    if(ifm->ifm_type == RTM_IFINFO) {
+      struct sockaddr_dl	*sdl = (struct sockaddr_dl *) (ifm + 1);
+      char *name = malloc(sdl->sdl_nlen + 1);
+      memcpy(name, sdl->sdl_data, sdl->sdl_nlen);
+      name[sdl->sdl_nlen] = 0;
+      char *mac = malloc(128);
+      int index = 0;
+      for(int i = 0; i < sdl->sdl_alen; i++) {
+        index += sprintf(&mac[index], "%x:", sdl->sdl_data[sdl->sdl_nlen+i] & 0xff);
+      }
+      mac[index-1] = 0;
+      printf("test_sysctl_CTL_NET ifm_msglen=%hu, ifm=%p, name=%s, mac=%s, sizeof_if_msghdr=%lu, sizeof_sockaddr_dl=%lu\n", ifm->ifm_msglen, ifm, name, mac, sizeof(struct if_msghdr), sizeof(struct sockaddr_dl));
+      printf("test_sysctl_CTL_NET ifm_version=%d, ifm_type=%d, ifm_addrs=%d, ifm_flags=%d, ifm_index=%d, sdl_family=%d\n", ifm->ifm_version, ifm->ifm_type, ifm->ifm_addrs, ifm->ifm_flags, ifm->ifm_index, sdl->sdl_family);
+      printf("test_sysctl_CTL_NET ifi_type=%d, ifi_typelen=%d, ifi_physical=%d, sdl_len=%d, sdl_index=%d, sdl_type=%d, sdl_slen=%d\n", ifm->ifm_data.ifi_type, ifm->ifm_data.ifi_typelen, ifm->ifm_data.ifi_physical, sdl->sdl_len, sdl->sdl_index, sdl->sdl_type, sdl->sdl_slen);
+      free(mac);
+      free(name);
+    }
+    ifm = (struct if_msghdr *)  ((char*)ifm + ifm->ifm_msglen);
+  }
+
+  free(buf);
 }
 
 static void test_sysctl_KERN_USRSTACK() {
@@ -31,6 +89,44 @@ static void test_sysctl_KERN_USRSTACK() {
   mib[1] = KERN_USRSTACK;
   int ret = sysctl(mib, 2, &stack, &size, NULL, 0);
   printf("sysctl_KERN_USRSTACK ret=%d, stack=%p, mib=%p, offset=0x%lx\n", ret, stack, mib, ((long) stack - (long) mib));
+}
+
+static void test_sysctl_HW_MACHINE() {
+  size_t size;
+  sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+  char *machine = malloc(size);
+  sysctlbyname("hw.machine", machine, &size, NULL, 0);
+  printf("test_sysctl_HW_MACHINE machine=%s\n", machine);
+  free(machine);
+}
+
+static void test_sysctl_HW_MODEL() {
+  size_t size;
+  sysctlbyname("hw.model", NULL, &size, NULL, 0);
+  char *model = malloc(size);
+  sysctlbyname("hw.model", model, &size, NULL, 0);
+  printf("test_sysctl_HW_MODEL model=%s\n", model);
+  free(model);
+}
+
+static void test_sysctl_KERN_VERSION() {
+  size_t size;
+  sysctlbyname("kern.version", NULL, &size, NULL, 0);
+  char *version = malloc(size);
+  sysctlbyname("kern.version", version, &size, NULL, 0);
+  printf("test_sysctl_KERN_VERSION version=%s\n", version);
+  free(version);
+}
+
+static void test_sysctl_KERN_BOOTTIME() {
+  size_t size;
+  sysctlbyname("kern.boottime", NULL, &size, NULL, 0);
+  char *boot_time = malloc(size);
+  sysctlbyname("kern.boottime", boot_time, &size, NULL, 0);
+  uint32_t timestamp = 0;
+  memcpy(&timestamp, boot_time, sizeof(uint32_t));
+  printf("test_sysctl_KERN_BOOTTIME boot_time=%u, size=%zu\n", timestamp, size);
+  free(boot_time);
 }
 
 static void test_sysctl_KERN_PROC() {
@@ -138,13 +234,75 @@ static void test_task_info() {
   }
 }
 
+static void test_NSGetExecutablePath() {
+  char buf[64];
+  uint32_t size = 64;
+  int ret = _NSGetExecutablePath(buf, &size);
+  printf("ExecutablePath: %s, ret=%d\n", buf, ret);
+}
+
+static void test_sysctl_HW_MEMSIZE() {
+  int mib[2];
+  unsigned long long mem_size = 0;
+  size_t size = sizeof(mem_size);
+
+  mib[0] = CTL_HW;
+  mib[1] = HW_MEMSIZE;
+  int ret = sysctl(mib, 2, &mem_size, &size, NULL, 0);
+  printf("test_sysctl_HW_MEMSIZE ret=%d, mem_size=%llu\n", ret, mem_size);
+}
+
+#define HW_CPU_FAMILY 108
+
+static void test_sysctl_HW_CPU_FAMILY() {
+  int mib[2];
+  unsigned int family = 0;
+  size_t size = sizeof(family);
+
+  mib[0] = CTL_HW;
+  mib[1] = HW_CPU_FAMILY;
+  int ret = sysctl(mib, 2, &family, &size, NULL, 0);
+  printf("test_sysctl_HW_CPU_FAMILY ret=%d, family=%u, size=%zu\n", ret, family, size);
+}
+
+static void test_getattrlist() {
+  struct attrlist attrlist;
+  u_int32_t attrbuf[2];	/* Length field and access modes */
+  attrlist.bitmapcount = ATTR_BIT_MAP_COUNT;
+  attrlist.commonattr = ATTR_CMN_USERACCESS;
+  attrlist.volattr = 0;
+  attrlist.dirattr = 0;
+  attrlist.fileattr = 0;
+  attrlist.forkattr = 0;
+  int ret = getattrlist("/", &attrlist, attrbuf, sizeof(attrbuf), 0);
+  printf("test_getattrlist ret=%d, len=%d, attrbuf2=%d\n", ret, attrbuf[0], attrbuf[1]);
+  printf("test_getattrlist X_OK=%d, R_OK=%d, W_OK=%d\n", X_OK, R_OK, W_OK);
+}
+
+static void test_dirent() {
+  struct dirent ent;
+  unsigned long base = (unsigned long) &ent;
+  printf("test_dirent size=%lu, d_fileno=%lu, d_name=%lu, d_name_size=%lu\n", sizeof(struct dirent), (unsigned long) &ent.d_fileno - base, (unsigned long) &ent.d_name - base, sizeof(ent.d_name));
+}
+
 void do_test() {
   test_printf();
+  test_sysctl_CTL_UNSPEC();
+  test_sysctl_CTL_NET();
   test_sysctl_KERN_USRSTACK();
   test_sysctl_KERN_PROC();
+  test_sysctl_KERN_VERSION();
+  test_sysctl_KERN_BOOTTIME();
+  test_sysctl_HW_MACHINE();
+  test_sysctl_HW_MODEL();
+  test_sysctl_HW_MEMSIZE();
   test_proc_pidinfo();
   test_pthread();
   test_file();
   test_time();
   test_task_info();
+  test_NSGetExecutablePath();
+  test_getattrlist();
+  test_dirent();
+  test_sysctl_HW_CPU_FAMILY();
 }

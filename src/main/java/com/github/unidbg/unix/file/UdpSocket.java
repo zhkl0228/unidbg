@@ -3,6 +3,7 @@ package com.github.unidbg.unix.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.linux.struct.IFConf;
 import com.github.unidbg.linux.struct.IFReq;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -251,4 +252,13 @@ public class UdpSocket extends SocketIO implements FileIO {
         return 0;
     }
 
+    @Override
+    public int getattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getdirentries64(Pointer buf, int bufSize) {
+        throw new UnsupportedOperationException();
+    }
 }

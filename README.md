@@ -37,7 +37,7 @@ Simple tests under src/test directory
 - Support ARM32 and ARM64 bit.
 - Inline hook, thanks to HookZz.
 - Android import hook, thanks to xHook.
-- IOS fishhook and substrate hook.
+- iOS fishhook and substrate hook.
 - Support simple console debugger, gdb stub, experimental IDA android debugger server, instruction trace, memory read/write trace.
 
 ## TODO

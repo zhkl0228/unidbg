@@ -3,6 +3,7 @@ package com.github.unidbg.linux.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.linux.StatStructure;
+import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.file.SocketIO;
 import com.sun.jna.Pointer;
@@ -145,4 +146,13 @@ public class LocalSocketIO extends SocketIO implements FileIO {
         throw new AbstractMethodError();
     }
 
+    @Override
+    public int getattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getdirentries64(Pointer buf, int bufSize) {
+        throw new UnsupportedOperationException();
+    }
 }
