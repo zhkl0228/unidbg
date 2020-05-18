@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualModule;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.api.Bitmap;
@@ -117,7 +118,7 @@ public class JniGraphics extends VirtualModule {
             bitmap.memoryBlock = memoryBlock;
 
             if (log.isDebugEnabled()) {
-                log.debug("AndroidBitmap_lockPixels buffer=" + buffer);
+                log.debug(Inspector.inspectString(buffer.array(), "AndroidBitmap_lockPixels buffer=" + buffer));
             }
         }
 

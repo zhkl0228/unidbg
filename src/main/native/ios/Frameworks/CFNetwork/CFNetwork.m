@@ -3,6 +3,6 @@
 #import <CoreFoundation/CoreFoundation.h>
 
 CFDictionaryRef CFNetworkCopySystemProxySettings() {
-  fprintf(stderr, "CFNetworkCopySystemProxySettings");
+  fprintf(stderr, "CFNetworkCopySystemProxySettings\n");
   return NULL;
 }
