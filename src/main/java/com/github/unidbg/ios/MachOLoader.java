@@ -1276,16 +1276,38 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     private boolean doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module, boolean lazy) {
+        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        if (pointer == null) {
+            throw new IllegalStateException();
+        }
+
         Symbol symbol = module.findSymbolByName(symbolName, true);
         if (symbol == null) {
             if (log.isDebugEnabled()) {
                 log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + lazy + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
             }
+            long bindAt = 0;
+            for (HookListener listener : hookListeners) {
+                long hook = listener.hook(emulator.getSvcMemory(), module.name, symbolName, bindAt);
+                if (hook > 0) {
+                    bindAt = hook;
+                    break;
+                }
+            }
+            if (bindAt > 0) {
+                Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
+                switch (type) {
+                    case BIND_TYPE_POINTER:
+                        pointer.setPointer(0, newPointer);
+                        break;
+                    case BIND_TYPE_TEXT_ABSOLUTE32:
+                    case BIND_TYPE_TEXT_PCREL32:
+                    default:
+                        throw new IllegalStateException("bad bind type " + type);
+                }
+                return true;
+            }
             return false;
-        }
-        Pointer pointer = UnicornPointer.pointer(emulator, address);
-        if (pointer == null) {
-            throw new IllegalStateException();
         }
 
         long bindAt = symbol.getAddress();
