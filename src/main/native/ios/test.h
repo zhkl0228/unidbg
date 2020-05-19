@@ -38,7 +38,7 @@ static void test_sysctl_CTL_UNSPEC() {
   int values[14];
   size_t size = sizeof(values);
 
-  char *name = "hw.cpufamily";
+  char *name = "kern.ostype";
 
   mib[0] = CTL_UNSPEC;
   mib[1] = 3;
@@ -98,6 +98,15 @@ static void test_sysctl_HW_MACHINE() {
   sysctlbyname("hw.machine", machine, &size, NULL, 0);
   printf("test_sysctl_HW_MACHINE machine=%s\n", machine);
   free(machine);
+}
+
+static void test_sysctl_KERN_OSTYPE() {
+  size_t size;
+  sysctlbyname("kern.ostype", NULL, &size, NULL, 0);
+  char *osType = malloc(size);
+  sysctlbyname("kern.ostype", osType, &size, NULL, 0);
+  printf("test_sysctl_KERN_OSTYPE machine=%s\n", osType);
+  free(osType);
 }
 
 static void test_sysctl_HW_MODEL() {
@@ -305,4 +314,5 @@ void do_test() {
   test_getattrlist();
   test_dirent();
   test_sysctl_HW_CPU_FAMILY();
+  test_sysctl_KERN_OSTYPE();
 }

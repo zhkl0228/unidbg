@@ -1,5 +1,32 @@
 #import "UIKit.h"
 
+int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSString *delegateClassName) {
+  id delegate = nil;
+  if(delegateClassName) {
+    Class delegateClass = NSClassFromString(delegateClassName);
+    delegate = [[delegateClass alloc] init];
+  }
+  NSLog(@"UIApplicationMain argc=%d, argv=%p, principalClassName=%@, delegateClassName=%@, delegate=%@", argc, argv, principalClassName, delegateClassName, delegate);
+  return 0;
+}
+
+const CGRect _frame = { 0, 0, 768, 1024 };
+
+@implementation UIWindow
+- (CGRect)frame {
+    return _frame;
+}
+@end
+
+@implementation MyUIApplicationDelegate
+- (UIWindow *)window {
+    return [[UIWindow alloc] init];
+}
+- (id) m_appViewControllerMgr {
+    return nil;
+}
+@end
+
 @implementation UIApplication
 
 + (UIApplication *)sharedApplication {
@@ -11,6 +38,10 @@
         self.statusBarHidden = YES;
     }
     return self;
+}
+
+- (id)delegate {
+    return [[MyUIApplicationDelegate alloc] init];
 }
 
 - (UIApplicationState)applicationState {
@@ -72,4 +103,7 @@
 @end
 
 @implementation UIViewController
+@end
+
+@implementation UIResponder
 @end

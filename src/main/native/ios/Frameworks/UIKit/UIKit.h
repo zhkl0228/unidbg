@@ -14,12 +14,16 @@ typedef enum UIApplicationState : NSInteger {
     UIApplicationStateBackground
 } UIApplicationState;
 
-int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSString *delegateClassName) {
-  NSLog(@"UIApplicationMain argc=%d, argv=%p, principalClassName=%@, delegateClassName=%@", argc, argv, principalClassName, delegateClassName);
-  return 0;
-}
+@interface UIWindow : NSObject
+- (CGRect)frame;
+@end
 
 @protocol UIApplicationDelegate<NSObject>
+- (UIWindow *)window;
+@end
+
+@interface MyUIApplicationDelegate <UIApplicationDelegate> : NSObject
+- (id) m_appViewControllerMgr;
 @end
 
 typedef enum UIInterfaceOrientation : NSInteger {
@@ -29,10 +33,11 @@ typedef enum UIInterfaceOrientation : NSInteger {
 
 @interface UIApplication : NSObject
 
-@property(nonatomic, assign) id<UIApplicationDelegate> delegate;
 @property(nonatomic, getter=isStatusBarHidden) BOOL statusBarHidden;
 
 + (UIApplication *)sharedApplication;
+
+- (id)delegate;
 
 - (UIApplicationState)applicationState;
 
@@ -70,4 +75,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 @end
 
 @interface UIViewController : NSObject
+@end
+
+@interface UIResponder : NSObject
 @end

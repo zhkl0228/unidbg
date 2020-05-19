@@ -5,6 +5,7 @@
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <SystemConfiguration/CaptiveNetwork.h>
 #import <Security/Security.h>
+#import <AVFoundation/AVFoundation.h>
 #include "test.h"
 
 @interface BootstrapTest : NSObject {}
@@ -103,6 +104,7 @@ static void test_Wifi() {
 
 static void test_Security() {
   NSLog(@"test_Security kSecClassGenericPassword=%@, kSecClass=%@, kSecAttrAccessGroup=%@, kSecReturnAttributes=%@", kSecClassGenericPassword, kSecClass, kSecAttrAccessGroup, kSecReturnAttributes);
+  NSLog(@"test_Security AVAudioSessionOrientationBack=%@, AVAudioSessionPolarPatternCardioid=%@", AVAudioSessionOrientationBack, AVAudioSessionPolarPatternCardioid);
 }
 
 int main(int argc, char *argv[]) {

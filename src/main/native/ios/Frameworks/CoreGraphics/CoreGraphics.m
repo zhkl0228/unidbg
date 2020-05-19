@@ -128,3 +128,11 @@ size_t CGBitmapContextGetBytesPerRow(CGContextRef context) {
   fprintf(stderr, "CGBitmapContextGetBytesPerRow context=%p\n", context);
   return context->bytesPerRow;
 }
+
+CGFloat CGRectGetHeight(CGRect rect) {
+  return rect.size.height;
+}
+
+CGFloat CGRectGetWidth(CGRect rect) {
+  return rect.size.width;
+}

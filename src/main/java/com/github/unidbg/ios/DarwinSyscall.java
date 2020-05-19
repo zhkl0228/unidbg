@@ -31,6 +31,7 @@ public interface DarwinSyscall {
     int NET_RT_IFLIST =		3;	/* survey interface list */
     int RTM_IFINFO =	0xe;	/* iface going up/down etc. */
 
+    int KERN_OSTYPE	   = 1;	/* string: system version */
     int KERN_OSRELEASE = 2; /* string: system release */
     int KERN_VERSION =	 	 4;	/* string: compile time info */
     int KERN_ARGMAX = 8; /* int: max arguments to exec */
