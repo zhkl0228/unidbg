@@ -39,3 +39,5 @@ typedef struct CGRect {
     CGPoint origin;
     CGSize size;
 } CGRect;
+
+const CGRect CGRectZero = { 0, 0, 0, 0 };

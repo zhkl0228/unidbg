@@ -31,8 +31,18 @@ function build_CoreGraphics() {
   mkdir -p ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework && \
   mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework/
 }
+function build_UIKit() {
+  xcrun -sdk iphoneos clang -o "$1"/"$1" "$1"/"$1".m -shared -lobjc -m32 -arch armv7 -miphoneos-version-min=7.1 -framework "$2" -framework CoreGraphics && \
+  mv "$1"/"$1" "$1"/"$1"32 && \
+  xcrun -sdk iphoneos clang -o "$1"/"$1" "$1"/"$1".m -shared -lobjc -m64 -arch arm64 -miphoneos-version-min=7.1 -framework "$2" -framework CoreGraphics && \
+  mv "$1"/"$1" "$1"/"$1"64 && \
+  lipo -create "$1"/"$1"32 "$1"/"$1"64 -output "$1"/"$1" && \
+  rm "$1"/"$1"32 "$1"/"$1"64 && \
+  mkdir -p ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework && \
+  mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework/
+}
 
-build_framework UIKit "Foundation"
+build_UIKit UIKit "Foundation"
 build_framework JavaScriptCore "Foundation"
 build_framework MultipeerConnectivity "Foundation"
 build_framework PushKit "Foundation"
@@ -70,3 +80,4 @@ build_framework CoreMedia "CoreFoundation"
 build_framework QuartzCore "CoreFoundation"
 build_framework OpenGLES "CoreFoundation"
 build_framework_version_a IOKit "CoreFoundation"
+build_framework UserNotifications "Foundation"

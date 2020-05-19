@@ -1,6 +1,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #define errSecSuccess                                0;       /* No error. */
+#define errSecUnimplemented                          -4;      /* Function or operation not implemented. */
 #define errSecItemNotFound                           -25300;  /* The specified item could not be found in the keychain. */
 
 const CFStringRef kSecClassGenericPassword = CFSTR("genp");
@@ -13,3 +14,5 @@ const CFStringRef kSecReturnData = CFSTR("r_Data");
 const CFStringRef kSecMatchLimitOne = CFSTR("m_LimitOne");
 const CFStringRef kSecMatchLimit = CFSTR("m_Limit");
 const CFStringRef kSecValueData = CFSTR("v_Data");
+const CFStringRef kSecReturnAttributes = CFSTR("r_Attributes");
+const CFStringRef kSecAttrAccessGroup = CFSTR("agrp");

@@ -6,8 +6,23 @@
     return [[UIApplication alloc] init];
 }
 
+- (id)init {
+    if(self = [super init]) {
+        self.statusBarHidden = YES;
+    }
+    return self;
+}
+
 - (UIApplicationState)applicationState {
     return UIApplicationStateActive;
+}
+
+- (UIInterfaceOrientation)statusBarOrientation {
+    return UIInterfaceOrientationPortrait;
+}
+
+- (CGRect)statusBarFrame {
+    return CGRectZero;
 }
 
 @end
@@ -54,4 +69,7 @@
     int value = [self intValue];
     return (unsigned int) value;
 }
+@end
+
+@implementation UIViewController
 @end

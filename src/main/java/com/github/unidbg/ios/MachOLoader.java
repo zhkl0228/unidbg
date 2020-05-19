@@ -158,10 +158,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
     }
 
-    public final void onExecutableLoaded() {
+    public final void onExecutableLoaded(String executable) {
         if (callInitFunction) {
             for (MachOModule m : modules.values()) {
-                boolean needCallInit = m.allSymbolBound || isPayloadModule(m);
+                boolean needCallInit = m.allSymbolBound || isPayloadModule(m) || m.getPath().equals(executable);
                 if (needCallInit) {
                     m.doInitialization(emulator);
                 }
@@ -751,6 +751,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             case "__dof_AudioHAL_":
             case "__dof_AudioHAL_0":
             case "__dof_AudioHAL_1":
+            case "__oslogstring":
                 break;
             default:
                 boolean isObjc = sectName.startsWith("__objc_");

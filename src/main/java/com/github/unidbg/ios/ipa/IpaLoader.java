@@ -75,7 +75,7 @@ public abstract class IpaLoader {
     @SuppressWarnings("unused")
     public static IpaLoader load32(File ipa, File rootDir, String... loads) throws IOException {
         String processName = getProcessName(ipa);
-        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(processName, rootDir);
+        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(processName, rootDir, getEnvs());
         config(emulator, ipa, processName, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
@@ -85,11 +85,27 @@ public abstract class IpaLoader {
     @SuppressWarnings("unused")
     public static IpaLoader load64(File ipa, File rootDir, String... loads) throws IOException {
         String processName = getProcessName(ipa);
-        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(processName, rootDir);
+        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(processName, rootDir, getEnvs());
         config(emulator, ipa, processName, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
         return load(emulator, ipa, false, loads);
+    }
+
+    private static String[] getEnvs() {
+        if (log.isDebugEnabled()) {
+            return new String[] {
+                    "OBJC_HELP=YES", // describe available environment variables
+//                    "OBJC_PRINT_OPTIONS=YES", // list which options are set
+//                    "OBJC_PRINT_INITIALIZE_METHODS=YES", // log calls to class +initialize methods
+                    "OBJC_PRINT_CLASS_SETUP=YES", // log progress of class and category setup
+                    "OBJC_PRINT_PROTOCOL_SETUP=YES", // log progress of protocol setup
+                    "OBJC_PRINT_IVAR_SETUP=YES", // log processing of non-fragile ivars
+                    "OBJC_PRINT_VTABLE_SETUP=YES", // log processing of class vtables
+            };
+        } else {
+            return new String[0];
+        }
     }
 
     public static IpaLoader load(Emulator<DarwinFileIO> emulator, File ipa, String... loads) throws IOException {
@@ -102,7 +118,7 @@ public abstract class IpaLoader {
         Memory memory = emulator.getMemory();
         Module module = memory.load(new IpaLibraryFile(appDir, ipa, executable, loads), forceCallInit);
         MachOLoader loader = (MachOLoader) memory;
-        loader.onExecutableLoaded();
+        loader.onExecutableLoaded(executable);
         return new IpaLoaderImpl(emulator, module);
     }
 

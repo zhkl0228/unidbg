@@ -13,5 +13,5 @@ int SecItemDelete(CFDictionaryRef query) {
 
 int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
   fprintf(stderr, "SecItemAdd attributes=%p, result=%p\n", attributes, result);
-  return errSecSuccess;
+  return errSecUnimplemented;
 }

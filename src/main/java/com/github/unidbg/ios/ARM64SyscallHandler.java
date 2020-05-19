@@ -174,6 +174,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case -31:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_msg_trap(emulator));
                     return;
+                case -33: // _semaphore_signal_trap
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, _semaphore_signal_trap(emulator));
+                    return;
                 case -36: // _semaphore_wait_trap
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, _semaphore_wait_trap(emulator));
                     return;
@@ -569,6 +572,19 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         return 0;
     }
 
+    private long _semaphore_signal_trap(Emulator<?> emulator) {
+        int port = emulator.getContext().getIntArg(0);
+        log.info("_semaphore_signal_trap port=" + port);
+        Log log = ARM64SyscallHandler.log;
+        if (!log.isDebugEnabled()) {
+            log = LogFactory.getLog(AbstractEmulator.class);
+        }
+        if (log.isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
+        return 0;
+    }
+
     private int _kernelrpc_mach_port_allocate_trap(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int task = context.getIntArg(0);
@@ -835,7 +851,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         String path = FilenameUtils.normalize(pathStr);
         int ret = stat64(emulator, path, stat);
         if (ret == -1) {
-            log.info("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat);
+            log.info("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat + ", LR=" + context.getLRPointer());
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat + ", ret=" + ret + ", LR=" + context.getLRPointer());

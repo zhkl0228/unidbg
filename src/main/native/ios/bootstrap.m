@@ -102,7 +102,7 @@ static void test_Wifi() {
 }
 
 static void test_Security() {
-  NSLog(@"test_Security kSecClassGenericPassword=%@, kSecClass=%@, kSecAttrService=%@, kSecValueData=%@", kSecClassGenericPassword, kSecClass, kSecAttrService, kSecValueData);
+  NSLog(@"test_Security kSecClassGenericPassword=%@, kSecClass=%@, kSecAttrAccessGroup=%@, kSecReturnAttributes=%@", kSecClassGenericPassword, kSecClass, kSecAttrAccessGroup, kSecReturnAttributes);
 }
 
 int main(int argc, char *argv[]) {

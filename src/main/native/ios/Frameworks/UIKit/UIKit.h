@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 const NSString *UIApplicationDidReceiveMemoryWarningNotification = @"UIApplicationDidReceiveMemoryWarningNotification";
 const NSString *UIApplicationDidEnterBackgroundNotification = @"UIApplicationDidEnterBackgroundNotification";
@@ -18,11 +19,26 @@ int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSStri
   return 0;
 }
 
+@protocol UIApplicationDelegate<NSObject>
+@end
+
+typedef enum UIInterfaceOrientation : NSInteger {
+    UIInterfaceOrientationUnknown,
+    UIInterfaceOrientationPortrait,
+} UIInterfaceOrientation;
+
 @interface UIApplication : NSObject
+
+@property(nonatomic, assign) id<UIApplicationDelegate> delegate;
+@property(nonatomic, getter=isStatusBarHidden) BOOL statusBarHidden;
 
 + (UIApplication *)sharedApplication;
 
 - (UIApplicationState)applicationState;
+
+- (UIInterfaceOrientation)statusBarOrientation;
+
+- (CGRect)statusBarFrame;
 
 @end
 
@@ -51,4 +67,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 
 @interface NSString (Number)
 - (unsigned int)unsignedIntValue;
+@end
+
+@interface UIViewController : NSObject
 @end
