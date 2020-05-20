@@ -284,6 +284,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 199:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, lseek(emulator));
                     return;
+                case 201:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, ftruncate(emulator));
+                    return;
                 case 202:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator, 0));
                     return;
@@ -734,6 +737,20 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.debug("lseek fd=" + fd + ", offset=" + offset + ", whence=" + whence + ", pos=" + pos);
         }
         return pos;
+    }
+
+    private long ftruncate(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int length = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("ftruncate fd=" + fd + ", length=" + length);
+        }
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            throw new UnsupportedOperationException();
+        }
+        return file.ftruncate(length);
     }
 
     private int unlink(Emulator<?> emulator) {

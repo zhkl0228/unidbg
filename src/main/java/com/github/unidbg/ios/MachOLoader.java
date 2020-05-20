@@ -503,11 +503,15 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
                 case LOAD_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
-                    neededList.add(new NeedLibrary(dylibCommand.name(), false));
+                    neededList.add(new NeedLibrary(dylibCommand.name(), false, false));
                     break;
                 case LOAD_UPWARD_DYLIB:
                     dylibCommand = (MachO.DylibCommand) command.body();
-                    neededList.add(new NeedLibrary(dylibCommand.name(), true));
+                    neededList.add(new NeedLibrary(dylibCommand.name(), true, false));
+                    break;
+                case LOAD_WEAK_DYLIB:
+                    dylibCommand = (MachO.DylibCommand) command.body();
+                    neededList.add(new NeedLibrary(dylibCommand.name(), true, true));
                     break;
                 case SYMTAB:
                     symtabCommand = (MachO.SymtabCommand) command.body();
@@ -587,7 +591,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     } else {
                         neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
                     }
-                } else {
+                } else if(!library.weak) {
                     log.info(dyId + " load dependency " + neededLibrary + " failed");
                 }
             }

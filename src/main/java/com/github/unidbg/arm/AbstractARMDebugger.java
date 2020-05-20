@@ -424,8 +424,12 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
             }
             int index = 0;
+            long filterAddress = -1;
+            if (filter != null && filter.startsWith("0x")) {
+                filterAddress = Long.parseLong(filter.substring(2));
+            }
             for (Module module : memory.getLoadedModules()) {
-                if (filter == null || module.name.contains(filter)) {
+                if (filter == null || module.name.contains(filter) || (filterAddress >= module.base && filterAddress < module.base + module.size)) {
                     sb.append(String.format("[%3s][%" + maxLengthSoName.length() + "s] ", index++, FilenameUtils.getName(module.name)));
                     sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x-0x%x]", module.base, module.base + module.size));
                     sb.append(module.getPath());

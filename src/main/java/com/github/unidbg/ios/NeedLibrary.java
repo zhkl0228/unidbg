@@ -4,9 +4,11 @@ class NeedLibrary {
 
     final String path;
     final boolean upward;
-    NeedLibrary(String path, boolean upward) {
+    final boolean weak;
+    NeedLibrary(String path, boolean upward, boolean weak) {
         this.path = path;
         this.upward = upward;
+        this.weak = weak;
     }
 
     @Override

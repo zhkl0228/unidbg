@@ -71,7 +71,6 @@ public abstract class IpaLoader {
         syscallHandler.addIOResolver(new IpaResolver(appDir.getAbsolutePath(), ipa));
         FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getAbsolutePath()));
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
-        emulator.attach().addBreakPoint(null, 0x000000010411B26CL);
     }
 
     @SuppressWarnings("unused")
