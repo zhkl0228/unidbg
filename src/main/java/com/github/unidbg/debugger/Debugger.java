@@ -4,6 +4,7 @@ import com.github.unidbg.Module;
 import unicorn.DebugHook;
 
 import java.io.Closeable;
+import java.util.concurrent.Callable;
 
 public interface Debugger extends Breaker, DebugHook, Closeable {
 
@@ -20,5 +21,7 @@ public interface Debugger extends Breaker, DebugHook, Closeable {
 
     @SuppressWarnings("unused")
     void setDebugListener(DebugListener listener);
+
+    void run(Callable<Void> callable) throws Exception;
 
 }

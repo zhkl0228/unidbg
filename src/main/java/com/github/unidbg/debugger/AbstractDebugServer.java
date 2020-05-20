@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 
 public abstract class AbstractDebugServer extends AbstractARMDebugger implements DebugServer {
@@ -232,11 +233,16 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     private Semaphore semaphore;
 
     @Override
-    protected final void loop(Emulator<?> emulator, long address, int size) throws Exception {
+    protected final void loop(Emulator<?> emulator, long address, int size, Callable<Void> callable) throws Exception {
         semaphore = new Semaphore(0);
 
         onHitBreakPoint(emulator, address);
         semaphore.acquire();
+    }
+
+    @Override
+    public void run(Callable<Void> callable) {
+        throw new UnsupportedOperationException();
     }
 
     protected abstract void onHitBreakPoint(Emulator<?> emulator, long address);

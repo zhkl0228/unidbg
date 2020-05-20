@@ -6,17 +6,12 @@ import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.Arm64Svc;
-import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.file.ios.DarwinFileIO;
-import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinARMEmulator;
 import com.github.unidbg.ios.DarwinResolver;
 import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.SyscallHandler;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -75,45 +70,8 @@ public abstract class IpaLoader {
         File appDir = executable.getParentFile();
         syscallHandler.addIOResolver(new IpaResolver(appDir.getAbsolutePath(), ipa));
         FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getAbsolutePath()));
-        emulator.getMemory().addHookListener(new HookListener() {
-            private UnicornPointer _os_unfair_lock_lock, _os_unfair_lock_unlock;
-            @Override
-            public long hook(SvcMemory svcMemory, String libraryName, String symbolName, long old) {
-                if ("_os_unfair_lock_lock".equals(symbolName)) {
-                    if (_os_unfair_lock_lock == null) {
-                        _os_unfair_lock_lock = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
-                            @Override
-                            public long handle(Emulator<?> emulator) {
-                                return 0;
-                            }
-                        } : new ArmSvc() {
-                            @Override
-                            public long handle(Emulator<?> emulator) {
-                                return 0;
-                            }
-                        });
-                    }
-                    return _os_unfair_lock_lock.peer;
-                }
-                if ("_os_unfair_lock_unlock".equals(symbolName)) {
-                    if (_os_unfair_lock_unlock == null) {
-                        _os_unfair_lock_unlock = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
-                            @Override
-                            public long handle(Emulator<?> emulator) {
-                                return 0;
-                            }
-                        } : new ArmSvc() {
-                            @Override
-                            public long handle(Emulator<?> emulator) {
-                                return 0;
-                            }
-                        });
-                    }
-                    return _os_unfair_lock_unlock.peer;
-                }
-                return 0;
-            }
-        });
+        emulator.getMemory().addHookListener(new SymbolResolver(emulator));
+        emulator.attach().addBreakPoint(null, 0x000000010411B26CL);
     }
 
     @SuppressWarnings("unused")

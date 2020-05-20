@@ -15,6 +15,7 @@ import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 
 class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
@@ -23,15 +24,17 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    protected final void loop(Emulator<?> emulator, long address, int size) {
-        System.out.println("debugger break at: 0x" + Long.toHexString(address));
+    protected final void loop(Emulator<?> emulator, long address, int size, Callable<Void> callable) throws Exception {
         Unicorn u = emulator.getUnicorn();
         long nextAddress = 0;
-        try {
-            emulator.showRegs();
-            nextAddress = disassemble(emulator, address, size, false);
-        } catch (UnicornException e) {
-            e.printStackTrace();
+        if (address > 0) {
+            System.out.println("debugger break at: 0x" + Long.toHexString(address));
+            try {
+                emulator.showRegs();
+                nextAddress = disassemble(emulator, address, size, false);
+            } catch (UnicornException e) {
+                e.printStackTrace();
+            }
         }
 
         Scanner scanner = new Scanner(System.in);
@@ -40,6 +43,10 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
             try {
                 if ("help".equals(line)) {
                     showHelp();
+                    continue;
+                }
+                if ("run".equals(line) && callable != null) {
+                    callable.call();
                     continue;
                 }
                 if ("d".equals(line) || "dis".equals(line)) {
@@ -301,6 +308,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println("d|dis: show disassemble");
         System.out.println("d(0x): show disassemble at specify address");
         System.out.println("stop: stop emulation");
+        System.out.println("run: run test");
     }
 
     @Override

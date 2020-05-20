@@ -35,6 +35,7 @@ import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -145,7 +146,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         try {
             if (listener == null || listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(u)))) {
-                loop(emulator, address, size);
+                loop(emulator, address, size, null);
             }
         } catch (Exception e) {
             log.warn("process loop failed", e);
@@ -163,7 +164,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
                     u.setFastDebug(true);
-                    loop(emulator, address, size);
+                    loop(emulator, address, size, null);
                 }
             }
         } catch (Exception e) {
@@ -181,7 +182,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             address = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
         }
         try {
-            loop(emulator, address, 4);
+            loop(emulator, address, 4, null);
         } catch (Exception e) {
             log.warn("debug failed", e);
         }
@@ -193,7 +194,16 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private String breakMnemonic;
 
-    protected abstract void loop(Emulator<?> emulator, long address, int size) throws Exception;
+    protected abstract void loop(Emulator<?> emulator, long address, int size, Callable<Void> callable) throws Exception;
+
+    @Override
+    public void run(Callable<Void> callable) throws Exception {
+        if (callable == null) {
+            throw new NullPointerException();
+        }
+        callable.call();
+        loop(emulator, 0, 0, callable);
+    }
 
     final void dumpMemory(Pointer pointer, int _length, String label, boolean nullTerminated) {
         if (nullTerminated) {
