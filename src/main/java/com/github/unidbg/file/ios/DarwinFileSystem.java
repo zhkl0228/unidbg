@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 
 public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements FileSystem<DarwinFileIO>, IOConstants {
 
@@ -25,6 +26,9 @@ public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements Fi
 
         FileUtils.forceMkdir(new File(rootDir, "private"));
         FileUtils.forceMkdir(new File(rootDir, "etc"));
+        FileUtils.forceMkdir(new File(rootDir, "var/root/Library"));
+        FileUtils.forceMkdir(new File(rootDir, "var/root/Documents"));
+        FileUtils.writeLines(new File(rootDir, "etc/master.passwd"), Collections.singleton("root:p5Z3vjjEfs.bQ:0:0::0:0:System Administrator:/var/root:/bin/sh"));
     }
 
     @Override

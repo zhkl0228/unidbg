@@ -756,6 +756,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             case "__dof_AudioHAL_0":
             case "__dof_AudioHAL_1":
             case "__oslogstring":
+            case "__swift_hooks":
                 break;
             default:
                 boolean isObjc = sectName.startsWith("__objc_");

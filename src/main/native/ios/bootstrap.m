@@ -103,7 +103,7 @@ static void test_Wifi() {
 }
 
 static void test_Security() {
-  NSLog(@"test_Security kSecClassGenericPassword=%@, kSecClass=%@, kSecAttrAccessGroup=%@, kSecReturnAttributes=%@", kSecClassGenericPassword, kSecClass, kSecAttrAccessGroup, kSecReturnAttributes);
+  NSLog(@"test_Security kSecClassGenericPassword=%@, kSecClass=%@, kSecAttrAccessGroup=%@, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly=%@", kSecClassGenericPassword, kSecClass, kSecAttrAccessGroup, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly);
   NSLog(@"test_Security AVAudioSessionOrientationBack=%@, AVAudioSessionPolarPatternCardioid=%@", AVAudioSessionOrientationBack, AVAudioSessionPolarPatternCardioid);
 }
 

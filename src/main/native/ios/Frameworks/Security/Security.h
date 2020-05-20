@@ -16,3 +16,5 @@ const CFStringRef kSecMatchLimit = CFSTR("m_Limit");
 const CFStringRef kSecValueData = CFSTR("v_Data");
 const CFStringRef kSecReturnAttributes = CFSTR("r_Attributes");
 const CFStringRef kSecAttrAccessGroup = CFSTR("agrp");
+const CFStringRef kSecAttrAccessibleAfterFirstUnlock = CFSTR("ck");
+const CFStringRef kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly = CFSTR("cku");

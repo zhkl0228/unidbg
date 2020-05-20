@@ -63,6 +63,20 @@ public abstract class IpaLoader {
         }
     }
 
+    private static String parseVersion(File ipa, String appDir) throws IOException {
+        try {
+            byte[] data = loadZip(ipa, appDir + "Info.plist");
+            if (data == null) {
+                throw new IllegalStateException("Find Info.plist failed");
+            }
+            NSDictionary info = (NSDictionary) PropertyListParser.parse(data);
+            NSString bundleVersion = (NSString) info.get("CFBundleVersion");
+            return bundleVersion.getContent();
+        } catch (PropertyListFormatException | ParseException | ParserConfigurationException | SAXException e) {
+            throw new IllegalStateException("load ipa failed", e);
+        }
+    }
+
     private static void config(final Emulator<DarwinFileIO> emulator, File ipa, String processName, File rootDir) throws IOException {
         File executable = new File(processName);
         SyscallHandler<DarwinFileIO> syscallHandler = emulator.getSyscallHandler();
@@ -76,7 +90,9 @@ public abstract class IpaLoader {
     @SuppressWarnings("unused")
     public static IpaLoader load32(File ipa, File rootDir, String... loads) throws IOException {
         String processName = getProcessName(ipa);
-        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(processName, rootDir, getEnvs());
+        String appDir = parseApp(ipa);
+        String version = parseVersion(ipa, appDir);
+        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(processName, new File(rootDir, version), getEnvs());
         config(emulator, ipa, processName, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
@@ -86,7 +102,9 @@ public abstract class IpaLoader {
     @SuppressWarnings("unused")
     public static IpaLoader load64(File ipa, File rootDir, String... loads) throws IOException {
         String processName = getProcessName(ipa);
-        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(processName, rootDir, getEnvs());
+        String appDir = parseApp(ipa);
+        String version = parseVersion(ipa, appDir);
+        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(processName, new File(rootDir, version), getEnvs());
         config(emulator, ipa, processName, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
