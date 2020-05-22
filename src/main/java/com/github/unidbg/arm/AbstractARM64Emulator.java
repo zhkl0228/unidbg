@@ -28,6 +28,7 @@ import unicorn.UnicornConst;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.ByteBuffer;
 
 public abstract class AbstractARM64Emulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
@@ -37,7 +38,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     private final UnixSyscallHandler<T> syscallHandler;
 
     private final Capstone capstoneArm64;
-    protected static final long LR = 0xffffff80001f0000L;
+    public static final long LR = 0xffffff80001f0000L;
 
     private final Dlfcn dlfcn;
 
@@ -65,6 +66,21 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
         this.capstoneArm64 = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
         this.capstoneArm64.setDetail(Capstone.CS_OPT_ON);
+
+        setupTraps();
+    }
+
+    protected void setupTraps() {
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+            unicorn.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+            KeystoneEncoded encoded = keystone.assemble("b #0");
+            byte[] b0 = encoded.getMachineCode();
+            ByteBuffer buffer = ByteBuffer.allocate(0x10000);
+            for (int i = 0; i < 0x10000; i += b0.length) {
+                buffer.put(b0);
+            }
+            unicorn.mem_write(LR, buffer.array());
+        }
     }
 
     @Override

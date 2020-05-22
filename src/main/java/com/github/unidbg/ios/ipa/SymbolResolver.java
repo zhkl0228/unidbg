@@ -19,6 +19,9 @@ class SymbolResolver implements HookListener {
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, long old) {
+        /*if (symbolName.contains("AVAudioSession")) {
+            System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
+        }*/
         if ("_os_unfair_lock_lock".equals(symbolName)) {
             if (_os_unfair_lock_lock == null) {
                 _os_unfair_lock_lock = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {

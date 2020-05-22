@@ -14,15 +14,9 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixSyscallHandler;
-import keystone.Keystone;
-import keystone.KeystoneArchitecture;
-import keystone.KeystoneEncoded;
-import keystone.KeystoneMode;
-import unicorn.UnicornConst;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.ByteBuffer;
 
 /**
  * android arm emulator
@@ -51,8 +45,6 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
 
     public AndroidARM64Emulator(String processName, File rootDir) {
         super(processName, rootDir);
-
-        setupTraps();
     }
 
     @Override
@@ -72,22 +64,6 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
 
     private VM createDalvikVMInternal(File apkFile) {
         return new DalvikVM64(this, apkFile);
-    }
-
-    /**
-     * https://github.com/lunixbochs/usercorn/blob/master/go/arch/arm/linux.go
-     */
-    private void setupTraps() {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-            unicorn.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
-            KeystoneEncoded encoded = keystone.assemble("b #0");
-            byte[] b0 = encoded.getMachineCode();
-            ByteBuffer buffer = ByteBuffer.allocate(0x10000);
-            for (int i = 0; i < 0x10000; i += b0.length) {
-                buffer.put(b0);
-            }
-            unicorn.mem_write(LR, buffer.array());
-        }
     }
 
     @Override

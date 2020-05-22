@@ -11,15 +11,9 @@ import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
-import keystone.Keystone;
-import keystone.KeystoneArchitecture;
-import keystone.KeystoneEncoded;
-import keystone.KeystoneMode;
-import unicorn.UnicornConst;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.util.Collections;
 
 public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
@@ -39,8 +33,6 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
 
     public DarwinARM64Emulator(String processName, File rootDir, String... envs) {
         super(processName, rootDir, envs);
-
-        setupTraps();
     }
 
     @Override
@@ -48,17 +40,8 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
         return new DarwinFileSystem(this, rootDir);
     }
 
-    private void setupTraps() {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-            unicorn.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
-            KeystoneEncoded encoded = keystone.assemble("b #0");
-            byte[] b0 = encoded.getMachineCode();
-            ByteBuffer buffer = ByteBuffer.allocate(0x10000);
-            for (int i = 0; i < 0x10000; i += b0.length) {
-                buffer.put(b0);
-            }
-            unicorn.mem_write(LR, buffer.array());
-        }
+    protected void setupTraps() {
+        super.setupTraps();
 
         long _COMM_PAGE_MEMORY_SIZE = (MachO._COMM_PAGE64_BASE_ADDRESS+0x038);	// uint64_t max memory size */
         Pointer commPageMemorySize = UnicornPointer.pointer(this, _COMM_PAGE_MEMORY_SIZE);
