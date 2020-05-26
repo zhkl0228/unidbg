@@ -5,7 +5,8 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
-import com.github.unidbg.ios.ipa.IpaLoader;
+import com.github.unidbg.ios.ipa.IpaLoader64;
+import com.github.unidbg.ios.ipa.LoadedIpa;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -15,11 +16,11 @@ import java.io.File;
 
 public class IpaLoaderTest {
 
-    public void testLoader() throws Exception {
+    public void testLoader() {
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         long start = System.currentTimeMillis();
-        IpaLoader loader = IpaLoader.load64(new File("src/test/resources/app/TelegramMessenger-5.11..ipa"),
-                new File("target/rootfs/ipa"));
+        LoadedIpa loader = new IpaLoader64(new File("src/test/resources/app/TelegramMessenger-5.11..ipa"),
+                new File("target/rootfs/ipa")).load();
         Emulator<?> emulator = loader.getEmulator();
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
         Module module = loader.getExecutable();

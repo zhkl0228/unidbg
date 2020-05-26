@@ -79,7 +79,7 @@ public class Dyld64 extends Dyld {
                             Pointer imageLoaderCache = context.getPointerArg(0);
                             long lazyBindingInfoOffset = context.getLongArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=" + lazyBindingInfoOffset);
+                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset));
                             }
                             return 0;
                         }
