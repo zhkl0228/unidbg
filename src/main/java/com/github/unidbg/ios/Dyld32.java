@@ -140,12 +140,14 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
-                            Pointer imageLoaderCache = context.getPointerArg(0);
-                            long lazyBindingInfoOffset = context.getLongArg(1);
+                            UnicornPointer imageLoaderCache = context.getPointerArg(0);
+                            int lazyBindingInfoOffset = context.getIntArg(1);
+                            MachOModule mm = (MachOModule) emulator.getMemory().findModuleByAddress(imageLoaderCache.peer);
+                            long result = mm.doBindFastLazySymbol(emulator, lazyBindingInfoOffset);
                             if (log.isDebugEnabled()) {
-                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset));
+                                log.info("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset) + ", result=0x" + Long.toHexString(result));
                             }
-                            return 0;
+                            return result;
                         }
                     });
                 }

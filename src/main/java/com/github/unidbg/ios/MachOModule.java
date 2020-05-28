@@ -4,12 +4,13 @@ import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.virtualmodule.VirtualSymbol;
+import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.utils.Inspector;
+import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
@@ -23,6 +24,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
+
+    private static int gLibraryOrdinal;
+    private final int ordinal;
 
     final MachO machO;
     private final MachO.SymtabCommand symtabCommand;
@@ -48,13 +52,17 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     final boolean executable;
     private final MachOLoader loader;
+    private final List<HookListener> hookListeners;
+
+    private final Map<String, ExportSymbol> exportSymbols;
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
                 String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
-                long machHeader, boolean executable, MachOLoader loader) {
+                long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners) {
         super(name, base, size, neededLibraries, regions);
+        this.ordinal = gLibraryOrdinal++;
         this.machO = machO;
         this.symtabCommand = symtabCommand;
         this.dysymtabCommand = dysymtabCommand;
@@ -70,16 +78,18 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.machHeader = machHeader;
         this.executable = executable;
         this.loader = loader;
+        this.hookListeners = hookListeners;
 
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = machO == null ? Collections.<InitFunction>emptyList() : parseRoutines(machO);
         this.initFunctionList = machO == null ? Collections.<InitFunction>emptyList() : parseInitFunction(machO, buffer.duplicate(), name, emulator);
 
         if (machO == null) {
+            exportSymbols = Collections.emptyMap();
             return;
         }
 
-        final Map<String, ExportSymbol> exportSymbols = processExportNode(log, dyldInfoCommand, buffer);
+        exportSymbols = processExportNode(log, dyldInfoCommand, buffer);
 
         if (symtabCommand != null) {
             buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
@@ -98,7 +108,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 String symbolName = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
                 if ((type == N_SECT || type == N_ABS) && (nlist.type() & N_STAB) == 0) {
                     ExportSymbol exportSymbol = null;
-                    if (exportSymbols.isEmpty() || (exportSymbol = exportSymbols.get(symbolName)) != null) {
+                    if (exportSymbols.isEmpty() || (exportSymbol = exportSymbols.remove(symbolName)) != null) {
                         if (log.isDebugEnabled()) {
                             log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", value=0x" + Long.toHexString(nlist.value()));
                         }
@@ -127,6 +137,12 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                         symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol));
                     }
                 }
+            }
+        }
+
+        if (log.isDebugEnabled()) {
+            for (Map.Entry<String, ExportSymbol> entry : exportSymbols.entrySet()) {
+                log.debug("export symbol: name=" + entry.getKey() + ", symbol=" + entry.getValue() + ", ordinal=" + ordinal);
             }
         }
     }
@@ -266,7 +282,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             String symbolName = new String(cummulativeString, 0, curStrOffset);
             map.put(symbolName, new ExportSymbol(symbolName, address, this, base + other, (flags & EXPORT_SYMBOL_FLAGS_KIND_MASK) == EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE));
             if (log.isDebugEnabled()) {
-                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName + ", flags=0x" + Integer.toHexString(flags));
+                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName + ", flags=0x" + Integer.toHexString(flags) + ", ordinal=" + ordinal);
             }
             buffer.reset();
             buffer.position(buffer.position() + terminalSize);
@@ -528,7 +544,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Collections.<NeedLibrary>emptyList(),
                 Collections.<String, Module>emptyMap(),
                 Collections.<String, Module>emptyMap(),
-                name, emulator, null, null, null, null, 0L, false, null) {
+                name, emulator, null, null, null, null, 0L, false, null, Collections.<HookListener>emptyList()) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnicornPointer pointer = symbols.get(name);
@@ -550,5 +566,141 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             module.registerSymbol(entry.getKey(), entry.getValue().peer);
         }
         return module;
+    }
+
+    public long doBindFastLazySymbol(Emulator<?> emulator, int lazyBindingInfoOffset) {
+        ByteBuffer buffer = this.buffer.duplicate();
+        buffer.limit((int) (dyldInfoCommand.lazyBindOff() + dyldInfoCommand.lazyBindSize()));
+        buffer.position((int) dyldInfoCommand.lazyBindOff());
+        return doBindFastLazySymbol(emulator, buffer.slice(), lazyBindingInfoOffset);
+    }
+
+    private long doBindFastLazySymbol(Emulator<?> emulator, ByteBuffer buffer, int lazyBindingInfoOffset) {
+        final List<MemRegion> regions = this.getRegions();
+        int type = BIND_TYPE_POINTER;
+        long address = 0;
+        String symbolName = null;
+        long libraryOrdinal = 0;
+        boolean done = false;
+        long result = 0;
+        buffer.position(lazyBindingInfoOffset);
+        while (!done && buffer.hasRemaining()) {
+            int b = buffer.get() & 0xff;
+            int immediate = b & BIND_IMMEDIATE_MASK;
+            int opcode = b & BIND_OPCODE_MASK;
+            switch (opcode) {
+                case BIND_OPCODE_DONE:
+                    done = true;
+                    break;
+                case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+                    libraryOrdinal = immediate;
+                    break;
+                case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+                    libraryOrdinal = Utils.readULEB128(buffer).intValue();
+                    break;
+                case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+                    // the special ordinals are negative numbers
+                    if ( immediate == 0 )
+                        libraryOrdinal = 0;
+                    else {
+                        libraryOrdinal = BIND_OPCODE_MASK | immediate;
+                    }
+                    break;
+                case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    while ((b = buffer.get()) != 0) {
+                        baos.write(b);
+                    }
+                    symbolName = baos.toString();
+                    break;
+                case BIND_OPCODE_SET_TYPE_IMM:
+                    type = immediate;
+                    break;
+                case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+                    MemRegion region = regions.get(immediate);
+                    address = region.begin + Utils.readULEB128(buffer).longValue();
+                    break;
+                case BIND_OPCODE_DO_BIND:
+                    result = bindAt(emulator, libraryOrdinal, type, address, symbolName);
+                    break;
+                case BIND_OPCODE_SET_ADDEND_SLEB:
+                case BIND_OPCODE_ADD_ADDR_ULEB:
+                case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+                case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+                case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+                default:
+                    throw new IllegalStateException("bad lazy bind opcode " + opcode);
+            }
+        }
+        return result;
+    }
+
+    private long bindAt(Emulator<?> emulator, long libraryOrdinal, int type, long address, String symbolName) {
+        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        if (pointer == null) {
+            throw new IllegalStateException();
+        }
+
+        Symbol symbol = this.findSymbolByName(symbolName, true);
+        if (symbol == null) {
+            for (Module module : neededLibraries.values()) {
+                MachOModule mm = (MachOModule) module;
+                symbol = mm.exportSymbols.get(symbolName);
+                if (symbol != null) {
+                    break;
+                }
+            }
+        }
+        if (symbol == null) {
+            long bindAt = 0;
+            for (HookListener listener : hookListeners) {
+                long hook = listener.hook(emulator.getSvcMemory(), this.name, symbolName, bindAt);
+                if (hook > 0) {
+                    bindAt = hook;
+                    break;
+                }
+            }
+            if (bindAt > 0) {
+                Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
+                switch (type) {
+                    case BIND_TYPE_POINTER:
+                        pointer.setPointer(0, newPointer);
+                        break;
+                    case BIND_TYPE_TEXT_ABSOLUTE32:
+                    case BIND_TYPE_TEXT_PCREL32:
+                    default:
+                        throw new IllegalStateException("bad bind type " + type);
+                }
+                return bindAt;
+            }
+            throw new IllegalStateException("bindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - this.base) + ", upwardLibraries=" + this.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + this.name);
+        }
+
+        long bindAt = symbol.getAddress();
+        for (HookListener listener : hookListeners) {
+            long hook = listener.hook(emulator.getSvcMemory(), symbol.getModuleName(), symbol.getName(), bindAt);
+            if (hook > 0) {
+                bindAt = hook;
+                break;
+            }
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("bindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbol.getModuleName() + ", address=0x" + Long.toHexString(address - this.base) + ", symbol=" + symbol + ", pointer=" + pointer + ", bindAt=0x" + Long.toHexString(bindAt) + ", libraryOrdinal=" + libraryOrdinal);
+        }
+
+        switch (type) {
+            case BIND_TYPE_POINTER:
+                Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
+                pointer.setPointer(0, newPointer);
+                break;
+            case BIND_TYPE_TEXT_ABSOLUTE32:
+                pointer.setInt(0, (int) (bindAt));
+                break;
+            case BIND_TYPE_TEXT_PCREL32:
+            default:
+                throw new IllegalStateException("bad bind type " + type);
+        }
+        return bindAt;
     }
 }

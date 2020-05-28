@@ -76,12 +76,14 @@ public class Dyld64 extends Dyld {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
-                            Pointer imageLoaderCache = context.getPointerArg(0);
+                            UnicornPointer imageLoaderCache = context.getPointerArg(0);
                             long lazyBindingInfoOffset = context.getLongArg(1);
+                            MachOModule mm = (MachOModule) emulator.getMemory().findModuleByAddress(imageLoaderCache.peer);
+                            long result = mm.doBindFastLazySymbol(emulator, (int) lazyBindingInfoOffset);
                             if (log.isDebugEnabled()) {
-                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset));
+                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset) + ", result=0x" + Long.toHexString(result));
                             }
-                            return 0;
+                            return result;
                         }
                     });
                 }
