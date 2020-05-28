@@ -367,7 +367,12 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
-                    dylibPath = dylibCommand.name().replace("@rpath", libraryFile.getPath());
+                    String dylibName = dylibCommand.name();
+                    if (dylibName.contains("@rpath")) {
+                        dylibPath = libraryFile.getPath();
+                    } else {
+                        dylibPath = dylibName;
+                    }
                     dyId = FilenameUtils.getName(dylibPath);
                     break;
                 case LOAD_DYLIB:
@@ -436,6 +441,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         MachO.SymtabCommand symtabCommand = null;
         MachO.DysymtabCommand dysymtabCommand = null;
         MachO.EntryPointCommand entryPointCommand = null;
+        List<String> ordinalList = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT: {
@@ -503,24 +509,33 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
                 case LOAD_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
+                    ordinalList.add(dylibCommand.name());
                     neededList.add(new NeedLibrary(dylibCommand.name(), false, false));
-                    break;
-                case LOAD_UPWARD_DYLIB:
-                    dylibCommand = (MachO.DylibCommand) command.body();
-                    neededList.add(new NeedLibrary(dylibCommand.name(), true, false));
                     break;
                 case LOAD_WEAK_DYLIB:
                     dylibCommand = (MachO.DylibCommand) command.body();
+                    ordinalList.add(dylibCommand.name());
                     neededList.add(new NeedLibrary(dylibCommand.name(), true, true));
+                    break;
+                case REEXPORT_DYLIB:
+                    dylibCommand = (MachO.DylibCommand) command.body();
+                    ordinalList.add(dylibCommand.name());
+                    exportDylibs.add((MachO.DylibCommand) command.body());
+                    break;
+                case LAZY_LOAD_DYLIB:
+                    dylibCommand = (MachO.DylibCommand) command.body();
+                    ordinalList.add(dylibCommand.name());
+                    break;
+                case LOAD_UPWARD_DYLIB:
+                    dylibCommand = (MachO.DylibCommand) command.body();
+                    ordinalList.add(dylibCommand.name());
+                    neededList.add(new NeedLibrary(dylibCommand.name(), true, false));
                     break;
                 case SYMTAB:
                     symtabCommand = (MachO.SymtabCommand) command.body();
                     break;
                 case DYSYMTAB:
                     dysymtabCommand = (MachO.DysymtabCommand) command.body();
-                    break;
-                case REEXPORT_DYLIB:
-                    exportDylibs.add((MachO.DylibCommand) command.body());
                     break;
                 case MAIN:
                     entryPointCommand = (MachO.EntryPointCommand) command.body();
@@ -606,7 +621,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         final long loadSize = size;
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
-                dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners);
+                dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList);
         processRebase(log, module);
         if (isExecutable) {
             setExecuteModule(module);
@@ -1182,7 +1197,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         long segmentEndAddress = address + module.size;
         String symbolName = null;
         int symbolFlags = 0;
-        long libraryOrdinal = 0;
+        int libraryOrdinal = 0;
         long addend = 0;
         int count;
         int skip;
@@ -1275,13 +1290,33 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return ret;
     }
 
-    private boolean doBindAt(Log log, long libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module) {
+    private boolean doBindAt(Log log, int libraryOrdinal, int type, long address, String symbolName, int symbolFlags, long addend, MachOModule module) {
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalStateException();
         }
 
-        Symbol symbol = module.findSymbolByName(symbolName, true);
+        Module targetImage;
+        if (libraryOrdinal == BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE) {
+            targetImage = this.getExecutableModule();
+        } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_SELF) {
+            targetImage = module;
+        } else if (libraryOrdinal <= 0) {
+            throw new IllegalStateException(String.format("bad mach-o binary, unknown special library ordinal (%d) too big for symbol %s in %s", libraryOrdinal, symbolName, module.getPath()));
+        } else if (libraryOrdinal <= module.ordinalList.size()) {
+            String path = module.ordinalList.get(libraryOrdinal - 1);
+            targetImage = this.modules.get(FilenameUtils.getName(path));
+            if (targetImage == null) { // LOAD_WEAK_DYLIB
+                if (log.isDebugEnabled()) {
+                    log.debug("doBindAt LOAD_WEAK_DYLIB: " + path);
+                }
+                return false;
+            }
+        } else {
+            throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, module.ordinalList.size(), symbolName, module.getPath()));
+        }
+
+        Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
             if (log.isDebugEnabled()) {
                 log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
@@ -1358,7 +1393,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
     }
 
-    private final Map<String, MachOModule> modules = new LinkedHashMap<>();
+    final Map<String, MachOModule> modules = new LinkedHashMap<>();
 
     private int get_segment_protection(MachO.VmProt vmProt) {
         int prot = Unicorn.UC_PROT_NONE;

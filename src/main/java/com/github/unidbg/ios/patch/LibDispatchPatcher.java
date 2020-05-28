@@ -20,7 +20,7 @@ public class LibDispatchPatcher extends ModulePatcher {
     }
 
     protected void patch32(Emulator<?> emulator, Module module) {
-        Pointer pointer = UnicornPointer.pointer(emulator, module.base + 0x00211b4); // dispatch_semaphore_wait
+        Pointer pointer = UnicornPointer.pointer(emulator, module.base + 0x211b4); // dispatch_semaphore_wait
         assert pointer != null;
         byte[] code = pointer.getByteArray(0, 4);
         if (!Arrays.equals(code, new byte[]{ 0x4, (byte) 0xc0, (byte) 0x9f, (byte) 0xe5 })) { // ldr ip, [pc, #4]
@@ -38,7 +38,7 @@ public class LibDispatchPatcher extends ModulePatcher {
 
     @Override
     protected void patch64(Emulator<?> emulator, Module module) {
-        Pointer pointer = UnicornPointer.pointer(emulator, module.base + 0x0000000000005940); // dispatch_semaphore_wait
+        Pointer pointer = UnicornPointer.pointer(emulator, module.base + 0x5940); // dispatch_semaphore_wait
         assert pointer != null;
         byte[] code = pointer.getByteArray(0, 4);
         if (!Arrays.equals(code, new byte[]{ 0x9, (byte) 0x0, (byte) 0x1, (byte) 0x91 })) { // ADD             X9, X0, #0x40

@@ -14,6 +14,7 @@ import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -24,9 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
-
-    private static int gLibraryOrdinal;
-    private final int ordinal;
 
     final MachO machO;
     private final MachO.SymtabCommand symtabCommand;
@@ -53,16 +51,16 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final boolean executable;
     private final MachOLoader loader;
     private final List<HookListener> hookListeners;
+    final List<String> ordinalList;
 
-    private final Map<String, ExportSymbol> exportSymbols;
+    final Map<String, ExportSymbol> exportSymbols;
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
                 String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
-                long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners) {
+                long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners, List<String> ordinalList) {
         super(name, base, size, neededLibraries, regions);
-        this.ordinal = gLibraryOrdinal++;
         this.machO = machO;
         this.symtabCommand = symtabCommand;
         this.dysymtabCommand = dysymtabCommand;
@@ -79,6 +77,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.executable = executable;
         this.loader = loader;
         this.hookListeners = hookListeners;
+        this.ordinalList = ordinalList;
 
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = machO == null ? Collections.<InitFunction>emptyList() : parseRoutines(machO);
@@ -142,7 +141,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         if (log.isDebugEnabled()) {
             for (Map.Entry<String, ExportSymbol> entry : exportSymbols.entrySet()) {
-                log.debug("export symbol: name=" + entry.getKey() + ", symbol=" + entry.getValue() + ", ordinal=" + ordinal);
+                log.debug("export symbol: name=" + entry.getKey() + ", symbol=" + entry.getValue());
             }
         }
     }
@@ -282,7 +281,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             String symbolName = new String(cummulativeString, 0, curStrOffset);
             map.put(symbolName, new ExportSymbol(symbolName, address, this, base + other, (flags & EXPORT_SYMBOL_FLAGS_KIND_MASK) == EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE));
             if (log.isDebugEnabled()) {
-                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName + ", flags=0x" + Integer.toHexString(flags) + ", ordinal=" + ordinal);
+                log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName + ", flags=0x" + Integer.toHexString(flags));
             }
             buffer.reset();
             buffer.position(buffer.position() + terminalSize);
@@ -467,6 +466,13 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     return symbol;
                 }
             }
+        } else {
+            for (Module module : exportModules.values()) {
+                symbol = module.findSymbolByName(name, false);
+                if (symbol != null) {
+                    return symbol;
+                }
+            }
         }
 
         return null;
@@ -544,7 +550,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Collections.<NeedLibrary>emptyList(),
                 Collections.<String, Module>emptyMap(),
                 Collections.<String, Module>emptyMap(),
-                name, emulator, null, null, null, null, 0L, false, null, Collections.<HookListener>emptyList()) {
+                name, emulator, null, null, null, null, 0L, false, null,
+                Collections.<HookListener>emptyList(), Collections.<String>emptyList()) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnicornPointer pointer = symbols.get(name);
@@ -580,7 +587,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         int type = BIND_TYPE_POINTER;
         long address = 0;
         String symbolName = null;
-        long libraryOrdinal = 0;
+        int libraryOrdinal = 0;
         boolean done = false;
         long result = 0;
         buffer.position(lazyBindingInfoOffset);
@@ -635,13 +642,30 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         return result;
     }
 
-    private long bindAt(Emulator<?> emulator, long libraryOrdinal, int type, long address, String symbolName) {
+    private long bindAt(Emulator<?> emulator, int libraryOrdinal, int type, long address, String symbolName) {
+        final Module targetImage;
+        if (libraryOrdinal == BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE) {
+            targetImage = loader.getExecutableModule();
+        } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_SELF) {
+            targetImage = this;
+        } else if (libraryOrdinal <= 0) {
+            throw new IllegalStateException(String.format("bad mach-o binary, unknown special library ordinal (%d) too big for symbol %s in %s", libraryOrdinal, symbolName, getPath()));
+        } else if (libraryOrdinal <= ordinalList.size()) {
+            String path = ordinalList.get(libraryOrdinal - 1);
+            targetImage = loader.modules.get(FilenameUtils.getName(path));
+            if (targetImage == null) {
+                throw new IllegalStateException("targetImage is null: path=" + path + ", module=" + getPath() + ", symbolName=" + symbolName);
+            }
+        } else {
+            throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, ordinalList.size(), symbolName, getPath()));
+        }
+
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalStateException();
         }
 
-        Symbol symbol = this.findSymbolByName(symbolName, true);
+        Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
             for (Module module : neededLibraries.values()) {
                 MachOModule mm = (MachOModule) module;
