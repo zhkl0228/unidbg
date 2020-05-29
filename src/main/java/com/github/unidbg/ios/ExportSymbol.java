@@ -4,19 +4,23 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 
-class ExportSymbol extends Symbol {
+class ExportSymbol extends Symbol implements MachO {
 
     private final long address;
     private final Module module;
-    final long other;
-    final boolean absolute;
+    private final long other;
+    private final int flags;
 
-    ExportSymbol(String name, long address, Module module, long other, boolean absolute) {
+    ExportSymbol(String name, long address, Module module, long other, int flags) {
         super(name);
         this.address = address;
         this.module = module;
         this.other = other;
-        this.absolute = absolute;
+        this.flags = flags;
+    }
+
+    public long getOtherWithBase() {
+        return module.base + other;
     }
 
     @Override
@@ -24,18 +28,32 @@ class ExportSymbol extends Symbol {
         return module.callFunction(emulator, getValue(), args);
     }
 
+    private boolean isAbsoluteSymbol() {
+        return (flags & EXPORT_SYMBOL_FLAGS_KIND_MASK) == EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE;
+    }
+
+    private boolean isRegularSymbol() {
+        return (flags & EXPORT_SYMBOL_FLAGS_KIND_MASK) == EXPORT_SYMBOL_FLAGS_KIND_REGULAR;
+    }
+
     @Override
     public long getAddress() {
-        if (absolute) {
-            return getValue();
+        if (isAbsoluteSymbol()) {
+            return address;
+        } else if(isRegularSymbol()) {
+            return module.base + address;
         } else {
-            return module.base + getValue();
+            throw new IllegalStateException("flags=0x" + Integer.toHexString(flags));
         }
     }
 
     @Override
     public long getValue() {
-        return address;
+        if (isRegularSymbol()) {
+            return address;
+        } else {
+            throw new UnsupportedOperationException("flags=0x" + Integer.toHexString(flags));
+        }
     }
 
     @Override

@@ -23,6 +23,7 @@ public interface MachO {
     int N_ABS = 0x2; /* absolute, n_sect == NO_SECT */
     int N_SECT = 0xe; /* defined in section number n_sect */
     int N_INDR = 0xa; /* indirect */
+    int N_PBUD = 0xc; /* prebound undefined (defined in a dylib) */
 
     int N_ARM_THUMB_DEF = 0x8; /* symbol is a Thumb function (ARM) */
     int N_WEAK_REF = 0x0040; /* symbol is weak referenced */
@@ -31,6 +32,7 @@ public interface MachO {
     int ARM_RELOC_VANILLA = 0; /* generic relocation as discribed above */
 
     int EXPORT_SYMBOL_FLAGS_KIND_MASK = 0x03;
+    int EXPORT_SYMBOL_FLAGS_KIND_REGULAR = 0x00;
     int EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE = 0x02;
 
     int EXPORT_SYMBOL_FLAGS_REEXPORT = 0x08;

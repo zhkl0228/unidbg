@@ -113,9 +113,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                         }
 
                         MachOSymbol symbol = new MachOSymbol(this, nlist, symbolName);
-                        if (exportSymbol != null && symbol.getAddress() == exportSymbol.other) {
+                        if (exportSymbol != null && symbol.getAddress() == exportSymbol.getOtherWithBase()) {
                             if (log.isDebugEnabled()) {
-                                log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", value=0x" + Long.toHexString(nlist.value()) + ", address=0x" + Long.toHexString(exportSymbol.getValue()) + ", other=0x" + Long.toHexString(exportSymbol.other));
+                                log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", value=0x" + Long.toHexString(nlist.value()) + ", address=0x" + Long.toHexString(exportSymbol.getValue()) + ", other=0x" + Long.toHexString(exportSymbol.getOtherWithBase()));
                             }
                             symbolMap.put(symbolName, exportSymbol);
                         } else {
@@ -135,13 +135,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                         }
                         symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol));
                     }
+                } else if (log.isDebugEnabled()) {
+                    log.debug("nlist isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", type=" + type + ", symbolName=" + symbolName);
                 }
-            }
-        }
-
-        if (log.isDebugEnabled()) {
-            for (Map.Entry<String, ExportSymbol> entry : exportSymbols.entrySet()) {
-                log.debug("export symbol: name=" + entry.getKey() + ", symbol=" + entry.getValue());
             }
         }
     }
@@ -279,7 +275,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 importName = null;
             }
             String symbolName = new String(cummulativeString, 0, curStrOffset);
-            map.put(symbolName, new ExportSymbol(symbolName, address, this, base + other, (flags & EXPORT_SYMBOL_FLAGS_KIND_MASK) == EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE));
+            map.put(symbolName, new ExportSymbol(symbolName, address, this, other, flags));
             if (log.isDebugEnabled()) {
                 log.debug("exportNode symbolName=" + symbolName + ", address=0x" + Long.toHexString(address) + ", other=0x" + Long.toHexString(other) + ", importName=" + importName + ", flags=0x" + Integer.toHexString(flags));
             }
@@ -697,7 +693,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 }
                 return bindAt;
             }
-            throw new IllegalStateException("bindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - this.base) + ", upwardLibraries=" + this.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + this.name);
+            throw new IllegalStateException("bindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - this.base) + ", upwardLibraries=" + this.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + this.name + ", targetImage=" + targetImage);
         }
 
         long bindAt = symbol.getAddress();

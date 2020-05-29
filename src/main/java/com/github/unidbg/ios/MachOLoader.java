@@ -1318,6 +1318,12 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
+            symbol = ((MachOModule) targetImage).exportSymbols.get(symbolName);
+            if (log.isDebugEnabled()) {
+                log.debug("doBindAt use export symbol: " + symbol);
+            }
+        }
+        if (symbol == null) {
             if (log.isDebugEnabled()) {
                 log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
             }
