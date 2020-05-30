@@ -1428,7 +1428,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException("elementClass=" + elementClass);
                 }
 
-                DvmObject<?> obj = size == 0 ? null : getObject(initialElement.toUIntPeer());
+                DvmObject<?> obj = size == 0 ? null : initialElement == null ? null : getObject(initialElement.toUIntPeer());
                 DvmObject<?>[] array = new DvmObject[size];
                 for (int i = 0; i < size; i++) {
                     array[i] = obj;
@@ -1456,14 +1456,16 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _SetObjectArrayElement = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                ArrayObject array = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1).toUIntPeer());
-                int index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R2)).intValue();
-                DvmObject<?> obj = getObject(UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R3).toUIntPeer());
+                Arm32RegisterContext context = emulator.getContext();
+                ArrayObject array = getObject(context.getR1Pointer().toUIntPeer());
+                int index = context.getR2Int();
+                UnicornPointer element = context.getR3Pointer();
+                DvmObject<?> obj = element == null ? null : getObject(element.toUIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("setObjectArrayElement array=" + array + ", index=" + index + ", obj=" + obj);
                 }
                 DvmObject<?>[] objs = array.getValue();
-                objs[index]=obj;
+                objs[index] = obj;
                 return 0;
             }
         });

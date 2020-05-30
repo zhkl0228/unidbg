@@ -3,6 +3,8 @@ package com.github.unidbg.linux.android.dvm.array;
 import com.github.unidbg.linux.android.dvm.Array;
 import com.github.unidbg.linux.android.dvm.DvmObject;
 
+import java.util.Arrays;
+
 public class ArrayObject extends BaseArray<DvmObject<?>[]> implements Array<DvmObject<?>[]> {
 
     public ArrayObject(DvmObject<?>...value) {
@@ -17,5 +19,10 @@ public class ArrayObject extends BaseArray<DvmObject<?>[]> implements Array<DvmO
     @Override
     public void setData(int start, DvmObject<?>[] data) {
         System.arraycopy(data, 0, value, start, data.length);
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(value);
     }
 }

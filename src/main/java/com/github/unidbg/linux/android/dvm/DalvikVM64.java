@@ -1239,7 +1239,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new UnicornException("elementClass=" + elementClass);
                 }
 
-                DvmObject<?> obj = size == 0 ? null : getObject(initialElement.toUIntPeer());
+                DvmObject<?> obj = size == 0 ? null : initialElement == null ? null : getObject(initialElement.toUIntPeer());
                 DvmObject<?>[] array = new DvmObject[size];
                 for (int i = 0; i < size; i++) {
                     array[i] = obj;
@@ -1261,6 +1261,23 @@ public class DalvikVM64 extends BaseVM implements VM {
                     System.out.println(String.format("JNIEnv->GetObjectArrayElement(%s, %d) was called from %s", array, index, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                 }
                 return addObject(array.getValue()[index], false);
+            }
+        });
+
+        Pointer _SetObjectArrayElement = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                Arm64RegisterContext context = emulator.getContext();
+                ArrayObject array = getObject(context.getXPointer(1).toUIntPeer());
+                int index = context.getXInt(2);
+                UnicornPointer element = context.getXPointer(3);
+                DvmObject<?> obj = element == null ? null : getObject(element.toUIntPeer());
+                if (log.isDebugEnabled()) {
+                    log.debug("setObjectArrayElement array=" + array + ", index=" + index + ", obj=" + obj);
+                }
+                DvmObject<?>[] objs = array.getValue();
+                objs[index] = obj;
+                return 0;
             }
         });
 
@@ -1629,6 +1646,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x530, _ReleaseStringChars);
         impl.setPointer(0x538, _NewStringUTF);
         impl.setPointer(0x568, _GetObjectArrayElement);
+        impl.setPointer(0x570, _SetObjectArrayElement);
         impl.setPointer(0x600, _ReleaseByteArrayElements);
         impl.setPointer(0x640, _GetByteArrayRegion);
         impl.setPointer(0x680, _SetByteArrayRegion);
