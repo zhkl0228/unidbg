@@ -1878,7 +1878,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 }
 
                 if (args.anywhere != MachO.VM_FLAGS_OVERWRITE || args.mask != 0) {
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("anywhere=0x" + Integer.toHexString(args.anywhere) + ", mask=0x" + Long.toHexString(args.mask));
                 }
 
                 unicorn.mem_unmap(args.target_address, args.size);

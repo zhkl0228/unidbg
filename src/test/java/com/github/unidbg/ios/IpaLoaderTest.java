@@ -19,7 +19,7 @@ import java.io.File;
 public class IpaLoaderTest implements EmulatorConfigurator {
 
     public void testLoader() {
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
         long start = System.currentTimeMillis();
         LoadedIpa loader = new IpaLoader64(new File("src/test/resources/app/TelegramMessenger-5.11..ipa"),
                 new File("target/rootfs/ipa")).load(this);
@@ -43,6 +43,6 @@ public class IpaLoaderTest implements EmulatorConfigurator {
 
     @Override
     public void configure(Emulator<DarwinFileIO> emulator, String processName, File rootDir) {
-        emulator.attach().addBreakPoint(null, 0x103428000L + 0x0000000000A33464L);
+//        emulator.attach().addBreakPoint(null, 0x103428000L + 0x0000000000A33464L);
     }
 }

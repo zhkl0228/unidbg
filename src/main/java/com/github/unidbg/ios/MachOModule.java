@@ -693,7 +693,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 }
                 return bindAt;
             }
-            throw new IllegalStateException("bindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - this.base) + ", upwardLibraries=" + this.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + this.name + ", targetImage=" + targetImage);
+            log.info("bindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - this.base) + ", upwardLibraries=" + this.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + this.name + ", targetImage=" + targetImage);
+            return 0;
         }
 
         long bindAt = symbol.getAddress();
