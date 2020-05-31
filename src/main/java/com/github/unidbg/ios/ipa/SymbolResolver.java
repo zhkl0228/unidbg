@@ -3,11 +3,16 @@ package com.github.unidbg.ios.ipa;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
-import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
+
+import java.util.Arrays;
 
 class SymbolResolver implements HookListener {
 
@@ -61,18 +66,40 @@ class SymbolResolver implements HookListener {
                 _objc_readClassPair = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
                     @Override
                     public long handle(Emulator<?> emulator) {
-                        RegisterContext context = emulator.getContext();
-                        return context.getPointerArg(0).peer;
+                        throw new UnsupportedOperationException();
+                    }
+                    @Override
+                    public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+                            KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                                    "nop",
+                                    "ret"));
+                            byte[] code = encoded.getMachineCode();
+                            UnicornPointer pointer = svcMemory.allocate(code.length, "objc_readClassPair");
+                            pointer.write(0, code, 0, code.length);
+                            return pointer;
+                        }
                     }
                 } : new ArmSvc() {
                     @Override
                     public long handle(Emulator<?> emulator) {
-                        RegisterContext context = emulator.getContext();
-                        return context.getPointerArg(0).peer;
+                        throw new UnsupportedOperationException();
+                    }
+                    @Override
+                    public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+                            KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                                    "nop",
+                                    "bx lr"));
+                            byte[] code = encoded.getMachineCode();
+                            UnicornPointer pointer = svcMemory.allocate(code.length, "objc_readClassPair");
+                            pointer.write(0, code, 0, code.length);
+                            return pointer;
+                        }
                     }
                 });
             }
-//            return _objc_readClassPair.peer;
+            return old == -2 ? _objc_readClassPair.peer : 0; // weak bind
         }
         return 0;
     }

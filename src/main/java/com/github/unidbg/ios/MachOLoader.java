@@ -1329,7 +1329,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             }
             long bindAt = 0;
             for (HookListener listener : hookListeners) {
-                long hook = listener.hook(emulator.getSvcMemory(), module.name, symbolName, bindAt);
+                long hook = listener.hook(emulator.getSvcMemory(), module.name, symbolName, -1);
                 if (hook > 0) {
                     bindAt = hook;
                     break;

@@ -15,34 +15,41 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
 public class IpaLoaderTest implements EmulatorConfigurator {
 
-    public void testLoader() {
+    public void testLoader() throws Exception {
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
         long start = System.currentTimeMillis();
         LoadedIpa loader = new IpaLoader64(new File("src/test/resources/app/TelegramMessenger-5.11..ipa"),
                 new File("target/rootfs/ipa")).load(this);
-        Emulator<?> emulator = loader.getEmulator();
+        final Emulator<?> emulator = loader.getEmulator();
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
-        Module module = loader.getExecutable();
-        IClassDumper classDumper = ClassDumper.getInstance(emulator);
-        String objcClass = classDumper.dumpClass("TGVideoCameraGLRenderer");
-        System.out.println(objcClass);
+        loader.callEntry();
+        final Module module = loader.getExecutable();
+        emulator.attach().run(new Callable<Void>() {
+            @Override
+            public Void call() {
+                IClassDumper classDumper = ClassDumper.getInstance(emulator);
+                String objcClass = classDumper.dumpClass("TGVideoCameraGLRenderer");
+                System.out.println(objcClass);
 
-        Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");
-        Pointer pointer = UnicornPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
-        assert pointer != null;
-        System.out.println("_TelegramCoreVersionString=" + pointer.getString(0));
+                Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");
+                Pointer pointer = UnicornPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
+                assert pointer != null;
+                System.out.println("_TelegramCoreVersionString=" + pointer.getString(0));
+                return null;
+            }
+        });
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         IpaLoaderTest test = new IpaLoaderTest();
         test.testLoader();
     }
 
     @Override
     public void configure(Emulator<DarwinFileIO> emulator, String processName, File rootDir) {
-//        emulator.attach().addBreakPoint(null, 0x103428000L + 0x0000000000A33464L);
     }
 }

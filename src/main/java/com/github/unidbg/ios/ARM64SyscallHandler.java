@@ -1877,12 +1877,26 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     log.debug("_kernelrpc_mach_vm_remap args=" + args + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                 }
 
-                if (args.anywhere != MachO.VM_FLAGS_OVERWRITE || args.mask != 0) {
-                    throw new UnsupportedOperationException("anywhere=0x" + Integer.toHexString(args.anywhere) + ", mask=0x" + Long.toHexString(args.mask));
+                if ((args.anywhere != MachO.VM_FLAGS_OVERWRITE && args.anywhere != MachO.VM_FLAGS_FIXED) ||
+                        args.mask != 0) {
+                    throw new UnsupportedOperationException("_kernelrpc_mach_vm_remap anywhere=0x" + Integer.toHexString(args.anywhere) + ", mask=0x" + Long.toHexString(args.mask));
                 }
 
-                unicorn.mem_unmap(args.target_address, args.size);
-                unicorn.mem_map(args.target_address, args.size, args.inheritance);
+                MemRegion[] regions = unicorn.mem_regions();
+                MemRegion memRegion = null;
+                for (MemRegion region : regions) {
+                    if (region.begin == args.target_address) {
+                        memRegion = region;
+                        break;
+                    }
+                }
+                if (memRegion != null) {
+                    if (memRegion.end - memRegion.begin != args.size) {
+                        throw new IllegalStateException("_kernelrpc_mach_vm_remap target_address=0x" + Long.toHexString(args.target_address) + ", size=" + args.size + ", end=0x" + Long.toHexString(memRegion.end));
+                    }
+                    unicorn.mem_unmap(args.target_address, args.size);
+                }
+                unicorn.mem_map(args.target_address, args.size, memRegion == null ? args.inheritance : memRegion.perms);
                 if (args.copy != 0) {
                     byte[] data = unicorn.mem_read(args.getSourceAddress(), args.size);
                     unicorn.mem_write(args.target_address, data);

@@ -40,10 +40,7 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
-import unicorn.UnicornException;
+import unicorn.*;
 
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
@@ -1919,11 +1916,25 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     log.debug("_kernelrpc_mach_vm_remap args=" + args + ", lr=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
 
-                if (args.anywhere != MachO.VM_FLAGS_OVERWRITE || args.mask != 0) {
-                    throw new UnsupportedOperationException("anywhere=0x" + Integer.toHexString(args.anywhere) + ", mask=0x" + Long.toHexString(args.mask));
+                if ((args.anywhere != MachO.VM_FLAGS_OVERWRITE && args.anywhere != MachO.VM_FLAGS_FIXED) ||
+                        args.mask != 0) {
+                    throw new UnsupportedOperationException("_kernelrpc_mach_vm_remap anywhere=0x" + Integer.toHexString(args.anywhere) + ", mask=0x" + Long.toHexString(args.mask));
                 }
 
-                unicorn.mem_unmap(args.target_address, args.size);
+                MemRegion[] regions = unicorn.mem_regions();
+                MemRegion memRegion = null;
+                for (MemRegion region : regions) {
+                    if (region.begin == args.target_address) {
+                        memRegion = region;
+                        break;
+                    }
+                }
+                if (memRegion != null) {
+                    if (memRegion.end - memRegion.begin != args.size) {
+                        throw new IllegalStateException("_kernelrpc_mach_vm_remap target_address=0x" + Long.toHexString(args.target_address) + ", size=" + args.size + ", end=0x" + Long.toHexString(memRegion.end));
+                    }
+                    unicorn.mem_unmap(args.target_address, args.size);
+                }
                 unicorn.mem_map(args.target_address, args.size, args.inheritance);
                 if (args.copy != 0) {
                     byte[] data = unicorn.mem_read(args.getSourceAddress(), args.size);

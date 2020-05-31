@@ -90,8 +90,8 @@ public interface MachO {
     long _COMM_PAGE32_BASE_ADDRESS = (0xffff4000L);
     long _COMM_PAGE64_BASE_ADDRESS = (0xffffff80001fc000L) /* In TTBR0 */;
 
+    int VM_FLAGS_FIXED = 0x0000;
     int VM_FLAGS_ANYWHERE = 0x0001;
-
     int VM_FLAGS_OVERWRITE = 0x4000; /* delete any existing mappings first */
 
     int F_GETPATH = 50; /* return the full path of the fd */
