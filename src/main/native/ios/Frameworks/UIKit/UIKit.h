@@ -69,6 +69,8 @@ typedef enum UIStatusBarStyle : NSInteger {
 
 - (void)setMinimumBackgroundFetchInterval:(NSTimeInterval)minimumBackgroundFetchInterval;
 
+- (NSArray *)windows;
+
 @end
 
 @protocol UIApplicationDelegate<NSObject>

@@ -2422,7 +2422,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 }
 
                 if (args.flavor == TaskInfoRequest.TASK_DYLD_INFO) {
-                    TaskInfoReply reply = new TaskInfoReply(request);
+                    TaskDyldInfoReply reply = new TaskDyldInfoReply(request);
                     reply.unpack();
 
                     header.setMsgBits(false);
@@ -2466,7 +2466,6 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 reply.act_listCnt = 0;
                 reply.pack();
 
-                System.out.println(reply);
                 if (log.isDebugEnabled()) {
                     log.debug("task_threads reply=" + reply);
                 }

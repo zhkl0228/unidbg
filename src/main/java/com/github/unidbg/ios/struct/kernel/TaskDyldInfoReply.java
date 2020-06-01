@@ -8,9 +8,9 @@ import com.sun.jna.Structure;
 import java.util.Arrays;
 import java.util.List;
 
-public class TaskInfoReply extends UnicornStructure {
+public class TaskDyldInfoReply extends UnicornStructure {
 
-    public TaskInfoReply(Pointer p) {
+    public TaskDyldInfoReply(Pointer p) {
         super(p);
         setAlignType(Structure.ALIGN_NONE);
     }

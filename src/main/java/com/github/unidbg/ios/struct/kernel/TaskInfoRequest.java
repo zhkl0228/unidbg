@@ -8,6 +8,8 @@ import java.util.List;
 
 public class TaskInfoRequest extends UnicornStructure {
 
+    public static final int TASK_BASIC_INFO_32 = 4; /* basic information */
+    public static final int TASK_BASIC_INFO_64 = 5; /* 64-bit capable basic info */
     public static final int TASK_DYLD_INFO = 17;
 
     public TaskInfoRequest(Pointer p) {

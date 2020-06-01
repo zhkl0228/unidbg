@@ -1,7 +1,8 @@
 #import "UIKit.h"
 
+static id delegate = nil;
+
 int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSString *delegateClassName) {
-  id delegate = nil;
   if(delegateClassName) {
     Class delegateClass = NSClassFromString(delegateClassName);
     delegate = [[delegateClass alloc] init];
@@ -88,7 +89,11 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 
 - (id)delegate {
-    return [[MyUIApplicationDelegate alloc] init];
+    if(delegate) {
+        return delegate;
+    } else {
+        return [[MyUIApplicationDelegate alloc] init];
+    }
 }
 
 - (UIApplicationState)applicationState {
@@ -104,6 +109,10 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 
 - (void)setMinimumBackgroundFetchInterval:(NSTimeInterval)minimumBackgroundFetchInterval {
+}
+
+- (NSArray *)windows {
+    return [[NSArray alloc] init];
 }
 
 @end

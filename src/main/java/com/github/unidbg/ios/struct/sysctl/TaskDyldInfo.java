@@ -29,7 +29,7 @@ public class TaskDyldInfo extends UnicornStructure {
         setAlignType(Structure.ALIGN_NONE);
     }
 
-    public void allocateAllImage(Emulator emulator) {
+    public void allocateAllImage(Emulator<?> emulator) {
         SvcMemory svcMemory = emulator.getSvcMemory();
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         Collection<Module> modules = loader.getLoadedModules();
@@ -50,7 +50,7 @@ public class TaskDyldInfo extends UnicornStructure {
         }
     }
 
-    private void allocateAllImage64(Emulator emulator, SvcMemory svcMemory, Collection<Module> modules) {
+    private void allocateAllImage64(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnicornStructure.calculateSize(DyldAllImageInfos64.class);
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_64;
         this.all_image_info_size = all_image_info_size;
@@ -84,7 +84,7 @@ public class TaskDyldInfo extends UnicornStructure {
         infos.pack();
     }
 
-    private void allocateAllImage32(Emulator emulator, SvcMemory svcMemory, Collection<Module> modules) {
+    private void allocateAllImage32(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnicornStructure.calculateSize(DyldAllImageInfos32.class);
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_32;
         this.all_image_info_size = all_image_info_size;
