@@ -7,14 +7,58 @@ int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSStri
     delegate = [[delegateClass alloc] init];
   }
   NSLog(@"UIApplicationMain argc=%d, argv=%p, principalClassName=%@, delegateClassName=%@, delegate=%@", argc, argv, principalClassName, delegateClassName, delegate);
+  if(delegate) {
+    UIApplication *application = [UIApplication sharedApplication];
+    NSDictionary *options = [[NSDictionary alloc] init];
+    [delegate application: application didFinishLaunchingWithOptions: options];
+    NSLog(@"UIApplicationMain didFinishLaunchingWithOptions delegate=%@", delegate);
+  }
   return 0;
 }
 
-const CGRect _frame = { 0, 0, 768, 1024 };
+const CGRect g_frame = { 0, 0, 768, 1024 };
+
+@implementation UIScreen
++ (UIScreen *)mainScreen {
+    return [[UIScreen alloc] init];
+}
+- (CGRect)bounds {
+    return g_frame;
+}
+- (CGFloat)scale {
+    return 1.0;
+}
+@end
+
+@implementation UIColor
++ (UIColor *)clearColor {
+    return [[UIColor alloc] init];
+}
++ (UIColor *)colorWithRed:(CGFloat)red green:(CGFloat)green blue:(CGFloat)blue alpha:(CGFloat)alpha {
+    return [[UIColor alloc] init];
+}
++ (UIColor *)whiteColor {
+    return [UIColor new];
+}
+@end
+
+@implementation UIView
+- (id)initWithFrame:(CGRect)rect {
+    if(self = [super init]) {
+        self.frame = rect;
+    }
+    return self;
+}
+@end
 
 @implementation UIWindow
-- (CGRect)frame {
-    return _frame;
+- (id)init {
+    if(self = [super init]) {
+        self.frame = g_frame;
+    }
+    return self;
+}
+- (void)makeKeyAndVisible {
 }
 @end
 
@@ -30,7 +74,10 @@ const CGRect _frame = { 0, 0, 768, 1024 };
 @implementation UIApplication
 
 + (UIApplication *)sharedApplication {
-    return [[UIApplication alloc] init];
+    static dispatch_once_t once;
+    static id instance;
+    dispatch_once(&once, ^{ instance = [[self alloc] init]; });
+    return instance;
 }
 
 - (id)init {
@@ -54,6 +101,9 @@ const CGRect _frame = { 0, 0, 768, 1024 };
 
 - (CGRect)statusBarFrame {
     return CGRectZero;
+}
+
+- (void)setMinimumBackgroundFetchInterval:(NSTimeInterval)minimumBackgroundFetchInterval {
 }
 
 @end

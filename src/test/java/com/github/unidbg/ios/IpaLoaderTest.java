@@ -32,7 +32,7 @@ public class IpaLoaderTest implements EmulatorConfigurator {
             @Override
             public Void call() {
                 IClassDumper classDumper = ClassDumper.getInstance(emulator);
-                String objcClass = classDumper.dumpClass("TGVideoCameraGLRenderer");
+                String objcClass = classDumper.dumpClass("AppDelegate");
                 System.out.println(objcClass);
 
                 Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");

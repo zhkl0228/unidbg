@@ -57,8 +57,8 @@ static BOOL isSystemClass(Class clazz) {
 static void test_UIKit() {
   NSLog(@"UIApplicationDidReceiveMemoryWarningNotification=%@", UIApplicationDidReceiveMemoryWarningNotification);
   NSLog(@"UIApplicationDidEnterBackgroundNotification=%@", UIApplicationDidEnterBackgroundNotification);
-  NSLog(@"UIApplicationDidBecomeActiveNotification=%@", UIApplicationDidBecomeActiveNotification);
-  NSLog(@"UIApplicationWillEnterForegroundNotification=%@", UIApplicationWillEnterForegroundNotification);
+  NSLog(@"UIApplicationDidFinishLaunchingNotification=%@", UIApplicationDidFinishLaunchingNotification);
+  NSLog(@"UIApplicationBackgroundFetchIntervalMinimum=%f", UIApplicationBackgroundFetchIntervalMinimum);
   NSLog(@"CTRadioAccessTechnologyLTE=%@", CTRadioAccessTechnologyLTE);
 
   NSString *path = [[NSBundle mainBundle] bundlePath];

@@ -3,7 +3,10 @@
 @implementation ASIdentifierManager
 
 + (ASIdentifierManager *)sharedManager {
-    return [[ASIdentifierManager alloc] init];
+    static dispatch_once_t once;
+    static id instance;
+    dispatch_once(&once, ^{ instance = [[self alloc] init]; });
+    return instance;
 }
 
 - (id)init {

@@ -7,6 +7,12 @@
 - (NSString *)isoCountryCode {
     return @"cn";
 }
+- (NSString *)mobileCountryCode {
+    return @"MCC";
+}
+- (NSString *)mobileNetworkCode {
+    return @"MNC";
+}
 @end
 
 @implementation CTTelephonyNetworkInfo
