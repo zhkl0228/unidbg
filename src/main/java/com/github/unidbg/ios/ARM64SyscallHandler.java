@@ -243,6 +243,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 58:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, readlink(emulator));
                     return;
+                case 65:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, msync(emulator));
+                    return;
                 case 73:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, munmap(emulator));
                     return;
@@ -433,6 +436,17 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private long msync(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer addr = context.getPointerArg(0);
+        int len = context.getIntArg(1);
+        int flags = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("msync addr=" + addr + ", len=" + len + ", flags=0x" + Integer.toHexString(flags));
+        }
+        return 0;
     }
 
     private long chmod(Emulator<DarwinFileIO> emulator) {

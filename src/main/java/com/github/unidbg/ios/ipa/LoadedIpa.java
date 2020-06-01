@@ -14,8 +14,16 @@ public class LoadedIpa {
         this.executable = executable;
     }
 
+    public void callEntry(boolean call_didFinishLaunchingWithOptions) {
+        if (call_didFinishLaunchingWithOptions) {
+            executable.callEntry(emulator, "call", "didFinishLaunchingWithOptions");
+        } else {
+            executable.callEntry(emulator);
+        }
+    }
+
     public void callEntry() {
-        executable.callEntry(emulator);
+        callEntry(false);
     }
 
     public Module getExecutable() {

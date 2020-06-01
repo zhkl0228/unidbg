@@ -2,13 +2,13 @@
 
 static id delegate = nil;
 
-int UIApplicationMain(int argc, char *argv, NSString *principalClassName, NSString *delegateClassName) {
+int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSString *delegateClassName) {
   if(delegateClassName) {
     Class delegateClass = NSClassFromString(delegateClassName);
     delegate = [[delegateClass alloc] init];
   }
   NSLog(@"UIApplicationMain argc=%d, argv=%p, principalClassName=%@, delegateClassName=%@, delegate=%@", argc, argv, principalClassName, delegateClassName, delegate);
-  if(delegate) {
+  if(delegate && argc == 3 && strcmp(argv[1], "call") == 0 && strcmp(argv[2], "didFinishLaunchingWithOptions") == 0) {
     UIApplication *application = [UIApplication sharedApplication];
     NSDictionary *options = [[NSDictionary alloc] init];
     [delegate application: application didFinishLaunchingWithOptions: options];
