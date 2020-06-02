@@ -212,7 +212,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     private boolean isPayloadModule(Module module) {
         String path = module.getPath();
-        return path.startsWith("Payload/") && path.contains("/@rpath/");
+        return path.startsWith("Payload/") && path.contains("/@");
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) {
@@ -368,7 +368,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     String dylibName = dylibCommand.name();
-                    if (dylibName.contains("@rpath")) {
+                    if (dylibName.contains("@")) { // @rpath, @executable_path
                         dylibPath = libraryFile.getPath();
                     } else {
                         dylibPath = dylibName;

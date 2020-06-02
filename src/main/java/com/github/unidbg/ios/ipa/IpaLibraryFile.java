@@ -47,13 +47,17 @@ public class IpaLibraryFile implements LibraryFile {
 
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) throws IOException {
-        if (!soName.contains("@rpath")) {
+        if (!soName.contains("@")) {
             return null;
         }
 
-        String path = soName.replace("@rpath", appDir + "Frameworks");
+        String path = soName.replace("@rpath", appDir + "Frameworks").replace("@executable_path/", appDir);
         if (log.isDebugEnabled()) {
             log.debug("Try resolve library soName=" + soName + ", path=" + path);
+        }
+        if (path.contains("@")) {
+            log.warn("Try resolve library soName=" + soName + ", path=" + path);
+            return null;
         }
         if (!loadList.isEmpty() && !loadList.contains(FilenameUtils.getName(path))) {
             return null;
