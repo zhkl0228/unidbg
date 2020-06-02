@@ -90,6 +90,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 + (UIColor *)whiteColor {
     return [UIColor new];
 }
++ (UIColor *)blackColor {
+    return [UIColor new];
+}
 @end
 
 @implementation UIView

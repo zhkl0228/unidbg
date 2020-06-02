@@ -46,13 +46,25 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
             try (JarFile jarFile = new JarFile(ipa)) {
                 Enumeration<JarEntry> enumeration = jarFile.entries();
                 JarEntry entry = null;
+                boolean hasChild = false;
+                String dir = path;
+                if (!dir.endsWith("/")) {
+                    dir += "/";
+                }
                 while (enumeration.hasMoreElements()) {
                     JarEntry jarEntry = enumeration.nextElement();
                     if (path.equals(jarEntry.getName()) || (path + "/").equals(jarEntry.getName())) {
                         entry = jarEntry;
                         break;
                     }
+                    if (!hasChild && jarEntry.getName().startsWith(dir)) {
+                        hasChild = true;
+                    }
                 }
+                if (entry == null && hasChild) {
+                    return FileResult.success(createDirectoryFileIO(dir, pathname, oflags));
+                }
+
                 if (entry == null) {
                     if (log.isDebugEnabled()) {
                         log.debug("Resolve appDir=" + appDir + ", path=" + path);
