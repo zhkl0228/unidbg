@@ -24,7 +24,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    protected final void loop(Emulator<?> emulator, long address, int size, Callable<Void> callable) throws Exception {
+    protected final void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception {
         Unicorn u = emulator.getUnicorn();
         long nextAddress = 0;
         if (address > 0) {

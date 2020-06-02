@@ -22,6 +22,6 @@ public interface Debugger extends Breaker, DebugHook, Closeable {
     @SuppressWarnings("unused")
     void setDebugListener(DebugListener listener);
 
-    void run(Callable<Void> callable) throws Exception;
+    <T> T run(Callable<T> callable) throws Exception;
 
 }

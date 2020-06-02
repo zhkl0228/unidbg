@@ -194,15 +194,16 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private String breakMnemonic;
 
-    protected abstract void loop(Emulator<?> emulator, long address, int size, Callable<Void> callable) throws Exception;
+    protected abstract void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception;
 
     @Override
-    public void run(Callable<Void> callable) throws Exception {
+    public <T> T run(Callable<T> callable) throws Exception {
         if (callable == null) {
             throw new NullPointerException();
         }
-        callable.call();
+        T ret =callable.call();
         loop(emulator, 0, 0, callable);
+        return ret;
     }
 
     final void dumpMemory(Pointer pointer, int _length, String label, boolean nullTerminated) {

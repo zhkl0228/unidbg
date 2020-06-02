@@ -233,7 +233,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     private Semaphore semaphore;
 
     @Override
-    protected final void loop(Emulator<?> emulator, long address, int size, Callable<Void> callable) throws Exception {
+    protected final void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception {
         semaphore = new Semaphore(0);
 
         onHitBreakPoint(emulator, address);
@@ -241,7 +241,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     }
 
     @Override
-    public void run(Callable<Void> callable) {
+    public <T> T run(Callable<T> callable) {
         throw new UnsupportedOperationException();
     }
 

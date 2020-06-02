@@ -101,10 +101,10 @@ public abstract class IpaLoader {
         String version = parseVersion(ipa, appDir);
         File rootDir = new File(this.rootDir, version);
         Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(processName, rootDir, getEnvs());
-        config(emulator, ipa, processName, rootDir);
         if (configurator != null) {
             configurator.configure(emulator, processName, rootDir);
         }
+        config(emulator, ipa, processName, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
         return load(emulator, ipa, loads);
@@ -116,10 +116,10 @@ public abstract class IpaLoader {
         String version = parseVersion(ipa, appDir);
         File rootDir = new File(this.rootDir, version);
         Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(processName, rootDir, getEnvs());
-        config(emulator, ipa, processName, rootDir);
         if (configurator != null) {
             configurator.configure(emulator, processName, rootDir);
         }
+        config(emulator, ipa, processName, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
         return load(emulator, ipa, loads);

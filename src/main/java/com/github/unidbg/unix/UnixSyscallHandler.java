@@ -89,6 +89,10 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
                 }
             }
         }
+        if (failResult != null && !failResult.isFallback()) {
+            return failResult;
+        }
+
         FileResult<T> result = emulator.getFileSystem().open(pathname, oflags);
         if (result != null && result.isSuccess()) {
             emulator.getMemory().setErrno(0);
@@ -255,16 +259,6 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             return minFd;
         }
 
-        FileResult<T> result = emulator.getFileSystem().open(pathname, oflags);
-        if (result != null && result.isSuccess()) {
-            emulator.getMemory().setErrno(0);
-            this.fdMap.put(minFd, result.io);
-            if (verbose) {
-                System.out.println(String.format("File opened '%s'", result.io));
-            }
-            return minFd;
-        }
-
         T driverIO = createDriverFileIO(emulator, oflags, pathname);
         if (driverIO != null) {
             emulator.getMemory().setErrno(0);
@@ -275,6 +269,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             return minFd;
         }
 
+        FileResult<T> result = null;
         if (resolveResult != null) {
             result = resolveResult;
         }
