@@ -1,8 +1,11 @@
 #import "CoreTelephony.h"
 
 @implementation CTCarrier
-- (NSString *)carrierName {
-    return @"中国联通";
+- (id)init {
+    if(self = [super init]) {
+        self.carrierName = @"中国联通";
+    }
+    return self;
 }
 - (NSString *)isoCountryCode {
     return @"cn";
@@ -17,7 +20,10 @@
 
 @implementation CTTelephonyNetworkInfo
 - (CTCarrier *)subscriberCellularProvider {
-    return [[CTCarrier alloc] init];
+    static dispatch_once_t once;
+    static id instance;
+    dispatch_once(&once, ^{ instance = [[CTCarrier alloc] init]; });
+    return instance;
 }
 - (NSString *)currentRadioAccessTechnology {
     return CTRadioAccessTechnologyLTE;

@@ -3,7 +3,7 @@
 NSString *const CTRadioAccessTechnologyLTE = @"CTRadioAccessTechnologyLTE";
 
 @interface CTCarrier : NSObject
-- (NSString *)carrierName;
+@property(nonatomic, assign) NSString *carrierName;
 - (NSString *)isoCountryCode;
 - (NSString *)mobileCountryCode;
 - (NSString *)mobileNetworkCode;

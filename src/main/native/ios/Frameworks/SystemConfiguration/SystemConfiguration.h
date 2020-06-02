@@ -18,10 +18,10 @@ typedef enum SCNetworkReachabilityFlags : uint32_t {
   kSCNetworkReachabilityFlagsIsWWAN = 1<<18,
 } SCNetworkReachabilityFlags;
 
+const SCNetworkReachabilityFlags defaultReachabilityFlags = kSCNetworkReachabilityFlagsReachable | kSCNetworkReachabilityFlagsIsLocalAddress | kSCNetworkReachabilityFlagsIsWWAN;
+
 Boolean SCNetworkReachabilityGetFlags(void *target, SCNetworkReachabilityFlags *flags) {
-  *flags |= kSCNetworkReachabilityFlagsReachable;
-  *flags |= kSCNetworkReachabilityFlagsIsLocalAddress;
-  *flags |= kSCNetworkReachabilityFlagsIsWWAN;
+  *flags = defaultReachabilityFlags;
   fprintf(stderr, "SCNetworkReachabilityGetFlags target=%p, flags=%p\n", target, flags);
   return TRUE;
 }
@@ -75,7 +75,7 @@ Boolean SCNetworkReachabilitySetCallback(SCNetworkReachabilityRef target, SCNetw
   if(context) {
     info = context->info;
   }
-  callback(target, kSCNetworkReachabilityFlagsReachable | kSCNetworkReachabilityFlagsIsWWAN, info);
+  callback(target, defaultReachabilityFlags, info);
   return TRUE;
 }
 

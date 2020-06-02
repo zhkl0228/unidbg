@@ -725,7 +725,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         int oflags = context.getIntArg(1);
         int mode = context.getIntArg(2);
         String name = pointer.getString(0);
-        log.info("shm_open name=" + name + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+        if (log.isDebugEnabled()) {
+            log.debug("shm_open name=" + name + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+        }
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
