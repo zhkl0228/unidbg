@@ -4,7 +4,6 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.android.EmulatorTest;
-import com.github.unidbg.ios.service.CFNetwork;
 import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -134,8 +133,6 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
 //        emulator.attach(0x4128F000, 0x41339000).addBreakPoint(null, 0x4128F000 + 0x0001E9B8);
-
-        new CFNetwork().processHook(emulator);
 
 //        emulator.attach(0xfffe0000L, 0xfffe0000L + 0x10000).addBreakPoint(null, 0xfffe0080L);
 //        emulator.traceCode(0xfffe0000L, 0xfffe0000L + 0x10000);

@@ -12,14 +12,62 @@
 -(void)testObjc;
 @end
 
+static CFMutableDictionaryRef makeDictionary() {
+  const static int one = 1;
+
+  CFStringRef array[] = { CFSTR("*.local"), CFSTR("169.254/16") };
+  CFArrayRef arrayRef = CFArrayCreate(NULL, (void *)array, (CFIndex) 2, NULL);
+  CFNumberRef ftpPassive = CFNumberCreate(NULL, kCFNumberSInt32Type, (const void *) &one);
+
+  CFStringRef en_keys[] = { CFSTR("ExceptionsList"), CFSTR("FTPPassive") };
+  CFTypeRef en_values[] = { arrayRef, ftpPassive };
+  CFDictionaryRef en = CFDictionaryCreate(NULL, (const void**) en_keys, (const void**) en_values, (CFIndex) 2, NULL, NULL);
+
+  CFStringRef scope_keys[] = { CFSTR("awdl0"), CFSTR("en0") };
+  CFDictionaryRef scope_values[] = { en, en };
+  CFDictionaryRef scope = CFDictionaryCreate(NULL, (const void**) scope_keys, (const void**) scope_values, (CFIndex) 2, NULL, NULL);
+
+  CFMutableDictionaryRef dict = CFDictionaryCreateMutable(NULL, (CFIndex) 0, NULL, NULL);
+  CFDictionarySetValue(dict, CFSTR("__SCOPED__"), scope);
+  return dict;
+}
+
 @implementation BootstrapTest
 -(void) testObjc {
   CTTelephonyNetworkInfo *info = [[CTTelephonyNetworkInfo alloc]init];
   CTCarrier *carrier = [info subscriberCellularProvider];
   NSLog(@"CTTelephonyNetworkInfo: carrier=%@", carrier);
 
-  NSDictionary *proxySettings = (NSDictionary *)CFNetworkCopySystemProxySettings();
-  NSLog(@"CFNetworkCopySystemProxySettings proxySettings=%@", proxySettings);
+  NSString *scope_key = [[NSString alloc] initWithCString: "__SCOPED__" encoding: NSUTF8StringEncoding];
+
+  NSDictionary *dictionary = (__bridge NSDictionary*) makeDictionary();
+  NSLog(@"CFNetworkCopySystemProxySettings __SCOPED__=%@, dictionary=%@", [dictionary objectForKey: scope_key], dictionary);
+
+  NSMutableDictionary *proxySettings = (__bridge NSMutableDictionary*) CFNetworkCopySystemProxySettings();
+  proxySettings = (__bridge NSMutableDictionary*) CFNetworkCopySystemProxySettings();
+
+  id scoped = [proxySettings objectForKey: scope_key];
+  id exceptionsList = proxySettings[@"ExceptionsList"];
+  if(scoped == nil) {
+    [proxySettings setObject: @"__SCOPED__values" forKey: @"__SCOPED__"];
+  }
+  NSLog(@"CFNetworkCopySystemProxySettings __SCOPED__=%@, ExceptionsList=%@, FTPPassive=%@, proxySettings=%@", scoped, exceptionsList, proxySettings[@"FTPPassive"], proxySettings);
+  NSLog(@"CFNetworkCopySystemProxySettings allKeys=%@, count=%lu, key=%@, pointer=%p", [proxySettings allKeys], (unsigned long) [proxySettings count], scope_key, scope_key);
+  for(id key in [proxySettings allKeys]) {
+    id value = [proxySettings objectForKey: key];
+    NSLog(@"CFNetworkCopySystemProxySettings key=%@, value=%@, class=%@, pointer=%p", key, value, [key class], key);
+  }
+
+  NSMutableDictionary *mutableDict = [NSMutableDictionary dictionaryWithCapacity: 8];
+  [mutableDict setObject: @"Hello, World!" forKey: @"__SCOPED__"];
+  [mutableDict setObject: @"Test" forKey: scope_key];
+  NSLog(@"CFNetworkCopySystemProxySettings mutableDict=%@, value=%@", mutableDict, [mutableDict objectForKey: scope_key]);
+
+  CFStringRef keys[] = { CFSTR("__SCOPED__") };
+  CFTypeRef values[] = { CFSTR("FTPPassive") };
+  NSDictionary *dict = (__bridge NSDictionary*) CFDictionaryCreate(NULL, (const void**) keys, (const void**) values, (CFIndex) 1, NULL, NULL);
+  NSString *key = [[NSString alloc] initWithCString: "__SCOPED__" encoding: NSUTF8StringEncoding];
+  NSLog(@"NSDictionary dict=%@, value=%@", dict, [dict objectForKey: key]);
 }
 -(NSString *) description {
   return @"This is ObjC TEST";
