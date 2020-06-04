@@ -22,7 +22,7 @@ public class IpaLoaderTest implements EmulatorConfigurator {
     public void testLoader() throws Exception {
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
         long start = System.currentTimeMillis();
-        LoadedIpa loader = new IpaLoader64(new File("src/test/resources/app/TelegramMessenger-5.11..ipa"),
+        LoadedIpa loader = new IpaLoader64(new File("src/test/resources/app/TelegramMessenger-5.11.ipa"),
                 new File("target/rootfs/ipa")).load(this);
         final Emulator<?> emulator = loader.getEmulator();
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");

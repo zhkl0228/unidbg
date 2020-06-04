@@ -177,7 +177,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     private MachOModule loadInternal(LibraryFile libraryFile, boolean forceCallInit, boolean checkBootstrap) {
-        MachOModule module = loadInternalPhase(libraryFile, true, checkBootstrap);
+        MachOModule module = loadInternalPhase(libraryFile, true, checkBootstrap, Collections.<String>emptyList());
 
         for (MachOModule export : modules.values()) {
             if (!export.lazyLoadNeededList.isEmpty()) {
@@ -217,16 +217,17 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return path.startsWith(IpaLoader.APP_DIR);
     }
 
-    private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) {
+    private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap, Collection<String> parentRpath) {
         try {
             ByteBuffer buffer = libraryFile.mapBuffer();
-            return loadInternalPhase(libraryFile, buffer, loadNeeded, checkBootstrap);
+            return loadInternalPhase(libraryFile, buffer, loadNeeded, checkBootstrap, parentRpath);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private MachOModule loadInternalPhase(LibraryFile libraryFile, ByteBuffer buffer, boolean loadNeeded, boolean checkBootstrap) throws IOException {
+    private MachOModule loadInternalPhase(LibraryFile libraryFile, ByteBuffer buffer,
+                                          boolean loadNeeded, boolean checkBootstrap, Collection<String> parentRpath) throws IOException {
         MachO machO = new MachO(new ByteBufferKaitaiStream(buffer));
         MachO.MagicType magic = machO.magic();
         switch (magic) {
@@ -250,7 +251,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     if (log.isDebugEnabled()) {
                         log.debug("loadFatArch=" + arch.cputype() + ", cpuSubType=" + arch.cpusubtype());
                     }
-                    return loadInternalPhase(libraryFile, buffer.slice(), loadNeeded, checkBootstrap);
+                    return loadInternalPhase(libraryFile, buffer.slice(), loadNeeded, checkBootstrap, parentRpath);
                 }
                 throw new IllegalArgumentException("find arch failed");
             case MACHO_LE_X86: // ARM
@@ -295,7 +296,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         MachO.DyldInfoCommand dyldInfoCommand = null;
         MachOModule subModule = null;
         boolean finalSegment = false;
-        List<String> rpathList = new ArrayList<>();
+        Set<String> rpathSet = new LinkedHashSet<>(2);
         byte[] uuid = null;
 
         String dylibPath = libraryFile.getPath();
@@ -380,9 +381,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     String dylibName = dylibCommand.name();
-                    if (dylibPath.startsWith(IpaLoader.APP_DIR)) { // @rpath, @executable_path
-                        dylibPath = dylibPath.replace("@rpath", "Frameworks").replace("@executable_path/", "");
-                    } else {
+                    if (dylibPath.startsWith(IpaLoader.APP_DIR)) { // @executable_path
+                        dylibPath = dylibPath.replace("@executable_path/", "");
+                    } else if (!dylibName.contains("@")) {
                         dylibPath = dylibName;
                     }
                     int index = dylibPath.indexOf('/'); // unidbg build frameworks
@@ -438,12 +439,18 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     break;
                 case RPATH:
                     MachO.RpathCommand rpathCommand = (MachO.RpathCommand) command.body();
-                    rpathList.add(rpathCommand.path());
+                    String rpath = rpathCommand.path();
+                    if (!rpath.contains("@loader_path/")) {
+                        rpathSet.add(rpath);
+                    }
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
                     break;
             }
+        }
+        if (rpathSet.isEmpty()) {
+            rpathSet.addAll(parentRpath);
         }
 
         final long loadBase = isExecutable ? 0 : mmapBaseAddress;
@@ -458,7 +465,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         if (log.isDebugEnabled()) {
-            log.debug(Inspector.inspectString(uuid, "start map dyid=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", size=0x" + Long.toHexString(size) + ", rpath=" + rpathList + ", uuid=" + Utils.toUUID(uuid)));
+            log.debug(Inspector.inspectString(uuid, "start map dyid=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", size=0x" + Long.toHexString(size) + ", rpath=" + rpathSet + ", uuid=" + Utils.toUUID(uuid)));
         }
 
         final List<NeedLibrary> neededList = new ArrayList<>();
@@ -590,12 +597,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 exportModules.put(FilenameUtils.getBaseName(loaded.name), loaded);
                 continue;
             }
-            LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, neededLibrary);
-            if (libraryResolver != null && neededLibraryFile == null) {
-                neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
-            }
+            LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, rpathSet);
             if (neededLibraryFile != null) {
-                MachOModule needed = loadInternalPhase(neededLibraryFile, false, false);
+                MachOModule needed = loadInternalPhase(neededLibraryFile, false, false, rpathSet);
                 needed.addReferenceCount();
                 exportModules.put(FilenameUtils.getBaseName(needed.name), needed);
             } else if(log.isDebugEnabled()) {
@@ -620,12 +624,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     neededLibraries.put(FilenameUtils.getBaseName(loaded.name), loaded);
                     continue;
                 }
-                LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, neededLibrary);
-                if (libraryResolver != null && neededLibraryFile == null) {
-                    neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
-                }
+                LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, rpathSet);
                 if (neededLibraryFile != null) {
-                    MachOModule needed = loadInternalPhase(neededLibraryFile, true, false);
+                    MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, rpathSet);
                     needed.addReferenceCount();
                     if (library.upward) {
                         upwardLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
@@ -633,7 +634,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
                     }
                 } else if(!library.weak) {
-                    log.info(dyId + " load dependency " + neededLibrary + " failed");
+                    log.info(dyId + " load dependency " + neededLibrary + " failed: rpath=" + rpathSet);
                 }
             }
         } else {
@@ -724,6 +725,30 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
         notifyModuleLoaded(module);
         return module;
+    }
+
+    private static final String RPATH = "@rpath";
+
+    private LibraryFile resolveLibrary(LibraryFile libraryFile, String neededLibrary, Collection<String> rpathSet) throws IOException {
+        if (rpathSet.isEmpty() || !neededLibrary.contains(RPATH)) {
+            LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, neededLibrary);
+            if (libraryResolver != null && neededLibraryFile == null) {
+                neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
+            }
+            return neededLibraryFile;
+        } else {
+            for (String rpath : rpathSet) {
+                String soName = neededLibrary.replace(RPATH, rpath);
+                LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, soName);
+                if (libraryResolver != null && neededLibraryFile == null) {
+                    neededLibraryFile = libraryResolver.resolveLibrary(emulator, soName);
+                }
+                if (neededLibraryFile != null) {
+                    return neededLibraryFile;
+                }
+            }
+            return null;
+        }
     }
 
     private void __NSSetLogCStringFunction(Pointer message, int length, boolean withSysLogBanner) {
@@ -1504,7 +1529,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             return null;
         }
 
-        MachOModule module = loadInternalPhase(libraryFile, true, false);
+        MachOModule module = loadInternalPhase(libraryFile, true, false, Collections.<String>emptyList());
 
         for (MachOModule export : modules.values()) {
             if (!export.lazyLoadNeededList.isEmpty()) {

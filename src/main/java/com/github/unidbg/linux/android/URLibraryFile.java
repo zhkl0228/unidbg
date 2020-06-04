@@ -27,7 +27,7 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        return "/system/lib/" + getName();
+        return getPath();
     }
 
     @Override
@@ -50,6 +50,6 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/system/lib";
+        return "/system/lib/" + getName();
     }
 }

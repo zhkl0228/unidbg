@@ -59,7 +59,7 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/usr/lib";
+        return path;
     }
 
 }

@@ -51,7 +51,7 @@ public class IpaLibraryFile implements LibraryFile {
             return null;
         }
 
-        String path = soName.replace("@rpath", appDir + "Frameworks").replace("@executable_path/", appDir);
+        String path = soName.replace("@executable_path/", appDir);
         if (log.isDebugEnabled()) {
             log.debug("Try resolve library soName=" + soName + ", path=" + path);
         }
