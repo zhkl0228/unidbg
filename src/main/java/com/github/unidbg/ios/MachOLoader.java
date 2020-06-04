@@ -379,7 +379,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     String dylibName = dylibCommand.name();
                     if (dylibPath.startsWith(IpaLoader.APP_DIR)) { // @rpath, @executable_path
-                        dylibPath = dylibPath.replace("@rpath", "Frameworks");
+                        dylibPath = dylibPath.replace("@rpath", "Frameworks").replace("@executable_path/", "");
                     } else {
                         dylibPath = dylibName;
                     }

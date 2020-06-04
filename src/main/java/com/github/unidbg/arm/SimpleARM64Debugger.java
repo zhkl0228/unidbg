@@ -285,7 +285,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println();
         System.out.println("s|si: step into");
         System.out.println("s[decimal]: execute specified amount instruction");
-        System.out.println("s(bl): execute util BL mnemonic");
+        System.out.println("s(bl): execute util BL mnemonic, low performance");
         System.out.println();
         System.out.println("m(op) [size]: show memory, default size is 0x70, size may hex or decimal");
         System.out.println("mx0-mx28, mfp, mip, msp [size]: show memory of specified register");
