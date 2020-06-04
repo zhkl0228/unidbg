@@ -21,6 +21,7 @@ import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
@@ -295,6 +296,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         MachOModule subModule = null;
         boolean finalSegment = false;
         List<String> rpathList = new ArrayList<>();
+        byte[] uuid = null;
 
         String dylibPath = libraryFile.getPath();
         String processName = emulator.getProcessName();
@@ -408,6 +410,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     }
                     break;
                 case UUID:
+                    MachO.UuidCommand uuidCommand = (MachO.UuidCommand) command.body();
+                    uuid = uuidCommand.uuid();
+                    break;
                 case FUNCTION_STARTS:
                 case DATA_IN_CODE:
                 case CODE_SIGNATURE:
@@ -453,7 +458,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("start map dyid=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", size=0x" + Long.toHexString(size) + ", rpath=" + rpathList);
+            log.debug(Inspector.inspectString(uuid, "start map dyid=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", size=0x" + Long.toHexString(size) + ", rpath=" + rpathList + ", uuid=" + Utils.toUUID(uuid)));
         }
 
         final List<NeedLibrary> neededList = new ArrayList<>();
@@ -1339,7 +1344,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
-            symbol = ((MachOModule) targetImage).exportSymbols.get(symbolName);
+            symbol = targetImage.findSymbolByName(symbolName, false);
             if (log.isDebugEnabled()) {
                 log.debug("doBindAt use export symbol: " + symbol);
             }

@@ -5,6 +5,34 @@ import java.nio.ByteBuffer;
 
 public class Utils {
 
+    /** Returns val represented by the specified number of hex digits. */
+    private static String digits(long val, int digits) {
+        long hi = 1L << (digits * 4);
+        return Long.toHexString(hi | (val & (hi - 1))).substring(1);
+    }
+
+    static String toUUID(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+
+        long msb = 0;
+        long lsb = 0;
+        assert data.length == 16 : "data must be 16 bytes in length";
+        for (int i=0; i<8; i++)
+            msb = (msb << 8) | (data[i] & 0xff);
+        for (int i=8; i<16; i++)
+            lsb = (lsb << 8) | (data[i] & 0xff);
+        long mostSigBits = msb;
+        long leastSigBits = lsb;
+
+        return (digits(mostSigBits >> 32, 8) + "-" +
+                digits(mostSigBits >> 16, 4) + "-" +
+                digits(mostSigBits, 4) + "-" +
+                digits(leastSigBits >> 48, 4) + "-" +
+                digits(leastSigBits, 12)).toUpperCase();
+    }
+
     /**
      * Reads an signed integer from {@code buffer}.
      */

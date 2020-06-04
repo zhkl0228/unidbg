@@ -34,9 +34,6 @@ public class TaskDyldInfo extends UnicornStructure {
         Collection<Module> modules = loader.getLoadedModules();
         for (Iterator<Module> iterator = modules.iterator(); iterator.hasNext(); ) {
             Module module = iterator.next();
-            if (module == loader.getExecutableModule()) {
-                continue;
-            }
             if (module.isVirtual()) {
                 iterator.remove();
             }

@@ -53,7 +53,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     private final List<HookListener> hookListeners;
     final List<String> ordinalList;
 
-    final Map<String, ExportSymbol> exportSymbols;
+    private final Map<String, ExportSymbol> exportSymbols;
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
@@ -451,6 +451,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     return symbol;
                 }
             }
+            symbol = exportSymbols.get(name);
+            return symbol;
         }
 
         return null;
