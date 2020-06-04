@@ -50,11 +50,13 @@ public abstract class IpaLoader {
         this.rootDir = rootDir;
     }
 
+    public static final String APP_DIR = "/var/containers/Bundle/Application/";
+
     private static String getProcessName(File ipa) throws IOException {
         String appDir = parseApp(ipa);
         String executable = parseExecutable(ipa, appDir);
         UUID uuid = UUID.nameUUIDFromBytes(DigestUtils.md5(appDir));
-        return appDir.replace("Payload", "/var/containers/Bundle/Application/" + uuid.toString().toUpperCase()) + executable;
+        return appDir.replace("Payload", APP_DIR + uuid.toString().toUpperCase()) + executable;
     }
 
     private static String parseExecutable(File ipa, String appDir) throws IOException {

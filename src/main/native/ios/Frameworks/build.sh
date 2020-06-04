@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# -Wl,-install_name,/System/Library/Frameworks/"$1".framework/Versions/A/"$1"
+# -Wl,-install_name,/System/Library/Frameworks/"$1".framework/"$1"
+
 function build_framework() {
   xcrun -sdk iphoneos clang -o "$1"/"$1" "$1"/"$1".m -shared -lobjc -m32 -arch armv7 -miphoneos-version-min=7.1 -framework "$2" && \
   mv "$1"/"$1" "$1"/"$1"32 && \

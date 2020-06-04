@@ -146,6 +146,10 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         try {
             if (listener == null || listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(u)))) {
+                if (traceHook != null) {
+                    traceHook.unhook();
+                    traceHook = null;
+                }
                 loop(emulator, address, size, null);
             }
         } catch (Exception e) {
@@ -310,6 +314,8 @@ public abstract class AbstractARMDebugger implements Debugger {
         return pointers;
     }
 
+    private Unicorn.UnHook traceHook;
+
     final boolean handleCommon(Unicorn u, String line, long address, int size, long nextAddress) throws DecoderException {
         if ("c".equals(line)) { // continue
             return true;
@@ -410,7 +416,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 System.out.println("Set trace " + (module == null ? "all" : module) + " instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
             }
             codeHook.initialize(begin, end, null);
-            emulator.getUnicorn().hook_add_new(codeHook, begin, end, emulator);
+            traceHook = emulator.getUnicorn().hook_add_new(codeHook, begin, end, emulator);
             return false;
         }
         if (line.startsWith("vm")) {

@@ -7,6 +7,7 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookListener;
+import com.github.unidbg.ios.ipa.IpaLoader;
 import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
@@ -210,9 +211,11 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return module;
     }
 
+    private static final String PAYLOAD_PREFIX = "Payload/";
+
     private boolean isPayloadModule(Module module) {
         String path = module.getPath();
-        return path.startsWith("Payload/") && path.contains("/@");
+        return path.startsWith(IpaLoader.APP_DIR);
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap) {
@@ -290,10 +293,19 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         long start = System.currentTimeMillis();
         long size = 0;
         String dyId = libraryFile.getName();
-        String dylibPath = libraryFile.getName();
         MachO.DyldInfoCommand dyldInfoCommand = null;
         MachOModule subModule = null;
         boolean finalSegment = false;
+        List<String> rpathList = new ArrayList<>();
+
+        String dylibPath = libraryFile.getPath();
+        String processName = emulator.getProcessName();
+        if (processName != null && dylibPath.startsWith(PAYLOAD_PREFIX) &&
+                processName.startsWith(IpaLoader.APP_DIR)) {
+            String appDir = new File(processName).getParentFile().getParentFile().getAbsolutePath();
+            dylibPath = dylibPath.replace("Payload", appDir);
+        }
+
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case DYLD_INFO:
@@ -368,12 +380,20 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     String dylibName = dylibCommand.name();
-                    if (dylibName.contains("@")) { // @rpath, @executable_path
-                        dylibPath = libraryFile.getPath();
+                    if (dylibPath.startsWith(IpaLoader.APP_DIR)) { // @rpath, @executable_path
+                        dylibPath = dylibPath.replace("@rpath", "Frameworks");
                     } else {
                         dylibPath = dylibName;
                     }
-                    dyId = FilenameUtils.getName(dylibPath);
+                    int index = dylibPath.indexOf('/'); // unidbg build frameworks
+                    if (index != -1) {
+                        String first = dylibPath.substring(0, index);
+                        String second = dylibPath.substring(index + 1);
+                        if (first.equals(second)) {
+                            dylibPath = "/System/Library/Frameworks/" + first + ".framework/" + first;
+                        }
+                    }
+                    dyId = FilenameUtils.getName(dylibName);
                     break;
                 case LOAD_DYLIB:
                 // case LOAD_WEAK_DYLIB:
@@ -397,7 +417,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case SEGMENT_SPLIT_INFO:
                 case DYLIB_CODE_SIGN_DRS:
                 case SUB_FRAMEWORK:
-                case RPATH:
                 case VERSION_MIN_IPHONEOS:
                 case LOAD_DYLINKER:
                 case MAIN:
@@ -413,6 +432,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         throw new IllegalStateException("Find sub client failed: " + name);
                     }
                     subModule = module;
+                    break;
+                case RPATH:
+                    MachO.RpathCommand rpathCommand = (MachO.RpathCommand) command.body();
+                    rpathList.add(rpathCommand.path());
                     break;
                 default:
                     log.info("Not handle loadCommand=" + command.type() + ", dylibPath=" + dylibPath);
@@ -432,7 +455,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("start map dyid=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", size=0x" + Long.toHexString(size));
+            log.debug("start map dyid=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", size=0x" + Long.toHexString(size) + ", rpath=" + rpathList);
         }
 
         final List<NeedLibrary> neededList = new ArrayList<>();
@@ -1325,7 +1348,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
         if (symbol == null) {
             if (log.isDebugEnabled()) {
-                log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name);
+                log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name + ", targetImage=" + targetImage);
             }
             long bindAt = 0;
             for (HookListener listener : hookListeners) {

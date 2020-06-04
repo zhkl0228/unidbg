@@ -67,7 +67,10 @@ static CFMutableDictionaryRef makeDictionary() {
   CFTypeRef values[] = { CFSTR("FTPPassive") };
   NSDictionary *dict = (__bridge NSDictionary*) CFDictionaryCreate(NULL, (const void**) keys, (const void**) values, (CFIndex) 1, NULL, NULL);
   NSString *key = [[NSString alloc] initWithCString: "__SCOPED__" encoding: NSUTF8StringEncoding];
-  NSLog(@"NSDictionary dict=%@, value=%@", dict, [dict objectForKey: key]);
+  NSLocale *locale = [NSLocale currentLocale];
+  NSString *countryCode = [locale objectForKey: NSLocaleCountryCode];
+  NSString *languageCode = [locale objectForKey: NSLocaleLanguageCode];
+  NSLog(@"NSDictionary dict=%@, value=%@, countryCode=%@, languageCode=%@", dict, [dict objectForKey: key], countryCode, languageCode);
 }
 -(NSString *) description {
   return @"This is ObjC TEST";

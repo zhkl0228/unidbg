@@ -1222,6 +1222,12 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     if (log.isDebugEnabled()) {
                         log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub);
                     }
+                    if ("kern.ostype".equals(sub)) {
+                        buffer.setInt(0, CTL_KERN);
+                        buffer.setInt(4, KERN_OSTYPE);
+                        bufferSize.setInt(0, 8);
+                        return 0;
+                    }
                     if ("kern.osrelease".equals(sub)) {
                         buffer.setInt(0, CTL_KERN);
                         buffer.setInt(4, KERN_OSRELEASE);
@@ -1296,6 +1302,16 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     case KERN_PROCARGS2:
                         log.info(msg);
                         return 1;
+                    case KERN_OSTYPE:
+                        log.debug(msg);
+                        String osType = "Darwin";
+                        if (bufferSize != null) {
+                            bufferSize.setInt(0, osType.length() + 1);
+                        }
+                        if (buffer != null) {
+                            buffer.setString(0, osType);
+                        }
+                        return 0;
                     case KERN_OSRELEASE:
                         log.debug(msg);
                         String osRelease = "7.1.2";

@@ -7,10 +7,8 @@ import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import unicorn.Unicorn;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public abstract class Module {
 
@@ -121,10 +119,10 @@ public abstract class Module {
 
     public final UnicornPointer createPathMemory(SvcMemory svcMemory) {
         if (this.pathPointer == null) {
-            byte[] path = getPath().getBytes();
-            this.pathPointer = svcMemory.allocate(path.length + 1, "Module.path: " + getPath());
+            byte[] bytes = getPath().getBytes(StandardCharsets.UTF_8);
+            byte[] path = Arrays.copyOf(bytes, bytes.length + 1);
+            this.pathPointer = svcMemory.allocate(path.length, "Module.path: " + getPath());
             this.pathPointer.write(0, path, 0, path.length);
-            this.pathPointer.setByte(path.length, (byte) 0);
         }
         return this.pathPointer;
     }

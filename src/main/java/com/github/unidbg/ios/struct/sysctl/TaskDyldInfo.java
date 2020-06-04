@@ -10,7 +10,6 @@ import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
-import org.apache.commons.io.FilenameUtils;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,7 +37,7 @@ public class TaskDyldInfo extends UnicornStructure {
             if (module == loader.getExecutableModule()) {
                 continue;
             }
-            if (module.isVirtual() || !"dylib".equals(FilenameUtils.getExtension(module.name))) {
+            if (module.isVirtual()) {
                 iterator.remove();
             }
         }

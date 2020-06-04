@@ -218,24 +218,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     final void callInitFunction(Emulator<?> emulator) {
-        /*if (!initFunctionList.isEmpty() && "libSystem.B.dylib".equals(name)) {
-            Module libsystem_c = loader.findModule("libsystem_c.dylib");
-            if (libsystem_c != null) {
-                long _program_vars_init;
-                if (emulator.is64Bit()) {
-                    _program_vars_init = 0x9974;
-                } else {
-                    _program_vars_init = 0x6d10 | 1; // thumb
-                }
-                libsystem_c.callFunction(emulator, _program_vars_init, vars);
-
-                MachOModule mCoreFoundation = (MachOModule) loader.findModule("CoreFoundation");
-                if (mCoreFoundation != null) {
-                    mCoreFoundation.callRoutines(emulator);
-                }
-            }
-        }*/
-
         Log log = LogFactory.getLog(MachOModule.class);
         if (log.isDebugEnabled() && !initFunctionList.isEmpty()) {
             log.debug("callInitFunction name=" + name);

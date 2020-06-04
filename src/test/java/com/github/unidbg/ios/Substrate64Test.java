@@ -26,7 +26,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         loader.setObjcRuntime(true);
@@ -146,7 +146,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 //        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
 
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-//        emulator.attach(0xffffe0000L, 0xffffe0000L + 0x10000).addBreakPoint(null, 0xffffe0094L);
+//        emulator.attach().addBreakPoint(null, 0x0000000100004118L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
         loader.getExecutableModule().callEntry(emulator);
