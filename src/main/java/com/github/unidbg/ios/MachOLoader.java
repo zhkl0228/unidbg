@@ -211,8 +211,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return module;
     }
 
-    private static final String PAYLOAD_PREFIX = "Payload/";
-
     private boolean isPayloadModule(Module module) {
         String path = module.getPath();
         return path.startsWith(IpaLoader.APP_DIR);
@@ -300,10 +298,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         String dylibPath = libraryFile.getPath();
         String processName = emulator.getProcessName();
-        if (processName != null && dylibPath.startsWith(PAYLOAD_PREFIX) &&
+        if (processName != null && dylibPath.startsWith(IpaLoader.PAYLOAD_PREFIX) &&
                 processName.startsWith(IpaLoader.APP_DIR)) {
             String appDir = new File(processName).getParentFile().getParentFile().getAbsolutePath();
-            dylibPath = dylibPath.replace("Payload", appDir);
+            dylibPath = dylibPath.replace(IpaLoader.PAYLOAD_PREFIX, appDir);
         }
 
         for (MachO.LoadCommand command : machO.loadCommands()) {
@@ -1468,6 +1466,15 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     private void processBind(MachOModule m) {
         bindIndirectSymbolPointers(m);
         setupLazyPointerHandler(m);
+    }
+
+    public boolean dlopen_preflight(String path) {
+        MachOModule loaded = modules.get(FilenameUtils.getName(path));
+        if (loaded != null) {
+            return true;
+        }
+        LibraryFile libraryFile = libraryResolver == null ? null : libraryResolver.resolveLibrary(emulator, path);
+        return libraryFile != null;
     }
 
     @Override

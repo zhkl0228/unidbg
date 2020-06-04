@@ -51,12 +51,13 @@ public abstract class IpaLoader {
     }
 
     public static final String APP_DIR = "/var/containers/Bundle/Application/";
+    public static final String PAYLOAD_PREFIX = "Payload";
 
     private static String getProcessName(File ipa) throws IOException {
         String appDir = parseApp(ipa);
         String executable = parseExecutable(ipa, appDir);
         UUID uuid = UUID.nameUUIDFromBytes(DigestUtils.md5(appDir));
-        return appDir.replace("Payload", APP_DIR + uuid.toString().toUpperCase()) + executable;
+        return appDir.replace(PAYLOAD_PREFIX, APP_DIR + uuid.toString().toUpperCase()) + executable;
     }
 
     private static String parseExecutable(File ipa, String appDir) throws IOException {
@@ -166,7 +167,7 @@ public abstract class IpaLoader {
             Enumeration<JarEntry> enumeration = file.entries();
             while (enumeration.hasMoreElements()) {
                 JarEntry entry = enumeration.nextElement();
-                if (!entry.getName().startsWith("Payload/")) {
+                if (!entry.getName().startsWith(PAYLOAD_PREFIX)) {
                     continue;
                 }
                 Matcher matcher = PATTERN.matcher(entry.getName());

@@ -42,7 +42,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
 
         pathname = FilenameUtils.normalize(pathname);
         if (pathname.startsWith(appDir)) {
-            String path = "Payload" + pathname.substring(randomDir.length());
+            String path = IpaLoader.PAYLOAD_PREFIX + pathname.substring(randomDir.length());
             try (JarFile jarFile = new JarFile(ipa)) {
                 Enumeration<JarEntry> enumeration = jarFile.entries();
                 JarEntry entry = null;

@@ -60,6 +60,7 @@ public class Dyld64 extends Dyld {
     private Pointer __dyld_dlopen;
     private Pointer __dyld_dlsym;
     private Pointer __dyld_dladdr;
+    private Pointer __dyld_dlopen_preflight;
     private long _os_trace_redirect_func;
     private long sandbox_check;
 
@@ -189,6 +190,25 @@ public class Dyld64 extends Dyld {
                     });
                 }
                 address.setPointer(0, __dyld_image_count);
+                return 1;
+            case "__dyld_dlopen_preflight":
+                if (__dyld_dlopen_preflight == null) {
+                    __dyld_dlopen_preflight = svcMemory.registerSvc(new Arm64Svc() {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer path = context.getPointerArg(0);
+                            String pathname = path.getString(0);
+                            MachOLoader loader = (MachOLoader) emulator.getMemory();
+                            boolean canLoad = loader.dlopen_preflight(pathname);
+                            if (log.isDebugEnabled()) {
+                                log.debug("dlopen_preflight path=" + pathname + ", canLoad=" + canLoad);
+                            }
+                            return canLoad ? 1 : 0;
+                        }
+                    });
+                }
+                address.setPointer(0, __dyld_dlopen_preflight);
                 return 1;
             case "__dyld_dlopen":
                 if (__dyld_dlopen == null) {
