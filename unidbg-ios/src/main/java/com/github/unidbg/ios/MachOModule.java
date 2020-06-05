@@ -52,7 +52,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Map<String, ExportSymbol> exportSymbols;
 
-    public Symbol findExportByName(String exportName) {
+    public Symbol getExportByName(String exportName) {
         return exportSymbols.get(exportName);
     }
 
@@ -622,9 +622,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     private long bindAt(Emulator<?> emulator, int libraryOrdinal, int type, long address, String symbolName) {
-        final Module targetImage;
+        final MachOModule targetImage;
         if (libraryOrdinal == BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE) {
-            targetImage = loader.getExecutableModule();
+            targetImage = (MachOModule) loader.getExecutableModule();
         } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_SELF) {
             targetImage = this;
         } else if (libraryOrdinal <= 0) {
@@ -646,13 +646,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
-            for (Module module : neededLibraries.values()) {
-                MachOModule mm = (MachOModule) module;
-                symbol = mm.findExportByName(symbolName);
-                if (symbol != null) {
-                    break;
-                }
-            }
+            symbol = targetImage.getExportByName(symbolName);
         }
         if (symbol == null) {
             long bindAt = 0;

@@ -1349,9 +1349,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             throw new IllegalStateException();
         }
 
-        Module targetImage;
+        MachOModule targetImage;
         if (libraryOrdinal == BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE) {
-            targetImage = this.getExecutableModule();
+            targetImage = executableModule;
         } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_SELF) {
             targetImage = module;
         } else if (libraryOrdinal <= 0) {
@@ -1371,7 +1371,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
-            symbol = targetImage.findSymbolByName(symbolName, false);
+            symbol = targetImage.getExportByName(symbolName);
             if (log.isDebugEnabled()) {
                 log.debug("doBindAt use export symbol: " + symbol);
             }
