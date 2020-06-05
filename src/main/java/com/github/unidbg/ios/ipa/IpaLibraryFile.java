@@ -20,18 +20,20 @@ public class IpaLibraryFile implements LibraryFile {
     private final File ipa;
     private final String executable;
     private final byte[] data;
+    private final String bundleAppDir;
 
-    IpaLibraryFile(String appDir, File ipa, String executable, String... loads) throws IOException {
-        this(appDir, ipa, executable, IpaLoader.loadZip(ipa, appDir + executable), Arrays.asList(loads));
+    IpaLibraryFile(String appDir, File ipa, String executable, String bundleAppDir, String... loads) throws IOException {
+        this(appDir, ipa, executable, bundleAppDir, IpaLoader.loadZip(ipa, appDir + executable), Arrays.asList(loads));
     }
 
     private final List<String> loadList;
 
-    private IpaLibraryFile(String appDir, File ipa, String executable, byte[] data, List<String> loadList) {
+    private IpaLibraryFile(String appDir, File ipa, String executable, String bundleAppDir, byte[] data, List<String> loadList) {
         this.appDir = appDir;
         this.ipa = ipa;
         this.executable = executable;
         this.data = data;
+        this.bundleAppDir = bundleAppDir;
         this.loadList = loadList;
     }
 
@@ -63,7 +65,7 @@ public class IpaLibraryFile implements LibraryFile {
             return null;
         }
         byte[] libData = IpaLoader.loadZip(ipa, path);
-        return libData == null ? null : new IpaLibraryFile(appDir, ipa, soName, libData, loadList);
+        return libData == null ? null : new IpaLibraryFile(appDir, ipa, soName, bundleAppDir, libData, loadList);
     }
 
     @Override
@@ -78,7 +80,7 @@ public class IpaLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return appDir + executable;
+        return appDir.replace(IpaLoader.PAYLOAD_PREFIX, bundleAppDir) + executable;
     }
 
 }

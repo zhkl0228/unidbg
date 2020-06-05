@@ -30,7 +30,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
         loader.setObjcRuntime(true);
 //        emulator.traceCode();
 //        emulator.attach().addBreakPoint(null, 0x402ffd10);
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
         long start;
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
 

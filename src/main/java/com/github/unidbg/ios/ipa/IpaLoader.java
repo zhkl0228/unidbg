@@ -53,7 +53,7 @@ public abstract class IpaLoader {
     public static final String APP_DIR = "/var/containers/Bundle/Application/";
     public static final String PAYLOAD_PREFIX = "Payload";
 
-    private static String getProcessName(File ipa) throws IOException {
+    private static String getExecutableBundlePath(File ipa) throws IOException {
         String appDir = parseApp(ipa);
         String executable = parseExecutable(ipa, appDir);
         UUID uuid = UUID.nameUUIDFromBytes(DigestUtils.md5(appDir));
@@ -99,33 +99,35 @@ public abstract class IpaLoader {
     }
 
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
-        String processName = getProcessName(ipa);
+        String executableBundlePath = getExecutableBundlePath(ipa);
+        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getAbsolutePath();
         String appDir = parseApp(ipa);
         String version = parseVersion(ipa, appDir);
         File rootDir = new File(this.rootDir, version);
-        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(processName, rootDir, getEnvs());
+        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, getEnvs());
         if (configurator != null) {
-            configurator.configure(emulator, processName, rootDir);
+            configurator.configure(emulator, executableBundlePath, rootDir);
         }
-        config(emulator, ipa, processName, rootDir);
+        config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
-        return load(emulator, ipa, loads);
+        return load(emulator, ipa, bundleAppDir, loads);
     }
 
     LoadedIpa load64(EmulatorConfigurator configurator, String... loads) throws IOException {
-        String processName = getProcessName(ipa);
+        String executableBundlePath = getExecutableBundlePath(ipa);
+        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getAbsolutePath();
         String appDir = parseApp(ipa);
         String version = parseVersion(ipa, appDir);
         File rootDir = new File(this.rootDir, version);
-        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(processName, rootDir, getEnvs());
+        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, getEnvs());
         if (configurator != null) {
-            configurator.configure(emulator, processName, rootDir);
+            configurator.configure(emulator, executableBundlePath, rootDir);
         }
-        config(emulator, ipa, processName, rootDir);
+        config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
-        return load(emulator, ipa, loads);
+        return load(emulator, ipa, bundleAppDir, loads);
     }
 
     protected String[] getEnvs() {
@@ -150,11 +152,11 @@ public abstract class IpaLoader {
         this.forceCallInit = forceCallInit;
     }
 
-    private LoadedIpa load(Emulator<DarwinFileIO> emulator, File ipa, String... loads) throws IOException {
+    private LoadedIpa load(Emulator<DarwinFileIO> emulator, File ipa, String bundleAppDir, String... loads) throws IOException {
         String appDir = parseApp(ipa);
         String executable = parseExecutable(ipa, appDir);
         Memory memory = emulator.getMemory();
-        Module module = memory.load(new IpaLibraryFile(appDir, ipa, executable, loads), forceCallInit);
+        Module module = memory.load(new IpaLibraryFile(appDir, ipa, executable, bundleAppDir, loads), forceCallInit);
         MachOLoader loader = (MachOLoader) memory;
         loader.onExecutableLoaded(executable);
         return new LoadedIpa(emulator, module);

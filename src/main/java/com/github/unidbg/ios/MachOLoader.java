@@ -298,14 +298,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         boolean finalSegment = false;
         Set<String> rpathSet = new LinkedHashSet<>(2);
         byte[] uuid = null;
-
         String dylibPath = libraryFile.getPath();
-        String processName = emulator.getProcessName();
-        if (processName != null && dylibPath.startsWith(IpaLoader.PAYLOAD_PREFIX) &&
-                processName.startsWith(IpaLoader.APP_DIR)) {
-            String appDir = new File(processName).getParentFile().getParentFile().getAbsolutePath();
-            dylibPath = dylibPath.replace(IpaLoader.PAYLOAD_PREFIX, appDir);
-        }
 
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
@@ -381,7 +374,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     String dylibName = dylibCommand.name();
-                    if (dylibPath.startsWith(IpaLoader.APP_DIR)) { // @executable_path
+                    if (dylibPath.startsWith(IpaLoader.APP_DIR)) {
                         dylibPath = dylibPath.replace("@executable_path/", "");
                     } else if (!dylibName.contains("@")) {
                         dylibPath = dylibName;
