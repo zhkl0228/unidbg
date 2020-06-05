@@ -165,7 +165,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             if (breakMnemonic != null) {
                 CodeHistory history = new CodeHistory(address, size, ARM.isThumb(u));
                 Capstone.CsInsn ins = history.disassemble(emulator);
-                if (breakMnemonic.equals(ins.mnemonic)) {
+                if (ins != null && breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
                     u.setFastDebug(true);
                     loop(emulator, address, size, null);
@@ -534,6 +534,10 @@ public abstract class AbstractARMDebugger implements Debugger {
         boolean on = false;
         StringBuilder sb = new StringBuilder();
         for (CodeHistory history : Collections.singletonList(new CodeHistory(address, size, ARM.isThumb(emulator.getUnicorn())))) {
+            Capstone.CsInsn ins = history.disassemble(emulator);
+            if (ins == null) {
+                continue;
+            }
             if (history.address == address) {
                 sb.append("=> *");
                 on = true;
@@ -544,7 +548,6 @@ public abstract class AbstractARMDebugger implements Debugger {
                     on = false;
                 }
             }
-            Capstone.CsInsn ins = history.disassemble(emulator);
             sb.append(ARM.assembleDetail(emulator, ins, history.address, history.thumb, on)).append('\n');
         }
         long nextAddr = address + size;

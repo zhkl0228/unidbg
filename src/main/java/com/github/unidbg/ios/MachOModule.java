@@ -55,6 +55,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Map<String, ExportSymbol> exportSymbols;
 
+    public Symbol findExportByName(String exportName) {
+        return exportSymbols.get(exportName);
+    }
+
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
@@ -451,8 +455,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     return symbol;
                 }
             }
-            symbol = exportSymbols.get(name);
-            return symbol;
         }
 
         return null;
@@ -649,7 +651,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         if (symbol == null) {
             for (Module module : neededLibraries.values()) {
                 MachOModule mm = (MachOModule) module;
-                symbol = mm.exportSymbols.get(symbolName);
+                symbol = mm.findExportByName(symbolName);
                 if (symbol != null) {
                     break;
                 }
