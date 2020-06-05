@@ -2,29 +2,33 @@ package com.github.unidbg.ios.classdump;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.hook.BaseHook;
+import com.github.unidbg.ios.URLibraryFile;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
+import com.github.unidbg.spi.LibraryFile;
 
-import java.io.IOException;
+import java.net.URL;
+import java.util.Collections;
 
 public class ClassDumper extends BaseHook implements IClassDumper {
 
     public static ClassDumper getInstance(Emulator<?> emulator) {
         ClassDumper classDumper = emulator.get(ClassDumper.class.getName());
         if (classDumper == null) {
-            try {
-                classDumper = new ClassDumper(emulator);
-                emulator.set(ClassDumper.class.getName(), classDumper);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
+            classDumper = new ClassDumper(emulator);
+            emulator.set(ClassDumper.class.getName(), classDumper);
         }
         return classDumper;
     }
 
-    private ClassDumper(Emulator<?> emulator) throws IOException {
+    private ClassDumper(Emulator<?> emulator) {
         super(emulator, "libclassdump");
+    }
+
+    @Override
+    protected LibraryFile createURLibraryFile(URL url, String libName) {
+        return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
     }
 
     @Override

@@ -14,15 +14,13 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
-import com.github.unidbg.ios.file.ByteArrayFileIO;
-import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
+import com.github.unidbg.ios.file.*;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.*;
 import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc64;
 import com.github.unidbg.ios.struct.sysctl.SockAddrDL;
 import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
-import com.github.unidbg.linux.file.DriverFileIO;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
@@ -31,9 +29,6 @@ import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
-import com.github.unidbg.unix.file.SocketIO;
-import com.github.unidbg.unix.file.TcpSocket;
-import com.github.unidbg.unix.file.UdpSocket;
 import com.github.unidbg.unix.struct.TimeVal64;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -48,8 +43,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.github.unidbg.ios.MachO.MAP_MY_FIXED;
-import static com.github.unidbg.unix.file.SocketIO.AF_LINK;
-import static com.github.unidbg.unix.file.SocketIO.AF_ROUTE;
+import static com.github.unidbg.ios.file.SocketIO.AF_LINK;
+import static com.github.unidbg.ios.file.SocketIO.AF_ROUTE;
 
 /**
  * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h

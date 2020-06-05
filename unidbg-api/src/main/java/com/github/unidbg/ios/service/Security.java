@@ -7,7 +7,7 @@ import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
-import com.github.unidbg.ios.Substrate;
+import com.github.unidbg.ios.hook.Substrate;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

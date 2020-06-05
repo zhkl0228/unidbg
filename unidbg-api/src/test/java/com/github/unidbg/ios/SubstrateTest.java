@@ -3,7 +3,6 @@ package com.github.unidbg.ios;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;

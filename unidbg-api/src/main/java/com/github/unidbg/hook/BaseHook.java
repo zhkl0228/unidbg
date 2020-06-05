@@ -7,14 +7,11 @@ import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
-import com.github.unidbg.linux.android.URLibraryFile;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
 
-import java.io.IOException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Stack;
 
 public abstract class BaseHook implements IHook {
@@ -22,7 +19,7 @@ public abstract class BaseHook implements IHook {
     protected final Emulator<?> emulator;
     protected final Module module;
 
-    public BaseHook(Emulator<?> emulator, String libName) throws IOException {
+    public BaseHook(Emulator<?> emulator, String libName) {
         this.emulator = emulator;
         this.module = emulator.getMemory().load(resolveLibrary(libName));
     }
@@ -61,9 +58,10 @@ public abstract class BaseHook implements IHook {
             throw new IllegalStateException("resolve library failed: " + libName + emulator.getLibraryExtension());
         }
 
-        boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
-        return isIOS ? new com.github.unidbg.ios.URLibraryFile(url, libName + emulator.getLibraryExtension(), null, Collections.<String>emptyList()) : new URLibraryFile(url, libName + emulator.getLibraryExtension(), -1);
+        return createURLibraryFile(url, libName + emulator.getLibraryExtension());
     }
+
+    protected abstract LibraryFile createURLibraryFile(URL url, String libName);
 
     protected final long numberToAddress(Number number) {
         return numberToAddress(emulator, number);

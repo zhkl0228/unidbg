@@ -1,8 +1,6 @@
 package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.file.linux.AndroidFileIO;
-import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import unicorn.Unicorn;
@@ -28,9 +26,7 @@ public abstract class AbstractFileIO implements NewFileIO {
         this.oflags = oflags;
     }
 
-    protected boolean isAppendMode() {
-        return (oflags & IOConstants.O_APPEND) != 0;
-    }
+    protected abstract void setFlags(long arg);
 
     @Override
     public int fcntl(Emulator<?> emulator, int cmd, long arg) {
@@ -46,15 +42,7 @@ public abstract class AbstractFileIO implements NewFileIO {
             case F_GETFL:
                 return oflags;
             case F_SETFL:
-                if ((IOConstants.O_APPEND & arg) != 0) {
-                    oflags |= IOConstants.O_APPEND;
-                }
-                if ((IOConstants.O_RDWR & arg) != 0) {
-                    oflags |= IOConstants.O_RDWR;
-                }
-                if ((IOConstants.O_NONBLOCK & arg) != 0) {
-                    oflags |= IOConstants.O_NONBLOCK;
-                }
+                setFlags(arg);
                 return 0;
             case F_SETLK:
             case F_SETLKW:
@@ -168,10 +156,6 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public String getPath() {
-        throw new AbstractMethodError(getClass().getName());
-    }
-
-    public AndroidFileIO accept(Pointer addr, Pointer addrlen) {
         throw new AbstractMethodError(getClass().getName());
     }
 

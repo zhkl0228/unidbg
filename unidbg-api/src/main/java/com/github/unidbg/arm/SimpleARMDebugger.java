@@ -3,7 +3,6 @@ package com.github.unidbg.arm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.debugger.Debugger;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
@@ -196,7 +195,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                         Module module = null;
                         if (lr != null) {
                             module = findModuleByAddress(lr.peer);
-                            if (lr.peer == AndroidARMEmulator.LR) {
+                            if (lr.peer == AbstractARMEmulator.LR) {
                                 break;
                             }
                         }

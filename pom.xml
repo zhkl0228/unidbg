@@ -7,6 +7,7 @@
     <version>0.4.0-SNAPSHOT</version>
     <modules>
         <module>unidbg-api</module>
+        <module>unidbg-android</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

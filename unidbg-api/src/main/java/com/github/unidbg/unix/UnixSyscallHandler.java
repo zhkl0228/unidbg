@@ -7,9 +7,7 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
-import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.ios.DarwinSyscall;
-import com.github.unidbg.linux.LinuxThread;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.struct.TimeVal32;
@@ -31,7 +29,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     public final Map<Integer, T> fdMap = new TreeMap<>();
 
-    public final Map<Integer, LinuxThread> threadMap = new HashMap<>(5);
+    public final Map<Integer, Thread> threadMap = new HashMap<>(5);
     public int lastThread = -1;
 
     protected boolean verbose;
@@ -389,7 +387,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return file.bind(addr, addrlen);
     }
 
-    protected final int listen(Emulator<AndroidFileIO> emulator, int sockfd, int backlog) {
+    protected final int listen(Emulator<?> emulator, int sockfd, int backlog) {
         if (log.isDebugEnabled()) {
             log.debug("listen sockfd=" + sockfd + ", backlog=" + backlog);
         }

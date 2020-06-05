@@ -18,7 +18,7 @@ import org.apache.commons.logging.LogFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-abstract class Dyld extends Dlfcn {
+public abstract class Dyld extends Dlfcn {
 
     private static final Log log = LogFactory.getLog(Dyld.class);
 
@@ -39,7 +39,7 @@ abstract class Dyld extends Dlfcn {
 
     abstract int _stub_binding_helper();
 
-    static long computeSlide(Emulator<?> emulator, long machHeader) {
+    public static long computeSlide(Emulator<?> emulator, long machHeader) {
         Pointer pointer = UnicornPointer.pointer(emulator, machHeader);
         assert pointer != null;
         MachHeader header = emulator.is32Bit() ? new MachHeader(pointer) : new MachHeader64(pointer);

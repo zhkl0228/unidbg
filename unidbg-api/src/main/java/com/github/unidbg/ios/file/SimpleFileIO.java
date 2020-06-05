@@ -3,6 +3,7 @@ package com.github.unidbg.ios.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
+import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.utils.Inspector;
@@ -71,7 +72,7 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
                 Inspector.inspect(data, "write");
             }
 
-            if (isAppendMode()) {
+            if ((oflags & IOConstants.O_APPEND) != 0) {
                 randomAccessFile.seek(randomAccessFile.length());
             }
             randomAccessFile.write(data);

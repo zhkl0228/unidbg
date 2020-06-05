@@ -2,13 +2,13 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.android.EmulatorTest;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
+import com.github.unidbg.ios.hook.Substrate;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.ios.struct.objc.ObjcObject;

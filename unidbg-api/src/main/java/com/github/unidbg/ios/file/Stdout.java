@@ -1,7 +1,7 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.file.FileIO;
-import com.github.unidbg.linux.file.StdoutCallback;
+import com.github.unidbg.file.StdoutCallback;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

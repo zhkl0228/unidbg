@@ -1,6 +1,5 @@
 package com.github.unidbg;
 
-import com.github.unidbg.linux.android.dvm.Hashable;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -142,8 +141,6 @@ public abstract class Module {
                 list.add(new PointerNumber((UnicornPointer) structure.getPointer()));
             } else if (arg instanceof Number) {
                 list.add((Number) arg);
-            } else if(arg instanceof Hashable) {
-                list.add(arg.hashCode()); // dvm object
             } else if(arg == null) {
                 list.add(new PointerNumber(null)); // null
             } else {

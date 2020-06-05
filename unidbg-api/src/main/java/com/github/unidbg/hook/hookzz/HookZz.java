@@ -13,35 +13,20 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
 import java.util.Stack;
 
-public class HookZz extends BaseHook implements IHookZz {
+public abstract class HookZz extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(HookZz.class);
-
-    public static HookZz getInstance(Emulator<?> emulator) {
-        HookZz hookZz = emulator.get(HookZz.class.getName());
-        if (hookZz == null) {
-            try {
-                hookZz = new HookZz(emulator);
-                emulator.set(HookZz.class.getName(), hookZz);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        return hookZz;
-    }
 
     private final Symbol zz_enable_arm_arm64_b_branch, zz_disable_arm_arm64_b_branch;
 
     private final Symbol zzReplace;
     private final Symbol zzWrap;
 
-    private HookZz(Emulator<?> emulator) throws IOException {
+    protected HookZz(Emulator<?> emulator, boolean isIOS) {
         super(emulator, "libhookzz");
 
-        boolean isIOS = ".dylib".equals(emulator.getLibraryExtension());
         zz_enable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_enable_arm_arm64_b_branch" : "zz_enable_arm_arm64_b_branch", false);
         zz_disable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_disable_arm_arm64_b_branch" : "zz_disable_arm_arm64_b_branch", false);
         zzReplace = module.findSymbolByName(isIOS ? "_ZzReplace" : "ZzReplace", false);
