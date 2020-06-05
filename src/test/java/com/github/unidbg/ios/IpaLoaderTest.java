@@ -50,6 +50,6 @@ public class IpaLoaderTest implements EmulatorConfigurator {
     }
 
     @Override
-    public void configure(Emulator<DarwinFileIO> emulator, String processName, File rootDir) {
+    public void configure(Emulator<DarwinFileIO> emulator, String executableBundlePath, File rootDir) {
     }
 }

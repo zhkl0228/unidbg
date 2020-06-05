@@ -88,19 +88,19 @@ public abstract class IpaLoader {
         }
     }
 
-    protected void config(final Emulator<DarwinFileIO> emulator, File ipa, String processName, File rootDir) throws IOException {
-        File executable = new File(processName);
+    protected void config(final Emulator<DarwinFileIO> emulator, File ipa, String executableBundlePath, File rootDir) throws IOException {
+        File executable = new File(executableBundlePath);
         SyscallHandler<DarwinFileIO> syscallHandler = emulator.getSyscallHandler();
         syscallHandler.setVerbose(log.isDebugEnabled());
         File appDir = executable.getParentFile();
-        syscallHandler.addIOResolver(new IpaResolver(appDir.getAbsolutePath(), ipa));
-        FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getAbsolutePath()));
+        syscallHandler.addIOResolver(new IpaResolver(appDir.getPath(), ipa));
+        FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getPath()));
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
     }
 
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
         String executableBundlePath = getExecutableBundlePath(ipa);
-        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getAbsolutePath();
+        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         String appDir = parseApp(ipa);
         String version = parseVersion(ipa, appDir);
         File rootDir = new File(this.rootDir, version);
@@ -116,7 +116,7 @@ public abstract class IpaLoader {
 
     LoadedIpa load64(EmulatorConfigurator configurator, String... loads) throws IOException {
         String executableBundlePath = getExecutableBundlePath(ipa);
-        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getAbsolutePath();
+        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         String appDir = parseApp(ipa);
         String version = parseVersion(ipa, appDir);
         File rootDir = new File(this.rootDir, version);

@@ -31,7 +31,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
     IpaResolver(String appDir, File ipa) {
         this.appDir = appDir;
         this.ipa = ipa;
-        this.randomDir = new File(appDir).getParentFile().getAbsolutePath();
+        this.randomDir = new File(appDir).getParentFile().getPath();
     }
 
     @Override
