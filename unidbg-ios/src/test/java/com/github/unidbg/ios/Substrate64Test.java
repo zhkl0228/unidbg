@@ -29,7 +29,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         loader.setObjcRuntime(true);
-        Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libsubstrate.dylib"));
+        Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/libsubstrate.dylib"));
 
         /*IFishHook fishHook = FishHook.getInstance(emulator);
         fishHook.rebindSymbol("memcpy", new ReplaceCallback() {

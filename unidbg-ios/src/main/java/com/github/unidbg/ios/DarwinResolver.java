@@ -67,7 +67,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
-        File file = ResourceUtils.extractResource(iosResource, path);
+        File file = ResourceUtils.extractResource(DarwinResolver.class, iosResource, path);
         if (file != null) {
             return FileResult.fallback(createFileIO(file, path, oflags));
         }

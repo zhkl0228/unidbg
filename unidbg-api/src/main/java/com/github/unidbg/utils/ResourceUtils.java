@@ -1,6 +1,5 @@
 package com.github.unidbg.utils;
 
-import com.github.unidbg.ios.DarwinResolver;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -14,8 +13,8 @@ import java.util.jar.JarFile;
 
 public class ResourceUtils {
 
-    public static File extractResource(String resource, String path) {
-        URL url = DarwinResolver.class.getResource(resource);
+    public static File extractResource(Class<?> clazz, String resource, String path) {
+        URL url = clazz.getResource(resource);
         if (url != null) {
             if (isFile(url)) {
                 OutputStream outputStream = null;

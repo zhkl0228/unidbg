@@ -6,6 +6,7 @@ import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.ipa.IpaLoader;
 import com.github.unidbg.ios.patch.LibDispatchPatcher;
@@ -20,6 +21,7 @@ import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
+import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -70,6 +72,13 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     public void setLibraryResolver(LibraryResolver libraryResolver) {
         syscallHandler.addIOResolver((DarwinResolver) libraryResolver);
         super.setLibraryResolver(libraryResolver);
+
+        /*
+         * 注意打开顺序很重要
+         */
+        syscallHandler.open(emulator, IO.STDIN, IOConstants.O_RDONLY);
+        syscallHandler.open(emulator, IO.STDOUT, IOConstants.O_WRONLY);
+        syscallHandler.open(emulator, IO.STDERR, IOConstants.O_WRONLY);
     }
 
     @Override

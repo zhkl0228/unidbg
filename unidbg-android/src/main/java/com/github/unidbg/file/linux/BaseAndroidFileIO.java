@@ -2,7 +2,6 @@ package com.github.unidbg.file.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileIO;
-import com.github.unidbg.file.ios.IOConstants;
 import com.sun.jna.Pointer;
 
 public abstract class BaseAndroidFileIO extends BaseFileIO implements AndroidFileIO {
@@ -28,13 +27,13 @@ public abstract class BaseAndroidFileIO extends BaseFileIO implements AndroidFil
 
     @Override
     protected void setFlags(long arg) {
-        if ((com.github.unidbg.file.ios.IOConstants.O_APPEND & arg) != 0) {
-            oflags |= com.github.unidbg.file.ios.IOConstants.O_APPEND;
+        if ((IOConstants.O_APPEND & arg) != 0) {
+            oflags |= IOConstants.O_APPEND;
         }
-        if ((com.github.unidbg.file.ios.IOConstants.O_RDWR & arg) != 0) {
-            oflags |= com.github.unidbg.file.ios.IOConstants.O_RDWR;
+        if ((IOConstants.O_RDWR & arg) != 0) {
+            oflags |= IOConstants.O_RDWR;
         }
-        if ((com.github.unidbg.file.ios.IOConstants.O_NONBLOCK & arg) != 0) {
+        if ((IOConstants.O_NONBLOCK & arg) != 0) {
             oflags |= IOConstants.O_NONBLOCK;
         }
     }

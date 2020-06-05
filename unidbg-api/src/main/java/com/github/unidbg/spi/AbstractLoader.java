@@ -5,13 +5,11 @@ import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
-import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
@@ -268,13 +266,6 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     @Override
     public void setLibraryResolver(LibraryResolver libraryResolver) {
         this.libraryResolver = libraryResolver;
-
-        /*
-         * 注意打开顺序很重要
-         */
-        syscallHandler.open(emulator, IO.STDIN, IOConstants.O_RDONLY);
-        syscallHandler.open(emulator, IO.STDOUT, IOConstants.O_WRONLY);
-        syscallHandler.open(emulator, IO.STDERR, IOConstants.O_WRONLY);
     }
 
     @Override

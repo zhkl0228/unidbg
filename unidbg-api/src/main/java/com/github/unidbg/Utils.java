@@ -1,4 +1,4 @@
-package com.github.unidbg.ios;
+package com.github.unidbg;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -11,7 +11,7 @@ public class Utils {
         return Long.toHexString(hi | (val & (hi - 1))).substring(1);
     }
 
-    static String toUUID(byte[] data) {
+    public static String toUUID(byte[] data) {
         if (data == null) {
             return null;
         }
@@ -53,7 +53,7 @@ public class Utils {
         return value;
     }
 
-    static BigInteger readULEB128(ByteBuffer buffer) {
+    public static BigInteger readULEB128(ByteBuffer buffer) {
         BigInteger result = BigInteger.ZERO;
         int shift = 0;
         while (true) {

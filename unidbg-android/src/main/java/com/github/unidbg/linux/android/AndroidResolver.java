@@ -81,7 +81,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         }
 
         String androidResource = FilenameUtils.normalize("/android/sdk" + sdk + "/" + path, true);
-        File file = ResourceUtils.extractResource(androidResource, path);
+        File file = ResourceUtils.extractResource(AndroidResolver.class, androidResource, path);
         if (file != null) {
             return FileResult.fallback(createFileIO(file, path, oflags));
         }

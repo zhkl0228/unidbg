@@ -3,6 +3,7 @@ package com.github.unidbg.linux;
 import com.github.unidbg.*;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.ElfLibraryFile;
@@ -12,6 +13,7 @@ import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
+import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
@@ -53,6 +55,13 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     public void setLibraryResolver(LibraryResolver libraryResolver) {
         syscallHandler.addIOResolver((AndroidResolver) libraryResolver);
         super.setLibraryResolver(libraryResolver);
+
+        /*
+         * 注意打开顺序很重要
+         */
+        syscallHandler.open(emulator, IO.STDIN, IOConstants.O_RDONLY);
+        syscallHandler.open(emulator, IO.STDOUT, IOConstants.O_WRONLY);
+        syscallHandler.open(emulator, IO.STDERR, IOConstants.O_WRONLY);
     }
 
     @Override

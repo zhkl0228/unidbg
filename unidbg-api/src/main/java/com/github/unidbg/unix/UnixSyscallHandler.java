@@ -7,7 +7,6 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
-import com.github.unidbg.ios.DarwinSyscall;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.struct.TimeVal32;
@@ -306,7 +305,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGILL = 4;
     private static final int SIGTRAP = 5; /* Trace trap (POSIX).  */
     private static final int SIGABRT = 6;
-    private static final int SIGBUS = 7; /* BUS error (4.2 BSD).  */
+    protected static final int SIGBUS = 7; /* BUS error (4.2 BSD).  */
     private static final int SIGFPE = 8; /* Floating-point exception (ANSI).  */
     private static final int SIGSEGV = 11;
     private static final int SIGUSR2 = 12;
@@ -350,7 +349,6 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGTRAP:
             case SIGABRT:
             case SIGBUS:
-            case DarwinSyscall.SIGBUS:
             case SIGFPE:
             case SIGSEGV:
             case SIGUSR2:

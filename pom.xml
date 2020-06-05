@@ -8,6 +8,7 @@
     <modules>
         <module>unidbg-api</module>
         <module>unidbg-android</module>
+        <module>unidbg-ios</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

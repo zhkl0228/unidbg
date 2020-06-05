@@ -29,7 +29,7 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
     }
 
     private void processXpcNoPie() throws Exception {
-        Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/xpcNP"));
+        Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/xpcNP"));
 
         long start = System.currentTimeMillis();
         int ret = module.callEntry(emulator);
@@ -51,7 +51,7 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
     private void processXpc() throws Exception {
 //        emulator.attach().addBreakPoint(null, 0x403b7dfc);
 //        emulator.traceCode();
-        Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/xpc"));
+        Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/xpc"));
 
         Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
         Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
