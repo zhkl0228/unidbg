@@ -7,3 +7,4 @@
 /src/test/resources/example_binaries/stdout
 /src/test/resources/example_binaries/stderr
 /src/test/native/android/obj/
+/unidbg-api/unidbg-api.iml
