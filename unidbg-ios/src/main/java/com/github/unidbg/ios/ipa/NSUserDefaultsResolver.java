@@ -18,6 +18,7 @@ public class NSUserDefaultsResolver implements IOResolver<DarwinFileIO> {
     private final String bundleIdentifier;
     private final Map<String, Object> map;
 
+    @SuppressWarnings("unused")
     public NSUserDefaultsResolver(String bundleIdentifier) {
         this(bundleIdentifier, Collections.<String, Object>emptyMap());
     }
@@ -37,7 +38,7 @@ public class NSUserDefaultsResolver implements IOResolver<DarwinFileIO> {
             } catch (IOException e) {
                 throw new IllegalStateException("save plist failed", e);
             }
-            return FileResult.<DarwinFileIO>success(new ByteArrayFileIO(oflags, pathname, outputStream.toByteArray()));
+            return FileResult.<DarwinFileIO>fallback(new ByteArrayFileIO(oflags, pathname, outputStream.toByteArray()));
         }
         return null;
     }

@@ -7,6 +7,7 @@ import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.file.ios.DarwinFileSystem;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinARMEmulator;
 import com.github.unidbg.ios.DarwinResolver;
@@ -126,6 +127,8 @@ public abstract class IpaLoader {
         syscallHandler.addIOResolver(new IpaResolver(appDir.getPath(), ipa));
         FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getPath()));
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
+        DarwinFileSystem fileSystem = (DarwinFileSystem) emulator.getFileSystem();
+        fileSystem.config(bundleIdentifier);
     }
 
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {

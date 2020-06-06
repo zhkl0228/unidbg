@@ -9,6 +9,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 
@@ -146,7 +148,9 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
     protected void setUp() throws Exception {
         super.setUp();
 
-        emulator.getSyscallHandler().addIOResolver(new NSUserDefaultsResolver("unidbg"));
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", getClass().getName());
+        emulator.getSyscallHandler().addIOResolver(new NSUserDefaultsResolver("unidbg", map));
     }
 
     public static void main(String[] args) throws Exception {
