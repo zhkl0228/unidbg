@@ -11,7 +11,9 @@ NSInteger new_integerForKey(id self, SEL _cmd, NSString *defaultName) {
 
 __attribute__((constructor))
 void init() {
-  NSLog(@"do hook initialize.");
+  NSLog(@"Initializing libhook");
 
   MSHookMessageEx([NSUserDefaults class], @selector(integerForKey:), (IMP) &new_integerForKey, (IMP *) &old_integerForKey);
+
+  NSLog(@"Initialized libhook");
 }

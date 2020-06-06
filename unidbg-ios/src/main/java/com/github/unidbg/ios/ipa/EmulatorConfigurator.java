@@ -7,6 +7,6 @@ import java.io.File;
 
 public interface EmulatorConfigurator {
 
-    void configure(Emulator<DarwinFileIO> emulator, String executableBundlePath, File rootDir);
+    void configure(Emulator<DarwinFileIO> emulator, String executableBundlePath, File rootDir, String bundleIdentifier);
 
 }

@@ -136,7 +136,7 @@ public abstract class IpaLoader {
         File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, getEnvs());
         if (configurator != null) {
-            configurator.configure(emulator, executableBundlePath, rootDir);
+            configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);
         }
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
@@ -149,7 +149,7 @@ public abstract class IpaLoader {
         File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, getEnvs());
         if (configurator != null) {
-            configurator.configure(emulator, executableBundlePath, rootDir);
+            configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);
         }
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
