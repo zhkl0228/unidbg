@@ -36,6 +36,7 @@ public abstract class IpaLoader {
 
     private static final Log log = LogFactory.getLog(IpaLoader.class);
 
+    @SuppressWarnings("unused")
     public final LoadedIpa load(String... loads) {
         return load(null, loads);
     }
@@ -45,17 +46,32 @@ public abstract class IpaLoader {
     protected final File ipa;
     protected final File rootDir;
 
+    private final String appDir;
+    private final String executable;
+    private final String bundleVersion;
+    private final String bundleIdentifier;
+
+    private final String executableBundlePath;
+
     IpaLoader(File ipa, File rootDir) {
         this.ipa = ipa;
         this.rootDir = rootDir;
+
+        try {
+            this.appDir = parseApp(ipa);
+            this.executable = parseExecutable(ipa, appDir);
+            this.bundleVersion = parseVersion(ipa, appDir);
+            this.bundleIdentifier = parseCFBundleIdentifier(ipa, appDir);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        this.executableBundlePath = generateExecutableBundlePath();
     }
 
     public static final String APP_DIR = "/var/containers/Bundle/Application/";
     public static final String PAYLOAD_PREFIX = "Payload";
 
-    private static String getExecutableBundlePath(File ipa) throws IOException {
-        String appDir = parseApp(ipa);
-        String executable = parseExecutable(ipa, appDir);
+    private String generateExecutableBundlePath() {
         UUID uuid = UUID.nameUUIDFromBytes(DigestUtils.md5(appDir));
         return appDir.replace(PAYLOAD_PREFIX, APP_DIR + uuid.toString().toUpperCase()) + executable;
     }
@@ -88,6 +104,20 @@ public abstract class IpaLoader {
         }
     }
 
+    private static String parseCFBundleIdentifier(File ipa, String appDir) throws IOException {
+        try {
+            byte[] data = loadZip(ipa, appDir + "Info.plist");
+            if (data == null) {
+                throw new IllegalStateException("Find Info.plist failed");
+            }
+            NSDictionary info = (NSDictionary) PropertyListParser.parse(data);
+            NSString bundleIdentifier = (NSString) info.get("CFBundleIdentifier");
+            return bundleIdentifier.getContent();
+        } catch (PropertyListFormatException | ParseException | ParserConfigurationException | SAXException e) {
+            throw new IllegalStateException("load ipa failed", e);
+        }
+    }
+
     protected void config(final Emulator<DarwinFileIO> emulator, File ipa, String executableBundlePath, File rootDir) throws IOException {
         File executable = new File(executableBundlePath);
         SyscallHandler<DarwinFileIO> syscallHandler = emulator.getSyscallHandler();
@@ -99,11 +129,8 @@ public abstract class IpaLoader {
     }
 
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
-        String executableBundlePath = getExecutableBundlePath(ipa);
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
-        String appDir = parseApp(ipa);
-        String version = parseVersion(ipa, appDir);
-        File rootDir = new File(this.rootDir, version);
+        File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, getEnvs());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir);
@@ -115,11 +142,8 @@ public abstract class IpaLoader {
     }
 
     LoadedIpa load64(EmulatorConfigurator configurator, String... loads) throws IOException {
-        String executableBundlePath = getExecutableBundlePath(ipa);
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
-        String appDir = parseApp(ipa);
-        String version = parseVersion(ipa, appDir);
-        File rootDir = new File(this.rootDir, version);
+        File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, getEnvs());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir);
@@ -148,18 +172,17 @@ public abstract class IpaLoader {
 
     private boolean forceCallInit;
 
+    @SuppressWarnings("unused")
     public void setForceCallInit(boolean forceCallInit) {
         this.forceCallInit = forceCallInit;
     }
 
     private LoadedIpa load(Emulator<DarwinFileIO> emulator, File ipa, String bundleAppDir, String... loads) throws IOException {
-        String appDir = parseApp(ipa);
-        String executable = parseExecutable(ipa, appDir);
         Memory memory = emulator.getMemory();
         Module module = memory.load(new IpaLibraryFile(appDir, ipa, executable, bundleAppDir, loads), forceCallInit);
         MachOLoader loader = (MachOLoader) memory;
         loader.onExecutableLoaded(executable);
-        return new LoadedIpa(emulator, module);
+        return new LoadedIpa(emulator, module, bundleIdentifier, bundleVersion);
     }
 
     private static final Pattern PATTERN = Pattern.compile("^(Payload/\\w+\\.app/)");

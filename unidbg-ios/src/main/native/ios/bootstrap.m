@@ -71,6 +71,12 @@ static CFMutableDictionaryRef makeDictionary() {
   NSString *countryCode = [locale objectForKey: NSLocaleCountryCode];
   NSString *languageCode = [locale objectForKey: NSLocaleLanguageCode];
   NSLog(@"NSDictionary dict=%@, value=%@, countryCode=%@, languageCode=%@", dict, [dict objectForKey: key], countryCode, languageCode);
+
+  NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
+  id name = [userDefault objectForKey: @"name"];
+  [userDefault setObject: @"unidbg" forKey: @"name"];
+  BOOL success = [userDefault synchronize];
+  NSLog(@"NSUserDefaults name=%@, synchronize=%d", name, success);
 }
 -(NSString *) description {
   return @"This is ObjC TEST";

@@ -3,6 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
 import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -150,6 +151,13 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+
+        emulator.getSyscallHandler().addIOResolver(new NSUserDefaultsResolver("unidbg"));
     }
 
     public static void main(String[] args) throws Exception {

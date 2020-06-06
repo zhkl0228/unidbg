@@ -9,10 +9,22 @@ public class LoadedIpa {
 
     private final Emulator<DarwinFileIO> emulator;
     private final Module executable;
+    private final String bundleIdentifier;
+    private final String bundleVersion;
 
-    LoadedIpa(Emulator<DarwinFileIO> emulator, Module executable) {
+    LoadedIpa(Emulator<DarwinFileIO> emulator, Module executable, String bundleIdentifier, String bundleVersion) {
         this.emulator = emulator;
         this.executable = executable;
+        this.bundleIdentifier = bundleIdentifier;
+        this.bundleVersion = bundleVersion;
+    }
+
+    public String getBundleIdentifier() {
+        return bundleIdentifier;
+    }
+
+    public String getBundleVersion() {
+        return bundleVersion;
     }
 
     private boolean callFinishLaunchingWithOptions;
