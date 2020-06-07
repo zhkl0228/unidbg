@@ -294,6 +294,19 @@ static void test_dirent() {
   printf("test_dirent size=%lu, d_fileno=%lu, d_name=%lu, d_name_size=%lu\n", sizeof(struct dirent), (unsigned long) &ent.d_fileno - base, (unsigned long) &ent.d_name - base, sizeof(ent.d_name));
 }
 
+static void checkDebugger() {
+  int name[4];
+  name[0] = CTL_KERN;
+  name[1] = KERN_PROC;
+  name[2] = KERN_PROC_PID;
+  name[3] = getpid();
+  struct kinfo_proc info;
+  size_t info_size = sizeof(info);
+  int error = sysctl(name, sizeof(name)/sizeof(*name), &info, &info_size, 0, 0);
+  bool ret = ((info.kp_proc.p_flag & P_TRACED) !=0);
+  printf("checkDebugger error=%d, ret=%d, P_TRACED=%d\n", error, ret, P_TRACED);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -315,4 +328,5 @@ void do_test() {
   test_dirent();
   test_sysctl_HW_CPU_FAMILY();
   test_sysctl_KERN_OSTYPE();
+  checkDebugger();
 }

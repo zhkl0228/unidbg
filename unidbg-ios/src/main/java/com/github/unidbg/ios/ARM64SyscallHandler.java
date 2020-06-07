@@ -1326,6 +1326,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                             KInfoProc64 kInfoProc = new KInfoProc64(buffer);
                             kInfoProc.unpack();
 
+                            kInfoProc.kp_proc.p_flag = 0; // P_TRACED
                             kInfoProc.kp_eproc.e_ucred.cr_uid = 0;
                             kInfoProc.pack();
                             if (log.isDebugEnabled()) {
