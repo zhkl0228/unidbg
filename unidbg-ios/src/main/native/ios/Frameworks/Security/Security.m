@@ -10,6 +10,11 @@ void init() {
 }
 
 int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
+  long lr = 0;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
   CFShow(query);
   int ret = errSecItemNotFound;
   CFStringRef class = CFDictionaryGetValue(query, kSecClass);
@@ -24,11 +29,16 @@ int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
     ret = errSecSuccess;
   }
   CFShow(plist);
-  fprintf(stderr, "SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d\n", query, result, value, ret);
+  fprintf(stderr, "SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d, LR=%p\n", query, result, value, ret, (void *) lr);
   return ret;
 }
 
 int SecItemDelete(CFDictionaryRef query) {
+  long lr = 0;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
   CFShow(query);
   CFStringRef class = CFDictionaryGetValue(query, kSecClass);
   CFStringRef acct = CFDictionaryGetValue(query, kSecAttrAccount);
@@ -39,11 +49,16 @@ int SecItemDelete(CFDictionaryRef query) {
     }
   }
   CFShow(plist);
-  fprintf(stderr, "SecItemDelete query=%p\n", query);
+  fprintf(stderr, "SecItemDelete query=%p, LR=%p\n", query, (void *) lr);
   return errSecSuccess;
 }
 
 int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
+  long lr = 0;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
   CFShow(attributes);
   int ret = errSecUnimplemented;
   CFStringRef class = CFDictionaryGetValue(attributes, kSecClass);
@@ -60,8 +75,19 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
       *result = CFRetain(data);
     }
     ret = errSecSuccess;
+
+    const UInt8 *ptr = CFDataGetBytePtr(data);
+    CFIndex length = CFDataGetLength(data);
+    char *buf = malloc(length * 2 + 1);
+    int idx = 0;
+    for(int i = 0; i < length; i++) {
+      idx += sprintf(&buf[idx], "%02x", ptr[i]);
+    }
+    buf[idx] = 0;
+    fprintf(stderr, "SecItemAdd ptr=%p, length=%ld, hex=%s\n", ptr, length, buf);
+    free(buf);
   }
   CFShow(plist);
-  fprintf(stderr, "SecItemAdd attributes=%p, acct=%s, ret=%d\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret);
+  fprintf(stderr, "SecItemAdd attributes=%p, acct=%s, ret=%d, LR=%p\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret, (void *) lr);
   return ret;
 }
