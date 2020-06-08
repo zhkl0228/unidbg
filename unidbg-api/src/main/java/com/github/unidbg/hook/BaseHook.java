@@ -52,13 +52,14 @@ public abstract class BaseHook implements IHook {
         });
     }
 
-    private LibraryFile resolveLibrary(String libName) {
-        URL url = BaseHook.class.getResource(emulator.getLibraryPath() + libName + emulator.getLibraryExtension());
+    protected LibraryFile resolveLibrary(String libName) {
+        String lib = libName + emulator.getLibraryExtension();
+        URL url = BaseHook.class.getResource(emulator.getLibraryPath() + lib);
         if (url == null) {
-            throw new IllegalStateException("resolve library failed: " + libName + emulator.getLibraryExtension());
+            throw new IllegalStateException("resolve library failed: " + lib);
         }
 
-        return createURLibraryFile(url, libName + emulator.getLibraryExtension());
+        return createURLibraryFile(url, lib);
     }
 
     protected abstract LibraryFile createURLibraryFile(URL url, String libName);

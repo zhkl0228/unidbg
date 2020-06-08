@@ -203,6 +203,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 10:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, unlink(emulator));
                     return;
+                case 15:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, chmod(emulator));
+                    return;
                 case 20:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getpid(emulator));
                     return;
@@ -878,6 +881,15 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         String path = FilenameUtils.normalize(pathname.getString(0));
         emulator.getFileSystem().unlink(path);
+        return 0;
+    }
+
+    private int chmod(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer path = context.getPointerArg(0);
+        int mode = context.getIntArg(1) & 0xffff;
+        String pathname = path.getString(0);
+        log.info("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
         return 0;
     }
 

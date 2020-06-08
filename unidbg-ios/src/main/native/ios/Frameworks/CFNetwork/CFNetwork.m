@@ -24,5 +24,7 @@ CFDictionaryRef CFNetworkCopySystemProxySettings() {
   [dict setObject: array forKey: @"ExceptionsList"];
   [dict setObject: (__bridge NSNumber*) ftpPassive forKey: @"FTPPassive"];
   [dict setObject: scope forKey: @"__SCOPED__"];
+
+  CFRelease(ftpPassive);
   return (__bridge CFDictionaryRef) dict;
 }
