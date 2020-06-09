@@ -205,6 +205,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 15:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, chmod(emulator));
                     return;
+                case 16:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, chown(emulator));
+                    return;
                 case 20:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
                     return;
@@ -302,6 +305,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     return;
                 case 220:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getattrlist(emulator));
+                    return;
+                case 221:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, setattrlist(emulator));
                     return;
                 case 236:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, setxattr(emulator));
@@ -453,6 +459,16 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         int mode = context.getIntArg(1) & 0xffff;
         String pathname = path.getString(0);
         log.info("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
+        return 0;
+    }
+
+    private long chown(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer path = context.getPointerArg(0);
+        int uid = context.getIntArg(1);
+        int gid = context.getIntArg(2);
+        String pathname = path.getString(0);
+        log.info("chown path=" + pathname + ", uid=" + uid + ", gid=" + gid);
         return 0;
     }
 
@@ -1568,6 +1584,36 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 if (log.isDebugEnabled()) {
                     createBreaker(emulator).debug();
                 }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug(msg + ", ret=" + ret);
+                }
+            }
+            return ret;
+        }
+
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
+        log.info(msg);
+        return -1;
+    }
+
+    private long setattrlist(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer path = context.getPointerArg(0);
+        Pointer attrListPointer = context.getPointerArg(1);
+        UnicornPointer attrBuf = context.getPointerArg(2);
+        int attrBufSize = context.getIntArg(3);
+        int options = context.getIntArg(4);
+        String pathname = path.getString(0);
+        AttrList attrList = new AttrList(attrListPointer);
+        attrBuf.setSize(attrBufSize);
+
+        String msg = "setattrlist path=" + pathname + ", attrList=" + attrList + ", attrBuf=" + attrBuf + ", attrBufSize=" + attrBufSize + ", options=0x" + Integer.toHexString(options);
+        FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
+            int ret = result.io.setattrlist(attrList, attrBuf, attrBufSize);
+            if (ret != 0) {
+                log.info(msg + ", ret=" + ret);
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug(msg + ", ret=" + ret);

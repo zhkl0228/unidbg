@@ -38,6 +38,7 @@ public interface DarwinFileIO extends NewFileIO {
     int fstatfs(StatFS statFS);
 
     int getattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize);
+    int setattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize);
 
     int getdirentries64(Pointer buf, int bufSize);
 }

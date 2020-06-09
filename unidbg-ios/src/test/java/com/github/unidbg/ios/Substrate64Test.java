@@ -1,17 +1,20 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.file.ios.DarwinFileSystem;
 import com.github.unidbg.hook.HookLoader;
+import com.github.unidbg.hook.MsgSendCallback;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
 
-public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
+public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implements MsgSendCallback {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -27,7 +30,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         loader.setObjcRuntime(true);
@@ -139,7 +142,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
         ret = numbers[0].longValue();
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        HookLoader.load(emulator);
+        HookLoader.load(emulator).hookObjcMsgSend(this);
 
         start = System.currentTimeMillis();
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
@@ -148,7 +151,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 
 //        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
 
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
 //        emulator.attach().addBreakPoint(null, 0x0000000100004118L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
@@ -173,4 +176,8 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
         test.tearDown();
     }
 
+    @Override
+    public void onMsgSend(Emulator<?> emulator, boolean systemClass, String className, String cmd, Pointer lr) {
+        System.out.printf("onMsgSend [%s %s] from %s\n", className, cmd, lr);
+    }
 }
