@@ -48,7 +48,7 @@ uintptr_t pre_objc_msgSend(id self, SEL _cmd, va_list args) {
   bool systemClass = isSystemClass(class);
   if(callback) {
     callback(systemClass, class ? class_getName(class) : NULL, sel_getName(_cmd), lr);
-  } else {
+  } else if(is_debug()) {
     Dl_info info;
     info.dli_fname = NULL;
     int success = dladdr((const void *) lr, &info);

@@ -20,9 +20,14 @@ void hook_objc_msgSend(objc_msgSend_callback _callback) {
 
 __attribute__((constructor))
 void init() {
-  NSLog(@"Initializing libhook");
+  int debug = is_debug();
+  if(debug) {
+    NSLog(@"Initializing libhook");
+  }
 
   MSHookMessageEx([NSBundle class], @selector(pathForResource:ofType:), (IMP) &new_pathForResource, (IMP *) &old_pathForResource);
 
-  NSLog(@"Initialized libhook");
+  if(debug) {
+    NSLog(@"Initialized libhook");
+  }
 }

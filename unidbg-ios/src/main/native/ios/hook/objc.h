@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import "../Frameworks/frameworks.h"
 
 typedef id (*objc_msg_function)(id self, SEL _cmd, ...);
 
