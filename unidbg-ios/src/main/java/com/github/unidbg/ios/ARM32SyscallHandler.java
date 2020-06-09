@@ -1000,7 +1000,7 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             return result.io.fstat(emulator, new Stat(statbuf));
         }
 
-        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
         return -1;
     }
 

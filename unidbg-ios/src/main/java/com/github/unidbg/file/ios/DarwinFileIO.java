@@ -8,9 +8,20 @@ import com.sun.jna.Pointer;
 
 public interface DarwinFileIO extends NewFileIO {
 
+    int F_NOCACHE = 48; /* turn data caching off/on for this fd */
     int F_GETPATH = 50; /* return the full path of the fd */
 
+    /*
+     * Vnode types.  VNON means no type.
+     */
+    enum vtype	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD, VSTR, VCPLX };
+
     int ATTR_BIT_MAP_COUNT = 5;
+    int ATTR_CMN_NAME = 0x00000001;
+    int ATTR_CMN_DEVID = 0x00000002;
+    int ATTR_CMN_FSID = 0x00000004;
+    int ATTR_CMN_OBJTYPE = 0x00000008;
+    int ATTR_CMN_OBJID = 0x00000020;
     int ATTR_CMN_CRTIME = 0x00000200;
     int ATTR_CMN_FNDRINFO = 0x00004000;
     int ATTR_CMN_USERACCESS = 0x00200000; // (used to get the user's access mode to the file).

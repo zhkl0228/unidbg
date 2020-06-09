@@ -134,6 +134,9 @@ static void test_UIKit() {
     id object = files[i];
     NSLog(@"test_NSFileManager file=%@", object);
   }
+
+  path = [documentPath stringByAppendingPathComponent: @"WechatPrivate/wx.txt"];
+  NSLog(@"NSFileManager fileExistsAtPath=%hhd, createFileAtPath=%hhd", [fm fileExistsAtPath: path], [fm createFileAtPath: path contents: [path dataUsingEncoding: NSUTF8StringEncoding] attributes: nil]);
 }
 
 static void test_Bundle() {

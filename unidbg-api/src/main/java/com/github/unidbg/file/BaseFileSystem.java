@@ -157,6 +157,12 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     public int rename(String oldPath, String newPath) {
         File oldFile = new File(rootDir, oldPath);
         File newFile = new File(rootDir, newPath);
+        try {
+            FileUtils.forceMkdir(newFile.getParentFile());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+
         if (!oldFile.renameTo(newFile)) {
             throw new IllegalStateException("rename failed: old=" + oldFile + ", new=" + newFile);
         }

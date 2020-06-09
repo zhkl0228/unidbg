@@ -1029,7 +1029,7 @@ public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> impleme
         }
 
         log.info("stat64 pathname=" + pathname + ", LR=" + emulator.getContext().getLRPointer());
-        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
         return -1;
     }
 

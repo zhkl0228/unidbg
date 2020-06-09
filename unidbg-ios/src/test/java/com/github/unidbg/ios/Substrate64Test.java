@@ -139,6 +139,8 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
         ret = numbers[0].longValue();
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
+        HookLoader.load(emulator);
+
         start = System.currentTimeMillis();
 //        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
@@ -150,10 +152,10 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> {
 //        emulator.attach().addBreakPoint(null, 0x0000000100004118L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
+//        Module foundation = emulator.getMemory().findModule("Foundation");
+//        emulator.attach().addBreakPoint(foundation, 0x29340);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
-
-        HookLoader.load(emulator);
     }
 
     @Override

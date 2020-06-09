@@ -3,6 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
 import com.github.unidbg.pointer.UnicornPointer;
 import org.apache.log4j.Level;
@@ -128,6 +129,8 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
         numbers = symbol.call(emulator, UnicornPointer.pointer(emulator, ret), "_MSGetImageByName");
         ret = numbers[0].intValue() & 0xffffffffL;
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+
+        HookLoader.load(emulator);
 
         start = System.currentTimeMillis();
 //        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);

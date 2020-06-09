@@ -806,7 +806,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> imple
         }
 
         log.info("stat64 pathname=" + pathname);
-        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
         return -1;
     }
 

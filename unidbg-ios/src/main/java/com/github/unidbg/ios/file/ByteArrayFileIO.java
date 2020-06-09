@@ -98,4 +98,9 @@ public class ByteArrayFileIO extends BaseDarwinFileIO {
         return path;
     }
 
+    @Override
+    public String getPath() {
+        return path;
+    }
+
 }

@@ -35,9 +35,9 @@ Simple tests under src/test directory
 - Support JavaVM, JNIEnv.
 - Emulation of syscalls instruction.
 - Support ARM32 and ARM64 bit.
-- Inline hook, thanks to HookZz.
-- Android import hook, thanks to xHook.
-- iOS fishhook and substrate hook.
+- Inline hook, thanks to [HookZz](https://github.com/jmpews/HookZz).
+- Android import hook, thanks to [xHook](https://github.com/iqiyi/xHook).
+- iOS [fishhook](https://github.com/facebook/fishhook) and substrate and [whale](https://github.com/asLody/whale) hook.
 - Support simple console debugger, gdb stub, experimental IDA android debugger server, instruction trace, memory read/write trace.
 
 ## TODO
