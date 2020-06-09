@@ -352,6 +352,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 346:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fstatfs64(u, emulator));
                     return;
+                case 347:
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, getfsstat64(emulator));
+                    return;
                 case 357:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(u, emulator));
                     return;
@@ -940,6 +943,16 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             return io.fstatfs(new StatFS(buf));
         }
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
+    }
+
+    protected int getfsstat64(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer buf = context.getPointerArg(0);
+        int bufSize = context.getIntArg(1);
+        int flags = context.getIntArg(2);
+        log.info("getfsstat64 buf=" + buf + ", bufSize=" + bufSize + ", flags=0x" + Integer.toHexString(flags));
+        emulator.getMemory().setErrno(UnixEmulator.EOPNOTSUPP);
         return -1;
     }
 
