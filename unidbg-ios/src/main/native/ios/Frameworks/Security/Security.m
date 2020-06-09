@@ -10,12 +10,11 @@ void init() {
 }
 
 int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
-  CFShow(query);
+  long lr = get_lr_reg();
+  int debug = is_debug();
+  if(debug) {
+    CFShow(query);
+  }
   int ret = errSecItemNotFound;
   CFStringRef class = CFDictionaryGetValue(query, kSecClass);
   CFStringRef acct = CFDictionaryGetValue(query, kSecAttrAccount);
@@ -28,18 +27,19 @@ int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
     }
     ret = errSecSuccess;
   }
-  CFShow(plist);
-  fprintf(stderr, "SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d, LR=%p\n", query, result, value, ret, (void *) lr);
+  if(debug) {
+    CFShow(plist);
+    fprintf(stderr, "SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d, LR=%p\n", query, result, value, ret, (void *) lr);
+  }
   return ret;
 }
 
 int SecItemDelete(CFDictionaryRef query) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
-  CFShow(query);
+  long lr = get_lr_reg();
+  int debug = is_debug();
+  if(debug) {
+    CFShow(query);
+  }
   CFStringRef class = CFDictionaryGetValue(query, kSecClass);
   CFStringRef acct = CFDictionaryGetValue(query, kSecAttrAccount);
   if(class && acct) {
@@ -48,18 +48,19 @@ int SecItemDelete(CFDictionaryRef query) {
       CFDictionaryRemoveValue(classDict, acct);
     }
   }
-  CFShow(plist);
-  fprintf(stderr, "SecItemDelete query=%p, LR=%p\n", query, (void *) lr);
+  if(debug) {
+    CFShow(plist);
+    fprintf(stderr, "SecItemDelete query=%p, LR=%p\n", query, (void *) lr);
+  }
   return errSecSuccess;
 }
 
 int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
-  CFShow(attributes);
+  long lr = get_lr_reg();
+  int debug = is_debug();
+  if(debug) {
+    CFShow(attributes);
+  }
   int ret = errSecUnimplemented;
   CFStringRef class = CFDictionaryGetValue(attributes, kSecClass);
   CFStringRef acct = CFDictionaryGetValue(attributes, kSecAttrAccount);
@@ -84,10 +85,14 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
       idx += sprintf(&buf[idx], "%02x", ptr[i]);
     }
     buf[idx] = 0;
-    fprintf(stderr, "SecItemAdd ptr=%p, length=%ld, hex=%s\n", ptr, length, buf);
+    if(debug) {
+      fprintf(stderr, "SecItemAdd ptr=%p, length=%ld, hex=%s\n", ptr, length, buf);
+    }
     free(buf);
   }
-  CFShow(plist);
-  fprintf(stderr, "SecItemAdd attributes=%p, acct=%s, ret=%d, LR=%p\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret, (void *) lr);
+  if(debug) {
+    CFShow(plist);
+    fprintf(stderr, "SecItemAdd attributes=%p, acct=%s, ret=%d, LR=%p\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret, (void *) lr);
+  }
   return ret;
 }

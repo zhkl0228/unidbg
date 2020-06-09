@@ -44,30 +44,30 @@ uintptr_t pre_objc_msgSend(id self, SEL _cmd, va_list args) {
     :[LR]"=r"(lr)
   );
 #endif
-  Dl_info info;
-  info.dli_fname = NULL;
-  int success = dladdr((const void *) lr, &info);
-  long offset = success ? lr - (long) info.dli_fbase : lr;
-  const char *name = info.dli_fname;
-  if(name) {
-    const char* find = name;
-    while(true) {
-      const char *next = strchr(find, '/');
-      if(next) {
-        find = &next[1];
-      } else {
-        break;
-      }
-    }
-    if(find) {
-      name = find;
-    }
-  }
   Class class = object_getClass(self);
   bool systemClass = isSystemClass(class);
   if(callback) {
     callback(systemClass, class ? class_getName(class) : NULL, sel_getName(_cmd), lr);
   } else {
+    Dl_info info;
+    info.dli_fname = NULL;
+    int success = dladdr((const void *) lr, &info);
+    long offset = success ? lr - (long) info.dli_fbase : lr;
+    const char *name = info.dli_fname;
+    if(name) {
+      const char* find = name;
+      while(true) {
+        const char *next = strchr(find, '/');
+        if(next) {
+          find = &next[1];
+        } else {
+          break;
+        }
+      }
+      if(find) {
+        name = find;
+      }
+    }
     if(class) {
       if(!systemClass) {
         printf("objc_msgSend called [%s %s] from [%s]%p\n", class_getName(class), sel_getName(_cmd), name, (void *) offset);

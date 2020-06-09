@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <CoreFoundation/CoreFoundation.h>
+#import "../frameworks.h"
 
 const CFStringRef kCNNetworkInfoKeySSID = CFSTR("SSID");
 const CFStringRef kCNNetworkInfoKeyBSSID = CFSTR("BSSID");

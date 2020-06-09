@@ -20,7 +20,10 @@ int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSSt
   }
   NSString *json = [[NSString alloc] initWithCString: argv[2] encoding: NSUTF8StringEncoding];
   NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:[json dataUsingEncoding: NSUTF8StringEncoding] options:kNilOptions error:nil];
-  NSLog(@"UIApplicationMain argc=%d, argv=%p, principalClassName=%@, delegateClassName=%@, delegate=%@, dict=%@", argc, argv, principalClassName, delegateClassName, delegate, dict);
+  if(is_debug()) {
+    NSLog(@"UIApplicationMain argc=%d, argv=%p, principalClassName=%@, delegateClassName=%@, delegate=%@, dict=%@", argc, argv, principalClassName, delegateClassName, delegate, dict);
+  }
+  [json release];
 
   NSString *_systemName = dict[@"systemName"];
   if(_systemName) {
@@ -59,9 +62,11 @@ int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSSt
   NSNumber *callFinishLaunchingWithOptions = dict[@"callFinishLaunchingWithOptions"];
   if(delegate && [callFinishLaunchingWithOptions boolValue]) {
     UIApplication *application = [UIApplication sharedApplication];
-    NSDictionary *options = [[NSDictionary alloc] init];
+    NSDictionary *options = [NSDictionary dictionary];
     [delegate application: application didFinishLaunchingWithOptions: options];
-    NSLog(@"UIApplicationMain didFinishLaunchingWithOptions delegate=%@", delegate);
+    if(is_debug()) {
+      NSLog(@"UIApplicationMain didFinishLaunchingWithOptions delegate=%@", delegate);
+    }
   }
   return 0;
 }
@@ -70,7 +75,10 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 
 @implementation UIScreen
 + (UIScreen *)mainScreen {
-    return [[UIScreen alloc] init];
+    static dispatch_once_t once;
+    static id instance;
+    dispatch_once(&once, ^{ instance = [[UIScreen alloc] init]; });
+    return instance;
 }
 - (CGRect)bounds {
     return g_frame;
@@ -117,7 +125,10 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 
 @implementation MyUIApplicationDelegate
 - (UIWindow *)window {
-    return [[UIWindow alloc] init];
+    static dispatch_once_t once;
+    static id instance;
+    dispatch_once(&once, ^{ instance = [[UIWindow alloc] init]; });
+    return instance;
 }
 - (id) m_appViewControllerMgr {
     return nil;
@@ -164,7 +175,7 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 
 - (NSArray *)windows {
-    return [[NSArray alloc] init];
+    return [NSArray array];
 }
 
 @end
@@ -172,7 +183,10 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @implementation UIDevice
 
 + (UIDevice *)currentDevice {
-    return [[UIDevice alloc] init];
+    static dispatch_once_t once;
+    static id instance;
+    dispatch_once(&once, ^{ instance = [[UIDevice alloc] init]; });
+    return instance;
 }
 
 - (id)init {

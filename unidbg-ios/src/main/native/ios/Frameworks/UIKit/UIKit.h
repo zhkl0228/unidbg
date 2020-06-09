@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import "../frameworks.h"
 
 typedef NSString *NSNotificationName;
 const NSNotificationName UIApplicationDidReceiveMemoryWarningNotification = @"UIApplicationDidReceiveMemoryWarningNotification";

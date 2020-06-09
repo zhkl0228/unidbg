@@ -220,6 +220,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 case 33:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, access(emulator));
                     return;
+                case 34:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, chflags(emulator));
+                    return;
                 case 39:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getppid(emulator));
                     return;
@@ -797,7 +800,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         }
         FileIO file = fdMap.get(fd);
         if (file == null) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("fd=" + fd + ", map=" + fdMap);
         }
         return file.ftruncate(length);
     }
@@ -858,6 +861,15 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.info("access pathname=" + path + ", mode=" + mode);
         }
         return ret;
+    }
+
+    private long chflags(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pathname = context.getPointerArg(0);
+        int flags = context.getIntArg(1);
+        String path = pathname.getString(0);
+        log.info("chflags pathname=" + path + ", flags=0x" + Integer.toHexString(flags));
+        return 0;
     }
 
     private int getppid(Emulator<?> emulator) {
@@ -1226,6 +1238,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     String sub = new String(bytes, StandardCharsets.UTF_8);
                     if (log.isDebugEnabled()) {
                         log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub + ", set1=" + set1);
+                    }
+                    if ("unidbg.debug".equals(sub)) {
+                        return log.isDebugEnabled() ? 1 : 0;
                     }
                     if ("kern.ostype".equals(sub)) {
                         buffer.setInt(0, CTL_KERN);

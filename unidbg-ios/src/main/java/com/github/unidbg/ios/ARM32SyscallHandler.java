@@ -1288,6 +1288,9 @@ public class ARM32SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                     if (log.isDebugEnabled()) {
                         log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub);
                     }
+                    if ("unidbg.debug".equals(sub)) {
+                        return log.isDebugEnabled() ? 1 : 0;
+                    }
                     if ("kern.ostype".equals(sub)) {
                         buffer.setInt(0, CTL_KERN);
                         buffer.setInt(4, KERN_OSTYPE);

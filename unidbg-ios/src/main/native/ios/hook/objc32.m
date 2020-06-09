@@ -3,7 +3,7 @@
 __attribute__((naked))
 void new_objc_msgSend(id self, SEL _cmd) {
   __asm__ volatile(
-    // Call our preObjc_msgSend hook - returns old_objc_msgSend.
+    // Call our pre_objc_msgSend hook - returns old_objc_msgSend.
     "push {r0-r4, r7, lr}\n"
     "mov r9, lr\n"
     "blx _pre_objc_msgSend\n"

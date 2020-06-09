@@ -4,12 +4,10 @@
 #import <Foundation/Foundation.h>
 
 CFDictionaryRef CFNetworkCopySystemProxySettings() {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
-  fprintf(stderr, "CFNetworkCopySystemProxySettings LR=%p\n", (void *) lr);
+  if(is_debug()) {
+    long lr = get_lr_reg();
+    fprintf(stderr, "CFNetworkCopySystemProxySettings LR=%p\n", (void *) lr);
+  }
 
   id objects[] = { @"*.local", @"169.254/16" };
   NSArray *array = [NSArray arrayWithObjects:objects count:2];

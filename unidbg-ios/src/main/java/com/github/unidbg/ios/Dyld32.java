@@ -578,8 +578,11 @@ public class Dyld32 extends Dyld {
                 pointer.setInt(0, 0);
 
                 if (ret == 0) {
-                    log.info("dlopen failed: " + path);
                     this.error.setString(0, "Resolve library " + path + " failed");
+                    if ("/usr/sbin/aslmanager".equals(path)) {
+                        return 0;
+                    }
+                    log.info("dlopen failed: " + path);
                     if (log.isDebugEnabled()) {
                         emulator.attach().debug();
                     }

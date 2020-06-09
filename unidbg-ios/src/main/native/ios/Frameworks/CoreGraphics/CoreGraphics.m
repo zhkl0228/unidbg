@@ -3,11 +3,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 
 CGDataProviderRef CGDataProviderCreateWithFilename(const char *filename) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   FILE *fp = fopen(filename, "r");
   if(fp == NULL) {
     fprintf(stderr, "CGDataProviderCreateWithFilename filename=%s, err=%s\n", filename, strerror(errno));
@@ -26,22 +22,14 @@ CGDataProviderRef CGDataProviderCreateWithFilename(const char *filename) {
 }
 
 void CGDataProviderRelease(CGDataProviderRef provider) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   fprintf(stderr, "CGDataProviderRelease provider=%p, LR=%p\n", provider, (void *) lr);
   free(provider->data);
   free(provider);
 }
 
 CGImageRef CGImageCreateWithPNGDataProvider(CGDataProviderRef source, const CGFloat *decode, bool shouldInterpolate, CGColorRenderingIntent intent) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
 
   /* Create a context */
   spng_ctx *ctx = spng_ctx_new(0);
@@ -80,11 +68,7 @@ CGImageRef CGImageCreateWithPNGDataProvider(CGDataProviderRef source, const CGFl
 }
 
 size_t CGImageGetWidth(CGImageRef image) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   struct spng_ihdr ihdr;
   int r = spng_get_ihdr(image->ctx, &ihdr);
   if(r) {
@@ -97,11 +81,7 @@ size_t CGImageGetWidth(CGImageRef image) {
 }
 
 size_t CGImageGetHeight(CGImageRef image) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   struct spng_ihdr ihdr;
   int r = spng_get_ihdr(image->ctx, &ihdr);
   if(r) {
@@ -114,32 +94,20 @@ size_t CGImageGetHeight(CGImageRef image) {
 }
 
 CGColorSpaceRef CGColorSpaceCreateDeviceRGB() {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   CGColorSpaceRef ref = malloc(sizeof(struct CGColorSpace));
   fprintf(stderr, "CGColorSpaceCreateDeviceRGB ref=%p, LR=%p\n", ref, (void *) lr);
   return ref;
 }
 
 void CGColorSpaceRelease(CGColorSpaceRef space) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   fprintf(stderr, "CGColorSpaceRelease space=%p, LR=%p\n", space, (void *) lr);
   free(space);
 }
 
 CGContextRef CGBitmapContextCreate(void *data, size_t width, size_t height, size_t bitsPerComponent, size_t bytesPerRow, CGColorSpaceRef space, uint32_t bitmapInfo) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   CGContextRef ref = malloc(sizeof(struct CGContext));
   if(data == NULL) {
     data = malloc(bytesPerRow * height);
@@ -151,41 +119,25 @@ CGContextRef CGBitmapContextCreate(void *data, size_t width, size_t height, size
 }
 
 void CGContextRelease(CGContextRef c) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   fprintf(stderr, "CGContextRelease c=%p, LR=%p\n", c, (void *) lr);
   free(c);
 }
 
 void * CGBitmapContextGetData(CGContextRef context) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   fprintf(stderr, "CGBitmapContextGetData context=%p, LR=%p\n", context, (void *) lr);
   return context->data;
 }
 
 void CGContextDrawImage(CGContextRef c, CGRect rect, CGImageRef image) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   fprintf(stderr, "CGContextDrawImage c=%p, image=%p, x=%f, y=%f, width=%f, height=%f, LR=%p\n", c, image, rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, (void *) lr);
   memcpy(c->data, image->out, image->out_size);
 }
 
 size_t CGBitmapContextGetBytesPerRow(CGContextRef context) {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  long lr = get_lr_reg();
   fprintf(stderr, "CGBitmapContextGetBytesPerRow context=%p, LR=%p\n", context, (void *) lr);
   return context->bytesPerRow;
 }

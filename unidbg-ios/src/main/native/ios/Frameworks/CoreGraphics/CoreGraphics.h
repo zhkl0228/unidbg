@@ -1,4 +1,5 @@
 #import <stdlib.h>
+#import "../frameworks.h"
 #import "spng.h"
 
 typedef struct CGDataProvider {

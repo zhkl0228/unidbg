@@ -2,5 +2,8 @@
 #import <stdio.h>
 
 void _LSRegisterFilePropertyProvider() {
-  fprintf(stderr, "_LSRegisterFilePropertyProvider\n");
+  if(is_debug()) {
+    long lr = get_lr_reg();
+    fprintf(stderr, "_LSRegisterFilePropertyProvider LR=%p\n", (void *) lr);
+  }
 }

@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import "../frameworks.h"
 
 @interface ASIdentifierManager : NSObject
 

@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import "../frameworks.h"
 
 NSString *const CTRadioAccessTechnologyLTE = @"CTRadioAccessTechnologyLTE";
 
