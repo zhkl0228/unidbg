@@ -143,6 +143,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 //        emulator.traceCode(0xfffe0000L, 0xfffe0000L + 0x10000);
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.DEBUG);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }

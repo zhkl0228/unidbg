@@ -54,19 +54,17 @@ uintptr_t pre_objc_msgSend(id self, SEL _cmd, va_list args) {
     int success = dladdr((const void *) lr, &info);
     long offset = success ? lr - (long) info.dli_fbase : lr;
     const char *name = info.dli_fname;
-    if(name) {
-      const char* find = name;
-      while(true) {
-        const char *next = strchr(find, '/');
-        if(next) {
-          find = &next[1];
-        } else {
-          break;
-        }
+    const char* find = name;
+    while(find) {
+      const char *next = strchr(find, '/');
+      if(next) {
+        find = &next[1];
+      } else {
+         break;
       }
-      if(find) {
-        name = find;
-      }
+    }
+    if(find) {
+      name = find;
     }
     if(class) {
       if(!systemClass) {
