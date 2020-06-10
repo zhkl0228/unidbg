@@ -32,15 +32,15 @@ objc_msg_function old_objc_msgSend = NULL;
 objc_msgSend_callback callback = NULL;
 
 uintptr_t pre_objc_msgSend(id self, SEL _cmd, va_list args) {
-  long lr = 0;
+  uintptr_t lr = 1;
 #if defined(__arm__)
   __asm__(
-    "mov %[LR], r9\n"
+    "mov %[LR], r12\n"
     :[LR]"=r"(lr)
   );
 #elif defined(__aarch64__)
   __asm__(
-    "mov %[LR], x9\n"
+    "mov %[LR], x12\n"
     :[LR]"=r"(lr)
   );
 #endif
@@ -49,29 +49,14 @@ uintptr_t pre_objc_msgSend(id self, SEL _cmd, va_list args) {
   if(callback) {
     callback(systemClass, class ? class_getName(class) : NULL, sel_getName(_cmd), lr);
   } else if(is_debug()) {
-    Dl_info info;
-    info.dli_fname = NULL;
-    int success = dladdr((const void *) lr, &info);
-    long offset = success ? lr - (long) info.dli_fbase : lr;
-    const char *name = info.dli_fname;
-    const char* find = name;
-    while(find) {
-      const char *next = strchr(find, '/');
-      if(next) {
-        find = &next[1];
-      } else {
-         break;
-      }
-    }
-    if(find) {
-      name = find;
-    }
+    char buf[512];
+    print_lr(buf, lr);
     if(class) {
       if(!systemClass) {
-        printf("objc_msgSend called [%s %s] from [%s]%p\n", class_getName(class), sel_getName(_cmd), name, (void *) offset);
+        printf("objc_msgSend called [%s %s] from %s\n", class_getName(class), sel_getName(_cmd), buf);
       }
     } else {
-      fprintf(stderr, "objc_msgSend called [%s] from [%s]%p\n", sel_getName(_cmd), name, (void *) offset);
+      fprintf(stderr, "objc_msgSend called [%s] from %s\n", sel_getName(_cmd), buf);
     }
   }
   return (uintptr_t) old_objc_msgSend;

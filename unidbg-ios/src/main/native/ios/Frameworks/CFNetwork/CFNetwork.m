@@ -4,9 +4,15 @@
 #import <Foundation/Foundation.h>
 
 CFDictionaryRef CFNetworkCopySystemProxySettings() {
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
   if(is_debug()) {
-    long lr = get_lr_reg();
-    fprintf(stderr, "CFNetworkCopySystemProxySettings LR=%p\n", (void *) lr);
+    char buf[512];
+    print_lr(buf, lr);
+    fprintf(stderr, "CFNetworkCopySystemProxySettings LR=%s\n", buf);
   }
 
   id objects[] = { @"*.local", @"169.254/16" };

@@ -3,7 +3,13 @@
 #import <CoreFoundation/CoreFoundation.h>
 
 CGDataProviderRef CGDataProviderCreateWithFilename(const char *filename) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   FILE *fp = fopen(filename, "r");
   if(fp == NULL) {
     fprintf(stderr, "CGDataProviderCreateWithFilename filename=%s, err=%s\n", filename, strerror(errno));
@@ -17,19 +23,31 @@ CGDataProviderRef CGDataProviderCreateWithFilename(const char *filename) {
   ref->data = malloc(size);
   size_t read = fread(ref->data, 1, size, fp);
   fclose(fp);
-  fprintf(stderr, "CGDataProviderCreateWithFilename filename=%s, size=%ld, read=%zu, LR=%p\n", filename, size, read, (void *) lr);
+  fprintf(stderr, "CGDataProviderCreateWithFilename filename=%s, size=%ld, read=%zu, LR=%s\n", filename, size, read, buf);
   return ref;
 }
 
 void CGDataProviderRelease(CGDataProviderRef provider) {
-  long lr = get_lr_reg();
-  fprintf(stderr, "CGDataProviderRelease provider=%p, LR=%p\n", provider, (void *) lr);
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
+  fprintf(stderr, "CGDataProviderRelease provider=%p, LR=%s\n", provider, buf);
   free(provider->data);
   free(provider);
 }
 
 CGImageRef CGImageCreateWithPNGDataProvider(CGDataProviderRef source, const CGFloat *decode, bool shouldInterpolate, CGColorRenderingIntent intent) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
 
   /* Create a context */
   spng_ctx *ctx = spng_ctx_new(0);
@@ -63,82 +81,136 @@ CGImageRef CGImageCreateWithPNGDataProvider(CGDataProviderRef source, const CGFl
   ref->ctx = ctx;
   ref->out = out;
   ref->out_size = out_size;
-  fprintf(stderr, "CGImageCreateWithPNGDataProvider source=%p, decode=%p, shouldInterpolate=%d, intent=%d, ref=%p, out_size=%zu, LR=%p\n", source, decode, shouldInterpolate, intent, ref, out_size, (void *) lr);
+  fprintf(stderr, "CGImageCreateWithPNGDataProvider source=%p, decode=%p, shouldInterpolate=%d, intent=%d, ref=%p, out_size=%zu, LR=%s\n", source, decode, shouldInterpolate, intent, ref, out_size, buf);
   return ref;
 }
 
 size_t CGImageGetWidth(CGImageRef image) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   struct spng_ihdr ihdr;
   int r = spng_get_ihdr(image->ctx, &ihdr);
   if(r) {
     fprintf(stderr, "CGImageGetWidth spng_get_ihdr() error: %s\n", spng_strerror(r));
     return 0;
   } else {
-    fprintf(stderr, "CGImageGetWidth width=%u, LR=%p\n", ihdr.width, (void *) lr);
+    fprintf(stderr, "CGImageGetWidth width=%u, LR=%s\n", ihdr.width, buf);
     return ihdr.width;
   }
 }
 
 size_t CGImageGetHeight(CGImageRef image) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   struct spng_ihdr ihdr;
   int r = spng_get_ihdr(image->ctx, &ihdr);
   if(r) {
     fprintf(stderr, "CGImageGetWidth spng_get_ihdr() error: %s\n", spng_strerror(r));
     return 0;
   } else {
-    fprintf(stderr, "CGImageGetWidth height=%u, LR=%p\n", ihdr.height, (void *) lr);
+    fprintf(stderr, "CGImageGetWidth height=%u, LR=%s\n", ihdr.height, buf);
     return ihdr.height;
   }
 }
 
 CGColorSpaceRef CGColorSpaceCreateDeviceRGB() {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   CGColorSpaceRef ref = malloc(sizeof(struct CGColorSpace));
-  fprintf(stderr, "CGColorSpaceCreateDeviceRGB ref=%p, LR=%p\n", ref, (void *) lr);
+  fprintf(stderr, "CGColorSpaceCreateDeviceRGB ref=%p, LR=%s\n", ref, buf);
   return ref;
 }
 
 void CGColorSpaceRelease(CGColorSpaceRef space) {
-  long lr = get_lr_reg();
-  fprintf(stderr, "CGColorSpaceRelease space=%p, LR=%p\n", space, (void *) lr);
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
+  fprintf(stderr, "CGColorSpaceRelease space=%p, LR=%s\n", space, buf);
   free(space);
 }
 
 CGContextRef CGBitmapContextCreate(void *data, size_t width, size_t height, size_t bitsPerComponent, size_t bytesPerRow, CGColorSpaceRef space, uint32_t bitmapInfo) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   CGContextRef ref = malloc(sizeof(struct CGContext));
   if(data == NULL) {
     data = malloc(bytesPerRow * height);
   }
   ref->data = data;
   ref->bytesPerRow = bytesPerRow;
-  fprintf(stderr, "CGBitmapContextCreate data=%p, width=%zu, height=%zu, bitsPerComponent=%zu, bytesPerRow=%zu, space=%p, bitmapInfo=%u, ref=%p, LR=%p\n", data, width, height, bitsPerComponent, bytesPerRow, space, bitmapInfo, ref, (void *) lr);
+  fprintf(stderr, "CGBitmapContextCreate data=%p, width=%zu, height=%zu, bitsPerComponent=%zu, bytesPerRow=%zu, space=%p, bitmapInfo=%u, ref=%p, LR=%s\n", data, width, height, bitsPerComponent, bytesPerRow, space, bitmapInfo, ref, buf);
   return ref;
 }
 
 void CGContextRelease(CGContextRef c) {
-  long lr = get_lr_reg();
-  fprintf(stderr, "CGContextRelease c=%p, LR=%p\n", c, (void *) lr);
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
+  fprintf(stderr, "CGContextRelease c=%p, LR=%s\n", c, buf);
   free(c);
 }
 
 void * CGBitmapContextGetData(CGContextRef context) {
-  long lr = get_lr_reg();
-  fprintf(stderr, "CGBitmapContextGetData context=%p, LR=%p\n", context, (void *) lr);
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
+  fprintf(stderr, "CGBitmapContextGetData context=%p, LR=%s\n", context, buf);
   return context->data;
 }
 
 void CGContextDrawImage(CGContextRef c, CGRect rect, CGImageRef image) {
-  long lr = get_lr_reg();
-  fprintf(stderr, "CGContextDrawImage c=%p, image=%p, x=%f, y=%f, width=%f, height=%f, LR=%p\n", c, image, rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, (void *) lr);
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
+  fprintf(stderr, "CGContextDrawImage c=%p, image=%p, x=%f, y=%f, width=%f, height=%f, LR=%s\n", c, image, rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, buf);
   memcpy(c->data, image->out, image->out_size);
 }
 
 size_t CGBitmapContextGetBytesPerRow(CGContextRef context) {
-  long lr = get_lr_reg();
-  fprintf(stderr, "CGBitmapContextGetBytesPerRow context=%p, LR=%p\n", context, (void *) lr);
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
+  fprintf(stderr, "CGBitmapContextGetBytesPerRow context=%p, LR=%s\n", context, buf);
   return context->bytesPerRow;
 }
 

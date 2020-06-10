@@ -10,7 +10,13 @@ void init() {
 }
 
 int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   int debug = is_debug();
   if(debug) {
     CFShow(query);
@@ -29,13 +35,19 @@ int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
   }
   if(debug) {
     CFShow(plist);
-    fprintf(stderr, "SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d, LR=%p\n", query, result, value, ret, (void *) lr);
+    fprintf(stderr, "SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d, LR=%s\n", query, result, value, ret, buf);
   }
   return ret;
 }
 
 int SecItemDelete(CFDictionaryRef query) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   int debug = is_debug();
   if(debug) {
     CFShow(query);
@@ -50,13 +62,19 @@ int SecItemDelete(CFDictionaryRef query) {
   }
   if(debug) {
     CFShow(plist);
-    fprintf(stderr, "SecItemDelete query=%p, LR=%p\n", query, (void *) lr);
+    fprintf(stderr, "SecItemDelete query=%p, LR=%s\n", query, buf);
   }
   return errSecSuccess;
 }
 
 int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
-  long lr = get_lr_reg();
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
   int debug = is_debug();
   if(debug) {
     CFShow(attributes);
@@ -92,7 +110,7 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
   }
   if(debug) {
     CFShow(plist);
-    fprintf(stderr, "SecItemAdd attributes=%p, acct=%s, ret=%d, LR=%p\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret, (void *) lr);
+    fprintf(stderr, "SecItemAdd attributes=%p, acct=%s, ret=%d, LR=%s\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret, buf);
   }
   return ret;
 }

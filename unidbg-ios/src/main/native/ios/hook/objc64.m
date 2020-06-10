@@ -15,7 +15,7 @@ void new_objc_msgSend(id self, SEL _cmd) {
     "stp x2, x3, [sp, #-16]!\n"
     "stp x0, x1, [sp, #-16]!\n"
     // Call our pre_objc_msgSend hook - returns old_objc_msgSend.
-    "mov x9, lr\n"
+    "mov x12, lr\n"
     "bl _pre_objc_msgSend\n"
     "mov x9, x0\n"
     // pop {x0-x8, lr}

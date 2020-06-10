@@ -1,16 +1,33 @@
 #import <string.h>
+#import <dlfcn.h>
+#import <stdio.h>
 #import <sys/sysctl.h>
 
-static inline long get_lr_reg() {
-  long lr = 0;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
-  return lr;
+static void print_lr(char *buf, uintptr_t lr) {
+  Dl_info info;
+  int success = dladdr((const void *) lr, &info);
+  if(success) {
+    long offset = lr - (long) info.dli_fbase;
+    const char *name = info.dli_fname;
+    const char *find = name;
+    while(find) {
+      const char *next = strchr(find, '/');
+      if(next) {
+        find = &next[1];
+      } else {
+         break;
+      }
+    }
+    if(find) {
+      name = find;
+    }
+    sprintf(buf, "[%s]%p", name, (void *) offset);
+  } else {
+    sprintf(buf, "%p", (void *) lr);
+  }
 }
 
-static inline int is_debug() {
+static int is_debug() {
   int mib[2];
   int values[2];
   size_t size = sizeof(values);
