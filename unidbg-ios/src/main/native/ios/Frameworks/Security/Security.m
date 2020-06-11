@@ -2,11 +2,49 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <stdio.h>
 
+static CFStringRef path = CFSTR("/var/root/Documents/keychain.plist");
 static CFMutableDictionaryRef plist = NULL;
+
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 __attribute__((constructor))
 void init() {
-  plist = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+  CFURLRef fileURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false);
+  CFDataRef resourceData = NULL;
+  SInt32 errorCode;
+  Boolean success = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, fileURL, &resourceData, NULL, NULL, &errorCode);
+  if (success) {
+    CFErrorRef error = NULL;
+    plist = (CFMutableDictionaryRef) CFPropertyListCreateWithData(kCFAllocatorDefault, resourceData, kCFPropertyListMutableContainersAndLeaves, NULL, &error);
+    if(error) {
+      CFRelease(error);
+    }
+  }
+  if(resourceData) {
+    CFRelease(resourceData);
+  }
+  CFRelease(fileURL);
+  if(!plist) {
+    plist = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+  }
+}
+
+static void WritePlistToFile(CFPropertyListRef propertyList) {
+  CFURLRef fileURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false);
+  CFErrorRef error = NULL;
+  CFDataRef xmlData = CFPropertyListCreateData(kCFAllocatorDefault, propertyList, kCFPropertyListXMLFormat_v1_0, 0, &error);
+  SInt32 errorCode;
+  Boolean success = CFURLWriteDataAndPropertiesToResource(fileURL, xmlData, NULL, &errorCode);
+  if (!success) {
+    fprintf(stderr, "WritePlistToFile failed: errorCode=%d\n", (int) errorCode);
+  }
+  if(xmlData) {
+    CFRelease(xmlData);
+  }
+  if(error) {
+    CFRelease(error);
+  }
+  CFRelease(fileURL);
 }
 
 int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
@@ -58,6 +96,7 @@ int SecItemDelete(CFDictionaryRef query) {
     CFMutableDictionaryRef classDict = (CFMutableDictionaryRef) CFDictionaryGetValue(plist, class);
     if(classDict) {
       CFDictionaryRemoveValue(classDict, acct);
+      WritePlistToFile(plist);
     }
   }
   if(debug) {
@@ -94,6 +133,7 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
       *result = CFRetain(data);
     }
     ret = errSecSuccess;
+    WritePlistToFile(plist);
 
     const UInt8 *ptr = CFDataGetBytePtr(data);
     CFIndex length = CFDataGetLength(data);

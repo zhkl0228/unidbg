@@ -27,12 +27,12 @@ static void print_lr(char *buf, uintptr_t lr) {
   }
 }
 
+// Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.DEBUG);
 static int is_debug() {
   int mib[2];
   int values[2];
   size_t size = sizeof(values);
 
-  // Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.DEBUG);
   char *name = "unidbg.debug";
   mib[0] = CTL_UNSPEC;
   mib[1] = 3;
