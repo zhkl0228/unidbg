@@ -5,6 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.ios.objc.Constants;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
@@ -28,6 +29,10 @@ public class TaskDyldInfo extends UnicornStructure {
         setAlignType(Structure.ALIGN_NONE);
     }
 
+    private static MemoryBlock infoArrayBlock;
+    private static Pointer dyldVersion;
+    private static UnicornPointer dyldAllImageInfosAddress;
+
     public void allocateAllImage(Emulator<?> emulator) {
         SvcMemory svcMemory = emulator.getSvcMemory();
         MachOLoader loader = (MachOLoader) emulator.getMemory();
@@ -37,6 +42,12 @@ public class TaskDyldInfo extends UnicornStructure {
             if (module.isVirtual()) {
                 iterator.remove();
             }
+        }
+        if (dyldVersion == null) {
+            dyldVersion = svcMemory.writeStackString(DYLD_VERSION);
+        }
+        if (infoArrayBlock == null) {
+            infoArrayBlock = loader.malloc(emulator.getPageAlign(), true);
         }
 
         if (emulator.is64Bit()) {
@@ -48,13 +59,17 @@ public class TaskDyldInfo extends UnicornStructure {
 
     private void allocateAllImage64(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnicornStructure.calculateSize(DyldAllImageInfos64.class);
+        if (dyldAllImageInfosAddress == null) {
+            dyldAllImageInfosAddress = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos64");
+        }
+
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_64;
         this.all_image_info_size = all_image_info_size;
-        UnicornPointer all_image_info_addr = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos64");
+        UnicornPointer all_image_info_addr = dyldAllImageInfosAddress;
         this.all_image_info_addr = all_image_info_addr.peer;
 
         int size = UnicornStructure.calculateSize(DyldImageInfo64.class);
-        Pointer infoArray = svcMemory.allocate(size * modules.size(), "DyldImageInfo64");
+        Pointer infoArray = infoArrayBlock.getPointer();
         Pointer pointer = infoArray;
         for (Module module : modules) {
             MachOModule mm = (MachOModule) module;
@@ -72,7 +87,7 @@ public class TaskDyldInfo extends UnicornStructure {
         infos.infoArray = infoArray;
         infos.libSystemInitialized = Constants.YES;
         infos.dyldImageLoadAddress = null;
-        infos.dyldVersion = svcMemory.writeStackString(DYLD_VERSION);
+        infos.dyldVersion = dyldVersion;
         infos.uuidArrayCount = 0;
         infos.uuidArray = null;
         infos.dyldAllImageInfosAddress = all_image_info_addr;
@@ -82,13 +97,17 @@ public class TaskDyldInfo extends UnicornStructure {
 
     private void allocateAllImage32(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnicornStructure.calculateSize(DyldAllImageInfos32.class);
+        if (dyldAllImageInfosAddress == null) {
+            dyldAllImageInfosAddress = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos64");
+        }
+
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_32;
         this.all_image_info_size = all_image_info_size;
-        UnicornPointer all_image_info_addr = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos32");
+        UnicornPointer all_image_info_addr = dyldAllImageInfosAddress;
         this.all_image_info_addr = all_image_info_addr.peer;
 
         int size = UnicornStructure.calculateSize(DyldImageInfo32.class);
-        Pointer infoArray = svcMemory.allocate(size * modules.size(), "DyldImageInfo32");
+        Pointer infoArray = infoArrayBlock.getPointer();
         Pointer pointer = infoArray;
         for (Module module : modules) {
             MachOModule mm = (MachOModule) module;
@@ -106,7 +125,7 @@ public class TaskDyldInfo extends UnicornStructure {
         infos.infoArray = infoArray;
         infos.libSystemInitialized = Constants.YES;
         infos.dyldImageLoadAddress = null;
-        infos.dyldVersion = svcMemory.writeStackString(DYLD_VERSION);
+        infos.dyldVersion = dyldVersion;
         infos.uuidArrayCount = 0;
         infos.uuidArray = null;
         infos.dyldAllImageInfosAddress = all_image_info_addr;

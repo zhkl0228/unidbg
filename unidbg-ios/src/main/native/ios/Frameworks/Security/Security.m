@@ -15,7 +15,7 @@ void init() {
   Boolean success = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, fileURL, &resourceData, NULL, NULL, &errorCode);
   if (success) {
     CFErrorRef error = NULL;
-    plist = (CFMutableDictionaryRef) CFPropertyListCreateWithData(kCFAllocatorDefault, resourceData, kCFPropertyListMutableContainersAndLeaves, NULL, &error);
+    plist = (CFMutableDictionaryRef) CFPropertyListCreateWithData(kCFAllocatorDefault, resourceData, kCFPropertyListMutableContainers, NULL, &error);
     if(error) {
       CFRelease(error);
     }
@@ -29,7 +29,7 @@ void init() {
   }
 }
 
-static void WritePlistToFile(CFPropertyListRef propertyList) {
+static void WritePropertyToFile(CFPropertyListRef propertyList) {
   CFURLRef fileURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false);
   CFErrorRef error = NULL;
   CFDataRef xmlData = CFPropertyListCreateData(kCFAllocatorDefault, propertyList, kCFPropertyListXMLFormat_v1_0, 0, &error);
@@ -96,7 +96,7 @@ int SecItemDelete(CFDictionaryRef query) {
     CFMutableDictionaryRef classDict = (CFMutableDictionaryRef) CFDictionaryGetValue(plist, class);
     if(classDict) {
       CFDictionaryRemoveValue(classDict, acct);
-      WritePlistToFile(plist);
+      WritePropertyToFile(plist);
     }
   }
   if(debug) {
@@ -133,7 +133,7 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
       *result = CFRetain(data);
     }
     ret = errSecSuccess;
-    WritePlistToFile(plist);
+    WritePropertyToFile(plist);
 
     const UInt8 *ptr = CFDataGetBytePtr(data);
     CFIndex length = CFDataGetLength(data);
