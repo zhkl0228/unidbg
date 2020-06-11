@@ -122,7 +122,6 @@ public abstract class IpaLoader {
     protected void config(final Emulator<DarwinFileIO> emulator, File ipa, String executableBundlePath, File rootDir) throws IOException {
         File executable = new File(executableBundlePath);
         SyscallHandler<DarwinFileIO> syscallHandler = emulator.getSyscallHandler();
-        syscallHandler.setVerbose(log.isDebugEnabled());
         File appDir = executable.getParentFile();
         syscallHandler.addIOResolver(new IpaResolver(appDir.getPath(), ipa));
         FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getPath()));
@@ -135,6 +134,7 @@ public abstract class IpaLoader {
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, getEnvs());
+        emulator.getSyscallHandler().setVerbose(log.isDebugEnabled());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);
         }
@@ -148,6 +148,7 @@ public abstract class IpaLoader {
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, getEnvs());
+        emulator.getSyscallHandler().setVerbose(log.isDebugEnabled());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);
         }

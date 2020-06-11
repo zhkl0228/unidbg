@@ -765,7 +765,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
         RegisterContext context = emulator.getContext();
         int fd = context.getIntArg(offset);
         if (log.isDebugEnabled()) {
-            log.debug("close fd=" + fd);
+            log.debug("close fd=" + fd + ", LR=" + context.getLRPointer());
         }
 
         return close(emulator, fd);
@@ -2734,7 +2734,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
             log.debug("close_NOCANCEL fd=" + fd);
         }
 
-        return closeWithOffset(emulator, fd);
+        return close(emulator, fd);
     }
 
     private int read_NOCANCEL(Emulator<?> emulator, int offset) {

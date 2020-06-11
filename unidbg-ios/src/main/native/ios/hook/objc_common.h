@@ -48,7 +48,7 @@ uintptr_t pre_objc_msgSend(id self, SEL _cmd, va_list args) {
   bool systemClass = isSystemClass(class);
   if(callback) {
     callback(systemClass, class ? class_getName(class) : NULL, sel_getName(_cmd), lr);
-  } else if(is_debug()) {
+  } else {
     char buf[512];
     print_lr(buf, lr);
     if(class) {

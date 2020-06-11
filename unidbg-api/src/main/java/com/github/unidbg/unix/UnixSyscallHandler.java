@@ -233,7 +233,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (file != null) {
             file.close();
             if (verbose) {
-                System.out.println(String.format("File closed '%s'", file));
+                System.out.println(String.format("File closed '%s' from %s", file, emulator.getContext().getLRPointer()));
             }
             return 0;
         } else {
@@ -251,7 +251,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, resolveResult.io);
             if (verbose) {
-                System.out.println(String.format("File opened '%s'", resolveResult.io));
+                System.out.println(String.format("File opened '%s' from %s", resolveResult.io, emulator.getContext().getLRPointer()));
             }
             return minFd;
         }
@@ -261,7 +261,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, driverIO);
             if (verbose) {
-                System.out.println(String.format("File opened '%s'", driverIO));
+                System.out.println(String.format("File opened '%s' from %s", driverIO, emulator.getContext().getLRPointer()));
             }
             return minFd;
         }

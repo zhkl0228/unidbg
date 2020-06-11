@@ -15,19 +15,15 @@ extern objc_msgSend_callback callback;
 
 void hook_objc_msgSend(objc_msgSend_callback _callback) {
   callback = _callback;
-  rebind_symbols((struct rebinding[1]){{"objc_msgSend", (void *)new_objc_msgSend, (void **)&old_objc_msgSend}}, 1);
+  int ret = rebind_symbols((struct rebinding[1]){{"objc_msgSend", (void *)new_objc_msgSend, (void **)&old_objc_msgSend}}, 1);
+  NSLog(@"hook_objc_msgSend callback=%p, ret=%d", callback, ret);
 }
 
 __attribute__((constructor))
 void init() {
-  int debug = is_debug();
-  if(debug) {
-    NSLog(@"Initializing libhook");
-  }
+  NSLog(@"Initializing libhook");
 
   MSHookMessageEx([NSBundle class], @selector(pathForResource:ofType:), (IMP) &new_pathForResource, (IMP *) &old_pathForResource);
 
-  if(debug) {
-    NSLog(@"Initialized libhook");
-  }
+  NSLog(@"Initialized libhook");
 }
