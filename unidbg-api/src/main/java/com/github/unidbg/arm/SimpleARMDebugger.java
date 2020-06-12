@@ -47,7 +47,12 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     continue;
                 }
                 if ("run".equals(line) && callable != null) {
-                    callable.call();
+                    try {
+                        callbackRunning = true;
+                        callable.call();
+                    } finally {
+                        callbackRunning = false;
+                    }
                     continue;
                 }
                 if ("d".equals(line) || "dis".equals(line)) {
@@ -266,7 +271,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
-                if(handleCommon(u, line, address, size, nextAddress)) {
+                if(handleCommon(u, line, address, size, nextAddress, callable)) {
                     break;
                 }
             } catch (RuntimeException | DecoderException e) {

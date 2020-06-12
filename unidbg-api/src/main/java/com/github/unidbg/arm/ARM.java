@@ -17,12 +17,10 @@ import unicorn.UnicornException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -343,9 +341,88 @@ public class ARM {
                 case Arm64Const.UC_ARM64_REG_PC:
                     builder.append(String.format(Locale.US, "\nPC=%s", UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC)));
                     break;
+                case Arm64Const.UC_ARM64_REG_Q0:
+                    builder.append("\n>>>");
+                    byte[] data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q1:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q2:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q3:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q4:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q5:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q6:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q7:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q8:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q9:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q10:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q11:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q12:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q13:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q14:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q15:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
+                    break;
             }
         }
         System.out.println(builder.toString());
+    }
+
+    private static BigInteger newBigInteger(byte[] data) {
+        if (data.length != 16) {
+            throw new IllegalStateException("data.length=" + data.length);
+        }
+        for (int i = 0; i < 8; i++) {
+            byte b = data[i];
+            data[i] = data[15 - i];
+            data[15 - i] = b;
+        }
+        byte[] bytes = new byte[data.length + 1];
+        System.arraycopy(data, 0, bytes, 1, data.length); // makePositive
+        return new BigInteger(bytes);
     }
 
     private static final int[] ARM_ARG_REGS = new int[] {
@@ -440,10 +517,28 @@ public class ARM {
             Arm64Const.UC_ARM64_REG_X28,
 
             Arm64Const.UC_ARM64_REG_FP,
+
+            Arm64Const.UC_ARM64_REG_Q0,
+            Arm64Const.UC_ARM64_REG_Q1,
+            Arm64Const.UC_ARM64_REG_Q2,
+            Arm64Const.UC_ARM64_REG_Q3,
+            Arm64Const.UC_ARM64_REG_Q4,
+            Arm64Const.UC_ARM64_REG_Q5,
+            Arm64Const.UC_ARM64_REG_Q6,
+            Arm64Const.UC_ARM64_REG_Q7,
+            Arm64Const.UC_ARM64_REG_Q8,
+            Arm64Const.UC_ARM64_REG_Q9,
+            Arm64Const.UC_ARM64_REG_Q10,
+            Arm64Const.UC_ARM64_REG_Q11,
+            Arm64Const.UC_ARM64_REG_Q12,
+            Arm64Const.UC_ARM64_REG_Q13,
+            Arm64Const.UC_ARM64_REG_Q14,
+            Arm64Const.UC_ARM64_REG_Q15,
+
             Arm64Const.UC_ARM64_REG_LR,
             Arm64Const.UC_ARM64_REG_SP,
             Arm64Const.UC_ARM64_REG_PC,
-            Arm64Const.UC_ARM64_REG_NZCV
+            Arm64Const.UC_ARM64_REG_NZCV,
     };
 
     private static int[] getRegArgs(Emulator<?> emulator) {

@@ -18,7 +18,6 @@ import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneEncoded;
 import keystone.exceptions.AssembleFailedKeystoneException;
-import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
@@ -32,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -200,12 +200,20 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     protected abstract void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception;
 
+    protected boolean callbackRunning;
+
     @Override
     public <T> T run(Callable<T> callable) throws Exception {
         if (callable == null) {
             throw new NullPointerException();
         }
-        T ret =callable.call();
+        T ret;
+        try {
+            callbackRunning = true;
+            ret = callable.call();
+        } finally {
+            callbackRunning = false;
+        }
         loop(emulator, 0, 0, callable);
         return ret;
     }
@@ -255,6 +263,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 long value = buffer.getLong();
                 sb.append(", value=0x").append(Long.toHexString(value));
+            } else if (_length == 16) {
+                byte[] bytes = Arrays.copyOf(data, 17);
+                for (int i = 1; i <= 8; i++) {
+                    byte b = bytes[i];
+                    bytes[i] = bytes[17 - i];
+                    bytes[17 - i] = b;
+                }
+                sb.append(", value=0x").append(new BigInteger(bytes).toString(16));
             }
             if (data.length >= 1024) {
                 sb.append(", hex=").append(Hex.encodeHexString(data));
@@ -316,9 +332,24 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private Unicorn.UnHook traceHook;
 
-    final boolean handleCommon(Unicorn u, String line, long address, int size, long nextAddress) throws DecoderException {
-        if ("c".equals(line)) { // continue
-            return true;
+    final boolean handleCommon(Unicorn u, String line, long address, int size, long nextAddress, Callable<?> callable) throws Exception {
+        if (callable == null || callbackRunning) {
+            if ("c".equals(line)) { // continue
+                return true;
+            }
+        } else {
+            if ("exit".equals(line) || "quit".equals(line)) { // continue
+                return true;
+            }
+            if ("c".equals(line)) {
+                try {
+                    callbackRunning = true;
+                    callable.call();
+                    return false;
+                } finally {
+                    callbackRunning = false;
+                }
+            }
         }
         if ("n".equals(line)) {
             if (nextAddress == 0) {
