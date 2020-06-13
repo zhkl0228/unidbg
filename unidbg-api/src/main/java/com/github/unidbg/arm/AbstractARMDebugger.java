@@ -264,12 +264,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                 long value = buffer.getLong();
                 sb.append(", value=0x").append(Long.toHexString(value));
             } else if (_length == 16) {
-                byte[] bytes = Arrays.copyOf(data, 17);
-                for (int i = 1; i <= 8; i++) {
-                    byte b = bytes[i];
-                    bytes[i] = bytes[17 - i];
-                    bytes[17 - i] = b;
+                byte[] tmp = Arrays.copyOf(data, 16);
+                for (int i = 0; i < 8; i++) {
+                    byte b = tmp[i];
+                    tmp[i] = tmp[15 - i];
+                    tmp[15 - i] = b;
                 }
+                byte[] bytes = new byte[tmp.length + 1];
+                System.arraycopy(tmp, 0, bytes, 1, tmp.length); // makePositive
                 sb.append(", value=0x").append(new BigInteger(bytes).toString(16));
             }
             if (data.length >= 1024) {
