@@ -5,12 +5,9 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.xhook.IxHook;
-import com.github.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.net.URL;
 
 public class XHookImpl extends BaseHook implements IxHook {
 
@@ -57,11 +54,6 @@ public class XHookImpl extends BaseHook implements IxHook {
         } else {
             xhook_enable_debug.call(emulator, log.isDebugEnabled() ? 1 : 0);
         }
-    }
-
-    @Override
-    protected LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, -1);
     }
 
     @Override

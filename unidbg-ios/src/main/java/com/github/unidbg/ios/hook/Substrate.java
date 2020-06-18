@@ -7,16 +7,11 @@ import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.MachOModule;
-import com.github.unidbg.ios.URLibraryFile;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.net.URL;
-import java.util.Collections;
 
 public class Substrate extends BaseHook implements ISubstrate {
 
@@ -68,11 +63,6 @@ public class Substrate extends BaseHook implements ISubstrate {
         if (log.isDebugEnabled()) {
             _MSDebug.createPointer(emulator).setInt(0, 1);
         }
-    }
-
-    @Override
-    protected LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
     }
 
     @Override

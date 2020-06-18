@@ -5,15 +5,10 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.ios.URLibraryFile;
 import com.github.unidbg.ios.hook.FishHook;
 import com.github.unidbg.ios.hook.Substrate;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
-
-import java.net.URL;
-import java.util.Collections;
 
 public class HookLoader extends BaseHook {
 
@@ -71,11 +66,6 @@ public class HookLoader extends BaseHook {
         Pointer lr = context.getPointerArg(3);
         callback.onMsgSend(emulator, systemClass, classNamePointer == null ? null : classNamePointer.getString(0), cmd, lr);
         return 0;
-    }
-
-    @Override
-    protected LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
     }
 
 }

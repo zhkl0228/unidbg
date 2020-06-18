@@ -146,6 +146,71 @@ public class ARM {
                 case ArmConst.UC_ARM_REG_PC:
                     builder.append(String.format(Locale.US, " PC=%s", UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC)));
                     break;
+                case ArmConst.UC_ARM_REG_Q0:
+                    builder.append("\n>>>");
+                    byte[] data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q1:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q2:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q3:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q4:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q5:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q6:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q7:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q8:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q9:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q10:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q11:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q12:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q13:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q14:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case ArmConst.UC_ARM_REG_Q15:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
+                    break;
             }
         }
         System.out.println(builder.toString());
@@ -406,6 +471,71 @@ public class ARM {
                     data = unicorn.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
                     break;
+                case Arm64Const.UC_ARM64_REG_Q16:
+                    builder.append("\n>>>");
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q16=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q17:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q17=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q18:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q18=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q19:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q19=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q20:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q20=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q21:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q21=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q22:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q22=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q23:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q23=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q24:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q24=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q25:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q25=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q26:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q26=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q27:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q27=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q28:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q28=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q29:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q29=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q30:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q30=0x%s", newBigInteger(data).toString(16)));
+                    break;
+                case Arm64Const.UC_ARM64_REG_Q31:
+                    data = unicorn.reg_read(reg, 16);
+                    builder.append(String.format(Locale.US, " q31=0x%s", newBigInteger(data).toString(16)));
+                    break;
             }
         }
         System.out.println(builder.toString());
@@ -462,7 +592,24 @@ public class ARM {
             ArmConst.UC_ARM_REG_SP,
             ArmConst.UC_ARM_REG_LR,
             ArmConst.UC_ARM_REG_PC,
-            ArmConst.UC_ARM_REG_CPSR
+            ArmConst.UC_ARM_REG_CPSR,
+
+            ArmConst.UC_ARM_REG_Q0,
+            ArmConst.UC_ARM_REG_Q1,
+            ArmConst.UC_ARM_REG_Q2,
+            ArmConst.UC_ARM_REG_Q3,
+            ArmConst.UC_ARM_REG_Q4,
+            ArmConst.UC_ARM_REG_Q5,
+            ArmConst.UC_ARM_REG_Q6,
+            ArmConst.UC_ARM_REG_Q7,
+            ArmConst.UC_ARM_REG_Q8,
+            ArmConst.UC_ARM_REG_Q9,
+            ArmConst.UC_ARM_REG_Q10,
+            ArmConst.UC_ARM_REG_Q11,
+            ArmConst.UC_ARM_REG_Q12,
+            ArmConst.UC_ARM_REG_Q13,
+            ArmConst.UC_ARM_REG_Q14,
+            ArmConst.UC_ARM_REG_Q15,
     };
     private static final int[] ARM_REGS = new int[] {
             ArmConst.UC_ARM_REG_R0,
@@ -483,7 +630,24 @@ public class ARM {
             ArmConst.UC_ARM_REG_SP,
             ArmConst.UC_ARM_REG_LR,
             ArmConst.UC_ARM_REG_PC,
-            ArmConst.UC_ARM_REG_CPSR
+            ArmConst.UC_ARM_REG_CPSR,
+
+            ArmConst.UC_ARM_REG_Q0,
+            ArmConst.UC_ARM_REG_Q1,
+            ArmConst.UC_ARM_REG_Q2,
+            ArmConst.UC_ARM_REG_Q3,
+            ArmConst.UC_ARM_REG_Q4,
+            ArmConst.UC_ARM_REG_Q5,
+            ArmConst.UC_ARM_REG_Q6,
+            ArmConst.UC_ARM_REG_Q7,
+            ArmConst.UC_ARM_REG_Q8,
+            ArmConst.UC_ARM_REG_Q9,
+            ArmConst.UC_ARM_REG_Q10,
+            ArmConst.UC_ARM_REG_Q11,
+            ArmConst.UC_ARM_REG_Q12,
+            ArmConst.UC_ARM_REG_Q13,
+            ArmConst.UC_ARM_REG_Q14,
+            ArmConst.UC_ARM_REG_Q15,
     };
     private static final int[] ARM64_REGS = new int[] {
             Arm64Const.UC_ARM64_REG_X0,
@@ -534,6 +698,23 @@ public class ARM {
             Arm64Const.UC_ARM64_REG_Q13,
             Arm64Const.UC_ARM64_REG_Q14,
             Arm64Const.UC_ARM64_REG_Q15,
+
+            Arm64Const.UC_ARM64_REG_Q16,
+            Arm64Const.UC_ARM64_REG_Q17,
+            Arm64Const.UC_ARM64_REG_Q18,
+            Arm64Const.UC_ARM64_REG_Q19,
+            Arm64Const.UC_ARM64_REG_Q20,
+            Arm64Const.UC_ARM64_REG_Q21,
+            Arm64Const.UC_ARM64_REG_Q22,
+            Arm64Const.UC_ARM64_REG_Q23,
+            Arm64Const.UC_ARM64_REG_Q24,
+            Arm64Const.UC_ARM64_REG_Q25,
+            Arm64Const.UC_ARM64_REG_Q26,
+            Arm64Const.UC_ARM64_REG_Q27,
+            Arm64Const.UC_ARM64_REG_Q28,
+            Arm64Const.UC_ARM64_REG_Q29,
+            Arm64Const.UC_ARM64_REG_Q30,
+            Arm64Const.UC_ARM64_REG_Q31,
 
             Arm64Const.UC_ARM64_REG_LR,
             Arm64Const.UC_ARM64_REG_SP,

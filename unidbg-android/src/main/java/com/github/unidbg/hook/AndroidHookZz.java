@@ -2,10 +2,6 @@ package com.github.unidbg.hook;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.hook.hookzz.HookZz;
-import com.github.unidbg.linux.android.URLibraryFile;
-import com.github.unidbg.spi.LibraryFile;
-
-import java.net.URL;
 
 public class AndroidHookZz extends HookZz {
 
@@ -20,10 +16,5 @@ public class AndroidHookZz extends HookZz {
 
     private AndroidHookZz(Emulator<?> emulator) {
         super(emulator, false);
-    }
-
-    @Override
-    protected LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, -1);
     }
 }

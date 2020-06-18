@@ -59,10 +59,8 @@ public abstract class BaseHook implements IHook {
             throw new IllegalStateException("resolve library failed: " + lib);
         }
 
-        return createURLibraryFile(url, lib);
+        return emulator.createURLibraryFile(url, lib);
     }
-
-    protected abstract LibraryFile createURLibraryFile(URL url, String libName);
 
     protected final long numberToAddress(Number number) {
         return numberToAddress(emulator, number);

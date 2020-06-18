@@ -8,16 +8,11 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.fishhook.IFishHook;
 import com.github.unidbg.ios.Dyld;
 import com.github.unidbg.ios.MachOModule;
-import com.github.unidbg.ios.URLibraryFile;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.net.URL;
-import java.util.Collections;
 
 public class FishHook extends BaseHook implements IFishHook {
 
@@ -50,11 +45,6 @@ public class FishHook extends BaseHook implements IFishHook {
         if (rebind_symbols_image == null) {
             throw new IllegalStateException("rebind_symbols_image is null");
         }
-    }
-
-    @Override
-    protected LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
     }
 
     @Override
