@@ -124,7 +124,7 @@ static void test_UIKit() {
   NSString *supportPath = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,   NSUserDomainMask, YES) objectAtIndex:0];
   NSString *tmpPath = NSTemporaryDirectory();
   NSString *homePath = NSHomeDirectory();
-  NSLog(@"test_UIKit bundlePath=%@, documentPath=%@, cachePath=%@, supportPath=%@, tmpPath=%@, homePath=%@", path, documentPath, cachePath, supportPath, tmpPath, homePath);
+  NSLog(@"test_UIKit bundlePath=%@, documentPath=%@[%p], cachePath=%@, supportPath=%@, tmpPath=%@, homePath=%@", path, documentPath, [documentPath UTF8String], cachePath, supportPath, tmpPath, homePath);
 
   NSFileManager* fm = [NSFileManager defaultManager];
   printf("NSFileManager defaultManager\n");

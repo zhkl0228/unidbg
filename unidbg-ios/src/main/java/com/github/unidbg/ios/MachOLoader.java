@@ -739,11 +739,13 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             }
             return neededLibraryFile;
         } else {
-            for (String rpath : rpathSet) {
-                String soName = neededLibrary.replace(RPATH, rpath);
-                LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, soName);
+            List<String> rpathList = new ArrayList<>(rpathSet);
+            Collections.reverse(rpathList);
+            for (String rpath : rpathList) {
+                String dylibName = neededLibrary.replace(RPATH, rpath);
+                LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, dylibName);
                 if (libraryResolver != null && neededLibraryFile == null) {
-                    neededLibraryFile = libraryResolver.resolveLibrary(emulator, soName);
+                    neededLibraryFile = libraryResolver.resolveLibrary(emulator, dylibName);
                 }
                 if (neededLibraryFile != null) {
                     return neededLibraryFile;

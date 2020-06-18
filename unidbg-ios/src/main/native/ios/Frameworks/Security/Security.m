@@ -2,14 +2,15 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <stdio.h>
 
-static CFStringRef path = CFSTR("/var/root/Documents/keychain.plist");
+static CFStringRef path = CFSTR("Documents/unidbg_keychain.plist");
 static CFMutableDictionaryRef plist = NULL;
 
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 __attribute__((constructor))
 void init() {
-  CFURLRef fileURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false);
+  CFURLRef home = CFCopyHomeDirectoryURL();
+  CFURLRef fileURL = CFURLCreateWithFileSystemPathRelativeToBase(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false, home);
   CFDataRef resourceData = NULL;
   SInt32 errorCode;
   Boolean success = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, fileURL, &resourceData, NULL, NULL, &errorCode);
@@ -24,13 +25,15 @@ void init() {
     CFRelease(resourceData);
   }
   CFRelease(fileURL);
+  CFRelease(home);
   if(!plist) {
     plist = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
   }
 }
 
 static void WritePropertyToFile(CFPropertyListRef propertyList) {
-  CFURLRef fileURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false);
+  CFURLRef home = CFCopyHomeDirectoryURL();
+  CFURLRef fileURL = CFURLCreateWithFileSystemPathRelativeToBase(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false, home);
   CFErrorRef error = NULL;
   CFDataRef xmlData = CFPropertyListCreateData(kCFAllocatorDefault, propertyList, kCFPropertyListXMLFormat_v1_0, 0, &error);
   SInt32 errorCode;
@@ -45,6 +48,7 @@ static void WritePropertyToFile(CFPropertyListRef propertyList) {
     CFRelease(error);
   }
   CFRelease(fileURL);
+  CFRelease(home);
 }
 
 int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {

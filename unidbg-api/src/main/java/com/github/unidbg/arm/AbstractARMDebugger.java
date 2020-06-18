@@ -469,7 +469,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 filterAddress = Long.parseLong(filter.substring(2));
             }
             for (Module module : memory.getLoadedModules()) {
-                if (filter == null || module.name.toLowerCase().contains(filter) || (filterAddress >= module.base && filterAddress < module.base + module.size)) {
+                if (filter == null || module.getPath().toLowerCase().contains(filter.toLowerCase()) || (filterAddress >= module.base && filterAddress < module.base + module.size)) {
                     sb.append(String.format("[%3s][%" + maxLengthSoName.length() + "s] ", index++, FilenameUtils.getName(module.name)));
                     sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x-0x%x]", module.base, module.base + module.size));
                     sb.append(module.getPath());

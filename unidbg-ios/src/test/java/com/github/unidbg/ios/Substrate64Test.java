@@ -23,7 +23,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
 
     @Override
     protected DarwinARM64Emulator createARMEmulator() {
-        return new DarwinARM64Emulator(new File("target/rootfs/substrate"));
+        return new DarwinARM64Emulator(null, new File("target/rootfs/substrate"), "CFFIXED_USER_HOME=/var/mobile");
     }
 
     public void testMS() throws Exception {
