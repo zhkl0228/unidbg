@@ -232,3 +232,13 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 
 @implementation UIResponder
 @end
+
+@implementation UIImage
++ (UIImage *)imageWithContentsOfFile: (NSString *)path {
+  UIImage *image = [UIImage new];
+  CGDataProviderRef provider = CGDataProviderCreateWithFilename([path UTF8String]);
+  image.CGImage = CGImageCreateWithPNGDataProvider(provider, NULL, true, kCGRenderingIntentDefault);
+  CGDataProviderRelease(provider);
+  return image;
+}
+@end

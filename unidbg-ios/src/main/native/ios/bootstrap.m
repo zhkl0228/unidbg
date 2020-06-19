@@ -6,6 +6,8 @@
 #import <SystemConfiguration/CaptiveNetwork.h>
 #import <Security/Security.h>
 #import <AVFoundation/AVFoundation.h>
+#import <CommonCrypto/CommonDigest.h>
+#import <CommonCrypto/CommonCryptor.h>
 #include "test.h"
 
 @interface BootstrapTest : NSObject {}
@@ -167,6 +169,67 @@ static void test_Security() {
   NSLog(@"test_Security AVAudioSessionOrientationBack=%@, AVAudioSessionPolarPatternCardioid=%@", AVAudioSessionOrientationBack, AVAudioSessionPolarPatternCardioid);
 }
 
+static void test_CoreGraphics(char *path) {
+  CGDataProviderRef provider = CGDataProviderCreateWithFilename(path);
+  NSLog(@"test_CoreGraphics provider=%p", provider);
+  if(!provider) {
+    return;
+  }
+  CGImageRef image = CGImageCreateWithPNGDataProvider(provider, NULL, true, kCGRenderingIntentDefault);
+  size_t width = CGImageGetWidth(image);
+  size_t height = CGImageGetHeight(image);
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  int bitsPerComponent = 8;
+  size_t bytesPerRow = width * 4;
+  void *data = malloc(bytesPerRow * height);
+  memset(data, 0, bytesPerRow * height);
+  CGContextRef context = CGBitmapContextCreate(data, width, height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+  CGRect rect = CGRectMake( 0.0, 0.0, width, height );
+  CGContextDrawImage(context, rect, image);
+  char *imageData = CGBitmapContextGetData(context);
+  size_t bytes = CGBitmapContextGetBytesPerRow(context);
+  NSLog(@"test_CoreGraphics data=%p, bytesPerRow=%lu, imageData=%p, bytes=%lu", data, bytesPerRow, imageData, bytes);
+  for(int i = 0; i < height; i++) {
+    char *row = &imageData[i * bytes];
+    uint8_t buffer[CC_MD5_DIGEST_LENGTH];
+    CC_MD5(row, (CC_LONG) bytes, buffer);
+    NSMutableString *md5 = [NSMutableString string];
+    for (int m = 0; m < CC_MD5_DIGEST_LENGTH; m++) {
+      [md5 appendFormat:@"%02x", buffer[m]];
+    }
+    for(int m = 0; m < bytes; m++) {
+      if(m % 45 == 0) {
+        printf("\n%03d[%s]:", i, [md5 UTF8String]);
+      }
+      int val = row[m] & 0xff;
+      printf(" %02x", val);
+    }
+  }
+  printf("\n");
+  CGContextRelease(context);
+  free(data);
+  CGColorSpaceRelease(colorSpace);
+  CGDataProviderRelease(provider);
+}
+
+static void test_CommonDigest() {
+  char key[16] = { 0xda, 0x5a, 0x18, 0xe9, 0x2, 0x76, 0xee, 0x6a, 0xc3, 0x9c, 0x25, 0x6a, 0x98, 0xcc, 0x20, 0x45 };
+  char iv[16] = { 0x3e, 0x39, 0x4f, 0x62, 0x38, 0x3f, 0x53, 0x4d, 0x29, 0x46, 0x2e, 0x7b, 0x40, 0x65, 0x55, 0x35 };
+  char data[16] = { 0xa5, 0x65, 0x42, 0xf3, 0xa9, 0x9, 0xff, 0xbc, 0x95, 0x53, 0xad, 0x34, 0xb3, 0xc0, 0x21, 0xf1 };
+  char out[32];
+  size_t outSize = 0;
+  memset(out, 0, 32);
+  CCCryptorStatus status = CCCrypt(kCCDecrypt, kCCAlgorithmAES, kCCOptionPKCS7Padding, key, 16, iv, data, 16, out, 32, &outSize);
+  NSLog(@"test_CommonDigest status=%d, outSize=%lu", status, outSize);
+  if(outSize > 0) {
+    fprintf(stderr, "test_CommonDigest:");
+    for(size_t i = 0; i < outSize; i++) {
+      fprintf(stderr, " %02x", out[i] & 0xff);
+    }
+    fprintf(stderr, "\n");
+  }
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -198,6 +261,11 @@ int main(int argc, char *argv[]) {
   test_SCNetworkReachabilityGetFlags();
   test_Wifi();
   test_Security();
+
+  if(argc == 2) {
+    test_CoreGraphics(argv[1]);
+  }
+  test_CommonDigest();
 
   return 0;
 }

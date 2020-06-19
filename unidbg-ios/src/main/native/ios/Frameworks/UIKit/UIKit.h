@@ -118,3 +118,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 - (CGRect)bounds;
 - (CGFloat)scale;
 @end
+
+@interface UIImage : NSObject
+@property(nonatomic) CGImageRef CGImage;
+@end

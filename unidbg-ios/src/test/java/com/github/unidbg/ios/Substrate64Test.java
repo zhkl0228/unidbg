@@ -167,6 +167,8 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
 
         DarwinFileSystem fileSystem = (DarwinFileSystem) emulator.getFileSystem();
         fileSystem.config("unidbg");
+
+        emulator.getSyscallHandler().setVerbose(false);
     }
 
     public static void main(String[] args) throws Exception {
@@ -178,6 +180,6 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
 
     @Override
     public void onMsgSend(Emulator<?> emulator, boolean systemClass, String className, String cmd, Pointer lr) {
-        System.out.printf("onMsgSend [%s %s] from %s\n", className, cmd, lr);
+//        System.out.printf("onMsgSend [%s %s] from %s\n", className, cmd, lr);
     }
 }

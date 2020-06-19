@@ -115,10 +115,10 @@ size_t CGImageGetHeight(CGImageRef image) {
   struct spng_ihdr ihdr;
   int r = spng_get_ihdr(image->ctx, &ihdr);
   if(r) {
-    fprintf(stderr, "CGImageGetWidth spng_get_ihdr() error: %s\n", spng_strerror(r));
+    fprintf(stderr, "CGImageGetHeight spng_get_ihdr() error: %s\n", spng_strerror(r));
     return 0;
   } else {
-    fprintf(stderr, "CGImageGetWidth height=%u, LR=%s\n", ihdr.height, buf);
+    fprintf(stderr, "CGImageGetHeight height=%u, LR=%s\n", ihdr.height, buf);
     return ihdr.height;
   }
 }

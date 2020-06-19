@@ -50,7 +50,7 @@ public class ObjcObject extends UnicornStructure {
         }
     }
 
-    public Pointer call(String selectorName, Object... args) {
+    public UnicornPointer call(String selectorName, Object... args) {
         ObjC objc = ObjC.getInstance(emulator);
         Pointer selector = objc.registerName(selectorName);
         List<Object> list = new ArrayList<>(args.length + 2);
