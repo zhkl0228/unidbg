@@ -66,7 +66,7 @@ public abstract class IpaLoader {
             this.bundleVersion = parseVersion(ipa, appDir);
             this.bundleIdentifier = parseCFBundleIdentifier(ipa, appDir);
         } catch (IOException e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("load " + ipa.getAbsolutePath() + " failed", e);
         }
         this.executableBundlePath = generateExecutableBundlePath();
     }

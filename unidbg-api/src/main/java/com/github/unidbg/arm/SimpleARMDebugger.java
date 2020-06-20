@@ -315,7 +315,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println();
         System.out.println("wr0-wr7, wfp, wip, wsp <value>: write specified register");
         System.out.println("wb(address), ws(address), wi(address) <value>: write (byte, short, integer) memory of specified address, address must start with 0x");
-        System.out.println("wx(address) <hex>: write bytes to memory of specified address, address must start with 0x");
+        System.out.println("wx(address) <hex>: write bytes to memory at specified address, address must start with 0x");
         System.out.println();
         System.out.println("b(address): add temporarily breakpoint, address must start with 0x, can be module offset");
         System.out.println("b: add breakpoint of register PC");

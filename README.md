@@ -29,20 +29,21 @@ Simple tests under src/test directory
 
 ## More tests
 - [unidbg-android/src/test/java/com/github/unidbg/android/QDReaderJni.java](https://github.com/zhkl0228/unidbg/blob/master/unidbg-android/src/test/java/com/github/unidbg/android/QDReaderJni.java)
+- [unidbg-ios/src/test/java/com/github/unidbg/ios/WeChat7012Test.java](https://github.com/zhkl0228/unidbg/blob/master/unidbg-ios/src/test/java/com/github/unidbg/ios/WeChat7012Test.java)
 
 ## Features
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.
 - Support JavaVM, JNIEnv.
 - Emulation of syscalls instruction.
-- Support ARM32 and ARM64 bit.
+- Support ARM32 and ARM64.
 - Inline hook, thanks to [HookZz](https://github.com/jmpews/HookZz).
 - Android import hook, thanks to [xHook](https://github.com/iqiyi/xHook).
 - iOS [fishhook](https://github.com/facebook/fishhook) and substrate and [whale](https://github.com/asLody/whale) hook.
 - Support simple console debugger, gdb stub, experimental IDA android debugger server, instruction trace, memory read/write trace.
+- Support iOS objc and swift runtime.
 
 ## TODO
 - ~~Working iOS emulation.~~
-- ~~Add more iOS syscall.~~
 
 ## Thanks
 - [unicorn](https://github.com/zhkl0228/unicorn)
