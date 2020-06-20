@@ -1739,7 +1739,32 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     public long mmap2(long start, int length, int prot, int flags, int fd, int offset) {
         int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
 
-        if (((flags & com.github.unidbg.ios.MachO.MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
+        boolean isAnonymous = ((flags & com.github.unidbg.ios.MachO.MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0);
+        if ((flags & MAP_FIXED) != 0 && isAnonymous) {
+            if (log.isDebugEnabled()) {
+                log.debug("mmap2 MAP_FIXED start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=" + prot);
+            }
+
+            MemoryMap mapped = null;
+            for (MemoryMap map : memoryMap.values()) {
+                if (start >= map.base && start + aligned <= map.base + map.size) {
+                    mapped = map;
+                }
+            }
+
+            if (mapped != null) {
+                munmap(start, aligned);
+                unicorn.mem_map(start, aligned, prot);
+                if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
+                    log.warn("mmap2 replace exists memory map: start=" + Long.toHexString(start));
+                }
+                return start;
+            } else {
+                throw new IllegalStateException("mmap2 MAP_FIXED not found mapped memory: start=0x" + Long.toHexString(start));
+            }
+        }
+
+        if (isAnonymous) {
             long addr = allocateMapAddress(0, aligned);
             if (log.isDebugEnabled()) {
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned);

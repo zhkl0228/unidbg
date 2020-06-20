@@ -2834,18 +2834,15 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
 
         boolean warning = length >= 0x10000000;
         long base = emulator.getMemory().mmap2(addr == null ? 0 : addr.peer, length, prot, flags, fd, (int) offset);
-        String msg = "mmap addr=" + addr + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag;
+        String msg = "mmap addr=" + addr + ", base=0x" + Long.toHexString(base) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", tag=" + tag + ", LR=" + context.getLRPointer();
         if (log.isDebugEnabled() || warning) {
             if (warning) {
                 log.warn(msg);
             } else {
                 log.debug(msg);
             }
-        } else {
-            Log log = LogFactory.getLog("com.github.unidbg.ios.malloc");
-            if (log.isDebugEnabled()) {
-                log.debug(msg + ", base=0x" + Long.toHexString(base));
-            }
+        } else if(LogFactory.getLog("com.github.unidbg.ios.malloc").isDebugEnabled()) {
+            log.debug(msg);
         }
         return base;
     }

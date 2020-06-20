@@ -8,6 +8,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <CommonCrypto/CommonDigest.h>
 #import <CommonCrypto/CommonCryptor.h>
+#include <sys/mman.h>
 #include "test.h"
 
 @interface BootstrapTest : NSObject {}
@@ -228,6 +229,12 @@ static void test_CommonDigest() {
   fprintf(stderr, "\n");
 }
 
+static void test_mmap() {
+  void *addr = mmap(NULL, 0x4000 * 2, 0, 0x1002, -1, 0);
+  void *fix = mmap(addr, 0x4000, 3, 0x1012, -1, 0);
+  NSLog(@"test_mmap addr=%p, fix=%p", addr, fix);
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -264,6 +271,7 @@ int main(int argc, char *argv[]) {
     test_CoreGraphics(argv[1]);
   }
   test_CommonDigest();
+  test_mmap();
 
   return 0;
 }
