@@ -466,7 +466,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             int index = 0;
             long filterAddress = -1;
             if (filter != null && filter.startsWith("0x")) {
-                filterAddress = Long.parseLong(filter.substring(2));
+                filterAddress = Long.parseLong(filter.substring(2), 16);
             }
             for (Module module : memory.getLoadedModules()) {
                 if (filter == null || module.getPath().toLowerCase().contains(filter.toLowerCase()) || (filterAddress >= module.base && filterAddress < module.base + module.size)) {

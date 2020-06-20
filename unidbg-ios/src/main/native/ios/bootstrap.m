@@ -221,13 +221,11 @@ static void test_CommonDigest() {
   memset(out, 0, 32);
   CCCryptorStatus status = CCCrypt(kCCDecrypt, kCCAlgorithmAES, kCCOptionPKCS7Padding, key, 16, iv, data, 16, out, 32, &outSize);
   NSLog(@"test_CommonDigest status=%d, outSize=%lu", status, outSize);
-  if(outSize > 0) {
-    fprintf(stderr, "test_CommonDigest:");
-    for(size_t i = 0; i < outSize; i++) {
-      fprintf(stderr, " %02x", out[i] & 0xff);
-    }
-    fprintf(stderr, "\n");
+  fprintf(stderr, "test_CommonDigest outSize=%lu:", outSize);
+  for(size_t i = 0; i < 16; i++) {
+    fprintf(stderr, " %02x", out[i] & 0xff);
   }
+  fprintf(stderr, "\n");
 }
 
 int main(int argc, char *argv[]) {
