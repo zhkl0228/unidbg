@@ -48,7 +48,6 @@ public abstract class WeChatTest implements IOResolver<DarwinFileIO>, EmulatorCo
         LoadedIpa loader = createLoader(new File("target/rootfs/wechat")).load(this);
 
         final Emulator<DarwinFileIO> emulator = loader.getEmulator();
-        emulator.getSyscallHandler().addIOResolver(this);
 
         ISubstrate substrate = Substrate.getInstance(emulator);
         final ObjC objc = ObjC.getInstance(emulator);
