@@ -37,6 +37,7 @@ typedef enum UIApplicationState : NSInteger {
 @property(nonatomic) CGRect frame;
 - (id)initWithFrame:(CGRect)rect;
 - (void)setAccessibilityViewIsModal:(BOOL)flag;
+- (void)setOverrideUserInterfaceStyle:(NSInteger)style;
 @end
 
 @interface UIWindow : UIView

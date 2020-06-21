@@ -585,6 +585,7 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                 u.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
                 return true;
             case 190:
+            case 340:
                 u.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator, 1));
                 return true;
             case 202:

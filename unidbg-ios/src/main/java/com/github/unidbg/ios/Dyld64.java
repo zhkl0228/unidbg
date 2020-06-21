@@ -63,6 +63,7 @@ public class Dyld64 extends Dyld {
     private Pointer __dyld_dlopen_preflight;
     private long _os_trace_redirect_func;
     private long sandbox_check;
+    private long __availability_version_check;
 
     @Override
     final int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address) {
@@ -331,6 +332,23 @@ public class Dyld64 extends Dyld {
                                     }).peer;
                                 }
                                 return sandbox_check;
+                            }
+                            if ("_availability_version_check".equals(symbolName)) {
+                                if (__availability_version_check == 0) {
+                                    __availability_version_check = svcMemory.registerSvc(new Arm64Svc() {
+                                        @Override
+                                        public long handle(Emulator<?> emulator) {
+                                            RegisterContext ctx = emulator.getContext();
+                                            int count = ctx.getIntArg(0);
+                                            Pointer versions = ctx.getPointerArg(1);
+                                            if (log.isDebugEnabled()) {
+                                                log.debug("_availability_version_check count=" + count + ", versions=" + versions);
+                                            }
+                                            return 1;
+                                        }
+                                    }).peer;
+                                }
+                                return __availability_version_check;
                             }
 
                             return dlsym(emulator, handle, "_" + symbolName);

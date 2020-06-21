@@ -110,6 +110,10 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
     }
     return self;
 }
+- (void)setAccessibilityViewIsModal:(BOOL)flag {
+}
+- (void)setOverrideUserInterfaceStyle:(NSInteger)style {
+}
 @end
 
 @implementation UIWindow
