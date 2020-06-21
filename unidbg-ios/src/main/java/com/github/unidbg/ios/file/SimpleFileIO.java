@@ -267,4 +267,24 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
             return -1;
         }
     }
+
+    @Override
+    public int listxattr(Pointer namebuf, int size, int options) {
+        return listxattr(file, namebuf, size);
+    }
+
+    @Override
+    public int chown(int uid, int gid) {
+        return chown(file, uid, gid);
+    }
+
+    @Override
+    public int chmod(int mode) {
+        return chmod(file, mode);
+    }
+
+    @Override
+    public int chflags(int flags) {
+        return chflags(file, flags);
+    }
 }

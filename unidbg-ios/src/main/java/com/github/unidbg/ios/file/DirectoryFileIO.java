@@ -2,6 +2,7 @@ package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
+import com.github.unidbg.file.UnidbgFileFilter;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.ios.struct.Dirent;
@@ -28,7 +29,7 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
 
     private static DirectoryEntry[] createEntries(File dir) {
         List<DirectoryEntry> list = new ArrayList<>();
-        File[] files = dir.listFiles();
+        File[] files = dir.listFiles(new UnidbgFileFilter());
         if (files != null) {
             Arrays.sort(files);
             for (File file : files) {
@@ -136,5 +137,15 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
         }
 
         return offset;
+    }
+
+    @Override
+    public int listxattr(Pointer namebuf, int size, int options) {
+        return listxattr(dir, namebuf, size);
+    }
+
+    @Override
+    public int setxattr(String name, byte[] data) {
+        return setxattr(dir, name, data);
     }
 }

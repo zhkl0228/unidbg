@@ -2,6 +2,7 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
+import com.github.unidbg.file.UnidbgFileFilter;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.linux.struct.Dirent;
@@ -25,7 +26,7 @@ public class DirectoryFileIO extends BaseAndroidFileIO {
 
     private static DirectoryEntry[] createEntries(File dir) {
         List<DirectoryEntry> list = new ArrayList<>();
-        File[] files = dir.listFiles();
+        File[] files = dir.listFiles(new UnidbgFileFilter());
         if (files != null) {
             Arrays.sort(files);
             for (File file : files) {

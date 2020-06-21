@@ -33,6 +33,10 @@ public interface DarwinFileIO extends NewFileIO {
     int F_GETPROTECTIONCLASS =	63;	/* Get the protection class of a file from the EA, returns int */
     int F_SETPROTECTIONCLASS =	64; /* Set the protection class of a file for the EA, requires int */
 
+    int XATTR_NOFOLLOW =   0x0001;     /* Don't follow symbolic links */
+    int XATTR_CREATE =     0x0002;     /* set the value, fail if attr already exists */
+    int XATTR_REPLACE =    0x0004;     /* set the value, fail if attr does not exist */
+
     int fstat(Emulator<?> emulator, StatStructure stat);
 
     int fstatfs(StatFS statFS);
@@ -41,4 +45,11 @@ public interface DarwinFileIO extends NewFileIO {
     int setattrlist(AttrList attrList, Pointer attrBuf, int attrBufSize);
 
     int getdirentries64(Pointer buf, int bufSize);
+
+    int listxattr(Pointer namebuf, int size, int options);
+    int setxattr(String name, byte[] data);
+    int chown(int uid, int gid);
+    int chmod(int mode);
+    int chflags(int flags);
+
 }
