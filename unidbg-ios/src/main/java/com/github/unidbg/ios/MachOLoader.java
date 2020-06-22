@@ -477,6 +477,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         MachO.DysymtabCommand dysymtabCommand = null;
         MachO.EntryPointCommand entryPointCommand = null;
         List<String> ordinalList = new ArrayList<>();
+        Section fEHFrameSection = null;
+        Section fUnwindInfoSection = null;
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT: {
@@ -487,8 +489,19 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         break;
                     }
 
+                    boolean isTextSeg = "__TEXT".equals(segmentCommand.segname());
                     for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
-                        checkSection(dyId, segmentCommand.segname(), section.sectName());
+                        String sectName = section.sectName();
+                        if (isTextSeg && "__eh_frame".equals(sectName)) {
+                            fEHFrameSection = new Section(section.addr(), section.size());
+                            continue;
+                        }
+                        if (isTextSeg && "__unwind_info".equals(sectName)) {
+                            fUnwindInfoSection = new Section(section.addr(), section.size());
+                            continue;
+                        }
+
+                        checkSection(dyId, segmentCommand.segname(), sectName);
                     }
 
                     if (segmentCommand.vmsize() == 0) {
@@ -500,7 +513,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         prot = UnicornConst.UC_PROT_ALL;
                     }
 
-                    if (machHeader == -1 && "__TEXT".equals(segmentCommand.segname())) {
+                    if (machHeader == -1 && isTextSeg) {
                         machHeader = begin;
                     }
                     Alignment alignment = this.mem_map(begin, segmentCommand.vmsize(), prot, dyId);
@@ -517,8 +530,19 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         break;
                     }
 
+                    boolean isTextSeg = "__TEXT".equals(segmentCommand64.segname());
                     for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
-                        checkSection(dyId, segmentCommand64.segname(), section.sectName());
+                        String sectName = section.sectName();
+                        if (isTextSeg && "__eh_frame".equals(sectName)) {
+                            fEHFrameSection = new Section(section.addr(), section.size());
+                            continue;
+                        }
+                        if (isTextSeg && "__unwind_info".equals(sectName)) {
+                            fUnwindInfoSection = new Section(section.addr(), section.size());
+                            continue;
+                        }
+
+                        checkSection(dyId, segmentCommand64.segname(), sectName);
                     }
 
                     if (segmentCommand64.vmsize() == 0) {
@@ -530,7 +554,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         prot = UnicornConst.UC_PROT_ALL;
                     }
 
-                    if (machHeader == -1 && "__TEXT".equals(segmentCommand64.segname())) {
+                    if (machHeader == -1 && isTextSeg) {
                         machHeader = begin;
                     }
                     Alignment alignment = this.mem_map(begin, segmentCommand64.vmsize(), prot, dyId);
@@ -650,7 +674,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         final long loadSize = size;
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
-                dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList);
+                dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
+                fEHFrameSection, fUnwindInfoSection);
         processRebase(log, module);
         if (isExecutable) {
             setExecuteModule(module);
@@ -803,9 +828,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             case "__dof_Cocoa_Aut":
             case "__dof_cache":
             case "__stubs":
-            case "__unwind_info":
             case "__got":
-            case "__eh_frame":
             case "__swift5_typeref":
             case "__swift5_fieldmd":
             case "__swift5_types":

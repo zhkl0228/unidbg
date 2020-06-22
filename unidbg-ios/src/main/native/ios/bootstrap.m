@@ -235,6 +235,13 @@ static void test_mmap() {
   NSLog(@"test_mmap addr=%p, fix=%p", addr, fix);
 }
 
+static void test_NSException() {
+  NSException *exce = [NSException exceptionWithName: @"UniException" reason: @"Test" userInfo: nil];
+  NSArray *stackSymbols = [NSThread callStackSymbols];
+  NSLog(@"test_NSException=%@, stackSymbols=%@", exce, stackSymbols);
+  [exce raise];
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -272,6 +279,11 @@ int main(int argc, char *argv[]) {
   }
   test_CommonDigest();
   test_mmap();
+  @try {
+    test_NSException();
+  } @catch (NSException *exception) {
+    NSLog(@"main: Caught %@: %@", [exception name], [exception reason]);
+  }
 
   return 0;
 }

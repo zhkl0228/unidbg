@@ -359,7 +359,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator));
                     return;
                 case 338:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, stat64(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, stat64(emulator, 0));
                     return;
                 case 339:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(emulator));
@@ -619,6 +619,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 return true;
             case 202:
                 u.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator, 1));
+                return true;
+            case 338:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, stat64(emulator, 1));
                 return true;
         }
         return false;
@@ -945,10 +948,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return -1;
     }
 
-    private int stat64(Emulator<DarwinFileIO> emulator) {
+    private int stat64(Emulator<DarwinFileIO> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        Pointer pathname = context.getPointerArg(0);
-        Pointer statbuf = context.getPointerArg(1);
+        Pointer pathname = context.getPointerArg(offset);
+        Pointer statbuf = context.getPointerArg(offset + 1);
         String path = FilenameUtils.normalize(pathname.getString(0));
         if (log.isDebugEnabled()) {
             log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf);

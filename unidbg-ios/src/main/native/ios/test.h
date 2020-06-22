@@ -191,7 +191,11 @@ static void test_pthread() {
   memset(name, 0, 64);
   pthread_t thread = pthread_self();
   pthread_getname_np(thread, name, sizeof(name));
-  printf("pthread[%p] name=%s\n", thread, name);
+  pthread_attr_t thread_attr;
+  pthread_attr_init(&thread_attr);
+  size_t stack_size = 0;
+  int ret = pthread_attr_getstacksize(&thread_attr, &stack_size);
+  printf("pthread[%p] name=%s, ret=%d, stack_size=%lu\n", thread, name, ret, stack_size);
 }
 
 static void test_file() {

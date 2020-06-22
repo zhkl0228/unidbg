@@ -215,15 +215,6 @@ public abstract class WeChatTest implements IOResolver<DarwinFileIO>, EmulatorCo
                 return HookStatus.LR(emulator, 0);
             }
         });
-
-        ObjcClass cMMSafeModeInfo = objc.getClass("MMSafeModeInfo");
-        substrate.hookMessageEx(cMMSafeModeInfo.getMeta(), objc.registerName("shareInstance"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [MMSafeModeInfo shareInstance]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
     }
 
 }

@@ -13,7 +13,7 @@ public interface Memory extends IO, Loader, StackMemory {
 
     long HEAP_BASE = 0x8048000;
     long STACK_BASE = 0xc0000000L;
-    int STACK_SIZE_OF_PAGE = 512; // 2M
+    int STACK_SIZE_OF_PAGE = 32; // 512k
 
     long MMAP_BASE = 0x40000000L;
 

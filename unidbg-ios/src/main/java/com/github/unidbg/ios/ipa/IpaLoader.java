@@ -162,6 +162,7 @@ public abstract class IpaLoader {
 
     protected String[] getEnvs(File rootDir) throws IOException {
         List<String> list = new ArrayList<>();
+        list.add("PrintExceptionThrow=YES"); // log backtrace of every objc_exception_throw()
         if (log.isDebugEnabled()) {
             list.add("OBJC_HELP=YES"); // describe available environment variables
 //            list.add("OBJC_PRINT_OPTIONS=YES"); // list which options are set

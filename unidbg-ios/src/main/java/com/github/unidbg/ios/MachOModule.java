@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.*;
 import com.github.unidbg.hook.HookListener;
+import com.github.unidbg.ios.struct.DyldUnwindSections;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -50,6 +51,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     private final List<HookListener> hookListeners;
     final List<String> ordinalList;
 
+    private final Section fEHFrameSection;
+    private final Section fUnwindInfoSection;
+
     private final Map<String, ExportSymbol> exportSymbols;
 
     public Symbol getExportByName(String exportName) {
@@ -60,7 +64,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
                 String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
-                long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners, List<String> ordinalList) {
+                long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners, List<String> ordinalList,
+                Section fEHFrameSection, Section fUnwindInfoSection) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -79,6 +84,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.loader = loader;
         this.hookListeners = hookListeners;
         this.ordinalList = ordinalList;
+        this.fEHFrameSection = fEHFrameSection;
+        this.fUnwindInfoSection = fUnwindInfoSection;
 
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = machO == null ? Collections.<InitFunction>emptyList() : parseRoutines(machO);
@@ -530,7 +537,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Collections.<String, Module>emptyMap(),
                 Collections.<String, Module>emptyMap(),
                 name, emulator, null, null, null, null, 0L, false, null,
-                Collections.<HookListener>emptyList(), Collections.<String>emptyList()) {
+                Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnicornPointer pointer = symbols.get(name);
@@ -700,5 +707,22 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 throw new IllegalStateException("bad bind type " + type);
         }
         return bindAt;
+    }
+
+    public final void getUnwindInfo(DyldUnwindSections info) {
+        info.mach_header = machHeader;
+        info.dwarf_section = 0;
+        info.dwarf_section_length = 0;
+        info.compact_unwind_section = 0;
+        info.compact_unwind_section_length = 0;
+        if (fEHFrameSection != null) {
+            info.dwarf_section = base + fEHFrameSection.addr;
+            info.dwarf_section_length = fEHFrameSection.size;
+        }
+        if (fUnwindInfoSection != null) {
+            info.compact_unwind_section = base + fUnwindInfoSection.addr;
+            info.compact_unwind_section_length = fUnwindInfoSection.size;
+        }
+        info.pack();
     }
 }

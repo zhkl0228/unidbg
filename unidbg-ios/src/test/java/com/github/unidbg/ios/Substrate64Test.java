@@ -51,7 +51,6 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
 
 //        IWhale whale = Whale.getInstance(emulator);
 //        Logger.getLogger("com.github.emulator.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
-//        Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.DEBUG);
 //        Module libwhale = emulator.getMemory().findModule("libwhale.dylib");
 //        emulator.attach(libwhale.base, libwhale.base + libwhale.size).addBreakPoint(libwhale, 0x0000184b0);
         /*whale.importHookFunction("_malloc", new ReplaceCallback() {
@@ -157,6 +156,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        Module foundation = emulator.getMemory().findModule("Foundation");
 //        emulator.attach().addBreakPoint(foundation, 0x29340);
+        Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }
