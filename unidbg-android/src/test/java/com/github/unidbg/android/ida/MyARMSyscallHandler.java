@@ -3,14 +3,14 @@ package com.github.unidbg.android.ida;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.linux.ARMSyscallHandler;
+import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
-class MyARMSyscallHandler extends ARMSyscallHandler {
+class MyARMSyscallHandler extends ARM32SyscallHandler {
 
     public MyARMSyscallHandler(SvcMemory svcMemory) {
         super(svcMemory);

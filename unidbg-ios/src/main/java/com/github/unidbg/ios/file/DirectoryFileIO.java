@@ -148,4 +148,9 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
     public int setxattr(String name, byte[] data) {
         return setxattr(dir, name, data);
     }
+
+    @Override
+    public int chmod(int mode) {
+        return chmod(dir, mode);
+    }
 }

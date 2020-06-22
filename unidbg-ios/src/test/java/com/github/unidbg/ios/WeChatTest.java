@@ -61,7 +61,7 @@ public abstract class WeChatTest implements IOResolver<DarwinFileIO>, EmulatorCo
         init(emulator);
 
         ObjcClass cMMServiceCenter = objc.getClass("MMServiceCenter");
-        final ObjcObject serviceCenter = getMMServiceCenter(cMMServiceCenter);
+        final ObjcObject serviceCenter = getMMServiceCenter(objc, cMMServiceCenter);
 
         ObjcClass cFPInitResponse = objc.lookUpClass("FPInitResponse");
         if(cFPInitResponse != null) {
@@ -97,7 +97,7 @@ public abstract class WeChatTest implements IOResolver<DarwinFileIO>, EmulatorCo
         emulator.attach().run(callable);
     }
 
-    protected ObjcObject getMMServiceCenter(ObjcClass cMMServiceCenter) {
+    protected ObjcObject getMMServiceCenter(ObjC objc, ObjcClass cMMServiceCenter) {
         return cMMServiceCenter.callObjc("defaultCenter");
     }
 

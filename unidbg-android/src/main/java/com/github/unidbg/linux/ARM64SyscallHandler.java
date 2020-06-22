@@ -17,10 +17,8 @@ import com.github.unidbg.linux.file.*;
 import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
-import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
@@ -40,7 +38,7 @@ import static unicorn.ArmConst.UC_ARM_REG_C13_C0_3;
 /**
  * http://androidxref.com/6.0.0_r5/xref/external/kernel-headers/original/uapi/asm-generic/unistd.h
  */
-public class ARM64SyscallHandler extends UnixSyscallHandler<AndroidFileIO> implements SyscallHandler<AndroidFileIO> {
+public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
     private static final Log log = LogFactory.getLog(ARM64SyscallHandler.class);
 

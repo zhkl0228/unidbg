@@ -5,7 +5,7 @@ import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.LinuxFileSystem;
-import com.github.unidbg.linux.ARMSyscallHandler;
+import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.linux.AndroidElfLoader;
 import com.github.unidbg.linux.android.dvm.DalvikVM;
 import com.github.unidbg.linux.android.dvm.VM;
@@ -67,7 +67,7 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
 
     @Override
     protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
-        return new ARMSyscallHandler(svcMemory);
+        return new ARM32SyscallHandler(svcMemory);
     }
 
     private VM createDalvikVMInternal(File apkFile) {

@@ -4,7 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.file.linux.AndroidFileIO;
-import com.github.unidbg.linux.ARMSyscallHandler;
+import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.struct.Dirent;
@@ -25,7 +25,7 @@ public class AndroidTest {
     private final Emulator<?> emulator;
     private final Module module;
 
-    private static class MyARMSyscallHandler extends ARMSyscallHandler {
+    private static class MyARMSyscallHandler extends ARM32SyscallHandler {
         private MyARMSyscallHandler(SvcMemory svcMemory) {
             super(svcMemory);
         }

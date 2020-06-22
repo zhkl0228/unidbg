@@ -26,7 +26,6 @@ import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
-import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unix.struct.TimeVal64;
@@ -51,7 +50,7 @@ import static com.github.unidbg.ios.file.SocketIO.AF_ROUTE;
 /**
  * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
  */
-public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implements SyscallHandler<DarwinFileIO>, DarwinSyscall {
+public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
     private static final Log log = LogFactory.getLog(ARM64SyscallHandler.class);
 
@@ -1458,9 +1457,9 @@ public class ARM64SyscallHandler extends UnixSyscallHandler<DarwinFileIO> implem
                             bufferSize.setLong(0, UnicornStructure.calculateSize(TimeVal64.class));
                         }
                         if (buffer != null) {
-                            long currentTimeMillis = System.currentTimeMillis();
+                            long currentTimeMillis = bootTime;
                             long tv_sec = currentTimeMillis / 1000;
-                            long tv_usec = (currentTimeMillis % 1000) * 1000;
+                            long tv_usec = (currentTimeMillis % 1000) * 1000 + (bootTime / 7 % 1000);
                             TimeVal64 timeVal = new TimeVal64(buffer);
                             timeVal.tv_sec = tv_sec;
                             timeVal.tv_usec = tv_usec;

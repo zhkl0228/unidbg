@@ -21,10 +21,8 @@ import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.AbstractLoader;
-import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
-import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
@@ -43,13 +41,13 @@ import static unicorn.ArmConst.UC_ARM_REG_C13_C0_3;
 /**
  * http://androidxref.com/6.0.0_r5/xref/bionic/libc/kernel/uapi/asm-arm/asm/unistd.h
  */
-public class ARMSyscallHandler extends UnixSyscallHandler<AndroidFileIO> implements SyscallHandler<AndroidFileIO> {
+public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
-    private static final Log log = LogFactory.getLog(ARMSyscallHandler.class);
+    private static final Log log = LogFactory.getLog(ARM32SyscallHandler.class);
 
     private final SvcMemory svcMemory;
 
-    public ARMSyscallHandler(SvcMemory svcMemory) {
+    public ARM32SyscallHandler(SvcMemory svcMemory) {
         super();
 
         this.svcMemory = svcMemory;
