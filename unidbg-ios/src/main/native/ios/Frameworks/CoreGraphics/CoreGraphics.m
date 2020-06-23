@@ -221,3 +221,12 @@ CGFloat CGRectGetHeight(CGRect rect) {
 CGFloat CGRectGetWidth(CGRect rect) {
   return rect.size.width;
 }
+
+CGColorRef CGColorCreate(CGColorSpaceRef space, const CGFloat *components) {
+  CGColorRef color = malloc(sizeof(struct CGColor));
+  return color;
+}
+
+bool CGColorEqualToColor(CGColorRef color1, CGColorRef color2) {
+  return false;
+}

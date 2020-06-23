@@ -48,6 +48,7 @@ public interface DarwinFileIO extends NewFileIO {
 
     int listxattr(Pointer namebuf, int size, int options);
     int setxattr(String name, byte[] data);
+    int getxattr(Emulator<?> emulator, String name, Pointer value, int size);
     int chown(int uid, int gid);
     int chmod(int mode);
     int chflags(int flags);

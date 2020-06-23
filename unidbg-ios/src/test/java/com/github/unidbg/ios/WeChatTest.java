@@ -141,70 +141,11 @@ public abstract class WeChatTest implements IOResolver<DarwinFileIO>, EmulatorCo
     }
 
     protected void patch(Emulator<DarwinFileIO> emulator, ISubstrate substrate, ObjC objc) {
-        ObjcClass cMMOOMCrashReport = objc.getClass("MMOOMCrashReport");
-        substrate.hookMessageEx(cMMOOMCrashReport.getMeta(), objc.registerName("checkRebootType"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [MMOOMCrashReport checkRebootType]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-
-        ObjcClass cMemoryStatManager = objc.getClass("MemoryStatManager");
-        substrate.hookMessageEx(cMemoryStatManager.getMeta(), objc.registerName("sharedInstance"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [MemoryStatManager sharedInstance]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-
-        ObjcClass cWCMatrixManager = objc.getClass("WCMatrixManager");
-        substrate.hookMessageEx(cWCMatrixManager.getMeta(), objc.registerName("sharedInstance"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [WCMatrixManager sharedInstance]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-
-        ObjcClass cWCCrashBlockExtensionHandler = objc.getClass("WCCrashBlockExtensionHandler");
-        substrate.hookMessageEx(cWCCrashBlockExtensionHandler.getMeta(), objc.registerName("shareInstance"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [WCCrashBlockExtensionHandler shareInstance]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-
-        ObjcClass cMMWatchDogMonitor = objc.getClass("MMWatchDogMonitor");
-        substrate.hookMessageEx(cMMWatchDogMonitor.getMeta(), objc.registerName("beginMonitor"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [MMWatchDogMonitor beginMonitor]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-
         ObjcClass cMicroMessengerAppDelegate = objc.getClass("MicroMessengerAppDelegate");
         substrate.hookMessageEx(cMicroMessengerAppDelegate, objc.registerName("mainUISetting"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
                 System.out.println("Patch [MicroMessengerAppDelegate mainUISetting]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-        substrate.hookMessageEx(cMicroMessengerAppDelegate, objc.registerName("shouldEnterSafeMode"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [MicroMessengerAppDelegate shouldEnterSafeMode]");
-                return HookStatus.LR(emulator, 0);
-            }
-        });
-        substrate.hookMessageEx(cMicroMessengerAppDelegate, objc.registerName("beforeMainLaunching"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                System.out.println("Patch [MicroMessengerAppDelegate beforeMainLaunching]");
                 return HookStatus.LR(emulator, 0);
             }
         });
@@ -215,6 +156,17 @@ public abstract class WeChatTest implements IOResolver<DarwinFileIO>, EmulatorCo
                 return HookStatus.LR(emulator, 0);
             }
         });
+
+        ObjcClass cWAAppTaskMgr = objc.lookUpClass("WAAppTaskMgr");
+        if (cWAAppTaskMgr != null) {
+            substrate.hookMessageEx(cWAAppTaskMgr, objc.registerName("registerMemoryWarningLevelListener"), new ReplaceCallback() {
+                @Override
+                public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
+                    System.out.println("Patch [WAAppTaskMgr registerMemoryWarningLevelListener]");
+                    return HookStatus.LR(emulator, 0);
+                }
+            });
+        }
     }
 
 }

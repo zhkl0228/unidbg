@@ -7,6 +7,7 @@ import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.struct.attr.*;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.struct.TimeSpec;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
@@ -155,6 +156,11 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
     }
 
     @Override
+    public int getxattr(Emulator<?> emulator, String name, Pointer value, int size) {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    @Override
     public int chown(int uid, int gid) {
         throw new UnsupportedOperationException(getClass().getName());
     }
@@ -231,15 +237,39 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
                 return 0;
             }
             int ret = 0;
+            Pointer buffer = namebuf;
             for (String name : attr.xattr.keySet()) {
                 byte[] data = name.getBytes(StandardCharsets.UTF_8);
                 ret += (data.length + 1);
 
-                if (namebuf != null && ret <= size) {
-                    namebuf.share(ret).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
+                if (buffer != null && ret <= size) {
+                    buffer.write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
+                    buffer = buffer.share(data.length + 1);
                 }
             }
             return ret;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected final int getxattr(Emulator<?> emulator, File dest, String name, Pointer value, int size) {
+        try {
+            DarwinFileAttr attr = loadAttr(dest);
+            byte[] data = attr == null || attr.xattr == null ? null : attr.xattr.get(name);
+            if (data == null) {
+                emulator.getMemory().setErrno(UnixEmulator.ENOATTR);
+                return -1;
+            }
+            if (value == null) {
+                return data.length;
+            } else if (size >= data.length) {
+                value.write(0, data, 0, data.length);
+                return data.length;
+            } else {
+                value.write(0, data, 0, size);
+                return size;
+            }
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

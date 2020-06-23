@@ -88,6 +88,32 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 @end
 
+@implementation UITraitCollection
+- (id)init {
+    if(self = [super init]) {
+        self.userInterfaceStyle = UIUserInterfaceStyleLight;
+    }
+    return self;
+}
++ (UITraitCollection *)traitCollectionWithUserInterfaceStyle:(UIUserInterfaceStyle)_userInterfaceStyle {
+    UITraitCollection *trait = [UITraitCollection new];
+    trait.userInterfaceStyle = _userInterfaceStyle;
+    return trait;
+}
++ (UITraitCollection *)currentTraitCollection {
+    return [UITraitCollection traitCollectionWithUserInterfaceStyle: UIUserInterfaceStyleLight];
+}
++ (UITraitCollection *)traitCollectionWithDisplayScale:(CGFloat)scale {
+    return [UITraitCollection traitCollectionWithUserInterfaceStyle: UIUserInterfaceStyleLight];
+}
++ (UITraitCollection *)traitCollectionWithTraitsFromCollections:(NSArray<UITraitCollection *> *)traitCollections {
+    return [UITraitCollection traitCollectionWithUserInterfaceStyle: UIUserInterfaceStyleLight];
+}
+- (CGFloat)displayScale {
+    return 1.0;
+}
+@end
+
 @implementation UIColor
 + (UIColor *)clearColor {
     return [[UIColor alloc] init];
@@ -101,6 +127,21 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 + (UIColor *)blackColor {
     return [UIColor new];
 }
+- (UIColor *)initWithDynamicProvider:(UIColor * (^)(UITraitCollection *traitCollection))dynamicProvider {
+    return dynamicProvider([UITraitCollection new]);
+}
+- (UIColor *)resolvedColorWithTraitCollection:(UITraitCollection *)traitCollection {
+    return [UIColor new];
+}
+- (CGColorRef)CGColor {
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGFloat components[] = { 0.0, 0.0, 0.0, 0.0 };
+    CGColorRef color = CGColorCreate(colorSpace, components);
+    CGColorSpaceRelease(colorSpace);
+    return color;
+}
+- (void)setFill {
+}
 @end
 
 @implementation UIView
@@ -112,7 +153,7 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 - (void)setAccessibilityViewIsModal:(BOOL)flag {
 }
-- (void)setOverrideUserInterfaceStyle:(NSInteger)style {
+- (void)setOverrideUserInterfaceStyle:(UIUserInterfaceStyle)style {
 }
 @end
 
@@ -245,4 +286,37 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
   CGDataProviderRelease(provider);
   return image;
 }
+- (UIImage *)resizableImageWithCapInsets:(UIEdgeInsets)capInsets {
+  return self;
+}
+- (CGFloat)scale {
+  return 1.0;
+}
+- (UITraitCollection *)traitCollection {
+  return [UITraitCollection new];
+}
+- (UIImageAsset *)imageAsset {
+  return [UIImageAsset new];
+}
 @end
+
+@implementation UIImageAsset
+- (UIImage *)imageWithTraitCollection:(UITraitCollection *)traitCollection {
+  return [UIImage new];
+}
+- (void)registerImage:(UIImage *)image withTraitCollection:(UITraitCollection *)traitCollection {
+}
+@end
+
+void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque, CGFloat scale) {
+}
+
+void UIRectFill(CGRect rect) {
+}
+
+UIImage *UIGraphicsGetImageFromCurrentImageContext() {
+  return [UIImage new];
+}
+
+void UIGraphicsEndImageContext() {
+}

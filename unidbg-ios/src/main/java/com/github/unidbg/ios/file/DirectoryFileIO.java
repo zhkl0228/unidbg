@@ -150,6 +150,11 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
     }
 
     @Override
+    public int getxattr(Emulator<?> emulator, String name, Pointer value, int size) {
+        return getxattr(emulator, dir, name, value, size);
+    }
+
+    @Override
     public int chmod(int mode) {
         return chmod(dir, mode);
     }
