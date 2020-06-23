@@ -16,7 +16,7 @@ public class WeChat7013Test extends WeChatTest {
 
     @Override
     protected IpaLoader createLoader(File rootDir) {
-        return new IpaLoader64(new File("../wechat/src/test/resources/app/com.tencent.xin_7.0.13.ipa"), rootDir);
+        return new IpaLoader64(new File("target/com.tencent.xin_7.0.13.ipa"), rootDir);
     }
 
     @Override
