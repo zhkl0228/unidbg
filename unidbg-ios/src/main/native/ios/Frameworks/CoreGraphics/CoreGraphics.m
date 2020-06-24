@@ -23,7 +23,10 @@ CGDataProviderRef CGDataProviderCreateWithFilename(const char *filename) {
   ref->data = malloc(size);
   size_t read = fread(ref->data, 1, size, fp);
   fclose(fp);
-  fprintf(stderr, "CGDataProviderCreateWithFilename filename=%s, size=%ld, read=%zu, LR=%s\n", filename, size, read, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGDataProviderCreateWithFilename filename=%s, size=%ld, read=%zu, LR=%s\n", filename, size, read, buf);
+  }
   return ref;
 }
 
@@ -35,7 +38,10 @@ void CGDataProviderRelease(CGDataProviderRef provider) {
   );
   char buf[512];
   print_lr(buf, lr);
-  fprintf(stderr, "CGDataProviderRelease provider=%p, LR=%s\n", provider, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGDataProviderRelease provider=%p, LR=%s\n", provider, buf);
+  }
   free(provider->data);
   free(provider);
 }
@@ -81,7 +87,10 @@ CGImageRef CGImageCreateWithPNGDataProvider(CGDataProviderRef source, const CGFl
   ref->ctx = ctx;
   ref->out = out;
   ref->out_size = out_size;
-  fprintf(stderr, "CGImageCreateWithPNGDataProvider source=%p, decode=%p, shouldInterpolate=%d, intent=%d, ref=%p, out_size=%zu, LR=%s\n", source, decode, shouldInterpolate, intent, ref, out_size, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGImageCreateWithPNGDataProvider source=%p, decode=%p, shouldInterpolate=%d, intent=%d, ref=%p, out_size=%zu, LR=%s\n", source, decode, shouldInterpolate, intent, ref, out_size, buf);
+  }
   return ref;
 }
 
@@ -99,7 +108,10 @@ size_t CGImageGetWidth(CGImageRef image) {
     fprintf(stderr, "CGImageGetWidth spng_get_ihdr() error: %s\n", spng_strerror(r));
     return 0;
   } else {
-    fprintf(stderr, "CGImageGetWidth width=%u, LR=%s\n", ihdr.width, buf);
+    int debug = is_debug();
+    if(debug) {
+      fprintf(stderr, "CGImageGetWidth width=%u, LR=%s\n", ihdr.width, buf);
+    }
     return ihdr.width;
   }
 }
@@ -118,7 +130,10 @@ size_t CGImageGetHeight(CGImageRef image) {
     fprintf(stderr, "CGImageGetHeight spng_get_ihdr() error: %s\n", spng_strerror(r));
     return 0;
   } else {
-    fprintf(stderr, "CGImageGetHeight height=%u, LR=%s\n", ihdr.height, buf);
+    int debug = is_debug();
+    if(debug) {
+      fprintf(stderr, "CGImageGetHeight height=%u, LR=%s\n", ihdr.height, buf);
+    }
     return ihdr.height;
   }
 }
@@ -132,7 +147,10 @@ CGColorSpaceRef CGColorSpaceCreateDeviceRGB() {
   char buf[512];
   print_lr(buf, lr);
   CGColorSpaceRef ref = malloc(sizeof(struct CGColorSpace));
-  fprintf(stderr, "CGColorSpaceCreateDeviceRGB ref=%p, LR=%s\n", ref, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGColorSpaceCreateDeviceRGB ref=%p, LR=%s\n", ref, buf);
+  }
   return ref;
 }
 
@@ -144,7 +162,10 @@ void CGColorSpaceRelease(CGColorSpaceRef space) {
   );
   char buf[512];
   print_lr(buf, lr);
-  fprintf(stderr, "CGColorSpaceRelease space=%p, LR=%s\n", space, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGColorSpaceRelease space=%p, LR=%s\n", space, buf);
+  }
   free(space);
 }
 
@@ -162,7 +183,10 @@ CGContextRef CGBitmapContextCreate(void *data, size_t width, size_t height, size
   }
   ref->data = data;
   ref->bytesPerRow = bytesPerRow;
-  fprintf(stderr, "CGBitmapContextCreate data=%p, width=%zu, height=%zu, bitsPerComponent=%zu, bytesPerRow=%zu, space=%p, bitmapInfo=%u, ref=%p, LR=%s\n", data, width, height, bitsPerComponent, bytesPerRow, space, bitmapInfo, ref, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGBitmapContextCreate data=%p, width=%zu, height=%zu, bitsPerComponent=%zu, bytesPerRow=%zu, space=%p, bitmapInfo=%u, ref=%p, LR=%s\n", data, width, height, bitsPerComponent, bytesPerRow, space, bitmapInfo, ref, buf);
+  }
   return ref;
 }
 
@@ -174,7 +198,10 @@ void CGContextRelease(CGContextRef c) {
   );
   char buf[512];
   print_lr(buf, lr);
-  fprintf(stderr, "CGContextRelease c=%p, LR=%s\n", c, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGContextRelease c=%p, LR=%s\n", c, buf);
+  }
   free(c);
 }
 
@@ -186,7 +213,10 @@ void * CGBitmapContextGetData(CGContextRef context) {
   );
   char buf[512];
   print_lr(buf, lr);
-  fprintf(stderr, "CGBitmapContextGetData context=%p, LR=%s\n", context, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGBitmapContextGetData context=%p, LR=%s\n", context, buf);
+  }
   return context->data;
 }
 
@@ -198,7 +228,10 @@ void CGContextDrawImage(CGContextRef c, CGRect rect, CGImageRef image) {
   );
   char buf[512];
   print_lr(buf, lr);
-  fprintf(stderr, "CGContextDrawImage c=%p, image=%p, x=%f, y=%f, width=%f, height=%f, LR=%s\n", c, image, rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGContextDrawImage c=%p, image=%p, x=%f, y=%f, width=%f, height=%f, LR=%s\n", c, image, rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, buf);
+  }
   memcpy(c->data, image->out, image->out_size);
 }
 
@@ -210,7 +243,10 @@ size_t CGBitmapContextGetBytesPerRow(CGContextRef context) {
   );
   char buf[512];
   print_lr(buf, lr);
-  fprintf(stderr, "CGBitmapContextGetBytesPerRow context=%p, LR=%s\n", context, buf);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGBitmapContextGetBytesPerRow context=%p, LR=%s\n", context, buf);
+  }
   return context->bytesPerRow;
 }
 

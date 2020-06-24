@@ -31,10 +31,19 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
         throw new UnsupportedOperationException(getClass().getName());
     }
 
+    private int protectionClass;
+
     @Override
     public int fcntl(Emulator<?> emulator, int cmd, long arg) {
         if (cmd == F_NOCACHE) {
             return 0;
+        }
+        if (cmd == F_SETPROTECTIONCLASS) {
+            protectionClass = (int) arg;
+            return 0;
+        }
+        if (cmd == F_GETPROTECTIONCLASS) {
+            return protectionClass;
         }
 
         return super.fcntl(emulator, cmd, arg);

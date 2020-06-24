@@ -97,9 +97,6 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
             }
             return 0;
         }
-        if (cmd == F_SETPROTECTIONCLASS) {
-            return 0;
-        }
 
         return super.fcntl(emulator, cmd, arg);
     }

@@ -886,11 +886,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("access pathname=" + path + ", mode=" + mode);
         }
-        int ret = faccessat(emulator, path);
-        if (ret == -1) {
-            log.info("access pathname=" + path + ", mode=" + mode);
-        }
-        return ret;
+        return faccessat(emulator, path);
     }
 
     private long chflags(Emulator<DarwinFileIO> emulator) {
@@ -938,10 +934,16 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private int faccessat(Emulator<DarwinFileIO> emulator, String pathname) {
         FileResult<?> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (result != null && result.isSuccess()) {
+            if (verbose) {
+                System.out.println(String.format("File access '%s' from %s", pathname, emulator.getContext().getLRPointer()));
+            }
             return 0;
         }
 
-        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
+        if (verbose) {
+            System.out.println(String.format("File access failed '%s' from %s", pathname, emulator.getContext().getLRPointer()));
+        }
         return -1;
     }
 
@@ -959,10 +961,16 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     protected int stat64(Emulator<DarwinFileIO> emulator, String pathname, Pointer statbuf) {
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (result != null && result.isSuccess()) {
+            if (verbose) {
+                System.out.println(String.format("File stat '%s' from %s", pathname, emulator.getContext().getLRPointer()));
+            }
             return result.io.fstat(emulator, new Stat64(statbuf));
         }
 
         emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
+        if (verbose) {
+            System.out.println(String.format("File stat failed '%s' from %s", pathname, emulator.getContext().getLRPointer()));
+        }
         return -1;
     }
 
@@ -984,12 +992,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         String pathStr = pathname.getString(0);
         String path = FilenameUtils.normalize(pathStr);
         int ret = stat64(emulator, path, stat);
-        if (ret == -1) {
-            log.info("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat + ", LR=" + context.getLRPointer());
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat + ", ret=" + ret + ", LR=" + context.getLRPointer());
-            }
+        if (log.isDebugEnabled()) {
+            log.debug("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat + ", ret=" + ret + ", LR=" + context.getLRPointer());
         }
         return ret;
     }
@@ -1607,9 +1611,13 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int flags = context.getIntArg(1);
         int _class = context.getIntArg(2);
         int dpflags = context.getIntArg(3);
+        int mode = context.getIntArg(4);
         String pathname = path.getString(0);
-        log.info("open_dprotected_np path=" + pathname + ", flags=0x" + Integer.toHexString(flags) + ", class=" + _class + ", dpflags=0x" + Integer.toHexString(dpflags));
-        return -1;
+        int fd = open(emulator, pathname, flags);
+        if (log.isDebugEnabled()) {
+            log.debug("open_dprotected_np path=" + pathname + ", flags=0x" + Integer.toHexString(flags) + ", class=" + _class + ", dpflags=0x" + Integer.toHexString(dpflags) + ", mode=0x" + Integer.toHexString(mode));
+        }
+        return fd;
     }
 
     private long getattrlist(Emulator<DarwinFileIO> emulator) {
@@ -2858,10 +2866,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int mode = context.getIntArg(offset + 2);
         String pathname = pathname_p.getString(0);
         int fd = open(emulator, pathname, oflags);
-        if (fd == -1) {
-            log.info("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", LR=" + context.getLRPointer());
-        } else if (log.isDebugEnabled()) {
-            log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", fd=" + fd);
+        if (log.isDebugEnabled()) {
+            log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", fd=" + fd + ", LR=" + context.getLRPointer());
         }
         return fd;
     }
