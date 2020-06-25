@@ -658,7 +658,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         if (symbol == null) {
             long bindAt = 0;
             for (HookListener listener : hookListeners) {
-                long hook = listener.hook(emulator.getSvcMemory(), this.name, symbolName, -2);
+                long hook = listener.hook(emulator.getSvcMemory(), this.name, symbolName, HookListener.WEAK_BIND);
                 if (hook > 0) {
                     bindAt = hook;
                     break;

@@ -289,6 +289,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 137:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, rmdir(emulator));
                     return;
+                case 138:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator));
+                    return;
                 case 194:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getrlimit(emulator));
                     return;
@@ -349,11 +352,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 327:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
                     return;
-                case 345:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, statfs64(emulator));
-                    return;
-                case 347:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, getfsstat64(emulator));
+                case 334:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal_nocancel());
                     return;
                 case 336:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator));
@@ -370,8 +370,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 344:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getdirentries64(emulator));
                     return;
+                case 345:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, statfs64(emulator));
+                    return;
                 case 346:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, fstatfs64(emulator));
+                    return;
+                case 347:
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, getfsstat64(emulator));
                     return;
                 case 357:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, getaudit_addr(emulator));
@@ -583,12 +589,27 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
     private int rmdir(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
-        Pointer pathname = context.getPointerArg(0);
-        String path = pathname.getString(0);
+        Pointer path = context.getPointerArg(0);
+        String pathname = path.getString(0);
 
-        emulator.getFileSystem().rmdir(path);
+        emulator.getFileSystem().rmdir(pathname);
         if (log.isDebugEnabled()) {
             log.debug("rmdir pathname=" + path);
+        }
+        return 0;
+    }
+
+    /**
+     * set file access and modification times
+     * int utimes(const char *path, const struct timeval times[2]);
+     */
+    private long utimes(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer path = context.getPointerArg(0);
+        Pointer times = context.getPointerArg(1);
+        String pathname = path.getString(0);
+        if (log.isDebugEnabled()) {
+            log.debug("utimes pathname=" + pathname + ", times=" + times);
         }
         return 0;
     }
@@ -2671,6 +2692,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 216: // host_statistics
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                 Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");
