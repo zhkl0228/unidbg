@@ -51,6 +51,9 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             @Override
             public boolean hook(Unicorn u, long address, int size, long value, Object user) {
                 log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value));
+                if (LogFactory.getLog("com.github.unidbg.AbstractEmulator").isDebugEnabled()) {
+                    attach().debug();
+                }
                 return false;
             }
         }, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED | UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED | UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, null);

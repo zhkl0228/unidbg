@@ -156,17 +156,6 @@ public abstract class WeChatTest implements IOResolver<DarwinFileIO>, EmulatorCo
                 return HookStatus.LR(emulator, 0);
             }
         });
-
-        ObjcClass cWAAppTaskMgr = objc.lookUpClass("WAAppTaskMgr");
-        if (cWAAppTaskMgr != null) {
-            substrate.hookMessageEx(cWAAppTaskMgr, objc.registerName("registerMemoryWarningLevelListener"), new ReplaceCallback() {
-                @Override
-                public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
-                    System.out.println("Patch [WAAppTaskMgr registerMemoryWarningLevelListener]");
-                    return HookStatus.LR(emulator, 0);
-                }
-            });
-        }
     }
 
 }

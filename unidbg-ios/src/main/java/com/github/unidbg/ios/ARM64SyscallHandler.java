@@ -15,6 +15,7 @@ import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.file.*;
+import com.github.unidbg.ios.struct.VMStatistics;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.*;
 import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
@@ -2693,6 +2694,34 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 return MACH_MSG_SUCCESS;
             }
             case 216: // host_statistics
+                HostStatisticsRequest args = new HostStatisticsRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("host_statistics args=" + args);
+                }
+
+                if (args.flavor == HostStatisticsRequest.HOST_VM_INFO) {
+                    int size = UnicornStructure.calculateSize(VMStatistics.class);
+                    HostStatisticsReply reply = new HostStatisticsReply(request, size);
+                    reply.unpack();
+
+                    header.setMsgBits(false);
+                    header.msgh_size = header.size() + reply.size();
+                    header.msgh_remote_port = header.msgh_local_port;
+                    header.msgh_local_port = 0;
+                    header.msgh_id += 100; // reply Id always equals reqId+100
+                    header.pack();
+
+                    reply.writeVMStatistics();
+                    reply.retCode = 0;
+                    reply.host_info_outCnt = size / 4;
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("host_statistics HOST_VM_INFO reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                 Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");

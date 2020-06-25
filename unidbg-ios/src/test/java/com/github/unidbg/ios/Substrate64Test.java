@@ -153,9 +153,9 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
 //        emulator.attach().addBreakPoint(null, 0x0000000100004118L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
-//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
-//        Module foundation = emulator.getMemory().findModule("Foundation");
-//        emulator.attach().addBreakPoint(foundation, 0x29340);
+        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.INFO);
+//        Module debugModule = emulator.getMemory().findModule("libsystem_kernel.dylib");
+//        emulator.attach().addBreakPoint(debugModule, 0x0000000000006314);
         Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
