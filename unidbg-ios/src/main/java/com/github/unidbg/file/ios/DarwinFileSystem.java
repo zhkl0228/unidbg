@@ -1,7 +1,5 @@
 package com.github.unidbg.file.ios;
 
-import com.dd.plist.NSDictionary;
-import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileSystem;
 import com.github.unidbg.file.FileSystem;
@@ -14,7 +12,6 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 
 public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements FileSystem<DarwinFileIO>, IOConstants {
 
@@ -27,15 +24,6 @@ public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements Fi
         super.initialize(rootDir);
 
         FileUtils.forceMkdir(new File(rootDir, "private"));
-        FileUtils.forceMkdir(new File(rootDir, "var/root/Library"));
-        FileUtils.forceMkdir(new File(rootDir, "var/root/Documents"));
-
-        File plist = new File(rootDir, "var/root/Library/Preferences/.GlobalPreferences.plist");
-        FileUtils.forceMkdir(plist.getParentFile());
-        if (!plist.exists()) {
-            NSDictionary root = (NSDictionary) NSDictionary.fromJavaObject(Collections.emptyMap());
-            PropertyListParser.saveAsASCII(root, plist);
-        }
     }
 
     @Override
@@ -76,19 +64,6 @@ public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements Fi
     @Override
     protected boolean hasExcl(int oflags) {
         return (oflags & O_EXCL) != 0;
-    }
-
-    public void config(String bundleIdentifier) {
-        File plist = new File(rootDir, "var/root/Library/Preferences/" + bundleIdentifier + ".plist");
-        try {
-            FileUtils.forceMkdir(plist.getParentFile());
-            if (!plist.exists()) {
-                NSDictionary root = (NSDictionary) NSDictionary.fromJavaObject(Collections.emptyMap());
-                PropertyListParser.saveAsASCII(root, plist);
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
 }

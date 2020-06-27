@@ -4,7 +4,6 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.file.ios.DarwinFileSystem;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.MsgSendCallback;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -151,11 +150,11 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
 //        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
 
         Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
-//        emulator.attach().addBreakPoint(null, 0x0000000100004118L);
+//        emulator.attach().addBreakPoint(null, 0x00000001000072E0L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
         Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.INFO);
-//        Module debugModule = emulator.getMemory().findModule("libsystem_kernel.dylib");
-//        emulator.attach().addBreakPoint(debugModule, 0x0000000000006314);
+//        Module debugModule = emulator.getMemory().findModule("CoreFoundation");
+//        emulator.attach().addBreakPoint(debugModule, 0x0000000000105AA4);
         Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -164,9 +163,6 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-
-        DarwinFileSystem fileSystem = (DarwinFileSystem) emulator.getFileSystem();
-        fileSystem.config("unidbg");
 
         emulator.getSyscallHandler().setVerbose(false);
     }

@@ -1,11 +1,14 @@
 package com.github.unidbg.ios;
 
+import com.dd.plist.NSDictionary;
+import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.ios.file.ByteArrayFileIO;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
 import com.github.unidbg.spi.LibraryFile;
@@ -13,11 +16,11 @@ import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO> {
 
@@ -66,6 +69,24 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
             return FileResult.success(createFileIO(fileSystem.createWorkDir(), path, oflags));
         }
 
+        if (path.endsWith("/Library/Preferences/.GlobalPreferences.plist")) {
+            if (_GlobalPreferences == null) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("AppleICUForce24HourTime", true);
+                map.put("AppleLanguages", new String[] { "zh-Hans", "en" });
+                map.put("AppleLocale", "zh_CN");
+                NSDictionary root = (NSDictionary) NSDictionary.fromJavaObject(map);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                try {
+                    PropertyListParser.saveAsBinary(root, outputStream);
+                } catch (IOException e) {
+                    throw new IllegalStateException("save .GlobalPreferences.plist failed", e);
+                }
+                _GlobalPreferences = outputStream.toByteArray();
+            }
+            return FileResult.<DarwinFileIO>success(new ByteArrayFileIO(oflags, path, _GlobalPreferences));
+        }
+
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
         File file = ResourceUtils.extractResource(DarwinResolver.class, iosResource, path);
         if (file != null) {
@@ -74,6 +95,8 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
 
         return null;
     }
+
+    private byte[] _GlobalPreferences;
 
     private DarwinFileIO createFileIO(File file, String pathname, int oflags) {
         if (file.canRead()) {

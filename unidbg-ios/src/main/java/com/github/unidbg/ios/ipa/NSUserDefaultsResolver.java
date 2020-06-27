@@ -24,7 +24,7 @@ public class NSUserDefaultsResolver implements IOResolver<DarwinFileIO> {
 
     @Override
     public FileResult<DarwinFileIO> resolve(Emulator<DarwinFileIO> emulator, String pathname, int oflags) {
-        if (("/var/root/Library/Preferences/" + bundleIdentifier + ".plist").equals(pathname)) {
+        if (pathname.endsWith(("/Library/Preferences/" + bundleIdentifier + ".plist"))) {
             NSDictionary root = (NSDictionary) NSDictionary.fromJavaObject(map);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             try {
