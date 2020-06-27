@@ -6,6 +6,7 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class PListTest extends TestCase {
@@ -17,6 +18,13 @@ public class PListTest extends TestCase {
         map.put("AppleLocale", "zh_CN");
         NSDictionary root = (NSDictionary) NSDictionary.fromJavaObject(map);
         PropertyListParser.saveAsBinary(root, new File("target/plist_test.plist"));
+    }
+
+    public void testLocale() {
+        Locale locale = Locale.getDefault();
+        System.out.println(locale);
+        System.out.println(locale.getCountry());
+        System.out.println(locale.getLanguage());
     }
 
 }

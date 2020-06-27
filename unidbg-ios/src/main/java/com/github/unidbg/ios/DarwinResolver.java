@@ -71,10 +71,11 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
 
         if (path.endsWith("/Library/Preferences/.GlobalPreferences.plist")) {
             if (_GlobalPreferences == null) {
+                Locale locale = Locale.getDefault();
                 Map<String, Object> map = new HashMap<>();
                 map.put("AppleICUForce24HourTime", true);
-                map.put("AppleLanguages", new String[] { "zh-Hans", "en" });
-                map.put("AppleLocale", "zh_CN");
+                map.put("AppleLanguages", new String[] { locale.getLanguage() });
+                map.put("AppleLocale", locale.toString());
                 NSDictionary root = (NSDictionary) NSDictionary.fromJavaObject(map);
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 try {
