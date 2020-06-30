@@ -492,15 +492,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     boolean isTextSeg = "__TEXT".equals(segmentCommand.segname());
                     for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
                         String sectName = section.sectName();
-                        if (isTextSeg && "__eh_frame".equals(sectName)) {
-                            fEHFrameSection = new Section(section.addr(), section.size());
-                            continue;
-                        }
-                        if (isTextSeg && "__unwind_info".equals(sectName)) {
-                            fUnwindInfoSection = new Section(section.addr(), section.size());
-                            continue;
-                        }
-
                         checkSection(dyId, segmentCommand.segname(), sectName);
                     }
 

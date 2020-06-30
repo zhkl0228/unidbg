@@ -582,7 +582,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 byte[] data = new byte[old_size];
                 old_address.read(0, data, 0, data.length);
                 memory.munmap(map.base, (int) map.size);
-                long address = emulator.getMemory().mmap2(0, new_size, map.prot, AbstractLoader.MAP_ANONYMOUS, 0, 0);
+                long address = emulator.getMemory().mmap2(0, new_size, map.prot, AndroidElfLoader.MAP_ANONYMOUS, 0, 0);
                 UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
                 assert pointer != null;
                 pointer.write(0, data, 0, data.length);

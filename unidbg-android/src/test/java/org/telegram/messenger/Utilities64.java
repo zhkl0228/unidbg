@@ -5,6 +5,7 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
+import com.github.unidbg.linux.android.dvm.AbstractJni;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.VM;
@@ -17,7 +18,7 @@ import com.github.unidbg.virtualmodule.android.JniGraphics;
 import java.io.File;
 import java.io.IOException;
 
-public class Utilities64 {
+public class Utilities64 extends AbstractJni {
 
     private static LibraryResolver createLibraryResolver() {
         return new AndroidResolver(23);
@@ -38,12 +39,13 @@ public class Utilities64 {
         memory.setLibraryResolver(createLibraryResolver());
 
         vm = emulator.createDalvikVM(null);
+        vm.setJni(this);
         Module module = new JniGraphics(emulator, vm).register(memory);
         assert module != null;
         new AndroidModule(emulator, vm).register(memory);
 
         vm.setVerbose(true);
-        DalvikModule dm = vm.loadLibrary(new File("src/test/resources/example_binaries/arm64-v8a/libtmessages.29.so"), false);
+        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/arm64-v8a/libtmessages.29.so"), false);
         dm.callJNI_OnLoad(emulator);
 
         Utilities = vm.resolveClass("org/telegram/messenger/Utilities");

@@ -3,7 +3,6 @@ package com.github.unidbg.spi;
 import com.github.unidbg.*;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
-import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
@@ -104,43 +103,6 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         }
         setMMapBaseAddress(addr + length);
         return addr;
-    }
-
-    public static final int MAP_ANONYMOUS = 0x20;
-
-    @Override
-    public long mmap2(long start, int length, int prot, int flags, int fd, int offset) {
-        int aligned = (int) ARM.alignSize(length, emulator.getPageAlign());
-
-        if (((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0)) {
-            long addr = allocateMapAddress(0, aligned);
-            if (log.isDebugEnabled()) {
-                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
-            }
-            unicorn.mem_map(addr, aligned, prot);
-            if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
-                log.warn("mmap2 replace exists memory map addr=" + Long.toHexString(addr));
-            }
-            return addr;
-        }
-        try {
-            FileIO file;
-            if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
-                long addr = allocateMapAddress(0, aligned);
-                if (log.isDebugEnabled()) {
-                    log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
-                }
-                long ret = file.mmap2(unicorn, addr, aligned, prot, offset, length);
-                if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
-                    log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
-                }
-                return ret;
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-
-        throw new AbstractMethodError("mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset);
     }
 
     @Override
