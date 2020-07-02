@@ -119,7 +119,8 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected abstract T createByteArrayFileIO(String pathname, int oflags, byte[] data);
 
-    protected int gettimeofday(Pointer tv, Pointer tz) {
+    @SuppressWarnings("unused")
+    protected int gettimeofday(Emulator<?> emulator, Pointer tv, Pointer tz) {
         if (log.isDebugEnabled()) {
             log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
         }

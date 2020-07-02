@@ -20,7 +20,6 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
@@ -1801,7 +1800,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private int gettimeofday(Emulator<?> emulator) {
         Pointer tv = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer tz = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        return gettimeofday(tv, tz);
+        return gettimeofday(emulator, tv, tz);
     }
 
     private int faccessat(Unicorn u, Emulator<AndroidFileIO> emulator) {
