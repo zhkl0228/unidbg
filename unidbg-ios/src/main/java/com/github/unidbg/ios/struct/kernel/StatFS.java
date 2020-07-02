@@ -32,11 +32,12 @@ public class StatFS extends UnicornStructure {
     public byte[] f_fstypename = new byte[MFSTYPENAMELEN]; /* fs type name */
     public byte[] f_mntonname = new byte[MAXPATHLEN]; /* directory on which mounted */
     public byte[] f_mntfromname = new byte[MAXPATHLEN]; /* mounted filesystem */
+    public int[] f_reserved = new int[8]; /* For future use */
 
     @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("f_bsize", "f_iosize", "f_blocks", "f_bfree", "f_bavail", "f_files", "f_ffree", "f_fsid", "f_owner",
-                "f_type", "f_flags", "f_fssubtype", "f_fstypename", "f_mntonname", "f_mntfromname");
+                "f_type", "f_flags", "f_fssubtype", "f_fstypename", "f_mntonname", "f_mntfromname", "f_reserved");
     }
 
 }

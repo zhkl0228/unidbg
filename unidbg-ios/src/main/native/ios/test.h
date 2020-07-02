@@ -20,6 +20,9 @@
 #include <mach-o/dyld_images.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#include <sys/param.h>
+#include <sys/ucred.h>
+#include <sys/mount.h>
 
 #define RTM_IFINFO	0xe
 
@@ -341,6 +344,21 @@ static void test_host_statistics() {
   free(buf);
 }
 
+static void test_getfsstat() {
+  struct statfs *mntbuf;
+  int mntsize = getfsstat(0, 0, MNT_NOWAIT);
+  size_t bufsize = (mntsize + 1) * sizeof(struct statfs);
+  mntbuf = malloc(bufsize);
+  memset(mntbuf, 0, bufsize);
+  int ret = getfsstat(mntbuf, bufsize, MNT_WAIT);
+  char *buf = malloc(bufsize * 3);
+  memset(buf, 0, bufsize * 3);
+  hex(buf, mntbuf, bufsize);
+  printf("test_getfsstat mntsize=%d, bufsize=%zu, ret=%d, hex=%s\n", mntsize, bufsize, ret, buf);
+  free(buf);
+  free(mntbuf);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -364,4 +382,5 @@ void do_test() {
   test_sysctl_KERN_OSTYPE();
   checkDebugger();
   test_host_statistics();
+  test_getfsstat();
 }

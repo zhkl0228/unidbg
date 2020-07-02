@@ -971,16 +971,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return -1;
     }
 
-    protected int getfsstat64(Emulator<DarwinFileIO> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer buf = context.getPointerArg(0);
-        int bufSize = context.getIntArg(1);
-        int flags = context.getIntArg(2);
-        log.info("getfsstat64 buf=" + buf + ", bufSize=" + bufSize + ", flags=0x" + Integer.toHexString(flags));
-        emulator.getMemory().setErrno(UnixEmulator.EOPNOTSUPP);
-        return -1;
-    }
-
     private int stat64(Emulator<DarwinFileIO> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(0);

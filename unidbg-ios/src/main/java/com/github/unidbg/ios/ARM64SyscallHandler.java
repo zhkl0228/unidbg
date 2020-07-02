@@ -1157,16 +1157,6 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         throw new UnicornException("statfs64 path=" + path + ", buf=" + buf);
     }
 
-    protected long getfsstat64(Emulator<DarwinFileIO> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer buf = context.getPointerArg(0);
-        int bufSize = context.getIntArg(1);
-        int flags = context.getIntArg(2);
-        log.info("getfsstat64 buf=" + buf + ", bufSize=" + bufSize + ", flags=0x" + Integer.toHexString(flags));
-        emulator.getMemory().setErrno(UnixEmulator.EOPNOTSUPP);
-        return -1;
-    }
-
     private long bsdthread_create(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer start_routine = context.getPointerArg(0);
