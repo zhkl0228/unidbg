@@ -26,6 +26,12 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
 
     final long bootTime = System.currentTimeMillis();
 
+    protected final void exit(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int status = context.getIntArg(0);
+        System.exit(status);
+    }
+
     protected final int open_NOCANCEL(Emulator<DarwinFileIO> emulator, int offset) {
         RegisterContext context = emulator.getContext();
         Pointer pathname_p = context.getPointerArg(offset);

@@ -25,7 +25,7 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
         return new DarwinARM64Emulator(null, new File("target/rootfs/substrate"), "CFFIXED_USER_HOME=/var/mobile");
     }
 
-    public void testMS() throws Exception {
+    public void testMS() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);

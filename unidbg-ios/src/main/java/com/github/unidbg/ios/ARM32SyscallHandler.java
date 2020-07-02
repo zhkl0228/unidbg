@@ -193,6 +193,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 case -93: // mk_timer_arm
                     u.reg_write(ArmConst.UC_ARM_REG_R0, _mk_timer_arm(emulator));
                     return;
+                case 1:
+                    exit(emulator);
+                    return;
                 case 4:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, write(u, emulator));
                     return;

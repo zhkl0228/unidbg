@@ -26,7 +26,6 @@ import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 
@@ -129,12 +128,12 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    public Module loadLibrary(File libraryFile) throws IOException {
+    public Module loadLibrary(File libraryFile) {
         return memory.load(libraryFile);
     }
 
     @Override
-    public Module loadLibrary(File libraryFile, boolean forceCallInit) throws IOException {
+    public Module loadLibrary(File libraryFile, boolean forceCallInit) {
         return memory.load(libraryFile, forceCallInit);
     }
 

@@ -28,7 +28,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
     public void testIgnore() {
     }
 
-    private void processMS() throws Exception {
+    private void processMS() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setObjcRuntime(true);
 //        emulator.traceCode();

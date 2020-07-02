@@ -28,7 +28,7 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
         return new DarwinARMEmulator();
     }
 
-    private void processXpcNoPie() throws Exception {
+    private void processXpcNoPie() {
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/xpcNP"));
 
         long start = System.currentTimeMillis();
@@ -48,7 +48,7 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
     }
 
     @SuppressWarnings("unused")
-    private void processXpc() throws Exception {
+    private void processXpc() {
 //        emulator.attach().addBreakPoint(null, 0x403b7dfc);
 //        emulator.traceCode();
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/xpc"));

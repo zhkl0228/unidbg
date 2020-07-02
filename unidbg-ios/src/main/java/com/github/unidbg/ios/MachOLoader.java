@@ -182,18 +182,36 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     @Override
     protected Module loadInternal(LibraryFile libraryFile, boolean forceCallInit) {
-        return loadInternal(libraryFile, forceCallInit, true);
+        try {
+            return loadInternal(libraryFile, forceCallInit, true);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
-    private MachOModule loadInternal(LibraryFile libraryFile, boolean forceCallInit, boolean checkBootstrap) {
+    private MachOModule loadInternal(LibraryFile libraryFile, boolean forceCallInit, boolean checkBootstrap) throws IOException {
         MachOModule module = loadInternalPhase(libraryFile, true, checkBootstrap, Collections.<String>emptyList());
 
-        for (MachOModule export : modules.values()) {
-            if (!export.lazyLoadNeededList.isEmpty()) {
+        for (MachOModule export : modules.values().toArray(new MachOModule[0])) {
+            for (NeedLibrary library : export.lazyLoadNeededList.toArray(new NeedLibrary[0])) {
+                String neededLibrary = library.path;
                 if (log.isDebugEnabled()) {
-                    log.debug("Export module resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
+                    log.debug(export.getPath() + " need dependency " + neededLibrary);
+                }
+
+                MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
+                if (loaded != null) {
+                    continue;
+                }
+                LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.<String>emptySet());
+                if (neededLibraryFile != null) {
+                    MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.<String>emptySet());
+                    needed.addReferenceCount();
+                } else if (!library.weak) {
+                    log.info(export.getPath() + " load dependency " + neededLibrary + " failed");
                 }
             }
+            export.lazyLoadNeededList.clear();
         }
 
         for (MachOModule m : modules.values()) {
@@ -268,7 +286,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
                 }
                 if (emulator.is64Bit()) {
-                    throw new UnsupportedOperationException("NOT 32 bit executable: " + libraryFile.getName());
+                    throw new UnsupportedOperationException("NOT 64 bit executable: " + libraryFile.getName());
                 }
                 break;
             case MACHO_LE_X64:
@@ -276,7 +294,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     throw new UnsupportedOperationException("cpuType=" + machO.header().cputype());
                 }
                 if (emulator.is32Bit()) {
-                    throw new UnsupportedOperationException("NOT 64 bit executable: " + libraryFile.getName());
+                    throw new UnsupportedOperationException("NOT 32 bit executable: " + libraryFile.getName());
                 }
                 break;
             default:
