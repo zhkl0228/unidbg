@@ -154,6 +154,22 @@ CGColorSpaceRef CGColorSpaceCreateDeviceRGB() {
   return ref;
 }
 
+CGColorSpaceRef CGColorSpaceCreateDeviceGray() {
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char buf[512];
+  print_lr(buf, lr);
+  CGColorSpaceRef ref = malloc(sizeof(struct CGColorSpace));
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "CGColorSpaceCreateDeviceGray ref=%p, LR=%s\n", ref, buf);
+  }
+  return ref;
+}
+
 void CGColorSpaceRelease(CGColorSpaceRef space) {
   uintptr_t lr = 1;
   __asm__(

@@ -12,6 +12,8 @@ const NSNotificationName UIApplicationWillTerminateNotification = @"UIApplicatio
 const NSNotificationName UIApplicationDidFinishLaunchingNotification = @"UIApplicationDidFinishLaunchingNotification";
 const NSNotificationName UIApplicationDidChangeStatusBarOrientationNotification = @"UIApplicationDidChangeStatusBarOrientationNotification";
 const NSNotificationName UIApplicationDidChangeStatusBarFrameNotification = @"UIApplicationDidChangeStatusBarFrameNotification";
+const NSNotificationName UIKeyboardWillShowNotification = @"UIKeyboardWillShowNotification";
+const NSNotificationName UIKeyboardWillHideNotification = @"UIKeyboardWillHideNotification";
 
 typedef CGFloat UIWindowLevel;
 const UIWindowLevel UIWindowLevelNormal = 0.0;

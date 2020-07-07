@@ -470,7 +470,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int gid = context.getIntArg(2);
         String pathname = path.getString(0);
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (result.isSuccess()) {
+        if (result != null && result.isSuccess()) {
             int ret = result.io.chown(uid, gid);
             if (ret == -1) {
                 log.info("chown path=" + pathname + ", uid=" + uid + ", gid=" + gid);
@@ -885,7 +885,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int flags = context.getIntArg(1);
         String pathname = path.getString(0);
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (result.isSuccess()) {
+        if (result != null && result.isSuccess()) {
             int ret = result.io.chflags(flags);
             if (ret == -1) {
                 log.info("chflags pathname=" + pathname + ", flags=0x" + Integer.toHexString(flags));
@@ -1664,7 +1664,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             value.setSize(size);
         }
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (result.isSuccess()) {
+        if (result != null && result.isSuccess()) {
             int ret = result.io.getxattr(emulator, name.getString(0), value, size);
             if (ret == -1) {
                 log.info("getxattr path=" + pathname + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));
@@ -1695,7 +1695,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return -1;
         }
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
-        if (result.isSuccess()) {
+        if (result != null && result.isSuccess()) {
             int ret = result.io.setxattr(name.getString(0), value.getByteArray(0, size));
             if (ret == -1) {
                 log.info("setxattr path=" + pathname + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));

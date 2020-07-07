@@ -801,79 +801,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     private void checkSection(String dyId, String segName, String sectName) {
         // __OBJC need fNotifyObjC = true
-        switch (sectName) {
-            case "__text":
-            case "__mod_init_func":
-            case "__cstring":
-            case "__cfstring":
-            case "__nl_symbol_ptr":
-            case "__la_symbol_ptr":
-            case "__picsymbolstub4":
-            case "__stub_helper":
-            case "__const":
-            case "__data":
-            case "__bss":
-            case "__common":
-            case "__gcc_except_tab":
-            case "__constrw":
-            case "__dyld":
-            case "__dof_magmalloc":
-            case "__dof_plockstat":
-            case "__dof_objc_runt":
-            case "__symbolstub1":
-            case "__symbol_stub4":
-            case "__lazy_symbol":
-            case "__ustring":
-            case "__cfstring_CFN":
-            case "__csbitmaps":
-            case "__properties":
-            case "__dof_NSXPCList":
-            case "__dof_Cocoa_Lay":
-            case "__dof_NSXPCProx":
-            case "__dof_NSProgres":
-            case "__dof_NSXPCConn":
-            case "__cf_except_bt":
-            case "__dof_CFRunLoop":
-            case "__dof_Cocoa_Aut":
-            case "__dof_cache":
-            case "__stubs":
-            case "__got":
-            case "__swift5_typeref":
-            case "__swift5_fieldmd":
-            case "__swift5_types":
-            case "__swift5_capture":
-            case "__swift5_reflstr":
-            case "__swift5_assocty":
-            case "__swift5_proto":
-            case "__swift5_builtin":
-            case "__swift5_protos":
-            case "__info_plist":
-            case "__crash_info":
-            case "__thread_vars":
-            case "__thread_bss":
-            case "__thread_data":
-            case "__mod_term_func":
-            case "__dof_CoreImage":
-            case "__dof_opencl_ap":
-            case "__dof_AudioHAL_":
-            case "__dof_AudioHAL_0":
-            case "__dof_AudioHAL_1":
-            case "__oslogstring":
-            case "__swift_hooks":
-            case "__bit_ios":
-            case "__bit_hockey":
-            case "__thread_ptrs":
-                break;
-            default:
-                boolean isObjc = sectName.startsWith("__objc_");
-                if (isObjc) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
-                    }
-                } else {
-                    log.info("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
-                }
-                break;
+        if (log.isDebugEnabled()) {
+            log.debug("checkSection name=" + sectName + ", dyId=" + dyId + ", segName=" + segName);
         }
     }
 
