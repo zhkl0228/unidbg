@@ -593,23 +593,6 @@ public class ARM {
             ArmConst.UC_ARM_REG_LR,
             ArmConst.UC_ARM_REG_PC,
             ArmConst.UC_ARM_REG_CPSR,
-
-            ArmConst.UC_ARM_REG_Q0,
-            ArmConst.UC_ARM_REG_Q1,
-            ArmConst.UC_ARM_REG_Q2,
-            ArmConst.UC_ARM_REG_Q3,
-            ArmConst.UC_ARM_REG_Q4,
-            ArmConst.UC_ARM_REG_Q5,
-            ArmConst.UC_ARM_REG_Q6,
-            ArmConst.UC_ARM_REG_Q7,
-            ArmConst.UC_ARM_REG_Q8,
-            ArmConst.UC_ARM_REG_Q9,
-            ArmConst.UC_ARM_REG_Q10,
-            ArmConst.UC_ARM_REG_Q11,
-            ArmConst.UC_ARM_REG_Q12,
-            ArmConst.UC_ARM_REG_Q13,
-            ArmConst.UC_ARM_REG_Q14,
-            ArmConst.UC_ARM_REG_Q15,
     };
     private static final int[] ARM_REGS = new int[] {
             ArmConst.UC_ARM_REG_R0,
