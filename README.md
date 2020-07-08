@@ -29,7 +29,6 @@ Simple tests under src/test directory
 
 ## More tests
 - [unidbg-android/src/test/java/com/github/unidbg/android/QDReaderJni.java](https://github.com/zhkl0228/unidbg/blob/master/unidbg-android/src/test/java/com/github/unidbg/android/QDReaderJni.java)
-- [unidbg-ios/src/test/java/com/github/unidbg/ios/WeChat7012Test.java](https://github.com/zhkl0228/unidbg/blob/master/unidbg-ios/src/test/java/com/github/unidbg/ios/WeChat7012Test.java)
 
 ## Features
 - Emulation of the JNI Invocation API so JNI_OnLoad can be called.
