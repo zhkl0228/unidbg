@@ -1,6 +1,7 @@
 package com.github.unidbg.arm;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.Memory;
@@ -332,6 +333,11 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("d(0x): show disassemble at specify address");
         System.out.println("stop: stop emulation");
         System.out.println("run: run test");
+
+        if (emulator.getFamily() == Family.iOS) {
+            System.out.println("dump [class name]: dump objc class");
+            System.out.println("search [keywords]: search objc classes");
+        }
     }
 
     @Override

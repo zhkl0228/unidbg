@@ -64,8 +64,11 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     private final FileSystem<T> fileSystem;
     protected final SvcMemory svcMemory;
 
-    public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, long svcBase, int svcSize, File rootDir) {
+    private final Family family;
+
+    public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, long svcBase, int svcSize, File rootDir, Family family) {
         super();
+        this.family = family;
 
         if (rootDir == null) {
             rootDir = new File(FileSystem.DEFAULT_ROOT_FS);
@@ -91,6 +94,11 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
         setContextEmulator(this);
         this.svcMemory = new ARMSvcMemory(unicorn, svcBase, svcSize, this);
+    }
+
+    @Override
+    public Family getFamily() {
+        return family;
     }
 
     public final SvcMemory getSvcMemory() {
@@ -431,4 +439,13 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     }
 
     protected abstract boolean isPaddingArgument();
+
+    protected void dumpClass(String className) {
+        throw new UnsupportedOperationException("dumpClass className=" + className);
+    }
+
+    protected void searchClass(String keywords) {
+        throw new UnsupportedOperationException("searchClass keywords=" + keywords);
+    }
+
 }

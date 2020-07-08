@@ -1,6 +1,7 @@
 package com.github.unidbg.linux.android;
 
 import com.github.unidbg.AndroidEmulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.arm.AbstractARM64Emulator;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.linux.AndroidFileIO;
@@ -25,6 +26,7 @@ import java.net.URL;
 
 public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> implements AndroidEmulator {
 
+    @SuppressWarnings("unused")
     public AndroidARM64Emulator() {
         this(null, null);
     }
@@ -44,7 +46,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
     }
 
     public AndroidARM64Emulator(String processName, File rootDir) {
-        super(processName, rootDir);
+        super(processName, rootDir, Family.Android64);
     }
 
     @Override
@@ -64,16 +66,6 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
 
     private VM createDalvikVMInternal(File apkFile) {
         return new DalvikVM64(this, apkFile);
-    }
-
-    @Override
-    public String getLibraryExtension() {
-        return ".so";
-    }
-
-    @Override
-    public String getLibraryPath() {
-        return "/android/lib/arm64-v8a/";
     }
 
     @Override

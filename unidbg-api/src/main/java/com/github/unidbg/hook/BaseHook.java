@@ -1,6 +1,7 @@
 package com.github.unidbg.hook;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.ArmHook;
@@ -53,8 +54,9 @@ public abstract class BaseHook implements IHook {
     }
 
     protected LibraryFile resolveLibrary(String libName) {
-        String lib = libName + emulator.getLibraryExtension();
-        URL url = BaseHook.class.getResource(emulator.getLibraryPath() + lib);
+        Family family = emulator.getFamily();
+        String lib = libName + family.getLibraryExtension();
+        URL url = BaseHook.class.getResource(family.getLibraryPath() + lib);
         if (url == null) {
             throw new IllegalStateException("resolve library failed: " + lib);
         }

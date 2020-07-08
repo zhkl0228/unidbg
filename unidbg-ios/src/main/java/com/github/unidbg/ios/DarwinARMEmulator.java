@@ -1,9 +1,12 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.Family;
 import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.DarwinFileSystem;
+import com.github.unidbg.ios.classdump.ClassDumper;
+import com.github.unidbg.ios.classdump.IClassDumper;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -32,7 +35,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
     }
 
     public DarwinARMEmulator(String processName, File rootDir, String... envs) {
-        super(processName, rootDir, envs);
+        super(processName, rootDir, Family.iOS, envs);
     }
 
     @Override
@@ -91,16 +94,6 @@ public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
     }
 
     @Override
-    public String getLibraryExtension() {
-        return ".dylib";
-    }
-
-    @Override
-    public String getLibraryPath() {
-        return "/ios/lib/";
-    }
-
-    @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
         return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
     }
@@ -108,5 +101,18 @@ public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
     @Override
     protected boolean isPaddingArgument() {
         return false;
+    }
+
+    @Override
+    protected void dumpClass(String className) {
+        IClassDumper classDumper = ClassDumper.getInstance(this);
+        String classData = classDumper.dumpClass(className);
+        System.out.println("dumpClass\n" + classData);
+    }
+
+    @Override
+    protected void searchClass(String keywords) {
+        IClassDumper classDumper = ClassDumper.getInstance(this);
+        classDumper.searchClass(keywords);
     }
 }

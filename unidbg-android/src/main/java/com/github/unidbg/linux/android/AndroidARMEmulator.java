@@ -1,6 +1,7 @@
 package com.github.unidbg.linux.android;
 
 import com.github.unidbg.AndroidEmulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.linux.AndroidFileIO;
@@ -47,7 +48,7 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
     }
 
     public AndroidARMEmulator(String processName, File rootDir) {
-        super(processName, rootDir);
+        super(processName, rootDir, Family.Android32);
     }
 
     @Override
@@ -109,16 +110,6 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
                 }
             }
         }
-    }
-
-    @Override
-    public String getLibraryExtension() {
-        return ".so";
-    }
-
-    @Override
-    public String getLibraryPath() {
-        return "/android/lib/armeabi-v7a/";
     }
 
     @Override

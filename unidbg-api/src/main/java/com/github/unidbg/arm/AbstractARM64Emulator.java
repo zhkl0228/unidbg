@@ -2,6 +2,7 @@ package com.github.unidbg.arm;
 
 import capstone.Capstone;
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.arm.context.UnicornArm64RegisterContext;
@@ -41,8 +42,8 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     private final Dlfcn dlfcn;
 
-    public AbstractARM64Emulator(String processName, File rootDir, String... envs) {
-        super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName, 0xffffe0000L, 0x10000, rootDir);
+    public AbstractARM64Emulator(String processName, File rootDir, Family family, String... envs) {
+        super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName, 0xffffe0000L, 0x10000, rootDir, family);
 
         Cpsr.getArm64(unicorn).switchUserMode();
 
@@ -111,7 +112,16 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     @Override
     protected Debugger createConsoleDebugger() {
-        return new SimpleARM64Debugger(this);
+        return new SimpleARM64Debugger(this) {
+            @Override
+            protected void dumpClass(String className) {
+                AbstractARM64Emulator.this.dumpClass(className);
+            }
+            @Override
+            protected void searchClass(String keywords) {
+                AbstractARM64Emulator.this.searchClass(keywords);
+            }
+        };
     }
 
     @Override

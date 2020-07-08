@@ -119,8 +119,7 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
 
     SyscallHandler<T> getSyscallHandler();
 
-    String getLibraryExtension();
-    String getLibraryPath();
+    Family getFamily();
     @SuppressWarnings("unused")
     LibraryFile createURLibraryFile(URL url, String libName);
 
