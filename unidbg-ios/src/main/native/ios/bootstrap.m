@@ -80,6 +80,9 @@ static CFMutableDictionaryRef makeDictionary() {
   [userDefault setObject: @"unidbg" forKey: @"name"];
   BOOL success = [userDefault synchronize];
   NSLog(@"NSUserDefaults name=%@, synchronize=%d", name, success);
+
+  NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+  NSLog(@"NSURLSessionConfiguration configuration=%@", configuration);
 }
 -(NSString *) description {
   return @"This is ObjC TEST";

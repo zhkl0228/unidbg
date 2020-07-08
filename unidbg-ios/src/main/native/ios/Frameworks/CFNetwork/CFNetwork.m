@@ -1,7 +1,6 @@
 #import "CFNetwork.h"
 #import <stdio.h>
 #import <CoreFoundation/CoreFoundation.h>
-#import <Foundation/Foundation.h>
 
 CFDictionaryRef CFNetworkCopySystemProxySettings() {
   uintptr_t lr = 1;

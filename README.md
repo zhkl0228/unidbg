@@ -42,9 +42,6 @@ Simple tests under src/test directory
 - Support simple console debugger, gdb stub, experimental IDA android debugger server, instruction trace, memory read/write trace.
 - Support iOS objc and swift runtime.
 
-## TODO
-- ~~Working iOS emulation.~~
-
 ## Thanks
 - [unicorn](https://github.com/zhkl0228/unicorn)
 - [HookZz](https://github.com/jmpews/HookZz)
@@ -58,3 +55,4 @@ Simple tests under src/test directory
 - [whale](https://github.com/asLody/whale)
 - [kaitai_struct](https://github.com/kaitai-io/kaitai_struct)
 - [fishhook](https://github.com/facebook/fishhook)
+- [runtime_class-dump](https://github.com/Tyilo/runtime_class-dump)

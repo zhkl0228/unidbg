@@ -272,6 +272,18 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 @end
 
+@implementation NSURLSessionConfiguration (CFNetwork)
++ (NSURLSessionConfiguration *)defaultSessionConfiguration {
+  return [NSURLSessionConfiguration new];
+}
+@end
+
+@implementation NSURLSession (CFNetwork)
++ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue {
+  return [NSURLSession new];
+}
+@end
+
 @implementation UIViewController
 @end
 

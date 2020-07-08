@@ -136,6 +136,14 @@ typedef enum UIDeviceBatteryState : NSInteger {
 - (unsigned int)unsignedIntValue;
 @end
 
+@interface NSURLSessionConfiguration (CFNetwork)
++ (NSURLSessionConfiguration *)defaultSessionConfiguration;
+@end
+
+@interface NSURLSession (CFNetwork)
++ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue;
+@end
+
 @interface UIViewController : NSObject
 @end
 
