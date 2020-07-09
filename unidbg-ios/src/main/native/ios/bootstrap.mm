@@ -19,7 +19,7 @@ static CFMutableDictionaryRef makeDictionary() {
   const static int one = 1;
 
   CFStringRef array[] = { CFSTR("*.local"), CFSTR("169.254/16") };
-  CFArrayRef arrayRef = CFArrayCreate(NULL, (void *)array, (CFIndex) 2, NULL);
+  CFArrayRef arrayRef = CFArrayCreate(NULL, (const void **)array, (CFIndex) 2, NULL);
   CFNumberRef ftpPassive = CFNumberCreate(NULL, kCFNumberSInt32Type, (const void *) &one);
 
   CFStringRef en_keys[] = { CFSTR("ExceptionsList"), CFSTR("FTPPassive") };
@@ -190,7 +190,7 @@ static void test_CoreGraphics(char *path) {
   CGContextRef context = CGBitmapContextCreate(data, width, height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
   CGRect rect = CGRectMake( 0.0, 0.0, width, height );
   CGContextDrawImage(context, rect, image);
-  char *imageData = CGBitmapContextGetData(context);
+  char *imageData = (char *) CGBitmapContextGetData(context);
   size_t bytes = CGBitmapContextGetBytesPerRow(context);
   NSLog(@"test_CoreGraphics data=%p, bytesPerRow=%lu, imageData=%p, bytes=%lu", data, bytesPerRow, imageData, bytes);
   for(int i = 0; i < height; i++) {

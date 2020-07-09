@@ -49,11 +49,11 @@ static void test_sysctl_CTL_UNSPEC() {
   int values[14];
   size_t size = sizeof(values);
 
-  char *name = "kern.ostype";
+  const char *name = "kern.ostype";
 
   mib[0] = CTL_UNSPEC;
   mib[1] = 3;
-  int ret = sysctl(mib, 2, values, &size, name, strlen(name));
+  int ret = sysctl(mib, 2, values, &size, (char *) name, strlen(name));
   printf("test_sysctl_CTL_UNSPEC ret=%d, ctl=%d, type=%d, size=%zu\n", ret, values[0], values[1], size);
 }
 
@@ -61,7 +61,7 @@ static void test_sysctl_CTL_NET() {
   size_t buffSize = 0;
   int					mib[6] = {CTL_NET, AF_ROUTE, 0, 0, NET_RT_IFLIST, 0 };
   int ret = sysctl(mib, 6, NULL, &buffSize, NULL, 0);
-  char *buf = malloc(buffSize);
+  char *buf = (char *) malloc(buffSize);
   ret = sysctl(mib, 6, buf, &buffSize, NULL, 0);
 
   struct if_msghdr	*ifm = (struct if_msghdr *) buf;
@@ -70,10 +70,10 @@ static void test_sysctl_CTL_NET() {
   while((char*)ifm < end) {
     if(ifm->ifm_type == RTM_IFINFO) {
       struct sockaddr_dl	*sdl = (struct sockaddr_dl *) (ifm + 1);
-      char *name = malloc(sdl->sdl_nlen + 1);
+      char *name = (char *) malloc(sdl->sdl_nlen + 1);
       memcpy(name, sdl->sdl_data, sdl->sdl_nlen);
       name[sdl->sdl_nlen] = 0;
-      char *mac = malloc(128);
+      char *mac = (char *) malloc(128);
       int index = 0;
       for(int i = 0; i < sdl->sdl_alen; i++) {
         index += sprintf(&mac[index], "%x:", sdl->sdl_data[sdl->sdl_nlen+i] & 0xff);
@@ -105,7 +105,7 @@ static void test_sysctl_KERN_USRSTACK() {
 static void test_sysctl_HW_MACHINE() {
   size_t size;
   sysctlbyname("hw.machine", NULL, &size, NULL, 0);
-  char *machine = malloc(size);
+  char *machine = (char *) malloc(size);
   sysctlbyname("hw.machine", machine, &size, NULL, 0);
   printf("test_sysctl_HW_MACHINE machine=%s\n", machine);
   free(machine);
@@ -114,7 +114,7 @@ static void test_sysctl_HW_MACHINE() {
 static void test_sysctl_KERN_OSTYPE() {
   size_t size;
   sysctlbyname("kern.ostype", NULL, &size, NULL, 0);
-  char *osType = malloc(size);
+  char *osType = (char *) malloc(size);
   sysctlbyname("kern.ostype", osType, &size, NULL, 0);
   printf("test_sysctl_KERN_OSTYPE machine=%s\n", osType);
   free(osType);
@@ -123,7 +123,7 @@ static void test_sysctl_KERN_OSTYPE() {
 static void test_sysctl_HW_MODEL() {
   size_t size;
   sysctlbyname("hw.model", NULL, &size, NULL, 0);
-  char *model = malloc(size);
+  char *model = (char *) malloc(size);
   sysctlbyname("hw.model", model, &size, NULL, 0);
   printf("test_sysctl_HW_MODEL model=%s\n", model);
   free(model);
@@ -132,7 +132,7 @@ static void test_sysctl_HW_MODEL() {
 static void test_sysctl_KERN_VERSION() {
   size_t size;
   sysctlbyname("kern.version", NULL, &size, NULL, 0);
-  char *version = malloc(size);
+  char *version = (char *) malloc(size);
   sysctlbyname("kern.version", version, &size, NULL, 0);
   printf("test_sysctl_KERN_VERSION version=%s\n", version);
   free(version);
@@ -141,7 +141,7 @@ static void test_sysctl_KERN_VERSION() {
 static void test_sysctl_KERN_BOOTTIME() {
   size_t size;
   sysctlbyname("kern.boottime", NULL, &size, NULL, 0);
-  char *boot_time = malloc(size);
+  char *boot_time = (char *) malloc(size);
   sysctlbyname("kern.boottime", boot_time, &size, NULL, 0);
   uint32_t timestamp = 0;
   memcpy(&timestamp, boot_time, sizeof(uint32_t));
@@ -185,7 +185,7 @@ struct proc_bsdshortinfo {
         uint32_t                pbsi_rfu;		/* reserved for future use*/
 };
 
-extern int proc_pidinfo(int pid, int flavor, uint64_t arg,  void *buffer, int buffersize);
+extern "C" int proc_pidinfo(int pid, int flavor, uint64_t arg,  void *buffer, int buffersize);
 
 static void test_proc_pidinfo() {
   struct proc_bsdshortinfo bsdinfo;
@@ -337,7 +337,7 @@ static void test_host_statistics() {
   mach_port_t mhs = mach_host_self();
   int ret = host_statistics(mhs, HOST_VM_INFO, (host_info_t)&stats, &count);
   size_t size = sizeof(stats);
-  char *buf = malloc(size * 3);
+  char *buf = (char *) malloc(size * 3);
   memset(buf, 0, size * 3);
   hex(buf, &stats, size);
   printf("test_host_statistics ret=%d, size=%lu, hex=%s\n", ret, size, buf);
@@ -348,10 +348,10 @@ static void test_getfsstat() {
   struct statfs *mntbuf;
   int mntsize = getfsstat(0, 0, MNT_NOWAIT);
   size_t bufsize = (mntsize + 1) * sizeof(struct statfs);
-  mntbuf = malloc(bufsize);
+  mntbuf = (struct statfs *) malloc(bufsize);
   memset(mntbuf, 0, bufsize);
   int ret = getfsstat(mntbuf, bufsize, MNT_WAIT);
-  char *buf = malloc(bufsize * 3);
+  char *buf = (char *) malloc(bufsize * 3);
   memset(buf, 0, bufsize * 3);
   hex(buf, mntbuf, bufsize);
   printf("test_getfsstat mntsize=%d, bufsize=%zu, ret=%d, hex=%s\n", mntsize, bufsize, ret, buf);
@@ -365,7 +365,7 @@ static void test_lr() {
     "mov %[LR], lr\n"
     :[LR]"=r"(lr)
   );
-  char *buf = malloc(128);
+  char *buf = (char *) malloc(128);
   memset(buf, 0, 128);
   hex(buf, (void *)lr, 8);
   printf("test_lr lr=%p, hex=%s\n", (void *)lr, buf);
@@ -407,7 +407,7 @@ void init() {
     :[LR]"=r"(lr)
   );
   lr &= (~(0x4000-1));
-  char *buf = malloc(128);
+  char *buf = (char *) malloc(128);
   memset(buf, 0, 128);
   hex(buf, (void *)lr, 8);
   printf("constructor lr=%p, hex=%s\n", (void *)lr, buf);
