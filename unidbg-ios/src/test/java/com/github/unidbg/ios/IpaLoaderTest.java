@@ -52,4 +52,8 @@ public class IpaLoaderTest implements EmulatorConfigurator {
     @Override
     public void configure(Emulator<DarwinFileIO> emulator, String executableBundlePath, File rootDir, String bundleIdentifier) {
     }
+
+    @Override
+    public void onExecutableLoaded(Emulator<DarwinFileIO> emulator, MachOModule executable) {
+    }
 }

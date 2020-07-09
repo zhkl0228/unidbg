@@ -725,4 +725,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
         info.pack();
     }
+
+    @Override
+    public long getBaseHeader() {
+        return machHeader;
+    }
 }

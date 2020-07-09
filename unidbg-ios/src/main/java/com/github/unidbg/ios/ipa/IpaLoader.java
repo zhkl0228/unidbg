@@ -7,10 +7,7 @@ import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.file.ios.DarwinFileIO;
-import com.github.unidbg.ios.DarwinARM64Emulator;
-import com.github.unidbg.ios.DarwinARMEmulator;
-import com.github.unidbg.ios.DarwinResolver;
-import com.github.unidbg.ios.MachOLoader;
+import com.github.unidbg.ios.*;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.spi.SyscallHandler;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -140,7 +137,7 @@ public abstract class IpaLoader {
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
-        return load(emulator, ipa, bundleAppDir, loads);
+        return load(emulator, ipa, bundleAppDir, configurator, loads);
     }
 
     LoadedIpa load64(EmulatorConfigurator configurator, String... loads) throws IOException {
@@ -154,7 +151,7 @@ public abstract class IpaLoader {
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
-        return load(emulator, ipa, bundleAppDir, loads);
+        return load(emulator, ipa, bundleAppDir, configurator, loads);
     }
 
     protected String[] getEnvs(File rootDir) throws IOException {
@@ -183,10 +180,13 @@ public abstract class IpaLoader {
         this.forceCallInit = forceCallInit;
     }
 
-    private LoadedIpa load(Emulator<DarwinFileIO> emulator, File ipa, String bundleAppDir, String... loads) throws IOException {
+    private LoadedIpa load(Emulator<DarwinFileIO> emulator, File ipa, String bundleAppDir, EmulatorConfigurator configurator, String... loads) throws IOException {
         Memory memory = emulator.getMemory();
         Module module = memory.load(new IpaLibraryFile(appDir, ipa, executable, bundleAppDir, loads), forceCallInit);
         MachOLoader loader = (MachOLoader) memory;
+        if (configurator != null) {
+            configurator.onExecutableLoaded(emulator, (MachOModule) module);
+        }
         loader.onExecutableLoaded(executable);
         return new LoadedIpa(emulator, module, bundleIdentifier, bundleVersion);
     }

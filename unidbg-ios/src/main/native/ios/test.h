@@ -359,6 +359,19 @@ static void test_getfsstat() {
   free(mntbuf);
 }
 
+static void test_lr() {
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  char *buf = malloc(128);
+  memset(buf, 0, 128);
+  hex(buf, (void *)lr, 8);
+  printf("test_lr lr=%p, hex=%s\n", (void *)lr, buf);
+  free(buf);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -383,4 +396,20 @@ void do_test() {
   checkDebugger();
   test_host_statistics();
   test_getfsstat();
+  test_lr();
+}
+
+__attribute__((constructor))
+void init() {
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  lr &= (~(0x4000-1));
+  char *buf = malloc(128);
+  memset(buf, 0, 128);
+  hex(buf, (void *)lr, 8);
+  printf("constructor lr=%p, hex=%s\n", (void *)lr, buf);
+  free(buf);
 }

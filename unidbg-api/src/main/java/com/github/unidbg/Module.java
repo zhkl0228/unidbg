@@ -26,6 +26,10 @@ public abstract class Module {
         this.regions = regions;
     }
 
+    public long getBaseHeader() {
+        return base;
+    }
+
     public final List<MemRegion> getRegions() {
         return regions;
     }
