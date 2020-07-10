@@ -155,6 +155,8 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 - (void)setOverrideUserInterfaceStyle:(UIUserInterfaceStyle)style {
 }
+- (void)addSubview:(UIView *)view {
+}
 @end
 
 @implementation UIWindow
@@ -291,6 +293,7 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @end
 
 @implementation UIImage
+@synthesize accessibilityIdentifier;
 + (UIImage *)imageWithContentsOfFile: (NSString *)path {
   UIImage *image = [UIImage new];
   CGDataProviderRef provider = CGDataProviderCreateWithFilename([path UTF8String]);
@@ -298,11 +301,18 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
   CGDataProviderRelease(provider);
   return image;
 }
++ (UIImage *)imageNamed:(NSString *)name {
+  UIImage *image = [UIImage new];
+  return image;
+}
 - (UIImage *)resizableImageWithCapInsets:(UIEdgeInsets)capInsets {
   return self;
 }
 - (CGFloat)scale {
   return 1.0;
+}
+- (CGSize)size {
+  return CGSizeZero;
 }
 - (UITraitCollection *)traitCollection {
   return [UITraitCollection new];

@@ -403,14 +403,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
             }
         }
-        if (emulator.getFamily() == Family.iOS && line.startsWith("dump ")) {
+        if (emulator.getFamily() == Family.iOS && !emulator.isRunning() && line.startsWith("dump ")) {
             String className = line.substring(5).trim();
             if (className.length() > 0) {
                 dumpClass(className);
                 return false;
             }
         }
-        if (emulator.getFamily() == Family.iOS && line.startsWith("search ")) {
+        if (emulator.getFamily() == Family.iOS && !emulator.isRunning() && line.startsWith("search ")) {
             String keywords = line.substring(7).trim();
             if (keywords.length() > 0) {
                 searchClass(keywords);

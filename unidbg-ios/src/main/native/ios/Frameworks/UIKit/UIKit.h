@@ -39,6 +39,10 @@ typedef struct UIEdgeInsets {
 
 const UIEdgeInsets UIEdgeInsetsZero = { 0.0, 0.0, 0.0, 0.0 };
 
+typedef enum UIViewAutoresizing : NSUInteger {
+    UIViewAutoresizingNone
+} UIViewAutoresizing;
+
 @interface UITraitCollection : NSObject
 @property(nonatomic) UIUserInterfaceStyle userInterfaceStyle;
 @end
@@ -60,13 +64,22 @@ const UIEdgeInsets UIEdgeInsetsZero = { 0.0, 0.0, 0.0, 0.0 };
 @property(nonatomic) BOOL accessibilityViewIsModal;
 @property(nonatomic, retain) UIColor *backgroundColor;
 @property(nonatomic) CGRect frame;
+@property(nonatomic, getter=isHidden) BOOL hidden;
+@property(nonatomic, readonly) UIView *superview;
+@property(nonatomic) UIViewAutoresizing autoresizingMask;
 - (id)initWithFrame:(CGRect)rect;
 - (void)setAccessibilityViewIsModal:(BOOL)flag;
 - (void)setOverrideUserInterfaceStyle:(UIUserInterfaceStyle)style;
 @end
 
+@interface UIViewController : UIResponder
+@property(nonatomic, copy) NSString *title;
+@property(nonatomic, strong) UIView *view;
+@end
+
 @interface UIWindow : UIView
 @property(nonatomic) UIWindowLevel windowLevel;
+@property(nonatomic, strong) UIViewController *rootViewController;
 - (void)makeKeyAndVisible;
 @end
 
@@ -144,15 +157,16 @@ typedef enum UIDeviceBatteryState : NSInteger {
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue;
 @end
 
-@interface UIViewController : NSObject
-@end
-
 @interface UIScreen : NSObject
 + (UIScreen *)mainScreen;
 - (CGRect)bounds;
 - (CGFloat)scale;
 @end
 
-@interface UIImage : NSObject
+@protocol UIAccessibilityIdentification
+@property(nonatomic, copy) NSString *accessibilityIdentifier;
+@end
+
+@interface UIImage : NSObject <UIAccessibilityIdentification>
 @property(nonatomic) CGImageRef CGImage;
 @end
