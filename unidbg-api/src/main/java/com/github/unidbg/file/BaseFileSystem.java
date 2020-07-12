@@ -76,20 +76,19 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             return FileResult.success(file.isDirectory() ? createDirectoryFileIO(file, oflags, path) : createSimpleFileIO(file, oflags, path));
         }
 
-        if (!create || !file.getParentFile().exists()) {
+        if (!create) {
             return FileResult.failed(UnixEmulator.ENOENT);
         }
 
         try {
             if (directory) {
-                if (!file.mkdir()) {
-                    throw new IllegalStateException("mkdir failed: " + file);
-                }
+                FileUtils.forceMkdir(file);
                 return FileResult.success(createDirectoryFileIO(file, oflags, path));
             } else {
-                if (!file.createNewFile()) {
-                    throw new IllegalStateException("createNewFile failed: " + file);
+                if (!file.getParentFile().exists()) {
+                    FileUtils.forceMkdir(file.getParentFile());
                 }
+                FileUtils.touch(file);
                 return FileResult.success(createSimpleFileIO(file, oflags, path));
             }
         } catch (IOException e) {
