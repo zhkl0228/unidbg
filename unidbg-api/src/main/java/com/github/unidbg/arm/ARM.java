@@ -754,7 +754,7 @@ public class ARM {
 
     private static final Pattern MEM_PATTERN = Pattern.compile("\\w+,\\s\\[(\\w+),\\s#(-)?(0x)?(\\w+)]");
 
-    static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
+    public static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
         return assembleDetail(emulator, ins, address, thumb, false);
     }
 
