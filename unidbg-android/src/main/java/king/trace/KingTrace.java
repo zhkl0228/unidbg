@@ -13,7 +13,7 @@ import unicorn.UnicornException;
 import java.io.*;
 import java.util.Arrays;
 
-class KingTrace implements CodeHook {
+public class KingTrace implements CodeHook {
     private AndroidEmulator emulator;
     private Unicorn unicorn;
     private StringBuilder outLogSb=new StringBuilder();

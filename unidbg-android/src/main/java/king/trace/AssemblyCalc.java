@@ -55,56 +55,56 @@ public abstract class AssemblyCalc {
 
     public int DumpSize=0x40;
     public Hashtable<String, Integer> RegDic;
-    public com.wx.CalcType OpType;
+    public CalcType OpType;
     //在最后面的常量数值
     public int OpValue=0;
     public Unicorn unicorn;
     public abstract void Init(String ops,String opcode);
     public String ExecCalc(){
         if(this.Ops.startsWith("lsr")) {
-            this.OpType= com.wx.CalcType.LSR;
+            this.OpType= CalcType.LSR;
             return LSR();
         }else if(this.Ops.startsWith("lsl")){
-            this.OpType= com.wx.CalcType.LSL;
+            this.OpType= CalcType.LSL;
             return LSL();
         }else if(this.Ops.startsWith("bic")){
-            this.OpType= com.wx.CalcType.BIC;
+            this.OpType= CalcType.BIC;
             return BIC();
         }else if(this.Ops.startsWith("orr")){
-            this.OpType= com.wx.CalcType.ORR;
+            this.OpType= CalcType.ORR;
             return ORR();
         }else if (this.Ops.startsWith("add")){
-            this.OpType= com.wx.CalcType.ADD;
+            this.OpType= CalcType.ADD;
             return ADD();
         }else if (this.Ops.startsWith("eor")){
-            this.OpType= com.wx.CalcType.EOR;
+            this.OpType= CalcType.EOR;
             return EOR();
         }else if (this.Ops.startsWith("and")){
-            this.OpType= com.wx.CalcType.AND;
+            this.OpType= CalcType.AND;
             return AND();
         }else if (this.Ops.startsWith("mvn")){
-            this.OpType= com.wx.CalcType.MVN;
+            this.OpType= CalcType.MVN;
             return MVN();
         }else if (this.Ops.startsWith("sub")) {
-            this.OpType = com.wx.CalcType.SUB;
+            this.OpType = CalcType.SUB;
             return SUB();
         }else if (this.Ops.startsWith("orn")){
-                this.OpType= com.wx.CalcType.ORN;
+                this.OpType= CalcType.ORN;
                 return ORN();
         }else if (this.Ops.startsWith("uxtb")){
-            this.OpType= com.wx.CalcType.UXTB;
+            this.OpType= CalcType.UXTB;
             return UXTB();
         }else if(this.Ops.equals("mov")){
-            this.OpType= com.wx.CalcType.MOV;
+            this.OpType= CalcType.MOV;
             return MOV();
         }else if(this.Ops.equals("movw")){
-            this.OpType= com.wx.CalcType.MOVW;
+            this.OpType= CalcType.MOVW;
             return MOVW();
         }else if(this.Ops.equals("movt")){
-            this.OpType= com.wx.CalcType.MOVT;
+            this.OpType= CalcType.MOVT;
             return MOVT();
         }else if (this.Ops.startsWith("ldr")){
-            this.OpType= com.wx.CalcType.LDR;
+            this.OpType= CalcType.LDR;
             return LDR();
         }
         return "";

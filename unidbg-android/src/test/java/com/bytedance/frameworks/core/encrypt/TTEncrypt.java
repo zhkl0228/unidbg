@@ -25,6 +25,7 @@ import com.github.unidbg.linux.android.dvm.array.ByteArray;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import king.trace.KingTrace;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +54,9 @@ public class TTEncrypt {
         module = dm.getModule(); // 加载好的libttEncrypt.so对应为一个模块
 
         TTEncryptUtils = vm.resolveClass("com/bytedance/frameworks/core/encrypt/TTEncryptUtils");
+
+        KingTrace codeHook = new KingTrace(emulator,false,0);
+        emulator.getUnicorn().hook_add_new(codeHook,1,0, this);
     }
 
     void destroy() throws IOException {
