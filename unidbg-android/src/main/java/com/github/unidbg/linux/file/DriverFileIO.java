@@ -24,6 +24,9 @@ public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, Androi
         if ("/dev/ashmem".equals(pathname)) {
             return new Ashmem(emulator, oflags, pathname);
         }
+        if ("/dev/zero".equals(pathname)) {
+            return new ZeroFileIO(emulator, oflags, pathname);
+        }
         return null;
     }
 

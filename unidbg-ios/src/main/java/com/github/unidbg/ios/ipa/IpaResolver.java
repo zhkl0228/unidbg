@@ -40,7 +40,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
             return FileResult.<DarwinFileIO>success(new ByteArrayFileIO(oflags, pathname, new byte[0]));
         }
 
-        pathname = FilenameUtils.normalize(pathname);
+        pathname = FilenameUtils.normalize(pathname, true);
         if (pathname.startsWith(appDir)) {
             String path = IpaLoader.PAYLOAD_PREFIX + pathname.substring(randomDir.length());
             try (JarFile jarFile = new JarFile(ipa)) {

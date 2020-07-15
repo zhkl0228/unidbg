@@ -172,7 +172,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     protected final LinuxModule loadInternal(LibraryFile libraryFile, boolean forceCallInit) {
         try {
             LinuxModule module = loadInternal(libraryFile);
-            resolveSymbols();
+            resolveSymbols(!forceCallInit);
             if (callInitFunction || forceCallInit) {
                 for (LinuxModule m : modules.values().toArray(new LinuxModule[0])) {
                     boolean forceCall = (forceCallInit && m == module) || m.isForceCallInit();
@@ -191,7 +191,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
     }
 
-    private void resolveSymbols() throws IOException {
+    private void resolveSymbols(boolean showWarning) throws IOException {
         for (LinuxModule m : modules.values()) {
             for (Iterator<ModuleSymbol> iterator = m.getUnresolvedSymbol().iterator(); iterator.hasNext(); ) {
                 ModuleSymbol moduleSymbol = iterator.next();
@@ -200,7 +200,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     log.debug("[" + moduleSymbol.soName + "]" + moduleSymbol.symbol.getName() + " symbol resolved to " + resolved.toSoName);
                     resolved.relocation(emulator);
                     iterator.remove();
-                } else {
+                } else if(showWarning) {
                     log.info("[" + moduleSymbol.soName + "]symbol " + moduleSymbol.symbol + " is missing relocationAddr=" + moduleSymbol.relocationAddr + ", offset=0x" + Long.toHexString(moduleSymbol.offset));
                 }
             }
@@ -235,7 +235,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         try {
             LinuxModule module = loadInternal(file);
-            resolveSymbols();
+            resolveSymbols(true);
             if (!callInitFunction) { // No need call init array
                 for (LinuxModule m : modules.values()) {
                     m.initFunctionList.clear();

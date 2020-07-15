@@ -104,7 +104,7 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
     @Override
     public String getPath() {
         if (".".equals(path)) {
-            return FilenameUtils.normalize(dir.getAbsolutePath());
+            return FilenameUtils.normalize(dir.getAbsolutePath(), true);
         }
         return path;
     }

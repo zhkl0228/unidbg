@@ -657,7 +657,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
     private int unlink(Emulator<?> emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = FilenameUtils.normalize(pathname.getString(0), true);
         log.info("unlink path=" + path);
         return 0;
     }
@@ -1002,7 +1002,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private int stat64(Emulator<AndroidFileIO> emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = FilenameUtils.normalize(pathname.getString(0), true);
         if (log.isDebugEnabled()) {
             log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf);
         }
@@ -1012,7 +1012,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private int lstat(Emulator<AndroidFileIO> emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = FilenameUtils.normalize(pathname.getString(0), true);
         if (log.isDebugEnabled()) {
             log.debug("lstat pathname=" + path + ", statbuf=" + statbuf);
         }
@@ -1835,7 +1835,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         Pointer statbuf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
         int flags = ((Number) u.reg_read(ArmConst.UC_ARM_REG_R3)).intValue();
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = FilenameUtils.normalize(pathname.getString(0), true);
         if (log.isDebugEnabled()) {
             log.debug("fstatat64 dirfd=" + dirfd + ", pathname=" + path + ", statbuf=" + statbuf + ", flags=" + flags);
         }
@@ -1867,9 +1867,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug(msg);
         }
+        pathname = FilenameUtils.normalize(pathname, true);
+        if ("/data/misc/zoneinfo/current/tzdata".equals(pathname) || "/dev/pmsg0".equals(pathname)) {
+            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
+            return -1;
+        }
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
+                emulator.getMemory().setErrno(UnixEmulator.ENOENT);
                 log.info(msg);
             }
             return fd;
@@ -1878,11 +1884,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 throw new UnicornException();
             }
 
-            int fd = open(emulator, pathname, oflags);
-            if (fd == -1) {
-                log.info(msg);
-            }
-            return fd;
+            log.warn(msg);
+            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
+            return -1;
         }
     }
 

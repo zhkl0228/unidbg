@@ -909,7 +909,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
 
     private int unlink(Emulator<?> emulator) {
         Pointer pathname = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = FilenameUtils.normalize(pathname.getString(0), true);
         emulator.getFileSystem().unlink(path);
         return 0;
     }
@@ -982,7 +982,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf + ", LR=" + context.getLRPointer());
         }
-        return stat64(emulator, FilenameUtils.normalize(path), statbuf);
+        return stat64(emulator, FilenameUtils.normalize(path, true), statbuf);
     }
 
     protected int fstat(Emulator<DarwinFileIO> emulator, int fd, Pointer stat) {
@@ -1033,7 +1033,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         Pointer pathname = context.getR0Pointer();
         Pointer stat = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         String pathStr = pathname.getString(0);
-        String path = FilenameUtils.normalize(pathStr);
+        String path = FilenameUtils.normalize(pathStr, true);
         if (log.isDebugEnabled()) {
             log.debug("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat);
         }

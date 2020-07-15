@@ -287,7 +287,8 @@ public abstract class BaseVM implements VM {
         }
     }
 
-    String getVersionName() {
+    @Override
+    public final String getVersionName() {
         if (apkFile == null) {
             return null;
         }
@@ -300,6 +301,27 @@ public abstract class BaseVM implements VM {
             apkFile = new ApkFile(this.apkFile);
             apkMeta = apkFile.getApkMeta();
             return apkMeta.getVersionName();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
+        }
+    }
+
+    @Override
+    public long getVersionCode() {
+        if (apkFile == null) {
+            return 0;
+        }
+        if (apkMeta != null) {
+            return apkMeta.getVersionCode();
+        }
+
+        ApkFile apkFile = null;
+        try {
+            apkFile = new ApkFile(this.apkFile);
+            apkMeta = apkFile.getApkMeta();
+            return apkMeta.getVersionCode();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         } finally {

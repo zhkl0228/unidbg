@@ -97,9 +97,6 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
     public int read(Unicorn unicorn, Pointer buffer, final int _count) {
         try {
             int count = _count;
-            if (count > 4096) {
-                count = 4096;
-            }
             if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {
                 count = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
 
@@ -111,9 +108,7 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
                  *        the gap.
                  */
                 if (count < 0) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
-                    }
+                    log.warn("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
                     return 0;
                 }
             }

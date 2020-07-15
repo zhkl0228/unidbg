@@ -839,7 +839,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private int unlink(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(0);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = FilenameUtils.normalize(pathname.getString(0), true);
         emulator.getFileSystem().unlink(path);
         return 0;
     }
@@ -925,7 +925,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         RegisterContext context = emulator.getContext();
         Pointer pathname = context.getPointerArg(offset);
         Pointer statbuf = context.getPointerArg(offset + 1);
-        String path = FilenameUtils.normalize(pathname.getString(0));
+        String path = FilenameUtils.normalize(pathname.getString(0), true);
         if (log.isDebugEnabled()) {
             log.debug("stat64 pathname=" + path + ", statbuf=" + statbuf);
         }
@@ -964,7 +964,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Pointer pathname = context.getPointerArg(offset);
         Pointer stat = context.getPointerArg(offset + 1);
         String pathStr = pathname.getString(0);
-        String path = FilenameUtils.normalize(pathStr);
+        String path = FilenameUtils.normalize(pathStr, true);
         int ret = stat64(emulator, path, stat);
         if (log.isDebugEnabled()) {
             log.debug("lstat path=" + path + ", pathStr=" + pathStr + ", stat=" + stat + ", ret=" + ret + ", LR=" + context.getLRPointer());

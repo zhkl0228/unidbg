@@ -48,6 +48,8 @@ public interface VM {
      * 设置apkFile以后，可调用该值获取apk对应的packageName
      */
     String getPackageName();
+    String getVersionName();
+    long getVersionCode();
 
     /**
      * 设置apkFile以后，可调用该方法获取资源文件
