@@ -2,6 +2,7 @@ package com.github.unidbg.linux.android.dvm.array;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.linux.android.dvm.Array;
+import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnicornPointer;
@@ -9,8 +10,8 @@ import com.sun.jna.Pointer;
 
 abstract class BaseArray<T> extends DvmObject<T> implements Array<T> {
 
-    BaseArray(T value) {
-        super(null, value);
+    BaseArray(DvmClass objectType, T value) {
+        super(objectType, value);
     }
 
     private MemoryBlock memoryBlock;

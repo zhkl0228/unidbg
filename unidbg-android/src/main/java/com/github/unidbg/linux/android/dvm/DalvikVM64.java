@@ -303,7 +303,8 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmObject == null || dvmClass == null) {
                     throw new UnicornException();
                 }
-                return dvmObject.isInstanceOf(DalvikVM64.this, dvmClass) ? JNI_TRUE : JNI_FALSE;
+                boolean flag = dvmObject.isInstanceOf(dvmClass);
+                return flag ? JNI_TRUE : JNI_FALSE;
             }
         });
 
@@ -1291,7 +1292,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (verbose) {
                     System.out.println(String.format("JNIEnv->NewByteArray(%d) was called from %s", size, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                 }
-                return addObject(new ByteArray(new byte[size]), false);
+                return addObject(new ByteArray(DalvikVM64.this, new byte[size]), false);
             }
         });
 
@@ -1305,7 +1306,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (verbose) {
                     System.out.println(String.format("JNIEnv->NewIntArray(%d) was called from %s", size, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                 }
-                return addObject(new IntArray(new int[size]), false);
+                return addObject(new IntArray(DalvikVM64.this, new int[size]), false);
             }
         });
 
@@ -1319,7 +1320,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (verbose) {
                     System.out.println(String.format("JNIEnv->NewDoubleArray(%d) was called from %s", size, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                 }
-                return addObject(new DoubleArray(new double[size]), false);
+                return addObject(new DoubleArray(DalvikVM64.this, new double[size]), false);
             }
         });
 
@@ -1336,6 +1337,18 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 ByteArray array = getObject(arrayPointer.toUIntPeer());
                 return array._GetArrayCritical(emulator, isCopy).toUIntPeer();
+            }
+        });
+
+        Pointer _GetIntArrayElements = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                IntArray array = getObject(UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toUIntPeer());
+                Pointer isCopy = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetIntArrayElements array=" + array + ", isCopy=" + isCopy);
+                }
+                return array._GetArrayCritical(emulator, isCopy).peer;
             }
         });
 
@@ -1418,6 +1431,20 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("ReleaseByteArrayElements arrayPointer=" + arrayPointer + ", pointer=" + pointer + ", mode=" + mode);
                 }
                 ByteArray array = getObject(arrayPointer.toUIntPeer());
+                array._ReleaseArrayCritical(pointer, mode);
+                return 0;
+            }
+        });
+
+        Pointer _ReleaseIntArrayElements = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                IntArray array = getObject(UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toUIntPeer());
+                Pointer pointer = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                int mode = ((Number) emulator.getUnicorn().reg_read(Arm64Const.UC_ARM64_REG_X3)).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("ReleaseIntArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
+                }
                 array._ReleaseArrayCritical(pointer, mode);
                 return 0;
             }
@@ -1546,6 +1573,22 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _NewWeakGlobalRef = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                if (object == null) {
+                    return 0;
+                }
+                DvmObject<?> dvmObject = getObject(object.toUIntPeer());
+                if (log.isDebugEnabled()) {
+                    log.debug("NewWeakGlobalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
+                }
+                addObject(dvmObject, true);
+                return object.toUIntPeer();
+            }
+        });
+
         Pointer _ExceptionCheck = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1632,28 +1675,31 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x4B0, _GetStaticIntField);
         impl.setPointer(0x4B8, _GetStaticLongField);
         impl.setPointer(0x500, _SetStaticLongField);
+        impl.setPointer(0x520, _GetStringLength);
+        impl.setPointer(0x528, _GetStringChars);
+        impl.setPointer(0x530, _ReleaseStringChars);
+        impl.setPointer(0x538, _NewStringUTF);
         impl.setPointer(0x540, _GetStringUTFLength);
         impl.setPointer(0x548, _GetStringUTFChars);
         impl.setPointer(0x550, _ReleaseStringUTFChars);
         impl.setPointer(0x558, _GetArrayLength);
         impl.setPointer(0x560, _NewObjectArray);
+        impl.setPointer(0x568, _GetObjectArrayElement);
+        impl.setPointer(0x570, _SetObjectArrayElement);
         impl.setPointer(0x580, _NewByteArray);
         impl.setPointer(0x598, _NewIntArray);
         impl.setPointer(0x5b0, _NewDoubleArray);
         impl.setPointer(0x5c0, _GetByteArrayElements);
-        impl.setPointer(0x520, _GetStringLength);
-        impl.setPointer(0x528, _GetStringChars);
-        impl.setPointer(0x530, _ReleaseStringChars);
-        impl.setPointer(0x538, _NewStringUTF);
-        impl.setPointer(0x568, _GetObjectArrayElement);
-        impl.setPointer(0x570, _SetObjectArrayElement);
+        impl.setPointer(0x5d8, _GetIntArrayElements);
         impl.setPointer(0x600, _ReleaseByteArrayElements);
+        impl.setPointer(0x618, _ReleaseIntArrayElements);
         impl.setPointer(0x640, _GetByteArrayRegion);
         impl.setPointer(0x680, _SetByteArrayRegion);
         impl.setPointer(0x698, _SetIntArrayRegion);
         impl.setPointer(0x6B0, _SetDoubleArrayRegion);
         impl.setPointer(0x6B8, _RegisterNatives);
         impl.setPointer(0x6D8, _GetJavaVM);
+        impl.setPointer(0x710, _NewWeakGlobalRef);
         impl.setPointer(0x720, _ExceptionCheck);
         impl.setPointer(0x740, _GetObjectRefType);
 

@@ -20,7 +20,7 @@ public class DvmClass extends DvmObject<String> {
     public final BaseVM vm;
     private final DvmClass[] interfaceClasses;
 
-    DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
+    protected DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
         super(ROOT_CLASS.equals(className) ? null : vm.resolveClass(ROOT_CLASS), className);
         this.vm = vm;
         this.interfaceClasses = interfaceClasses;
@@ -81,7 +81,7 @@ public class DvmClass extends DvmObject<String> {
             log.debug("getStaticMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         checkJni(vm);
-        if (vm.jni.acceptMethod(signature, true)) {
+        if (vm.jni.acceptMethod(this, signature, true)) {
             staticMethodMap.put(hash, new DvmMethod(this, methodName, args, true));
             return (int) hash;
         } else {
@@ -110,7 +110,7 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        if (vm.jni == null || vm.jni.acceptMethod(signature, false)) {
+        if (vm.jni == null || vm.jni.acceptMethod(this, signature, false)) {
             methodMap.put(hash, new DvmMethod(this, methodName, args, false));
             return (int) hash;
         } else {
@@ -139,7 +139,7 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        if (vm.jni == null || vm.jni.acceptField(signature, false)) {
+        if (vm.jni == null || vm.jni.acceptField(this, signature, false)) {
             fieldMap.put(hash, new DvmField(this, fieldName, fieldType));
             return (int) hash;
         } else {
@@ -168,7 +168,7 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getStaticFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        if (vm.jni == null || vm.jni.acceptField(signature, true)) {
+        if (vm.jni == null || vm.jni.acceptField(this, signature, true)) {
             staticFieldMap.put(hash, new DvmField(this, fieldName, fieldType));
             return (int) hash;
         } else {
@@ -220,6 +220,29 @@ public class DvmClass extends DvmObject<String> {
 
     public Number callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
         return callJniMethod(emulator, vm, this, this, method, args);
+    }
+
+    final boolean isInstance(DvmClass dvmClass) {
+        if (dvmClass == this) {
+            return true;
+        }
+
+        for (DvmClass dc : interfaceClasses) {
+            if (dc == dvmClass) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private JniFunction jni;
+
+    protected final void setJni(JniFunction jni) {
+        this.jni = jni;
+    }
+
+    final Jni getJni() {
+        return jni;
     }
 
 }

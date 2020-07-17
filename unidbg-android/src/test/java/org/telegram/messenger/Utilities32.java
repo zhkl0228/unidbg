@@ -68,12 +68,12 @@ public class Utilities32 extends AbstractJni {
 
     private void aesCbcEncryptionByteArray() {
         long start = System.currentTimeMillis();
-        ByteArray data = new ByteArray(new byte[16]);
+        ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
         Number ret = Utilities.callStaticJniMethod(emulator, "aesCbcEncryptionByteArray([B[B[BIIII)V", vm.addLocalObject(data),
-                vm.addLocalObject(new ByteArray(key)),
-                vm.addLocalObject(new ByteArray(iv)),
+                vm.addLocalObject(new ByteArray(vm, key)),
+                vm.addLocalObject(new ByteArray(vm, iv)),
                 0, data.length(), 0, 0);
         vm.deleteLocalRefs();
         Inspector.inspect(data.getValue(), "aesCbcEncryptionByteArray ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -81,12 +81,12 @@ public class Utilities32 extends AbstractJni {
 
     private void aesCtrDecryptionByteArray() {
         long start = System.currentTimeMillis();
-        ByteArray data = new ByteArray(new byte[16]);
+        ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
         Number ret = Utilities.callStaticJniMethod(emulator, "aesCtrDecryptionByteArray([B[B[BIII)V", vm.addLocalObject(data),
-                vm.addLocalObject(new ByteArray(key)),
-                vm.addLocalObject(new ByteArray(iv)),
+                vm.addLocalObject(new ByteArray(vm, key)),
+                vm.addLocalObject(new ByteArray(vm, iv)),
                 0, data.length(), 0);
         vm.deleteLocalRefs();
         Inspector.inspect(data.getValue(), "aesCtrDecryptionByteArray ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -96,9 +96,9 @@ public class Utilities32 extends AbstractJni {
         long start = System.currentTimeMillis();
         byte[] password = "123456".getBytes();
         byte[] salt = new byte[8];
-        ByteArray dst = new ByteArray(new byte[64]);
-        Number ret = Utilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(password)),
-                vm.addLocalObject(new ByteArray(salt)),
+        ByteArray dst = new ByteArray(vm, new byte[64]);
+        Number ret = Utilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
+                vm.addLocalObject(new ByteArray(vm, salt)),
                 vm.addLocalObject(dst), 100000);
         vm.deleteLocalRefs();
         Inspector.inspect(dst.getValue(), "pbkdf2 ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");

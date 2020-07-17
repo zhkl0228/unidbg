@@ -75,4 +75,6 @@ public interface VM {
     void throwException(DvmObject<?> throwable);
 
     void setVerbose(boolean verbose);
+
+    void setDvmClassFactory(DvmClassFactory factory);
 }

@@ -3,7 +3,6 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.pointer.UnicornPointer;
-import unicorn.UnicornException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +25,8 @@ public class DvmObject<T> extends Hashable {
         return objectType;
     }
 
-    protected boolean isInstanceOf(VM vm, DvmClass dvmClass) {
-        throw new UnicornException("isInstanceOf vm=" + vm + ", dvmClass=" + dvmClass);
+    protected boolean isInstanceOf(DvmClass dvmClass) {
+        return objectType.isInstance(dvmClass);
     }
 
     @SuppressWarnings("unused")

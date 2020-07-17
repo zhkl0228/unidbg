@@ -10,19 +10,14 @@ import com.github.unidbg.linux.android.dvm.wrapper.DvmLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
+import java.util.*;
 
 public abstract class AbstractJni implements Jni {
 
@@ -30,6 +25,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.getStaticObjectField(vm, dvmClass, signature);
+        }
+
         switch (signature) {
             case "android/content/Context->TELEPHONY_SERVICE:Ljava/lang/String;":
                 return new StringObject(vm, SystemService.TELEPHONY_SERVICE);
@@ -63,16 +63,27 @@ public abstract class AbstractJni implements Jni {
                 return vm.resolveClass("java/lang/Double");
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.getStaticIntField(vm, dvmClass, signature);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.getObjectField(vm, dvmObject, signature);
+        }
+
         if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature) &&
                 dvmObject instanceof PackageInfo) {
             PackageInfo packageInfo = (PackageInfo) dvmObject;
@@ -94,56 +105,95 @@ public abstract class AbstractJni implements Jni {
             }
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticBooleanMethod(vm, dvmClass, signature, varArg);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticBooleanMethodV(vm, dvmClass, signature, vaList);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public int callStaticIntMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticIntMethod(vm, dvmClass, signature, varArg);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticIntMethodV(vm, dvmClass, signature, vaList);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public long callLongMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callLongMethod(vm, dvmObject, signature, varArg);
+        }
+
         if ("java/lang/Long->longValue()J".equals(signature)) {
             DvmLong val = (DvmLong) dvmObject;
             return val.value;
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public long callLongMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callLongMethodV(vm, dvmObject, signature, vaList);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public float callFloatMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
-    }
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callFloatMethodV(vm, dvmObject, signature, vaList);
+        }
 
-    @Override
-    public DvmObject<?> callObjectMethodA(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callObjectMethodV(vm, dvmObject, signature, vaList);
+        }
+
         switch (signature) {
             case "android/app/Application->getAssets()Landroid/content/res/AssetManager;":
                 return new AssetManager(vm, signature);
@@ -210,7 +260,7 @@ public abstract class AbstractJni implements Jni {
             case "android/content/pm/Signature->toByteArray()[B":
                 if (dvmObject instanceof Signature) {
                     Signature sig = (Signature) dvmObject;
-                    return new ByteArray(sig.toByteArray());
+                    return new ByteArray(vm, sig.toByteArray());
                 }
                 break;
             case "android/content/pm/Signature->toCharsString()Ljava/lang/String;":
@@ -221,14 +271,14 @@ public abstract class AbstractJni implements Jni {
                 break;
             case "java/lang/String->getBytes()[B": {
                 String str = (String) dvmObject.getValue();
-                return new ByteArray(str.getBytes());
+                return new ByteArray(vm, str.getBytes());
             }
             case "java/lang/String->getBytes(Ljava/lang/String;)[B":
                 String str = (String) dvmObject.getValue();
                 StringObject charsetName = vaList.getObject(0);
                 assert charsetName != null;
                 try {
-                    return new ByteArray(str.getBytes(charsetName.value));
+                    return new ByteArray(vm, str.getBytes(charsetName.value));
                 } catch (UnsupportedEncodingException e) {
                     throw new IllegalStateException(e);
                 }
@@ -245,7 +295,7 @@ public abstract class AbstractJni implements Jni {
             case "java/security/cert/Certificate->getEncoded()[B": {
                 Certificate certificate = (Certificate) dvmObject.value;
                 try {
-                    return new ByteArray(certificate.getEncoded());
+                    return new ByteArray(vm, certificate.getEncoded());
                 } catch (CertificateEncodingException e) {
                     throw new IllegalStateException(e);
                 }
@@ -254,30 +304,44 @@ public abstract class AbstractJni implements Jni {
                 MessageDigest messageDigest = (MessageDigest) dvmObject.value;
                 ByteArray array = vaList.getObject(0);
                 assert array != null;
-                return new ByteArray(messageDigest.digest(array.value));
+                return new ByteArray(vm, messageDigest.digest(array.value));
             }
             case "java/util/ArrayList->remove(I)Ljava/lang/Object;": {
                 int index = vaList.getInt(0);
                 ArrayListObject list = (ArrayListObject) dvmObject;
                 return list.value.remove(index);
             }
+            case "java/util/List->get(I)Ljava/lang/Object;":
+                List<?> list = (List<?>) dvmObject.getValue();
+                return (DvmObject<?>) list.get(vaList.getInt(0));
+            case "java/util/Map->entrySet()Ljava/util/Set;":
+                Map<?, ?> map = (Map<?, ?>) dvmObject.getValue();
+                return vm.resolveClass("java/util/Set").newObject(map.entrySet());
+            case "java/util/Set->iterator()Ljava/util/Iterator;":
+                Set<?> set = (Set<?>) dvmObject.getValue();
+                return vm.resolveClass("java/util/Iterator").newObject(set.iterator());
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        throw new AbstractMethodError(signature);
-    }
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticObjectMethod(vm, dvmClass, signature, varArg);
+        }
 
-    @Override
-    public DvmObject<?> callStaticObjectMethodA(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticObjectMethodV(vm, dvmClass, signature, vaList);
+        }
+
         switch (signature) {
             case "com/android/internal/os/BinderInternal->getContextObject()Landroid/os/IBinder;":
                 return new Binder(vm, signature);
@@ -311,20 +375,27 @@ public abstract class AbstractJni implements Jni {
             }
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callIntMethodV(vm, dvmObject, signature, vaList);
+        }
+
         switch (signature) {
             case "android/os/Bundle->getInt(Ljava/lang/String;)I":
                 Bundle bundle = (Bundle) dvmObject;
                 StringObject key = vaList.getObject(0);
                 assert key != null;
                 return bundle.getInt(key.getValue());
-            case "java/util/ArrayList->size()I":
+            case "java/util/ArrayList->size()I": {
                 ArrayListObject list = (ArrayListObject) dvmObject;
                 return list.size();
+            }
             case "android/content/pm/Signature->hashCode()I": {
                 if (dvmObject instanceof Signature) {
                     Signature sig = (Signature) dvmObject;
@@ -336,80 +407,148 @@ public abstract class AbstractJni implements Jni {
                 DvmInteger integer = (DvmInteger) dvmObject;
                 return integer.value;
             }
+            case "java/util/List->size()I":
+                List<?> list = (List<?>) dvmObject.getValue();
+                return list.size();
+            case "java/util/Map->size()I":
+                Map<?, ?> map = (Map<?, ?>) dvmObject.getValue();
+                return map.size();
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public long callStaticLongMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticLongMethod(vm, dvmClass, signature, varArg);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.callStaticLongMethodV(vm, dvmClass, signature, vaList);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public boolean callBooleanMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callBooleanMethod(vm, dvmObject, signature, varArg);
+        }
+
         if ("java/lang/Boolean->booleanValue()Z".equals(signature)) {
             DvmBoolean dvmBoolean = (DvmBoolean) dvmObject;
             return dvmBoolean.value;
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callBooleanMethodV(vm, dvmObject, signature, vaList);
+        }
+
         switch (signature) {
             case "java/util/Enumeration->hasMoreElements()Z":
                 return ((Enumeration) dvmObject).hasMoreElements();
             case "java/util/ArrayList->isEmpty()Z":
                 return ((ArrayListObject) dvmObject).isEmpty();
+            case "java/util/Iterator->hasNext()Z":
+                Iterator<?> iterator = (Iterator<?>) dvmObject.getValue();
+                return iterator.hasNext();
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public int getIntField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.getIntField(vm, dvmObject, signature);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public long getLongField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.getLongField(vm, dvmObject, signature);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        throw new AbstractMethodError(signature);
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            jni.callStaticVoidMethod(vm, dvmClass, signature, varArg);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void callStaticVoidMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
-    }
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            jni.callStaticVoidMethodV(vm, dvmClass, signature, vaList);
+            return;
+        }
 
-    @Override
-    public void callStaticVoidMethodA(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void setObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature, DvmObject<?> value) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            jni.setObjectField(vm, dvmObject, signature, value);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.getBooleanField(vm, dvmObject, signature);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.newObject(vm, dvmClass, signature, varArg);
+        }
+
         switch (signature) {
             case "java/lang/String-><init>([B)V":
                 ByteArray array = varArg.getObject(0);
@@ -424,11 +563,16 @@ public abstract class AbstractJni implements Jni {
                 }
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.newObjectV(vm, dvmClass, signature, vaList);
+        }
+
         switch (signature) {
             case "java/io/ByteArrayInputStream-><init>([B)V": {
                 ByteArray array = vaList.getObject(0);
@@ -453,47 +597,86 @@ public abstract class AbstractJni implements Jni {
             }
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> allocObject(BaseVM vm, DvmClass dvmClass, String signature) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.allocObject(vm, dvmClass, signature);
+        }
+
         if ("java/util/HashMap->allocObject".equals(signature)) {
             return dvmClass.newObject(new HashMap<>());
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void setIntField(BaseVM vm, DvmObject<?> dvmObject, String signature, int value) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            jni.setIntField(vm, dvmObject, signature, value);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void setLongField(BaseVM vm, DvmObject<?> dvmObject, String signature, long value) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            jni.setLongField(vm, dvmObject, signature, value);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature, boolean value) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            jni.setBooleanField(vm, dvmObject, signature, value);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
     
     @Override
     public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, String signature, double value) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            jni.setDoubleField(vm, dvmObject, signature, value);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public DvmObject<?> callObjectMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callObjectMethod(vm, dvmObject, signature, varArg);
+        }
+
         switch (signature) {
             case "java/lang/String->getBytes(Ljava/lang/String;)[B": {
                 StringObject string = (StringObject) dvmObject;
                 StringObject encoding = varArg.getObject(0);
                 System.err.println("string=" + string.getValue() + ", encoding=" + encoding.getValue());
                 try {
-                    return new ByteArray(string.getValue().getBytes(encoding.value));
+                    return new ByteArray(vm, string.getValue().getBytes(encoding.value));
                 } catch (UnsupportedEncodingException e) {
                     throw new IllegalStateException(e);
                 }
@@ -520,7 +703,7 @@ public abstract class AbstractJni implements Jni {
             case "android/content/pm/Signature->toByteArray()[B": {
                 if (dvmObject instanceof Signature) {
                     Signature sig = (Signature) dvmObject;
-                    return new ByteArray(sig.toByteArray());
+                    return new ByteArray(vm, sig.toByteArray());
                 }
                 break;
             }
@@ -539,58 +722,111 @@ public abstract class AbstractJni implements Jni {
             case "java/lang/Integer->getClass()Ljava/lang/Class;": {
                 return dvmObject.getObjectType();
             }
+            case "java/lang/Class->getClassLoader()Ljava/lang/ClassLoader;":
+                return new ClassLoader(vm, signature);
         }
 
-        throw new AbstractMethodError(signature);
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public int callIntMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
-        if ("java/lang/Integer->intValue()I".equals(signature)) {
-            DvmInteger integer = (DvmInteger) dvmObject;
-            return integer.value;
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            return jni.callIntMethod(vm, dvmObject, signature, varArg);
         }
 
-        throw new AbstractMethodError(signature);
+        switch (signature) {
+            case "java/lang/Integer->intValue()I":
+                DvmInteger integer = (DvmInteger) dvmObject;
+                return integer.value;
+            case "java/io/InputStream->read([B)I": {
+                try {
+                    java.io.InputStream inputStream = (java.io.InputStream) dvmObject.getValue();
+                    ByteArray array = varArg.getObject(0);
+                    return inputStream.read(array.getValue());
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void callVoidMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            jni.callVoidMethod(vm, dvmObject, signature, varArg);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
     public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+        DvmClass dvmClass = dvmObject.getObjectType();
+        Jni jni = dvmClass == null ? null : dvmClass.getJni();
+        if (jni != null) {
+            jni.callVoidMethodV(vm, dvmObject, signature, vaList);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
-    public void callVoidMethodA(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
-        throw new AbstractMethodError(signature);
+    public void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            jni.setStaticLongField(vm, dvmClass, signature, value);
+            return;
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
-    public void setStaticLongField(BaseVM vm, String signature, long value) {
-        throw new AbstractMethodError(signature);
+    public long getStaticLongField(BaseVM vm, DvmClass dvmClass, String signature) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.getStaticLongField(vm, dvmClass, signature);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
-    public long getStaticLongField(BaseVM vm, String signature) {
-        throw new AbstractMethodError(signature);
+    public DvmObject<?> toReflectedMethod(BaseVM vm, DvmClass dvmClass, String signature) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.toReflectedMethod(vm, dvmClass, signature);
+        }
+
+        throw new UnsupportedOperationException(signature);
     }
 
     @Override
-    public DvmObject<?> toReflectedMethod(BaseVM vm, String signature) {
-        throw new AbstractMethodError(signature);
-    }
+    public boolean acceptMethod(DvmClass dvmClass, String signature, boolean isStatic) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.acceptMethod(dvmClass, signature, isStatic);
+        }
 
-    @Override
-    public boolean acceptMethod(String signature, boolean isStatic) {
         return true;
     }
 
     @Override
-    public boolean acceptField(String signature, boolean isStatic) {
+    public boolean acceptField(DvmClass dvmClass, String signature, boolean isStatic) {
+        Jni jni = dvmClass.getJni();
+        if (jni != null) {
+            return jni.acceptField(dvmClass, signature, isStatic);
+        }
+
         return true;
     }
 }

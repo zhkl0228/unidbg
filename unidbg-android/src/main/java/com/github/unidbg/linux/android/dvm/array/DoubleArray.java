@@ -1,14 +1,15 @@
 package com.github.unidbg.linux.android.dvm.array;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import unicorn.UnicornException;
 
 public class DoubleArray extends BaseArray<double[]> implements PrimitiveArray<double[]> {
 
-    public DoubleArray(double[] value) {
-        super(value);
+    public DoubleArray(VM vm, double[] value) {
+        super(vm.resolveClass("[D"), value);
     }
 
     @Override

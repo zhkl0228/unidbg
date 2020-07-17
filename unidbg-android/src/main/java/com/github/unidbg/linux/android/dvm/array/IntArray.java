@@ -7,8 +7,8 @@ import com.sun.jna.Pointer;
 
 public class IntArray extends BaseArray<int[]> implements PrimitiveArray<int[]> {
 
-    public IntArray(int[] value) {
-        super(value);
+    public IntArray(VM vm, int[] value) {
+        super(vm.resolveClass("[I"), value);
     }
 
     @Override

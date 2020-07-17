@@ -7,8 +7,8 @@ import com.sun.jna.Pointer;
 
 public class FloatArray extends BaseArray<float[]> implements PrimitiveArray<float[]> {
 
-    public FloatArray(float[] value) {
-        super(value);
+    public FloatArray(VM vm, float[] value) {
+        super(vm.resolveClass("[F"), value);
     }
 
     @Override

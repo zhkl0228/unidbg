@@ -6,8 +6,6 @@ public interface Jni {
 
     void callStaticVoidMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    void callStaticVoidMethodA(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
-
     boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
     boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
@@ -24,8 +22,6 @@ public interface Jni {
 
     DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
-    DvmObject<?> callStaticObjectMethodA(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
-
     DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
     DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
@@ -35,8 +31,6 @@ public interface Jni {
     void callVoidMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);
 
     void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
-
-    void callVoidMethodA(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
     boolean callBooleanMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);
 
@@ -55,8 +49,6 @@ public interface Jni {
     float callFloatMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
     DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
-
-    DvmObject<?> callObjectMethodA(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature);
 
@@ -80,13 +72,13 @@ public interface Jni {
 
     void setObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature, DvmObject<?> value);
 
-    void setStaticLongField(BaseVM vm, String signature, long value);
+    void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value);
 
-    long getStaticLongField(BaseVM vm, String signature);
+    long getStaticLongField(BaseVM vm, DvmClass dvmClass, String signature);
 
-    DvmObject<?> toReflectedMethod(BaseVM vm, String signature);
+    DvmObject<?> toReflectedMethod(BaseVM vm, DvmClass dvmClass, String signature);
 
-    boolean acceptMethod(String signature, boolean isStatic);
+    boolean acceptMethod(DvmClass dvmClass, String signature, boolean isStatic);
 
-    boolean acceptField(String signature, boolean isStatic);
+    boolean acceptField(DvmClass dvmClass, String signature, boolean isStatic);
 }

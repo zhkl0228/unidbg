@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Enumeration extends DvmObject<List<?>> {
 
-    private Iterator<? extends DvmObject<?>> iterator;
+    private final Iterator<? extends DvmObject<?>> iterator;
 
     public Enumeration(VM vm, List<? extends DvmObject<?>> value) {
         super(vm.resolveClass("java/util/Enumeration"), value);

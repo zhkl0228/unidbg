@@ -321,7 +321,8 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmObject == null || dvmClass == null) {
                     throw new UnicornException();
                 }
-                return dvmObject.isInstanceOf(DalvikVM.this, dvmClass) ? JNI_TRUE : JNI_FALSE;
+                boolean flag = dvmObject.isInstanceOf(dvmClass);
+                return flag ? JNI_TRUE : JNI_FALSE;
             }
         });
 
@@ -1480,7 +1481,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (verbose) {
                     System.out.println(String.format("JNIEnv->NewFloatArray(%d) was called from %s", size, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
-                return addObject(new FloatArray(new float[size]), false);
+                return addObject(new FloatArray(DalvikVM.this, new float[size]), false);
             }
         });
 
@@ -1504,7 +1505,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (verbose) {
                     System.out.println(String.format("JNIEnv->NewByteArray(%d) was called from %s", size, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
-                return addObject(new ByteArray(new byte[size]), false);
+                return addObject(new ByteArray(DalvikVM.this, new byte[size]), false);
             }
         });
 
@@ -1518,7 +1519,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (verbose) {
                     System.out.println(String.format("JNIEnv->NewIntArray(%d) was called from %s", size, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
-                return addObject(new IntArray(new int[size]), false);
+                return addObject(new IntArray(DalvikVM.this, new int[size]), false);
             }
         });
         
@@ -1532,7 +1533,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (verbose) {
                     System.out.println(String.format("JNIEnv->NewDoubleArray(%d) was called from %s", size, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 }
-                return addObject(new DoubleArray(new double[size]), false);
+                return addObject(new DoubleArray(DalvikVM.this, new double[size]), false);
             }
         });
 
@@ -1864,6 +1865,22 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _NewWeakGlobalRef = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnicornPointer object = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                if (object == null) {
+                    return 0;
+                }
+                DvmObject<?> dvmObject = getObject(object.toUIntPeer());
+                if (log.isDebugEnabled()) {
+                    log.debug("NewWeakGlobalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
+                }
+                addObject(dvmObject, true);
+                return object.toUIntPeer();
+            }
+        });
+
         Pointer _ExceptionCheck = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1990,6 +2007,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x36c, _GetJavaVM);
         impl.setPointer(0x378, _GetPrimitiveArrayCritical);
         impl.setPointer(0x37c, _ReleasePrimitiveArrayCritical);
+        impl.setPointer(0x388, _NewWeakGlobalRef);
         impl.setPointer(0x390, _ExceptionCheck);
         impl.setPointer(0x3a0, _GetObjectRefType);
 

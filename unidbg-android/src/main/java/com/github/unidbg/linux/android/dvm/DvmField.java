@@ -128,23 +128,23 @@ class DvmField extends Hashable {
     }
 
     void setStaticLongField(long value) {
-        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+        String signature = this.dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("setStaticLongField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
         }
-        BaseVM vm = dvmClass.vm;
+        BaseVM vm = this.dvmClass.vm;
         checkJni(vm);
-        vm.jni.setStaticLongField(dvmClass.vm, signature, value);
+        vm.jni.setStaticLongField(this.dvmClass.vm, dvmClass, signature, value);
     }
 
     long getStaticLongField() {
-        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+        String signature = this.dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
         if (log.isDebugEnabled()) {
             log.debug("getStaticLongField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
         }
-        BaseVM vm = dvmClass.vm;
+        BaseVM vm = this.dvmClass.vm;
         checkJni(vm);
-        return vm.jni.getStaticLongField(dvmClass.vm, signature);
+        return vm.jni.getStaticLongField(this.dvmClass.vm, dvmClass, signature);
     }
 
 }

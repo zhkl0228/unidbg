@@ -157,7 +157,7 @@ public class TTEncrypt {
             emulator.attach(DebuggerType.ANDROID_SERVER_V7); // 附加IDA android_server，可输入c命令取消附加继续运行
         }
         byte[] data = new byte[16];
-        Number ret = TTEncryptUtils.callStaticJniMethod(emulator, "ttEncrypt([BI)[B", new ByteArray(data), data.length); // 执行Jni方法
+        Number ret = TTEncryptUtils.callStaticJniMethod(emulator, "ttEncrypt([BI)[B", new ByteArray(vm, data), data.length); // 执行Jni方法
         long hash = ret.intValue() & 0xffffffffL; // 返回的是jobject的hash
         ByteArray array = vm.getObject(hash); // 通过hash在vm中找到对象
         vm.deleteLocalRefs(); // 调用Jni函数惯例，清理本地引用

@@ -2613,7 +2613,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
-                Log log = LogFactory.getLog("com.github.unidbg.AbstractEmulator");
+                Log log = LogFactory.getLog(AbstractEmulator.class);
                 if (log.isDebugEnabled()) {
                     createBreaker(emulator).debug();
                 }

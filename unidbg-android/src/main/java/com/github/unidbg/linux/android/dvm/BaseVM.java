@@ -67,12 +67,24 @@ public abstract class BaseVM implements VM {
     final Map<Long, DvmObject<?>> globalObjectMap = new HashMap<>();
     final Map<Long, DvmObject<?>> localObjectMap = new HashMap<>();
 
+    private DvmClassFactory dvmClassFactory;
+
+    @Override
+    public void setDvmClassFactory(DvmClassFactory factory) {
+        this.dvmClassFactory = factory;
+    }
+
     @Override
     public final DvmClass resolveClass(String className, DvmClass... interfaceClasses) {
         long hash = Objects.hash(className) & 0xffffffffL;
         DvmClass dvmClass = classMap.get(hash);
         if (dvmClass == null) {
-            dvmClass = new DvmClass(this, className, interfaceClasses);
+            if (dvmClassFactory != null) {
+                dvmClass = dvmClassFactory.createClass(this, className, interfaceClasses);
+            }
+            if (dvmClass == null) {
+                dvmClass = new DvmClass(this, className, interfaceClasses);
+            }
             classMap.put(hash, dvmClass);
             addObject(dvmClass, true);
         }

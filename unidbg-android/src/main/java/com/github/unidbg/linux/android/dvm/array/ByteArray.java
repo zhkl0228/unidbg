@@ -7,8 +7,8 @@ import com.sun.jna.Pointer;
 
 public class ByteArray extends BaseArray<byte[]> implements PrimitiveArray<byte[]> {
 
-    public ByteArray(byte[] value) {
-        super(value);
+    public ByteArray(VM vm, byte[] value) {
+        super(vm.resolveClass("[B"), value);
     }
 
     @Override

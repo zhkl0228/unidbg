@@ -51,7 +51,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             @Override
             public boolean hook(Unicorn u, long address, int size, long value, Object user) {
                 log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value));
-                if (LogFactory.getLog("com.github.unidbg.AbstractEmulator").isDebugEnabled()) {
+                if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
                     attach().debug();
                 }
                 return false;

@@ -1,5 +1,6 @@
 package com.github.unidbg.linux;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
@@ -303,7 +304,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     u.reg_write(ArmConst.UC_ARM_REG_R0, lgetxattr(u, emulator));
                     return;
                 case 94:
-                    exit_group(u);
+                    exit_group(emulator);
                     return;
                 case 113:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, clock_gettime(emulator));
@@ -1357,14 +1358,18 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         return (int) buf.toUIntPeer();
     }
 
-    private void exit_group(Unicorn u) {
-        int status = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X0)).intValue();
+    private void exit_group(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int status = context.getIntArg(0);
         if (log.isDebugEnabled()) {
             log.debug("exit with code: " + status, new Exception("exit_group status=" + status));
         } else {
             System.out.println("exit with code: " + status);
         }
-        u.emu_stop();
+        if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
+        emulator.getUnicorn().emu_stop();
     }
 
     private int munmap(Unicorn u, Emulator<?> emulator) {
