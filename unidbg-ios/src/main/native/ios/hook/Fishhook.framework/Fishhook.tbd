@@ -1,0 +1,10 @@
+---
+archs:           [ armv7, arm64 ]
+platform:        ios
+install-name:    libfishhook.dylib
+current-version: 0.0.0
+compatibility-version: 0.0.0
+exports:
+  - archs:            [ armv7, arm64 ]
+    symbols:          [ _rebind_symbols, _rebind_symbols_image ]
+...

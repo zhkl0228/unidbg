@@ -1,9 +1,13 @@
 /*.iml
 /.idea/
-/src/test/resources/unpack/*_unpacked.so
+/unidbg-android/src/test/resources/unpack/*_unpacked.so
 /target/
 *.DS_Store
 **/dev/log
-/src/test/resources/example_binaries/stdout
-/src/test/resources/example_binaries/stderr
-/src/test/native/android/obj/
+/unidbg-android/src/test/native/android/obj/
+/unidbg-api/unidbg-api.iml
+/unidbg-api/target/
+/unidbg-android/unidbg-android.iml
+/unidbg-ios/unidbg-ios.iml
+/unidbg-ios/target/
+/unidbg-android/target/
