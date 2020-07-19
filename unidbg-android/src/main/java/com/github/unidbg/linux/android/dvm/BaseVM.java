@@ -26,7 +26,7 @@ public abstract class BaseVM implements VM {
 
     private static final Log log = LogFactory.getLog(BaseVM.class);
 
-    final Map<Long, DvmClass> classMap = new HashMap<>();
+    final Map<Integer, DvmClass> classMap = new HashMap<>();
 
     Jni jni;
 
@@ -64,8 +64,8 @@ public abstract class BaseVM implements VM {
         this.apkFile = apkFile;
     }
 
-    final Map<Long, DvmObject<?>> globalObjectMap = new HashMap<>();
-    final Map<Long, DvmObject<?>> localObjectMap = new HashMap<>();
+    final Map<Integer, DvmObject<?>> globalObjectMap = new HashMap<>();
+    final Map<Integer, DvmObject<?>> localObjectMap = new HashMap<>();
 
     private DvmClassFactory dvmClassFactory;
 
@@ -76,7 +76,7 @@ public abstract class BaseVM implements VM {
 
     @Override
     public final DvmClass resolveClass(String className, DvmClass... interfaceClasses) {
-        long hash = Objects.hash(className) & 0xffffffffL;
+        int hash = Objects.hash(className);
         DvmClass dvmClass = classMap.get(hash);
         if (dvmClass == null) {
             if (dvmClassFactory != null) {
@@ -95,7 +95,7 @@ public abstract class BaseVM implements VM {
         if (object == null) {
             return 0;
         } else {
-            long hash = object.hashCode() & 0xffffffffL;
+            int hash = object.hashCode();
             if (log.isDebugEnabled()) {
                 log.debug("addObject hash=0x" + Long.toHexString(hash));
             }
@@ -104,7 +104,7 @@ public abstract class BaseVM implements VM {
             } else {
                 localObjectMap.put(hash, object);
             }
-            return (int) hash;
+            return hash;
         }
     }
 
@@ -119,7 +119,7 @@ public abstract class BaseVM implements VM {
 
     @SuppressWarnings("unchecked")
     @Override
-    public final <T extends DvmObject<?>> T getObject(long hash) {
+    public final <T extends DvmObject<?>> T getObject(int hash) {
         if (localObjectMap.containsKey(hash)) {
             return (T) localObjectMap.get(hash);
         } else {
@@ -129,11 +129,10 @@ public abstract class BaseVM implements VM {
 
     @Override
     public final DvmClass findClass(String className) {
-        return classMap.get(Objects.hash(className) & 0xffffffffL);
+        return classMap.get(Objects.hash(className));
     }
 
-    @Override
-    public final void deleteLocalRefs() {
+    final void deleteLocalRefs() {
         localObjectMap.clear();
     }
 

@@ -35,7 +35,6 @@ public class JniDispatch32 extends AbstractJni {
     }
 
     private final AndroidEmulator emulator;
-    private final VM vm;
     private final Module module;
 
     private final DvmClass Native;
@@ -45,7 +44,7 @@ public class JniDispatch32 extends AbstractJni {
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
 
-        vm = emulator.createDalvikVM(null);
+        VM vm = emulator.createDalvikVM(null);
         vm.setJni(this);
         vm.setVerbose(true);
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libjnidispatch.so"), false);
@@ -103,11 +102,10 @@ public class JniDispatch32 extends AbstractJni {
 
         long start = System.currentTimeMillis();
         final int size = 0x20;
-        Number ret = Native.callStaticJniMethod(emulator, "malloc(J)J", size);
+        Number ret = Native.callStaticJniMethodLong(emulator, "malloc(J)J", size);
         Pointer pointer = UnicornPointer.pointer(emulator, ret.intValue() & 0xffffffffL);
         assert pointer != null;
         pointer.setString(0, getClass().getName());
-        vm.deleteLocalRefs();
         Inspector.inspect(pointer.getByteArray(0, size), "malloc ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         IHookZz hookZz = AndroidHookZz.getInstance(emulator);
@@ -121,20 +119,13 @@ public class JniDispatch32 extends AbstractJni {
             }
         });
 
-        ret = Native.callStaticJniMethod(emulator, "getNativeVersion()Ljava/lang/String;");
-        long hash = ret.intValue() & 0xffffffffL;
-        StringObject version = vm.getObject(hash);
-        vm.deleteLocalRefs();
+        StringObject version = Native.callStaticJniMethodObject(emulator, "getNativeVersion()Ljava/lang/String;");
         System.out.println("getNativeVersion version=" + version.getValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        ret = Native.callStaticJniMethod(emulator, "getAPIChecksum()Ljava/lang/String;");
-        hash = ret.intValue() & 0xffffffffL;
-        StringObject checksum = vm.getObject(hash);
-        vm.deleteLocalRefs();
+        StringObject checksum = Native.callStaticJniMethodObject(emulator, "getAPIChecksum()Ljava/lang/String;");
         System.out.println("getAPIChecksum checksum=" + checksum.getValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        ret = Native.callStaticJniMethod(emulator, "sizeof(I)I", 0);
-        vm.deleteLocalRefs();
+        ret = Native.callStaticJniMethodInt(emulator, "sizeof(I)I", 0);
         System.out.println("sizeof POINTER_SIZE=" + ret.intValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 

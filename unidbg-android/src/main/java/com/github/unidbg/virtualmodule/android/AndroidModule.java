@@ -102,7 +102,7 @@ public class AndroidModule extends VirtualModule<VM> {
         RegisterContext context = emulator.getContext();
         Pointer env = context.getPointerArg(0);
         UnicornPointer assetManager = context.getPointerArg(1);
-        DvmObject<?> obj = vm.getObject(assetManager.toUIntPeer());
+        DvmObject<?> obj = vm.getObject(assetManager.toIntPeer());
         if (log.isDebugEnabled()) {
             log.debug("AAssetManager_fromJava env=" + env + ", assetManager=" + obj.getObjectType());
         }
@@ -136,7 +136,7 @@ public class AndroidModule extends VirtualModule<VM> {
     private static long close(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         UnicornPointer asset = context.getPointerArg(0);
-        DvmObject<?> obj = vm.getObject(asset.toUIntPeer());
+        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
         if (log.isDebugEnabled()) {
             log.debug("AAsset_close asset=" + asset + ", pointer=" + block.getPointer());
@@ -148,7 +148,7 @@ public class AndroidModule extends VirtualModule<VM> {
     private static long getBuffer(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         UnicornPointer asset = context.getPointerArg(0);
-        DvmObject<?> obj = vm.getObject(asset.toUIntPeer());
+        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
         UnicornPointer buffer = block.getPointer().share(8, 0);
         if (log.isDebugEnabled()) {
@@ -160,7 +160,7 @@ public class AndroidModule extends VirtualModule<VM> {
     private static long getLength(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         UnicornPointer asset = context.getPointerArg(0);
-        DvmObject<?> obj = vm.getObject(asset.toUIntPeer());
+        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
         int length = block.getPointer().getInt(4);
         if (log.isDebugEnabled()) {
@@ -174,7 +174,7 @@ public class AndroidModule extends VirtualModule<VM> {
         UnicornPointer asset = context.getPointerArg(0);
         Pointer buf = context.getPointerArg(1);
         int count = context.getIntArg(2);
-        DvmObject<?> obj = vm.getObject(asset.toUIntPeer());
+        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
         Pointer pointer = block.getPointer();
         int index = pointer.getInt(0);

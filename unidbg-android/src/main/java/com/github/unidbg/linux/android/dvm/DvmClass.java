@@ -59,9 +59,9 @@ public class DvmClass extends DvmObject<String> {
         return vm.jni.allocObject(vm, this, signature);
     }
 
-    private final Map<Long, DvmMethod> staticMethodMap = new HashMap<>();
+    private final Map<Integer, DvmMethod> staticMethodMap = new HashMap<>();
 
-    final DvmMethod getStaticMethod(long hash) {
+    final DvmMethod getStaticMethod(int hash) {
         DvmMethod method = staticMethodMap.get(hash);
         if (method == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
@@ -76,22 +76,22 @@ public class DvmClass extends DvmObject<String> {
 
     int getStaticMethodID(String methodName, String args) {
         String signature = getClassName() + "->" + methodName + args;
-        long hash = signature.hashCode() & 0xffffffffL;
+        int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
             log.debug("getStaticMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         checkJni(vm);
         if (vm.jni.acceptMethod(this, signature, true)) {
             staticMethodMap.put(hash, new DvmMethod(this, methodName, args, true));
-            return (int) hash;
+            return hash;
         } else {
             return 0;
         }
     }
 
-    private final Map<Long, DvmMethod> methodMap = new HashMap<>();
+    private final Map<Integer, DvmMethod> methodMap = new HashMap<>();
 
-    final DvmMethod getMethod(long hash) {
+    final DvmMethod getMethod(int hash) {
         DvmMethod method = methodMap.get(hash);
         if (method == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
@@ -106,21 +106,21 @@ public class DvmClass extends DvmObject<String> {
 
     int getMethodID(String methodName, String args) {
         String signature = getClassName() + "->" + methodName + args;
-        long hash = signature.hashCode() & 0xffffffffL;
+        int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
             log.debug("getMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptMethod(this, signature, false)) {
             methodMap.put(hash, new DvmMethod(this, methodName, args, false));
-            return (int) hash;
+            return hash;
         } else {
             return 0;
         }
     }
 
-    private final Map<Long, DvmField> fieldMap = new HashMap<>();
+    private final Map<Integer, DvmField> fieldMap = new HashMap<>();
 
-    final DvmField getField(long hash) {
+    final DvmField getField(int hash) {
         DvmField field = fieldMap.get(hash);
         if (field == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
@@ -135,21 +135,21 @@ public class DvmClass extends DvmObject<String> {
 
     int getFieldID(String fieldName, String fieldType) {
         String signature = getClassName() + "->" + fieldName + ":" + fieldType;
-        long hash = signature.hashCode() & 0xffffffffL;
+        int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
             log.debug("getFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptField(this, signature, false)) {
             fieldMap.put(hash, new DvmField(this, fieldName, fieldType));
-            return (int) hash;
+            return hash;
         } else {
             return 0;
         }
     }
 
-    private final Map<Long, DvmField> staticFieldMap = new HashMap<>();
+    private final Map<Integer, DvmField> staticFieldMap = new HashMap<>();
 
-    final DvmField getStaticField(long hash) {
+    final DvmField getStaticField(int hash) {
         DvmField field = staticFieldMap.get(hash);
         if (field == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
@@ -164,13 +164,13 @@ public class DvmClass extends DvmObject<String> {
 
     int getStaticFieldID(String fieldName, String fieldType) {
         String signature = getClassName() + "->" + fieldName + ":" + fieldType;
-        long hash = signature.hashCode() & 0xffffffffL;
+        int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
             log.debug("getStaticFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptField(this, signature, true)) {
             staticFieldMap.put(hash, new DvmField(this, fieldName, fieldType));
-            return (int) hash;
+            return hash;
         } else {
             return 0;
         }
@@ -218,8 +218,40 @@ public class DvmClass extends DvmObject<String> {
         return fnPtr;
     }
 
-    public Number callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
-        return callJniMethod(emulator, vm, this, this, method, args);
+    public void callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
+        try {
+            callJniMethod(emulator, vm, this, this, method, args);
+        } finally {
+            vm.deleteLocalRefs();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public int callStaticJniMethodInt(Emulator<?> emulator, String method, Object...args) {
+        try {
+            return callJniMethod(emulator, vm, this, this, method, args).intValue();
+        } finally {
+            vm.deleteLocalRefs();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public long callStaticJniMethodLong(Emulator<?> emulator, String method, Object...args) {
+        try {
+            return callJniMethod(emulator, vm, this, this, method, args).longValue();
+        } finally {
+            vm.deleteLocalRefs();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public <T extends DvmObject<?>> T callStaticJniMethodObject(Emulator<?> emulator, String method, Object...args) {
+        try {
+            Number number = callJniMethod(emulator, vm, this, this, method, args);
+            return vm.getObject(number.intValue());
+        } finally {
+            vm.deleteLocalRefs();
+        }
     }
 
     final boolean isInstance(DvmClass dvmClass) {

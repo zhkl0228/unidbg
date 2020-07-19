@@ -200,7 +200,7 @@ public abstract class AbstractJni implements Jni {
             case "android/app/Application->getClassLoader()Ljava/lang/ClassLoader;":
                 return new ClassLoader(vm, signature);
             case "android/app/Application->getContentResolver()Landroid/content/ContentResolver;":
-                return new DvmObject<>(vm.resolveClass("android/content/ContentResolver"), signature);
+                return vm.resolveClass("android/content/ContentResolver").newObject(signature);
             case "java/util/ArrayList->get(I)Ljava/lang/Object;": {
                 int index = vaList.getInt(0);
                 ArrayListObject arrayList = (ArrayListObject) dvmObject;
@@ -288,7 +288,7 @@ public abstract class AbstractJni implements Jni {
                 assert stream != null;
                 InputStream inputStream = (InputStream) stream.value;
                 try {
-                    return new DvmObject<>(vm.resolveClass("java/security/cert/Certificate"), factory.generateCertificate(inputStream));
+                    return vm.resolveClass("java/security/cert/Certificate").newObject(factory.generateCertificate(inputStream));
                 } catch (CertificateException e) {
                     throw new IllegalStateException(e);
                 }
@@ -346,11 +346,11 @@ public abstract class AbstractJni implements Jni {
             case "com/android/internal/os/BinderInternal->getContextObject()Landroid/os/IBinder;":
                 return new Binder(vm, signature);
             case "android/app/ActivityThread->currentActivityThread()Landroid/app/ActivityThread;":
-                return new DvmObject<Object>(dvmClass, null);
+                return dvmClass.newObject(null);
             case "android/app/ActivityThread->currentApplication()Landroid/app/Application;":
-                return new DvmObject<>(vm.resolveClass("android/app/Application", vm.resolveClass("android/content/ContextWrapper", vm.resolveClass("android/content/Context"))), signature);
+                return vm.resolveClass("android/app/Application", vm.resolveClass("android/content/ContextWrapper", vm.resolveClass("android/content/Context"))).newObject(signature);
             case "java/util/Locale->getDefault()Ljava/util/Locale;":
-                return new DvmObject<>(dvmClass, Locale.getDefault());
+                return dvmClass.newObject(Locale.getDefault());
             case "android/os/ServiceManagerNative->asInterface(Landroid/os/IBinder;)Landroid/os/IServiceManager;":
                 return new ServiceManager(vm, signature);
             case "com/android/internal/telephony/ITelephony$Stub->asInterface(Landroid/os/IBinder;)Lcom/android/internal/telephony/ITelephony;":
@@ -359,7 +359,7 @@ public abstract class AbstractJni implements Jni {
                 StringObject type = vaList.getObject(0);
                 assert type != null;
                 try {
-                    return new DvmObject<>(vm.resolveClass("java/security/cert/CertificateFactory"), CertificateFactory.getInstance(type.value));
+                    return vm.resolveClass("java/security/cert/CertificateFactory").newObject(CertificateFactory.getInstance(type.value));
                 } catch (CertificateException e) {
                     throw new IllegalStateException(e);
                 }
@@ -368,7 +368,7 @@ public abstract class AbstractJni implements Jni {
                 StringObject type = vaList.getObject(0);
                 assert type != null;
                 try {
-                    return new DvmObject<>(vm.resolveClass("java/security/MessageDigest"), MessageDigest.getInstance(type.value));
+                    return vm.resolveClass("java/security/MessageDigest").newObject(MessageDigest.getInstance(type.value));
                 } catch (NoSuchAlgorithmException e) {
                     throw new IllegalStateException(e);
                 }
@@ -577,7 +577,7 @@ public abstract class AbstractJni implements Jni {
             case "java/io/ByteArrayInputStream-><init>([B)V": {
                 ByteArray array = vaList.getObject(0);
                 assert array != null;
-                return new DvmObject<>(vm.resolveClass("java/io/ByteArrayInputStream"), new ByteArrayInputStream(array.value));
+                return vm.resolveClass("java/io/ByteArrayInputStream").newObject(new ByteArrayInputStream(array.value));
             }
             case "java/lang/String-><init>([B)V": {
                 ByteArray array = vaList.getObject(0);
@@ -682,7 +682,7 @@ public abstract class AbstractJni implements Jni {
                 }
             }
             case "android/content/Context->getPackageManager()Landroid/content/pm/PackageManager;":
-                return new DvmObject<Object>(vm.resolveClass("android/content/pm/PackageManager"), null);
+                return vm.resolveClass("android/content/pm/PackageManager").newObject(null);
             case "android/content/Context->getApplicationInfo()Landroid/content/pm/ApplicationInfo;":
                 return new ApplicationInfo(vm);
             case "android/content/Context->getPackageName()Ljava/lang/String;": {

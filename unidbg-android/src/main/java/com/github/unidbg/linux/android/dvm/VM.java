@@ -29,13 +29,11 @@ public interface VM {
 
     DvmClass findClass(String className);
 
-    <T extends DvmObject<?>> T getObject(long hash);
+    <T extends DvmObject<?>> T getObject(int hash);
 
     void setJni(Jni jni);
 
     void printMemoryInfo();
-
-    void deleteLocalRefs();
 
     DalvikModule loadLibrary(String libname, boolean forceCallInit);
     DalvikModule loadLibrary(File elfFile, boolean forceCallInit);
