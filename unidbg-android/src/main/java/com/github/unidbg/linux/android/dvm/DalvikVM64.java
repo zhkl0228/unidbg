@@ -211,7 +211,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("NewLocalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
                 }
                 if (verbose) {
-                    System.out.println(String.format("JNIEnv->NewLocalRef(0x%x) was called from %s", object.toIntPeer(), UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
+                    System.out.println(String.format("JNIEnv->NewLocalRef(%s) was called from %s", dvmObject, UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                 }
                 return object.toIntPeer();
             }
