@@ -302,6 +302,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         final Pointer pointer = UnicornPointer.pointer(this, begin);
         long start = 0;
         PrintStream redirect = null;
+        Thread exitHook = null;
         try {
             setContextEmulator(this);
 
@@ -341,6 +342,15 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             }
             start = System.currentTimeMillis();
             running = true;
+            if (log.isDebugEnabled()) {
+                exitHook = new Thread() {
+                    @Override
+                    public void run() {
+                        attach().debug();
+                    }
+                };
+                Runtime.getRuntime().addShutdownHook(exitHook);
+            }
             unicorn.emu_start(begin, until, timeout, 0);
             if (is64Bit()) {
                 return (Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X0);
@@ -364,6 +374,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             }
             return -1;
         } finally {
+            if (exitHook != null) {
+                Runtime.getRuntime().removeShutdownHook(exitHook);
+            }
             running = false;
 
             if (log.isDebugEnabled()) {

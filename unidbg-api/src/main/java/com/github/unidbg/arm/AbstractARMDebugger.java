@@ -332,14 +332,14 @@ public abstract class AbstractARMDebugger implements Debugger {
     private Unicorn.UnHook traceHook;
 
     final boolean handleCommon(Unicorn u, String line, long address, int size, long nextAddress, Callable<?> callable) throws Exception {
+        if ("exit".equals(line) || "quit".equals(line)) { // continue
+            return true;
+        }
         if (callable == null || callbackRunning) {
             if ("c".equals(line)) { // continue
                 return true;
             }
         } else {
-            if ("exit".equals(line) || "quit".equals(line)) { // continue
-                return true;
-            }
             if ("c".equals(line)) {
                 try {
                     callbackRunning = true;
