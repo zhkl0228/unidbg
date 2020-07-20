@@ -187,7 +187,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     u.reg_write(ArmConst.UC_ARM_REG_R0, fchmod(u));
                     return;
                 case 98:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, futex(u, emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, futex(emulator));
                     return;
                 case 103888:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, syslog(u, emulator));
@@ -1511,10 +1511,11 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
     private static final int FUTEX_WAIT = 0;
     private static final int FUTEX_WAKE = 1;
 
-    private int futex(Unicorn u, Emulator<?> emulator) {
-        Pointer uaddr = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-        int futex_op = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X1)).intValue();
-        int val = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_X2)).intValue();
+    private int futex(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer uaddr = context.getPointerArg(0);
+        int futex_op = context.getIntArg(1);
+        int val = context.getIntArg(2);
         int old = uaddr.getInt(0);
         if (log.isDebugEnabled()) {
             log.debug("futex uaddr=" + uaddr + ", _futexop=" + futex_op + ", op=" + (futex_op & 0x7f) + ", val=" + val + ", old=" + old);
@@ -1525,7 +1526,8 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 if (old != val) {
                     throw new IllegalStateException("old=" + old + ", val=" + val);
                 }
-                Pointer timeout = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                Thread.yield();
+                Pointer timeout = context.getPointerArg(3);
                 int mytype = val & 0xc000;
                 int shared = val & 0x2000;
                 if (log.isDebugEnabled()) {

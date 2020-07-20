@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.security.cert.CertificateException;
 import java.util.*;
 
-public abstract class BaseVM implements VM {
+public abstract class BaseVM implements VM, DvmClassFactory {
 
     private static final Log log = LogFactory.getLog(BaseVM.class);
 
@@ -83,12 +83,17 @@ public abstract class BaseVM implements VM {
                 dvmClass = dvmClassFactory.createClass(this, className, interfaceClasses);
             }
             if (dvmClass == null) {
-                dvmClass = new DvmClass(this, className, interfaceClasses);
+                dvmClass = this.createClass(this, className, interfaceClasses);
             }
             classMap.put(hash, dvmClass);
             addObject(dvmClass, true);
         }
         return dvmClass;
+    }
+
+    @Override
+    public DvmClass createClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
+        return new DvmClass(vm, className, interfaceClasses);
     }
 
     final int addObject(DvmObject<?> object, boolean global) {
