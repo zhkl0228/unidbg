@@ -14,6 +14,8 @@ import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.unwind.SimpleARM64Unwinder;
+import com.github.unidbg.unwind.Unwinder;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -256,5 +258,10 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     @Override
     protected Pointer getStackPointer() {
         return UnicornPointer.register(this, Arm64Const.UC_ARM64_REG_SP);
+    }
+
+    @Override
+    public Unwinder getUnwinder() {
+        return new SimpleARM64Unwinder();
     }
 }

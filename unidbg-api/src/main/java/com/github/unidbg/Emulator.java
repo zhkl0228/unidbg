@@ -11,6 +11,7 @@ import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.spi.*;
+import com.github.unidbg.unwind.Unwinder;
 import unicorn.Unicorn;
 
 import java.io.Closeable;
@@ -131,5 +132,7 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     void setTimeout(long timeout);
 
     <V extends RegisterContext> V getContext();
+
+    Unwinder getUnwinder();
 
 }

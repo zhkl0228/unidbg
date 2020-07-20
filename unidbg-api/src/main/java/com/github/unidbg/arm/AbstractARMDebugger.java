@@ -662,7 +662,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         System.out.println(sb);
     }
 
-    final Module findModuleByAddress(long address) {
+    public final Module findModuleByAddress(long address) {
         Memory memory = emulator.getMemory();
         Module module = memory.findModuleByAddress(address);
         if (module == null) {

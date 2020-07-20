@@ -203,46 +203,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     }
                 }
                 if ("bt".equals(line)) {
-                    Memory memory = emulator.getMemory();
-                    String maxLengthSoName = memory.getMaxLengthLibraryName();
-                    boolean hasTrace = false;
-                    UnicornPointer lr = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR);
-                    UnicornPointer fp = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_FP);
-                    do {
-                        Module module = null;
-                        if (lr != null) {
-                            module = findModuleByAddress(lr.peer);
-                            if (lr.peer == AbstractARM64Emulator.LR) {
-                                break;
-                            }
-                        }
-
-                        hasTrace = true;
-                        StringBuilder sb = new StringBuilder();
-                        if (module != null) {
-                            sb.append(String.format("[0x%09x]", module.base));
-                            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
-                            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - module.base));
-                        } else {
-                            sb.append(String.format("[0x%09x]", 0L));
-                            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(lr == null ? 0 : lr.peer)));
-                            if (lr != null) {
-                                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 0xfffe0000L));
-                            }
-                        }
-                        System.out.println(sb);
-
-                        if (fp == null) {
-                            System.err.println("fp=null");
-                            break;
-                        }
-
-                        lr = fp.getPointer(8);
-                        fp = fp.getPointer(0);
-                    } while(true);
-                    if (!hasTrace) {
-                        System.err.println("Decode back trace failed.");
-                    }
+                    emulator.getUnwinder().unwind(emulator, this, false);
                     continue;
                 }
                 if (line.startsWith("b0x")) {
