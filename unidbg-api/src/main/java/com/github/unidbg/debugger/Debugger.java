@@ -24,4 +24,6 @@ public interface Debugger extends Breaker, DebugHook, Closeable {
 
     <T> T run(Callable<T> callable) throws Exception;
 
+    boolean isDebugging();
+
 }

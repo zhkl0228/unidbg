@@ -346,7 +346,10 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 exitHook = new Thread() {
                     @Override
                     public void run() {
-                        attach().debug();
+                        Debugger debugger = attach();
+                        if (!debugger.isDebugging()) {
+                            debugger.debug();
+                        }
                     }
                 };
                 Runtime.getRuntime().addShutdownHook(exitHook);

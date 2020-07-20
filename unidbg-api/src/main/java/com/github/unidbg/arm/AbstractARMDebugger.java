@@ -147,11 +147,21 @@ public abstract class AbstractARMDebugger implements Debugger {
                     traceHook.unhook();
                     traceHook = null;
                 }
+                debugging = true;
                 loop(emulator, address, size, null);
             }
         } catch (Exception e) {
             log.warn("process loop failed", e);
+        } finally {
+            debugging = false;
         }
+    }
+
+    private boolean debugging;
+
+    @Override
+    public boolean isDebugging() {
+        return debugging;
     }
 
     @Override
@@ -165,11 +175,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (ins != null && breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
                     u.setFastDebug(true);
+                    debugging = true;
                     loop(emulator, address, size, null);
                 }
             }
         } catch (Exception e) {
             log.warn("process hook failed", e);
+        } finally {
+            debugging = false;
         }
     }
 
@@ -183,9 +196,12 @@ public abstract class AbstractARMDebugger implements Debugger {
             address = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
         }
         try {
+            debugging = true;
             loop(emulator, address, 4, null);
         } catch (Exception e) {
             log.warn("debug failed", e);
+        } finally {
+            debugging = false;
         }
     }
 
@@ -211,7 +227,12 @@ public abstract class AbstractARMDebugger implements Debugger {
         } finally {
             callbackRunning = false;
         }
-        loop(emulator, 0, 0, callable);
+        try {
+            debugging = true;
+            loop(emulator, 0, 0, callable);
+        } finally {
+            debugging = false;
+        }
         return ret;
     }
 
