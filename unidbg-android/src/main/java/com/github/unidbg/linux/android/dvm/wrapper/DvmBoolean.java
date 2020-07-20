@@ -5,6 +5,7 @@ import com.github.unidbg.linux.android.dvm.VM;
 
 public class DvmBoolean extends DvmObject<Boolean> {
 
+    @SuppressWarnings("unused")
     public static DvmBoolean valueOf(VM vm, boolean b) {
         return new DvmBoolean(vm, b);
     }

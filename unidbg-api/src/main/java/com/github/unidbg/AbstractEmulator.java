@@ -342,7 +342,13 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             start = System.currentTimeMillis();
             running = true;
             unicorn.emu_start(begin, until, timeout, 0);
-            return (Number) unicorn.reg_read(is64Bit() ? Arm64Const.UC_ARM64_REG_X0 : ArmConst.UC_ARM_REG_R0);
+            if (is64Bit()) {
+                return (Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X0);
+            } else {
+                Number r0 = (Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0);
+                Number r1 = (Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1);
+                return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
+            }
         } catch (RuntimeException e) {
             if (!entry && e instanceof UnicornException && !log.isDebugEnabled()) {
                 log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);

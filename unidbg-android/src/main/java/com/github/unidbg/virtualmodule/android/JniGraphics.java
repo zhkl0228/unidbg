@@ -76,7 +76,7 @@ public class JniGraphics extends VirtualModule<VM> {
         Pointer env = context.getPointerArg(0);
         UnicornPointer jbitmap = context.getPointerArg(1);
         Pointer info = context.getPointerArg(2);
-        Bitmap bitmap = vm.getObject(jbitmap.toUIntPeer());
+        Bitmap bitmap = vm.getObject(jbitmap.toIntPeer());
         BufferedImage image = bitmap.getValue();
         if (log.isDebugEnabled()) {
             log.debug("AndroidBitmap_getInfo env=" + env + ", width=" + image.getWidth() + ", height=" + image.getHeight() + ", stride=" + image.getWidth() * 4 + ", info=" + info);
@@ -94,7 +94,7 @@ public class JniGraphics extends VirtualModule<VM> {
         Pointer env = context.getPointerArg(0);
         UnicornPointer jbitmap = context.getPointerArg(1);
         Pointer addrPtr = context.getPointerArg(2);
-        Bitmap bitmap = vm.getObject(jbitmap.toUIntPeer());
+        Bitmap bitmap = vm.getObject(jbitmap.toIntPeer());
         BufferedImage image = bitmap.getValue();
         if (image.getType() != BufferedImage.TYPE_4BYTE_ABGR) {
             throw new IllegalStateException("image type=" + image.getType());
@@ -132,7 +132,7 @@ public class JniGraphics extends VirtualModule<VM> {
         RegisterContext context = emulator.getContext();
         Pointer env = context.getPointerArg(0);
         UnicornPointer jbitmap = context.getPointerArg(1);
-        Bitmap bitmap = vm.getObject(jbitmap.toUIntPeer());
+        Bitmap bitmap = vm.getObject(jbitmap.toIntPeer());
         MemoryBlock memoryBlock = bitmap.memoryBlock;
         if (memoryBlock != null) {
             memoryBlock.free(true);

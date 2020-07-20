@@ -45,7 +45,7 @@ public class Utilities64 extends AbstractJni {
         new AndroidModule(emulator, vm).register(memory);
 
         vm.setVerbose(true);
-        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/arm64-v8a/libtmessages.29.so"), false);
+        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/arm64-v8a/libtmessages.29.so"), true);
         dm.callJNI_OnLoad(emulator);
 
         Utilities = vm.resolveClass("org/telegram/messenger/Utilities");
@@ -71,12 +71,11 @@ public class Utilities64 extends AbstractJni {
         ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
-        Number ret = Utilities.callStaticJniMethod(emulator, "aesCbcEncryptionByteArray([B[B[BIIII)V", vm.addLocalObject(data),
+        Utilities.callStaticJniMethod(emulator, "aesCbcEncryptionByteArray([B[B[BIIII)V", vm.addLocalObject(data),
                 vm.addLocalObject(new ByteArray(vm, key)),
                 vm.addLocalObject(new ByteArray(vm, iv)),
                 0, data.length(), 0, 0);
-        vm.deleteLocalRefs();
-        Inspector.inspect(data.getValue(), "aesCbcEncryptionByteArray ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        Inspector.inspect(data.getValue(), "aesCbcEncryptionByteArray offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
     private void aesCtrDecryptionByteArray() {
@@ -84,12 +83,11 @@ public class Utilities64 extends AbstractJni {
         ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
-        Number ret = Utilities.callStaticJniMethod(emulator, "aesCtrDecryptionByteArray([B[B[BIII)V", vm.addLocalObject(data),
+        Utilities.callStaticJniMethod(emulator, "aesCtrDecryptionByteArray([B[B[BIII)V", vm.addLocalObject(data),
                 vm.addLocalObject(new ByteArray(vm, key)),
                 vm.addLocalObject(new ByteArray(vm, iv)),
                 0, data.length(), 0);
-        vm.deleteLocalRefs();
-        Inspector.inspect(data.getValue(), "aesCtrDecryptionByteArray ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        Inspector.inspect(data.getValue(), "aesCtrDecryptionByteArray offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
     private void pbkdf2() {
@@ -97,11 +95,10 @@ public class Utilities64 extends AbstractJni {
         byte[] password = "123456".getBytes();
         byte[] salt = new byte[8];
         ByteArray dst = new ByteArray(vm, new byte[64]);
-        Number ret = Utilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
+        Utilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
                 vm.addLocalObject(new ByteArray(vm, salt)),
                 vm.addLocalObject(dst), 100000);
-        vm.deleteLocalRefs();
-        Inspector.inspect(dst.getValue(), "pbkdf2 ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
 }

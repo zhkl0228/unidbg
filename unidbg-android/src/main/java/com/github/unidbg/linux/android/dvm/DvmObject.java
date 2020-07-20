@@ -11,8 +11,14 @@ public class DvmObject<T> extends Hashable {
 
     private final DvmClass objectType;
     protected T value;
+    private final BaseVM vm;
 
     protected DvmObject(DvmClass objectType, T value) {
+        this(objectType == null ? null : objectType.vm, objectType, value);
+    }
+
+    private DvmObject(BaseVM vm, DvmClass objectType, T value) {
+        this.vm = vm;
         this.objectType = objectType;
         this.value = value;
     }
@@ -26,12 +32,56 @@ public class DvmObject<T> extends Hashable {
     }
 
     protected boolean isInstanceOf(DvmClass dvmClass) {
-        return objectType.isInstance(dvmClass);
+        return objectType != null && objectType.isInstance(dvmClass);
     }
 
     @SuppressWarnings("unused")
-    public Number callJniMethod(Emulator<?> emulator, String method, Object...args) {
-        return callJniMethod(emulator, objectType.vm, objectType, this, method, args);
+    public void callJniMethod(Emulator<?> emulator, String method, Object...args) {
+        if (objectType == null) {
+            throw new IllegalStateException("objectType is null");
+        }
+        try {
+            callJniMethod(emulator, vm, objectType, this, method, args);
+        } finally {
+            vm.deleteLocalRefs();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public int callJniMethodInt(Emulator<?> emulator, String method, Object...args) {
+        if (objectType == null) {
+            throw new IllegalStateException("objectType is null");
+        }
+        try {
+            return callJniMethod(emulator, vm, objectType, this, method, args).intValue();
+        } finally {
+            vm.deleteLocalRefs();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public long callJniMethodLong(Emulator<?> emulator, String method, Object...args) {
+        if (objectType == null) {
+            throw new IllegalStateException("objectType is null");
+        }
+        try {
+            return callJniMethod(emulator, vm, objectType, this, method, args).longValue();
+        } finally {
+            vm.deleteLocalRefs();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public <V extends DvmObject<?>> V callJniMethodObject(Emulator<?> emulator, String method, Object...args) {
+        if (objectType == null) {
+            throw new IllegalStateException("objectType is null");
+        }
+        try {
+            Number number = callJniMethod(emulator, vm, objectType, this, method, args);
+            return objectType.vm.getObject(number.intValue());
+        } finally {
+            vm.deleteLocalRefs();
+        }
     }
 
     protected static Number callJniMethod(Emulator<?> emulator, VM vm, DvmClass objectType, DvmObject<?> thisObj, String method, Object...args) {

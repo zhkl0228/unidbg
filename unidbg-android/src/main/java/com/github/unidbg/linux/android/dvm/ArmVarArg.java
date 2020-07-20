@@ -23,7 +23,7 @@ public class ArmVarArg implements VarArg {
         if (pointer == null) {
             return null;
         } else {
-            return vm.getObject(pointer.toUIntPeer());
+            return vm.getObject(pointer.toIntPeer());
         }
     }
 

@@ -89,11 +89,8 @@ public class QDReaderJni extends AbstractJni implements ModuleListener {
         final String data = "359250054370919||1551086094";
         long start = System.currentTimeMillis();
 //        emulator.traceCode();
-        Number ret = d.callStaticJniMethod(emulator, "c(Ljava/lang/String;)[B", vm.addLocalObject(new StringObject(vm, data)));
-        long hash = ret.intValue() & 0xffffffffL;
-        ByteArray array = vm.getObject(hash);
-        vm.deleteLocalRefs();
-        Inspector.inspect(array.getValue(), "c ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        ByteArray array = d.callStaticJniMethodObject(emulator, "c(Ljava/lang/String;)[B", vm.addLocalObject(new StringObject(vm, data)));
+        Inspector.inspect(array.getValue(), "c offset=" + (System.currentTimeMillis() - start) + "ms");
 
         final String key = "sewxf03hhz3ew9qcCXMHiDMk";
         final String iv = "sh331nt1";

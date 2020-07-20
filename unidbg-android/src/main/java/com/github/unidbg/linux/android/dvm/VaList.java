@@ -111,12 +111,12 @@ public abstract class VaList {
         return String.format(sb.toString(), args.toArray());
     }
 
-    public final  <T extends DvmObject<?>> T getObject(int offset) {
-        long p = getInt(offset);
+    public final <T extends DvmObject<?>> T getObject(int offset) {
+        int p = getInt(offset);
         if (p == 0) {
             return null;
         } else {
-            return vm.getObject(p & 0xffffffffL);
+            return vm.getObject(p);
         }
     }
 

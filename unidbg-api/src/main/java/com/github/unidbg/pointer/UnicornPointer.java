@@ -33,6 +33,10 @@ public class UnicornPointer extends Pointer {
         return peer & 0xffffffffL;
     }
 
+    public int toIntPeer() {
+        return (int) toUIntPeer();
+    }
+
     private UnicornPointer(Emulator<?> emulator, long peer, int pointerSize) {
         super(0);
 
