@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -6,6 +7,9 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <signal.h>
+
+#include <iostream>
+#include <exception>
 
 static void test_stat() {
   struct stat st;
@@ -90,6 +94,9 @@ static void test_signalaction() {
     }
 }
 
+static void test_exception() {
+}
+
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -99,6 +106,7 @@ int main() {
   test_ioctl();
   test_signal();
   test_signalaction();
+  test_exception();
   printf("Press any key to exit\n");
   getchar();
   return 0;

@@ -11,7 +11,7 @@ import unicorn.Arm64Const;
 public class SimpleARM64Unwinder implements Unwinder {
 
     @Override
-    public void unwind(Emulator<?> emulator, AbstractARMDebugger debugger, boolean thumb) {
+    public void unwind(Emulator<?> emulator, AbstractARMDebugger debugger) {
         Memory memory = emulator.getMemory();
         String maxLengthSoName = memory.getMaxLengthLibraryName();
         boolean hasTrace = false;
@@ -31,12 +31,12 @@ public class SimpleARM64Unwinder implements Unwinder {
             if (module != null) {
                 sb.append(String.format("[0x%09x]", module.base));
                 sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
-                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - module.base));
+                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 4 - module.base));
             } else {
                 sb.append(String.format("[0x%09x]", 0L));
-                sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(lr == null ? 0 : lr.peer)));
+                sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(lr == null ? 0 : lr.peer - 4)));
                 if (lr != null) {
-                    sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 0xfffe0000L));
+                    sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", lr.peer - 4 - 0xfffe0000L));
                 }
             }
             System.out.println(sb);

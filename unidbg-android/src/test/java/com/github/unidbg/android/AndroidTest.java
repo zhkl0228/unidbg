@@ -36,7 +36,7 @@ public class AndroidTest {
     }
 
     private AndroidTest() throws IOException {
-        File executable = new File("src/test/native/android/libs/armeabi-v7a/test");
+        File executable = new File("unidbg-android/src/test/native/android/libs/armeabi-v7a/test");
         emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs")) {
             @Override
             protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {

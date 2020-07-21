@@ -202,8 +202,8 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         continue;
                     }
                 }
-                if ("bt".equals(line)) {
-                    emulator.getUnwinder().unwind(emulator, this, false);
+                if (emulator.isRunning() && "bt".equals(line)) {
+                    emulator.getUnwinder().unwind(emulator, this);
                     continue;
                 }
                 if (line.startsWith("b0x")) {
@@ -257,7 +257,9 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     final void showHelp() {
         System.out.println("c: continue");
         System.out.println("n: step over");
-        System.out.println("bt: back trace");
+        if (emulator.isRunning()) {
+            System.out.println("bt: back trace");
+        }
         System.out.println();
         System.out.println("st hex: search stack");
         System.out.println("shw hex: search writable heap");

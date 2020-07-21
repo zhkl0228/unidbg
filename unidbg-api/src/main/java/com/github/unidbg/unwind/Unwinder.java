@@ -5,6 +5,6 @@ import com.github.unidbg.arm.AbstractARMDebugger;
 
 public interface Unwinder {
 
-    void unwind(Emulator<?> emulator, AbstractARMDebugger debugger, boolean thumb);
+    void unwind(Emulator<?> emulator, AbstractARMDebugger debugger);
 
 }
