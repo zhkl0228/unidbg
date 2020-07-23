@@ -116,6 +116,15 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (failResult != null && failResult.isFallback()) {
             return FileResult.success(failResult.io);
         }
+        
+        if (pathname.indexOf(("/proc/" + emulator.getPid() + "/fd/")) == 0) {
+            int fd = Integer.parseInt(pathname.substring(pathname.lastIndexOf("/") + 1));
+            T file = fdMap.get(fd);
+            if (file != null) {
+                return FileResult.success(file);
+            }
+        }
+        
         return failResult;
     }
 
