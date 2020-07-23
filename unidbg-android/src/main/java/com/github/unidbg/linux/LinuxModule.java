@@ -8,6 +8,7 @@ import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
+import net.fornwall.jelf.ArmExIdx;
 import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.SymbolLocator;
 import org.apache.commons.logging.Log;
@@ -44,7 +45,7 @@ public class LinuxModule extends Module {
 
         LinuxModule module = new LinuxModule(base, size, name, null,
                 Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
-                Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList()) {
+                Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(), null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnicornPointer pointer = symbols.get(name);
@@ -72,14 +73,17 @@ public class LinuxModule extends Module {
     private final SymbolLocator dynsym;
     private final List<ModuleSymbol> unresolvedSymbol;
     public final List<InitFunction> initFunctionList;
+    public final ArmExIdx armExIdx;
 
     LinuxModule(long base, long size, String name, SymbolLocator dynsym,
-                List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions) {
+                List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
+                ArmExIdx armExIdx) {
         super(name, base, size, neededLibraries, regions);
 
         this.dynsym = dynsym;
         this.unresolvedSymbol = unresolvedSymbol;
         this.initFunctionList = initFunctionList;
+        this.armExIdx = armExIdx;
     }
 
     void callInitFunction(Emulator<?> emulator, boolean mustCallInit) throws IOException {

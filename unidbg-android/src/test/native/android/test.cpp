@@ -7,9 +7,13 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <sys/system_properties.h>
 
 #include <iostream>
 #include <exception>
+
+static int sdk_int = 0;
 
 static void test_stat() {
   struct stat st;
@@ -94,7 +98,15 @@ static void test_signalaction() {
     }
 }
 
-static void test_exception() {
+__attribute__((constructor))
+void init() {
+  char sdk[PROP_VALUE_MAX];
+  __system_property_get("ro.build.version.sdk", sdk);
+  sdk_int = atoi(sdk);
+  printf("constructor sdk=%d\n", sdk_int);
+}
+
+static void test_backtrace() {
 }
 
 int main() {
@@ -104,9 +116,11 @@ int main() {
   test_stat();
   test_dirent();
   test_ioctl();
-  test_signal();
-  test_signalaction();
-  test_exception();
+  if(sdk_int > 19) {
+    test_signal();
+    test_signalaction();
+  }
+  test_backtrace();
   printf("Press any key to exit\n");
   getchar();
   return 0;

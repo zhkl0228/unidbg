@@ -47,6 +47,8 @@ public class ElfSegment {
 	public static final int PT_HIOS = 0x6fffffff;
 	/** Lower bound of the range reserved for processor-specific semantics. */
 	public static final int PT_LOPROC = 0x70000000;
+	/** .ARM.exidx segment */
+	public static final int PT_ARM_EXIDX = 0x70000001;
 	/** Upper bound of the range reserved for processor-specific semantics. */
 	public static final int PT_HIPROC = 0x7fffffff;
 
@@ -72,6 +74,7 @@ public class ElfSegment {
 	private MemoizedObject<String> ptInterpreter;
 	private MemoizedObject<byte[]> ptLoad;
 	private MemoizedObject<ElfDynamicStructure> dynamicStructure;
+	private MemoizedObject<ArmExIdx> arm_exidx;
 
 	ElfSegment(final ElfParser parser, final long offset) {
 		parser.seek(offset);
@@ -148,6 +151,17 @@ public class ElfSegment {
                 }
             };
             break;
+		case PT_ARM_EXIDX:
+			arm_exidx = new MemoizedObject<ArmExIdx>() {
+				@Override
+				protected ArmExIdx computeValue() throws ElfException, IOException {
+					parser.seek(ElfSegment.this.offset);
+					byte[] buffer = new byte[(int) file_size];
+					parser.read(buffer);
+					return new ArmExIdx(ElfSegment.this.virtual_address, Arrays.copyOf(buffer, (int) mem_size));
+				}
+			};
+            break;
 		}
 	}
 
@@ -204,4 +218,8 @@ public class ElfSegment {
 	public ElfDynamicStructure getDynamicStructure() throws IOException {
 	    return dynamicStructure == null ? null : dynamicStructure.getValue();
     }
+
+    public ArmExIdx getARMExIdxData() throws IOException {
+		return arm_exidx == null ? null : arm_exidx.getValue();
+	}
 }

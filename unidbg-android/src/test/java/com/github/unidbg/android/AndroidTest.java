@@ -45,10 +45,10 @@ public class AndroidTest {
         };
         Memory memory = emulator.getMemory();
         emulator.getSyscallHandler().setVerbose(false);
-        LibraryResolver resolver = new AndroidResolver(23);
+        LibraryResolver resolver = new AndroidResolver(19);
         memory.setLibraryResolver(resolver);
 
-        module = emulator.loadLibrary(executable);
+        module = emulator.loadLibrary(executable, true);
 
         {
             Pointer pointer = memory.allocateStack(0x100);
@@ -57,7 +57,7 @@ public class AndroidTest {
     }
 
     private void test() {
-//        Logger.getLogger("com.github.unidbg.linux.ARMSyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger("com.github.unidbg.linux.ARM32SyscallHandler").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.unix.UnixSyscallHandler").setLevel(Level.DEBUG);
         System.err.println("exit code: " + module.callEntry(emulator));
     }

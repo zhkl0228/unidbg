@@ -147,10 +147,6 @@ public final class ElfSection implements SymbolLocator {
 		entry_size = parser.readIntOrLong();
 
 		switch (type) {
-		case ElfSection.SHT_NULL:
-			break;
-		case ElfSection.SHT_PROGBITS:
-			break;
 		case ElfSection.SHT_SYMTAB:
 		case ElfSection.SHT_DYNSYM:
 			int num_entries = (int) (size / entry_size);
@@ -189,10 +185,6 @@ public final class ElfSection implements SymbolLocator {
 				}
 			};
 			break;
-		case ElfSection.SHT_NOTE:
-			break;
-		case ElfSection.SHT_NOBITS:
-			break;
 		case ElfSection.SHT_RELA:
 		case ElfSection.SHT_REL:
 			num_entries = (int) (size / entry_size);
@@ -206,8 +198,6 @@ public final class ElfSection implements SymbolLocator {
 					}
 				};
 			}
-			break;
-		case ElfSection.SHT_SHLIB:
 			break;
 		case ElfSection.SHT_INIT_ARRAY:
 			initArray = new MemoizedObject<ElfInitArray>() {
@@ -225,6 +215,11 @@ public final class ElfSection implements SymbolLocator {
 				}
 			};
 			break;
+		case ElfSection.SHT_NULL:
+		case ElfSection.SHT_PROGBITS:
+		case ElfSection.SHT_SHLIB:
+		case ElfSection.SHT_NOTE:
+		case ElfSection.SHT_NOBITS:
 		default:
 			break;
 		}

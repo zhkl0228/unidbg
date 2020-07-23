@@ -235,7 +235,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         try {
             LinuxModule module = loadInternal(file);
-            resolveSymbols(true);
+            resolveSymbols(false);
             if (!callInitFunction) { // No need call init array
                 for (LinuxModule m : modules.values()) {
                     m.initFunctionList.clear();
@@ -327,6 +327,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         setMMapBaseAddress(load_base + size);
 
         final List<MemRegion> regions = new ArrayList<>(5);
+        ArmExIdx armExIdx = null;
         for (int i = 0; i < elfFile.num_ph; i++) {
             ElfSegment ph = elfFile.getProgramHeader(i);
             switch (ph.type) {
@@ -349,6 +350,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     if (log.isDebugEnabled()) {
                         log.debug("[" + libraryFile.getName() + "]interp=" + ph.getIntepreter());
                     }
+                    break;
+                case ElfSegment.PT_ARM_EXIDX:
+                    armExIdx = ph.getARMExIdxData();
                     break;
                 default:
                     if (log.isDebugEnabled()) {
@@ -537,7 +541,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         if (dynsym == null) {
             throw new IllegalStateException("dynsym is null");
         }
-        LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions);
+        LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions, armExIdx);
         if ("libc.so".equals(soName)) { // libc
             ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
             if (__thread_entry != null) {
