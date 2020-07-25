@@ -286,11 +286,18 @@ public class ArmExIdx {
                 break;
             }
             case ARM_EXIDX_CMD_REG_POP: {
-                List<String> list = new ArrayList<>(16);
+                final List<String> list;
+                if (log.isDebugEnabled()) {
+                    list = null;
+                } else {
+                    list = new ArrayList<>(16);
+                }
                 for (int m = 0; m < 16; m++) {
                     if ((edata.data & (1 << m)) != 0) {
                         String reg = "r" + m;
-                        list.add(reg);
+                        if (list != null) {
+                            list.add(reg);
+                        }
 
                         UnicornPointer sp = UnicornPointer.pointer(emulator, context.cfa);
                         assert sp != null;
@@ -306,8 +313,8 @@ public class ArmExIdx {
                 if ((edata.data & (1 << UNW_ARM_SP)) != 0) {
                     context.cfa = context.loc[UNW_ARM_SP];
                 }
-                if (log.isDebugEnabled()) {
-                    log.debug("pop " + list.toString());
+                if (log.isDebugEnabled() && list != null) {
+                    log.debug("pop " + list.toString().replace('[', '{').replace(']', '}'));
                 }
                 break;
             }
