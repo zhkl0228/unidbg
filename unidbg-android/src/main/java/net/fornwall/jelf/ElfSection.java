@@ -255,6 +255,17 @@ public final class ElfSection implements SymbolLocator {
 		return null;
 	}
 
+	@Override
+	public ElfSymbol getELFSymbolByAddr(long addr) throws IOException {
+		for (int i = 0, m = getNumberOfSymbols(); i < m; i++) {
+			ElfSymbol symbol = getELFSymbol(i);
+			if (addr >= symbol.value && addr < symbol.value + symbol.size) {
+				return symbol;
+			}
+		}
+		return null;
+	}
+
 	/** Returns the number of relocations in this section or 0 if none. */
 	public int getNumberOfRelocations() {
 		return (relocations != null) ? relocations.length : 0;

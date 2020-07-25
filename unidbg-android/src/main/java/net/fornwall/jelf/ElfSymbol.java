@@ -159,8 +159,6 @@ public final class ElfSymbol {
 		String typeString;
 		switch (getType()) {
 		case STT_NOTYPE:
-			typeString = "object";
-			break;
 		case STT_OBJECT:
 			typeString = "object";
 			break;

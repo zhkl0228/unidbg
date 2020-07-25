@@ -25,6 +25,21 @@ public class ElfSymbolStructure implements SymbolLocator {
     }
 
     @Override
+    public ElfSymbol getELFSymbolByAddr(long addr) throws IOException {
+        if (hashTable == null) {
+            throw new UnsupportedOperationException("hashTable is null");
+        }
+        HashTable hashTable = this.hashTable.getValue();
+        for (int i = 0; i < hashTable.getNumBuckets(); i++) {
+            ElfSymbol symbol = getELFSymbol(i);
+            if (addr >= symbol.value && addr < symbol.value + symbol.size) {
+                return symbol;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public ElfSymbol getELFSymbolByName(String name) throws IOException {
         if (hashTable == null) {
             return null;

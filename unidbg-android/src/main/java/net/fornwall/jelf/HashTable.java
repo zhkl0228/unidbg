@@ -10,4 +10,6 @@ public interface HashTable {
      */
     ElfSymbol getSymbol(ElfSymbolStructure symbolStructure, String symbolName) throws IOException;
 
+    int getNumBuckets();
+
 }

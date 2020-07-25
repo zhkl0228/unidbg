@@ -99,32 +99,44 @@ public class ArmExIdx {
             bb.putInt(value);
             instruction = Arrays.copyOfRange(bb.array(), 1, 4);
         } else {
-            value += (offset - 4);
-            UnicornPointer pointer = UnicornPointer.pointer(emulator, module.base + value);
+            long addr = value + offset - 4;
+            UnicornPointer pointer = UnicornPointer.pointer(emulator, module.base + addr);
             assert pointer != null;
             value = pointer.getInt(0);
             if ((value & ARM_EXIDX_COMPACT) == 0) {
-                throw new UnsupportedOperationException("generic model");
-            }
-            index = (value >> 24) & 0xf;
-            switch (index) {
-                case 0: // Su16 / __aeabi_unwind_cpp_pr0
-                    bb = ByteBuffer.allocate(4);
-                    bb.putInt(value);
-                    instruction = Arrays.copyOfRange(bb.array(), 1, bb.capacity());
-                    break;
-                case 1: // Lu16 / __aeabi_unwind_cpp_pr1
-                case 2: // Lu32 / __aeabi_unwind_cpp_pr1
-                    int n = (value >> 16) & 0xff;
-                    bb = ByteBuffer.allocate((n + 1) * 4);
-                    bb.putInt(value);
-                    for (int i = 0; i < n; i++) {
-                        bb.putInt(pointer.getInt((i + 1) * 4));
-                    }
-                    instruction = Arrays.copyOfRange(bb.array(), 2, bb.capacity());
-                    break;
-                default:
-                    throw new UnsupportedOperationException("index=" + index);
+                long personality = (value << 1 >> 1) + addr;
+                int data = pointer.getInt(4);
+                int n = (data >> 24) & 0xff;
+                bb = ByteBuffer.allocate((n + 1) * 4);
+                bb.putInt(data);
+                for (int i = 0; i < n; i++) {
+                    bb.putInt(pointer.getInt((i + 2) * 4));
+                }
+                instruction = Arrays.copyOfRange(bb.array(), 1, bb.capacity());
+                if (log.isDebugEnabled()) {
+                    log.debug("unwind generic model: " + module + ", entry=0x" + Integer.toHexString(entry) + ", personality=0x" + Long.toHexString(personality));
+                }
+            } else {
+                index = (value >> 24) & 0xf;
+                switch (index) {
+                    case 0: // Su16 / __aeabi_unwind_cpp_pr0
+                        bb = ByteBuffer.allocate(4);
+                        bb.putInt(value);
+                        instruction = Arrays.copyOfRange(bb.array(), 1, bb.capacity());
+                        break;
+                    case 1: // Lu16 / __aeabi_unwind_cpp_pr1
+                    case 2: // Lu32 / __aeabi_unwind_cpp_pr1
+                        int n = (value >> 16) & 0xff;
+                        bb = ByteBuffer.allocate((n + 1) * 4);
+                        bb.putInt(value);
+                        for (int i = 0; i < n; i++) {
+                            bb.putInt(pointer.getInt((i + 1) * 4));
+                        }
+                        instruction = Arrays.copyOfRange(bb.array(), 2, bb.capacity());
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("index=" + index);
+                }
             }
         }
         if (instruction.length > 0 && (instruction[instruction.length - 1] & 0xff) != ARM_EXTBL_OP_FINISH) {
@@ -134,7 +146,7 @@ public class ArmExIdx {
             instruction = tmp;
         }
         if (log.isDebugEnabled()) {
-            log.debug(Inspector.inspectString(instruction, "unwind entry=0x" + Integer.toHexString(entry) + ", value=0x" + Integer.toHexString(value) + ", fun=0x" + Long.toHexString(fun) + ", index=" + index + ", module=" + module.name));
+            log.debug(Inspector.inspectString(instruction, "unwind entry=0x" + Integer.toHexString(entry) + ", value=0x" + Integer.toHexString(value) + ", fun=0x" + Long.toHexString(fun) + ", module=" + module.name));
         }
 
         return arm_exidx_decode(emulator, instruction, unwinder, context);

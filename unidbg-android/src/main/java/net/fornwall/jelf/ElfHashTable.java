@@ -8,11 +8,11 @@ class ElfHashTable implements HashTable {
 	 * Returns the ELFSymbol that has the specified name or null if no symbol with that name exists. NOTE: Currently
 	 * this method does not work and will always return null.
 	 */
-	private int num_buckets;
+	private final int num_buckets;
 
 	// These could probably be memoized.
-	private int[] buckets;
-	private int[] chains;
+	private final int[] buckets;
+	private final int[] chains;
 
 	ElfHashTable(ElfParser parser, long offset, int length) {
 		parser.seek(offset);
@@ -74,4 +74,8 @@ class ElfHashTable implements HashTable {
 		return null;
 	}
 
+	@Override
+	public int getNumBuckets() {
+		return num_buckets;
+	}
 }

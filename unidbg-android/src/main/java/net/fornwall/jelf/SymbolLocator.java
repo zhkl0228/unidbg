@@ -8,4 +8,6 @@ public interface SymbolLocator {
 
     ElfSymbol getELFSymbolByName(String name) throws IOException;
 
+    ElfSymbol getELFSymbolByAddr(long addr) throws IOException;
+
 }

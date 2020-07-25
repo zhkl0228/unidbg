@@ -12,9 +12,9 @@ class ElfGnuHashTable implements HashTable {
     private final int maskwords;
     private final int shift2;
 
-    private long[] bloom_filters;
-    private int[] buckets;
-    private HashChain chains;
+    private final long[] bloom_filters;
+    private final int[] buckets;
+    private final HashChain chains;
 
     private final int bloom_mask_bits;
 
@@ -94,4 +94,8 @@ class ElfGnuHashTable implements HashTable {
         return h & 0xffffffffL;
     }
 
+    @Override
+    public int getNumBuckets() {
+        return nbucket;
+    }
 }
