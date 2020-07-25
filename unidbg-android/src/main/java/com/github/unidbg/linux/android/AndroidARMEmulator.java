@@ -141,6 +141,6 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
 
     @Override
     public Unwinder getUnwinder() {
-        return new AndroidARMUnwinder();
+        return new AndroidARMUnwinder(this);
     }
 }

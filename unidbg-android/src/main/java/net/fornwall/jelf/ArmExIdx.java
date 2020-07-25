@@ -27,6 +27,10 @@ public class ArmExIdx {
     private static final int ARM_EXIDX_VFP_SHIFT_16 = 1 << 16;
     private static final int ARM_EXIDX_VFP_DOUBLE = 1 << 17;
 
+    private static final int UNW_ARM_SP = 13;
+    private static final int UNW_ARM_LR = 14;
+    private static final int UNW_ARM_PC = 15;
+
     enum arm_exbuf_cmd {
         ARM_EXIDX_CMD_FINISH,
         ARM_EXIDX_CMD_DATA_PUSH,
@@ -48,7 +52,7 @@ public class ArmExIdx {
         this.data = data;
     }
 
-    public Frame unwind(Emulator<?> emulator, Unwinder unwinder, Module module, long fun, long[] context) {
+    public Frame unwind(Emulator<?> emulator, Unwinder unwinder, Module module, long fun, DwarfCursor context) {
         int value = ARM_EXIDX_CANT_UNWIND;
 
         ByteBuffer buffer = ByteBuffer.wrap(data);
@@ -67,9 +71,21 @@ public class ArmExIdx {
                 break;
             }
         }
+
         if (value == ARM_EXIDX_CANT_UNWIND) {
             return null;
         }
+
+        if (fun == entry) { // first instruction of function
+            UnicornPointer ip = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
+            UnicornPointer fp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+            Frame frame = unwinder.createFrame(ip, fp);
+            if (frame != null) {
+                context.ip = frame.ip.peer;
+            }
+            return frame;
+        }
+
         byte[] instruction;
         boolean compact = (value & ARM_EXIDX_COMPACT) != 0;
         int index;
@@ -95,13 +111,13 @@ public class ArmExIdx {
                 case 0: // Su16 / __aeabi_unwind_cpp_pr0
                     bb = ByteBuffer.allocate(4);
                     bb.putInt(value);
-                    instruction = Arrays.copyOfRange(bb.array(), 1, 4);
+                    instruction = Arrays.copyOfRange(bb.array(), 1, bb.capacity());
                     break;
                 case 1: // Lu16 / __aeabi_unwind_cpp_pr1
                 case 2: // Lu32 / __aeabi_unwind_cpp_pr1
-                    bb = ByteBuffer.allocate(8);
-                    bb.putInt(value);
                     int n = (value >> 16) & 0xff;
+                    bb = ByteBuffer.allocate((n + 1) * 4);
+                    bb.putInt(value);
                     for (int i = 0; i < n; i++) {
                         bb.putInt(pointer.getInt((i + 1) * 4));
                     }
@@ -111,14 +127,14 @@ public class ArmExIdx {
                     throw new UnsupportedOperationException("index=" + index);
             }
         }
+        if (instruction.length > 0 && (instruction[instruction.length - 1] & 0xff) != ARM_EXTBL_OP_FINISH) {
+            byte[] tmp = new byte[instruction.length + 1];
+            System.arraycopy(instruction, 0, tmp, 0, instruction.length);
+            tmp[instruction.length] = (byte) ARM_EXTBL_OP_FINISH;
+            instruction = tmp;
+        }
         if (log.isDebugEnabled()) {
             log.debug(Inspector.inspectString(instruction, "unwind entry=0x" + Integer.toHexString(entry) + ", value=0x" + Integer.toHexString(value) + ", fun=0x" + Long.toHexString(fun) + ", index=" + index + ", module=" + module.name));
-        }
-
-        if (fun == entry) { // first instruction of function
-            UnicornPointer ip = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
-            UnicornPointer fp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
-            return unwinder.createFrame(ip, fp);
         }
 
         return arm_exidx_decode(emulator, instruction, unwinder, context);
@@ -129,7 +145,9 @@ public class ArmExIdx {
         int data;
     }
 
-    private Frame arm_exidx_decode(Emulator<?> emulator, byte[] instruction, Unwinder unwinder, long[] context) {
+    private Frame arm_exidx_decode(Emulator<?> emulator, byte[] instruction, Unwinder unwinder, DwarfCursor context) {
+        context.loc[UNW_ARM_PC] = null;
+
         arm_exbuf_data edata = new arm_exbuf_data();
         for (int i = 0; i < instruction.length; i++) {
             int op = instruction[i] & 0xff;
@@ -215,112 +233,129 @@ public class ArmExIdx {
                 edata.cmd = arm_exbuf_cmd.ARM_EXIDX_CMD_RESERVED;
             }
 
-            switch (edata.cmd) {
-                case ARM_EXIDX_CMD_REG_POP: {
-                    List<String> list = new ArrayList<>(16);
-                    for (int m = 0; m < 16; m++) {
-                        if ((edata.data & (1 << m)) != 0) {
-                            String reg = "r" + m;
-                            list.add(reg);
-
-                            UnicornPointer sp = UnicornPointer.pointer(emulator, context[13]);
-                            assert sp != null;
-                            long value = sp.getInt(0) & 0xffffffffL;
-                            context[m] = value;
-                            context[13] += 4;
-                            if (log.isDebugEnabled()) {
-                                log.debug("pop " + reg + " -> 0x" + Long.toHexString(value));
-                            }
-
-                            if (m == 13) { // pop sp
-                                log.warn("pop sp");
-                            }
-                        }
-                    }
-                    if (log.isDebugEnabled()) {
-                        log.debug("pop " + list.toString());
-                    }
-                    break;
-                }
-                case ARM_EXIDX_CMD_DATA_POP: {
-                    context[13] += edata.data;
-                    if (log.isDebugEnabled()) {
-                        log.debug("vsp = vsp + " + edata.data);
-                    }
-                    break;
-                }
-                case ARM_EXIDX_CMD_VFP_POP: {
-                    int start = (((edata.data) >> 4) & 0xf);
-                    int count = ((edata.data) & 0xf);
-                    int end = start + count;
-                    for (int m = start; m <= end; m++) {
-                        context[13] += 8;
-                    }
-                    if ((edata.data & ARM_EXIDX_VFP_DOUBLE) == 0) {
-                        context[13] += 4;
-                    }
-                    if (log.isDebugEnabled()) {
-                        log.debug("pop {D" + start + "-D" + end + "}");
-                    }
-                    break;
-                }
-                case ARM_EXIDX_CMD_REG_TO_SP: {
-                    long sp = context[13];
-                    long value = context[edata.data];
-                    context[13] = value;
-                    if (log.isDebugEnabled()) {
-                        log.debug("vsp = r" + edata.data + " [0x" + Long.toHexString(context[13]) + "]");
-                    }
-                    if (context[13] == 0) {
-                        System.err.println("vsp is null: sp=0x" + Long.toHexString(sp));
-                        return null;
-                    }
-                    break;
-                }
-                case ARM_EXIDX_CMD_DATA_PUSH: {
-                    context[13] -= edata.data;
-                    if (log.isDebugEnabled()) {
-                        log.debug("vsp = vsp - " + edata.data);
-                    }
-                    break;
-                }
-                case ARM_EXIDX_CMD_FINISH:
-                    if (log.isDebugEnabled()) {
-                        log.debug("finish");
-                    }
-                    break;
-                case ARM_EXIDX_CMD_WCGR_POP: {
-                    for (int m = 0; m < 4; m++) {
-                        if ((edata.data & (1 << m)) != 0) {
-                            context[13] += 4;
-                        }
-                    }
-                    break;
-                }
-                case ARM_EXIDX_CMD_WREG_POP: {
-                    int start = (((edata.data) >> 4) & 0xf);
-                    int count = ((edata.data) & 0xf);
-                    int end = start + count;
-                    for (int m = start; m <= end; m++) {
-                        context[13] += 8;
-                    }
-                    break;
-                }
-                case ARM_EXIDX_CMD_REFUSED:
-                case ARM_EXIDX_CMD_RESERVED:
-                    return null;
-                default:
-                    log.warn("arm_exidx_decode cmd=" + edata.cmd);
-                    return null;
+            if (!arm_exidx_apply_cmd(emulator, edata, context)) {
+                return null;
             }
         }
 
-        long lr = context[14];
-        if (lr != 0) {
-            return unwinder.createFrame(UnicornPointer.pointer(emulator, lr), UnicornPointer.pointer(emulator, context[13]));
+        Long pc = context.loc[UNW_ARM_PC];
+        if (pc != null) {
+            return unwinder.createFrame(UnicornPointer.pointer(emulator, pc), UnicornPointer.pointer(emulator, context.cfa));
         }
 
         return null;
+    }
+
+    private boolean arm_exidx_apply_cmd(Emulator<?> emulator, arm_exbuf_data edata, DwarfCursor context) {
+        switch (edata.cmd) {
+            case ARM_EXIDX_CMD_FINISH: {
+                /* Set LR to PC if not set already.  */
+                if (context.loc[UNW_ARM_PC] == null) {
+                    context.loc[UNW_ARM_PC] = context.loc[UNW_ARM_LR];
+                }
+                context.ip = context.loc[UNW_ARM_PC];
+                if (log.isDebugEnabled()) {
+                    log.debug("finish");
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_DATA_PUSH: {
+                context.cfa -= edata.data;
+                if (log.isDebugEnabled()) {
+                    log.debug("vsp = vsp - " + edata.data);
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_DATA_POP: {
+                context.cfa += edata.data;
+                if (log.isDebugEnabled()) {
+                    log.debug("vsp = vsp + " + edata.data);
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_REG_POP: {
+                List<String> list = new ArrayList<>(16);
+                for (int m = 0; m < 16; m++) {
+                    if ((edata.data & (1 << m)) != 0) {
+                        String reg = "r" + m;
+                        list.add(reg);
+
+                        UnicornPointer sp = UnicornPointer.pointer(emulator, context.cfa);
+                        assert sp != null;
+                        long value = sp.getInt(0) & 0xffffffffL;
+                        context.loc[m] = value;
+                        context.cfa += 4;
+                        if (log.isDebugEnabled()) {
+                            log.debug("pop " + reg + " -> 0x" + Long.toHexString(value));
+                        }
+                    }
+                }
+                /* Set cfa in case the SP got popped. */
+                if ((edata.data & (1 << UNW_ARM_SP)) != 0) {
+                    context.cfa = context.loc[UNW_ARM_SP];
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("pop " + list.toString());
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_REG_TO_SP: {
+                long value = context.loc[edata.data];
+                context.loc[UNW_ARM_SP] = value;
+                if (log.isDebugEnabled()) {
+                    log.debug("vsp = r" + edata.data + " [0x" + Long.toHexString(context.loc[UNW_ARM_SP]) + "]");
+                }
+                long sp = context.cfa;
+                context.cfa = value;
+                if (context.cfa == 0) {
+                    System.err.println("vsp is null: sp=0x" + Long.toHexString(sp));
+                    return false;
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_VFP_POP: {
+                int start = (((edata.data) >> 4) & 0xf);
+                int count = ((edata.data) & 0xf);
+                int end = start + count;
+                for (int m = start; m <= end; m++) {
+                    context.cfa += 8;
+                }
+                if ((edata.data & ARM_EXIDX_VFP_DOUBLE) == 0) {
+                    context.cfa += 4;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("pop {D" + start + "-D" + end + "}");
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_WREG_POP: {
+                int start = (((edata.data) >> 4) & 0xf);
+                int count = ((edata.data) & 0xf);
+                int end = start + count;
+                for (int m = start; m <= end; m++) {
+                    context.cfa += 8;
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_WCGR_POP: {
+                for (int m = 0; m < 4; m++) {
+                    if ((edata.data & (1 << m)) != 0) {
+                        context.cfa += 4;
+                    }
+                }
+                break;
+            }
+            case ARM_EXIDX_CMD_REFUSED:
+            case ARM_EXIDX_CMD_RESERVED:
+                if (log.isDebugEnabled()) {
+                    log.debug("cmd=" + edata.cmd);
+                }
+                return false;
+            default:
+                log.warn("arm_exidx_decode cmd=" + edata.cmd);
+                return false;
+        }
+        return true;
     }
 
 }

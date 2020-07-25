@@ -19,12 +19,27 @@ public class SimpleARMUnwinder extends Unwinder {
                 return new Frame(ip, null);
             }
 
-            boolean thumb = (ip.peer & 1) == 1;
-            ip = ip.share(thumb ? -2 : -4, 0);
-            return new Frame(ip, fp);
+            return new Frame(adjust_ip(ip), fp);
         } else {
             return null;
         }
+    }
+
+    private UnicornPointer adjust_ip(UnicornPointer ip) {
+        int adjust = 4;
+
+        boolean thumb = (ip.peer & 1) == 1;
+        if (thumb) {
+            /* Thumb instructions, the currently executing instruction could be
+             * 2 or 4 bytes, so adjust appropriately.
+             */
+            int value = ip.share(-5).getInt(0);
+            if ((value & 0xe000f000L) != 0xe000f000L) {
+                adjust = 2;
+            }
+        }
+
+        return ip.share(-adjust, 0);
     }
 
     private Frame initFrame(Emulator<?> emulator) {
