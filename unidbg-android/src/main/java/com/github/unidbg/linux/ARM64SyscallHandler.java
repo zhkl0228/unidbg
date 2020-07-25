@@ -165,6 +165,14 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 24:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, dup3(emulator));
                     return;
+                case 43: {
+                    RegisterContext context = emulator.getContext();
+                    Pointer pathPointer = context.getPointerArg(0);
+                    Pointer buf = context.getPointerArg(1);
+                    String path = pathPointer.getString(0);
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, statfs64(emulator, path, buf));
+                    return;
+                }
                 case 134:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, sigaction(emulator));
                     return;

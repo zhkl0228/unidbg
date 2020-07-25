@@ -6,6 +6,7 @@ import com.github.unidbg.file.UnidbgFileFilter;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.linux.struct.Dirent;
+import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 
@@ -107,5 +108,22 @@ public class DirectoryFileIO extends BaseAndroidFileIO {
     @Override
     public String getPath() {
         return path;
+    }
+
+    @Override
+    public int statfs(StatFS statFS) {
+        statFS.setType(0xef53);
+        statFS.setBlockSize(0x1000);
+        statFS.f_blocks = 0x3235af;
+        statFS.f_bfree = 0x2b5763;
+        statFS.f_bavail = 0x2b5763;
+        statFS.f_files = 0xcccb0;
+        statFS.f_ffree = 0xcbd2e;
+        statFS.f_fsid = new int[] { 0xd3609fe8, 0x4970d6b };
+        statFS.setNameLen(0xff);
+        statFS.setFrSize(0x1000);
+        statFS.setFlags(0x426);
+        statFS.pack();
+        return 0;
     }
 }

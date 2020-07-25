@@ -1,17 +1,19 @@
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <dirent.h>
 #include <net/if.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/statfs.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/system_properties.h>
 
 #include <iostream>
 #include <exception>
+
+#include "test.h"
 
 static int sdk_int = 0;
 
@@ -109,6 +111,14 @@ void init() {
 static void test_backtrace() {
 }
 
+static void test_statfs() {
+  struct statfs stb;
+  int ret = statfs("/data/app", &stb);
+  char buf[1024];
+  hex(buf, &stb, sizeof(stb));
+  printf("test_statfs size=%d, ret=%d, hex=%s\n", (int) sizeof(stb), ret, buf);
+}
+
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -121,6 +131,7 @@ int main() {
     test_signalaction();
   }
   test_backtrace();
+  test_statfs();
   printf("Press any key to exit\n");
   getchar();
   return 0;

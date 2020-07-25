@@ -334,9 +334,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 263:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, clock_gettime(u, emulator));
                     return;
-                case 266:
-                    u.reg_write(ArmConst.UC_ARM_REG_R0, statfs64(emulator));
+                case 266: {
+                    RegisterContext context = emulator.getContext();
+                    Pointer pathPointer = context.getPointerArg(0);
+                    int size = context.getIntArg(1);
+                    Pointer buf = context.getPointerArg(2).setSize(size);
+                    String path = pathPointer.getString(0);
+                    u.reg_write(ArmConst.UC_ARM_REG_R0, (int) statfs64(emulator, path, buf));
                     return;
+                }
                 case 268:
                     u.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(u));
                     return;
@@ -1590,19 +1596,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", ret=" + ret + ", offset=" + (System.currentTimeMillis() - timeInMillis) + ", from=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
         }
         return ret;
-    }
-
-    protected int statfs64(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer pathPointer = context.getPointerArg(0);
-        int size = context.getIntArg(1);
-        Pointer buf = context.getPointerArg(2);
-        String path = pathPointer.getString(0);
-        log.info("statfs64 pathPointer=" + pathPointer + ", buf=" + buf + ", size=" + size + ", path=" + path);
-        if("/sys/fs/selinux".equals(path)) {
-            return -1;
-        }
-        throw new UnicornException("statfs64 path=" + path + ", size=" + size + ", buf=" + buf);
     }
 
     private static final int PR_GET_DUMPABLE = 3;

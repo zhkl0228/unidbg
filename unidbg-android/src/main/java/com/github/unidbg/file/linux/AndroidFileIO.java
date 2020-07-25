@@ -2,6 +2,7 @@ package com.github.unidbg.file.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.NewFileIO;
+import com.github.unidbg.linux.struct.StatFS;
 import com.sun.jna.Pointer;
 
 public interface AndroidFileIO extends NewFileIO {
@@ -15,4 +16,5 @@ public interface AndroidFileIO extends NewFileIO {
 
     AndroidFileIO accept(Pointer addr, Pointer addrlen);
 
+    int statfs(StatFS statFS);
 }
