@@ -6,10 +6,7 @@ import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.struct.VMStatistics;
-import com.github.unidbg.ios.struct.kernel.HostStatisticsReply;
-import com.github.unidbg.ios.struct.kernel.HostStatisticsRequest;
-import com.github.unidbg.ios.struct.kernel.MachMsgHeader;
-import com.github.unidbg.ios.struct.kernel.StatFS;
+import com.github.unidbg.ios.struct.kernel.*;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.SyscallHandler;
@@ -19,6 +16,8 @@ import com.sun.jna.Pointer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.util.Arrays;
 
 abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> implements SyscallHandler<DarwinFileIO>, DarwinSyscall  {
 
@@ -183,6 +182,49 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
         }
 
         return false;
+    }
+
+    static final int STATIC_PORT = 0x88;
+
+    final int vproc_mig_look_up2(Pointer request, MachMsgHeader header) {
+        VprocMigLookupRequest args = new VprocMigLookupRequest(request);
+        args.unpack();
+        String serviceName = args.getServiceName();
+        if (log.isDebugEnabled()) {
+            log.debug("vproc_mig_look_up2 args=" + args + ", serviceName=" + serviceName);
+        }
+
+        if ("cy:com.saurik.substrated".equals(serviceName)) {
+            return -1;
+        }
+
+        VprocMigLookupReply reply = new VprocMigLookupReply(request);
+        reply.unpack();
+
+        header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+        header.msgh_size = header.size() + reply.size();
+        header.msgh_remote_port = header.msgh_local_port;
+        header.msgh_local_port = 0;
+        header.msgh_id += 100; // reply Id always equals reqId+100
+        header.pack();
+
+        reply.body.msgh_descriptor_count = 1;
+        reply.sp.name = STATIC_PORT;
+        reply.sp.pad1 = 0;
+        reply.sp.pad2 = 0;
+        reply.sp.disposition = 17;
+        reply.sp.type = MACH_MSG_PORT_DESCRIPTOR;
+        reply.pack();
+
+        VprocMigLookupData data = new VprocMigLookupData(request.share(reply.size()));
+        data.size = 0x20;
+        Arrays.fill(data.au_tok.val, 0);
+        data.pack();
+
+        if (log.isDebugEnabled()) {
+            log.debug("vproc_mig_look_up2 reply=" + reply + ", data=" + data);
+        }
+        return MACH_MSG_SUCCESS;
     }
 
 }

@@ -10,7 +10,6 @@ import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
-import com.github.unidbg.hook.AndroidHookZz;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.*;
 import com.github.unidbg.hook.xhook.IxHook;
@@ -111,7 +110,7 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
         });*/
         ixHook.refresh();
 
-        IHookZz hookZz = AndroidHookZz.getInstance(emulator);
+        IHookZz hookZz = HookZz.getInstance(emulator);
         /*hookZz.replace(0x4005DA2D, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {

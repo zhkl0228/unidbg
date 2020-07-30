@@ -1,18 +1,12 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.Module;
-import com.github.unidbg.Symbol;
+import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.MsgSendCallback;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.HookEntryInfo;
-import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.InstrumentCallback;
-import com.github.unidbg.ios.hook.DarwinHookZz;
+import com.github.unidbg.hook.hookzz.*;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -69,13 +63,13 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
             }
         });*/
 
-        IHookZz hookZz = DarwinHookZz.getInstance(emulator);
+        IHookZz hookZz = Dobby.getInstance(emulator);
         Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
 //        Module libhookzz = emulator.getMemory().findModule("libhookzz.dylib");
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(libhookzz, 0x0000000000007850);
-//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
+//        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
+//        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.DEBUG);
 //        emulator.traceCode(libhookzz.base, libhookzz.base + libhookzz.size);
         hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override

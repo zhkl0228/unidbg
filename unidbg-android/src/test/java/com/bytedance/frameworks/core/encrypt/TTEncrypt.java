@@ -8,13 +8,9 @@ import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebuggerType;
-import com.github.unidbg.hook.AndroidHookZz;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.HookEntryInfo;
-import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.InstrumentCallback;
-import com.github.unidbg.hook.hookzz.WrapCallback;
+import com.github.unidbg.hook.hookzz.*;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -79,7 +75,7 @@ public class TTEncrypt {
             Inspector.inspect(sbox0.createPointer(emulator).getByteArray(0, 256), "sbox0"); // 打印sbox0导出符号在unicorn中的内存数据
             Inspector.inspect(sbox1.createPointer(emulator).getByteArray(0, 256), "sbox1");
 
-            IHookZz hookZz = AndroidHookZz.getInstance(emulator); // 加载HookZz，支持inline hook，文档看https://github.com/jmpews/HookZz
+            IHookZz hookZz = HookZz.getInstance(emulator); // 加载HookZz，支持inline hook，文档看https://github.com/jmpews/HookZz
             hookZz.wrap(module.findSymbolByName("ss_encrypt"), new WrapCallback<RegisterContext>() { // inline wrap导出函数
                 @Override
                 public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {

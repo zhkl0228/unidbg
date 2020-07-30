@@ -1,6 +1,7 @@
 package com.github.unidbg.hook.hookzz;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
@@ -15,9 +16,18 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Stack;
 
-public abstract class Dobby extends BaseHook implements IHookZz {
+public final class Dobby extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(Dobby.class);
+
+    public static Dobby getInstance(Emulator<?> emulator) {
+        Dobby dobby = emulator.get(Dobby.class.getName());
+        if (dobby == null) {
+            dobby = new Dobby(emulator);
+            emulator.set(Dobby.class.getName(), dobby);
+        }
+        return dobby;
+    }
 
     private static final int RT_SUCCESS = 0;
 
@@ -26,9 +36,10 @@ public abstract class Dobby extends BaseHook implements IHookZz {
     private final Symbol dobbyHook;
     private final Symbol dobbyInstrument;
 
-    protected Dobby(Emulator<?> emulator, boolean isIOS) {
+    private Dobby(Emulator<?> emulator) {
         super(emulator, "libdobby");
 
+        boolean isIOS = emulator.getFamily() == Family.iOS;
         dobby_enable_near_branch_trampoline = module.findSymbolByName(isIOS ? "_dobby_enable_near_branch_trampoline" : "dobby_enable_near_branch_trampoline", false);
         dobby_disable_near_branch_trampoline = module.findSymbolByName(isIOS ? "_dobby_disable_near_branch_trampoline" : "dobby_disable_near_branch_trampoline", false);
         dobbyHook = module.findSymbolByName(isIOS ? "_DobbyHook" : "DobbyHook", false);

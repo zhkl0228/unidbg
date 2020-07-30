@@ -3,14 +3,14 @@ package com.sun.jna;
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.hook.AndroidHookZz;
-import com.github.unidbg.hook.AndroidWhale;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
+import com.github.unidbg.hook.hookzz.HookZz;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.hook.whale.IWhale;
+import com.github.unidbg.hook.whale.Whale;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -90,7 +90,7 @@ public class JniDispatch32 extends AbstractJni {
         }, true);
         xHook.refresh();
 
-        IWhale whale = AndroidWhale.getInstance(emulator);
+        IWhale whale = Whale.getInstance(emulator);
         Symbol free = emulator.getMemory().findModule("libc.so").findSymbolByName("free");
         whale.inlineHookFunction(free, new ReplaceCallback() {
             @Override
@@ -108,7 +108,7 @@ public class JniDispatch32 extends AbstractJni {
         pointer.setString(0, getClass().getName());
         Inspector.inspect(pointer.getByteArray(0, size), "malloc ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        IHookZz hookZz = AndroidHookZz.getInstance(emulator);
+        IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol newJavaString = module.findSymbolByName("newJavaString");
         hookZz.instrument(newJavaString, new InstrumentCallback<RegisterContext>() {
             @Override

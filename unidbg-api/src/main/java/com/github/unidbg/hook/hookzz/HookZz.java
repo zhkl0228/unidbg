@@ -1,6 +1,7 @@
 package com.github.unidbg.hook.hookzz;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
@@ -15,9 +16,18 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Stack;
 
-public abstract class HookZz extends BaseHook implements IHookZz {
+public final class HookZz extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(HookZz.class);
+
+    public static HookZz getInstance(Emulator<?> emulator) {
+        HookZz hookZz = emulator.get(HookZz.class.getName());
+        if (hookZz == null) {
+            hookZz = new HookZz(emulator);
+            emulator.set(HookZz.class.getName(), hookZz);
+        }
+        return hookZz;
+    }
 
     private static final int RS_SUCCESS = 1;
 
@@ -27,9 +37,10 @@ public abstract class HookZz extends BaseHook implements IHookZz {
     private final Symbol zzWrap;
     private final Symbol zzDynamicBinaryInstrumentation;
 
-    protected HookZz(Emulator<?> emulator, boolean isIOS) {
+    private HookZz(Emulator<?> emulator) {
         super(emulator, "libhookzz");
 
+        boolean isIOS = emulator.getFamily() == Family.iOS;
         zz_enable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_enable_arm_arm64_b_branch" : "zz_enable_arm_arm64_b_branch", false);
         zz_disable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_disable_arm_arm64_b_branch" : "zz_disable_arm_arm64_b_branch", false);
         zzReplace = module.findSymbolByName(isIOS ? "_ZzReplace" : "ZzReplace", false);

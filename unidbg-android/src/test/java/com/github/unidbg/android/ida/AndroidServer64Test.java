@@ -10,7 +10,6 @@ import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
-import com.github.unidbg.hook.AndroidHookZz;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.*;
 import com.github.unidbg.hook.xhook.IxHook;
@@ -111,7 +110,7 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
         });*/
         ixHook.refresh();
 
-        IHookZz hookZz = AndroidHookZz.getInstance(emulator);
+        IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol pack_dd = module.findSymbolByName("pack_dd", false);
         hookZz.wrap(pack_dd, new WrapCallback<HookZzArm64RegisterContext>() {
             @Override

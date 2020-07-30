@@ -9,9 +9,9 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
+import com.github.unidbg.hook.hookzz.HookZz;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.InstrumentCallback;
-import com.github.unidbg.ios.hook.DarwinHookZz;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
@@ -72,7 +72,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
             }
         });*/
 
-        IHookZz hookZz = DarwinHookZz.getInstance(emulator);
+        IHookZz hookZz = HookZz.getInstance(emulator);
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
         hookZz.replace(module.findSymbolByName("_malloc_zone_malloc"), new ReplaceCallback() {
             @Override

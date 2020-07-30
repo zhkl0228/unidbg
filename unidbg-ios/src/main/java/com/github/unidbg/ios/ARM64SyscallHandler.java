@@ -2209,40 +2209,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 return MACH_MSG_SUCCESS;
             }
             case 404: { // vproc_mig_look_up2
-                VprocMigLookupRequest args = new VprocMigLookupRequest(request);
-                args.unpack();
-
-                VprocMigLookupReply reply = new VprocMigLookupReply(request);
-                reply.unpack();
-
-                header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
-                header.msgh_size = header.size() + reply.size();
-                header.msgh_remote_port = header.msgh_local_port;
-                header.msgh_local_port = 0;
-                header.msgh_id += 100; // reply Id always equals reqId+100
-                header.pack();
-
-                reply.body.msgh_descriptor_count = 1;
-                reply.sp.name = STATIC_PORT;
-                reply.sp.pad1 = 0;
-                reply.sp.pad2 = 0;
-                reply.sp.disposition = 17;
-                reply.sp.type = MACH_MSG_PORT_DESCRIPTOR;
-                reply.pack();
-
-                VprocMigLookupData data = new VprocMigLookupData(request.share(reply.size()));
-                if (log.isDebugEnabled()) {
-                    log.debug("vproc_mig_look_up2 args=" + args + ", data=" + data);
-                }
-
-                data.size = 0x20;
-                Arrays.fill(data.au_tok.val, 0);
-                data.pack();
-
-                if (log.isDebugEnabled()) {
-                    log.debug("vproc_mig_look_up2 reply=" + reply + ", data=" + data);
-                }
-                return MACH_MSG_SUCCESS;
+                return vproc_mig_look_up2(request, header);
             }
             case 78945669: { // notify_server_register_plain
                 NotifyServerRegisterPlain64Request args = new NotifyServerRegisterPlain64Request(request);
@@ -2613,7 +2580,6 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private static final int BOOTSTRAP_PORT = 11;
     private static final int CLOCK_SERVER_PORT = 13;
     private static final int SEMAPHORE_PORT = 14;
-    private static final int STATIC_PORT = 0x88;
 
     private int task_self_trap() {
         log.debug("task_self_trap");
