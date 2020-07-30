@@ -244,7 +244,7 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
         stat.setSize(file.length());
         stat.setBlockCount((file.length() + blockSize - 1) / blockSize);
         stat.st_blksize = blockSize;
-        stat.st_ino = 1;
+        stat.st_ino = 7;
         stat.st_uid = 0;
         stat.st_gid = 0;
         stat.setLastModification(file.lastModified());

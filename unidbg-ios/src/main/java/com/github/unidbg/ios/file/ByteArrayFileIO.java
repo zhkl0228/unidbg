@@ -85,7 +85,7 @@ public class ByteArrayFileIO extends BaseDarwinFileIO {
         stat.setSize(bytes.length);
         stat.setBlockCount(bytes.length / blockSize);
         stat.st_blksize = blockSize;
-        stat.st_ino = 1;
+        stat.st_ino = 7;
         stat.st_uid = 0;
         stat.st_gid = 0;
         stat.setLastModification(System.currentTimeMillis());

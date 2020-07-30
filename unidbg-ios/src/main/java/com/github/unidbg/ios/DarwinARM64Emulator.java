@@ -94,7 +94,7 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
 
     @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, null, Collections.<String>emptyList());
+        return new URLibraryFile(url, "/usr/lib/" + libName, null, Collections.<String>emptyList());
     }
 
     @Override

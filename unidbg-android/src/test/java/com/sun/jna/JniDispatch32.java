@@ -9,7 +9,7 @@ import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.WrapCallback;
+import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
@@ -110,9 +110,9 @@ public class JniDispatch32 extends AbstractJni {
 
         IHookZz hookZz = AndroidHookZz.getInstance(emulator);
         Symbol newJavaString = module.findSymbolByName("newJavaString");
-        hookZz.wrap(newJavaString, new WrapCallback<RegisterContext>() {
+        hookZz.instrument(newJavaString, new InstrumentCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
+            public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
                 Pointer value = ctx.getPointerArg(1);
                 Pointer encoding = ctx.getPointerArg(2);
                 System.out.println("newJavaString value=" + value.getString(0) + ", encoding=" + encoding.getString(0));

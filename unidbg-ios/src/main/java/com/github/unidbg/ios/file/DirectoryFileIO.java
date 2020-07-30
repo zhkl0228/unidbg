@@ -74,7 +74,7 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
         stat.st_mode = IO.S_IFDIR | 0x777;
         stat.setSize(0);
         stat.st_blksize = 0;
-        stat.st_ino = 1;
+        stat.st_ino = 7;
         stat.pack();
         return 0;
     }

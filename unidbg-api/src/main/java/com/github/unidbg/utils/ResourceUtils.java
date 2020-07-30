@@ -24,12 +24,7 @@ public class ResourceUtils {
                     if (dir.exists() && dir.isFile()) {
                         FileUtils.deleteQuietly(dir);
                     }
-                    if (!dir.exists() && !dir.mkdirs() && !dir.exists()) {
-                        throw new IOException("mkdirs failed: " + dir);
-                    }
-                    if (!file.exists() && !file.createNewFile()) {
-                        throw new IOException("createNewFile failed: " + file);
-                    }
+                    FileUtils.forceMkdir(dir);
 
                     outputStream = new FileOutputStream(file);
                     IOUtils.copy(inputStream, outputStream);
@@ -45,10 +40,7 @@ public class ResourceUtils {
                     if (dir.exists() && dir.isFile()) {
                         FileUtils.deleteQuietly(dir);
                     }
-                    if (!dir.exists() && !dir.mkdirs() && !dir.exists()) {
-                        throw new IOException("mkdirs failed: " + dir);
-                    }
-
+                    FileUtils.forceMkdir(dir);
                     extractJarResource(url, dir);
                     return dir;
                 } catch (IOException e) {

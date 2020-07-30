@@ -13,6 +13,7 @@ import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.IHookZz;
+import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.hook.hookzz.WrapCallback;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
@@ -92,9 +93,9 @@ public class TTEncrypt {
                     System.out.println("ss_encrypt.postCall R0=" + ctx.getLongArg(0));
                 }
             });
-            hookZz.wrap(module.base + 0x00000F5C + 1, new WrapCallback<Arm32RegisterContext>() {
+            hookZz.instrument(module.base + 0x00000F5C + 1, new InstrumentCallback<Arm32RegisterContext>() {
                 @Override
-                public void preCall(Emulator<?> emulator, Arm32RegisterContext ctx, HookEntryInfo info) { // 通过base+offset inline wrap内部函数，在IDA看到为sub_xxx那些
+                public void dbiCall(Emulator<?> emulator, Arm32RegisterContext ctx, HookEntryInfo info) { // 通过base+offset inline wrap内部函数，在IDA看到为sub_xxx那些
                     System.out.println("R3=" + ctx.getLongArg(3) + ", R10=0x" + Long.toHexString(ctx.getR10Long()));
                 }
             });

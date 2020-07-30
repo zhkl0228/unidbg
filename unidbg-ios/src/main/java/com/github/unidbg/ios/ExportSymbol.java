@@ -7,14 +7,14 @@ import com.github.unidbg.Symbol;
 class ExportSymbol extends Symbol implements MachO {
 
     private final long address;
-    private final Module module;
+    private final MachOModule module;
     private final long other;
     private final int flags;
 
     ExportSymbol(String name, long address, Module module, long other, int flags) {
         super(name);
         this.address = address;
-        this.module = module;
+        this.module = (MachOModule) module;
         this.other = other;
         this.flags = flags;
     }
@@ -41,7 +41,7 @@ class ExportSymbol extends Symbol implements MachO {
         if (isAbsoluteSymbol()) {
             return address;
         } else if(isRegularSymbol()) {
-            return module.base + address;
+            return module.machHeader + address;
         } else {
             throw new IllegalStateException("flags=0x" + Integer.toHexString(flags));
         }

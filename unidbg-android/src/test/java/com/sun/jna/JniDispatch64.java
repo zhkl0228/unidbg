@@ -4,13 +4,10 @@ import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebuggerType;
-import com.github.unidbg.hook.AndroidHookZz;
-import com.github.unidbg.hook.AndroidWhale;
-import com.github.unidbg.hook.HookContext;
-import com.github.unidbg.hook.ReplaceCallback;
+import com.github.unidbg.hook.*;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.WrapCallback;
+import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
@@ -108,11 +105,11 @@ public class JniDispatch64 extends AbstractJni {
         pointer.setString(0, getClass().getName());
         Inspector.inspect(pointer.getByteArray(0, size), "malloc ret=0x" + Long.toHexString(ret.longValue()) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        IHookZz hookZz = AndroidHookZz.getInstance(emulator);
+        IHookZz hookZz = AndroidDobby.getInstance(emulator);
         Symbol newJavaString = module.findSymbolByName("newJavaString");
-        hookZz.wrap(newJavaString, new WrapCallback<RegisterContext>() {
+        hookZz.instrument(newJavaString, new InstrumentCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
+            public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
                 Pointer value = ctx.getPointerArg(1);
                 Pointer encoding = ctx.getPointerArg(2);
                 System.out.println("newJavaString value=" + value.getString(0) + ", encoding=" + encoding.getString(0));

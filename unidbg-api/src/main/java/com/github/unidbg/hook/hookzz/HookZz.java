@@ -19,10 +19,13 @@ public abstract class HookZz extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(HookZz.class);
 
+    private static final int RS_SUCCESS = 1;
+
     private final Symbol zz_enable_arm_arm64_b_branch, zz_disable_arm_arm64_b_branch;
 
     private final Symbol zzReplace;
     private final Symbol zzWrap;
+    private final Symbol zzDynamicBinaryInstrumentation;
 
     protected HookZz(Emulator<?> emulator, boolean isIOS) {
         super(emulator, "libhookzz");
@@ -31,6 +34,7 @@ public abstract class HookZz extends BaseHook implements IHookZz {
         zz_disable_arm_arm64_b_branch = module.findSymbolByName(isIOS ? "_zz_disable_arm_arm64_b_branch" : "zz_disable_arm_arm64_b_branch", false);
         zzReplace = module.findSymbolByName(isIOS ? "_ZzReplace" : "ZzReplace", false);
         zzWrap = module.findSymbolByName(isIOS ? "_ZzWrap" : "ZzWrap", false);
+        zzDynamicBinaryInstrumentation = module.findSymbolByName(isIOS ? "_ZzDynamicBinaryInstrumentation" : "ZzDynamicBinaryInstrumentation", false);
         if (log.isDebugEnabled()) {
             log.debug("zzReplace=" + zzReplace + ", zzWrap=" + zzWrap);
         }
@@ -46,6 +50,9 @@ public abstract class HookZz extends BaseHook implements IHookZz {
         }
         if (zzWrap == null) {
             throw new IllegalStateException("zzWrap is null");
+        }
+        if (zzDynamicBinaryInstrumentation == null) {
+            throw new IllegalStateException("zzDynamicBinaryInstrumentation is null");
         }
     }
 
@@ -103,14 +110,12 @@ public abstract class HookZz extends BaseHook implements IHookZz {
         Pointer preCall = svcMemory.registerSvc(emulator.is32Bit() ? new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                context.clear();
                 callback.preCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
                 return 0;
             }
         } : new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                context.clear();
                 callback.preCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
                 return 0;
             }
@@ -134,4 +139,33 @@ public abstract class HookZz extends BaseHook implements IHookZz {
         }
     }
 
+    @Override
+    public <T extends RegisterContext> void instrument(Symbol symbol, InstrumentCallback<T> callback) {
+        instrument(symbol.getAddress(), callback);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends RegisterContext> void instrument(long functionAddress, final InstrumentCallback<T> callback) {
+        SvcMemory svcMemory = emulator.getSvcMemory();
+        Pointer dbiCall = svcMemory.registerSvc(emulator.is32Bit() ? new ArmSvc() {
+            private final Stack<Object> context = new Stack<>();
+            @Override
+            public long handle(Emulator<?> emulator) {
+                callback.dbiCall(emulator, (T) new HookZzArm32RegisterContextImpl(emulator, context), new ArmHookEntryInfo(emulator));
+                return 0;
+            }
+        } : new Arm64Svc() {
+            private final Stack<Object> context = new Stack<>();
+            @Override
+            public long handle(Emulator<?> emulator) {
+                callback.dbiCall(emulator, (T) new HookZzArm64RegisterContextImpl(emulator, context), new Arm64HookEntryInfo(emulator));
+                return 0;
+            }
+        });
+        int ret = zzDynamicBinaryInstrumentation.call(emulator, UnicornPointer.pointer(emulator, functionAddress), dbiCall)[0].intValue();
+        if (ret != RS_SUCCESS) {
+            throw new IllegalStateException("ret=" + ret);
+        }
+    }
 }

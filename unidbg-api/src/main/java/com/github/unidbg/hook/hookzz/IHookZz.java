@@ -7,8 +7,6 @@ import com.github.unidbg.hook.ReplaceCallback;
 
 public interface IHookZz extends IHook {
 
-    int RS_SUCCESS = 1;
-
     void enable_arm_arm64_b_branch();
     void disable_arm_arm64_b_branch();
 
@@ -20,5 +18,8 @@ public interface IHookZz extends IHook {
 
     void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall);
     void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall);
+
+    <T extends RegisterContext> void instrument(long functionAddress, InstrumentCallback<T> callback);
+    <T extends RegisterContext> void instrument(Symbol symbol, InstrumentCallback<T> callback);
 
 }
