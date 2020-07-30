@@ -4,8 +4,15 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.MsgSendCallback;
+import com.github.unidbg.hook.ReplaceCallback;
+import com.github.unidbg.hook.hookzz.HookEntryInfo;
+import com.github.unidbg.hook.hookzz.IHookZz;
+import com.github.unidbg.hook.hookzz.InstrumentCallback;
+import com.github.unidbg.ios.hook.DarwinHookZz;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -62,15 +69,15 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
             }
         });*/
 
-//        IHookZz hookZz = HookZz.getInstance(emulator);
-//        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
+        IHookZz hookZz = DarwinHookZz.getInstance(emulator);
+        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
 //        Module libhookzz = emulator.getMemory().findModule("libhookzz.dylib");
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(libhookzz, 0x0000000000007850);
 //        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode(libhookzz.base, libhookzz.base + libhookzz.size);
-        /*hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
+        hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -79,24 +86,19 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
                 System.err.println("HookZz _malloc_zone_malloc zone=" + zone + ", size=" + size);
                 return HookStatus.RET(emulator, originFunction);
             }
-        });*/
+        });
 //        emulator.attach().debug();
 
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
 
 //        emulator.traceCode();
-        /*hookZz.wrap(symbol, new WrapCallback<RegisterContext>() {
+        hookZz.instrument(symbol, new InstrumentCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
+            public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("HookZz preCall _MSGetImageByName=" + ctx.getPointerArg(0).getString(0));
             }
-            @Override
-            public void postCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
-                super.postCall(emulator, ctx, info);
-                System.err.println("HookZz postCall _MSGetImageByName ret=0x" + Long.toHexString(ctx.getLongArg(0)));
-            }
-        });*/
+        });
 
         long start = System.currentTimeMillis();
 

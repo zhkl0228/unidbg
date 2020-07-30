@@ -13,9 +13,11 @@ import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
 import com.github.unidbg.ios.struct.kernel.Pthread64;
+import com.github.unidbg.ios.struct.kernel.VmRemapRequest;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo32;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo64;
 import com.github.unidbg.memory.*;
+import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.AbstractLoader;
@@ -30,10 +32,7 @@ import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Arm64Const;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
+import unicorn.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -1695,6 +1694,28 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     public Module getExecutableModule() {
         return executableModule;
+    }
+
+    final void remap(VmRemapRequest args) {
+        MemoryMap memoryMap = null;
+        for (MemoryMap map : emulator.getMemory().getMemoryMap()) {
+            if (args.target_address >= map.base && args.target_address + args.size <= map.base + map.size) {
+                memoryMap = map;
+                break;
+            }
+        }
+        if (memoryMap != null) {
+            munmap(args.target_address, (int) args.size);
+        }
+        int prot = memoryMap == null ? args.inheritance : memoryMap.prot;
+        try {
+            unicorn.mem_map(args.target_address, args.size, prot);
+        } catch (UnicornException e) {
+            throw new IllegalStateException("remap target_address=0x" + Long.toHexString(args.target_address) + ", size=" + args.size, e);
+        }
+        if (this.memoryMap.put(args.target_address, new MemoryMap(args.target_address, args.size, prot)) != null) {
+            log.warn("remap replace exists memory map: start=" + Long.toHexString(args.target_address));
+        }
     }
 
     @Override

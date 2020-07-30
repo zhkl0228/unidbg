@@ -1,11 +1,20 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookLoader;
+import com.github.unidbg.hook.ReplaceCallback;
+import com.github.unidbg.hook.hookzz.HookEntryInfo;
+import com.github.unidbg.hook.hookzz.IHookZz;
+import com.github.unidbg.hook.hookzz.InstrumentCallback;
+import com.github.unidbg.ios.hook.DarwinHookZz;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -63,9 +72,9 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
             }
         });*/
 
-//        IHookZz hookZz = HookZz.getInstance(emulator);
+        IHookZz hookZz = DarwinHookZz.getInstance(emulator);
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-        /*hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
+        hookZz.replace(module.findSymbolByName("_malloc_zone_malloc"), new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -74,15 +83,15 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
                 System.err.println("_malloc_zone_malloc zone=" + zone + ", size=" + size);
                 return HookStatus.RET(emulator, originFunction);
             }
-        });*/
+        });
 
 //        emulator.traceCode();
-        /*hookZz.wrap(module.findSymbolByName("_free"), new WrapCallback<RegisterContext>() {
+        hookZz.instrument(module.findSymbolByName("_free"), new InstrumentCallback<RegisterContext>() {
             @Override
-            public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
-                System.err.println("preCall _free=" + ctx.getPointerArg(0));
+            public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
+                System.err.println("dbiCall _free=" + ctx.getPointerArg(0));
             }
-        });*/
+        });
 
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
