@@ -46,6 +46,7 @@ public class ARM {
         showRegs(emulator, ARM.THUMB_REGS);
     }
 
+    @SuppressWarnings("deprecation")
     public static void showRegs(Emulator<?> emulator, int[] regs) {
         Unicorn unicorn = emulator.getUnicorn();
         boolean thumb = isThumb(unicorn);
@@ -216,6 +217,7 @@ public class ARM {
         System.out.println(builder.toString());
     }
 
+    @SuppressWarnings("deprecation")
     public static void showRegs64(Emulator<?> emulator, int[] regs) {
         Unicorn unicorn = emulator.getUnicorn();
         if (regs == null || regs.length < 1) {
