@@ -8,10 +8,7 @@ import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.HookEntryInfo;
-import com.github.unidbg.hook.hookzz.HookZz;
-import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.InstrumentCallback;
+import com.github.unidbg.hook.hookzz.*;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.sun.jna.Pointer;
@@ -72,9 +69,9 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
             }
         });*/
 
-        IHookZz hookZz = HookZz.getInstance(emulator);
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-        hookZz.replace(module.findSymbolByName("_malloc_zone_malloc"), new ReplaceCallback() {
+        Symbol _malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
+        Dobby.getInstance(emulator).replace(_malloc_zone_malloc, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 RegisterContext context = emulator.getContext();
@@ -85,8 +82,9 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
             }
         });
 
-//        emulator.traceCode();
-        hookZz.instrument(module.findSymbolByName("_free"), new InstrumentCallback<RegisterContext>() {
+        IHookZz hookZz = HookZz.getInstance(emulator);
+        Symbol _free = module.findSymbolByName("_free");
+        hookZz.instrument(_free, new InstrumentCallback<RegisterContext>() {
             @Override
             public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
                 System.err.println("dbiCall _free=" + ctx.getPointerArg(0));

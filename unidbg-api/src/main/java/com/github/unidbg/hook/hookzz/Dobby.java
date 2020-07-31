@@ -16,6 +16,9 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Stack;
 
+/**
+ * 对64位支持比较好
+ */
 public final class Dobby extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(Dobby.class);
@@ -65,7 +68,7 @@ public final class Dobby extends BaseHook implements IHookZz {
     @Override
     public void enable_arm_arm64_b_branch() {
         if (dobby_enable_near_branch_trampoline == null) {
-            throw new UnsupportedOperationException();
+            return;
         }
         int ret = dobby_enable_near_branch_trampoline.call(emulator)[0].intValue();
         if (ret != RT_SUCCESS) {
@@ -76,7 +79,7 @@ public final class Dobby extends BaseHook implements IHookZz {
     @Override
     public void disable_arm_arm64_b_branch() {
         if (dobby_disable_near_branch_trampoline == null) {
-            throw new UnsupportedOperationException();
+            return;
         }
         int ret = dobby_disable_near_branch_trampoline.call(emulator)[0].intValue();
         if (ret != RT_SUCCESS) {

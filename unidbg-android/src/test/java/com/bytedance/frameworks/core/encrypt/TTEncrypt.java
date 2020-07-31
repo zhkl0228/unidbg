@@ -76,6 +76,7 @@ public class TTEncrypt {
             Inspector.inspect(sbox1.createPointer(emulator).getByteArray(0, 256), "sbox1");
 
             IHookZz hookZz = HookZz.getInstance(emulator); // 加载HookZz，支持inline hook，文档看https://github.com/jmpews/HookZz
+            hookZz.enable_arm_arm64_b_branch(); // 测试enable_arm_arm64_b_branch，可有可无
             hookZz.wrap(module.findSymbolByName("ss_encrypt"), new WrapCallback<RegisterContext>() { // inline wrap导出函数
                 @Override
                 public void preCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
@@ -89,6 +90,7 @@ public class TTEncrypt {
                     System.out.println("ss_encrypt.postCall R0=" + ctx.getLongArg(0));
                 }
             });
+            hookZz.disable_arm_arm64_b_branch();
             hookZz.instrument(module.base + 0x00000F5C + 1, new InstrumentCallback<Arm32RegisterContext>() {
                 @Override
                 public void dbiCall(Emulator<?> emulator, Arm32RegisterContext ctx, HookEntryInfo info) { // 通过base+offset inline wrap内部函数，在IDA看到为sub_xxx那些
@@ -96,8 +98,8 @@ public class TTEncrypt {
                 }
             });
 
-            hookZz.enable_arm_arm64_b_branch(); // 测试enable_arm_arm64_b_branch，可有可无
-            hookZz.replace(module.findSymbolByName("ss_encrypted_size"), new ReplaceCallback() { // 使用HookZz inline hook导出函数
+            Dobby dobby = Dobby.getInstance(emulator);
+            dobby.replace(module.findSymbolByName("ss_encrypted_size"), new ReplaceCallback() { // 使用Dobby inline hook导出函数
                 @Override
                 public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
                     System.out.println("ss_encrypted_size.onCall arg0=" + context.getIntArg(0) + ", originFunction=0x" + Long.toHexString(originFunction));
@@ -108,7 +110,6 @@ public class TTEncrypt {
                     System.out.println("ss_encrypted_size.postCall ret=" + context.getIntArg(0));
                 }
             }, true);
-            hookZz.disable_arm_arm64_b_branch();
 
             IxHook xHook = XHookImpl.getInstance(emulator); // 加载xHook，支持Import hook，文档看https://github.com/iqiyi/xHook
             xHook.register("libttEncrypt.so", "strlen", new ReplaceCallback() { // hook libttEncrypt.so的导入函数strlen

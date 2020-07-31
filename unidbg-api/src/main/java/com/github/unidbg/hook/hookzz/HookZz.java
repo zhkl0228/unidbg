@@ -16,6 +16,9 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Stack;
 
+/**
+ * 对32位支持比较好
+ */
 public final class HookZz extends BaseHook implements IHookZz {
 
     private static final Log log = LogFactory.getLog(HookZz.class);
