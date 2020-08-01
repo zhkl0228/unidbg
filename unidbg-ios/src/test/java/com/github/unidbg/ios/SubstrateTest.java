@@ -84,6 +84,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
 
         IHookZz hookZz = HookZz.getInstance(emulator);
         Symbol _free = module.findSymbolByName("_free");
+//        emulator.attach().addBreakPoint(null, _free.getAddress());
         hookZz.instrument(_free, new InstrumentCallback<RegisterContext>() {
             @Override
             public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {

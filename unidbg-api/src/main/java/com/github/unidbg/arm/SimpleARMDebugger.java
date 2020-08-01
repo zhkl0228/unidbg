@@ -210,7 +210,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                 }
                 if (line.startsWith("b0x")) {
                     try {
-                        long addr = Long.parseLong(line.substring(3), 16) & 0xfffffffffffffffeL;
+                        long addr = Long.parseLong(line.substring(3), 16) & 0xffffffffL;
                         Module module = null;
                         if (addr < Memory.MMAP_BASE && (module = findModuleByAddress(emulator, address)) != null) {
                             addr += module.base;
