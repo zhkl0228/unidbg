@@ -1,5 +1,9 @@
 package com.github.unidbg.linux.file;
 
+import com.github.unidbg.Emulator;
+import com.github.unidbg.file.linux.LinuxFileSystem;
+import com.github.unidbg.linux.android.LogCatHandler;
+import com.github.unidbg.linux.android.LogCatLevel;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -12,38 +16,15 @@ public class LogCatFileIO extends SimpleFileIO {
 
     private static final Log log = LogFactory.getLog(LogCatFileIO.class);
 
-    /**
-     * Priority constant for the println method; use Log.v.
-     */
-    static final int VERBOSE = 2;
+    public static final String LOG_PATH_PREFIX = "/dev/log/";
 
-    /**
-     * Priority constant for the println method; use Log.d.
-     */
-    static final int DEBUG = 3;
+    private final Emulator<?> emulator;
+    private final String type;
 
-    /**
-     * Priority constant for the println method; use Log.i.
-     */
-    static final int INFO = 4;
-
-    /**
-     * Priority constant for the println method; use Log.w.
-     */
-    static final int WARN = 5;
-
-    /**
-     * Priority constant for the println method; use Log.e.
-     */
-    static final int ERROR = 6;
-
-    /**
-     * Priority constant for the println method.
-     */
-    static final int ASSERT = 7;
-
-    public LogCatFileIO(int oflags, File file, String path) {
+    public LogCatFileIO(Emulator<?> emulator, int oflags, File file, String path) {
         super(oflags, file, path);
+        this.emulator = emulator;
+        this.type = path.substring(LOG_PATH_PREFIX.length());
 
         if (log.isDebugEnabled()) {
             setDebugStream(System.out);
@@ -91,31 +72,14 @@ public class LogCatFileIO extends SimpleFileIO {
                 int level = body[0] & 0xff;
                 String tag = new String(body, 1, tagIndex - 1);
                 String text = new String(body, tagIndex + 1, bodyIndex - tagIndex - 1);
-                final String c;
-                switch (level) {
-                    case VERBOSE:
-                        c = "V";
-                        break;
-                    case DEBUG:
-                        c = "D";
-                        break;
-                    case INFO:
-                        c = "I";
-                        break;
-                    case WARN:
-                        c = "W";
-                        break;
-                    case ERROR:
-                        c = "E";
-                        break;
-                    case ASSERT:
-                        c = "A";
-                        break;
-                    default:
-                        c = level + "";
-                        break;
+                LogCatLevel value = LogCatLevel.valueOf(level);
+                super.write(String.format("%s/%s: %s\n", value, tag, text).getBytes());
+
+                LinuxFileSystem fileSystem = (LinuxFileSystem) emulator.getFileSystem();
+                LogCatHandler handler = fileSystem.getLogCatHandler();
+                if (handler != null) {
+                    handler.handleLog(type, value, tag, text);
                 }
-                super.write(String.format("%s/%s: %s\n", c, tag, text).getBytes());
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);

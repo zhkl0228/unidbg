@@ -60,7 +60,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
     public FileResult<AndroidFileIO> resolve(Emulator<AndroidFileIO> emulator, String path, int oflags) {
         FileSystem<AndroidFileIO> fileSystem = emulator.getFileSystem();
         File rootDir = fileSystem.getRootDir();
-        if (path.startsWith("/dev/log/")) {
+        if (path.startsWith(LogCatFileIO.LOG_PATH_PREFIX)) {
             try {
                 File log = new File(rootDir, path);
                 File logDir = log.getParentFile();
@@ -70,7 +70,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
                 if (!log.exists() && !log.createNewFile()) {
                     throw new IOException("create new file failed: " + log);
                 }
-                return FileResult.<AndroidFileIO>success(new LogCatFileIO(oflags, log, path));
+                return FileResult.<AndroidFileIO>success(new LogCatFileIO(emulator, oflags, log, path));
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }

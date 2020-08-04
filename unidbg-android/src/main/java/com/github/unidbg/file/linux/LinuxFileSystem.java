@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileSystem;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.FileSystem;
+import com.github.unidbg.linux.android.LogCatHandler;
 import com.github.unidbg.linux.file.*;
 import com.github.unidbg.unix.IO;
 import org.apache.commons.io.FileUtils;
@@ -27,6 +28,10 @@ public class LinuxFileSystem extends BaseFileSystem<AndroidFileIO> implements Fi
         }
 
         return super.open(pathname, oflags);
+    }
+
+    public LogCatHandler getLogCatHandler() {
+        return null;
     }
 
     @Override

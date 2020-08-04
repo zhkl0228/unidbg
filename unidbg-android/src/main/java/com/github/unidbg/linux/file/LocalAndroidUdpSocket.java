@@ -2,6 +2,9 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.file.linux.LinuxFileSystem;
+import com.github.unidbg.linux.android.LogCatHandler;
+import com.github.unidbg.linux.android.LogCatLevel;
 import com.github.unidbg.unix.UnixEmulator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -96,31 +99,15 @@ public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFile
                             int level = body[11] & 0xff;
                             String tag = new String(body, 12, tagIndex - 12);
                             String text = new String(body, tagIndex + 1, bodyIndex - tagIndex - 1);
-                            final String c;
-                            switch (level) {
-                                case LogCatFileIO.VERBOSE:
-                                    c = "V";
-                                    break;
-                                case LogCatFileIO.DEBUG:
-                                    c = "D";
-                                    break;
-                                case LogCatFileIO.INFO:
-                                    c = "I";
-                                    break;
-                                case LogCatFileIO.WARN:
-                                    c = "W";
-                                    break;
-                                case LogCatFileIO.ERROR:
-                                    c = "E";
-                                    break;
-                                case LogCatFileIO.ASSERT:
-                                    c = "A";
-                                    break;
-                                default:
-                                    c = level + "";
-                                    break;
+                            LogCatLevel value = LogCatLevel.valueOf(level);
+
+                            LinuxFileSystem fileSystem = (LinuxFileSystem) emulator.getFileSystem();
+                            LogCatHandler handler = fileSystem.getLogCatHandler();
+                            if (handler != null) {
+                                handler.handleLog(type, value, tag, text);
+                            } else {
+                                System.err.println(String.format("[%s]%s/%s: %s", type, value, tag, text));
                             }
-                            System.err.println(String.format("[%s]%s/%s: %s", type, c, tag, text));
                         }
                     } catch (IOException e) {
                         throw new IllegalStateException(e);
