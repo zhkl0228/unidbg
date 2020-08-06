@@ -376,4 +376,9 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     public void callJNI_OnLoad(Emulator<?> emulator, Module module) {
         new DalvikModule(this, module).callJNI_OnLoad(emulator);
     }
+
+    @Override
+    public Emulator<?> getEmulator() {
+        return emulator;
+    }
 }

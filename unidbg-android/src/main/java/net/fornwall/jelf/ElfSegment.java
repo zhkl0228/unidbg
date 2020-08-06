@@ -43,6 +43,8 @@ public class ElfSegment {
 
 	/** Lower bound of the range reserved for operating system-specific semantics. */
 	public static final int PT_LOOS = 0x60000000;
+	/** EH frame segment */
+	public static final int PT_GNU_EH_FRAME = 0x6474e550;
 	/** Upper bound of the range reserved for operating system-specific semantics. */
 	public static final int PT_HIOS = 0x6fffffff;
 	/** Lower bound of the range reserved for processor-specific semantics. */
@@ -73,6 +75,7 @@ public class ElfSegment {
 
 	private MemoizedObject<String> ptInterpreter;
 	private MemoizedObject<byte[]> ptLoad;
+	private MemoizedObject<GnuEhFrameHeader> ehFrameHeader;
 	private MemoizedObject<ElfDynamicStructure> dynamicStructure;
 	private MemoizedObject<ArmExIdx> arm_exidx;
 
@@ -151,6 +154,14 @@ public class ElfSegment {
                 }
             };
             break;
+		case PT_GNU_EH_FRAME:
+			ehFrameHeader = new MemoizedObject<GnuEhFrameHeader>() {
+				@Override
+				protected GnuEhFrameHeader computeValue() throws ElfException, IOException {
+					return new GnuEhFrameHeader(parser, parser.virtualMemoryAddrToFileOffset(virtual_address), (int) mem_size);
+				}
+			};
+			break;
 		case PT_ARM_EXIDX:
 			arm_exidx = new MemoizedObject<ArmExIdx>() {
 				@Override
@@ -190,6 +201,12 @@ public class ElfSegment {
 		case PT_PHDR:
 			typeString = "PT_PHDR";
 			break;
+		case PT_GNU_EH_FRAME:
+			typeString = "PT_GNU_EH_FRAME";
+			break;
+		case PT_ARM_EXIDX:
+			typeString = "PT_ARM_EXIDX";
+			break;
 		default:
 			typeString = "0x" + Long.toHexString(type);
 			break;
@@ -218,6 +235,10 @@ public class ElfSegment {
 	public ElfDynamicStructure getDynamicStructure() throws IOException {
 	    return dynamicStructure == null ? null : dynamicStructure.getValue();
     }
+
+    public GnuEhFrameHeader getEhFrameHeader() throws IOException {
+		return ehFrameHeader == null ? null : ehFrameHeader.getValue();
+	}
 
     public ArmExIdx getARMExIdxData() throws IOException {
 		return arm_exidx == null ? null : arm_exidx.getValue();

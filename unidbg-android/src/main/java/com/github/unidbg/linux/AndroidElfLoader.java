@@ -328,6 +328,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         final List<MemRegion> regions = new ArrayList<>(5);
         ArmExIdx armExIdx = null;
+        GnuEhFrameHeader ehFrameHeader = null;
         for (int i = 0; i < elfFile.num_ph; i++) {
             ElfSegment ph = elfFile.getProgramHeader(i);
             switch (ph.type) {
@@ -350,6 +351,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     if (log.isDebugEnabled()) {
                         log.debug("[" + libraryFile.getName() + "]interp=" + ph.getIntepreter());
                     }
+                    break;
+                case ElfSegment.PT_GNU_EH_FRAME:
+                    ehFrameHeader = ph.getEhFrameHeader();
                     break;
                 case ElfSegment.PT_ARM_EXIDX:
                     armExIdx = ph.getARMExIdxData();

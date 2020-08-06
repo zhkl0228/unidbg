@@ -75,4 +75,6 @@ public interface VM {
     void setVerbose(boolean verbose);
 
     void setDvmClassFactory(DvmClassFactory factory);
+
+    Emulator<?> getEmulator();
 }
