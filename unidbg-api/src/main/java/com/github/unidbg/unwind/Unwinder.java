@@ -1,6 +1,7 @@
 package com.github.unidbg.unwind;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.AbstractARMDebugger;
@@ -38,7 +39,7 @@ public abstract class Unwinder {
                 sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
                 sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", frame.ip.peer - module.base));
 
-                Symbol symbol = module.findNearestSymbolByAddress(frame.ip.peer);
+                Symbol symbol = emulator.getFamily() == Family.iOS ? null : module.findNearestSymbolByAddress(frame.ip.peer);
                 if (symbol != null) {
                     sb.append(" ").append(Demangler.parse(symbol.getName())).append(" + 0x").append(Long.toHexString(frame.ip.peer - symbol.getAddress()));
                 }

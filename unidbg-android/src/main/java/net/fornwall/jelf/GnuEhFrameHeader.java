@@ -1,5 +1,9 @@
 package net.fornwall.jelf;
 
+import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
+import com.github.unidbg.unwind.Frame;
+import com.github.unidbg.unwind.Unwinder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -28,8 +32,38 @@ public class GnuEhFrameHeader {
     private static final int DW_EH_PE_aligned = 0x50;
     private static final int DW_EH_PE_indirect = 0x80; /* gcc extension */
 
+    private static class TableEntry {
+        final long location; // function address
+        final long address; // fde address
+        TableEntry(long location, long address) {
+            this.location = location;
+            this.address = address;
+        }
+        @Override
+        public String toString() {
+            return "TableEntry{" +
+                    "location=0x" + Long.toHexString(location) +
+                    ", address=0x" + Long.toHexString(address) +
+                    '}';
+        }
+    }
+
     private final long offset;
     private long pos;
+
+    private final TableEntry[] entries;
+
+    private TableEntry search(long fun) {
+        TableEntry tableEntry = null;
+        for (TableEntry entry : entries) {
+            if (fun >= entry.location) {
+                tableEntry = entry;
+            } else {
+                break;
+            }
+        }
+        return tableEntry;
+    }
 
     GnuEhFrameHeader(final ElfParser parser, long offset, int size) {
         super();
@@ -46,9 +80,11 @@ public class GnuEhFrameHeader {
         int table_enc = parser.readUnsignedByte(); pos++;
         long eh_frame_ptr = readEncodedPointer(parser, eh_frame_ptr_enc);
         long fde_count = readEncodedPointer(parser, fde_count_enc);
+        entries = new TableEntry[(int) fde_count];
         for (int i = 0; i < fde_count; i++) {
-            long location = readEncodedPointer(parser, table_enc); // function address
-            long address = readEncodedPointer(parser, table_enc); // fde address
+            long location = readEncodedPointer(parser, table_enc);
+            long address = readEncodedPointer(parser, table_enc);
+            entries[i] = new TableEntry(location, address);
             if (log.isDebugEnabled()) {
                 log.debug("Table entry: eh_frame_ptr=0x" + Long.toHexString(eh_frame_ptr) + ", location=0x" + Long.toHexString(location) + ", address=0x" + Long.toHexString(address) + ", size=" + size + ", pos=" + pos);
             }
@@ -134,6 +170,17 @@ public class GnuEhFrameHeader {
         }
 
         return result;
+    }
+
+    public Frame dwarf_step(Emulator<?> emulator, Unwinder unwinder, Module module, long fun, DwarfCursor context) {
+        TableEntry entry = search(fun);
+        if (entry == null) {
+            return null;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("dwarf_step entry=" + entry + ", fun=0x" + Long.toHexString(fun));
+        }
+        return null;
     }
 
 }

@@ -269,10 +269,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, fsync(emulator));
                     return;
                 case 97:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 0));
                     return;
                 case 98:
-                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
+                    u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 0));
                     return;
                 case 116:
                     u.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
@@ -610,6 +610,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 return true;
             case 20:
                 u.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
+                return true;
+            case 97:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 1));
+                return true;
+            case 98:
+                u.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 1));
                 return true;
             case 190:
             case 340:
@@ -2770,7 +2776,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return sendto(emulator, sockfd, buf, len, flags, dest_addr, addrlen);
     }
 
-    private int connect(Emulator<?> emulator) {
+    private int connect(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
         int sockfd = context.getIntArg(0);
         Pointer addr = context.getPointerArg(1);
@@ -2836,11 +2842,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return base;
     }
 
-    private int socket(Emulator<?> emulator) {
+    private int socket(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        int domain = context.getIntArg(0);
-        int type = context.getIntArg(1) & 0x7ffff;
-        int protocol = context.getIntArg(2);
+        int domain = context.getIntArg(offset);
+        int type = context.getIntArg(offset + 1) & 0x7ffff;
+        int protocol = context.getIntArg(offset + 2);
         if (log.isDebugEnabled()) {
             log.debug("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
         }

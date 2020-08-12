@@ -1,6 +1,7 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.utils.Inspector;
+import de.fearlesstobi.demangler.Demangler;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import junit.framework.TestCase;
@@ -155,6 +156,10 @@ public class MachOTest extends TestCase {
                     break;
             }
         }
+    }
+
+    public void testDemangler() {
+        System.out.println(Demangler.parse("__ZNSt3__114__thread_proxyINS_5tupleIJNS_10unique_ptrINS_15__thread_structENS_14default_deleteIS3_EEEEMN6hilive5media18EditorVideoHandlerEFvRKNS_3mapIjNS8_5TrackENS_4lessIjEENS_9allocatorINS_4pairIKjSB_EEEEEEEPS9_SJ_EEEEEPvSQ_"));
     }
 
 }

@@ -545,7 +545,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         if (dynsym == null) {
             throw new IllegalStateException("dynsym is null");
         }
-        LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions, armExIdx);
+        LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
+                armExIdx, ehFrameHeader);
         if ("libc.so".equals(soName)) { // libc
             ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
             if (__thread_entry != null) {

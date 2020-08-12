@@ -52,7 +52,7 @@ public class ArmExIdx {
         this.data = data;
     }
 
-    public Frame unwind(Emulator<?> emulator, Unwinder unwinder, Module module, long fun, DwarfCursor context) {
+    public Frame arm_exidx_step(Emulator<?> emulator, Unwinder unwinder, Module module, long fun, DwarfCursor context) {
         int value = ARM_EXIDX_CANT_UNWIND;
 
         ByteBuffer buffer = ByteBuffer.wrap(data);
