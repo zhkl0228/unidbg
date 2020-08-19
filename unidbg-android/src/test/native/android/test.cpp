@@ -132,7 +132,9 @@ int main() {
   }
   test_backtrace();
   test_statfs();
-  printf("Press any key to exit\n");
+  char sdk[PROP_VALUE_MAX];
+  __system_property_get("ro.build.version.sdk", sdk);
+  printf("Press any key to exit: cmp=%d\n", strcmp("23", sdk));
   getchar();
   return 0;
 }
