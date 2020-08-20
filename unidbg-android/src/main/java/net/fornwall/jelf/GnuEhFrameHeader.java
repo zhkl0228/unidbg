@@ -288,7 +288,7 @@ public class GnuEhFrameHeader {
 
         int length = parser.readInt(); off.pos += 4;
         if (length == -1) {
-            throw new UnsupportedOperationException("64bits DWARF FDE");
+            throw new UnsupportedOperationException("64bits DWARF CIE");
         }
         int fde_address_encoding = DW_EH_PE_sdata4;
         int cie_id = parser.readInt(); off.pos += 4;

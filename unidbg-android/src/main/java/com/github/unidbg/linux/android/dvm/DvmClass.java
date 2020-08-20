@@ -213,7 +213,7 @@ public class DvmClass extends DvmObject<String> {
             throw new IllegalArgumentException("find method failed: " + method);
         }
         if (vm.verbose) {
-            System.out.println(String.format("Find native function %s => %s", "Java_" + getClassName().replace('/', '_') + "_" + method, fnPtr));
+            System.out.printf("Find native function %s => %s%n", "Java_" + getClassName().replace('/', '_') + "_" + method, fnPtr);
         }
         return fnPtr;
     }

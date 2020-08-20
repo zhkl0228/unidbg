@@ -102,6 +102,11 @@ public class DvmObject<T> extends Hashable {
                         vm.addLocalObject((DvmObject<?>) arg);
                     }
                     continue;
+                } else if (arg instanceof String) {
+                    StringObject str = new StringObject(vm, (String) arg);
+                    list.add(str.hashCode());
+                    vm.addLocalObject(str);
+                    continue;
                 }
 
                 list.add(arg);

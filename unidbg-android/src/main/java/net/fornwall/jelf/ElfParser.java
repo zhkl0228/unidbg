@@ -32,7 +32,7 @@ class ElfParser {
 	}
 
 	long byteSwap(long arg) {
-		return ((((long) byteSwap((int) arg)) << 32) | (((long) byteSwap((int) (arg >>> 32))) & 0xFFFFFFFF));
+		return ((((long) byteSwap((int) arg)) << 32) | (((long) byteSwap((int) (arg >>> 32)))));
 	}
 
 	short readUnsignedByte() {
@@ -44,7 +44,7 @@ class ElfParser {
 	short readShort() throws ElfException {
 		int ch1 = readUnsignedByte();
 		int ch2 = readUnsignedByte();
-		short val = (short) ((ch1 << 8) + (ch2 << 0));
+		short val = (short) ((ch1 << 8) + (ch2));
 		if (elfFile.encoding == ElfFile.DATA_LSB) val = byteSwap(val);
 		return val;
 	}
@@ -54,7 +54,7 @@ class ElfParser {
 		int ch2 = readUnsignedByte();
 		int ch3 = readUnsignedByte();
 		int ch4 = readUnsignedByte();
-		int val = ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+		int val = ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4));
 
 		if (elfFile.encoding == ElfFile.DATA_LSB) val = byteSwap(val);
 		return val;
@@ -65,12 +65,12 @@ class ElfParser {
 		int ch2 = readUnsignedByte();
 		int ch3 = readUnsignedByte();
 		int ch4 = readUnsignedByte();
-		int val1 = ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+		int val1 = ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4));
 		int ch5 = readUnsignedByte();
 		int ch6 = readUnsignedByte();
 		int ch7 = readUnsignedByte();
 		int ch8 = readUnsignedByte();
-		int val2 = ((ch5 << 24) + (ch6 << 16) + (ch7 << 8) + (ch8 << 0));
+		int val2 = ((ch5 << 24) + (ch6 << 16) + (ch7 << 8) + (ch8));
 
 		long val = ((long) (val1) << 32) + (val2 & 0xFFFFFFFFL);
 		if (elfFile.encoding == ElfFile.DATA_LSB) val = byteSwap(val);
@@ -83,6 +83,7 @@ class ElfParser {
 	}
 
 	/** Returns a big-endian unsigned representation of the int. */
+	@SuppressWarnings("unused")
 	long unsignedByte(int arg) {
 		long val;
 		if (arg >= 0) {
