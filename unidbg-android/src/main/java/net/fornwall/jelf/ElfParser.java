@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 /** Package internal class used for parsing ELF files. */
-class ElfParser {
+class ElfParser implements ElfDataIn {
 
 	final ElfFile elfFile;
 	private final ByteArrayInputStream fsFile;
@@ -35,13 +35,15 @@ class ElfParser {
 		return ((((long) byteSwap((int) arg)) << 32) | (((long) byteSwap((int) (arg >>> 32)))));
 	}
 
-	short readUnsignedByte() {
+	@Override
+	public short readUnsignedByte() {
 		int val = fsFile.read();
 		if (val < 0) throw new ElfException("Trying to read outside file");
 		return (short) val;
 	}
 
-	short readShort() throws ElfException {
+	@Override
+	public short readShort() throws ElfException {
 		int ch1 = readUnsignedByte();
 		int ch2 = readUnsignedByte();
 		short val = (short) ((ch1 << 8) + (ch2));
@@ -49,7 +51,8 @@ class ElfParser {
 		return val;
 	}
 
-	int readInt() throws ElfException {
+	@Override
+	public int readInt() throws ElfException {
 		int ch1 = readUnsignedByte();
 		int ch2 = readUnsignedByte();
 		int ch3 = readUnsignedByte();
@@ -60,7 +63,8 @@ class ElfParser {
 		return val;
 	}
 
-	long readLong() {
+	@Override
+	public long readLong() {
 		int ch1 = readUnsignedByte();
 		int ch2 = readUnsignedByte();
 		int ch3 = readUnsignedByte();

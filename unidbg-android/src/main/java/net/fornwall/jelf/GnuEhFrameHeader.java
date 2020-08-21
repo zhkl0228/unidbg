@@ -2,6 +2,7 @@ package net.fornwall.jelf;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.unwind.Frame;
 import com.github.unidbg.unwind.Unwinder;
 import com.github.unidbg.utils.Inspector;
@@ -9,6 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 
 public class GnuEhFrameHeader {
 
@@ -27,7 +29,8 @@ public class GnuEhFrameHeader {
     private static final int DW_EH_PE_sdata2 = 0x0A;
     private static final int DW_EH_PE_sdata4 = 0x0B;
     private static final int DW_EH_PE_sdata8 = 0x0C;
-
+    private static final int DW_EH_PE_udata1 = 0x0D;
+    private static final int DW_EH_PE_block = 0x0F;
     private static final int DW_EH_PE_pcrel = 0x10;
     private static final int DW_EH_PE_textrel = 0x20;
     private static final int DW_EH_PE_datarel = 0x30;
@@ -108,12 +111,12 @@ public class GnuEhFrameHeader {
     }
 
     /* read a uleb128 encoded value and advance pointer */
-    private static long readULEB128(ElfParser parser, Off off) {
+    private static long readULEB128(ElfDataIn dataIn, Off off) {
         long result = 0;
         int shift = 0;
         int b;
         do {
-            b = parser.readUnsignedByte(); off.pos++;
+            b = dataIn.readUnsignedByte(); off.pos++;
             result |= (b & 0x7f) << shift;
             shift += 7;
         } while ((b & 0x80) != 0);
@@ -121,12 +124,12 @@ public class GnuEhFrameHeader {
     }
 
     /* read a sleb128 encoded value and advance pointer */
-    private static long readSLEB128(ElfParser parser, Off off) {
+    private static long readSLEB128(ElfDataIn dataIn, Off off) {
         long result = 0;
         int shift = 0;
         int b;
         do {
-            b = parser.readUnsignedByte(); off.pos++;
+            b = dataIn.readUnsignedByte(); off.pos++;
             result |= (b & 0x7f) << shift;
             shift += 7;
         } while ((b & 0x80) != 0);
@@ -136,7 +139,7 @@ public class GnuEhFrameHeader {
         return result;
     }
 
-    private static long readEncodedPointer(ElfParser parser, int encoding, Off off) {
+    private static long readEncodedPointer(ElfDataIn dataIn, int encoding, Off off) {
         if (encoding == DW_EH_PE_omit) {
             return 0;
         }
@@ -150,23 +153,26 @@ public class GnuEhFrameHeader {
                 p += sizeof(uintptr_t);
                 break;*/
             case DW_EH_PE_uleb128:
-                result = readULEB128(parser, off);
+                result = readULEB128(dataIn, off);
+                break;
+            case DW_EH_PE_udata1:
+                result = dataIn.readUnsignedByte(); off.pos++;
                 break;
             case DW_EH_PE_udata2:
-                result = parser.readShort() & 0xffffL; off.pos += 2;
+                result = dataIn.readShort() & 0xffffL; off.pos += 2;
                 break;
             case DW_EH_PE_udata4:
-                result = parser.readInt() & 0xffffffffL; off.pos += 4;
+                result = dataIn.readInt() & 0xffffffffL; off.pos += 4;
                 break;
             case DW_EH_PE_sdata2:
-                result = parser.readShort(); off.pos += 2;
+                result = dataIn.readShort(); off.pos += 2;
                 break;
             case DW_EH_PE_sdata4:
-                result = parser.readInt(); off.pos += 4;
+                result = dataIn.readInt(); off.pos += 4;
                 break;
             case DW_EH_PE_udata8:
             case DW_EH_PE_sdata8:
-                result = parser.readLong(); off.pos += 8;
+                result = dataIn.readLong(); off.pos += 8;
                 break;
             case DW_EH_PE_sleb128:
             default:
@@ -208,10 +214,271 @@ public class GnuEhFrameHeader {
 
         FDE fde = dwarf_get_fde(entry.address);
         if (log.isDebugEnabled()) {
-            log.debug("dwarf_step entry=" + entry + ", fun=0x" + Long.toHexString(fun) + ", fde=" + fde);
+            log.debug("dwarf_step entry=" + entry + ", fun=0x" + Long.toHexString(fun) + ", fde=" + fde + ", module=" + module);
+        }
+        dwarf_loc_t loc = dwarf_get_loc(fde, fun);
+        if (loc != null) {
+            UnicornPointer vsp;
+            switch (loc.cfa_rule.type) {
+                case DW_LOC_REGISTER:
+                    vsp = UnicornPointer.pointer(emulator, context.loc[(int) loc.cfa_rule.values[0]] + loc.cfa_rule.values[1]);
+                    assert vsp != null;
+                    if (log.isDebugEnabled()) {
+                        log.debug("dwarf_step cfa = r" + loc.cfa_rule.values[0] + " + " + loc.cfa_rule.values[1] + " => 0x" + Long.toHexString(vsp.peer));
+                    }
+                    break;
+                case DW_LOC_VAL_EXPRESSION:
+                default:
+                    throw new UnsupportedOperationException("dwarf_step type=" + loc.cfa_rule.type);
+            }
+
+            for (int i = 0; i < loc.reg_rules.length; i++) {
+                dwarf_loc_rule_t rule = loc.reg_rules[i];
+                if (rule == null) {
+                    continue;
+                }
+
+                switch (rule.type) {
+                    case DW_LOC_OFFSET:
+                        UnicornPointer value = vsp.getPointer(rule.values[0]);
+                        context.loc[i] = value == null ? 0L : value.peer;
+                        if (log.isDebugEnabled()) {
+                            log.debug("dwarf_step r" + i + " + (" + rule.values[0] + ") => 0x" + Long.toHexString(context.loc[i]));
+                        }
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("dwarf_step type=" + rule.type);
+                }
+            }
+
+            long ip = context.loc[fde.cie.return_address_register];
+            if (log.isDebugEnabled()) {
+                log.debug("dwarf_step cfa=0x" + Long.toHexString(vsp.peer) + ", ip=0x" + Long.toHexString(ip));
+            }
+
+            context.ip = ip;
+            context.cfa = vsp.peer;
+            return unwinder.createFrame(UnicornPointer.pointer(emulator, ip), UnicornPointer.pointer(emulator, context.cfa));
         }
 
         return null;
+    }
+
+    private static class dwarf_loc_rule_t {
+        int type;
+        final long[] values = new long[2];
+        final dwarf_loc_rule_t copy() {
+            dwarf_loc_rule_t copy = new dwarf_loc_rule_t();
+            copy.type = this.type;
+            System.arraycopy(values, 0, copy.values, 0, values.length);
+            return copy;
+        }
+    }
+
+    private static final int DWARF_REG_NUM = 0x3f;
+
+    private static class dwarf_loc_t {
+        final dwarf_loc_rule_t cfa_rule;
+        final dwarf_loc_rule_t[] reg_rules;
+        dwarf_loc_t() {
+            cfa_rule = new dwarf_loc_rule_t();
+            reg_rules = new dwarf_loc_rule_t[DWARF_REG_NUM];
+        }
+        dwarf_loc_t(dwarf_loc_t copy) {
+            cfa_rule = copy.cfa_rule.copy();
+            reg_rules = new dwarf_loc_rule_t[DWARF_REG_NUM];
+            for (int i = 0; i < DWARF_REG_NUM; i++) {
+                dwarf_loc_rule_t src = copy.reg_rules[i];
+                if (src != null) {
+                    reg_rules[i] = src.copy();
+                }
+            }
+        }
+        dwarf_loc_rule_t get_reg_rule(int i) {
+            dwarf_loc_rule_t rule = reg_rules[i];
+            if (rule == null) {
+                rule = new dwarf_loc_rule_t();
+                reg_rules[i] = rule;
+            }
+            return rule;
+        }
+    }
+
+    private static class dwarf_cfa_t {
+        final boolean illegal;
+        final int[] operand_types;
+        dwarf_cfa_t(boolean illegal, int t1, int t2) {
+            this.illegal = illegal;
+            this.operand_types = new int[] { t1, t2 };
+        }
+    }
+
+    private static final dwarf_cfa_t[] dwarf_cfa_table = new dwarf_cfa_t[]{
+/* 0x00 */ new dwarf_cfa_t(false, DW_EH_PE_omit, DW_EH_PE_omit),
+/* 0x01 */ new dwarf_cfa_t(false, DW_EH_PE_absptr, DW_EH_PE_omit),
+/* 0x02 */ new dwarf_cfa_t(false, DW_EH_PE_udata1,  DW_EH_PE_omit),
+/* 0x03 */ new dwarf_cfa_t(false, DW_EH_PE_udata2,  DW_EH_PE_omit),
+/* 0x04 */ new dwarf_cfa_t(false, DW_EH_PE_udata4,  DW_EH_PE_omit),
+/* 0x05 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x06 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x07 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x08 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x09 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x0a */ new dwarf_cfa_t(false, DW_EH_PE_omit,    DW_EH_PE_omit),
+/* 0x0b */ new dwarf_cfa_t(false, DW_EH_PE_omit,    DW_EH_PE_omit),
+/* 0x0c */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x0d */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x0e */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x0f */ new dwarf_cfa_t(false, DW_EH_PE_block,   DW_EH_PE_omit),
+/* 0x10 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_block),
+/* 0x11 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_sleb128),
+/* 0x12 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_sleb128),
+/* 0x13 */ new dwarf_cfa_t(false, DW_EH_PE_sleb128, DW_EH_PE_omit),
+/* 0x14 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x15 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_sleb128),
+/* 0x16 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_block),
+/* 0x17 */ null,
+/* 0x18 */ null,
+/* 0x19 */ null,
+/* 0x1a */ null,
+/* 0x1b */ null,
+/* 0x1c */ null,
+/* 0x1d */ null,
+/* 0x1e */ null,
+/* 0x1f */ null,
+/* 0x20 */ null,
+/* 0x21 */ null,
+/* 0x22 */ null,
+/* 0x23 */ null,
+/* 0x24 */ null,
+/* 0x25 */ null,
+/* 0x26 */ null,
+/* 0x27 */ null,
+/* 0x28 */ null,
+/* 0x29 */ null,
+/* 0x2a */ null,
+/* 0x2b */ null,
+/* 0x2c */ null,
+/* 0x2d */ null,
+/* 0x2e */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x2f */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x30 */ null,
+/* 0x31 */ null,
+/* 0x32 */ null,
+/* 0x33 */ null,
+/* 0x34 */ null,
+/* 0x35 */ null,
+/* 0x36 */ null,
+/* 0x37 */ null,
+/* 0x38 */ null,
+/* 0x39 */ null,
+/* 0x3a */ null,
+/* 0x3b */ null,
+/* 0x3c */ null,
+/* 0x3d */ null,
+/* 0x3e */ null,
+/* 0x3f */ null,
+    };
+
+    // location rule type
+    private static final int DW_LOC_INVALID = 0;
+    private static final int DW_LOC_UNDEFINED = 1;
+    private static final int DW_LOC_OFFSET = 2;
+    private static final int DW_LOC_VAL_OFFSET = 3;
+    private static final int DW_LOC_REGISTER = 4;
+    private static final int DW_LOC_EXPRESSION = 5;
+    private static final int DW_LOC_VAL_EXPRESSION = 6;
+
+    private static dwarf_loc_t dwarf_get_loc(FDE fde, final long pc) {
+        long cur_pc = fde.pc_start;
+        dwarf_loc_t loc;
+        long[] operands = new long[2];
+
+        dwarf_loc_t loc_init = new dwarf_loc_t();
+        dwarf_loc_t loc_pc = null;
+        loc = loc_init;
+
+        byte[] instructions = fde.merge();
+        for (int i = 0; i < instructions.length; i++) {
+            if (cur_pc > pc) {
+                break; // have stepped to the LOC
+            }
+
+            if (i == fde.cie.cfa_instructions.length) {
+                loc_pc = new dwarf_loc_t(loc_init);
+                loc = loc_pc;
+            }
+
+            int op = instructions[i] & 0xff;
+            int cfa_op = op >> 6;
+            int cfa_op_ext = op & 0x3f;
+            if (log.isDebugEnabled()) {
+                log.debug("dwarf_get_loc i=" + i + ", op=0x" + Integer.toHexString(op) + ", cfa_op=" + cfa_op + ", cfa_op_ext=0x" + Integer.toHexString(cfa_op_ext) + ", cur_pc=0x" + Long.toHexString(cur_pc));
+            }
+
+            switch (cfa_op) {
+                case 0x1: // DW_CFA_advance_loc
+                    cur_pc += cfa_op_ext * fde.cie.code_alignment_factor;
+                    break;
+                case 0x2: { // DW_CFA_offset
+                    Off off = new Off(0);
+                    ElfDataIn dataIn = new ElfBuffer(Arrays.copyOfRange(instructions, i + 1, instructions.length));
+                    long v64 = readULEB128(dataIn, off);
+                    dwarf_loc_rule_t rule = loc.get_reg_rule(cfa_op_ext);
+                    rule.type = DW_LOC_OFFSET;
+                    rule.values[0] = v64 * fde.cie.data_alignment_factor;
+                    i += off.pos;
+                    break;
+                }
+                case 0x3: // DW_CFA_restore
+                    loc.reg_rules[cfa_op_ext] = loc_init.reg_rules[cfa_op_ext];
+                    break;
+                case 0:
+                default: {
+                    dwarf_cfa_t cfa = dwarf_cfa_table[cfa_op_ext];
+                    if (cfa == null) { // illegal cfa
+                        throw new IllegalStateException("dwarf_get_loc illegal cfa");
+                    }
+                    for (int m = 0; m < 2; m++) {
+                        int type = cfa.operand_types[m];
+                        if (type == DW_EH_PE_omit) {
+                            break;
+                        } else if (type == DW_EH_PE_block) {
+                            throw new IllegalStateException("dwarf_get_loc DW_EH_PE_block");
+                        } else {
+                            Off off = new Off(0);
+                            ElfDataIn dataIn = new ElfBuffer(Arrays.copyOfRange(instructions, i + 1, instructions.length));
+                            long v64 = readEncodedPointer(dataIn, type, off);
+                            operands[m] = v64;
+                            i += off.pos;
+                        }
+                    }
+                    switch (cfa_op_ext) {
+                        case 0x02: // DW_CFA_advance_loc1
+                        case 0x03: // DW_CFA_advance_loc2
+                        case 0x04: // DW_CFA_advance_loc3
+                            cur_pc += operands[0] * fde.cie.code_alignment_factor;
+                            break;
+                        case 0x0c: // DW_CFA_def_cfa
+                            loc.cfa_rule.type = DW_LOC_REGISTER;
+                            loc.cfa_rule.values[0] = operands[0];
+                            loc.cfa_rule.values[1] = operands[1];
+                            break;
+                        case 0x0e: // DW_CFA_def_cfa_offset
+                            if (loc.cfa_rule.type != DW_LOC_REGISTER) {
+                                throw new IllegalStateException("NOT DW_LOC_REGISTER");
+                            } else {
+                                loc.cfa_rule.values[1] = operands[0];
+                            }
+                            break;
+                        default:
+                            throw new IllegalStateException("dwarf_get_loc cfa_op=" + cfa_op + ", i=" + i + ", cfa_op_ext=0x" + Integer.toHexString(cfa_op_ext));
+                    }
+                }
+            }
+        }
+
+        return loc == loc_pc ? loc : null;
     }
 
     private static class FDE {
@@ -224,6 +491,12 @@ public class GnuEhFrameHeader {
             this.pc_start = pc_start;
             this.pc_end = pc_end;
             this.cfa_instructions = cfa_instructions;
+        }
+        final byte[] merge() {
+            byte[] instructions = new byte[cie.cfa_instructions.length + cfa_instructions.length];
+            System.arraycopy(cie.cfa_instructions, 0, instructions, 0, cie.cfa_instructions.length);
+            System.arraycopy(cfa_instructions, 0, instructions, cie.cfa_instructions.length, cfa_instructions.length);
+            return instructions;
         }
     }
 
@@ -301,7 +574,7 @@ public class GnuEhFrameHeader {
         }
 
         // get augmentation string
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(10);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(8);
         for (int i = 0; i < 8; i++) {
             int b = parser.readUnsignedByte(); off.pos++;
             if (b == 0) {
