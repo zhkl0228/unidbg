@@ -15,6 +15,7 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.unwind.Unwinder;
 
 import java.io.File;
 import java.net.URL;
@@ -92,5 +93,10 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
     @Override
     public final VM getDalvikVM() {
         return vm;
+    }
+
+    @Override
+    public Unwinder getUnwinder() {
+        return new AndroidARM64Unwinder(this);
     }
 }

@@ -11,6 +11,10 @@ public class DwarfCursor {
 
     final Long[] loc;
 
+    protected DwarfCursor(Long[] loc) {
+        this.loc = loc;
+    }
+
     public DwarfCursor(Emulator<?> emulator) {
         this.loc = new Long[16];
         for (int i = ArmConst.UC_ARM_REG_R0; i <= ArmConst.UC_ARM_REG_R12; i++) {
