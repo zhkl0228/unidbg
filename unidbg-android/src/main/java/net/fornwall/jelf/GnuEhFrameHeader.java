@@ -316,38 +316,36 @@ public class GnuEhFrameHeader {
     }
 
     private static class dwarf_cfa_t {
-        final boolean illegal;
         final int[] operand_types;
-        dwarf_cfa_t(boolean illegal, int t1, int t2) {
-            this.illegal = illegal;
+        dwarf_cfa_t(int t1, int t2) {
             this.operand_types = new int[] { t1, t2 };
         }
     }
 
     private static final dwarf_cfa_t[] dwarf_cfa_table = new dwarf_cfa_t[]{
-/* 0x00 */ new dwarf_cfa_t(false, DW_EH_PE_omit, DW_EH_PE_omit),
-/* 0x01 */ new dwarf_cfa_t(false, DW_EH_PE_absptr, DW_EH_PE_omit),
-/* 0x02 */ new dwarf_cfa_t(false, DW_EH_PE_udata1,  DW_EH_PE_omit),
-/* 0x03 */ new dwarf_cfa_t(false, DW_EH_PE_udata2,  DW_EH_PE_omit),
-/* 0x04 */ new dwarf_cfa_t(false, DW_EH_PE_udata4,  DW_EH_PE_omit),
-/* 0x05 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
-/* 0x06 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
-/* 0x07 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
-/* 0x08 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
-/* 0x09 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
-/* 0x0a */ new dwarf_cfa_t(false, DW_EH_PE_omit,    DW_EH_PE_omit),
-/* 0x0b */ new dwarf_cfa_t(false, DW_EH_PE_omit,    DW_EH_PE_omit),
-/* 0x0c */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
-/* 0x0d */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
-/* 0x0e */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
-/* 0x0f */ new dwarf_cfa_t(false, DW_EH_PE_block,   DW_EH_PE_omit),
-/* 0x10 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_block),
-/* 0x11 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_sleb128),
-/* 0x12 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_sleb128),
-/* 0x13 */ new dwarf_cfa_t(false, DW_EH_PE_sleb128, DW_EH_PE_omit),
-/* 0x14 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
-/* 0x15 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_sleb128),
-/* 0x16 */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_block),
+/* 0x00 */ new dwarf_cfa_t(DW_EH_PE_omit, DW_EH_PE_omit),
+/* 0x01 */ new dwarf_cfa_t(DW_EH_PE_absptr, DW_EH_PE_omit),
+/* 0x02 */ new dwarf_cfa_t(DW_EH_PE_udata1,  DW_EH_PE_omit),
+/* 0x03 */ new dwarf_cfa_t(DW_EH_PE_udata2,  DW_EH_PE_omit),
+/* 0x04 */ new dwarf_cfa_t(DW_EH_PE_udata4,  DW_EH_PE_omit),
+/* 0x05 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x06 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x07 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x08 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x09 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x0a */ new dwarf_cfa_t(DW_EH_PE_omit,    DW_EH_PE_omit),
+/* 0x0b */ new dwarf_cfa_t(DW_EH_PE_omit,    DW_EH_PE_omit),
+/* 0x0c */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x0d */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x0e */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x0f */ new dwarf_cfa_t(DW_EH_PE_block,   DW_EH_PE_omit),
+/* 0x10 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_block),
+/* 0x11 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_sleb128),
+/* 0x12 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_sleb128),
+/* 0x13 */ new dwarf_cfa_t(DW_EH_PE_sleb128, DW_EH_PE_omit),
+/* 0x14 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x15 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_sleb128),
+/* 0x16 */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_block),
 /* 0x17 */ null,
 /* 0x18 */ null,
 /* 0x19 */ null,
@@ -371,8 +369,8 @@ public class GnuEhFrameHeader {
 /* 0x2b */ null,
 /* 0x2c */ null,
 /* 0x2d */ null,
-/* 0x2e */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_omit),
-/* 0x2f */ new dwarf_cfa_t(false, DW_EH_PE_uleb128, DW_EH_PE_uleb128),
+/* 0x2e */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_omit),
+/* 0x2f */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_uleb128),
 /* 0x30 */ null,
 /* 0x31 */ null,
 /* 0x32 */ null,
