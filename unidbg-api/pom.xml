@@ -47,5 +47,10 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.60</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.zhkl0228</groupId>
+            <artifactId>demumble</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 </project>

@@ -7,7 +7,8 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.AbstractARMDebugger;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnicornPointer;
-import de.fearlesstobi.demangler.Demangler;
+import com.github.zhkl0228.demumble.DemanglerFactory;
+import com.github.zhkl0228.demumble.GccDemangler;
 
 public abstract class Unwinder {
 
@@ -41,7 +42,8 @@ public abstract class Unwinder {
 
                 Symbol symbol = emulator.getFamily() == Family.iOS ? null : module.findNearestSymbolByAddress(frame.ip.peer);
                 if (symbol != null) {
-                    sb.append(" ").append(Demangler.parse(symbol.getName())).append(" + 0x").append(Long.toHexString(frame.ip.peer - symbol.getAddress()));
+                    GccDemangler demangler = DemanglerFactory.createDemangler();
+                    sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(frame.ip.peer - symbol.getAddress()));
                 }
             } else {
                 sb.append(String.format(getBaseFormat(), 0));

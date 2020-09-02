@@ -55,4 +55,3 @@ Simple tests under src/test directory
 - [kaitai_struct](https://github.com/kaitai-io/kaitai_struct)
 - [fishhook](https://github.com/facebook/fishhook)
 - [runtime_class-dump](https://github.com/Tyilo/runtime_class-dump)
-- [GccDemangler](https://github.com/FearlessTobi/GccDemangler)
