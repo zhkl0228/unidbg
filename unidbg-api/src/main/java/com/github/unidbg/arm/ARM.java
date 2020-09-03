@@ -20,9 +20,13 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import static capstone.Arm_const.ARM_OP_IMM;
+import static capstone.Arm_const.ARM_OP_INVALID;
 
 /**
  * arm utils
@@ -754,10 +758,72 @@ public class ARM {
         }
     }
 
-    private static final Pattern MEM_PATTERN = Pattern.compile("\\w+,\\s\\[(\\w+),\\s#(-)?(0x)?(\\w+)]");
-
     static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
         return assembleDetail(emulator, ins, address, thumb, false);
+    }
+
+    private static void appendMemoryDetails32(Emulator<?> emulator, Capstone.CsInsn ins, Arm.OpInfo opInfo, boolean thumb, StringBuilder sb) {
+        Memory memory = emulator.getMemory();
+
+        // ldr rx, [pc, #0xab] or ldr.w rx, [pc, #0xcd] based capstone.setDetail(Capstone.CS_OPT_ON);
+        if (opInfo.op.length == 2 &&
+                opInfo.op[0].type == Arm_const.ARM_OP_REG &&
+                opInfo.op[1].type == Arm_const.ARM_OP_MEM) {
+            Arm.MemType mem = opInfo.op[1].value.mem;
+
+            long addr = -1;
+            if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
+                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                long base_value = base == null ? 0L : base.peer;
+                addr = base_value + mem.disp;
+            }
+
+            // ldr.w r0, [r2, r0, lsl #2]
+            Arm.OpShift shift;
+            if (mem.index > 0 && mem.scale == 1 && mem.lshift == 0 && mem.disp == 0 &&
+                    (shift = opInfo.op[1].shift) != null) {
+                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                long base_value = base == null ? 0L : base.peer;
+                UnicornPointer index = UnicornPointer.register(emulator, mem.index);
+                int index_value = index == null ? 0 : (int) index.peer;
+                if (shift.type == ARM_OP_IMM) {
+                    addr = base_value + (index_value << shift.value);
+                } else if (shift.type == ARM_OP_INVALID) {
+                    addr = base_value + index_value;
+                }
+            }
+            if (addr != -1) {
+                if (mem.base == Arm_const.ARM_REG_PC) {
+                    addr += (thumb ? 4 : 8);
+                }
+                int bytesRead = 4;
+                if (ins.mnemonic.startsWith("ldrb") || ins.mnemonic.startsWith("strb")) {
+                    bytesRead = 1;
+                }
+                if (ins.mnemonic.startsWith("ldrh") || ins.mnemonic.startsWith("strh")) {
+                    bytesRead = 2;
+                }
+                appendAddrValue(sb, addr, memory, emulator.is64Bit(), bytesRead);
+            }
+        }
+
+        // ldrd r2, r1, [r5, #4]
+        if ("ldrd".equals(ins.mnemonic) && opInfo.op.length == 3 &&
+                opInfo.op[0].type == Arm_const.ARM_OP_REG &&
+                opInfo.op[1].type == Arm_const.ARM_OP_REG &&
+                opInfo.op[2].type == Arm_const.ARM_OP_MEM) {
+            Arm.MemType mem = opInfo.op[2].value.mem;
+            if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
+                UnicornPointer ptr = UnicornPointer.register(emulator, mem.base);
+                long ptr_value = ptr == null ? 0L : ptr.peer;
+                long addr = ptr_value + mem.disp;
+                if (mem.base == Arm_const.ARM_REG_PC) {
+                    addr += (thumb ? 4 : 8);
+                }
+                appendAddrValue(sb, addr, memory, emulator.is64Bit(), 4);
+                appendAddrValue(sb, addr + emulator.getPointerSize(), memory, emulator.is64Bit(), 4);
+            }
+        }
     }
 
     public static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb, boolean current) {
@@ -792,103 +858,16 @@ public class ARM {
         if (ins.operands instanceof Arm.OpInfo) {
             opInfo = (Arm.OpInfo) ins.operands;
         }
-        if (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) {
-            Matcher matcher;
-
-            // ldr rx, [pc, #0xab] or ldr.w rx, [pc, #0xcd] based capstone.setDetail(Capstone.CS_OPT_ON);
-            if (opInfo != null &&
-                    opInfo.op.length == 2 &&
-                    opInfo.op[0].type == Arm_const.ARM_OP_REG &&
-                    opInfo.op[1].type == Arm_const.ARM_OP_MEM) {
-                Arm.MemType mem = opInfo.op[1].value.mem;
-                if (mem.base == Arm_const.ARM_REG_PC && mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                    long addr = ins.address + mem.disp;
-                    addr += (thumb ? 4 : 8);
-                    appendAddrValue(sb, addr, memory, emulator.is64Bit());
-                }
-            } else if((matcher = MEM_PATTERN.matcher(ins.opStr)).find()) {
-                String reg = matcher.group(1);
-                boolean minus = "-".equals(matcher.group(2));
-                String g1 = matcher.group(3);
-                boolean hex = "0x".equals(g1);
-                String g2 = matcher.group(4);
-                long value = hex ? Long.parseLong(g2, 16) : Long.parseLong(g2);
-                if (minus) {
-                    value = -value;
-                }
-                if ("pc".equals(reg)) {
-                    long addr = ins.address + value;
-                    addr += (thumb ? 4 : 8);
-                    appendAddrValue(sb, addr, memory, emulator.is64Bit());
-                } else if (current) {
-                    boolean is64Bit = emulator.is64Bit();
-                    int r = -1;
-                    switch (reg) {
-                        case "r0":
-                            r = ArmConst.UC_ARM_REG_R0;
-                            break;
-                        case "r1":
-                            r = ArmConst.UC_ARM_REG_R1;
-                            break;
-                        case "r2":
-                            r = ArmConst.UC_ARM_REG_R2;
-                            break;
-                        case "r3":
-                            r = ArmConst.UC_ARM_REG_R3;
-                            break;
-                        case "r4":
-                            r = ArmConst.UC_ARM_REG_R4;
-                            break;
-                        case "r5":
-                            r = ArmConst.UC_ARM_REG_R5;
-                            break;
-                        case "r6":
-                            r = ArmConst.UC_ARM_REG_R6;
-                            break;
-                        case "r7":
-                            r = ArmConst.UC_ARM_REG_R7;
-                            break;
-                        case "x0":
-                            r = Arm64Const.UC_ARM64_REG_X0;
-                            break;
-                        case "x8":
-                            r = Arm64Const.UC_ARM64_REG_X8;
-                            break;
-                        case "x19":
-                            r = Arm64Const.UC_ARM64_REG_X19;
-                            break;
-                        case "x20":
-                            r = Arm64Const.UC_ARM64_REG_X20;
-                            break;
-                        case "x21":
-                            r = Arm64Const.UC_ARM64_REG_X21;
-                            break;
-                        case "fp":
-                            r = is64Bit ? Arm64Const.UC_ARM64_REG_FP : ArmConst.UC_ARM_REG_FP;
-                            break;
-                        case "sp":
-                            r = is64Bit ? Arm64Const.UC_ARM64_REG_SP : ArmConst.UC_ARM_REG_SP;
-                            break;
-                        case "lr":
-                            r = is64Bit ? Arm64Const.UC_ARM64_REG_LR : ArmConst.UC_ARM_REG_LR;
-                            break;
-                    }
-                    if (r != -1) {
-                        UnicornPointer pointer = UnicornPointer.register(emulator, r);
-                        if (pointer != null) {
-                            long addr = (is64Bit ? pointer.peer : pointer.toUIntPeer()) + value;
-                            appendAddrValue(sb, addr, memory, is64Bit);
-                        }
-                    }
-                }
-            }
+        if (current && (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) && opInfo != null) {
+            appendMemoryDetails32(emulator, ins, opInfo, thumb, sb);
         }
 
         return sb.toString();
     }
 
-    private static void appendAddrValue(StringBuilder sb, long addr, Memory memory, boolean is64Bit) {
-        Pointer pointer = memory.pointer(addr & 0xfffffffffffffffcL);
+    private static void appendAddrValue(StringBuilder sb, long addr, Memory memory, boolean is64Bit, int bytesRead) {
+        long mask = -bytesRead;
+        Pointer pointer = memory.pointer(addr & mask);
         sb.append(" [0x").append(Long.toHexString(addr)).append(']');
         try {
             if (is64Bit) {
@@ -903,7 +882,20 @@ public class ARM {
                     }
                 }
             } else {
-                int value = pointer.getInt(0);
+                int value;
+                switch (bytesRead) {
+                    case 1:
+                        value = pointer.getByte(0) & 0xff;
+                        break;
+                    case 2:
+                        value = pointer.getShort(0) & 0xffff;
+                        break;
+                    case 4:
+                        value = pointer.getInt(0);
+                        break;
+                    default:
+                        throw new IllegalStateException("bytesRead=" + bytesRead);
+                }
                 sb.append(" => 0x").append(Long.toHexString(value & 0xffffffffL));
                 if (value < 0) {
                     sb.append(" (-0x").append(Integer.toHexString(-value)).append(")");
