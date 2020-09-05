@@ -97,8 +97,8 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
                     "rsbs r0, r3, #0",
                     "b #0xffff0fa0"), 0xffff0fc0);
             byte[] __kuser_cmpxchg = encoded.getMachineCode();
-            unicorn.mem_write(0xffff0fa0L, __kuser_memory_barrier);
-            unicorn.mem_write(0xffff0fc0L, __kuser_cmpxchg);
+            memory.pointer(0xffff0fa0L).write(__kuser_memory_barrier);
+            memory.pointer(0xffff0fc0L).write(__kuser_cmpxchg);
 
             if (log.isDebugEnabled()) {
                 log.debug("__kuser_memory_barrier");

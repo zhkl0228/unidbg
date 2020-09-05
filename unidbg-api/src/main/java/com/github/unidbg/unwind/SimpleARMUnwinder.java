@@ -7,6 +7,10 @@ import unicorn.ArmConst;
 
 public class SimpleARMUnwinder extends Unwinder {
 
+    public SimpleARMUnwinder(Emulator<?> emulator) {
+        super(emulator);
+    }
+
     @Override
     protected String getBaseFormat() {
         return "[0x%08x]";

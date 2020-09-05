@@ -84,7 +84,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             for (int i = 0; i < 0x10000; i += b0.length) {
                 buffer.put(b0);
             }
-            unicorn.mem_write(LR, buffer.array());
+            memory.pointer(LR).write(buffer.array());
         }
     }
 
@@ -262,6 +262,6 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     @Override
     public Unwinder getUnwinder() {
-        return new SimpleARM64Unwinder();
+        return new SimpleARM64Unwinder(this);
     }
 }

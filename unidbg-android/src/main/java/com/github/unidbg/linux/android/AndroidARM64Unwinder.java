@@ -16,6 +16,7 @@ class AndroidARM64Unwinder extends SimpleARM64Unwinder {
     private final DwarfCursor context;
 
     public AndroidARM64Unwinder(Emulator<?> emulator) {
+        super(emulator);
         this.context = new DwarfCursor64(emulator);
     }
 

@@ -45,9 +45,8 @@ class TraceMemoryHook implements MemHook {
                 value = Hex.encodeHexString(data);
             }
             Emulator<?> emulator = (Emulator<?>) user;
-            printMsg("### Memory READ at 0x", emulator, address, size, value);
-            if (traceReadListener != null) {
-                traceReadListener.onRead(emulator, address, data, value);
+            if (traceReadListener == null || traceReadListener.onRead(emulator, address, data, value)) {
+                printMsg("### Memory READ at 0x", emulator, address, size, value);
             }
         } catch (UnicornException e) {
             throw new IllegalStateException(e);
@@ -76,9 +75,8 @@ class TraceMemoryHook implements MemHook {
 
         try {
             Emulator<?> emulator = (Emulator<?>) user;
-            printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
-            if (traceWriteListener != null) {
-                traceWriteListener.onWrite(emulator, address, size, value);
+            if (traceWriteListener == null || traceWriteListener.onWrite(emulator, address, size, value)) {
+                printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
             }
         } catch (UnicornException e) {
             throw new IllegalStateException(e);

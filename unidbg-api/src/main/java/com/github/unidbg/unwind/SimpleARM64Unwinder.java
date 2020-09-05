@@ -7,6 +7,10 @@ import unicorn.Arm64Const;
 
 public class SimpleARM64Unwinder extends Unwinder {
 
+    public SimpleARM64Unwinder(Emulator<?> emulator) {
+        super(emulator);
+    }
+
     @Override
     protected String getBaseFormat() {
         return "[0x%09x]";

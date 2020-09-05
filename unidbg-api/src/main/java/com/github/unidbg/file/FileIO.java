@@ -46,7 +46,7 @@ public interface FileIO {
 
     int getsockname(Pointer addr, Pointer addrlen);
 
-    long mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length) throws IOException;
+    long mmap2(Emulator<?> emulator, long addr, int aligned, int prot, int offset, int length) throws IOException;
 
     int llseek(long offset, Pointer result, int whence);
 

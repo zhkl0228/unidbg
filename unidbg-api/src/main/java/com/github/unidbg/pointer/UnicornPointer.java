@@ -37,6 +37,8 @@ public class UnicornPointer extends Pointer {
         return (int) toUIntPeer();
     }
 
+    private final MemoryWriteListener listener;
+
     private UnicornPointer(Emulator<?> emulator, long peer, int pointerSize) {
         super(0);
 
@@ -44,6 +46,12 @@ public class UnicornPointer extends Pointer {
         this.unicorn = emulator.getUnicorn();
         this.peer = peer;
         this.pointerSize = pointerSize;
+
+        if (emulator instanceof MemoryWriteListener) {
+            listener = (MemoryWriteListener) emulator;
+        } else {
+            listener = null;
+        }
     }
 
     private long size;
@@ -126,6 +134,10 @@ public class UnicornPointer extends Pointer {
         throw new AbstractMethodError();
     }
 
+    public void write(byte[] buf) {
+        write(0, buf, 0, buf.length);
+    }
+
     @Override
     public void write(long offset, byte[] buf, int index, int length) {
         if (size > 0) {
@@ -138,12 +150,17 @@ public class UnicornPointer extends Pointer {
             }
         }
 
+        byte[] data;
         if (index == 0 && buf.length == length) {
-            unicorn.mem_write(peer + offset, buf);
+            data = buf;
         } else {
-            byte[] data = new byte[length];
+            data = new byte[length];
             System.arraycopy(buf, index, data, 0, length);
-            unicorn.mem_write(peer + offset, data);
+        }
+        long addr = peer + offset;
+        unicorn.mem_write(addr, data);
+        if (listener != null) {
+            listener.onSystemWrite(addr, data);
         }
     }
 

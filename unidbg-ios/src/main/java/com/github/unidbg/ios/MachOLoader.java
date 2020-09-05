@@ -1409,7 +1409,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             buffer.position(offset);
             byte[] data = new byte[size];
             buffer.get(data);
-            unicorn.mem_write(begin, data);
+            pointer(begin).write(data);
         } else if(size < 0) {
             log.warn("write_mem offset=" + offset + ", size=" + offset + ", begin=0x" + Long.toHexString(begin));
         }
@@ -1765,7 +1765,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 if (log.isDebugEnabled()) {
                     log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 }
-                long ret = file.mmap2(unicorn, addr, aligned, prot, offset, length);
+                long ret = file.mmap2(emulator, addr, aligned, prot, offset, length);
                 if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                     log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
                 }
@@ -1791,7 +1791,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
                 FileIO io = syscallHandler.fdMap.get(fd);
                 if (io != null) {
-                    return io.mmap2(unicorn, start, aligned, prot, offset, length);
+                    return io.mmap2(emulator, start, aligned, prot, offset, length);
                 }
             }
             if (flags == MAP_MY_FIXED) {

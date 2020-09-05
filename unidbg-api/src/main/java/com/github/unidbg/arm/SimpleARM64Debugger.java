@@ -203,7 +203,11 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     }
                 }
                 if (emulator.isRunning() && "bt".equals(line)) {
-                    emulator.getUnwinder().unwind(emulator);
+                    try {
+                        emulator.getUnwinder().unwind();
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
                     continue;
                 }
                 if (line.startsWith("b0x")) {

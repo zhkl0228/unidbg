@@ -1979,7 +1979,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 }
 
                 byte[] data = unicorn.mem_read(args.source_address, args.size);
-                unicorn.mem_write(args.dest_address, data);
+                emulator.getMemory().pointer(args.dest_address).write(data);
 
                 VmCopyReply reply = new VmCopyReply(request);
                 reply.unpack();
@@ -2017,7 +2017,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 loader.remap(args);
                 if (args.copy != 0) {
                     byte[] data = unicorn.mem_read(args.getSourceAddress(), args.size);
-                    unicorn.mem_write(args.target_address, data);
+                    loader.pointer(args.target_address).write(data);
                 }
 
                 VmRemapReply reply = new VmRemapReply(request);

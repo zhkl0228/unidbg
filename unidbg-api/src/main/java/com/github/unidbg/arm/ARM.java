@@ -25,9 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import static capstone.Arm_const.ARM_OP_IMM;
-import static capstone.Arm_const.ARM_OP_INVALID;
-
 /**
  * arm utils
  * Created by zhkl0228 on 2017/5/11.
@@ -764,14 +761,15 @@ public class ARM {
 
     private static void appendMemoryDetails32(Emulator<?> emulator, Capstone.CsInsn ins, Arm.OpInfo opInfo, boolean thumb, StringBuilder sb) {
         Memory memory = emulator.getMemory();
+        Arm.MemType mem = null;
+        long addr = -1;
 
         // ldr rx, [pc, #0xab] or ldr.w rx, [pc, #0xcd] based capstone.setDetail(Capstone.CS_OPT_ON);
         if (opInfo.op.length == 2 &&
                 opInfo.op[0].type == Arm_const.ARM_OP_REG &&
                 opInfo.op[1].type == Arm_const.ARM_OP_MEM) {
-            Arm.MemType mem = opInfo.op[1].value.mem;
+            mem = opInfo.op[1].value.mem;
 
-            long addr = -1;
             if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
                 UnicornPointer base = UnicornPointer.register(emulator, mem.base);
                 long base_value = base == null ? 0L : base.peer;
@@ -786,25 +784,38 @@ public class ARM {
                 long base_value = base == null ? 0L : base.peer;
                 UnicornPointer index = UnicornPointer.register(emulator, mem.index);
                 int index_value = index == null ? 0 : (int) index.peer;
-                if (shift.type == ARM_OP_IMM) {
+                if (shift.type == Arm_const.ARM_OP_IMM) {
                     addr = base_value + (index_value << shift.value);
-                } else if (shift.type == ARM_OP_INVALID) {
+                } else if (shift.type == Arm_const.ARM_OP_INVALID) {
                     addr = base_value + index_value;
                 }
             }
-            if (addr != -1) {
-                if (mem.base == Arm_const.ARM_REG_PC) {
-                    addr += (thumb ? 4 : 8);
-                }
-                int bytesRead = 4;
-                if (ins.mnemonic.startsWith("ldrb") || ins.mnemonic.startsWith("strb")) {
-                    bytesRead = 1;
-                }
-                if (ins.mnemonic.startsWith("ldrh") || ins.mnemonic.startsWith("strh")) {
-                    bytesRead = 2;
-                }
-                appendAddrValue(sb, addr, memory, emulator.is64Bit(), bytesRead);
+        }
+
+        // ldrb r0, [r1], #1
+        if (opInfo.op.length == 3 &&
+                opInfo.op[0].type == Arm_const.ARM_OP_REG &&
+                opInfo.op[1].type == Arm_const.ARM_OP_MEM &&
+                opInfo.op[2].type == Arm_const.ARM_OP_IMM) {
+            mem = opInfo.op[1].value.mem;
+            if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
+                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                addr = base == null ? 0L : base.peer;
             }
+        }
+        if (addr != -1) {
+            if (mem.base == Arm_const.ARM_REG_PC) {
+                addr += (thumb ? 4 : 8);
+            }
+            int bytesRead = 4;
+            if (ins.mnemonic.startsWith("ldrb") || ins.mnemonic.startsWith("strb")) {
+                bytesRead = 1;
+            }
+            if (ins.mnemonic.startsWith("ldrh") || ins.mnemonic.startsWith("strh")) {
+                bytesRead = 2;
+            }
+            appendAddrValue(sb, addr, memory, emulator.is64Bit(), bytesRead);
+            return;
         }
 
         // ldrd r2, r1, [r5, #4]
@@ -812,11 +823,11 @@ public class ARM {
                 opInfo.op[0].type == Arm_const.ARM_OP_REG &&
                 opInfo.op[1].type == Arm_const.ARM_OP_REG &&
                 opInfo.op[2].type == Arm_const.ARM_OP_MEM) {
-            Arm.MemType mem = opInfo.op[2].value.mem;
+            mem = opInfo.op[2].value.mem;
             if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                UnicornPointer ptr = UnicornPointer.register(emulator, mem.base);
-                long ptr_value = ptr == null ? 0L : ptr.peer;
-                long addr = ptr_value + mem.disp;
+                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                long base_value = base == null ? 0L : base.peer;
+                addr = base_value + mem.disp;
                 if (mem.base == Arm_const.ARM_REG_PC) {
                     addr += (thumb ? 4 : 8);
                 }

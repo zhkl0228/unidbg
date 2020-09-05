@@ -17,19 +17,18 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryBlockImpl;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.pointer.MemoryWriteListener;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<T> {
+public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<T>, MemoryWriteListener {
 
     private static final Log log = LogFactory.getLog(AbstractEmulator.class);
 
@@ -228,6 +227,23 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         traceMemoryWriteBegin = begin;
         traceMemoryWriteEnd = end;
         return this;
+    }
+
+    @Override
+    public void onSystemWrite(long addr, byte[] data) {
+        if (!traceMemoryWrite) {
+            return;
+        }
+        long max = Math.max(addr, traceMemoryReadBegin);
+        long min = Math.min(addr + data.length, traceMemoryWriteEnd);
+        if (max < min) {
+            byte[] buf = new byte[(int) (min - max)];
+            System.arraycopy(data, (int) (max - addr), buf, 0, buf.length);
+            StringWriter writer = new StringWriter();
+            writer.write("### System Memory WRITE at 0x" + Long.toHexString(max));
+            new Exception().printStackTrace(new PrintWriter(writer));
+            Inspector.inspect(buf, writer.toString());
+        }
     }
 
     @Override

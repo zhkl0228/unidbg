@@ -118,10 +118,11 @@ public abstract class AbstractFileIO implements NewFileIO {
     }
 
     @Override
-    public final long mmap2(Unicorn unicorn, long addr, int aligned, int prot, int offset, int length) throws IOException {
+    public final long mmap2(Emulator<?> emulator, long addr, int aligned, int prot, int offset, int length) throws IOException {
+        Unicorn unicorn = emulator.getUnicorn();
         byte[] data = getMmapData(offset, length);
         unicorn.mem_map(addr, aligned, prot);
-        unicorn.mem_write(addr, data);
+        emulator.getMemory().pointer(addr).write(data);
         return addr;
     }
 

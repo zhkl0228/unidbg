@@ -15,6 +15,7 @@ class AndroidARMUnwinder extends SimpleARMUnwinder {
     private final DwarfCursor context;
 
     public AndroidARMUnwinder(Emulator<?> emulator) {
+        super(emulator);
         this.context = new DwarfCursor(emulator);
     }
 

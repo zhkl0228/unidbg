@@ -12,13 +12,19 @@ import com.github.zhkl0228.demumble.GccDemangler;
 
 public abstract class Unwinder {
 
+    protected final Emulator<?> emulator;
+
+    protected Unwinder(Emulator<?> emulator) {
+        this.emulator = emulator;
+    }
+
     public abstract Frame createFrame(UnicornPointer ip, UnicornPointer fp);
 
     protected abstract Frame unw_step(Emulator<?> emulator, Frame frame);
 
     protected abstract String getBaseFormat();
 
-    public final void unwind(Emulator<?> emulator) {
+    public final void unwind() {
         Memory memory = emulator.getMemory();
         String maxLengthSoName = memory.getMaxLengthLibraryName();
         boolean hasTrace = false;

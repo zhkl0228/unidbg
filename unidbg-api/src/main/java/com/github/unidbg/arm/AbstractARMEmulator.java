@@ -96,7 +96,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
             for (int i = 0; i < 0x10000; i += 4) {
                 buffer.put(b0);
             }
-            unicorn.mem_write(LR, buffer.array());
+            memory.pointer(LR).write(buffer.array());
         }
     }
 
@@ -264,6 +264,6 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     @Override
     public Unwinder getUnwinder() {
-        return new SimpleARMUnwinder();
+        return new SimpleARMUnwinder(this);
     }
 }

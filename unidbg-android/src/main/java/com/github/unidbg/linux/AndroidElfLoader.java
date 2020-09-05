@@ -340,7 +340,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
                     final long begin = load_base + ph.virtual_address;
                     Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName());
-                    unicorn.mem_write(begin, ph.getPtLoadData());
+                    pointer(begin).write(ph.getPtLoadData());
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
                     break;
@@ -693,7 +693,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 if (log.isDebugEnabled()) {
                     log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 }
-                long ret = file.mmap2(unicorn, addr, aligned, prot, offset, length);
+                long ret = file.mmap2(emulator, addr, aligned, prot, offset, length);
                 if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                     log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
                 }
