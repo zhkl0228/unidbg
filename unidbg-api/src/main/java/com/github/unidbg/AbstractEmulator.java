@@ -224,17 +224,20 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     @Override
     public final Emulator<T> traceWrite(long begin, long end) {
         traceMemoryWrite = true;
+        traceSystemMemoryWrite = true;
         traceMemoryWriteBegin = begin;
         traceMemoryWriteEnd = end;
         return this;
     }
 
+    private boolean traceSystemMemoryWrite;
+
     @Override
     public void onSystemWrite(long addr, byte[] data) {
-        if (!traceMemoryWrite) {
+        if (!traceSystemMemoryWrite) {
             return;
         }
-        long max = Math.max(addr, traceMemoryReadBegin);
+        long max = Math.max(addr, traceMemoryWriteBegin);
         long min = Math.min(addr + data.length, traceMemoryWriteEnd);
         if (max < min) {
             byte[] buf = new byte[(int) (min - max)];
@@ -396,6 +399,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             if (exitHook != null) {
                 Runtime.getRuntime().removeShutdownHook(exitHook);
             }
+            traceSystemMemoryWrite = false;
             running = false;
 
             if (log.isDebugEnabled()) {
