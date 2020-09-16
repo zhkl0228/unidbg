@@ -23,10 +23,14 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
 
     @SuppressWarnings("unused")
     protected MapsFileIO(int oflags, String path, Collection<Module> modules, String additionContent) {
-        super(oflags, path, getMapsData(modules, additionContent));
+        this(oflags, path, getMapsData(modules, additionContent));
     }
 
-    private static byte[] getMapsData(Collection<Module> modules, String additionContent) {
+    protected MapsFileIO(int oflags, String path, byte[] bytes) {
+        super(oflags, path, bytes);
+    }
+
+    protected static byte[] getMapsData(Collection<Module> modules, String additionContent) {
         List<MemRegion> list = new ArrayList<>(modules.size());
         for (Module module : modules) {
             list.addAll(module.getRegions());

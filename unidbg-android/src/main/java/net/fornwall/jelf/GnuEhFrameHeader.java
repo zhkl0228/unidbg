@@ -404,13 +404,15 @@ public class GnuEhFrameHeader {
         long[] operands = new long[2];
 
         dwarf_loc_t loc_init = new dwarf_loc_t();
-        dwarf_loc_t loc_pc = null;
+        dwarf_loc_t loc_pc;
         loc = loc_init;
         Stack<dwarf_loc_t> loc_node_stack = new Stack<>();
 
         byte[] instructions = fde.merge();
+        boolean stepped = false;
         for (int i = 0; i < instructions.length; i++) {
             if (cur_pc > pc) {
+                stepped = true;
                 break; // have stepped to the LOC
             }
 
@@ -428,7 +430,11 @@ public class GnuEhFrameHeader {
 
             switch (cfa_op) {
                 case 0x1: // DW_CFA_advance_loc
-                    cur_pc += cfa_op_ext * fde.cie.code_alignment_factor;
+                    long step = cfa_op_ext * fde.cie.code_alignment_factor;
+                    cur_pc += step;
+                    if (log.isDebugEnabled()) {
+                        log.debug("DW_CFA_advance_loc: " + step + " to " + Long.toHexString(cur_pc));
+                    }
                     break;
                 case 0x2: { // DW_CFA_offset
                     Off off = new Off(0);
@@ -438,10 +444,16 @@ public class GnuEhFrameHeader {
                     rule.type = DW_LOC_OFFSET;
                     rule.values[0] = v64 * fde.cie.data_alignment_factor;
                     i += off.pos;
+                    if (log.isDebugEnabled()) {
+                        log.debug("DW_CFA_offset: r" + cfa_op_ext + " at cfa" + rule.values[0]);
+                    }
                     break;
                 }
                 case 0x3: // DW_CFA_restore
                     loc.reg_rules[cfa_op_ext] = loc_init.reg_rules[cfa_op_ext];
+                    if (log.isDebugEnabled()) {
+                        log.debug("DW_CFA_restore: r" + cfa_op_ext);
+                    }
                     break;
                 case 0:
                 default: {
@@ -465,11 +477,20 @@ public class GnuEhFrameHeader {
                     }
                     switch (cfa_op_ext) {
                         case 0x00: // DW_CFA_nop
+                            if (log.isDebugEnabled()) {
+                                log.debug("DW_CFA_nop");
+                            }
                             break;
                         case 0x01: // DW_CFA_set_loc
                             cur_pc = operands[0];
                             break;
                         case 0x02: // DW_CFA_advance_loc1
+                            step = operands[0] * fde.cie.code_alignment_factor;
+                            cur_pc += step;
+                            if (log.isDebugEnabled()) {
+                                log.debug("DW_CFA_advance_loc1: " + step + " to " + Long.toHexString(cur_pc));
+                            }
+                            break;
                         case 0x03: // DW_CFA_advance_loc2
                         case 0x04: // DW_CFA_advance_loc3
                             cur_pc += operands[0] * fde.cie.code_alignment_factor;
@@ -508,6 +529,9 @@ public class GnuEhFrameHeader {
                             loc.cfa_rule.type = DW_LOC_REGISTER;
                             loc.cfa_rule.values[0] = operands[0];
                             loc.cfa_rule.values[1] = operands[1];
+                            if (log.isDebugEnabled()) {
+                                log.debug("DW_CFA_def_cfa: r" + operands[0] + " ofs " + operands[1]);
+                            }
                             break;
                         case 0x0d: // DW_CFA_def_cfa_register
                             if (loc.cfa_rule.type != DW_LOC_REGISTER) {
@@ -521,6 +545,9 @@ public class GnuEhFrameHeader {
                                 throw new IllegalStateException("NOT DW_LOC_REGISTER");
                             } else {
                                 loc.cfa_rule.values[1] = operands[0];
+                                if (log.isDebugEnabled()) {
+                                    log.debug("DW_CFA_def_cfa_offset: " + operands[0]);
+                                }
                             }
                             break;
                         default:
@@ -530,7 +557,7 @@ public class GnuEhFrameHeader {
             }
         }
 
-        return loc == loc_pc ? loc : null;
+        return stepped ? loc : loc_init;
     }
 
     private static class FDE {

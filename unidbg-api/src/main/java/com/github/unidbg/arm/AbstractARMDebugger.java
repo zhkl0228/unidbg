@@ -10,6 +10,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.unix.struct.StdString;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
@@ -236,37 +237,51 @@ public abstract class AbstractARMDebugger implements Debugger {
         return ret;
     }
 
-    final void dumpMemory(Pointer pointer, int _length, String label, boolean nullTerminated) {
-        if (nullTerminated) {
-            long addr = 0;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            boolean foundTerminated = false;
-            while (true) {
-                byte[] data = pointer.getByteArray(addr, 0x10);
-                int length = data.length;
-                for (int i = 0; i < data.length; i++) {
-                    if (data[i] == 0) {
-                        length = i;
+    protected enum StringType {
+        nullTerminated,
+        std_string
+    }
+
+    final void dumpMemory(Pointer pointer, int _length, String label, StringType stringType) {
+        if (stringType != null) {
+            if (stringType == StringType.nullTerminated) {
+                long addr = 0;
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                boolean foundTerminated = false;
+                while (true) {
+                    byte[] data = pointer.getByteArray(addr, 0x10);
+                    int length = data.length;
+                    for (int i = 0; i < data.length; i++) {
+                        if (data[i] == 0) {
+                            length = i;
+                            break;
+                        }
+                    }
+                    baos.write(data, 0, length);
+                    addr += length;
+
+                    if (length < data.length) { // reach zero
+                        foundTerminated = true;
+                        break;
+                    }
+
+                    if (baos.size() > 0x10000) { // 64k
                         break;
                     }
                 }
-                baos.write(data, 0, length);
-                addr += length;
 
-                if (length < data.length) { // reach zero
-                    foundTerminated = true;
-                    break;
+                if (foundTerminated) {
+                    Inspector.inspect(baos.toByteArray(), baos.size() >= 1024 ? (label + ", hex=" + Hex.encodeHexString(baos.toByteArray())) : label);
+                } else {
+                    Inspector.inspect(pointer.getByteArray(0, _length), label + ", find NULL-terminated failed");
                 }
-
-                if (baos.size() > 0x10000) { // 64k
-                    break;
-                }
-            }
-
-            if (foundTerminated) {
-                Inspector.inspect(baos.toByteArray(), baos.size() >= 1024 ? (label + ", hex=" + Hex.encodeHexString(baos.toByteArray())) : label);
+            } else if (stringType == StringType.std_string) {
+                StdString string = StdString.createStdString(emulator, pointer);
+                long size = string.getDataSize();
+                byte[] data = string.getData();
+                Inspector.inspect(data, size >= 1024 ? (label + ", hex=" + Hex.encodeHexString(data)) : label);
             } else {
-                Inspector.inspect(pointer.getByteArray(0, _length), label + ", find NULL-terminated failed");
+                throw new UnsupportedOperationException("stringType=" + stringType);
             }
         } else {
             StringBuilder sb = new StringBuilder(label);

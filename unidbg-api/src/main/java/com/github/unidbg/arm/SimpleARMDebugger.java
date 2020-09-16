@@ -83,10 +83,13 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                             length = Integer.parseInt(str, radix);
                         }
                     } catch(NumberFormatException ignored) {}
-                    boolean nullTerminated = false;
+                    StringType stringType = null;
                     if (command.endsWith("s")) {
-                        nullTerminated = true;
+                        stringType = StringType.nullTerminated;
                         command = command.substring(0, command.length() - 1);
+                    } else if (command.endsWith("std")) {
+                        stringType = StringType.std_string;
+                        command = command.substring(0, command.length() - 3);
                     }
 
                     int reg = -1;
@@ -111,7 +114,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                         long addr = Long.parseLong(command.substring(3).trim(), 16);
                         Pointer pointer = UnicornPointer.pointer(emulator, addr);
                         if (pointer != null) {
-                            dumpMemory(pointer, length, pointer.toString(), nullTerminated);
+                            dumpMemory(pointer, length, pointer.toString(), stringType);
                         } else {
                             System.out.println(addr + " is null");
                         }
@@ -120,7 +123,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     if (reg != -1) {
                         Pointer pointer = UnicornPointer.register(emulator, reg);
                         if (pointer != null) {
-                            dumpMemory(pointer, length, name + "=" + pointer, nullTerminated);
+                            dumpMemory(pointer, length, name + "=" + pointer, stringType);
                         } else {
                             System.out.println(name + " is null");
                         }
@@ -138,7 +141,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     if (pointer != null && tokens.length > 1) {
                         byte[] data = Hex.decodeHex(tokens[1].toCharArray());
                         pointer.write(0, data, 0, data.length);
-                        dumpMemory(pointer, data.length, pointer.toString(), false);
+                        dumpMemory(pointer, data.length, pointer.toString(), null);
                     } else {
                         System.out.println(addr + " is null");
                     }
@@ -191,7 +194,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                             } else if (command.startsWith("wi")) {
                                 pointer.setInt(0, value);
                             }
-                            dumpMemory(pointer, 16, pointer.toString(), false);
+                            dumpMemory(pointer, 16, pointer.toString(), null);
                         } else {
                             System.out.println(addr + " is null");
                         }
