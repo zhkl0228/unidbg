@@ -1,52 +1,43 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>cn.banny</groupId>
-    <artifactId>emulator</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <groupId>com.github.zhkl0228</groupId>
+    <artifactId>unidbg-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>0.6.0</version>
+    <modules>
+        <module>unidbg-api</module>
+        <module>unidbg-android</module>
+        <module>unidbg-ios</module>
+    </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    <profiles>
-        <profile>
-            <id>osx64</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <dynamic.lib.location>prebuilt/osx64</dynamic.lib.location>
-            </properties>
-        </profile>
-        <profile>
-            <id>linux64</id>
-            <properties>
-                <dynamic.lib.location>prebuilt/linux64</dynamic.lib.location>
-            </properties>
-        </profile>
-        <profile>
-            <id>win32</id>
-            <properties>
-                <dynamic.lib.location>prebuilt/win32</dynamic.lib.location>
-            </properties>
-        </profile>
-        <profile>
-            <id>win64</id>
-            <properties>
-                <dynamic.lib.location>prebuilt/win64</dynamic.lib.location>
-            </properties>
-        </profile>
-    </profiles>
+    <name>unidbg</name>
+    <description>Allows you to emulate an Android ARM32 and/or ARM64 native library</description>
+    <url>https://github.com/zhkl0228/unidbg</url>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>zhkl0228</name>
+            <email>zhkl0228@gmail.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:zhkl0228/unidbg.git</connection>
+        <developerConnection>scm:git:git@github.com:zhkl0228/unidbg.git</developerConnection>
+        <url>git@github.com:zhkl0228/unidbg.git</url>
+    </scm>
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.12.4</version>
-                <configuration>
-                    <argLine>-Djava.library.path=${dynamic.lib.location} -Djna.library.path=${dynamic.lib.location}</argLine>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -72,6 +63,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.10.3</version>
+                <configuration>
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -80,49 +74,22 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
-        <dependency>
-            <groupId>org.unicorn-engine</groupId>
-            <artifactId>unicorn</artifactId>
-            <version>1.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>4.5.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.capstone-engine</groupId>
-            <artifactId>capstone</artifactId>
-            <version>3.0.5</version>
-        </dependency>
-        <dependency>
-            <groupId>keystone</groupId>
-            <artifactId>java-bindings</artifactId>
-            <version>0.9.1-2</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.banny</groupId>
-            <artifactId>utils</artifactId>
-            <version>0.0.8</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.4</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.1.3</version>
-        </dependency>
-        <dependency>
-            <groupId>net.dongliu</groupId>
-            <artifactId>apk-parser</artifactId>
-            <version>2.6.4</version>
-        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -135,32 +102,27 @@
             <version>3.8.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.26</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.26</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <id>nexus</id>
-            <url>http://p.gzmtx.cn:8081/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
     <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <name>Releases Repository</name>
-            <url>http://p.gzmtx.cn:8081/nexus/content/repositories/releases/</url>
-        </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <name>Snapshots Repository</name>
-            <url>http://p.gzmtx.cn:8081/nexus/content/repositories/snapshots/</url>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
+        <repository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
-
 </project>
