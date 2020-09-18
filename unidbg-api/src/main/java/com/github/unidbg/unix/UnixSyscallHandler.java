@@ -20,6 +20,8 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class UnixSyscallHandler<T extends NewFileIO> implements SyscallHandler<T> {
 
@@ -39,6 +41,12 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         this.verbose = verbose;
     }
 
+    private FileListener fileListener;
+
+    public void setFileListener(FileListener fileListener) {
+        this.fileListener = fileListener;
+    }
+
     @Override
     public boolean isVerbose() {
         return verbose;
@@ -55,7 +63,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return breaker != null ? breaker : emulator.attach();
     }
 
-    protected final int getMinFd() {
+    protected int getMinFd() {
         int last_fd = -1;
         for (int fd : fdMap.keySet()) {
             if (last_fd + 1 == fd) {
@@ -235,7 +243,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         }
         int read = file.read(emulator.getUnicorn(), buffer, count);
         if (verbose) {
-            System.out.println(String.format("Read %d bytes from '%s'", read, file));
+            System.out.printf("Read %d bytes from '%s'%n", read, file);
         }
         return read;
     }
@@ -245,7 +253,10 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (file != null) {
             file.close();
             if (verbose) {
-                System.out.println(String.format("File closed '%s' from %s", file, emulator.getContext().getLRPointer()));
+                System.out.printf("File closed '%s' from %s%n", file, emulator.getContext().getLRPointer());
+            }
+            if (fileListener != null) {
+                fileListener.onClose(emulator, file);
             }
             return 0;
         } else {
@@ -263,7 +274,10 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, resolveResult.io);
             if (verbose) {
-                System.out.println(String.format("File opened '%s' from %s", resolveResult.io, emulator.getContext().getLRPointer()));
+                System.out.printf("File opened '%s' from %s%n", resolveResult.io, emulator.getContext().getLRPointer());
+            }
+            if (fileListener != null) {
+                fileListener.onOpenSuccess(emulator, pathname, resolveResult.io);
             }
             return minFd;
         }
@@ -273,7 +287,10 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, driverIO);
             if (verbose) {
-                System.out.println(String.format("File opened '%s' from %s", driverIO, emulator.getContext().getLRPointer()));
+                System.out.printf("File opened '%s' from %s%n", driverIO, emulator.getContext().getLRPointer());
+            }
+            if (fileListener != null) {
+                fileListener.onOpenSuccess(emulator, pathname, driverIO);
             }
             return minFd;
         }
@@ -284,7 +301,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         }
         emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
         if (verbose) {
-            System.out.println(String.format("File opened failed '%s' from %s", pathname, emulator.getContext().getLRPointer()));
+            System.out.printf("File opened failed '%s' from %s%n", pathname, emulator.getContext().getLRPointer());
         }
         return -1;
     }
@@ -304,9 +321,19 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return file.fcntl(emulator, cmd, arg);
     }
 
+    private static final Pattern FD_PATTERN = Pattern.compile("/proc/self/fd/(\\d+)");
+
     protected int readlink(Emulator<?> emulator, String path, Pointer buf, int bufSize) {
         if (log.isDebugEnabled()) {
             log.debug("readlink path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
+        }
+        Matcher matcher = FD_PATTERN.matcher(path);
+        if (matcher.find()) {
+            int fd = Integer.parseInt(matcher.group(1));
+            FileIO io = fdMap.get(fd);
+            if (io != null) {
+                path = io.getPath();
+            }
         }
         buf.setString(0, path);
         return path.length() + 1;
@@ -453,7 +480,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         }
         int write = file.write(data);
         if (verbose) {
-            System.out.println(String.format("Write %d bytes to '%s'", write, file));
+            System.out.printf("Write %d bytes to '%s'%n", write, file);
         }
         return write;
     }

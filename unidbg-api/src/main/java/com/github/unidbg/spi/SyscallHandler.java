@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.debugger.Breaker;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
+import com.github.unidbg.unix.FileListener;
 import unicorn.InterruptHook;
 
 /**
@@ -24,6 +25,7 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook {
 
     void setVerbose(boolean verbose);
     boolean isVerbose();
+    void setFileListener(FileListener fileListener);
 
     void setBreaker(Breaker breaker);
 

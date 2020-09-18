@@ -267,4 +267,8 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
         }
     }
 
+    @Override
+    public String getPath() {
+        return path;
+    }
 }
