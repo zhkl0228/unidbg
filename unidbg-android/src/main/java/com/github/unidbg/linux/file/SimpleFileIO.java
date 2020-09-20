@@ -108,7 +108,7 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
                  *        the gap.
                  */
                 if (count < 0) {
-                    log.warn("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
+                    log.warn("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
                     return 0;
                 }
             }
@@ -117,7 +117,7 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
             int read = randomAccessFile.read(data);
             if (read <= 0) {
                 if (log.isDebugEnabled()) {
-                    log.debug("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
+                    log.debug("read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
                 }
                 return read;
             }
@@ -135,7 +135,7 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
                 throw new IllegalStateException("count=" + count + ", read=" + read);
             }
             if (log.isDebugEnabled() && buf.length < 0x3000) {
-                Inspector.inspect(buf, "read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length());
+                Inspector.inspect(buf, "read path=" + file + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
             }
             buffer.write(0, buf, 0, buf.length);
             return buf.length;

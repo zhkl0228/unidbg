@@ -4,10 +4,17 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.IO;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
+import java.util.Arrays;
+
 public class ByteArrayFileIO extends BaseAndroidFileIO {
+
+    private static final Log log = LogFactory.getLog(ByteArrayFileIO.class);
 
     private final byte[] bytes;
     private final String path;
@@ -41,7 +48,11 @@ public class ByteArrayFileIO extends BaseAndroidFileIO {
             count = remain;
         }
         buffer.write(0, bytes, pos, count);
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(Arrays.copyOfRange(bytes, pos, pos + count), "read path=" + path + ", fp=" + pos + ", _count=" + count + ", length=" + bytes.length + ", buffer=" + buffer));
+        }
         pos += count;
+
         return count;
     }
 

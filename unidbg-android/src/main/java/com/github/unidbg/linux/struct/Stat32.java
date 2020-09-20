@@ -21,11 +21,21 @@ public class Stat32 extends StatStructure {
     public TimeSpec st_ctim;
 
     @Override
-    public void setLastModification(long lastModified) {
-        for (TimeSpec spec : Arrays.asList(st_atim, st_mtim, st_ctim)) {
-            spec.tv_sec = (int) (lastModified / 1000L);
-            spec.tv_nsec = (int) ((lastModified % 1000) * 1000);
-        }
+    public void setSt_atim(long st_atim, long tv_nsec) {
+        this.st_atim.tv_sec = (int) (st_atim / 1000L);
+        this.st_atim.tv_nsec = (int) ((st_atim % 1000) * 1000000L + (tv_nsec % 1000000L));
+    }
+
+    @Override
+    public void setSt_mtim(long st_mtim, long tv_nsec) {
+        this.st_mtim.tv_sec = (int) (st_mtim / 1000L);
+        this.st_mtim.tv_nsec = (int) ((st_mtim % 1000) * 1000000L + tv_nsec % 1000000L);
+    }
+
+    @Override
+    public void setSt_ctim(long st_ctim, long tv_nsec) {
+        this.st_ctim.tv_sec = (int) (st_ctim / 1000L);
+        this.st_ctim.tv_nsec = (int) ((st_ctim % 1000) * 1000000L + tv_nsec % 1000000L);
     }
 
     @Override

@@ -104,7 +104,7 @@ public class AndroidModule extends VirtualModule<VM> {
         UnicornPointer assetManager = context.getPointerArg(1);
         DvmObject<?> obj = vm.getObject(assetManager.toIntPeer());
         if (log.isDebugEnabled()) {
-            log.debug("AAssetManager_fromJava env=" + env + ", assetManager=" + obj.getObjectType());
+            log.debug("AAssetManager_fromJava env=" + env + ", assetManager=" + obj.getObjectType() + ", LR=" + context.getLRPointer());
         }
         return assetManager.peer;
     }
@@ -115,7 +115,7 @@ public class AndroidModule extends VirtualModule<VM> {
         String filename = context.getPointerArg(1).getString(0);
         int mode = context.getIntArg(2);
         if (log.isDebugEnabled()) {
-            log.debug("AAssetManager_open amgr=" + amgr + ", filename=" + filename + ", mode=" + mode);
+            log.debug("AAssetManager_open amgr=" + amgr + ", filename=" + filename + ", mode=" + mode + ", LR=" + context.getLRPointer());
         }
         final int AASSET_MODE_STREAMING = 2;
         final int AASSET_MODE_BUFFER = 3;
@@ -139,7 +139,7 @@ public class AndroidModule extends VirtualModule<VM> {
         DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_close asset=" + asset + ", pointer=" + block.getPointer());
+            log.debug("AAsset_close asset=" + asset + ", pointer=" + block.getPointer() + ", LR=" + context.getLRPointer());
         }
         block.free(true);
         return 0;
@@ -152,7 +152,7 @@ public class AndroidModule extends VirtualModule<VM> {
         MemoryBlock block = (MemoryBlock) obj.getValue();
         UnicornPointer buffer = block.getPointer().share(8, 0);
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_getBuffer asset=" + asset + ", buffer=" + buffer);
+            log.debug("AAsset_getBuffer asset=" + asset + ", buffer=" + buffer + ", LR=" + context.getLRPointer());
         }
         return buffer.peer;
     }
@@ -164,7 +164,7 @@ public class AndroidModule extends VirtualModule<VM> {
         MemoryBlock block = (MemoryBlock) obj.getValue();
         int length = block.getPointer().getInt(4);
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_getLength asset=" + asset + ", length=" + length);
+            log.debug("AAsset_getLength asset=" + asset + ", length=" + length + ", LR=" + context.getLRPointer());
         }
         return length;
     }
@@ -181,7 +181,7 @@ public class AndroidModule extends VirtualModule<VM> {
         int length = pointer.getInt(4);
         Pointer data = pointer.share(8, 0);
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_read asset=" + asset + ", buf=" + buf + ", count=" + count);
+            log.debug("AAsset_read asset=" + asset + ", buf=" + buf + ", count=" + count + ", LR=" + context.getLRPointer());
         }
         int remaining = length - index;
         int read = Math.min(remaining, count);
