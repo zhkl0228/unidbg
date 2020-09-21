@@ -4,7 +4,7 @@ import java.io.File;
 
 public interface FileSystem<T extends NewFileIO> {
 
-    String DEFAULT_ROOT_FS = "target/rootfs/default";
+    String DEFAULT_ROOT_FS = "rootfs/default";
     String DEFAULT_WORK_DIR = "unidbg_work";
 
     File getRootDir();

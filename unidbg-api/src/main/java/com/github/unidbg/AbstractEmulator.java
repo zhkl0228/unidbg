@@ -23,6 +23,7 @@ import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,8 +70,12 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         super();
         this.family = family;
 
+        File targetDir = new File("target");
+        if (!targetDir.exists()) {
+            targetDir = FileUtils.getTempDirectory();
+        }
         if (rootDir == null) {
-            rootDir = new File(FileSystem.DEFAULT_ROOT_FS);
+            rootDir = new File(targetDir, FileSystem.DEFAULT_ROOT_FS);
         }
         if (rootDir.isFile()) {
             throw new IllegalArgumentException("rootDir must be directory: " + rootDir);
