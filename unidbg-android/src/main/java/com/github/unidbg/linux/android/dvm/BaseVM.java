@@ -4,22 +4,17 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.ElfLibraryFile;
 import com.github.unidbg.linux.android.dvm.api.Signature;
+import com.github.unidbg.linux.android.dvm.apk.Apk;
+import com.github.unidbg.linux.android.dvm.apk.ApkFactory;
 import com.github.unidbg.spi.LibraryFile;
-import net.dongliu.apk.parser.ApkFile;
-import net.dongliu.apk.parser.bean.ApkMeta;
-import net.dongliu.apk.parser.bean.ApkSigner;
-import net.dongliu.apk.parser.bean.CertificateMeta;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.nio.ByteBuffer;
-import java.security.cert.CertificateException;
 import java.util.*;
 
 public abstract class BaseVM implements VM, DvmClassFactory {
@@ -50,7 +45,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     private final Emulator<?> emulator;
-    private final File apkFile;
+    private final Apk apk;
 
     final Set<String> notFoundClassSet = new HashSet<>();
 
@@ -61,7 +56,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
     BaseVM(Emulator<?> emulator, File apkFile) {
         this.emulator = emulator;
-        this.apkFile = apkFile;
+        this.apk = apkFile == null ? null : ApkFactory.createApk(apkFile);
     }
 
     final Map<Integer, DvmObject<?>> globalObjectMap = new HashMap<>();
@@ -142,15 +137,17 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     private class ApkLibraryFile implements LibraryFile {
-        private final File apkFile;
+        private final Apk apk;
         private final String soName;
         private final byte[] soData;
         private final String packageName;
-        ApkLibraryFile(File apkFile, String soName, byte[] soData, String packageName) {
-            this.apkFile = apkFile;
+        private final String appDir;
+        ApkLibraryFile(Apk apk, String soName, byte[] soData, String packageName) {
+            this.apk = apk;
             this.soName = soName;
             this.soData = soData;
             this.packageName = packageName;
+            this.appDir = packageName == null ? "" : ('/' + packageName + "-1");
         }
         @Override
         public String getName() {
@@ -158,14 +155,12 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         }
         @Override
         public String getMapRegionName() {
-            return "/data/app-lib/" + packageName + "-1/" + soName;
+            return "/data/app-lib" + appDir + '/' + soName;
         }
         @Override
-        public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) throws IOException {
-            try (ApkFile apkFile = new ApkFile(this.apkFile)) {
-                byte[] libData = findLibrary(apkFile, soName);
-                return libData == null ? null : new ApkLibraryFile(this.apkFile, soName, libData, packageName);
-            }
+        public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
+            byte[] libData = loadLibraryData(apk, soName);
+            return libData == null ? null : new ApkLibraryFile(this.apk, soName, libData, packageName);
         }
         @Override
         public byte[] readToByteArray() {
@@ -177,24 +172,24 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         }
         @Override
         public String getPath() {
-            return "/data/app-lib/" + packageName + "-1";
+            return "/data/app-lib" + appDir;
         }
     }
 
-    abstract byte[] findLibrary(ApkFile apkFile, String soName) throws IOException;
+    abstract byte[] loadLibraryData(Apk apk, String soName);
 
     @Override
     public final DalvikModule loadLibrary(String libname, boolean forceCallInit) {
-        if (apkFile == null) {
+        if (apk == null) {
             throw new UnsupportedOperationException();
         }
 
         String soName = "lib" + libname + ".so";
-        ApkLibraryFile libraryFile = findLibrary(apkFile, soName);
+        ApkLibraryFile libraryFile = findLibrary(apk, soName);
         if (libraryFile == null) {
-            File split = new File(apkFile.getParentFile(), emulator.is64Bit() ? "config.arm64_v8a.apk" : "config.armeabi_v7a.apk");
+            File split = new File(apk.getParentFile(), emulator.is64Bit() ? "config.arm64_v8a.apk" : "config.armeabi_v7a.apk");
             if (split.canRead()) {
-                libraryFile = findLibrary(split, soName);
+                libraryFile = findLibrary(ApkFactory.createApk(split), soName);
             }
         }
         if (libraryFile == null) {
@@ -205,144 +200,42 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         return new DalvikModule(this, module);
     }
 
-    private ApkLibraryFile findLibrary(File file, String soName) {
-        try (ApkFile apkFile = new ApkFile(file)) {
-            byte[] libData = findLibrary(apkFile, soName);
-            if (libData == null) {
-                return null;
-            }
-
-            return new ApkLibraryFile(file, soName, libData, apkFile.getApkMeta().getPackageName());
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private Signature[] signatures;
-
-    Signature[] getSignatures() {
-        if (apkFile == null) {
+    private ApkLibraryFile findLibrary(Apk apk, String soName) {
+        byte[] libData = loadLibraryData(apk, soName);
+        if (libData == null) {
             return null;
         }
-        if (signatures != null) {
-            return signatures;
-        }
 
-        ApkFile apkFile = null;
-        try {
-            apkFile = new ApkFile(this.apkFile);
-            List<Signature> signatures = new ArrayList<>(10);
-            for (ApkSigner signer : apkFile.getApkSingers()) {
-                for (CertificateMeta meta : signer.getCertificateMetas()) {
-                    signatures.add(new Signature(this, meta));
-                }
-            }
-            this.signatures = signatures.toArray(new Signature[0]);
-            return this.signatures;
-        } catch (IOException | CertificateException e) {
-            throw new IllegalStateException(e);
-        } finally {
-            IOUtils.closeQuietly(apkFile);
-        }
+        return new ApkLibraryFile(apk, soName, libData, apk.getPackageName());
     }
 
-    private ApkMeta apkMeta;
+    Signature[] getSignatures() {
+        return apk == null ? null : apk.getSignatures(this);
+    }
 
     @Override
     public String getPackageName() {
-        if (apkFile == null) {
-            return null;
-        }
-        if (apkMeta != null) {
-            return apkMeta.getPackageName();
-        }
-
-        ApkFile apkFile = null;
-        try {
-            apkFile = new ApkFile(this.apkFile);
-            apkMeta = apkFile.getApkMeta();
-            return apkMeta.getPackageName();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        } finally {
-            IOUtils.closeQuietly(apkFile);
-        }
+        return apk == null ? null : apk.getPackageName();
     }
 
     @Override
     public String getManifestXml() {
-        if (apkFile == null) {
-            return null;
-        }
-
-        ApkFile apkFile = null;
-        try {
-            apkFile = new ApkFile(this.apkFile);
-            return apkFile.getManifestXml();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        } finally {
-            IOUtils.closeQuietly(apkFile);
-        }
+        return apk == null ? null : apk.getManifestXml();
     }
 
     @Override
     public byte[] openAsset(String fileName) {
-        if (apkFile == null) {
-            return null;
-        }
-
-        ApkFile apkFile = null;
-        try {
-            apkFile = new ApkFile(this.apkFile);
-            return apkFile.getFileData("assets/" + fileName);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        } finally {
-            IOUtils.closeQuietly(apkFile);
-        }
+        return apk == null ? null : apk.openAsset(fileName);
     }
 
     @Override
     public final String getVersionName() {
-        if (apkFile == null) {
-            return null;
-        }
-        if (apkMeta != null) {
-            return apkMeta.getVersionName();
-        }
-
-        ApkFile apkFile = null;
-        try {
-            apkFile = new ApkFile(this.apkFile);
-            apkMeta = apkFile.getApkMeta();
-            return apkMeta.getVersionName();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        } finally {
-            IOUtils.closeQuietly(apkFile);
-        }
+        return apk == null ? null : apk.getVersionName();
     }
 
     @Override
     public long getVersionCode() {
-        if (apkFile == null) {
-            return 0;
-        }
-        if (apkMeta != null) {
-            return apkMeta.getVersionCode();
-        }
-
-        ApkFile apkFile = null;
-        try {
-            apkFile = new ApkFile(this.apkFile);
-            apkMeta = apkFile.getApkMeta();
-            return apkMeta.getVersionCode();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        } finally {
-            IOUtils.closeQuietly(apkFile);
-        }
+        return apk == null ? 0 : apk.getVersionCode();
     }
 
     @Override
