@@ -12,6 +12,7 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
+import java.io.DataOutput;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -32,6 +33,11 @@ public class ARMSvcMemory implements SvcMemory {
         this.size = size;
 
         unicorn.mem_map(base, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+    }
+
+    @Override
+    public void serialize(DataOutput out) {
+        throw new UnsupportedOperationException();
     }
 
     private final long baseAddr;

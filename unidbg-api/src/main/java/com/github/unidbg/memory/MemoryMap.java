@@ -1,6 +1,11 @@
 package com.github.unidbg.memory;
 
-public class MemoryMap {
+import com.github.unidbg.serialize.Serializable;
+
+import java.io.DataOutput;
+import java.io.IOException;
+
+public class MemoryMap implements Serializable {
 
     public final long base;
     public final long size;
@@ -10,6 +15,13 @@ public class MemoryMap {
         this.base = base;
         this.size = size;
         this.prot = prot;
+    }
+
+    @Override
+    public void serialize(DataOutput out) throws IOException {
+        out.writeLong(base);
+        out.writeLong(size);
+        out.writeInt(prot);
     }
 
     @Override

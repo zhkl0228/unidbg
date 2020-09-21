@@ -100,7 +100,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     public boolean mkdir(String path) {
         File dir = new File(rootDir, path);
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.println(String.format("mkdir '%s'", path));
+            System.out.printf("mkdir '%s'%n", path);
         }
 
         if (dir.exists()) {
@@ -116,7 +116,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         FileUtils.deleteQuietly(dir);
 
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.println(String.format("rmdir '%s'", path));
+            System.out.printf("rmdir '%s'%n", path);
         }
     }
 
@@ -134,7 +134,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             log.debug("unlink path=" + path + ", file=" + file);
         }
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.println(String.format("unlink '%s'", path));
+            System.out.printf("unlink '%s'%n", path);
         }
     }
 

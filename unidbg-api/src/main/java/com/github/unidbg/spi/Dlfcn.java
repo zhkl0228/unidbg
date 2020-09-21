@@ -7,10 +7,13 @@ import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.serialize.Serializable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public abstract class Dlfcn implements HookListener {
+import java.io.DataOutput;
+
+public abstract class Dlfcn implements HookListener, Serializable {
 
     private static final Log log = LogFactory.getLog(Dlfcn.class);
 
@@ -37,4 +40,8 @@ public abstract class Dlfcn implements HookListener {
         return symbol.getAddress();
     }
 
+    @Override
+    public void serialize(DataOutput out) {
+        throw new UnsupportedOperationException();
+    }
 }

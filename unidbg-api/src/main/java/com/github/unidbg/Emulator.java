@@ -10,6 +10,7 @@ import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.serialize.Serializable;
 import com.github.unidbg.spi.*;
 import com.github.unidbg.unwind.Unwinder;
 import unicorn.Unicorn;
@@ -24,7 +25,7 @@ import java.net.URL;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, ValuePair {
+public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, ValuePair, Serializable {
 
     int getPointerSize();
 

@@ -490,4 +490,13 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         throw new UnsupportedOperationException("searchClass keywords=" + keywords);
     }
 
+    @Override
+    public final void serialize(DataOutput out) throws IOException {
+        out.writeUTF(getClass().getName());
+        getMemory().serialize(out);
+        getSvcMemory().serialize(out);
+        getSyscallHandler().serialize(out);
+        getDlfcn().serialize(out);
+    }
+
 }

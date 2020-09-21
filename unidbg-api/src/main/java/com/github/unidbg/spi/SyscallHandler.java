@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.debugger.Breaker;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
+import com.github.unidbg.serialize.Serializable;
 import com.github.unidbg.unix.FileListener;
 import unicorn.InterruptHook;
 
@@ -12,7 +13,7 @@ import unicorn.InterruptHook;
  * Created by zhkl0228 on 2017/5/9.
  */
 
-public interface SyscallHandler<T extends NewFileIO> extends InterruptHook {
+public interface SyscallHandler<T extends NewFileIO> extends InterruptHook, Serializable {
 
     int DARWIN_SWI_SYSCALL = 0x80;
 

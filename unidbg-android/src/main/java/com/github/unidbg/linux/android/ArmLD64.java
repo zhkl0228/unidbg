@@ -28,7 +28,7 @@ public class ArmLD64 extends Dlfcn {
 
     private static final Log log = LogFactory.getLog(ArmLD64.class);
 
-    private Unicorn unicorn;
+    private final Unicorn unicorn;
 
     ArmLD64(Unicorn unicorn, SvcMemory svcMemory) {
         super(svcMemory);
@@ -38,7 +38,9 @@ public class ArmLD64 extends Dlfcn {
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, long old) {
         if ("libdl.so".equals(libraryName)) {
-            log.debug("link " + symbolName + ", old=0x" + Long.toHexString(old));
+            if (log.isDebugEnabled()) {
+                log.debug("link " + symbolName + ", old=0x" + Long.toHexString(old));
+            }
             switch (symbolName) {
                 case "dl_iterate_phdr":
                     return svcMemory.registerSvc(new Arm64Svc() {

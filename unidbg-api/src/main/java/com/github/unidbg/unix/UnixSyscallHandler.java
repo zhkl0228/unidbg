@@ -18,6 +18,7 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -507,6 +508,11 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
      */
     protected boolean handleUnknownSyscall(Emulator<?> emulator, int NR) {
         return false;
+    }
+
+    @Override
+    public void serialize(DataOutput out) {
+        throw new UnsupportedOperationException();
     }
 
 }

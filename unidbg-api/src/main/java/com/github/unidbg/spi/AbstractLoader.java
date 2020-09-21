@@ -19,6 +19,7 @@ import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
 
+import java.io.DataOutput;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -378,4 +379,23 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     public Module loadVirtualModule(String name, Map<String, UnicornPointer> symbols) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void serialize(DataOutput out) throws IOException {
+        out.writeLong(sp);
+        out.writeLong(mmapBaseAddress);
+        out.writeLong(stackBase);
+        out.writeLong(stackSize);
+        out.writeInt(memoryMap.size());
+        for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
+            MemoryMap map = entry.getValue();
+            out.writeLong(entry.getKey());
+            map.serialize(out);
+            UnicornPointer pointer = UnicornPointer.pointer(emulator, map.base);
+            assert pointer != null;
+            byte[] data = pointer.getByteArray(0, (int) map.size);
+            out.write(data);
+        }
+    }
+
 }
