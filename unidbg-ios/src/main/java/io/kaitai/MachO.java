@@ -136,6 +136,7 @@ public class MachO extends KaitaiStruct {
         LINKER_OPTIMIZATION_HINT(0x2eL),
         VERSION_MIN_TVOS(0x2fL),
         VERSION_MIN_WATCHOS(0x30L),
+        BUILD_VERSION(0x32L),
         REQ_DYLD(0x80000000L),
         LOAD_WEAK_DYLIB(0x80000018L),
         RPATH(0x8000001cL),
@@ -147,7 +148,7 @@ public class MachO extends KaitaiStruct {
         private final long id;
         LoadCommandType(long id) { this.id = id; }
         public long id() { return id; }
-        private static final Map<Long, LoadCommandType> byId = new HashMap<Long, LoadCommandType>(50);
+        private static final Map<Long, LoadCommandType> byId = new HashMap<Long, LoadCommandType>(51);
         static {
             for (LoadCommandType e : LoadCommandType.values())
                 byId.put(e.id(), e);
@@ -1377,6 +1378,68 @@ public class MachO extends KaitaiStruct {
         public KaitaiStruct _parent() { return _parent; }
         public byte[] _raw_body() { return _raw_body; }
     }
+    public static class BuildVersionCommand extends KaitaiStruct {
+        public static BuildVersionCommand fromFile(String fileName) throws IOException {
+            return new BuildVersionCommand(new ByteBufferKaitaiStream(fileName));
+        }
+
+        public enum BuildPlatform {
+            MACOS(0x1L),
+            IOS(0x2L),
+            TVOS(0x3L),
+            WATCHOS(0x4L),
+            BRIDGEOS(0x5L);
+
+            private final long id;
+            BuildPlatform(long id) { this.id = id; }
+            public long id() { return id; }
+            private static final Map<Long, BuildPlatform> byId = new HashMap<Long, BuildPlatform>(5);
+            static {
+                for (BuildPlatform e : BuildPlatform.values())
+                    byId.put(e.id(), e);
+            }
+            public static BuildPlatform byId(long id) { return byId.get(id); }
+        }
+
+        public BuildVersionCommand(KaitaiStream _io) {
+            this(_io, null, null);
+        }
+
+        public BuildVersionCommand(KaitaiStream _io, MachO.LoadCommand _parent) {
+            this(_io, _parent, null);
+        }
+
+        public BuildVersionCommand(KaitaiStream _io, MachO.LoadCommand _parent, MachO _root) {
+            super(_io);
+            this._parent = _parent;
+            this._root = _root;
+            _read();
+        }
+        private void _read() {
+            this.platform = BuildPlatform.byId(this._io.readU4le());
+            this.minos = new Version(this._io, this, _root);
+            this.sdk = new Version(this._io, this, _root);
+            this.ntools = this._io.readU4le();
+            buildToolVersions = new ArrayList<BuildToolVersion>(((Number) (ntools())).intValue());
+            for (int i = 0; i < ntools(); i++) {
+                this.buildToolVersions.add(new BuildToolVersion(this._io, this, _root));
+            }
+        }
+        private BuildPlatform platform;
+        private Version minos;
+        private Version sdk;
+        private long ntools;
+        private ArrayList<BuildToolVersion> buildToolVersions;
+        private MachO _root;
+        private MachO.LoadCommand _parent;
+        public BuildPlatform platform() { return platform; }
+        public Version minos() { return minos; }
+        public Version sdk() { return sdk; }
+        public long ntools() { return ntools; }
+        public ArrayList<BuildToolVersion> buildToolVersions() { return buildToolVersions; }
+        public MachO _root() { return _root; }
+        public MachO.LoadCommand _parent() { return _parent; }
+    }
     public static class RoutinesCommand extends KaitaiStruct {
         public static RoutinesCommand fromFile(String fileName) throws IOException {
             return new RoutinesCommand(new ByteBufferKaitaiStream(fileName));
@@ -1803,6 +1866,54 @@ public class MachO extends KaitaiStruct {
         public byte[] reserved() { return reserved; }
         public MachO _root() { return _root; }
         public MachO.LoadCommand _parent() { return _parent; }
+    }
+    public static class BuildToolVersion extends KaitaiStruct {
+        public static BuildToolVersion fromFile(String fileName) throws IOException {
+            return new BuildToolVersion(new ByteBufferKaitaiStream(fileName));
+        }
+
+        public enum BuildTool {
+            CLANG(0x1L),
+            SWIFT(0x2L),
+            LD(0x3L);
+
+            private final long id;
+            BuildTool(long id) { this.id = id; }
+            public long id() { return id; }
+            private static final Map<Long, BuildTool> byId = new HashMap<Long, BuildTool>(3);
+            static {
+                for (BuildTool e : BuildTool.values())
+                    byId.put(e.id(), e);
+            }
+            public static BuildTool byId(long id) { return byId.get(id); }
+        }
+
+        public BuildToolVersion(KaitaiStream _io) {
+            this(_io, null, null);
+        }
+
+        public BuildToolVersion(KaitaiStream _io, MachO.BuildVersionCommand _parent) {
+            this(_io, _parent, null);
+        }
+
+        public BuildToolVersion(KaitaiStream _io, MachO.BuildVersionCommand _parent, MachO _root) {
+            super(_io);
+            this._parent = _parent;
+            this._root = _root;
+            _read();
+        }
+        private void _read() {
+            this.tool = BuildTool.byId(this._io.readU4le());
+            this.version = new Version(this._io, this, _root);
+        }
+        private BuildTool tool;
+        private Version version;
+        private MachO _root;
+        private MachO.BuildVersionCommand _parent;
+        public BuildTool tool() { return tool; }
+        public Version version() { return version; }
+        public MachO _root() { return _root; }
+        public MachO.BuildVersionCommand _parent() { return _parent; }
     }
     public static class LinkerOptionCommand extends KaitaiStruct {
         public static LinkerOptionCommand fromFile(String fileName) throws IOException {
@@ -2763,11 +2874,11 @@ public class MachO extends KaitaiStruct {
             this(_io, null, null);
         }
 
-        public Version(KaitaiStream _io, MachO.VersionMinCommand _parent) {
+        public Version(KaitaiStream _io, KaitaiStruct _parent) {
             this(_io, _parent, null);
         }
 
-        public Version(KaitaiStream _io, MachO.VersionMinCommand _parent, MachO _root) {
+        public Version(KaitaiStream _io, KaitaiStruct _parent, MachO _root) {
             super(_io);
             this._parent = _parent;
             this._root = _root;
@@ -2784,13 +2895,13 @@ public class MachO extends KaitaiStruct {
         private int major;
         private int release;
         private MachO _root;
-        private MachO.VersionMinCommand _parent;
+        private KaitaiStruct _parent;
         public int p1() { return p1; }
         public int minor() { return minor; }
         public int major() { return major; }
         public int release() { return release; }
         public MachO _root() { return _root; }
-        public MachO.VersionMinCommand _parent() { return _parent; }
+        public KaitaiStruct _parent() { return _parent; }
     }
     public static class EncryptionInfoCommand extends KaitaiStruct {
         public static EncryptionInfoCommand fromFile(String fileName) throws IOException {
@@ -3648,6 +3759,12 @@ public class MachO extends KaitaiStruct {
                         this._raw_body = this._io.readBytes((size() - 8));
                         KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
                         this.body = new DylibCommand(_io__raw_body, this, _root);
+                        break;
+                    }
+                    case BUILD_VERSION: {
+                        this._raw_body = this._io.readBytes((size() - 8));
+                        KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
+                        this.body = new BuildVersionCommand(_io__raw_body, this, _root);
                         break;
                     }
                     case SOURCE_VERSION: {

@@ -116,6 +116,7 @@ enums:
     0x2E      : linker_optimization_hint
     0x2F      : version_min_tvos
     0x30      : version_min_watchos
+    0x32      : build_version
 types:
   macho_flags:
     params:
@@ -268,6 +269,7 @@ types:
             'load_command_type::version_min_iphoneos'    : version_min_command
             'load_command_type::version_min_tvos'        : version_min_command
             'load_command_type::version_min_watchos'     : version_min_command
+            'load_command_type::build_version'           : build_version_command
             'load_command_type::source_version'          : source_version_command
             'load_command_type::main'                    : entry_point_command
             'load_command_type::load_dylib'              : dylib_command
@@ -983,6 +985,40 @@ types:
       - id: sdk
         type: version
     -webide-representation: 'v:{version}, r:{reserved}'
+  build_tool_version:
+    seq:
+      - id: tool
+        type: u4
+        enum: build_tool
+      - id: version
+        type: version
+    enums:
+      build_tool:
+        1: clang
+        2: swift
+        3: ld
+  build_version_command:
+    seq:
+      - id: platform
+        type: u4
+        enum: build_platform
+      - id: minos
+        type: version
+      - id: sdk
+        type: version
+      - id: ntools
+        type: u4
+      - id: build_tool_versions
+        type: build_tool_version
+        repeat: expr
+        repeat-expr: ntools
+    enums:
+      build_platform:
+        1: macos
+        2: ios
+        3: tvos
+        4: watchos
+        5: bridgeos
   source_version_command:
     seq:
       - id: version

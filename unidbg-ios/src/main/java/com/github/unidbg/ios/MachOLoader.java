@@ -1,6 +1,7 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.*;
+import com.github.unidbg.Module;
 import com.github.unidbg.arm.*;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
@@ -327,6 +328,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         String dylibPath = libraryFile.getPath();
 
         for (MachO.LoadCommand command : machO.loadCommands()) {
+            if (command == null) {
+                throw new NullPointerException();
+            }
+
             switch (command.type()) {
                 case DYLD_INFO:
                 case DYLD_INFO_ONLY:
@@ -446,6 +451,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ROUTINES:
                 case ROUTINES_64:
                 case LOAD_WEAK_DYLIB:
+                case BUILD_VERSION:
                     break;
                 case SUB_CLIENT:
                     MachO.SubCommand subCommand = (MachO.SubCommand) command.body();
