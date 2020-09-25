@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO> {
 
@@ -45,9 +47,20 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         return resolveLibrary(libraryName, version, excludeLibs);
     }
 
+    private static final Pattern SYSTEM_LIBRARY_FRAMEWORK_PATTERN = Pattern.compile("/System/Library/Frameworks/(\\w+).framework/Versions/[A-C]/(\\w+)");
+
     static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs) {
         if (!excludeLibs.isEmpty() && excludeLibs.contains(FilenameUtils.getName(libraryName))) {
             return null;
+        }
+
+        Matcher systemLibraryFrameworkMatcher = SYSTEM_LIBRARY_FRAMEWORK_PATTERN.matcher(libraryName);
+        if (systemLibraryFrameworkMatcher.find()) {
+            String f1 = systemLibraryFrameworkMatcher.group(1);
+            String f2 = systemLibraryFrameworkMatcher.group(2);
+            if (f1.equals(f2)) {
+                libraryName = "/System/Library/Frameworks/" + f1 + ".framework/" + f1;
+            }
         }
 
         String name = "/ios/" + version + libraryName.replace('+', 'p');

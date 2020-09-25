@@ -7,4 +7,4 @@ xcrun -sdk iphoneos clang -m64 -arch arm64 -o a12z_ios a12z.m -framework Foundat
 mv a12z_ios a12z_ios64 && \
 lipo -create a12z_ios32 a12z_ios64 -output ../../example_binaries/a12z_ios && \
 rm a12z_ios32 a12z_ios64
-xcrun -sdk macosx clang -m64 -arch arm64 -o ../../example_binaries/a12z_osx a12z.m
+xcrun -sdk macosx clang -m64 -arch arm64 -o ../../example_binaries/a12z_osx a12z.m -framework Foundation
