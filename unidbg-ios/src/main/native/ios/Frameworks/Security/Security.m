@@ -13,7 +13,7 @@ void init() {
   CFURLRef fileURL = CFURLCreateWithFileSystemPathRelativeToBase(kCFAllocatorDefault, path, kCFURLPOSIXPathStyle, false, home);
   CFDataRef resourceData = NULL;
   SInt32 errorCode;
-  Boolean success = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, fileURL, &resourceData, NULL, NULL, &errorCode);
+  Boolean success = CFURLResourceIsReachable(fileURL, NULL) && CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, fileURL, &resourceData, NULL, NULL, &errorCode);
   if (success) {
     CFErrorRef error = NULL;
     plist = (CFMutableDictionaryRef) CFPropertyListCreateWithData(kCFAllocatorDefault, resourceData, kCFPropertyListMutableContainers, NULL, &error);

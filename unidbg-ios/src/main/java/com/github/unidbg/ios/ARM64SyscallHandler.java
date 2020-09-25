@@ -942,14 +942,15 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (result != null && result.isSuccess()) {
             if (verbose) {
-                System.out.println(String.format("File stat '%s' from %s", pathname, emulator.getContext().getLRPointer()));
+                System.out.printf("File stat '%s' from %s%n", pathname, emulator.getContext().getLRPointer());
             }
             return result.io.fstat(emulator, new Stat64(statbuf));
         }
 
-        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
+        int errno = result != null ? result.errno : UnixEmulator.ENOENT;
+        emulator.getMemory().setErrno(errno);
         if (verbose) {
-            System.out.println(String.format("File stat failed '%s' from %s", pathname, emulator.getContext().getLRPointer()));
+            System.out.printf("File stat '%s' errno is %d from %s%n", pathname, errno, emulator.getContext().getLRPointer());
         }
         return -1;
     }
@@ -2778,9 +2779,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
     private int connect(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        int sockfd = context.getIntArg(0);
-        Pointer addr = context.getPointerArg(1);
-        int addrlen = context.getIntArg(2);
+        int sockfd = context.getIntArg(offset);
+        Pointer addr = context.getPointerArg(offset + 1);
+        int addrlen = context.getIntArg(offset + 2);
         return connect(emulator, sockfd, addr, addrlen);
     }
 

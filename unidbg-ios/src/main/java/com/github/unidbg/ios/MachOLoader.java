@@ -17,8 +17,8 @@ import com.github.unidbg.ios.struct.kernel.Pthread64;
 import com.github.unidbg.ios.struct.kernel.VmRemapRequest;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo32;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo64;
-import com.github.unidbg.memory.*;
 import com.github.unidbg.memory.MemRegion;
+import com.github.unidbg.memory.*;
 import com.github.unidbg.pointer.UnicornPointer;
 import com.github.unidbg.pointer.UnicornStructure;
 import com.github.unidbg.spi.AbstractLoader;
@@ -222,7 +222,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         notifySingle(Dyld.dyld_image_state_dependents_initialized, module);
 
         if (callInitFunction || forceCallInit) {
-            for (MachOModule m : modules.values()) {
+            MachOModule[] modules = this.modules.values().toArray(new MachOModule[0]);
+            for (MachOModule m : modules) {
                 if (isPayloadModule(m)) {
                     continue;
                 }
