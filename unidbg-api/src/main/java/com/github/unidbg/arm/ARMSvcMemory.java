@@ -23,7 +23,7 @@ public class ARMSvcMemory implements SvcMemory {
     private final Emulator<?> emulator;
     private UnicornPointer base;
 
-    public ARMSvcMemory(Unicorn unicorn, long base, int size, Emulator<?> emulator) {
+    public ARMSvcMemory(long base, int size, Emulator<?> emulator) {
         this.emulator = emulator;
         this.base = UnicornPointer.pointer(emulator, base);
         assert this.base != null;
@@ -32,6 +32,7 @@ public class ARMSvcMemory implements SvcMemory {
         this.baseAddr = base;
         this.size = size;
 
+        Unicorn unicorn = emulator.getUnicorn();
         unicorn.mem_map(base, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
     }
 

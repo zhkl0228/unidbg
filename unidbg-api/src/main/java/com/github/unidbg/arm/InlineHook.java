@@ -138,6 +138,10 @@ public class InlineHook {
         }
     }
 
+    /**
+     * Use HookZz.instrument
+     */
+    @Deprecated
     public static void simpleThumbIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {
@@ -162,6 +166,10 @@ public class InlineHook {
         }
     }
 
+    /**
+     * Use HookZz.instrument
+     */
+    @Deprecated
     public static void simpleArmIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
         Pointer pointer = UnicornPointer.pointer(emulator, address);
         if (pointer == null) {

@@ -23,6 +23,7 @@ import java.util.List;
 /**
  * Use HookZz
  */
+@Deprecated
 public class ThumbIntercept extends ThumbSvc {
 
     private final Pointer pointer;

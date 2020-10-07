@@ -97,7 +97,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         this.pid = Integer.parseInt(pid);
 
         setContextEmulator(this);
-        this.svcMemory = new ARMSvcMemory(unicorn, svcBase, svcSize, this);
+        this.svcMemory = new ARMSvcMemory(svcBase, svcSize, this);
     }
 
     @Override

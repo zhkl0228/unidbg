@@ -22,6 +22,7 @@ import java.util.List;
 /**
  * Use HookZz
  */
+@Deprecated
 public class ArmIntercept extends ArmSvc {
 
     private final Pointer pointer;
