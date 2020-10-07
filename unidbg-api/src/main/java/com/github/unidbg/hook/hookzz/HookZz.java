@@ -9,7 +9,7 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -100,7 +100,7 @@ public final class HookZz extends BaseHook implements IHookZz {
     public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replaceCall = createReplacePointer(callback, originCall, enablePostCall);
-        int ret = zzReplace.call(emulator, UnicornPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
+        int ret = zzReplace.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -147,7 +147,7 @@ public final class HookZz extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        int ret = zzWrap.call(emulator, UnicornPointer.pointer(emulator, functionAddress), preCall, postCall)[0].intValue();
+        int ret = zzWrap.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), preCall, postCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -177,7 +177,7 @@ public final class HookZz extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        int ret = zzDynamicBinaryInstrumentation.call(emulator, UnicornPointer.pointer(emulator, functionAddress), dbiCall)[0].intValue();
+        int ret = zzDynamicBinaryInstrumentation.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), dbiCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }

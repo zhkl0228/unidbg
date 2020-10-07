@@ -3,7 +3,7 @@ package com.github.unidbg.linux;
 import com.github.unidbg.*;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
@@ -22,20 +22,20 @@ public class LinuxModule extends Module {
 
     private static final Log log = LogFactory.getLog(LinuxModule.class);
 
-    static LinuxModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator<?> emulator) {
+    static LinuxModule createVirtualModule(String name, final Map<String, UnidbgPointer> symbols, Emulator<?> emulator) {
         if (symbols.isEmpty()) {
             throw new IllegalArgumentException("symbols is empty");
         }
 
-        List<UnicornPointer> list = new ArrayList<>(symbols.values());
-        Collections.sort(list, new Comparator<UnicornPointer>() {
+        List<UnidbgPointer> list = new ArrayList<>(symbols.values());
+        Collections.sort(list, new Comparator<UnidbgPointer>() {
             @Override
-            public int compare(UnicornPointer o1, UnicornPointer o2) {
+            public int compare(UnidbgPointer o1, UnidbgPointer o2) {
                 return (int) (o1.peer - o2.peer);
             }
         });
-        UnicornPointer first = list.get(0);
-        UnicornPointer last = list.get(list.size() - 1);
+        UnidbgPointer first = list.get(0);
+        UnidbgPointer last = list.get(list.size() - 1);
         Alignment alignment = emulator.align(first.peer, last.peer - first.peer);
         final long base = alignment.address;
         final long size = alignment.size;
@@ -49,7 +49,7 @@ public class LinuxModule extends Module {
                 Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(), null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
-                UnicornPointer pointer = symbols.get(name);
+                UnidbgPointer pointer = symbols.get(name);
                 if (pointer != null) {
                     return new VirtualSymbol(name, this, pointer.peer);
                 } else {
@@ -65,7 +65,7 @@ public class LinuxModule extends Module {
                 return true;
             }
         };
-        for (Map.Entry<String, UnicornPointer> entry : symbols.entrySet()) {
+        for (Map.Entry<String, UnidbgPointer> entry : symbols.entrySet()) {
             module.registerSymbol(entry.getKey(), entry.getValue().peer);
         }
         return module;
@@ -149,7 +149,7 @@ public class LinuxModule extends Module {
         }
 
         Memory memory = emulator.getMemory();
-        final UnicornPointer stack = memory.allocateStack(0);
+        final UnidbgPointer stack = memory.allocateStack(0);
 
         int argc = 0;
         List<Pointer> argv = new ArrayList<>();
@@ -186,12 +186,12 @@ public class LinuxModule extends Module {
             pointer.setPointer(0, arg);
         }
 
-        UnicornPointer kernelArgumentBlock = memory.allocateStack(emulator.getPointerSize());
+        UnidbgPointer kernelArgumentBlock = memory.allocateStack(emulator.getPointerSize());
         assert kernelArgumentBlock != null;
         kernelArgumentBlock.setInt(0, argc);
 
         if (log.isDebugEnabled()) {
-            UnicornPointer sp = memory.allocateStack(0);
+            UnidbgPointer sp = memory.allocateStack(0);
             byte[] data = sp.getByteArray(0, (int) (stack.peer - sp.peer));
             Inspector.inspect(data, "kernelArgumentBlock=" + kernelArgumentBlock + ", envPointer=" + envPointer + ", auxvPointer=" + auxvPointer);
         }

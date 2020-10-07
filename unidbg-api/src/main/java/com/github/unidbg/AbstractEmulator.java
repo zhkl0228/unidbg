@@ -2,6 +2,10 @@ package com.github.unidbg;
 
 import com.github.unidbg.arm.ARMSvcMemory;
 import com.github.unidbg.arm.Arguments;
+import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.UnicornBackend;
+import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebugServer;
 import com.github.unidbg.debugger.Debugger;
@@ -18,7 +22,7 @@ import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryBlockImpl;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.MemoryWriteListener;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
@@ -27,7 +31,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.*;
+import unicorn.Arm64Const;
+import unicorn.ArmConst;
+import unicorn.Unicorn;
+import unicorn.UnicornException;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -45,7 +52,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     public static final long DEFAULT_TIMEOUT = TimeUnit.HOURS.toMicros(1);
 
-    protected final Unicorn unicorn;
+    protected final Backend backend;
 
     private final int pid;
 
@@ -84,9 +91,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new IllegalStateException("mkdirs failed: " + rootDir);
         }
         this.fileSystem = createFileSystem(rootDir);
-        this.unicorn = new Unicorn(unicorn_arch, unicorn_mode);
+        this.backend = new UnicornBackend(new Unicorn(unicorn_arch, unicorn_mode));
         this.processName = processName == null ? "unidbg" : processName;
-        this.registerContext = createRegisterContext(unicorn);
+        this.registerContext = createRegisterContext(backend);
 
         this.readHook = new TraceMemoryHook(true);
         this.writeHook = new TraceMemoryHook(false);
@@ -126,7 +133,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         return getPointerSize() == 4;
     }
 
-    protected abstract RegisterContext createRegisterContext(Unicorn unicorn);
+    protected abstract RegisterContext createRegisterContext(Backend backend);
 
     @SuppressWarnings("unchecked")
     @Override
@@ -150,7 +157,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
         long spBackup = getMemory().getStackPoint();
         MemoryBlock block = MemoryBlockImpl.allocExecutable(getMemory(), shellCode.length);
-        UnicornPointer pointer = block.getPointer();
+        UnidbgPointer pointer = block.getPointer();
         pointer.write(0, shellCode, 0, shellCode.length);
         try {
             emulate(pointer.peer, pointer.peer + shellCode.length, 0, false);
@@ -191,7 +198,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new UnsupportedOperationException();
         }
 
-        this.unicorn.debugger_add(debugger, 1, 0, this);
+        this.backend.debugger_add(debugger, 1, 0, this);
         this.timeout = 0;
         return debugger;
     }
@@ -319,11 +326,11 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
      */
     protected final Number emulate(long begin, long until, long timeout, boolean entry) {
         if (running) {
-            unicorn.emu_stop();
+            backend.emu_stop();
             throw new IllegalStateException("running");
         }
 
-        final Pointer pointer = UnicornPointer.pointer(this, begin);
+        final Pointer pointer = UnidbgPointer.pointer(this, begin);
         long start = 0;
         PrintStream redirect = null;
         Thread exitHook = null;
@@ -344,14 +351,14 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                     readHook.redirect = redirect;
                     readHook.traceReadListener = traceReadListener;
                     traceReadListener = null;
-                    unicorn.hook_add_new((ReadHook) readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
+                    backend.hook_add_new((ReadHook) readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
                 }
                 if (traceMemoryWrite) {
                     traceMemoryWrite = false;
                     writeHook.redirect = redirect;
                     writeHook.traceWriteListener = traceWriteListener;
                     traceWriteListener = null;
-                    unicorn.hook_add_new((WriteHook) writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
+                    backend.hook_add_new((WriteHook) writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
                 }
             }
             if (traceInstruction) {
@@ -359,7 +366,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 codeHook.initialize(traceInstructionBegin, traceInstructionEnd, traceCodeListener);
                 traceCodeListener = null;
                 codeHook.redirect = redirect;
-                unicorn.hook_add_new(codeHook, traceInstructionBegin, traceInstructionEnd, this);
+                backend.hook_add_new(codeHook, traceInstructionBegin, traceInstructionEnd, this);
             }
             if (log.isDebugEnabled()) {
                 log.debug("emulate " + pointer + " started sp=" + getStackPointer());
@@ -378,12 +385,12 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 };
                 Runtime.getRuntime().addShutdownHook(exitHook);
             }
-            unicorn.emu_start(begin, until, timeout, 0);
+            backend.emu_start(begin, until, timeout, 0);
             if (is64Bit()) {
-                return (Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_X0);
+                return backend.reg_read(Arm64Const.UC_ARM64_REG_X0);
             } else {
-                Number r0 = (Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0);
-                Number r1 = (Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1);
+                Number r0 = backend.reg_read(ArmConst.UC_ARM_REG_R0);
+                Number r1 = backend.reg_read(ArmConst.UC_ARM_REG_R1);
                 return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
             }
         } catch (RuntimeException e) {
@@ -428,7 +435,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
             closeInternal();
 
-            unicorn.closeAll();
+            backend.destroy();
         } finally {
             closed = true;
         }
@@ -449,8 +456,8 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     }
 
     @Override
-    public Unicorn getUnicorn() {
-        return unicorn;
+    public Backend getBackend() {
+        return backend;
     }
 
     private final String processName;

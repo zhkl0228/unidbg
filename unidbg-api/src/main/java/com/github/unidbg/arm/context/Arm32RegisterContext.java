@@ -1,6 +1,6 @@
 package com.github.unidbg.arm.context;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public interface Arm32RegisterContext extends RegisterContext {
 
@@ -56,30 +56,30 @@ public interface Arm32RegisterContext extends RegisterContext {
 
     int getR12Int();
 
-    UnicornPointer getR0Pointer();
+    UnidbgPointer getR0Pointer();
 
-    UnicornPointer getR1Pointer();
+    UnidbgPointer getR1Pointer();
 
-    UnicornPointer getR2Pointer();
+    UnidbgPointer getR2Pointer();
 
-    UnicornPointer getR3Pointer();
+    UnidbgPointer getR3Pointer();
 
-    UnicornPointer getR4Pointer();
+    UnidbgPointer getR4Pointer();
 
-    UnicornPointer getR5Pointer();
+    UnidbgPointer getR5Pointer();
 
-    UnicornPointer getR6Pointer();
+    UnidbgPointer getR6Pointer();
 
-    UnicornPointer getR7Pointer();
+    UnidbgPointer getR7Pointer();
 
-    UnicornPointer getR8Pointer();
+    UnidbgPointer getR8Pointer();
 
-    UnicornPointer getR9Pointer();
+    UnidbgPointer getR9Pointer();
 
-    UnicornPointer getR10Pointer();
+    UnidbgPointer getR10Pointer();
 
-    UnicornPointer getR11Pointer();
+    UnidbgPointer getR11Pointer();
 
-    UnicornPointer getR12Pointer();
+    UnidbgPointer getR12Pointer();
 
 }

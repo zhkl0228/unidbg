@@ -1,8 +1,8 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 public class ZeroFileIO extends DriverFileIO {
 
@@ -11,7 +11,7 @@ public class ZeroFileIO extends DriverFileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         buffer.write(0, new byte[count], 0, count);
         return count;
     }

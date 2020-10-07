@@ -1,7 +1,7 @@
 package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 public interface Array<T> {
@@ -10,7 +10,7 @@ public interface Array<T> {
 
     void setData(int start, T data);
 
-    UnicornPointer allocateMemoryBlock(Emulator<?> emulator, int length);
+    UnidbgPointer allocateMemoryBlock(Emulator<?> emulator, int length);
     void freeMemoryBlock(Pointer pointer);
 
 }

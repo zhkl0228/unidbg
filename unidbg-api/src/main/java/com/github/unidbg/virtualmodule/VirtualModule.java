@@ -3,7 +3,7 @@ package com.github.unidbg.virtualmodule;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -15,7 +15,7 @@ public abstract class VirtualModule<T> {
     private static final Log log = LogFactory.getLog(VirtualModule.class);
 
     private final String name;
-    private final Map<String, UnicornPointer> symbols = new HashMap<>();
+    private final Map<String, UnidbgPointer> symbols = new HashMap<>();
 
     protected VirtualModule(Emulator<?> emulator, String name) {
         this(emulator, null, name);
@@ -27,7 +27,7 @@ public abstract class VirtualModule<T> {
         onInitialize(emulator, extra, symbols);
     }
 
-    protected abstract void onInitialize(Emulator<?> emulator, T extra, Map<String, UnicornPointer> symbols);
+    protected abstract void onInitialize(Emulator<?> emulator, T extra, Map<String, UnidbgPointer> symbols);
 
     public Module register(Memory memory) {
         if (name == null || name.trim().length() < 1) {

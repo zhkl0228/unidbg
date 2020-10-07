@@ -8,7 +8,7 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -57,7 +57,7 @@ public class Substrate extends BaseHook implements ISubstrate {
             throw new IllegalStateException("_MSDebug is null");
         }
         if (log.isDebugEnabled()) {
-            log.debug("_MSGetImageByName=" + UnicornPointer.pointer(emulator, _MSGetImageByName.getAddress()) + ", _MSFindSymbol=" + UnicornPointer.pointer(emulator, _MSFindSymbol.getAddress()) + ", _MSHookFunction=" + UnicornPointer.pointer(emulator, _MSHookFunction.getAddress()) + ", _MSHookMessageEx=" + UnicornPointer.pointer(emulator, _MSHookMessageEx.getAddress()) + ", _MSDebug=" + UnicornPointer.pointer(emulator, _MSDebug.getAddress()));
+            log.debug("_MSGetImageByName=" + UnidbgPointer.pointer(emulator, _MSGetImageByName.getAddress()) + ", _MSFindSymbol=" + UnidbgPointer.pointer(emulator, _MSFindSymbol.getAddress()) + ", _MSHookFunction=" + UnidbgPointer.pointer(emulator, _MSHookFunction.getAddress()) + ", _MSHookMessageEx=" + UnidbgPointer.pointer(emulator, _MSHookMessageEx.getAddress()) + ", _MSDebug=" + UnidbgPointer.pointer(emulator, _MSDebug.getAddress()));
         }
 
         if (log.isDebugEnabled()) {
@@ -85,7 +85,7 @@ public class Substrate extends BaseHook implements ISubstrate {
     @Override
     public Symbol findSymbol(Module image, String name) {
         MachOModule mm = (MachOModule) image;
-        Number[] numbers = _MSFindSymbol.call(emulator, mm == null ? null : UnicornPointer.pointer(emulator, mm.machHeader), name);
+        Number[] numbers = _MSFindSymbol.call(emulator, mm == null ? null : UnidbgPointer.pointer(emulator, mm.machHeader), name);
         long ret = numberToAddress(numbers[0]);
         if (ret == 0) {
             return null;
@@ -113,7 +113,7 @@ public class Substrate extends BaseHook implements ISubstrate {
     public void hookFunction(long address, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup, enablePostCall);
-        _MSHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
+        _MSHookFunction.call(emulator, UnidbgPointer.pointer(emulator, address), replace, backup);
     }
 
     @Override

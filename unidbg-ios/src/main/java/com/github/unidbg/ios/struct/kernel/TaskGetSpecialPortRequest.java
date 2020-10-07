@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class TaskGetSpecialPortRequest extends UnicornStructure {
+public class TaskGetSpecialPortRequest extends UnidbgStructure {
 
     public TaskGetSpecialPortRequest(Pointer p) {
         super(p);

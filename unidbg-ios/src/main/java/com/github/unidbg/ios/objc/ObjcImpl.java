@@ -4,7 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 class ObjcImpl extends ObjC {
@@ -54,7 +54,7 @@ class ObjcImpl extends ObjC {
     @Override
     public ObjcClass getMetaClass(String className) {
         Number number = _objc_getMetaClass.call(emulator, className)[0];
-        Pointer pointer = UnicornPointer.pointer(emulator, number);
+        Pointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalArgumentException(className + " NOT found");
         }
@@ -64,7 +64,7 @@ class ObjcImpl extends ObjC {
     @Override
     public ObjcClass getClass(String className) {
         Number number = _objc_getClass.call(emulator, className)[0];
-        Pointer pointer = UnicornPointer.pointer(emulator, number);
+        Pointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalArgumentException(className + " NOT found");
         }
@@ -74,14 +74,14 @@ class ObjcImpl extends ObjC {
     @Override
     public ObjcClass lookUpClass(String className) {
         Number number = _objc_lookUpClass.call(emulator, className)[0];
-        Pointer pointer = UnicornPointer.pointer(emulator, number);
+        Pointer pointer = UnidbgPointer.pointer(emulator, number);
         return pointer == null ? null : ObjcClass.create(emulator, pointer);
     }
 
     @Override
     public Pointer registerName(String selectorName) {
         Number number = _sel_registerName.call(emulator, selectorName)[0];
-        Pointer pointer = UnicornPointer.pointer(emulator, number);
+        Pointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalStateException(selectorName);
         }

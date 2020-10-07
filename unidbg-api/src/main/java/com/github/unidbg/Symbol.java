@@ -1,7 +1,7 @@
 package com.github.unidbg;
 
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 public abstract class Symbol {
@@ -20,9 +20,9 @@ public abstract class Symbol {
 
     public abstract boolean isUndef();
 
-    private UnicornPointer namePointer;
+    private UnidbgPointer namePointer;
 
-    public final UnicornPointer createNameMemory(SvcMemory svcMemory) {
+    public final UnidbgPointer createNameMemory(SvcMemory svcMemory) {
         if (namePointer == null) {
             byte[] name = getName().getBytes();
             namePointer = svcMemory.allocate(name.length + 1, "Symbol." + getName());
@@ -33,7 +33,7 @@ public abstract class Symbol {
     }
 
     public Pointer createPointer(Emulator<?> emulator) {
-        return UnicornPointer.pointer(emulator, getAddress());
+        return UnidbgPointer.pointer(emulator, getAddress());
     }
 
     public String getName() {

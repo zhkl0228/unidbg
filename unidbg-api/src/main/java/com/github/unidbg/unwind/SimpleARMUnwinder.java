@@ -2,7 +2,7 @@ package com.github.unidbg.unwind;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.AbstractARMEmulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import unicorn.ArmConst;
 
 public class SimpleARMUnwinder extends Unwinder {
@@ -17,7 +17,7 @@ public class SimpleARMUnwinder extends Unwinder {
     }
 
     @Override
-    public Frame createFrame(UnicornPointer ip, UnicornPointer fp) {
+    public Frame createFrame(UnidbgPointer ip, UnidbgPointer fp) {
         if (ip != null) {
             if (ip.peer == AbstractARMEmulator.LR) {
                 return new Frame(ip, null);
@@ -29,7 +29,7 @@ public class SimpleARMUnwinder extends Unwinder {
         }
     }
 
-    private UnicornPointer adjust_ip(UnicornPointer ip) {
+    private UnidbgPointer adjust_ip(UnidbgPointer ip) {
         int adjust = 4;
 
         boolean thumb = (ip.peer & 1) == 1;
@@ -47,8 +47,8 @@ public class SimpleARMUnwinder extends Unwinder {
     }
 
     private Frame initFrame(Emulator<?> emulator) {
-        UnicornPointer ip = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
-        UnicornPointer fp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R7);
+        UnidbgPointer ip = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
+        UnidbgPointer fp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R7);
         return createFrame(ip, fp);
     }
 
@@ -58,14 +58,14 @@ public class SimpleARMUnwinder extends Unwinder {
             return initFrame(emulator);
         }
 
-        UnicornPointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+        UnidbgPointer sp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         if (frame.fp == null || frame.fp.peer < sp.peer) {
             System.err.println("fp=" + frame.fp + ", sp=" + sp);
             return null;
         }
 
-        UnicornPointer ip = frame.fp.getPointer(4);
-        UnicornPointer fp = frame.fp.getPointer(0);
+        UnidbgPointer ip = frame.fp.getPointer(4);
+        UnidbgPointer fp = frame.fp.getPointer(0);
         return createFrame(ip, fp);
     }
 

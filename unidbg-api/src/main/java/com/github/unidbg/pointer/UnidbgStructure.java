@@ -11,9 +11,9 @@ import org.apache.commons.logging.LogFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public abstract class UnicornStructure extends Structure {
+public abstract class UnidbgStructure extends Structure {
 
-    private static final Log log = LogFactory.getLog(UnicornStructure.class);
+    private static final Log log = LogFactory.getLog(UnidbgStructure.class);
 
     /** Placeholder pointer to help avoid auto-allocation of memory where a
      * Structure needs a valid pointer but want to avoid actually reading from it.
@@ -23,16 +23,16 @@ public abstract class UnicornStructure extends Structure {
         public Pointer share(long offset, long sz) { return this; }
     };
 
-    public static int calculateSize(Class<? extends UnicornStructure> type) {
+    public static int calculateSize(Class<? extends UnidbgStructure> type) {
         try {
-            Constructor<? extends UnicornStructure> constructor = type.getConstructor(Pointer.class);
+            Constructor<? extends UnidbgStructure> constructor = type.getConstructor(Pointer.class);
             return constructor.newInstance(PLACEHOLDER_MEMORY).calculateSize(false);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    protected UnicornStructure(Pointer p) {
+    protected UnidbgStructure(Pointer p) {
         super(p);
 
         checkPointer(p);
@@ -42,7 +42,7 @@ public abstract class UnicornStructure extends Structure {
         if (p == null) {
             throw new NullPointerException("p is null");
         }
-        if (!(p instanceof UnicornPointer) && !isPlaceholderMemory(p)) {
+        if (!(p instanceof UnidbgPointer) && !isPlaceholderMemory(p)) {
             throw new IllegalArgumentException("p is NOT UnicornPointer");
         }
     }

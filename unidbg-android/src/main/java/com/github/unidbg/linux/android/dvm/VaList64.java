@@ -1,7 +1,7 @@
 package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -11,7 +11,7 @@ class VaList64 extends VaList {
 
     private static final Log log = LogFactory.getLog(VaList64.class);
 
-    VaList64(Emulator<?> emulator, BaseVM vm, UnicornPointer va_list, DvmMethod method) {
+    VaList64(Emulator<?> emulator, BaseVM vm, UnidbgPointer va_list, DvmMethod method) {
         super(vm, method, method.decodeArgsShorty());
 
         long base_p = va_list.getLong(0);
@@ -34,15 +34,15 @@ class VaList64 extends VaList {
                         Pointer pointer;
                         if ((mask_integer & 0x80000000) != 0) {
                             if (mask_integer + 8 <= 0) {
-                                pointer = UnicornPointer.pointer(emulator, base_integer + mask_integer);
+                                pointer = UnidbgPointer.pointer(emulator, base_integer + mask_integer);
                                 mask_integer += 8;
                             } else {
-                                pointer = UnicornPointer.pointer(emulator, base_p);
+                                pointer = UnidbgPointer.pointer(emulator, base_p);
                                 mask_integer += 8;
                                 base_p = (base_p + 11) & 0xfffffffffffffff8L;
                             }
                         } else {
-                            pointer = UnicornPointer.pointer(emulator, base_p);
+                            pointer = UnidbgPointer.pointer(emulator, base_p);
                             base_p = (base_p + 11) & 0xfffffffffffffff8L;
                         }
                         assert pointer != null;
@@ -53,15 +53,15 @@ class VaList64 extends VaList {
                         Pointer pointer;
                         if ((mask_float & 0x80000000) != 0) {
                             if (mask_float + 16 <= 0) {
-                                pointer = UnicornPointer.pointer(emulator, base_float + mask_float);
+                                pointer = UnidbgPointer.pointer(emulator, base_float + mask_float);
                                 mask_float += 16;
                             } else {
-                                pointer = UnicornPointer.pointer(emulator, base_p);
+                                pointer = UnidbgPointer.pointer(emulator, base_p);
                                 mask_float += 16;
                                 base_p = (base_p + 15) & 0xfffffffffffffff8L;
                             }
                         } else {
-                            pointer = UnicornPointer.pointer(emulator, base_p);
+                            pointer = UnidbgPointer.pointer(emulator, base_p);
                             base_p = (base_p + 15) & 0xfffffffffffffff8L;
                         }
                         assert pointer != null;
@@ -72,15 +72,15 @@ class VaList64 extends VaList {
                         Pointer pointer;
                         if ((mask_float & 0x80000000) != 0) {
                             if (mask_float + 16 <= 0) {
-                                pointer = UnicornPointer.pointer(emulator, base_float + mask_float);
+                                pointer = UnidbgPointer.pointer(emulator, base_float + mask_float);
                                 mask_float += 16;
                             } else {
-                                pointer = UnicornPointer.pointer(emulator, base_p);
+                                pointer = UnidbgPointer.pointer(emulator, base_p);
                                 mask_float += 16;
                                 base_p = (base_p + 15) & 0xfffffffffffffff8L;
                             }
                         } else {
-                            pointer = UnicornPointer.pointer(emulator, base_p);
+                            pointer = UnidbgPointer.pointer(emulator, base_p);
                             base_p = (base_p + 15) & 0xfffffffffffffff8L;
                         }
                         assert pointer != null;
@@ -91,15 +91,15 @@ class VaList64 extends VaList {
                         Pointer pointer;
                         if ((mask_integer & 0x80000000) != 0) {
                             if (mask_integer + 8 <= 0) {
-                                pointer = UnicornPointer.pointer(emulator, base_integer + mask_integer);
+                                pointer = UnidbgPointer.pointer(emulator, base_integer + mask_integer);
                                 mask_integer += 8;
                             } else {
-                                pointer = UnicornPointer.pointer(emulator, base_p);
+                                pointer = UnidbgPointer.pointer(emulator, base_p);
                                 mask_integer += 8;
                                 base_p = (base_p + 15) & 0xfffffffffffffff8L;
                             }
                         } else {
-                            pointer = UnicornPointer.pointer(emulator, base_p);
+                            pointer = UnidbgPointer.pointer(emulator, base_p);
                             base_p = (base_p + 15) & 0xfffffffffffffff8L;
                         }
                         assert pointer != null;
@@ -110,15 +110,15 @@ class VaList64 extends VaList {
                         Pointer pointer;
                         if ((mask_integer & 0x80000000) != 0) {
                             if (mask_integer + 8 <= 0) {
-                                pointer = UnicornPointer.pointer(emulator, base_integer + mask_integer);
+                                pointer = UnidbgPointer.pointer(emulator, base_integer + mask_integer);
                                 mask_integer += 8;
                             } else {
-                                pointer = UnicornPointer.pointer(emulator, base_p);
+                                pointer = UnidbgPointer.pointer(emulator, base_p);
                                 mask_integer += 8;
                                 base_p = (base_p + 15) & 0xfffffffffffffff8L;
                             }
                         } else {
-                            pointer = UnicornPointer.pointer(emulator, base_p);
+                            pointer = UnidbgPointer.pointer(emulator, base_p);
                             base_p = (base_p + 15) & 0xfffffffffffffff8L;
                         }
                         assert pointer != null;

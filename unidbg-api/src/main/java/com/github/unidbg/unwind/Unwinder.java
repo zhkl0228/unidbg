@@ -6,7 +6,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.AbstractARMDebugger;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.zhkl0228.demumble.DemanglerFactory;
 import com.github.zhkl0228.demumble.GccDemangler;
 
@@ -18,7 +18,7 @@ public abstract class Unwinder {
         this.emulator = emulator;
     }
 
-    public abstract Frame createFrame(UnicornPointer ip, UnicornPointer fp);
+    public abstract Frame createFrame(UnidbgPointer ip, UnidbgPointer fp);
 
     protected abstract Frame unw_step(Emulator<?> emulator, Frame frame);
 

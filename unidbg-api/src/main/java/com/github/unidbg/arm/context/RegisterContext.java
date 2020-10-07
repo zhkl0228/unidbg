@@ -1,6 +1,6 @@
 package com.github.unidbg.arm.context;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public interface RegisterContext {
 
@@ -17,18 +17,18 @@ public interface RegisterContext {
     /**
      * @param index 0 based
      */
-    UnicornPointer getPointerArg(int index);
+    UnidbgPointer getPointerArg(int index);
 
     long getLR();
 
-    UnicornPointer getLRPointer();
+    UnidbgPointer getLRPointer();
 
-    UnicornPointer getPCPointer();
+    UnidbgPointer getPCPointer();
 
     /**
      * sp
      */
-    UnicornPointer getStackPointer();
+    UnidbgPointer getStackPointer();
 
     int getInt(int regId);
     long getLong(int regId);

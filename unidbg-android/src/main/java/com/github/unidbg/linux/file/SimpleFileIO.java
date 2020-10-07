@@ -1,6 +1,7 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
@@ -13,7 +14,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -94,7 +94,7 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, final int _count) {
+    public int read(Backend backend, Pointer buffer, final int _count) {
         try {
             int count = _count;
             if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {

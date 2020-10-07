@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class MachPortsLookup64Reply extends UnicornStructure {
+public class MachPortsLookup64Reply extends UnidbgStructure {
 
     public MachPortsLookup64Reply(Pointer p) {
         super(p);

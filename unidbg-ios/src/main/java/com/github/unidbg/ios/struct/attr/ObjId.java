@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.attr;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class ObjId extends UnicornStructure {
+public class ObjId extends UnidbgStructure {
 
     public ObjId(Pointer p) {
         super(p);

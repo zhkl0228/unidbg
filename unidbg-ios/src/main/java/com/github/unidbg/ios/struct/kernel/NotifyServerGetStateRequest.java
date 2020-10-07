@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class NotifyServerGetStateRequest extends UnicornStructure {
+public class NotifyServerGetStateRequest extends UnidbgStructure {
 
     public NotifyServerGetStateRequest(Pointer p) {
         super(p);

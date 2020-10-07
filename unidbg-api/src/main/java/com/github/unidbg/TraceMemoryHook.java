@@ -1,12 +1,13 @@
 package com.github.unidbg;
 
+import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.codec.binary.Hex;
-import unicorn.MemHook;
-import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.io.PrintStream;
@@ -18,7 +19,7 @@ import java.nio.ByteOrder;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-class TraceMemoryHook implements MemHook {
+class TraceMemoryHook implements ReadHook, WriteHook {
 
     private final boolean read;
 
@@ -31,13 +32,13 @@ class TraceMemoryHook implements MemHook {
     TraceWriteListener traceWriteListener;
 
     @Override
-    public void hook(Unicorn u, long address, int size, Object user) {
+    public void hook(Backend backend, long address, int size, Object user) {
         if (!read) {
             return;
         }
 
         try {
-            byte[] data = u.mem_read(address, size);
+            byte[] data = backend.mem_read(address, size);
             String value;
             if (data.length == 4) {
                 value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
@@ -55,8 +56,8 @@ class TraceMemoryHook implements MemHook {
 
     private void printMsg(String type, Emulator<?> emulator, long address, int size, String value) {
         RegisterContext context = emulator.getContext();
-        UnicornPointer pc = context.getPCPointer();
-        UnicornPointer lr = context.getLRPointer();
+        UnidbgPointer pc = context.getPCPointer();
+        UnidbgPointer lr = context.getLRPointer();
         PrintStream out = System.out;
         if (redirect != null) {
             out = redirect;
@@ -68,7 +69,7 @@ class TraceMemoryHook implements MemHook {
     }
 
     @Override
-    public void hook(Unicorn u, long address, int size, long value, Object user) {
+    public void hook(Backend backend, long address, int size, long value, Object user) {
         if (read) {
             return;
         }

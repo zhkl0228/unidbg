@@ -2,6 +2,7 @@ package com.github.unidbg.arm;
 
 import capstone.Capstone;
 import com.github.unidbg.*;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.debugger.DebugListener;
@@ -9,7 +10,7 @@ import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.struct.StdString;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -108,7 +109,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         BreakPointImpl breakPoint = new BreakPointImpl(callback, thumb);
         breakMap.put(address, breakPoint);
-        emulator.getUnicorn().addBreakPoint(address);
+        emulator.getBackend().addBreakPoint(address);
         return breakPoint;
     }
 
@@ -119,7 +120,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
         if (breakMap.containsKey(address)) {
             breakMap.remove(address);
-            emulator.getUnicorn().removeBreakPoint(address);
+            emulator.getBackend().removeBreakPoint(address);
             return true;
         } else {
             return false;
@@ -134,7 +135,7 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    public void onBreak(Unicorn u, long address, int size, Object user) {
+    public void onBreak(Backend backend, long address, int size, Object user) {
         BreakPointImpl breakPoint = breakMap.get(address);
         if (breakPoint != null && breakPoint.isTemporary) {
             removeBreakPoint(address);
@@ -143,7 +144,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             return;
         }
         try {
-            if (listener == null || listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(u)))) {
+            if (listener == null || listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(backend)))) {
                 if (traceHook != null) {
                     traceHook.unhook();
                     traceHook = null;
@@ -166,16 +167,16 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    public final void hook(Unicorn u, long address, int size, Object user) {
+    public final void hook(Backend backend, long address, int size, Object user) {
         Emulator<?> emulator = (Emulator<?>) user;
 
         try {
             if (breakMnemonic != null) {
-                CodeHistory history = new CodeHistory(address, size, ARM.isThumb(u));
+                CodeHistory history = new CodeHistory(address, size, ARM.isThumb(backend));
                 Capstone.CsInsn ins = history.disassemble(emulator);
                 if (ins != null && breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
-                    u.setFastDebug(true);
+                    backend.setFastDebug(true);
                     debugging = true;
                     loop(emulator, address, size, null);
                 }
@@ -189,12 +190,12 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public void debug() {
-        Unicorn unicorn = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         long address;
         if (emulator.is32Bit()) {
-            address = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_PC)).intValue() & 0xffffffffL;
+            address = backend.reg_read(ArmConst.UC_ARM_REG_PC).intValue() & 0xffffffffL;
         } else {
-            address = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+            address = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
         }
         try {
             debugging = true;
@@ -207,7 +208,7 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     protected final void setSingleStep(int singleStep) {
-        emulator.getUnicorn().setSingleStep(singleStep);
+        emulator.getBackend().setSingleStep(singleStep);
     }
 
     private String breakMnemonic;
@@ -320,9 +321,9 @@ public abstract class AbstractARMDebugger implements Debugger {
             return;
         }
 
-        UnicornPointer stack = emulator.getContext().getStackPointer();
-        Unicorn unicorn = emulator.getUnicorn();
-        Collection<Pointer> pointers = searchMemory(unicorn, stack.toUIntPeer(), emulator.getMemory().getStackBase(), data);
+        UnidbgPointer stack = emulator.getContext().getStackPointer();
+        Backend backend = emulator.getBackend();
+        Collection<Pointer> pointers = searchMemory(backend, stack.toUIntPeer(), emulator.getMemory().getStackBase(), data);
         System.out.println("Search stack from " + stack + " matches " + pointers.size() + " count");
         for (Pointer pointer : pointers) {
             System.out.println("Stack matches: " + pointer);
@@ -336,10 +337,10 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
 
         List<Pointer> list = new ArrayList<>();
-        Unicorn unicorn = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         for (MemoryMap map : emulator.getMemory().getMemoryMap()) {
             if ((map.prot & prot) != 0) {
-                Collection<Pointer> pointers = searchMemory(unicorn, map.base, map.base + map.size, data);
+                Collection<Pointer> pointers = searchMemory(backend, map.base, map.base + map.size, data);
                 list.addAll(pointers);
             }
         }
@@ -349,16 +350,16 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
     }
 
-    private Collection<Pointer> searchMemory(Unicorn unicorn, long start, long end, byte[] data) {
+    private Collection<Pointer> searchMemory(Backend backend, long start, long end, byte[] data) {
         List<Pointer> pointers = new ArrayList<>();
         for (long i = start, m = end - data.length; i < m; i++) {
-            byte[] oneByte = unicorn.mem_read(i, 1);
+            byte[] oneByte = backend.mem_read(i, 1);
             if (data[0] != oneByte[0]) {
                 continue;
             }
 
-            if (Arrays.equals(data, unicorn.mem_read(i, data.length))) {
-                pointers.add(UnicornPointer.pointer(emulator, i));
+            if (Arrays.equals(data, backend.mem_read(i, data.length))) {
+                pointers.add(UnidbgPointer.pointer(emulator, i));
                 i += (data.length - 1);
             }
         }
@@ -367,7 +368,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private Unicorn.UnHook traceHook;
 
-    final boolean handleCommon(Unicorn u, String line, long address, int size, long nextAddress, Callable<?> callable) throws Exception {
+    final boolean handleCommon(Backend backend, String line, long address, int size, long nextAddress, Callable<?> callable) throws Exception {
         if ("exit".equals(line) || "quit".equals(line)) { // continue
             return true;
         }
@@ -496,7 +497,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 System.out.println("Set trace " + (module == null ? "all" : module) + " instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
             }
             codeHook.initialize(begin, end, null);
-            traceHook = emulator.getUnicorn().hook_add_new(codeHook, begin, end, emulator);
+            traceHook = emulator.getBackend().hook_add_new(codeHook, begin, end, emulator);
             return false;
         }
         if (line.startsWith("vm")) {
@@ -539,7 +540,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 BreakPointImpl bp = entry.getValue();
                 Capstone.CsInsn ins = null;
                 try {
-                    byte[] code = u.mem_read(address, 4);
+                    byte[] code = backend.mem_read(address, 4);
                     Capstone.CsInsn[] insns = emulator.disassemble(address, code, bp.thumb, 1);
                     if (insns != null && insns.length > 0) {
                         ins = insns[0];
@@ -560,7 +561,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             return false;
         }
         if ("stop".equals(line)) {
-            u.emu_stop();
+            backend.emu_stop();
             return true;
         }
         if ("s".equals(line) || "si".equals(line)) {
@@ -573,7 +574,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 return true;
             } catch (NumberFormatException e) {
                 breakMnemonic = line.substring(1);
-                u.setFastDebug(false);
+                backend.setFastDebug(false);
                 return true;
             }
         }
@@ -589,7 +590,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     System.err.println("patch code failed: nextAddress=0x" + Long.toHexString(nextAddress) + ", codeSize=" + code.length);
                     return false;
                 }
-                Pointer pointer = UnicornPointer.pointer(emulator, address);
+                Pointer pointer = UnidbgPointer.pointer(emulator, address);
                 assert pointer != null;
                 pointer.write(0, code, 0, code.length);
                 disassemble(emulator, originalAddress, size, isThumb);
@@ -619,7 +620,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         long next = 0;
         boolean on = false;
         StringBuilder sb = new StringBuilder();
-        for (CodeHistory history : Collections.singletonList(new CodeHistory(address, size, ARM.isThumb(emulator.getUnicorn())))) {
+        for (CodeHistory history : Collections.singletonList(new CodeHistory(address, size, ARM.isThumb(emulator.getBackend())))) {
             Capstone.CsInsn ins = history.disassemble(emulator);
             if (ins == null) {
                 continue;
@@ -665,7 +666,7 @@ public abstract class AbstractARMDebugger implements Debugger {
     final void disassembleBlock(Emulator<?> emulator, long address, boolean thumb) {
         StringBuilder sb = new StringBuilder();
         long nextAddr = address;
-        UnicornPointer pointer = UnicornPointer.pointer(emulator, address);
+        UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
         assert pointer != null;
         byte[] code = pointer.getByteArray(0, 4 * 10);
         Capstone.CsInsn[] insns = emulator.disassemble(nextAddr, code, thumb, 0);

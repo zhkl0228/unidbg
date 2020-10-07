@@ -1,12 +1,12 @@
 package com.github.unidbg.unix.struct;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.nio.charset.StandardCharsets;
 
-public abstract class StdString extends UnicornStructure implements CharSequence {
+public abstract class StdString extends UnidbgStructure implements CharSequence {
 
     @SuppressWarnings("unused")
     public static StdString createStdString(Emulator<?> emulator, Pointer pointer) {

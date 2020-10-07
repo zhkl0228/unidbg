@@ -1,7 +1,7 @@
 package com.github.unidbg.hook;
 
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 import java.util.Stack;
@@ -36,7 +36,7 @@ class Arm64HookContext extends HookContext implements EditableArm64RegisterConte
     }
 
     @Override
-    public UnicornPointer getXPointer(int index) {
+    public UnidbgPointer getXPointer(int index) {
         return registerContext.getXPointer(index);
     }
 
@@ -46,7 +46,7 @@ class Arm64HookContext extends HookContext implements EditableArm64RegisterConte
     }
 
     @Override
-    public UnicornPointer getFpPointer() {
+    public UnidbgPointer getFpPointer() {
         return registerContext.getFpPointer();
     }
 
@@ -61,7 +61,7 @@ class Arm64HookContext extends HookContext implements EditableArm64RegisterConte
     }
 
     @Override
-    public UnicornPointer getPointerArg(int index) {
+    public UnidbgPointer getPointerArg(int index) {
         return registerContext.getPointerArg(index);
     }
 
@@ -71,17 +71,17 @@ class Arm64HookContext extends HookContext implements EditableArm64RegisterConte
     }
 
     @Override
-    public UnicornPointer getLRPointer() {
+    public UnidbgPointer getLRPointer() {
         return registerContext.getLRPointer();
     }
 
     @Override
-    public UnicornPointer getPCPointer() {
+    public UnidbgPointer getPCPointer() {
         return registerContext.getPCPointer();
     }
 
     @Override
-    public UnicornPointer getStackPointer() {
+    public UnidbgPointer getStackPointer() {
         return registerContext.getStackPointer();
     }
 

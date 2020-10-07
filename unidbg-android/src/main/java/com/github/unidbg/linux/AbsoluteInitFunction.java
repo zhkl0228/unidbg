@@ -1,7 +1,7 @@
 package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -31,7 +31,7 @@ public class AbsoluteInitFunction extends InitFunction {
             return;
         }
 
-        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        Pointer pointer = UnidbgPointer.pointer(emulator, address);
         log.debug("[" + libName + "]CallInitFunction: " + pointer);
         long start = System.currentTimeMillis();
 

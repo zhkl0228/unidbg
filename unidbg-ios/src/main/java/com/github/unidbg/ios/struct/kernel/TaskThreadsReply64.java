@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class TaskThreadsReply64 extends UnicornStructure {
+public class TaskThreadsReply64 extends UnidbgStructure {
 
     public TaskThreadsReply64(Pointer p) {
         super(p);

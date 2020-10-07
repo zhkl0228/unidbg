@@ -11,7 +11,7 @@ import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.XHookImpl;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import unicorn.ArmConst;
@@ -47,7 +47,7 @@ public class CrackMe {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 String str = emulator.getContext().getPointerArg(0).getString(0);
-                System.err.println(String.format("strlen[\"%s\"] called from %s", str, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                System.err.println(String.format("strlen[\"%s\"] called from %s", str, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 return HookStatus.RET(emulator, originFunction);
             }
         });
@@ -55,7 +55,7 @@ public class CrackMe {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 String str = emulator.getContext().getPointerArg(0).getString(0);
-                System.err.println(String.format("puts[\"%s\"] called from %s", str, UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                System.err.println(String.format("puts[\"%s\"] called from %s", str, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                 if (str.startsWith("yes")) {
                     canStop = true;
                 }
@@ -69,7 +69,7 @@ public class CrackMe {
                 Pointer dest = context.getPointerArg(0);
                 Pointer src = context.getPointerArg(1);
                 int size = context.getIntArg(2);
-                Inspector.inspect(src.getByteArray(0, size), "memcpy dest=" + dest + ", src=" + src + ", LR=" + UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                Inspector.inspect(src.getByteArray(0, size), "memcpy dest=" + dest + ", src=" + src + ", LR=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 return HookStatus.RET(emulator, originFunction);
             }
         });

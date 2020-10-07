@@ -1,12 +1,12 @@
 package com.github.unidbg.unix.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class DlInfo extends UnicornStructure {
+public class DlInfo extends UnidbgStructure {
 
     public DlInfo(Pointer p) {
         super(p);

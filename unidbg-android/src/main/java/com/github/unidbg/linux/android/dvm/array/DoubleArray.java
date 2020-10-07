@@ -2,7 +2,7 @@ package com.github.unidbg.linux.android.dvm.array;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import unicorn.UnicornException;
 
@@ -23,7 +23,7 @@ public class DoubleArray extends BaseArray<double[]> implements PrimitiveArray<d
     }
 
     @Override
-    public UnicornPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
+    public UnidbgPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
         throw new UnicornException();
     }
 

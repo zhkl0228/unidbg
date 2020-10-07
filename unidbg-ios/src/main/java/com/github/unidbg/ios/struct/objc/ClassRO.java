@@ -1,6 +1,6 @@
 package com.github.unidbg.ios.struct.objc;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * class_ro_t
  */
-public class ClassRO extends UnicornStructure implements ObjcConstants {
+public class ClassRO extends UnidbgStructure implements ObjcConstants {
 
     ClassRO(Pointer p) {
         super(p);

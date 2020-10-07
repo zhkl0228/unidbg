@@ -5,7 +5,7 @@ import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 class MyARM64SyscallHandler extends ARM64SyscallHandler {
@@ -53,7 +53,7 @@ class MyARM64SyscallHandler extends ARM64SyscallHandler {
         RegisterContext context = emulator.getContext();
         int request = context.getIntArg(0);
         int pid = context.getIntArg(1);
-        UnicornPointer addr = context.getPointerArg(2);
+        UnidbgPointer addr = context.getPointerArg(2);
         Pointer data = context.getPointerArg(3);
         String msg = "ptrace request=0x" + Integer.toHexString(request) + ", pid=" + pid + ", addr=" + addr + ", data=" + data + ", LR=" + context.getLRPointer();
         switch (request) {
@@ -75,7 +75,7 @@ class MyARM64SyscallHandler extends ARM64SyscallHandler {
             case PTrace.PTRACE_GETREGSET: {
                 if (addr.toUIntPeer() == PTrace.NT_PRSTATUS) {
                     Arm64Register register = new Arm64Register(data);
-                    register.fill(emulator.getUnicorn());
+                    register.fill(emulator.getBackend());
                     register.pack();
                     System.out.println(register);
                     break;

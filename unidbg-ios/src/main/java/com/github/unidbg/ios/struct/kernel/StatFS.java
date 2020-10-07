@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class StatFS extends UnicornStructure {
+public class StatFS extends UnidbgStructure {
 
     private static final int MFSTYPENAMELEN = 16; /* length of fs type name including null */
     private static final int MAXPATHLEN = 1024; /* max bytes in pathname */

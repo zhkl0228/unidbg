@@ -1,14 +1,14 @@
 package com.github.unidbg.android.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class File64 extends UnicornStructure {
+public class File64 extends UnidbgStructure {
 
-    public static class __sbuf extends UnicornStructure {
+    public static class __sbuf extends UnidbgStructure {
         public __sbuf(Pointer p) {
             super(p);
         }

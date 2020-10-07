@@ -1,6 +1,6 @@
 package com.github.unidbg.arm.context;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public interface Arm64RegisterContext extends RegisterContext {
 
@@ -8,10 +8,10 @@ public interface Arm64RegisterContext extends RegisterContext {
 
     int getXInt(int index);
 
-    UnicornPointer getXPointer(int index);
+    UnidbgPointer getXPointer(int index);
 
     long getFp();
 
-    UnicornPointer getFpPointer();
+    UnidbgPointer getFpPointer();
 
 }

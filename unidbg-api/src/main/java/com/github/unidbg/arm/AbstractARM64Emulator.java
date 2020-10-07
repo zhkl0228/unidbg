@@ -4,13 +4,14 @@ import capstone.Capstone;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.arm.context.UnicornArm64RegisterContext;
+import com.github.unidbg.arm.context.BackendArm64RegisterContext;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -47,9 +48,9 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     public AbstractARM64Emulator(String processName, File rootDir, Family family, String... envs) {
         super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName, 0xffffe0000L, 0x10000, rootDir, family);
 
-        Cpsr.getArm64(unicorn).switchUserMode();
+        Cpsr.getArm64(backend).switchUserMode();
 
-        unicorn.hook_add_new(new EventMemHook() {
+        backend.hook_add_new(new EventMemHook() {
             @Override
             public boolean hook(Unicorn u, long address, int size, long value, Object user) {
                 log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value));
@@ -67,7 +68,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         this.dlfcn = createDyld(svcMemory);
         this.memory.addHookListener(dlfcn);
 
-        unicorn.hook_add_new(syscallHandler, this);
+        backend.hook_add_new(syscallHandler, this);
 
         this.capstoneArm64 = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
         this.capstoneArm64.setDetail(Capstone.CS_OPT_ON);
@@ -77,7 +78,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     protected void setupTraps() {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-            unicorn.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+            backend.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
             KeystoneEncoded encoded = keystone.assemble("b #0");
             byte[] b0 = encoded.getMachineCode();
             ByteBuffer buffer = ByteBuffer.allocate(0x10000);
@@ -89,8 +90,8 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
-    protected RegisterContext createRegisterContext(Unicorn unicorn) {
-        return new UnicornArm64RegisterContext(unicorn, this);
+    protected RegisterContext createRegisterContext(Backend backend) {
+        return new BackendArm64RegisterContext(backend, this);
     }
 
     @Override
@@ -107,9 +108,9 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     private void enableVFP() {
-        long value = ((Number) unicorn.reg_read(Arm64Const.UC_ARM64_REG_CPACR_EL1)).longValue();
+        long value = backend.reg_read(Arm64Const.UC_ARM64_REG_CPACR_EL1).longValue();
         value |= 0x300000; // set the FPEN bits
-        unicorn.reg_write(Arm64Const.UC_ARM64_REG_CPACR_EL1, value);
+        backend.reg_write(Arm64Const.UC_ARM64_REG_CPACR_EL1, value);
     }
 
     @Override
@@ -174,7 +175,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     @Override
     public Capstone.CsInsn[] disassemble(long address, int size, long count) {
-        byte[] code = unicorn.mem_read(address, size);
+        byte[] code = backend.mem_read(address, size);
         return capstoneArm64.disasm(code, address, count);
     }
 
@@ -211,7 +212,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     public Number[] eFunc(long begin, Number... arguments) {
         long spBackup = memory.getStackPoint();
         try {
-            unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
             final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
             return eFunc(begin, args, LR, true);
         } finally {
@@ -223,7 +224,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     public void eInit(long begin, Number... arguments) {
         long spBackup = memory.getStackPoint();
         try {
-            unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
             final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
             eFunc(begin, args, LR, false);
         } finally {
@@ -236,7 +237,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         long spBackup = memory.getStackPoint();
         try {
             memory.setStackPoint(sp);
-            unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
             return emulate(begin, LR, timeout, true);
         } finally {
             memory.setStackPoint(spBackup);
@@ -244,12 +245,11 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
-    public Unicorn eBlock(long begin, long until) {
+    public void eBlock(long begin, long until) {
         long spBackup = memory.getStackPoint();
         try {
-            unicorn.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
             emulate(begin, until, traceInstruction ? 0 : timeout, true);
-            return unicorn;
         } finally {
             memory.setStackPoint(spBackup);
         }
@@ -257,7 +257,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     @Override
     protected Pointer getStackPointer() {
-        return UnicornPointer.register(this, Arm64Const.UC_ARM64_REG_SP);
+        return UnidbgPointer.register(this, Arm64Const.UC_ARM64_REG_SP);
     }
 
     @Override

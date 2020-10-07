@@ -2,7 +2,7 @@ package com.github.unidbg.linux.android.dvm.array;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 public class ByteArray extends BaseArray<byte[]> implements PrimitiveArray<byte[]> {
@@ -26,11 +26,11 @@ public class ByteArray extends BaseArray<byte[]> implements PrimitiveArray<byte[
     }
 
     @Override
-    public UnicornPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
+    public UnidbgPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
         if (isCopy != null) {
             isCopy.setInt(0, VM.JNI_TRUE);
         }
-        UnicornPointer pointer = this.allocateMemoryBlock(emulator, value.length);
+        UnidbgPointer pointer = this.allocateMemoryBlock(emulator, value.length);
         pointer.write(0, value, 0, value.length);
         return pointer;
     }

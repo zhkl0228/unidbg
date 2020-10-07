@@ -9,7 +9,7 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -101,7 +101,7 @@ public final class Dobby extends BaseHook implements IHookZz {
     public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replaceCall = createReplacePointer(callback, originCall, enablePostCall);
-        int ret = dobbyHook.call(emulator, UnicornPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
+        int ret = dobbyHook.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
         if (ret != RT_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -147,7 +147,7 @@ public final class Dobby extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        int ret = dobbyInstrument.call(emulator, UnicornPointer.pointer(emulator, functionAddress), dbiCall)[0].intValue();
+        int ret = dobbyInstrument.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), dbiCall)[0].intValue();
         if (ret != RT_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }

@@ -1,13 +1,13 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.UnixEmulator;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -53,7 +53,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         if (response == null) {
             throw new IllegalStateException("response is null");
         }

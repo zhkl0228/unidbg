@@ -18,7 +18,7 @@ import com.github.unidbg.linux.android.XHookImpl;
 import com.github.unidbg.linux.android.dvm.*;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 
 import java.io.File;
@@ -103,7 +103,7 @@ public class JniDispatch32 extends AbstractJni {
         long start = System.currentTimeMillis();
         final int size = 0x20;
         Number ret = Native.callStaticJniMethodLong(emulator, "malloc(J)J", size);
-        Pointer pointer = UnicornPointer.pointer(emulator, ret.intValue() & 0xffffffffL);
+        Pointer pointer = UnidbgPointer.pointer(emulator, ret.intValue() & 0xffffffffL);
         assert pointer != null;
         pointer.setString(0, getClass().getName());
         Inspector.inspect(pointer.getByteArray(0, size), "malloc ret=" + ret + ", offset=" + (System.currentTimeMillis() - start) + "ms");

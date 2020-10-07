@@ -10,7 +10,7 @@ import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.*;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -134,7 +134,7 @@ public class SubstrateTest extends EmulatorTest<DarwinARMEmulator> {
         assertNotNull(symbol);
         start = System.currentTimeMillis();
 //         emulator.traceCode();
-        numbers = symbol.call(emulator, UnicornPointer.pointer(emulator, ret), "_MSGetImageByName");
+        numbers = symbol.call(emulator, UnidbgPointer.pointer(emulator, ret), "_MSGetImageByName");
         ret = numbers[0].intValue() & 0xffffffffL;
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 

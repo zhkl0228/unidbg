@@ -1,12 +1,12 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.file.linux.StatStructure;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -48,7 +48,7 @@ public class NullFileIO extends BaseAndroidFileIO implements FileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         if (isTTY()) {
             try {
                 byte[] buf = new byte[count];

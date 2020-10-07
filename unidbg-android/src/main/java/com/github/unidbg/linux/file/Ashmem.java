@@ -1,7 +1,7 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -23,7 +23,7 @@ class Ashmem extends DriverFileIO {
     @Override
     public int ioctl(Emulator<?> emulator, long request, long argp) {
         if (request == ASHMEM_SET_NAME) {
-            Pointer pointer = UnicornPointer.pointer(emulator, argp);
+            Pointer pointer = UnidbgPointer.pointer(emulator, argp);
             assert pointer != null;
             this.name = pointer.getString(0);
             log.debug("ashmem set name: " + this.name);

@@ -1,9 +1,9 @@
 package com.github.unidbg.file.ios;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
-public abstract class StatStructure extends UnicornStructure {
+public abstract class StatStructure extends UnidbgStructure {
 
     public StatStructure(Pointer p) {
         super(p);

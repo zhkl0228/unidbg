@@ -3,6 +3,7 @@ package com.github.unidbg.pointer;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.InvalidMemoryAccessException;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
@@ -11,7 +12,6 @@ import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
@@ -20,12 +20,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-public class UnicornPointer extends Pointer {
+public class UnidbgPointer extends Pointer {
 
-    private static final Log log = LogFactory.getLog(UnicornPointer.class);
+    private static final Log log = LogFactory.getLog(UnidbgPointer.class);
 
     private final Emulator<?> emulator;
-    private final Unicorn unicorn;
+    private final Backend backend;
     public final long peer;
     private final int pointerSize;
 
@@ -39,11 +39,11 @@ public class UnicornPointer extends Pointer {
 
     private final MemoryWriteListener listener;
 
-    private UnicornPointer(Emulator<?> emulator, long peer, int pointerSize) {
+    private UnidbgPointer(Emulator<?> emulator, long peer, int pointerSize) {
         super(0);
 
         this.emulator = emulator;
-        this.unicorn = emulator.getUnicorn();
+        this.backend = emulator.getBackend();
         this.peer = peer;
         this.pointerSize = pointerSize;
 
@@ -56,7 +56,7 @@ public class UnicornPointer extends Pointer {
 
     private long size;
 
-    public UnicornPointer setSize(long size) {
+    public UnidbgPointer setSize(long size) {
         if (size < 0) {
             throw new IllegalArgumentException("size=" + size);
         }
@@ -68,16 +68,16 @@ public class UnicornPointer extends Pointer {
         return size;
     }
 
-    public static UnicornPointer pointer(Emulator<?> emulator, long addr) {
-        return addr == 0 ? null : new UnicornPointer(emulator, addr, emulator.getPointerSize());
+    public static UnidbgPointer pointer(Emulator<?> emulator, long addr) {
+        return addr == 0 ? null : new UnidbgPointer(emulator, addr, emulator.getPointerSize());
     }
 
-    public static UnicornPointer pointer(Emulator<?> emulator, Number number) {
+    public static UnidbgPointer pointer(Emulator<?> emulator, Number number) {
         return pointer(emulator, BaseHook.numberToAddress(emulator, number));
     }
 
-    public static UnicornPointer register(Emulator<?> emulator, int reg) {
-        return pointer(emulator, (Number) emulator.getUnicorn().reg_read(reg));
+    public static UnidbgPointer register(Emulator<?> emulator, int reg) {
+        return pointer(emulator, emulator.getBackend().reg_read(reg));
     }
 
     @Override
@@ -158,7 +158,7 @@ public class UnicornPointer extends Pointer {
             System.arraycopy(buf, index, data, 0, length);
         }
         long addr = peer + offset;
-        unicorn.mem_write(addr, data);
+        backend.mem_write(addr, data);
         if (listener != null) {
             listener.onSystemWrite(addr, data);
         }
@@ -246,7 +246,7 @@ public class UnicornPointer extends Pointer {
     }
 
     @Override
-    public UnicornPointer getPointer(long offset) {
+    public UnidbgPointer getPointer(long offset) {
         return pointer(emulator, pointerSize == 4 ? (Number) getInt(offset) : (Number) getLong(offset));
     }
 
@@ -259,7 +259,7 @@ public class UnicornPointer extends Pointer {
         if (arraySize < 0 || arraySize >= 0x7ffffff) {
             throw new InvalidMemoryAccessException("Invalid array size: " + arraySize);
         }
-        return unicorn.mem_read(peer + offset, arraySize);
+        return backend.mem_read(peer + offset, arraySize);
     }
 
     @Override
@@ -296,7 +296,7 @@ public class UnicornPointer extends Pointer {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         while (true) {
-            byte[] data = unicorn.mem_read(addr, 0x10);
+            byte[] data = backend.mem_read(addr, 0x10);
             int length = data.length;
             for (int i = 0; i < data.length; i++) {
                 if (data[i] == 0) {
@@ -386,7 +386,7 @@ public class UnicornPointer extends Pointer {
         if (pointer == null) {
             value = 0;
         } else {
-            value = ((UnicornPointer) pointer).peer;
+            value = ((UnidbgPointer) pointer).peer;
         }
 
         if (pointerSize == 4) {
@@ -422,12 +422,12 @@ public class UnicornPointer extends Pointer {
     }
 
     @Override
-    public UnicornPointer share(long offset, long sz) {
+    public UnidbgPointer share(long offset, long sz) {
         if (offset == 0L && sz == size) {
             return this;
         }
 
-        UnicornPointer pointer = new UnicornPointer(emulator, peer + offset, pointerSize);
+        UnidbgPointer pointer = new UnidbgPointer(emulator, peer + offset, pointerSize);
         if (size > 0) {
             if (offset > size) {
                 throw new InvalidMemoryAccessException("offset=" + offset + ", size=" + size);
@@ -484,7 +484,7 @@ public class UnicornPointer extends Pointer {
         if (o == null) {
             return false;
         }
-        return (o instanceof UnicornPointer) && (((UnicornPointer)o).peer == peer);
+        return (o instanceof UnidbgPointer) && (((UnidbgPointer)o).peer == peer);
     }
 
     @Override

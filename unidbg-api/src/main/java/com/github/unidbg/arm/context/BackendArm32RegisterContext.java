@@ -1,26 +1,26 @@
 package com.github.unidbg.arm.context;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 
-public class UnicornArm32RegisterContext extends BaseRegisterContext implements EditableArm32RegisterContext {
+public class BackendArm32RegisterContext extends BaseRegisterContext implements EditableArm32RegisterContext {
 
-    private final Unicorn unicorn;
+    private final Backend backend;
 
-    public UnicornArm32RegisterContext(Unicorn unicorn, Emulator<?> emulator) {
+    public BackendArm32RegisterContext(Backend backend, Emulator<?> emulator) {
         super(emulator, ArmConst.UC_ARM_REG_R0, 4);
-        this.unicorn = unicorn;
+        this.backend = backend;
     }
 
     private long reg(int regId) {
-        return ((Number) unicorn.reg_read(regId)).intValue() & 0xffffffffL;
+        return backend.reg_read(regId).intValue() & 0xffffffffL;
     }
 
     private void set(int regId, int value) {
-        unicorn.reg_write(regId, value);
+        backend.reg_write(regId, value);
     }
 
     @Override
@@ -194,78 +194,78 @@ public class UnicornArm32RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
-    public UnicornPointer getR0Pointer() {
-        return UnicornPointer.pointer(emulator, getR0Long());
+    public UnidbgPointer getR0Pointer() {
+        return UnidbgPointer.pointer(emulator, getR0Long());
     }
 
     @Override
-    public UnicornPointer getR1Pointer() {
-        return UnicornPointer.pointer(emulator, getR1Long());
+    public UnidbgPointer getR1Pointer() {
+        return UnidbgPointer.pointer(emulator, getR1Long());
     }
 
     @Override
-    public UnicornPointer getR2Pointer() {
-        return UnicornPointer.pointer(emulator, getR2Long());
+    public UnidbgPointer getR2Pointer() {
+        return UnidbgPointer.pointer(emulator, getR2Long());
     }
 
     @Override
-    public UnicornPointer getR3Pointer() {
-        return UnicornPointer.pointer(emulator, getR3Long());
+    public UnidbgPointer getR3Pointer() {
+        return UnidbgPointer.pointer(emulator, getR3Long());
     }
 
     @Override
-    public UnicornPointer getR4Pointer() {
-        return UnicornPointer.pointer(emulator, getR4Long());
+    public UnidbgPointer getR4Pointer() {
+        return UnidbgPointer.pointer(emulator, getR4Long());
     }
 
     @Override
-    public UnicornPointer getR5Pointer() {
-        return UnicornPointer.pointer(emulator, getR5Long());
+    public UnidbgPointer getR5Pointer() {
+        return UnidbgPointer.pointer(emulator, getR5Long());
     }
 
     @Override
-    public UnicornPointer getR6Pointer() {
-        return UnicornPointer.pointer(emulator, getR6Long());
+    public UnidbgPointer getR6Pointer() {
+        return UnidbgPointer.pointer(emulator, getR6Long());
     }
 
     @Override
-    public UnicornPointer getR7Pointer() {
-        return UnicornPointer.pointer(emulator, getR7Long());
+    public UnidbgPointer getR7Pointer() {
+        return UnidbgPointer.pointer(emulator, getR7Long());
     }
 
     @Override
-    public UnicornPointer getR8Pointer() {
-        return UnicornPointer.pointer(emulator, getR8Long());
+    public UnidbgPointer getR8Pointer() {
+        return UnidbgPointer.pointer(emulator, getR8Long());
     }
 
     @Override
-    public UnicornPointer getR9Pointer() {
-        return UnicornPointer.pointer(emulator, getR9Long());
+    public UnidbgPointer getR9Pointer() {
+        return UnidbgPointer.pointer(emulator, getR9Long());
     }
 
     @Override
-    public UnicornPointer getR10Pointer() {
-        return UnicornPointer.pointer(emulator, getR10Long());
+    public UnidbgPointer getR10Pointer() {
+        return UnidbgPointer.pointer(emulator, getR10Long());
     }
 
     @Override
-    public UnicornPointer getR11Pointer() {
-        return UnicornPointer.pointer(emulator, getR11Long());
+    public UnidbgPointer getR11Pointer() {
+        return UnidbgPointer.pointer(emulator, getR11Long());
     }
 
     @Override
-    public UnicornPointer getR12Pointer() {
-        return UnicornPointer.pointer(emulator, getR12Long());
+    public UnidbgPointer getR12Pointer() {
+        return UnidbgPointer.pointer(emulator, getR12Long());
     }
 
     @Override
-    public UnicornPointer getLRPointer() {
-        return UnicornPointer.pointer(emulator, getLR());
+    public UnidbgPointer getLRPointer() {
+        return UnidbgPointer.pointer(emulator, getLR());
     }
 
     @Override
-    public UnicornPointer getPCPointer() {
-        return UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
+    public UnidbgPointer getPCPointer() {
+        return UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
     }
 
     @Override
@@ -274,12 +274,12 @@ public class UnicornArm32RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
-    public UnicornPointer getStackPointer() {
-        return UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+    public UnidbgPointer getStackPointer() {
+        return UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
     }
 
     @Override
     public void setStackPointer(Pointer sp) {
-        unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) sp).peer);
+        backend.reg_write(ArmConst.UC_ARM_REG_SP, ((UnidbgPointer) sp).peer);
     }
 }

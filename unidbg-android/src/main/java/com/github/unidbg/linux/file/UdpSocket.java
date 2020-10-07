@@ -2,17 +2,17 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.linux.struct.IFConf;
 import com.github.unidbg.linux.struct.IFReq;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.struct.SockAddr;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.net.*;
@@ -102,7 +102,7 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         throw new AbstractMethodError();
     }
 
@@ -213,7 +213,7 @@ public class UdpSocket extends SocketIO implements FileIO {
     private int getIFaceList(Emulator<?> emulator, long argp) {
         try {
             List<NetworkIF> list = getNetworkIFs();
-            IFConf conf = new IFConf(UnicornPointer.pointer(emulator, argp));
+            IFConf conf = new IFConf(UnidbgPointer.pointer(emulator, argp));
             IFReq ifReq = IFReq.createIFReq(emulator, conf.ifcu_req);
             if (list.size() * ifReq.size() > conf.ifc_len) {
                 throw new BufferOverflowException();
@@ -244,7 +244,7 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     protected int getIFaceFlags(Emulator<?> emulator, long argp) {
-        String ifName = ARM.readCString(emulator.getUnicorn(), argp);
+        String ifName = ARM.readCString(emulator.getBackend(), argp);
         if (log.isDebugEnabled()) {
             log.debug("get iface flags: " + ifName);
         }

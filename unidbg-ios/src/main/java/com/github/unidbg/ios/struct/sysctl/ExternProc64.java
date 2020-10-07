@@ -1,7 +1,7 @@
 package com.github.unidbg.ios.struct.sysctl;
 
 import com.github.unidbg.ios.DarwinSyscall;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.unix.struct.ITimerVal64;
 import com.github.unidbg.unix.struct.TimeVal64;
 import com.sun.jna.Pointer;
@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * extern_proc
  */
-public class ExternProc64 extends UnicornStructure implements DarwinSyscall {
+public class ExternProc64 extends UnidbgStructure implements DarwinSyscall {
 
     public ExternProc64(Pointer p) {
         super(p);

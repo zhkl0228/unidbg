@@ -1,9 +1,9 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.ios.IOConstants;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 public class RandomFileIO extends DriverFileIO {
 
@@ -12,7 +12,7 @@ public class RandomFileIO extends DriverFileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         byte[] data = new byte[count];
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) i;

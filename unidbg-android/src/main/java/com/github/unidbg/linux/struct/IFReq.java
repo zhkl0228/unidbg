@@ -1,13 +1,13 @@
 package com.github.unidbg.linux.struct;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public abstract class IFReq extends UnicornStructure {
+public abstract class IFReq extends UnidbgStructure {
 
     static final int IFNAMSIZ = 16;
 

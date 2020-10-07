@@ -3,16 +3,16 @@ package com.github.unidbg.arm;
 import capstone.Arm;
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.hook.InterceptCallback;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class ArmIntercept extends ArmSvc {
     }
 
     @Override
-    public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+    public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
             KeystoneEncoded encoded = keystone.assemble("svc #0x" + Integer.toHexString(svcNumber));
             byte[] code = encoded.getMachineCode();
@@ -47,24 +47,24 @@ public class ArmIntercept extends ArmSvc {
 
     @Override
     public long handle(Emulator<?> emulator) {
-        Unicorn u = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         if (callback != null) {
             callback.onIntercept(emulator);
         }
-        eval(u, emulator);
-        return ((Number) u.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+        eval(backend, emulator);
+        return backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
     }
 
-    private void eval(Unicorn u, Emulator<?> emulator) {
+    private void eval(Backend backend, Emulator<?> emulator) {
         if ("push".equals(insn.mnemonic)) {
-            evalPush(u, emulator);
+            evalPush(backend, emulator);
         } else {
             throw new UnicornException(insn.mnemonic + " " + insn.opStr);
         }
     }
 
-    private void evalPush(Unicorn u, Emulator<?> emulator) {
-        Pointer sp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+    private void evalPush(Backend backend, Emulator<?> emulator) {
+        Pointer sp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         Arm.OpInfo opInfo = (Arm.OpInfo) this.insn.operands;
         List<Arm.Operand> operandList = new ArrayList<>(opInfo.op.length);
         Collections.addAll(operandList, opInfo.op);
@@ -72,10 +72,10 @@ public class ArmIntercept extends ArmSvc {
         try {
             for (Arm.Operand operand : operandList) {
                 sp = sp.share(-4);
-                sp.setPointer(0, UnicornPointer.register(emulator, operand.value.reg));
+                sp.setPointer(0, UnidbgPointer.register(emulator, operand.value.reg));
             }
         } finally {
-            u.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) sp).peer);
+            backend.reg_write(ArmConst.UC_ARM_REG_SP, ((UnidbgPointer) sp).peer);
         }
     }
 

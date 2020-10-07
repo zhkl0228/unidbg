@@ -1,28 +1,28 @@
 package com.github.unidbg.arm.context;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
-import unicorn.Unicorn;
 
-public class UnicornArm64RegisterContext extends BaseRegisterContext implements EditableArm64RegisterContext {
+public class BackendArm64RegisterContext extends BaseRegisterContext implements EditableArm64RegisterContext {
 
-    private final Unicorn unicorn;
+    private final Backend backend;
 
-    public UnicornArm64RegisterContext(Unicorn unicorn, Emulator<?> emulator) {
+    public BackendArm64RegisterContext(Backend backend, Emulator<?> emulator) {
         super(emulator, Arm64Const.UC_ARM64_REG_X0, 8);
-        this.unicorn = unicorn;
+        this.backend = backend;
     }
 
     private long reg(int regId) {
-        return ((Number) unicorn.reg_read(regId)).longValue();
+        return backend.reg_read(regId).longValue();
     }
 
     @Override
     public void setXLong(int index, long value) {
         if (index >= 0 && index <= 28) {
-            unicorn.reg_write(Arm64Const.UC_ARM64_REG_X0 + index, value);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X0 + index, value);
             return;
         }
         throw new IllegalArgumentException("invalid index: " + index);
@@ -42,8 +42,8 @@ public class UnicornArm64RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
-    public UnicornPointer getXPointer(int index) {
-        return UnicornPointer.pointer(emulator, getXLong(index));
+    public UnidbgPointer getXPointer(int index) {
+        return UnidbgPointer.pointer(emulator, getXLong(index));
     }
 
     @Override
@@ -52,8 +52,8 @@ public class UnicornArm64RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
-    public UnicornPointer getFpPointer() {
-        return UnicornPointer.pointer(emulator, getFp());
+    public UnidbgPointer getFpPointer() {
+        return UnidbgPointer.pointer(emulator, getFp());
     }
 
     @Override
@@ -62,22 +62,22 @@ public class UnicornArm64RegisterContext extends BaseRegisterContext implements 
     }
 
     @Override
-    public UnicornPointer getLRPointer() {
-        return UnicornPointer.pointer(emulator, getLR());
+    public UnidbgPointer getLRPointer() {
+        return UnidbgPointer.pointer(emulator, getLR());
     }
 
     @Override
-    public UnicornPointer getPCPointer() {
-        return UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
+    public UnidbgPointer getPCPointer() {
+        return UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
     }
 
     @Override
-    public UnicornPointer getStackPointer() {
-        return UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
+    public UnidbgPointer getStackPointer() {
+        return UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
     }
 
     @Override
     public void setStackPointer(Pointer sp) {
-        unicorn.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnicornPointer) sp).peer);
+        backend.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnidbgPointer) sp).peer);
     }
 }

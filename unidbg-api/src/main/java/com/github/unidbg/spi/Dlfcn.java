@@ -6,7 +6,7 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.serialize.Serializable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,7 +17,7 @@ public abstract class Dlfcn implements HookListener, Serializable {
 
     private static final Log log = LogFactory.getLog(Dlfcn.class);
 
-    protected final UnicornPointer error;
+    protected final UnidbgPointer error;
 
     protected Dlfcn(SvcMemory svcMemory) {
         error = svcMemory.allocate(0x80, "Dlfcn.error");

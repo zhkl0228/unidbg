@@ -1,13 +1,13 @@
 package com.github.unidbg.ios.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class MachHeader extends UnicornStructure {
+public class MachHeader extends UnidbgStructure {
 
     public MachHeader(Pointer p) {
         super(p);

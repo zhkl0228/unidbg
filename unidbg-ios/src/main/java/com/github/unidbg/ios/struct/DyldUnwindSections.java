@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class DyldUnwindSections extends UnicornStructure {
+public class DyldUnwindSections extends UnidbgStructure {
 
     public DyldUnwindSections(Pointer p) {
         super(p);

@@ -1,13 +1,13 @@
 package com.github.unidbg.ios.struct.kernel;
 
 import com.github.unidbg.ios.DarwinSyscall;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class ProcBsdShortInfo extends UnicornStructure implements DarwinSyscall {
+public class ProcBsdShortInfo extends UnidbgStructure implements DarwinSyscall {
 
     public static final int SRUN = 2; /* Currently runnable. */
     public static final int P_SUGID = 0x00000100; /* Has set privileges since last exec */

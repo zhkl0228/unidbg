@@ -1,7 +1,7 @@
 package com.github.unidbg.hook.hookzz;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
 
@@ -10,7 +10,7 @@ public class Arm64HookEntryInfo implements HookEntryInfo {
     private final Pointer info;
 
     Arm64HookEntryInfo(Emulator<?> emulator) {
-        info = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+        info = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
     }
 
     @Override

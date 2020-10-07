@@ -7,7 +7,7 @@ import com.github.unidbg.linux.LinuxModule;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.UnixEmulator;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
@@ -41,19 +41,19 @@ class RunExecutable {
             LinuxModule libc = (LinuxModule) module.getDependencyModule("libc");
             ElfSymbol environ = libc.getELFSymbolByName("environ");
             if (environ != null) {
-                Pointer pointer = UnicornPointer.pointer(emulator, libc.base + environ.value);
+                Pointer pointer = UnidbgPointer.pointer(emulator, libc.base + environ.value);
                 assert pointer != null;
                 System.err.println("environ=" + pointer + ", value=" + pointer.getPointer(0));
             }
             Number __errno = libc.callFunction(emulator, "__errno")[0];
-            Pointer pointer = UnicornPointer.pointer(emulator, __errno.intValue() & 0xffffffffL);
+            Pointer pointer = UnidbgPointer.pointer(emulator, __errno.intValue() & 0xffffffffL);
             assert pointer != null;
             emulator.getMemory().setErrno(UnixEmulator.EACCES);
             int value = pointer.getInt(0);
             assert value == UnixEmulator.EACCES;
 
 //             emulator.traceCode();
-            Pointer strerror = UnicornPointer.pointer(emulator, libc.callFunction(emulator, "strerror", UnixEmulator.ECONNREFUSED)[0].intValue() & 0xffffffffL);
+            Pointer strerror = UnidbgPointer.pointer(emulator, libc.callFunction(emulator, "strerror", UnixEmulator.ECONNREFUSED)[0].intValue() & 0xffffffffL);
             assert strerror != null;
             System.out.println(strerror.getString(0));
 

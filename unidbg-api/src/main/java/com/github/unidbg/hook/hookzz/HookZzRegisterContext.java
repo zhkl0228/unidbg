@@ -3,7 +3,7 @@ package com.github.unidbg.hook.hookzz;
 import com.github.unidbg.arm.context.AbstractRegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.InvocationContext;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 import java.util.Stack;
 
@@ -29,7 +29,7 @@ public abstract class HookZzRegisterContext extends AbstractRegisterContext impl
     }
 
     @Override
-    public UnicornPointer getPCPointer() {
+    public UnidbgPointer getPCPointer() {
         throw new UnsupportedOperationException();
     }
 

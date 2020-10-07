@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class VmRegionSubMapShortInfo64 extends UnicornStructure {
+public class VmRegionSubMapShortInfo64 extends UnidbgStructure {
 
     public VmRegionSubMapShortInfo64(Pointer p) {
         super(p);

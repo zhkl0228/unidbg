@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.sysctl;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class Pcred extends UnicornStructure {
+public class Pcred extends UnidbgStructure {
 
     public Pcred(Pointer p) {
         super(p);

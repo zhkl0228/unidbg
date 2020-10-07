@@ -5,14 +5,14 @@ import capstone.Arm_const;
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.io.ByteArrayOutputStream;
@@ -32,8 +32,8 @@ import java.util.Locale;
 
 public class ARM {
 
-    public static boolean isThumb(Unicorn unicorn) {
-        return Cpsr.getArm(unicorn).isThumb();
+    public static boolean isThumb(Backend backend) {
+        return Cpsr.getArm(backend).isThumb();
     }
 
     /**
@@ -47,10 +47,9 @@ public class ARM {
         showRegs(emulator, ARM.THUMB_REGS);
     }
 
-    @SuppressWarnings("deprecation")
     public static void showRegs(Emulator<?> emulator, int[] regs) {
-        Unicorn unicorn = emulator.getUnicorn();
-        boolean thumb = isThumb(unicorn);
+        Backend backend = emulator.getBackend();
+        boolean thumb = isThumb(backend);
         if (regs == null || regs.length < 1) {
             regs = ARM.getAllRegisters(thumb);
         }
@@ -61,7 +60,7 @@ public class ARM {
             int value;
             switch (reg) {
                 case ArmConst.UC_ARM_REG_CPSR:
-                    Cpsr cpsr = Cpsr.getArm(unicorn);
+                    Cpsr cpsr = Cpsr.getArm(backend);
                     builder.append(String.format(Locale.US, " cpsr: N=%d, Z=%d, C=%d, V=%d, T=%d, mode=0b",
                             cpsr.isNegative() ? 1 : 0,
                             cpsr.isZero() ? 1 : 0,
@@ -70,7 +69,7 @@ public class ARM {
                             cpsr.isThumb() ? 1 : 0)).append(Integer.toBinaryString(cpsr.getMode()));
                     break;
                 case ArmConst.UC_ARM_REG_R0:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r0=0x%x", value));
                     if (value < 0) {
@@ -78,139 +77,139 @@ public class ARM {
                     }
                     break;
                 case ArmConst.UC_ARM_REG_R1:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r1=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R2:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r2=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R3:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r3=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R4:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r4=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R5:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r5=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R6:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r6=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R7:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r7=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R8:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " r8=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R9: // UC_ARM_REG_SB
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " sb=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_R10: // UC_ARM_REG_SL
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " sl=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_FP:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " fp=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_IP:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " ip=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_SP:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.intValue();
                     builder.append(String.format(Locale.US, " SP=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_LR:
-                    builder.append(String.format(Locale.US, " LR=%s", UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                    builder.append(String.format(Locale.US, " LR=%s", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                     break;
                 case ArmConst.UC_ARM_REG_PC:
-                    builder.append(String.format(Locale.US, " PC=%s", UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_PC)));
+                    builder.append(String.format(Locale.US, " PC=%s", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC)));
                     break;
                 case ArmConst.UC_ARM_REG_Q0:
                     builder.append("\n>>>");
-                    byte[] data = unicorn.reg_read(reg, 16);
+                    byte[] data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q1:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q2:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q3:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q4:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q5:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q6:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q7:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q8:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q9:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q10:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q11:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q12:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q13:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q14:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case ArmConst.UC_ARM_REG_Q15:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
                     break;
             }
@@ -218,9 +217,8 @@ public class ARM {
         System.out.println(builder.toString());
     }
 
-    @SuppressWarnings("deprecation")
     public static void showRegs64(Emulator<?> emulator, int[] regs) {
-        Unicorn unicorn = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         if (regs == null || regs.length < 1) {
             regs = ARM.getAll64Registers();
         }
@@ -231,7 +229,7 @@ public class ARM {
             long value;
             switch (reg) {
                 case Arm64Const.UC_ARM64_REG_NZCV:
-                    Cpsr cpsr = Cpsr.getArm64(unicorn);
+                    Cpsr cpsr = Cpsr.getArm64(backend);
                     builder.append(String.format(Locale.US, "\nnzcv: N=%d, Z=%d, C=%d, V=%d, T=%d, mode=0b",
                             cpsr.isNegative() ? 1 : 0,
                             cpsr.isZero() ? 1 : 0,
@@ -240,7 +238,7 @@ public class ARM {
                             cpsr.isThumb() ? 1 : 0)).append(Integer.toBinaryString(cpsr.getMode()));
                     break;
                 case Arm64Const.UC_ARM64_REG_X0:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x0=0x%x", value));
                     if (value < 0) {
@@ -253,290 +251,290 @@ public class ARM {
                     }
                     break;
                 case Arm64Const.UC_ARM64_REG_X1:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x1=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X2:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x2=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X3:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x3=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X4:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x4=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X5:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x5=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X6:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x6=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X7:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x7=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X8:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x8=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X9:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x9=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X10:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x10=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X11:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x11=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X12:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x12=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X13:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x13=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X14:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x14=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X15:
                     builder.append("\n>>>");
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x15=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X16:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x16=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X17:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x17=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X18:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x18=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X19:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x19=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X20:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x20=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X21:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x21=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X22:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x22=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X23:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x23=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X24:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x24=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X25:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x25=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X26:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x26=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X27:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x27=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_X28:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " x28=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_FP:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, " fp=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_SP:
-                    number = (Number) unicorn.reg_read(reg);
+                    number = backend.reg_read(reg);
                     value = number.longValue();
                     builder.append(String.format(Locale.US, "\nSP=0x%x", value));
                     break;
                 case Arm64Const.UC_ARM64_REG_LR:
-                    builder.append(String.format(Locale.US, "\nLR=%s", UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
+                    builder.append(String.format(Locale.US, "\nLR=%s", UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                     break;
                 case Arm64Const.UC_ARM64_REG_PC:
-                    builder.append(String.format(Locale.US, "\nPC=%s", UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC)));
+                    builder.append(String.format(Locale.US, "\nPC=%s", UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q0:
                     builder.append("\n>>>");
-                    byte[] data = unicorn.reg_read(reg, 16);
+                    byte[] data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q1:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q2:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q3:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q4:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q5:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q6:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q7:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q8:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q9:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q10:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q11:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q12:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q13:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q14:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q15:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q16:
                     builder.append("\n>>>");
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q16=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q17:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q17=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q18:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q18=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q19:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q19=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q20:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q20=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q21:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q21=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q22:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q22=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q23:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q23=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q24:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q24=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q25:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q25=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q26:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q26=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q27:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q27=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q28:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q28=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q29:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q29=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q30:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q30=0x%s", newBigInteger(data).toString(16)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q31:
-                    data = unicorn.reg_read(reg, 16);
+                    data = backend.reg_read(reg, 16);
                     builder.append(String.format(Locale.US, " q31=0x%s", newBigInteger(data).toString(16)));
                     break;
             }
@@ -730,12 +728,12 @@ public class ARM {
         return ((size - 1) / align + 1) * align;
     }
 
-    public static String readCString(Unicorn unicorn, long address) {
+    public static String readCString(Backend backend, long address) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(0x1000);
         int size = 0;
         try {
             while (true) {
-                byte[] oneByte = unicorn.mem_read(address, 1);
+                byte[] oneByte = backend.mem_read(address, 1);
                 size += oneByte.length;
 
                 if (size > 0x1000) {
@@ -771,7 +769,7 @@ public class ARM {
             mem = opInfo.op[1].value.mem;
 
             if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.disp;
             }
@@ -780,9 +778,9 @@ public class ARM {
             Arm.OpShift shift;
             if (mem.index > 0 && mem.scale == 1 && mem.lshift == 0 && mem.disp == 0 &&
                     (shift = opInfo.op[1].shift) != null) {
-                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
                 long base_value = base == null ? 0L : base.peer;
-                UnicornPointer index = UnicornPointer.register(emulator, mem.index);
+                UnidbgPointer index = UnidbgPointer.register(emulator, mem.index);
                 int index_value = index == null ? 0 : (int) index.peer;
                 if (shift.type == Arm_const.ARM_OP_IMM) {
                     addr = base_value + (index_value << shift.value);
@@ -799,7 +797,7 @@ public class ARM {
                 opInfo.op[2].type == Arm_const.ARM_OP_IMM) {
             mem = opInfo.op[1].value.mem;
             if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
                 addr = base == null ? 0L : base.peer;
             }
         }
@@ -825,7 +823,7 @@ public class ARM {
                 opInfo.op[2].type == Arm_const.ARM_OP_MEM) {
             mem = opInfo.op[2].value.mem;
             if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                UnicornPointer base = UnicornPointer.register(emulator, mem.base);
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.disp;
                 if (mem.base == Arm_const.ARM_REG_PC) {
@@ -920,7 +918,7 @@ public class ARM {
     private static final Log log = LogFactory.getLog(ARM.class);
 
     static Arguments initArgs(Emulator<?> emulator, boolean padding, Number... arguments) {
-        Unicorn unicorn = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         Memory memory = emulator.getMemory();
 
         int[] regArgs = ARM.getRegArgs(emulator);
@@ -986,7 +984,7 @@ public class ARM {
         }
         int i = 0;
         while (!list.isEmpty() && i < regArgs.length) {
-            unicorn.reg_write(regArgs[i], list.remove(0));
+            backend.reg_write(regArgs[i], list.remove(0));
             i++;
         }
         Collections.reverse(list);
@@ -995,7 +993,7 @@ public class ARM {
         }
         while (!list.isEmpty()) {
             Number number = list.remove(0);
-            UnicornPointer pointer = memory.allocateStack(emulator.getPointerSize());
+            UnidbgPointer pointer = memory.allocateStack(emulator.getPointerSize());
             assert pointer != null;
             if (emulator.is64Bit()) {
                 if ((pointer.peer % 8) != 0) {

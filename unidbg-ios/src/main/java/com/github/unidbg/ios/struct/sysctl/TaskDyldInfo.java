@@ -7,8 +7,8 @@ import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.ios.objc.Constants;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
@@ -17,7 +17,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-public class TaskDyldInfo extends UnicornStructure {
+public class TaskDyldInfo extends UnidbgStructure {
 
     private static final String DYLD_VERSION = "324.1";
 
@@ -31,7 +31,7 @@ public class TaskDyldInfo extends UnicornStructure {
 
     private static MemoryBlock infoArrayBlock;
     private static Pointer dyldVersion;
-    private static UnicornPointer dyldAllImageInfosAddress;
+    private static UnidbgPointer dyldAllImageInfosAddress;
 
     public void allocateAllImage(Emulator<?> emulator) {
         SvcMemory svcMemory = emulator.getSvcMemory();
@@ -58,23 +58,23 @@ public class TaskDyldInfo extends UnicornStructure {
     }
 
     private void allocateAllImage64(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
-        int all_image_info_size = UnicornStructure.calculateSize(DyldAllImageInfos64.class);
+        int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos64.class);
         if (dyldAllImageInfosAddress == null) {
             dyldAllImageInfosAddress = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos64");
         }
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_64;
         this.all_image_info_size = all_image_info_size;
-        UnicornPointer all_image_info_addr = dyldAllImageInfosAddress;
+        UnidbgPointer all_image_info_addr = dyldAllImageInfosAddress;
         this.all_image_info_addr = all_image_info_addr.peer;
 
-        int size = UnicornStructure.calculateSize(DyldImageInfo64.class);
+        int size = UnidbgStructure.calculateSize(DyldImageInfo64.class);
         Pointer infoArray = infoArrayBlock.getPointer();
         Pointer pointer = infoArray;
         for (Module module : modules) {
             MachOModule mm = (MachOModule) module;
             DyldImageInfo64 info = new DyldImageInfo64(pointer);
-            info.imageLoadAddress = UnicornPointer.pointer(emulator, mm.machHeader);
+            info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
             info.imageFilePath = mm.createPathMemory(svcMemory);
             info.imageFileModDate = 0;
             info.pack();
@@ -96,23 +96,23 @@ public class TaskDyldInfo extends UnicornStructure {
     }
 
     private void allocateAllImage32(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
-        int all_image_info_size = UnicornStructure.calculateSize(DyldAllImageInfos32.class);
+        int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos32.class);
         if (dyldAllImageInfosAddress == null) {
             dyldAllImageInfosAddress = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos64");
         }
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_32;
         this.all_image_info_size = all_image_info_size;
-        UnicornPointer all_image_info_addr = dyldAllImageInfosAddress;
+        UnidbgPointer all_image_info_addr = dyldAllImageInfosAddress;
         this.all_image_info_addr = all_image_info_addr.peer;
 
-        int size = UnicornStructure.calculateSize(DyldImageInfo32.class);
+        int size = UnidbgStructure.calculateSize(DyldImageInfo32.class);
         Pointer infoArray = infoArrayBlock.getPointer();
         Pointer pointer = infoArray;
         for (Module module : modules) {
             MachOModule mm = (MachOModule) module;
             DyldImageInfo32 info = new DyldImageInfo32(pointer);
-            info.imageLoadAddress = UnicornPointer.pointer(emulator, mm.machHeader);
+            info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
             info.imageFilePath = mm.createPathMemory(svcMemory);
             info.imageFileModDate = 0;
             info.pack();

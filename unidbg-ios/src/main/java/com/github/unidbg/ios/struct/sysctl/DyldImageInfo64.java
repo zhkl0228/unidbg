@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.sysctl;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class DyldImageInfo64 extends UnicornStructure {
+public class DyldImageInfo64 extends UnidbgStructure {
 
     public DyldImageInfo64(Pointer p) {
         super(p);

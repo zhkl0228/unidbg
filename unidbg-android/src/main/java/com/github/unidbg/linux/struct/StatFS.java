@@ -1,12 +1,12 @@
 package com.github.unidbg.linux.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class StatFS extends UnicornStructure {
+public abstract class StatFS extends UnidbgStructure {
 
     protected StatFS(Pointer p) {
         super(p);

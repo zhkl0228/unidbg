@@ -8,7 +8,7 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DispatchSourceType;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -19,13 +19,13 @@ import java.util.Arrays;
 class SymbolResolver implements HookListener {
 
     private final Emulator<DarwinFileIO> emulator;
-    private UnicornPointer _os_unfair_lock_lock, _os_unfair_lock_unlock;
-    private UnicornPointer _objc_readClassPair;
-    private UnicornPointer _objc_unsafeClaimAutoreleasedReturnValue;
-    private UnicornPointer __tlv_bootstrap;
+    private UnidbgPointer _os_unfair_lock_lock, _os_unfair_lock_unlock;
+    private UnidbgPointer _objc_readClassPair;
+    private UnidbgPointer _objc_unsafeClaimAutoreleasedReturnValue;
+    private UnidbgPointer __tlv_bootstrap;
 
-    private UnicornPointer __dispatch_source_type_memorypressure;
-    private UnicornPointer dispatch_source_type_memorypressure_init;
+    private UnidbgPointer __dispatch_source_type_memorypressure;
+    private UnidbgPointer dispatch_source_type_memorypressure_init;
 
     public SymbolResolver(Emulator<DarwinFileIO> emulator) {
         this.emulator = emulator;
@@ -118,14 +118,14 @@ class SymbolResolver implements HookListener {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
-                        UnicornPointer self = context.getPointerArg(0);
+                        UnidbgPointer self = context.getPointerArg(0);
                         return self.peer + emulator.getPointerSize();
                     }
                 } : new ArmSvc() {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
-                        UnicornPointer self = context.getPointerArg(0);
+                        UnidbgPointer self = context.getPointerArg(0);
                         return self.peer + emulator.getPointerSize();
                     }
                 });
@@ -140,13 +140,13 @@ class SymbolResolver implements HookListener {
                         throw new UnsupportedOperationException();
                     }
                     @Override
-                    public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                    public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
                             KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                     "nop",
                                     "ret"));
                             byte[] code = encoded.getMachineCode();
-                            UnicornPointer pointer = svcMemory.allocate(code.length, "objc_readClassPair");
+                            UnidbgPointer pointer = svcMemory.allocate(code.length, "objc_readClassPair");
                             pointer.write(0, code, 0, code.length);
                             return pointer;
                         }
@@ -157,13 +157,13 @@ class SymbolResolver implements HookListener {
                         throw new UnsupportedOperationException();
                     }
                     @Override
-                    public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                    public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
                             KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                     "nop",
                                     "bx lr"));
                             byte[] code = encoded.getMachineCode();
-                            UnicornPointer pointer = svcMemory.allocate(code.length, "objc_readClassPair");
+                            UnidbgPointer pointer = svcMemory.allocate(code.length, "objc_readClassPair");
                             pointer.write(0, code, 0, code.length);
                             return pointer;
                         }

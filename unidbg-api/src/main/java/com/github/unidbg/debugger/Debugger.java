@@ -1,7 +1,7 @@
 package com.github.unidbg.debugger;
 
 import com.github.unidbg.Module;
-import unicorn.DebugHook;
+import com.github.unidbg.arm.backend.DebugHook;
 
 import java.io.Closeable;
 import java.util.concurrent.Callable;

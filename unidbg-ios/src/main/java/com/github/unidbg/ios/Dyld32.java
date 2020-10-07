@@ -7,13 +7,14 @@ import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
@@ -24,7 +25,6 @@ import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -77,8 +77,8 @@ public class Dyld32 extends Dyld {
                     __dyld__NSGetExecutablePath = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer buf = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            int bufSize = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            Pointer buf = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            int bufSize = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R1).intValue();
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld__NSGetExecutablePath buf=" + buf + ", bufSize=" + bufSize);
                             }
@@ -94,7 +94,7 @@ public class Dyld32 extends Dyld {
                     __dyld_get_image_name = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            int image_index = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                             Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             long ret;
                             if (image_index < 0 || image_index >= modules.length) {
@@ -117,7 +117,7 @@ public class Dyld32 extends Dyld {
                     __dyld_get_image_header = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            int image_index = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                             Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             long ret;
                             if (image_index < 0 || image_index >= modules.length) {
@@ -141,7 +141,7 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
-                            UnicornPointer imageLoaderCache = context.getPointerArg(0);
+                            UnidbgPointer imageLoaderCache = context.getPointerArg(0);
                             int lazyBindingInfoOffset = context.getIntArg(1);
                             MachOModule mm = (MachOModule) emulator.getMemory().findModuleByAddress(imageLoaderCache.peer);
                             long result = mm.doBindFastLazySymbol(emulator, lazyBindingInfoOffset);
@@ -159,7 +159,7 @@ public class Dyld32 extends Dyld {
                     __dyld_get_image_slide = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            UnicornPointer mh = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            UnidbgPointer mh = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_get_image_slide mh=" + mh);
                             }
@@ -174,7 +174,7 @@ public class Dyld32 extends Dyld {
                     __dyld_get_image_vmaddr_slide = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            int image_index = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                            int image_index = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                             Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
                             long ret;
                             if (image_index < 0 || image_index >= modules.length) {
@@ -228,7 +228,7 @@ public class Dyld32 extends Dyld {
                 if (__dyld_dlopen == null) {
                     __dyld_dlopen = svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                        public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
                                 KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                         "push {r4-r7, lr}",
@@ -239,15 +239,15 @@ public class Dyld32 extends Dyld {
                                         "bxne r7", // call init array
                                         "pop {r0, r4-r7, pc}")); // with return address
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length, "__dyld_dlopen");
+                                UnidbgPointer pointer = svcMemory.allocate(code.length, "__dyld_dlopen");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }
                         }
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer path = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            int mode = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
+                            Pointer path = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            int mode = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R1).intValue();
                             String str = path == null ? null : path.getString(0);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_dlopen path=" + str + ", mode=0x" + Integer.toHexString(mode));
@@ -263,8 +263,8 @@ public class Dyld32 extends Dyld {
                     __dyld_dladdr = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            long addr = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
-                            Pointer info = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            long addr = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
+                            Pointer info = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
                             }
@@ -277,10 +277,10 @@ public class Dyld32 extends Dyld {
 
                             DlInfo dlInfo = new DlInfo(info);
                             dlInfo.dli_fname = module.createPathMemory(svcMemory);
-                            dlInfo.dli_fbase = UnicornPointer.pointer(emulator, module.machHeader);
+                            dlInfo.dli_fbase = UnidbgPointer.pointer(emulator, module.machHeader);
                             if (symbol != null) {
                                 dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
-                                dlInfo.dli_saddr = UnicornPointer.pointer(emulator, symbol.getAddress());
+                                dlInfo.dli_saddr = UnidbgPointer.pointer(emulator, symbol.getAddress());
                             }
                             dlInfo.pack();
                             return 1;
@@ -308,8 +308,8 @@ public class Dyld32 extends Dyld {
                     __dyld_dlsym = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            long handle = ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue() & 0xffffffffL;
-                            Pointer symbol = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            long handle = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
+                            Pointer symbol = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
                             }
@@ -320,7 +320,7 @@ public class Dyld32 extends Dyld {
                                     _os_trace_redirect_func = svcMemory.registerSvc(new ArmSvc() {
                                         @Override
                                         public long handle(Emulator<?> emulator) {
-                                            Pointer msg = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                                            Pointer msg = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
 //                                            Inspector.inspect(msg.getByteArray(0, 16), "_os_trace_redirect_func msg=" + msg);
                                             System.err.println("_os_trace_redirect_func msg=" + msg.getString(0));
                                             return 1;
@@ -342,7 +342,7 @@ public class Dyld32 extends Dyld {
                         @Override
                         public long handle(Emulator<?> emulator) {
                             // the table passed to dyld containing thread helpers
-                            Pointer helpers = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            Pointer helpers = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             if (log.isDebugEnabled()) {
                                 log.debug("registerThreadHelpers helpers=" + helpers + ", version=" + helpers.getInt(0));
                             }
@@ -357,7 +357,7 @@ public class Dyld32 extends Dyld {
                     __dyld_image_path_containing_address = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            UnicornPointer address = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            UnidbgPointer address = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             MachOModule module = (MachOModule) loader.findModuleByAddress(address.peer);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_image_path_containing_address address=" + address + ", module=" + module);
@@ -382,7 +382,7 @@ public class Dyld32 extends Dyld {
                     __dyld_register_func_for_remove_image = svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer callback = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            Pointer callback = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_register_func_for_remove_image callback=" + callback);
                             }
@@ -402,7 +402,7 @@ public class Dyld32 extends Dyld {
                 if (__dyld_register_func_for_add_image == null) {
                     __dyld_register_func_for_add_image = svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                        public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
                                 KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                         "push {r4-r7, lr}",
@@ -414,7 +414,7 @@ public class Dyld32 extends Dyld {
                                         "bxne r7", // call init array
                                         "pop {r0, r4-r7, pc}")); // with return address
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length, "__dyld_register_func_for_add_image");
+                                UnidbgPointer pointer = svcMemory.allocate(code.length, "__dyld_register_func_for_add_image");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }
@@ -422,14 +422,14 @@ public class Dyld32 extends Dyld {
 
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            final Unicorn unicorn = emulator.getUnicorn();
+                            final Backend backend = emulator.getBackend();
 
-                            UnicornPointer callback = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            UnidbgPointer callback = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_register_func_for_add_image callback=" + callback);
                             }
 
-                            Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+                            Pointer pointer = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
                             try {
                                 pointer = pointer.share(-4); // return value
                                 pointer.setInt(0, 0);
@@ -467,7 +467,7 @@ public class Dyld32 extends Dyld {
 
                                 return 0;
                             } finally {
-                                unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) pointer).peer);
+                                backend.reg_write(ArmConst.UC_ARM_REG_SP, ((UnidbgPointer) pointer).peer);
                             }
                         }
                     });
@@ -478,7 +478,7 @@ public class Dyld32 extends Dyld {
                 if (__dyld_dyld_register_image_state_change_handler == null) {
                     __dyld_dyld_register_image_state_change_handler = svcMemory.registerSvc(new ArmSvc() {
                         @Override
-                        public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                        public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
                                 KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                         "push {r4-r7, lr}",
@@ -490,25 +490,25 @@ public class Dyld32 extends Dyld {
                                         "bxne r7", // call init array
                                         "pop {r0, r4-r7, pc}")); // with return address
                                 byte[] code = encoded.getMachineCode();
-                                UnicornPointer pointer = svcMemory.allocate(code.length, "dyld_image_state_change_handler");
+                                UnidbgPointer pointer = svcMemory.allocate(code.length, "dyld_image_state_change_handler");
                                 pointer.write(0, code, 0, code.length);
                                 return pointer;
                             }
                         }
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Unicorn unicorn = emulator.getUnicorn();
-                            int state = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                            int batch = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R1)).intValue();
-                            UnicornPointer handler = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-                            UnicornStructure[] imageInfos;
+                            Backend backend = emulator.getBackend();
+                            int state = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
+                            int batch = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
+                            UnidbgPointer handler = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                            UnidbgStructure[] imageInfos;
                             if (batch == 1) {
                                 imageInfos = registerImageStateBatchChangeHandler(loader, state, handler, emulator);
                             } else {
                                 imageInfos = registerImageStateSingleChangeHandler(loader, state, handler, emulator);
                             }
 
-                            Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+                            Pointer pointer = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
                             try {
                                 pointer = pointer.share(-4); // return value
                                 pointer.setInt(0, 0);
@@ -534,7 +534,7 @@ public class Dyld32 extends Dyld {
 
                                 return 0;
                             } finally {
-                                unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) pointer).peer);
+                                backend.reg_write(ArmConst.UC_ARM_REG_SP, ((UnidbgPointer) pointer).peer);
                             }
                         }
                     });
@@ -554,8 +554,8 @@ public class Dyld32 extends Dyld {
      */
     private long dlopen(Emulator<?> emulator, String path, int mode) {
         Memory memory = emulator.getMemory();
-        Unicorn unicorn = emulator.getUnicorn();
-        Pointer pointer = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+        Backend backend = emulator.getBackend();
+        Pointer pointer = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
             Collection<Module> loaded = memory.getLoadedModules();
             Module module = path == null ? null : memory.dlopen(path, false);
@@ -626,7 +626,7 @@ public class Dyld32 extends Dyld {
                 return ((MachOModule) module).machHeader;
             }
         } finally {
-            unicorn.reg_write(ArmConst.UC_ARM_REG_SP, ((UnicornPointer) pointer).peer);
+            backend.reg_write(ArmConst.UC_ARM_REG_SP, ((UnidbgPointer) pointer).peer);
         }
     }
 
@@ -642,7 +642,7 @@ public class Dyld32 extends Dyld {
                         public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
                             emulator.attach().debug();
-                            emulator.getUnicorn().reg_write(ArmConst.UC_ARM_REG_LR, AbstractARMEmulator.LR);
+                            emulator.getBackend().reg_write(ArmConst.UC_ARM_REG_LR, AbstractARMEmulator.LR);
                             return 0;
                         }
                     }).peer;

@@ -2,7 +2,7 @@ package com.github.unidbg.unwind;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.AbstractARM64Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import unicorn.Arm64Const;
 
 public class SimpleARM64Unwinder extends Unwinder {
@@ -17,7 +17,7 @@ public class SimpleARM64Unwinder extends Unwinder {
     }
 
     @Override
-    public Frame createFrame(UnicornPointer ip, UnicornPointer fp) {
+    public Frame createFrame(UnidbgPointer ip, UnidbgPointer fp) {
         if (ip != null) {
             if (ip.peer == AbstractARM64Emulator.LR) {
                 return new Frame(ip, null);
@@ -31,8 +31,8 @@ public class SimpleARM64Unwinder extends Unwinder {
     }
 
     private Frame initFrame(Emulator<?> emulator) {
-        UnicornPointer ip = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR);
-        UnicornPointer fp = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_FP);
+        UnidbgPointer ip = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR);
+        UnidbgPointer fp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_FP);
         return createFrame(ip, fp);
     }
 
@@ -47,8 +47,8 @@ public class SimpleARM64Unwinder extends Unwinder {
             return null;
         }
 
-        UnicornPointer ip = frame.fp.getPointer(8);
-        UnicornPointer fp = frame.fp.getPointer(0);
+        UnidbgPointer ip = frame.fp.getPointer(8);
+        UnidbgPointer fp = frame.fp.getPointer(0);
         return createFrame(ip, fp);
     }
 

@@ -1,12 +1,12 @@
 package com.github.unidbg.unix.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class TimeVal64 extends UnicornStructure {
+public class TimeVal64 extends UnidbgStructure {
 
     public TimeVal64(Pointer p) {
         super(p);

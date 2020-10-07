@@ -1,8 +1,8 @@
 package com.github.unidbg.arm.context;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
-import unicorn.Unicorn;
+import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public abstract class BaseRegisterContext extends AbstractRegisterContext implements RegisterContext {
 
@@ -17,27 +17,27 @@ public abstract class BaseRegisterContext extends AbstractRegisterContext implem
     }
 
     @Override
-    public UnicornPointer getPointerArg(int index) {
+    public UnidbgPointer getPointerArg(int index) {
         if (index < regArgCount) {
             int reg = firstArgReg + index;
-            return UnicornPointer.register(emulator, reg);
+            return UnidbgPointer.register(emulator, reg);
         }
 
-        UnicornPointer sp = getStackPointer();
+        UnidbgPointer sp = getStackPointer();
         return sp.getPointer((index - regArgCount) * emulator.getPointerSize());
     }
 
     @Override
     public int getInt(int regId) {
-        Unicorn unicorn = emulator.getUnicorn();
-        Number number = (Number) unicorn.reg_read(regId);
+        Backend backend = emulator.getBackend();
+        Number number = backend.reg_read(regId);
         return number.intValue();
     }
 
     @Override
     public long getLong(int regId) {
-        Unicorn unicorn = emulator.getUnicorn();
-        Number number = (Number) unicorn.reg_read(regId);
+        Backend backend = emulator.getBackend();
+        Number number = backend.reg_read(regId);
         return number.longValue();
     }
 

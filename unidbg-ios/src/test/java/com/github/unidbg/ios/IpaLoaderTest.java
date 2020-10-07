@@ -9,7 +9,7 @@ import com.github.unidbg.ios.classdump.IClassDumper;
 import com.github.unidbg.ios.ipa.EmulatorConfigurator;
 import com.github.unidbg.ios.ipa.IpaLoader64;
 import com.github.unidbg.ios.ipa.LoadedIpa;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -36,7 +36,7 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                 System.out.println(objcClass);
 
                 Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");
-                Pointer pointer = UnicornPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
+                Pointer pointer = UnidbgPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
                 assert pointer != null;
                 System.out.println("_TelegramCoreVersionString=" + pointer.getString(0));
                 return null;

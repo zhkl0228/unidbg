@@ -2,7 +2,7 @@ package net.fornwall.jelf;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unwind.Frame;
 import com.github.unidbg.unwind.Unwinder;
 import com.github.unidbg.utils.Inspector;
@@ -219,10 +219,10 @@ public class GnuEhFrameHeader {
         }
         dwarf_loc_t loc = fde == null ? null : dwarf_get_loc(fde, fun);
         if (loc != null) {
-            UnicornPointer vsp;
+            UnidbgPointer vsp;
             switch (loc.cfa_rule.type) {
                 case DW_LOC_REGISTER:
-                    vsp = UnicornPointer.pointer(emulator, context.loc[(int) loc.cfa_rule.values[0]] + loc.cfa_rule.values[1]);
+                    vsp = UnidbgPointer.pointer(emulator, context.loc[(int) loc.cfa_rule.values[0]] + loc.cfa_rule.values[1]);
                     assert vsp != null;
                     context.loc[emulator.is32Bit() ? 13 : 31] = vsp.peer;
                     if (log.isDebugEnabled()) {
@@ -242,7 +242,7 @@ public class GnuEhFrameHeader {
 
                 switch (rule.type) {
                     case DW_LOC_OFFSET:
-                        UnicornPointer value = vsp.getPointer(rule.values[0]);
+                        UnidbgPointer value = vsp.getPointer(rule.values[0]);
                         context.loc[i] = value == null ? 0L : value.peer;
                         if (log.isDebugEnabled()) {
                             log.debug("dwarf_step " + (emulator.is32Bit() ? "r" : "x") + i + " + (" + rule.values[0] + ") => 0x" + Long.toHexString(context.loc[i]));
@@ -265,7 +265,7 @@ public class GnuEhFrameHeader {
 
             context.ip = ip;
             context.cfa = vsp.peer;
-            Frame frame = unwinder.createFrame(UnicornPointer.pointer(emulator, ip), UnicornPointer.pointer(emulator, context.cfa));
+            Frame frame = unwinder.createFrame(UnidbgPointer.pointer(emulator, ip), UnidbgPointer.pointer(emulator, context.cfa));
             if (frame != null) {
                 context.ip = frame.ip.peer;
             }

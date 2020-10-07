@@ -1,10 +1,10 @@
 package com.github.unidbg;
 
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
-import unicorn.Unicorn;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -87,9 +87,9 @@ public abstract class Module {
         this.forceCallInit = true;
     }
 
-    public final void unload(Unicorn unicorn) {
+    public final void unload(Backend backend) {
         for (MemRegion region : regions) {
-            unicorn.mem_unmap(region.begin, region.end - region.begin);
+            backend.mem_unmap(region.begin, region.end - region.begin);
         }
     }
 
@@ -109,7 +109,7 @@ public abstract class Module {
 
     public  abstract int callEntry(Emulator<?> emulator, String... args);
 
-    private UnicornPointer pathPointer;
+    private UnidbgPointer pathPointer;
 
     public abstract String getPath();
 
@@ -120,7 +120,7 @@ public abstract class Module {
      */
     public abstract void registerSymbol(String symbolName, long address);
 
-    public final UnicornPointer createPathMemory(SvcMemory svcMemory) {
+    public final UnidbgPointer createPathMemory(SvcMemory svcMemory) {
         if (this.pathPointer == null) {
             byte[] bytes = getPath().getBytes(StandardCharsets.UTF_8);
             byte[] path = Arrays.copyOf(bytes, bytes.length + 1);
@@ -137,12 +137,12 @@ public abstract class Module {
                 list.add(new StringNumber((String) arg));
             } else if(arg instanceof byte[]) {
                 list.add(new ByteArrayNumber((byte[]) arg));
-            } else if(arg instanceof UnicornPointer) {
-                UnicornPointer pointer = (UnicornPointer) arg;
+            } else if(arg instanceof UnidbgPointer) {
+                UnidbgPointer pointer = (UnidbgPointer) arg;
                 list.add(new PointerNumber(pointer));
-            } else if(arg instanceof UnicornStructure) {
-                UnicornStructure structure = (UnicornStructure) arg;
-                list.add(new PointerNumber((UnicornPointer) structure.getPointer()));
+            } else if(arg instanceof UnidbgStructure) {
+                UnidbgStructure structure = (UnidbgStructure) arg;
+                list.add(new PointerNumber((UnidbgPointer) structure.getPointer()));
             } else if (arg instanceof Number) {
                 list.add((Number) arg);
             } else if(arg == null) {

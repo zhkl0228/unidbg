@@ -4,13 +4,14 @@ import capstone.Capstone;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.arm.context.UnicornArm32RegisterContext;
+import com.github.unidbg.arm.context.BackendArm32RegisterContext;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -48,9 +49,9 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public AbstractARMEmulator(String processName, File rootDir, Family family, String... envs) {
         super(UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM, processName, 0xfffe0000L, 0x10000, rootDir, family);
 
-        Cpsr.getArm(unicorn).switchUserMode();
+        Cpsr.getArm(backend).switchUserMode();
 
-        unicorn.hook_add_new(new EventMemHook() {
+        backend.hook_add_new(new EventMemHook() {
             @Override
             public boolean hook(Unicorn u, long address, int size, long value, Object user) {
                 RegisterContext context = getContext();
@@ -66,7 +67,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
         this.dlfcn = createDyld(svcMemory);
         this.memory.addHookListener(dlfcn);
 
-        unicorn.hook_add_new(syscallHandler, this);
+        backend.hook_add_new(syscallHandler, this);
 
         this.capstoneArm = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
         this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
@@ -77,8 +78,8 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    protected RegisterContext createRegisterContext(Unicorn unicorn) {
-        return new UnicornArm32RegisterContext(unicorn, this);
+    protected RegisterContext createRegisterContext(Backend backend) {
+        return new BackendArm32RegisterContext(backend, this);
     }
 
     @Override
@@ -88,7 +89,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     protected void setupTraps() {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            unicorn.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+            backend.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
             KeystoneEncoded encoded = keystone.assemble("mov pc, #0");
             byte[] b0 = encoded.getMachineCode();
             ByteBuffer buffer = ByteBuffer.allocate(0x10000);
@@ -109,10 +110,10 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     private void enableVFP() {
-        int value = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_C1_C0_2)).intValue();
+        int value = ((Number) backend.reg_read(ArmConst.UC_ARM_REG_C1_C0_2)).intValue();
         value |= (0xf << 20);
-        unicorn.reg_write(ArmConst.UC_ARM_REG_C1_C0_2, value);
-        unicorn.reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
+        backend.reg_write(ArmConst.UC_ARM_REG_C1_C0_2, value);
+        backend.reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
     }
 
     @Override
@@ -172,14 +173,14 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     @Override
     public Capstone.CsInsn[] printAssemble(PrintStream out, long address, int size) {
         Capstone.CsInsn[] insns = disassemble(address, size, 0);
-        printAssemble(out, insns, address, ARM.isThumb(unicorn));
+        printAssemble(out, insns, address, ARM.isThumb(backend));
         return insns;
     }
 
     @Override
     public Capstone.CsInsn[] disassemble(long address, int size, long count) {
-        boolean thumb = ARM.isThumb(unicorn);
-        byte[] code = unicorn.mem_read(address, size);
+        boolean thumb = ARM.isThumb(backend);
+        byte[] code = backend.mem_read(address, size);
         return thumb ? capstoneThumb.disasm(code, address, count) : capstoneArm.disasm(code, address, count);
     }
 
@@ -203,7 +204,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public Number[] eFunc(long begin, Number... arguments) {
         long spBackup = memory.getStackPoint();
         try {
-            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
             final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
             return eFunc(begin, args, LR, true);
         } finally {
@@ -215,7 +216,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public void eInit(long begin, Number... arguments) {
         long spBackup = memory.getStackPoint();
         try {
-            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
             final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
             eFunc(begin, args, LR, false);
         } finally {
@@ -228,7 +229,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
         long spBackup = memory.getStackPoint();
         try {
             memory.setStackPoint(sp);
-            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
             return emulate(begin, LR, timeout, true);
         } finally {
             memory.setStackPoint(spBackup);
@@ -236,12 +237,11 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    public Unicorn eBlock(long begin, long until) {
+    public void eBlock(long begin, long until) {
         long spBackup = memory.getStackPoint();
         try {
-            unicorn.reg_write(ArmConst.UC_ARM_REG_LR, LR);
+            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
             emulate(begin, until, traceInstruction ? 0 : timeout, true);
-            return unicorn;
         } finally {
             memory.setStackPoint(spBackup);
         }
@@ -259,7 +259,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     @Override
     protected Pointer getStackPointer() {
-        return UnicornPointer.register(this, ArmConst.UC_ARM_REG_SP);
+        return UnidbgPointer.register(this, ArmConst.UC_ARM_REG_SP);
     }
 
     @Override

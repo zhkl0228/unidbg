@@ -1,7 +1,7 @@
 package com.github.unidbg.hook;
 
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 import java.util.Stack;
@@ -191,67 +191,67 @@ class Arm32HookContext extends HookContext implements EditableArm32RegisterConte
     }
 
     @Override
-    public UnicornPointer getR0Pointer() {
+    public UnidbgPointer getR0Pointer() {
         return registerContext.getR0Pointer();
     }
 
     @Override
-    public UnicornPointer getR1Pointer() {
+    public UnidbgPointer getR1Pointer() {
         return registerContext.getR1Pointer();
     }
 
     @Override
-    public UnicornPointer getR2Pointer() {
+    public UnidbgPointer getR2Pointer() {
         return registerContext.getR2Pointer();
     }
 
     @Override
-    public UnicornPointer getR3Pointer() {
+    public UnidbgPointer getR3Pointer() {
         return registerContext.getR3Pointer();
     }
 
     @Override
-    public UnicornPointer getR4Pointer() {
+    public UnidbgPointer getR4Pointer() {
         return registerContext.getR4Pointer();
     }
 
     @Override
-    public UnicornPointer getR5Pointer() {
+    public UnidbgPointer getR5Pointer() {
         return registerContext.getR5Pointer();
     }
 
     @Override
-    public UnicornPointer getR6Pointer() {
+    public UnidbgPointer getR6Pointer() {
         return registerContext.getR6Pointer();
     }
 
     @Override
-    public UnicornPointer getR7Pointer() {
+    public UnidbgPointer getR7Pointer() {
         return registerContext.getR7Pointer();
     }
 
     @Override
-    public UnicornPointer getR8Pointer() {
+    public UnidbgPointer getR8Pointer() {
         return registerContext.getR8Pointer();
     }
 
     @Override
-    public UnicornPointer getR9Pointer() {
+    public UnidbgPointer getR9Pointer() {
         return registerContext.getR9Pointer();
     }
 
     @Override
-    public UnicornPointer getR10Pointer() {
+    public UnidbgPointer getR10Pointer() {
         return registerContext.getR10Pointer();
     }
 
     @Override
-    public UnicornPointer getR11Pointer() {
+    public UnidbgPointer getR11Pointer() {
         return registerContext.getR11Pointer();
     }
 
     @Override
-    public UnicornPointer getR12Pointer() {
+    public UnidbgPointer getR12Pointer() {
         return registerContext.getR12Pointer();
     }
 
@@ -266,7 +266,7 @@ class Arm32HookContext extends HookContext implements EditableArm32RegisterConte
     }
 
     @Override
-    public UnicornPointer getPointerArg(int index) {
+    public UnidbgPointer getPointerArg(int index) {
         return registerContext.getPointerArg(index);
     }
 
@@ -276,17 +276,17 @@ class Arm32HookContext extends HookContext implements EditableArm32RegisterConte
     }
 
     @Override
-    public UnicornPointer getLRPointer() {
+    public UnidbgPointer getLRPointer() {
         return registerContext.getLRPointer();
     }
 
     @Override
-    public UnicornPointer getPCPointer() {
+    public UnidbgPointer getPCPointer() {
         return registerContext.getPCPointer();
     }
 
     @Override
-    public UnicornPointer getStackPointer() {
+    public UnidbgPointer getStackPointer() {
         return registerContext.getStackPointer();
     }
 

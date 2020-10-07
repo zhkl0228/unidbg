@@ -1,13 +1,13 @@
 package com.github.unidbg.memory;
 
 import com.github.unidbg.Svc;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public interface SvcMemory extends StackMemory {
 
-    UnicornPointer allocate(int size, String label);
+    UnidbgPointer allocate(int size, String label);
 
-    UnicornPointer registerSvc(Svc svc);
+    UnidbgPointer registerSvc(Svc svc);
 
     Svc getSvc(int svcNumber);
 

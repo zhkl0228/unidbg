@@ -6,7 +6,7 @@ import com.github.unidbg.file.BaseFileIO;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.struct.attr.*;
 import com.github.unidbg.ios.struct.kernel.StatFS;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.struct.TimeSpec;
 import com.sun.jna.Pointer;
@@ -63,7 +63,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             throw new UnsupportedOperationException("bitmapcount=" + attrList.bitmapcount);
         }
         Pointer pointer = attrBuf.share(4);
-        List<UnicornStructure> list = new ArrayList<>();
+        List<UnidbgStructure> list = new ArrayList<>();
         List<AttrReference> attrReferenceList = new ArrayList<>();
         if((attrList.commonattr & ATTR_CMN_NAME) != 0) {
             String name = FilenameUtils.getName(getPath());
@@ -129,7 +129,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             return -1;
         }
         int len = 0;
-        for (UnicornStructure structure : list) {
+        for (UnidbgStructure structure : list) {
             int size = structure.size();
             len += size;
             structure.pack();

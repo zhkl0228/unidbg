@@ -2,7 +2,7 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +85,7 @@ public class DvmObject<T> extends Hashable {
     }
 
     protected static Number callJniMethod(Emulator<?> emulator, VM vm, DvmClass objectType, DvmObject<?> thisObj, String method, Object...args) {
-        UnicornPointer fnPtr = objectType.findNativeFunction(emulator, method);
+        UnidbgPointer fnPtr = objectType.findNativeFunction(emulator, method);
         vm.addLocalObject(thisObj);
         List<Object> list = new ArrayList<>(10);
         list.add(vm.getJNIEnv());

@@ -20,7 +20,7 @@ import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.MapsFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.binary.Hex;
@@ -124,8 +124,8 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             public void postCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
                 long value = ctx.pop();
-                UnicornPointer data = ctx.pop();
-                UnicornPointer end = ctx.getPointerArg(0);
+                UnidbgPointer data = ctx.pop();
+                UnidbgPointer end = ctx.getPointerArg(0);
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
                 byte[] my = Utils.pack_dd(value);
                 byte[] ida = data.getByteArray(0, size);
@@ -148,8 +148,8 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             public void postCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
                 long value = ctx.pop();
-                UnicornPointer data = ctx.pop();
-                UnicornPointer end = ctx.getPointerArg(0);
+                UnidbgPointer data = ctx.pop();
+                UnidbgPointer end = ctx.getPointerArg(0);
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
                 byte[] my = Utils.pack_dq(value);
                 byte[] ida = data.getByteArray(0, size);
@@ -172,8 +172,8 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             @Override
             public void postCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
-                UnicornPointer end = ctx.pop();
-                UnicornPointer data = ctx.pop();
+                UnidbgPointer end = ctx.pop();
+                UnidbgPointer data = ctx.pop();
                 long value = ctx.getLongArg(0);
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
                 byte[] bytes = data.getByteArray(0, size);
@@ -196,8 +196,8 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             @Override
             public void postCall(Emulator<?> emulator, HookZzArm64RegisterContext ctx, HookEntryInfo info) {
                 super.postCall(emulator, ctx, info);
-                UnicornPointer end = ctx.pop();
-                UnicornPointer data = ctx.pop();
+                UnidbgPointer end = ctx.pop();
+                UnidbgPointer data = ctx.pop();
                 long value = ctx.getLongArg(0);
                 int size = (int) (end.toUIntPeer() - data.toUIntPeer());
                 byte[] bytes = data.getByteArray(0, size);

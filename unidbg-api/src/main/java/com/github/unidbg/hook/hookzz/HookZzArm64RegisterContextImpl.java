@@ -1,7 +1,7 @@
 package com.github.unidbg.hook.hookzz;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
 
@@ -14,17 +14,17 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
 
     HookZzArm64RegisterContextImpl(Emulator<?> emulator, Stack<Object> context) {
         super(context);
-        this.reg_ctx = UnicornPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0).share(8); // skip dummy
+        this.reg_ctx = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0).share(8); // skip dummy
         this.emulator = emulator;
     }
 
     @Override
-    public UnicornPointer getPointerArg(int index) {
+    public UnidbgPointer getPointerArg(int index) {
         if (index < 8) {
             return getXPointer(index);
         }
 
-        UnicornPointer sp = getStackPointer();
+        UnidbgPointer sp = getStackPointer();
         return sp.getPointer((index - 8) * emulator.getPointerSize());
     }
 
@@ -42,8 +42,8 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public UnicornPointer getXPointer(int index) {
-        return UnicornPointer.pointer(emulator, getXLong(index));
+    public UnidbgPointer getXPointer(int index) {
+        return UnidbgPointer.pointer(emulator, getXLong(index));
     }
 
     @Override
@@ -52,8 +52,8 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public UnicornPointer getFpPointer() {
-        return UnicornPointer.pointer(emulator, getFp());
+    public UnidbgPointer getFpPointer() {
+        return UnidbgPointer.pointer(emulator, getFp());
     }
 
     @Override
@@ -62,12 +62,12 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
     }
 
     @Override
-    public UnicornPointer getLRPointer() {
-        return UnicornPointer.pointer(emulator, getLR());
+    public UnidbgPointer getLRPointer() {
+        return UnidbgPointer.pointer(emulator, getLR());
     }
 
     @Override
-    public UnicornPointer getStackPointer() {
-        return (UnicornPointer) reg_ctx.share(30 * 8 + 8 + 16 * 8);
+    public UnidbgPointer getStackPointer() {
+        return (UnidbgPointer) reg_ctx.share(30 * 8 + 8 + 16 * 8);
     }
 }

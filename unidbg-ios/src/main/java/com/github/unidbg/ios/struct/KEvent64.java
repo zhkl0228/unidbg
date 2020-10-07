@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class KEvent64 extends UnicornStructure {
+public class KEvent64 extends UnidbgStructure {
 
     public KEvent64(Pointer p) {
         super(p);

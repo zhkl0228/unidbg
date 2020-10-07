@@ -1,12 +1,12 @@
 package com.github.unidbg.linux.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class SysInfo32 extends UnicornStructure {
+public class SysInfo32 extends UnidbgStructure {
 
     public SysInfo32(Pointer p) {
         super(p);

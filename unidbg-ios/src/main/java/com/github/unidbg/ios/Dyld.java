@@ -7,8 +7,8 @@ import com.github.unidbg.ios.struct.*;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo32;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo64;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.Dlfcn;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
@@ -40,7 +40,7 @@ public abstract class Dyld extends Dlfcn {
     abstract int _stub_binding_helper();
 
     public static long computeSlide(Emulator<?> emulator, long machHeader) {
-        Pointer pointer = UnicornPointer.pointer(emulator, machHeader);
+        Pointer pointer = UnidbgPointer.pointer(emulator, machHeader);
         assert pointer != null;
         MachHeader header = emulator.is32Bit() ? new MachHeader(pointer) : new MachHeader64(pointer);
         header.unpack();
@@ -64,7 +64,7 @@ public abstract class Dyld extends Dlfcn {
 
     abstract int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address);
 
-    protected final UnicornStructure[] registerImageStateBatchChangeHandler(MachOLoader loader, int state, UnicornPointer handler, Emulator<?> emulator) {
+    protected final UnidbgStructure[] registerImageStateBatchChangeHandler(MachOLoader loader, int state, UnidbgPointer handler, Emulator<?> emulator) {
         if (log.isDebugEnabled()) {
             log.debug("registerImageStateBatchChangeHandler state=" + state + ", handler=" + handler);
         }
@@ -80,10 +80,10 @@ public abstract class Dyld extends Dlfcn {
         return generateDyldImageInfo(emulator, loader, state, handler);
     }
 
-    private UnicornStructure[] generateDyldImageInfo(Emulator<?> emulator, MachOLoader loader, int state, UnicornPointer handler) {
+    private UnidbgStructure[] generateDyldImageInfo(Emulator<?> emulator, MachOLoader loader, int state, UnidbgPointer handler) {
         SvcMemory svcMemory = emulator.getSvcMemory();
-        List<UnicornStructure> list = new ArrayList<>(loader.getLoadedModulesNoVirtual().size());
-        int elementSize = UnicornStructure.calculateSize(emulator.is64Bit() ? DyldImageInfo64.class : DyldImageInfo32.class);
+        List<UnidbgStructure> list = new ArrayList<>(loader.getLoadedModulesNoVirtual().size());
+        int elementSize = UnidbgStructure.calculateSize(emulator.is64Bit() ? DyldImageInfo64.class : DyldImageInfo32.class);
         Pointer pointer = svcMemory.allocate(elementSize * loader.getLoadedModulesNoVirtual().size(), "DyldImageInfo");
         List<Module> loadedModules = new ArrayList<>(loader.getLoadedModulesNoVirtual());
         for (Module module : loadedModules) {
@@ -101,14 +101,14 @@ public abstract class Dyld extends Dlfcn {
             if (emulator.is64Bit()) {
                 DyldImageInfo64 info = new DyldImageInfo64(pointer);
                 info.imageFilePath = mm.createPathMemory(svcMemory);
-                info.imageLoadAddress = UnicornPointer.pointer(emulator, mm.machHeader);
+                info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
                 info.imageFileModDate = 0;
                 info.pack();
                 list.add(info);
             } else {
                 DyldImageInfo32 info = new DyldImageInfo32(pointer);
                 info.imageFilePath = mm.createPathMemory(svcMemory);
-                info.imageLoadAddress = UnicornPointer.pointer(emulator, mm.machHeader);
+                info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
                 info.imageFileModDate = 0;
                 info.pack();
                 list.add(info);
@@ -122,10 +122,10 @@ public abstract class Dyld extends Dlfcn {
                 mm.dependentsInitializedCallSet.add(handler);
             }
         }
-        return list.toArray(new UnicornStructure[0]);
+        return list.toArray(new UnidbgStructure[0]);
     }
 
-    protected final UnicornStructure[] registerImageStateSingleChangeHandler(MachOLoader loader, int state, UnicornPointer handler, Emulator<?> emulator) {
+    protected final UnidbgStructure[] registerImageStateSingleChangeHandler(MachOLoader loader, int state, UnidbgPointer handler, Emulator<?> emulator) {
         if (log.isDebugEnabled()) {
             log.debug("registerImageStateSingleChangeHandler state=" + state + ", handler=" + handler);
         }

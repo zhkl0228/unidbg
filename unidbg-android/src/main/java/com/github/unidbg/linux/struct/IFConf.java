@@ -1,12 +1,12 @@
 package com.github.unidbg.linux.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class IFConf extends UnicornStructure {
+public class IFConf extends UnidbgStructure {
 
     public IFConf(Pointer p) {
         super(p);

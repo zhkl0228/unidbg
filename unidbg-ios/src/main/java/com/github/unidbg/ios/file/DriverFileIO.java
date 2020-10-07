@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.DarwinFileIO;
@@ -8,7 +9,6 @@ import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 public class DriverFileIO extends BaseDarwinFileIO implements NewFileIO, DarwinFileIO {
 
@@ -40,7 +40,7 @@ public class DriverFileIO extends BaseDarwinFileIO implements NewFileIO, DarwinF
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         throw new AbstractMethodError();
     }
 

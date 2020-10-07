@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class SemaphoreCreateReply extends UnicornStructure {
+public class SemaphoreCreateReply extends UnidbgStructure {
 
     public SemaphoreCreateReply(Pointer p) {
         super(p);

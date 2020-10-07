@@ -1,13 +1,13 @@
 package com.github.unidbg.ios.struct.kernel;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.nio.charset.StandardCharsets;
 
-public abstract class Pthread extends UnicornStructure {
+public abstract class Pthread extends UnidbgStructure {
 
     public static Pthread create(Emulator<?> emulator, Pointer pointer) {
         Pthread pthread = emulator.is64Bit() ? new Pthread64(pointer) : new Pthread32(pointer);
@@ -33,8 +33,8 @@ public abstract class Pthread extends UnicornStructure {
         return new String(pthread_name, StandardCharsets.UTF_8).trim();
     }
 
-    public UnicornPointer getTSD() {
-        return (UnicornPointer) getPointer().share(fieldOffset("self"));
+    public UnidbgPointer getTSD() {
+        return (UnidbgPointer) getPointer().share(fieldOffset("self"));
     }
 
     public Pointer getErrno() {

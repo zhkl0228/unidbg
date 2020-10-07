@@ -242,7 +242,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
-        int read = file.read(emulator.getUnicorn(), buffer, count);
+        int read = file.read(emulator.getBackend(), buffer, count);
         if (verbose) {
             System.out.printf("Read %d bytes from '%s'%n", read, file);
         }

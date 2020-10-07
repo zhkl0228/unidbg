@@ -5,7 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.HookListener;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 import java.io.File;
 import java.util.Collection;
@@ -56,6 +56,6 @@ public interface Loader {
     /**
      * 加载虚拟模块
      */
-    Module loadVirtualModule(String name, final Map<String, UnicornPointer> symbols);
+    Module loadVirtualModule(String name, final Map<String, UnidbgPointer> symbols);
 
 }

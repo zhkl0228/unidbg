@@ -1,11 +1,11 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 public class ByteArrayFileIO extends BaseDarwinFileIO {
 
@@ -31,7 +31,7 @@ public class ByteArrayFileIO extends BaseDarwinFileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         if (pos >= bytes.length) {
             return 0;
         }

@@ -1,12 +1,12 @@
 package com.github.unidbg;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public class PointerNumber extends Number {
 
-    public final UnicornPointer value;
+    public final UnidbgPointer value;
 
-    public PointerNumber(UnicornPointer value) {
+    public PointerNumber(UnidbgPointer value) {
         this.value = value;
     }
 

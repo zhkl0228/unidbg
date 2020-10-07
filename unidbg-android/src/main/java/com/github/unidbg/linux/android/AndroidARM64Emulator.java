@@ -57,7 +57,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
 
     @Override
     protected Dlfcn createDyld(SvcMemory svcMemory) {
-        return new ArmLD64(unicorn, svcMemory);
+        return new ArmLD64(backend, svcMemory);
     }
 
     @Override

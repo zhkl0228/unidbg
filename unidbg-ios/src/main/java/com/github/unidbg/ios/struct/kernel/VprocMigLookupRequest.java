@@ -1,15 +1,14 @@
 package com.github.unidbg.ios.struct.kernel;
 
 import com.github.unidbg.debugger.ida.Utils;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-public class VprocMigLookupRequest extends UnicornStructure {
+public class VprocMigLookupRequest extends UnidbgStructure {
 
     public VprocMigLookupRequest(Pointer p) {
         super(p);

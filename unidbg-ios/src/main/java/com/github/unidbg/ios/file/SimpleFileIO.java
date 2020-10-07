@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
@@ -12,7 +13,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -89,7 +89,7 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, final int _count) {
+    public int read(Backend backend, Pointer buffer, final int _count) {
         try {
             int count = _count;
             if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {

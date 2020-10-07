@@ -1,6 +1,6 @@
 package com.github.unidbg.ios.struct.sysctl;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * sockaddr_dl
  */
-public class SockAddrDL extends UnicornStructure {
+public class SockAddrDL extends UnidbgStructure {
 
     public SockAddrDL(Pointer p) {
         super(p);

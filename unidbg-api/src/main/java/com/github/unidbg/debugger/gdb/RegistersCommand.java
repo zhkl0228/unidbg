@@ -2,9 +2,9 @@ package com.github.unidbg.debugger.gdb;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
+import com.github.unidbg.arm.backend.Backend;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 class RegistersCommand implements GdbStubCommand {
 
@@ -12,7 +12,7 @@ class RegistersCommand implements GdbStubCommand {
 
     @Override
     public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
-        Unicorn unicorn = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         if (log.isDebugEnabled()) {
             if (emulator.is32Bit()) {
                 ARM.showRegs(emulator, null);
@@ -24,7 +24,7 @@ class RegistersCommand implements GdbStubCommand {
         if (command.startsWith("g")) {
             StringBuilder sb = new StringBuilder();
             for(int i = 0; i < stub.registers.length; i++) {
-                long value = ((Number) unicorn.reg_read(stub.registers[i])).longValue();
+                long value = backend.reg_read(stub.registers[i]).longValue();
                 if (emulator.is32Bit()) {
                     String hex = String.format("%08x", Integer.reverseBytes((int) (value & 0xffffffffL)));
                     sb.append(hex);
@@ -34,19 +34,18 @@ class RegistersCommand implements GdbStubCommand {
                 }
             }
             stub.makePacketAndSend(sb.toString());
-            return true;
         } else {
             for (int i = 0; i < stub.registers.length; i++) {
                 if (emulator.is32Bit()) {
                     long value = Long.parseLong(command.substring(1 + 8 * i, 9 + 8 * i), 16);
-                    unicorn.reg_write(stub.registers[i], Integer.reverseBytes((int) (value & 0xffffffffL)));
+                    backend.reg_write(stub.registers[i], Integer.reverseBytes((int) (value & 0xffffffffL)));
                 } else {
                     long value = Long.parseLong(command.substring(1 + 16 * i, 9 + 16 * i), 16);
-                    unicorn.reg_write(stub.registers[i], Long.reverseBytes(value));
+                    backend.reg_write(stub.registers[i], Long.reverseBytes(value));
                 }
             }
-            return true;
         }
+        return true;
     }
 
 }

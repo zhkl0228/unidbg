@@ -64,7 +64,7 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
 
     @Override
     protected Dlfcn createDyld(SvcMemory svcMemory) {
-        return new ArmLD(unicorn, svcMemory);
+        return new ArmLD(backend, svcMemory);
     }
 
     @Override

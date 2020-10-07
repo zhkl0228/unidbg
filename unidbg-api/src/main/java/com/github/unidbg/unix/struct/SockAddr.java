@@ -1,12 +1,12 @@
 package com.github.unidbg.unix.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class SockAddr extends UnicornStructure {
+public class SockAddr extends UnidbgStructure {
 
     public SockAddr(Pointer p) {
         super(p);

@@ -1,12 +1,12 @@
 package com.github.unidbg.unwind;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public class Frame {
 
-    public final UnicornPointer ip, fp;
+    public final UnidbgPointer ip, fp;
 
-    public Frame(UnicornPointer ip, UnicornPointer fp) {
+    public Frame(UnidbgPointer ip, UnidbgPointer fp) {
         this.ip = ip;
         this.fp = fp;
     }

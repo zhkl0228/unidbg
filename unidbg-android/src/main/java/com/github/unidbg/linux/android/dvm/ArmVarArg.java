@@ -1,7 +1,7 @@
 package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public class ArmVarArg implements VarArg {
 
@@ -19,7 +19,7 @@ public class ArmVarArg implements VarArg {
 
     @Override
     public <T extends DvmObject<?>> T getObject(int index) {
-        UnicornPointer pointer = getArg(index);
+        UnidbgPointer pointer = getArg(index);
         if (pointer == null) {
             return null;
         } else {
@@ -29,13 +29,13 @@ public class ArmVarArg implements VarArg {
 
     @Override
     public int getInt(int index) {
-        UnicornPointer pointer = getArg(index);
+        UnidbgPointer pointer = getArg(index);
         return pointer == null ? 0 : (int) pointer.peer;
     }
 
     private static final int REG_OFFSET = 3;
 
-    private UnicornPointer getArg(int index) {
+    private UnidbgPointer getArg(int index) {
         return emulator.getContext().getPointerArg(REG_OFFSET + index);
     }
 

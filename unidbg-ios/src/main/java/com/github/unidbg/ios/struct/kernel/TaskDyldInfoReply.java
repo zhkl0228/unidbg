@@ -1,14 +1,14 @@
 package com.github.unidbg.ios.struct.kernel;
 
 import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class TaskDyldInfoReply extends UnicornStructure {
+public class TaskDyldInfoReply extends UnidbgStructure {
 
     public TaskDyldInfoReply(Pointer p) {
         super(p);

@@ -1,9 +1,9 @@
 package com.github.unidbg;
 
 import capstone.Capstone;
+import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.listener.TraceCodeListener;
-import unicorn.CodeHook;
-import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.io.PrintStream;
@@ -46,7 +46,7 @@ public class AssemblyCodeDumper implements CodeHook {
     }
 
     @Override
-    public void hook(Unicorn u, long address, int size, Object user) {
+    public void hook(Backend backend, long address, int size, Object user) {
         if (canTrace(address)) {
             try {
                 PrintStream out = System.out;

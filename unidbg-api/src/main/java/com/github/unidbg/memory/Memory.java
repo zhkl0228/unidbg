@@ -1,6 +1,6 @@
 package com.github.unidbg.memory;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.unix.IO;
 
@@ -17,8 +17,8 @@ public interface Memory extends IO, Loader, StackMemory {
 
     long MMAP_BASE = 0x40000000L;
 
-    UnicornPointer allocateStack(int size);
-    UnicornPointer pointer(long address);
+    UnidbgPointer allocateStack(int size);
+    UnidbgPointer pointer(long address);
     void setStackPoint(long sp);
     long getStackPoint();
     long getStackBase();
@@ -30,7 +30,7 @@ public interface Memory extends IO, Loader, StackMemory {
 
     MemoryBlock malloc(int length);
     MemoryBlock malloc(int length, boolean runtime);
-    UnicornPointer mmap(int length, int prot);
+    UnidbgPointer mmap(int length, int prot);
     int munmap(long start, int length);
 
     /**

@@ -1,13 +1,13 @@
 package com.github.unidbg.ios.struct.kernel;
 
 import com.github.unidbg.ios.struct.VMStatistics;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class HostStatisticsReply extends UnicornStructure {
+public class HostStatisticsReply extends UnidbgStructure {
 
     public HostStatisticsReply(Pointer p, int size) {
         super(p);

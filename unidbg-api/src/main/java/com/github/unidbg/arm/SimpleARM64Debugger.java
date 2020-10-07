@@ -3,9 +3,10 @@ package com.github.unidbg.arm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -13,7 +14,6 @@ import keystone.KeystoneMode;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import unicorn.Arm64Const;
-import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.util.Scanner;
@@ -27,7 +27,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
     @Override
     protected final void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception {
-        Unicorn u = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         long nextAddress = 0;
         if (address > 0) {
             System.out.println("debugger break at: 0x" + Long.toHexString(address));
@@ -109,7 +109,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         name = "sp";
                     } else if (command.startsWith("m0x")) {
                         long addr = Long.parseLong(command.substring(3).trim(), 16);
-                        Pointer pointer = UnicornPointer.pointer(emulator, addr);
+                        Pointer pointer = UnidbgPointer.pointer(emulator, addr);
                         if (pointer != null) {
                             dumpMemory(pointer, length, pointer.toString(), stringType);
                         } else {
@@ -118,7 +118,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         continue;
                     }
                     if (reg != -1) {
-                        Pointer pointer = UnicornPointer.register(emulator, reg);
+                        Pointer pointer = UnidbgPointer.register(emulator, reg);
                         if (pointer != null) {
                             dumpMemory(pointer, length, name + "=" + pointer, stringType);
                         } else {
@@ -134,7 +134,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                 if (line.startsWith("wx0x")) {
                     String[] tokens = line.split("\\s+");
                     long addr = Long.parseLong(tokens[0].substring(4).trim(), 16);
-                    Pointer pointer = UnicornPointer.pointer(emulator, addr);
+                    Pointer pointer = UnidbgPointer.pointer(emulator, addr);
                     if (pointer != null && tokens.length > 1) {
                         byte[] data = Hex.decodeHex(tokens[1].toCharArray());
                         pointer.write(0, data, 0, data.length);
@@ -181,7 +181,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         reg = Arm64Const.UC_ARM64_REG_SP;
                     } else if (command.startsWith("wb0x") || command.startsWith("ws0x") || command.startsWith("wi0x") || command.startsWith("wl0x")) {
                         long addr = Long.parseLong(command.substring(4).trim(), 16);
-                        Pointer pointer = UnicornPointer.pointer(emulator, addr);
+                        Pointer pointer = UnidbgPointer.pointer(emulator, addr);
                         if (pointer != null) {
                             if (command.startsWith("wb")) {
                                 pointer.setByte(0, (byte) value);
@@ -199,8 +199,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                         continue;
                     }
                     if (reg != -1) {
-                        Unicorn unicorn = emulator.getUnicorn();
-                        unicorn.reg_write(reg, value);
+                        backend.reg_write(reg, value);
                         ARM.showRegs64(emulator, new int[] { reg });
                         continue;
                     }
@@ -230,14 +229,14 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     }
                 }
                 if ("blr".equals(line)) { // break LR
-                    long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue();
+                    long addr = ((Number) backend.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue();
                     addBreakPoint(addr);
                     Module module = findModuleByAddress(emulator, addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
                 if ("r".equals(line)) {
-                    long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+                    long addr = ((Number) backend.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
                     if (removeBreakPoint(addr)) {
                         Module module = findModuleByAddress(emulator, addr);
                         System.out.println("Remove breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
@@ -245,13 +244,13 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     continue;
                 }
                 if ("b".equals(line)) {
-                    long addr = ((Number) u.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+                    long addr = ((Number) backend.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
                     addBreakPoint(addr);
                     Module module = findModuleByAddress(emulator, addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
-                if(handleCommon(u, line, address, size, nextAddress, callable)) {
+                if(handleCommon(backend, line, address, size, nextAddress, callable)) {
                     break;
                 }
             } catch (RuntimeException | DecoderException e) {

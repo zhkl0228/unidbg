@@ -4,7 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.debugger.DebugServer;
 import com.github.unidbg.debugger.ida.DebuggerEvent;
 import com.github.unidbg.debugger.ida.Utils;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 import java.nio.ByteBuffer;
 
@@ -17,7 +17,7 @@ public class AttachExecutableEvent extends DebuggerEvent {
         buffer.put(Utils.pack_dd(0x400));
         buffer.put(Utils.pack_dd(emulator.getPid()));
         buffer.put(Utils.pack_dd(emulator.getPid()));
-        UnicornPointer pc = emulator.getContext().getPCPointer();
+        UnidbgPointer pc = emulator.getContext().getPCPointer();
         if (emulator.is32Bit()) {
             buffer.put(Utils.pack_dq(pc.toUIntPeer() + 1));
         } else {

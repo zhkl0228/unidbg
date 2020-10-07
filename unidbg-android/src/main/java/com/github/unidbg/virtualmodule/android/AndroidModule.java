@@ -10,7 +10,7 @@ import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,7 +27,7 @@ public class AndroidModule extends VirtualModule<VM> {
     }
 
     @Override
-    protected void onInitialize(Emulator<?> emulator, final VM vm, Map<String, UnicornPointer> symbols) {
+    protected void onInitialize(Emulator<?> emulator, final VM vm, Map<String, UnidbgPointer> symbols) {
         boolean is64Bit = emulator.is64Bit();
         SvcMemory svcMemory = emulator.getSvcMemory();
         symbols.put("AAssetManager_fromJava", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
@@ -101,7 +101,7 @@ public class AndroidModule extends VirtualModule<VM> {
     private static long fromJava(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
         Pointer env = context.getPointerArg(0);
-        UnicornPointer assetManager = context.getPointerArg(1);
+        UnidbgPointer assetManager = context.getPointerArg(1);
         DvmObject<?> obj = vm.getObject(assetManager.toIntPeer());
         if (log.isDebugEnabled()) {
             log.debug("AAssetManager_fromJava env=" + env + ", assetManager=" + obj.getObjectType() + ", LR=" + context.getLRPointer());
@@ -135,7 +135,7 @@ public class AndroidModule extends VirtualModule<VM> {
 
     private static long close(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnicornPointer asset = context.getPointerArg(0);
+        UnidbgPointer asset = context.getPointerArg(0);
         DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
         if (log.isDebugEnabled()) {
@@ -147,10 +147,10 @@ public class AndroidModule extends VirtualModule<VM> {
 
     private static long getBuffer(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnicornPointer asset = context.getPointerArg(0);
+        UnidbgPointer asset = context.getPointerArg(0);
         DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
-        UnicornPointer buffer = block.getPointer().share(8, 0);
+        UnidbgPointer buffer = block.getPointer().share(8, 0);
         if (log.isDebugEnabled()) {
             log.debug("AAsset_getBuffer asset=" + asset + ", buffer=" + buffer + ", LR=" + context.getLRPointer());
         }
@@ -159,7 +159,7 @@ public class AndroidModule extends VirtualModule<VM> {
 
     private static long getLength(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnicornPointer asset = context.getPointerArg(0);
+        UnidbgPointer asset = context.getPointerArg(0);
         DvmObject<?> obj = vm.getObject(asset.toIntPeer());
         MemoryBlock block = (MemoryBlock) obj.getValue();
         int length = block.getPointer().getInt(4);
@@ -171,7 +171,7 @@ public class AndroidModule extends VirtualModule<VM> {
 
     private static long read(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnicornPointer asset = context.getPointerArg(0);
+        UnidbgPointer asset = context.getPointerArg(0);
         Pointer buf = context.getPointerArg(1);
         int count = context.getIntArg(2);
         DvmObject<?> obj = vm.getObject(asset.toIntPeer());

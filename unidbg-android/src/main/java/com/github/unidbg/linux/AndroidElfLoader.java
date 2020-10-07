@@ -10,7 +10,7 @@ import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.ElfLibraryFile;
 import com.github.unidbg.memory.*;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.spi.LibraryFile;
@@ -43,7 +43,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         // init stack
         stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
-        unicorn.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+        backend.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
 
         setStackPoint(STACK_BASE);
         initializeTLS(new String[] {
@@ -99,7 +99,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     @Override
     public File dumpHeap() throws IOException {
         File outFile = File.createTempFile("heap_0x" + Long.toHexString(HEAP_BASE) + "_", ".dat");
-        dump(UnicornPointer.pointer(emulator, HEAP_BASE), brk - HEAP_BASE, outFile);
+        dump(UnidbgPointer.pointer(emulator, HEAP_BASE), brk - HEAP_BASE, outFile);
         return outFile;
     }
 
@@ -146,16 +146,16 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         argv.setPointer(2 * emulator.getPointerSize(), environ);
         argv.setPointer(3 * emulator.getPointerSize(), auxv);
 
-        final UnicornPointer tls = allocateStack(0x80 * 4); // tls size
+        final UnidbgPointer tls = allocateStack(0x80 * 4); // tls size
         assert tls != null;
         tls.setPointer(emulator.getPointerSize(), thread);
         this.errno = tls.share(emulator.getPointerSize() * 2);
         tls.setPointer(emulator.getPointerSize() * 3, argv);
 
         if (emulator.is32Bit()) {
-            unicorn.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
+            backend.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
         } else {
-            unicorn.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, tls.peer);
         }
 
         long sp = getStackPoint();
@@ -275,7 +275,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             LinuxModule module = iterator.next().getValue();
             if (module.base == handle) {
                 if (module.decrementReferenceCount() <= 0) {
-                    module.unload(unicorn);
+                    module.unload(backend);
                     iterator.remove();
                 }
                 return true;
@@ -418,7 +418,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             }
             ElfSymbol symbol = relocation.sym() == 0 ? null : relocation.symbol();
             long sym_value = symbol != null ? symbol.value : 0;
-            Pointer relocationAddr = UnicornPointer.pointer(emulator, load_base + relocation.offset());
+            Pointer relocationAddr = UnidbgPointer.pointer(emulator, load_base + relocation.offset());
             assert relocationAddr != null;
 
             Log log = LogFactory.getLog("com.github.unidbg.linux." + soName);
@@ -507,14 +507,14 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             int preInitArraySize = dynamicStructure.getPreInitArraySize();
             int count = preInitArraySize / emulator.getPointerSize();
             if (count > 0) {
-                Pointer pointer = UnicornPointer.pointer(emulator, load_base + dynamicStructure.getPreInitArrayOffset());
+                Pointer pointer = UnidbgPointer.pointer(emulator, load_base + dynamicStructure.getPreInitArrayOffset());
                 if (pointer == null) {
                     throw new IllegalStateException("DT_PREINIT_ARRAY is null");
                 }
                 for (int i = 0; i < count; i++) {
                     Pointer func = pointer.getPointer(i * emulator.getPointerSize());
                     if (func != null) {
-                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnicornPointer) func).peer));
+                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnidbgPointer) func).peer));
                     }
                 }
             }
@@ -528,14 +528,14 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             int initArraySize = dynamicStructure.getInitArraySize();
             int count = initArraySize / emulator.getPointerSize();
             if (count > 0) {
-                Pointer pointer = UnicornPointer.pointer(emulator, load_base + dynamicStructure.getInitArrayOffset());
+                Pointer pointer = UnidbgPointer.pointer(emulator, load_base + dynamicStructure.getInitArrayOffset());
                 if (pointer == null) {
                     throw new IllegalStateException("DT_INIT_ARRAY is null");
                 }
                 for (int i = 0; i < count; i++) {
                     Pointer func = pointer.getPointer(i * emulator.getPointerSize());
                     if (func != null) {
-                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnicornPointer) func).peer));
+                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnidbgPointer) func).peer));
                     }
                 }
             }
@@ -571,7 +571,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     }
 
     @Override
-    public Module loadVirtualModule(String name, Map<String, UnicornPointer> symbols) {
+    public Module loadVirtualModule(String name, Map<String, UnidbgPointer> symbols) {
         LinuxModule module = LinuxModule.createVirtualModule(name, symbols, emulator);
         modules.put(name, module);
         if (maxSoName == null || name.length() > maxSoName.length()) {
@@ -634,10 +634,10 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
 
         if (address > brk) {
-            unicorn.mem_map(brk, address - brk, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+            backend.mem_map(brk, address - brk, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
             this.brk = address;
         } else if(address < brk) {
-            unicorn.mem_unmap(address, brk - address);
+            backend.mem_unmap(address, brk - address);
             this.brk = address;
         }
 
@@ -666,7 +666,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
             if (mapped != null) {
                 munmap(start, aligned);
-                unicorn.mem_map(start, aligned, prot);
+                backend.mem_map(start, aligned, prot);
                 if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
                     log.warn("mmap2 replace exists memory map: start=" + Long.toHexString(start));
                 }
@@ -680,7 +680,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             if (log.isDebugEnabled()) {
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
             }
-            unicorn.mem_map(addr, aligned, prot);
+            backend.mem_map(addr, aligned, prot);
             if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                 log.warn("mmap2 replace exists memory map addr=" + Long.toHexString(addr));
             }

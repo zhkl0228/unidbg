@@ -1,13 +1,13 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
-public class IOServiceAddNotificationRequest extends UnicornStructure {
+public class IOServiceAddNotificationRequest extends UnidbgStructure {
 
     public IOServiceAddNotificationRequest(Pointer p) {
         super(p);

@@ -1,6 +1,7 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.unix.UnixEmulator;
@@ -10,7 +11,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,7 +64,7 @@ public class TcpSocket extends SocketIO implements FileIO {
     private byte[] receiveBuf;
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         try {
             if (receiveBuf == null) {
                 receiveBuf = new byte[socket.getReceiveBufferSize()];

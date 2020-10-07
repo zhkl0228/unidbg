@@ -6,7 +6,7 @@ import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
@@ -64,7 +64,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
-                String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars,
+                String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnidbgPointer envp, UnidbgPointer apple, UnidbgPointer vars,
                 long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners, List<String> ordinalList,
                 Section fEHFrameSection, Section fUnwindInfoSection) {
         super(name, base, size, neededLibraries, regions);
@@ -158,7 +158,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
 
         Memory memory = emulator.getMemory();
-        final UnicornPointer stack = memory.allocateStack(0);
+        final UnidbgPointer stack = memory.allocateStack(0);
 
         int argc = 0;
         List<Pointer> argv = new ArrayList<>();
@@ -192,7 +192,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
 
         if (log.isDebugEnabled()) {
-            UnicornPointer sp = memory.allocateStack(0);
+            UnidbgPointer sp = memory.allocateStack(0);
             byte[] data = sp.getByteArray(0, (int) (stack.peer - sp.peer));
             Inspector.inspect(data, "callEntry sp=0x" + Long.toHexString(memory.getStackPoint()) + ", envPointer=" + envPointer + ", auxvPointer=" + auxvPointer);
         }
@@ -204,7 +204,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     final void doInitialization(Emulator<?> emulator) {
         if (loader.executableModule == null) {
-            vars.setPointer(0, UnicornPointer.pointer(emulator, machHeader)); // _NSGetMachExecuteHeader
+            vars.setPointer(0, UnidbgPointer.pointer(emulator, machHeader)); // _NSGetMachExecuteHeader
         }
 
         callRoutines(emulator);
@@ -384,9 +384,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         return initFunctionList;
     }
 
-    private final UnicornPointer envp;
-    private final UnicornPointer apple;
-    private final UnicornPointer vars;
+    private final UnidbgPointer envp;
+    private final UnidbgPointer apple;
+    private final UnidbgPointer vars;
 
     final Map<String, Module> neededLibraries() {
         return neededLibraries;
@@ -493,10 +493,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     boolean allSymbolBound;
     boolean allLazySymbolBound;
 
-    final Set<UnicornPointer> addImageCallSet = new HashSet<>();
-    final Set<UnicornPointer> boundCallSet = new HashSet<>();
-    final Set<UnicornPointer> dependentsInitializedCallSet = new HashSet<>();
-    final Set<UnicornPointer> initializedCallSet = new HashSet<>();
+    final Set<UnidbgPointer> addImageCallSet = new HashSet<>();
+    final Set<UnidbgPointer> boundCallSet = new HashSet<>();
+    final Set<UnidbgPointer> dependentsInitializedCallSet = new HashSet<>();
+    final Set<UnidbgPointer> initializedCallSet = new HashSet<>();
 
     @Override
     public String getPath() {
@@ -508,20 +508,20 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         throw new UnsupportedOperationException();
     }
 
-    static MachOModule createVirtualModule(String name, final Map<String, UnicornPointer> symbols, Emulator<?> emulator) {
+    static MachOModule createVirtualModule(String name, final Map<String, UnidbgPointer> symbols, Emulator<?> emulator) {
         if (symbols.isEmpty()) {
             throw new IllegalArgumentException("symbols is empty");
         }
 
-        List<UnicornPointer> list = new ArrayList<>(symbols.values());
-        Collections.sort(list, new Comparator<UnicornPointer>() {
+        List<UnidbgPointer> list = new ArrayList<>(symbols.values());
+        Collections.sort(list, new Comparator<UnidbgPointer>() {
             @Override
-            public int compare(UnicornPointer o1, UnicornPointer o2) {
+            public int compare(UnidbgPointer o1, UnidbgPointer o2) {
                 return (int) (o1.peer - o2.peer);
             }
         });
-        UnicornPointer first = list.get(0);
-        UnicornPointer last = list.get(list.size() - 1);
+        UnidbgPointer first = list.get(0);
+        UnidbgPointer last = list.get(list.size() - 1);
         Alignment alignment = emulator.align(first.peer, last.peer - first.peer);
         final long base = alignment.address;
         final long size = alignment.size;
@@ -541,7 +541,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
-                UnicornPointer pointer = symbols.get(name);
+                UnidbgPointer pointer = symbols.get(name);
                 if (pointer != null) {
                     return new VirtualSymbol(name, this, pointer.peer);
                 } else {
@@ -556,7 +556,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 return true;
             }
         };
-        for (Map.Entry<String, UnicornPointer> entry : symbols.entrySet()) {
+        for (Map.Entry<String, UnidbgPointer> entry : symbols.entrySet()) {
             module.registerSymbol(entry.getKey(), entry.getValue().peer);
         }
         return module;
@@ -647,7 +647,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, ordinalList.size(), symbolName, getPath()));
         }
 
-        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalStateException();
         }
@@ -666,7 +666,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 }
             }
             if (bindAt > 0) {
-                Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
+                Pointer newPointer = UnidbgPointer.pointer(emulator, bindAt);
                 switch (type) {
                     case BIND_TYPE_POINTER:
                         pointer.setPointer(0, newPointer);
@@ -697,7 +697,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         switch (type) {
             case BIND_TYPE_POINTER:
-                Pointer newPointer = UnicornPointer.pointer(emulator, bindAt);
+                Pointer newPointer = UnidbgPointer.pointer(emulator, bindAt);
                 pointer.setPointer(0, newPointer);
                 break;
             case BIND_TYPE_TEXT_ABSOLUTE32:

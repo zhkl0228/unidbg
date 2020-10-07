@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Collections;
 import java.util.List;
 
-public class MachMsgBody extends UnicornStructure {
+public class MachMsgBody extends UnidbgStructure {
 
     public MachMsgBody(Pointer p) {
         super(p);

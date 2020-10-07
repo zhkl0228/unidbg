@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.kernel;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class HostStatisticsRequest extends UnicornStructure {
+public class HostStatisticsRequest extends UnidbgStructure {
 
     public static final int HOST_VM_INFO = 2; /* Virtual memory stats */
 

@@ -3,7 +3,7 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -194,17 +194,17 @@ public class DvmClass extends DvmObject<String> {
         return "class " + getClassName();
     }
 
-    final Map<String, UnicornPointer> nativesMap = new HashMap<>();
+    final Map<String, UnidbgPointer> nativesMap = new HashMap<>();
 
-    UnicornPointer findNativeFunction(Emulator<?> emulator, String method) {
-        UnicornPointer fnPtr = nativesMap.get(method);
+    UnidbgPointer findNativeFunction(Emulator<?> emulator, String method) {
+        UnidbgPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index != -1) {
             String symbolName = "Java_" + getClassName().replace('/', '_') + "_" + method.substring(0, index);
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
                 if (symbol != null) {
-                    fnPtr = (UnicornPointer) symbol.createPointer(emulator);
+                    fnPtr = (UnidbgPointer) symbol.createPointer(emulator);
                     break;
                 }
             }

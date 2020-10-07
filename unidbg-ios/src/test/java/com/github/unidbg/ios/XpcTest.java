@@ -10,7 +10,7 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.hook.Substrate;
 import com.github.unidbg.memory.MemoryBlock;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 
@@ -54,7 +54,7 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/xpc"));
 
         Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
-        Pointer zone = UnicornPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
+        Pointer zone = UnidbgPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
         assertNotNull(zone);
         System.err.println("_malloc_default_zone zone=" + zone);
 

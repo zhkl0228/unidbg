@@ -1,13 +1,13 @@
 package com.github.unidbg.ios.struct.attr;
 
 import com.github.unidbg.arm.ARM;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class AttrReference extends UnicornStructure {
+public class AttrReference extends UnidbgStructure {
 
     private final byte[] bytes;
 
@@ -27,7 +27,7 @@ public class AttrReference extends UnicornStructure {
 
     private boolean started;
 
-    public void check(UnicornStructure structure, int size) {
+    public void check(UnidbgStructure structure, int size) {
         if (structure == this) {
             started = true;
         }

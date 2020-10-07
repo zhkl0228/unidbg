@@ -1,14 +1,14 @@
 package com.github.unidbg.android.ida;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 class MyARMSyscallHandler extends ARM32SyscallHandler {
 
@@ -51,11 +51,12 @@ class MyARMSyscallHandler extends ARM32SyscallHandler {
     }
 
     @Override
-    protected int ptrace(Unicorn u, Emulator<?> emulator) {
+    protected int ptrace(Emulator<?> emulator) {
+        Backend backend = emulator.getBackend();
         RegisterContext context = emulator.getContext();
         int request = context.getIntArg(0);
         int pid = context.getIntArg(1);
-        UnicornPointer addr = context.getPointerArg(2);
+        UnidbgPointer addr = context.getPointerArg(2);
         Pointer data = context.getPointerArg(3);
         String msg = "ptrace request=0x" + Integer.toHexString(request) + ", pid=" + pid + ", addr=" + addr + ", data=" + data + ", LR=" + context.getLRPointer();
         switch (request) {
@@ -76,7 +77,7 @@ class MyARMSyscallHandler extends ARM32SyscallHandler {
             }
             case PTrace.PTRACE_GETREGS: {
                 ArmRegister register = new ArmRegister(data);
-                register.fill(u);
+                register.fill(backend);
                 register.pack();
                 System.out.println(register);
                 break;
@@ -90,7 +91,7 @@ class MyARMSyscallHandler extends ARM32SyscallHandler {
                     msg += (", off=" + off);
                 }
                 if (reg != ArmConst.UC_ARM_REG_INVALID) {
-                    data.setInt(0, ArmRegister.readReg(u, reg));
+                    data.setInt(0, ArmRegister.readReg(backend, reg));
                     break;
                 }
             }

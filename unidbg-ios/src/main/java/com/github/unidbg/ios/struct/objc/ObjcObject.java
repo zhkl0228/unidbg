@@ -3,8 +3,8 @@ package com.github.unidbg.ios.struct.objc;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.ios.objc.NSData;
 import com.github.unidbg.ios.objc.ObjC;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.nio.charset.StandardCharsets;
@@ -14,7 +14,7 @@ import java.util.List;
 
 import static com.github.unidbg.ios.objc.Constants.NSUTF8StringEncoding;
 
-public class ObjcObject extends UnicornStructure {
+public class ObjcObject extends UnidbgStructure {
 
     public static ObjcObject create(Emulator<?> emulator, Pointer pointer) {
         if (pointer == null) {
@@ -42,15 +42,15 @@ public class ObjcObject extends UnicornStructure {
 
     public ObjcClass getObjClass() {
         if (emulator.is64Bit()) {
-            UnicornPointer pointer = (UnicornPointer) isa;
+            UnidbgPointer pointer = (UnidbgPointer) isa;
             long address = pointer.peer & 0x1fffffff8L;
-            return ObjcClass.create(emulator, UnicornPointer.pointer(emulator, address));
+            return ObjcClass.create(emulator, UnidbgPointer.pointer(emulator, address));
         } else {
             return ObjcClass.create(emulator, isa);
         }
     }
 
-    public UnicornPointer call(String selectorName, Object... args) {
+    public UnidbgPointer call(String selectorName, Object... args) {
         ObjC objc = ObjC.getInstance(emulator);
         Pointer selector = objc.registerName(selectorName);
         List<Object> list = new ArrayList<>(args.length + 2);
@@ -58,7 +58,7 @@ public class ObjcObject extends UnicornStructure {
         list.add(selector);
         Collections.addAll(list, args);
         Number number = objc.msgSend(emulator, list.toArray());
-        return UnicornPointer.pointer(emulator, number);
+        return UnidbgPointer.pointer(emulator, number);
     }
 
     public ObjcObject callObjc(String selectorName, Object... args) {
@@ -79,7 +79,7 @@ public class ObjcObject extends UnicornStructure {
         if (str == null) {
             return "<description not available>";
         } else {
-            UnicornPointer pointer = (UnicornPointer) str.call("lengthOfBytesUsingEncoding:", NSUTF8StringEncoding);
+            UnidbgPointer pointer = (UnidbgPointer) str.call("lengthOfBytesUsingEncoding:", NSUTF8StringEncoding);
             int length = (int) (pointer.peer & 0x7fffffffL);
             byte[] bytes = str.call("UTF8String").getByteArray(0, length);
             return new String(bytes, StandardCharsets.UTF_8);

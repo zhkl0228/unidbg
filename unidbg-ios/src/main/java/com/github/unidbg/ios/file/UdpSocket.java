@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.unix.UnixEmulator;
@@ -8,7 +9,6 @@ import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -96,7 +96,7 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         throw new AbstractMethodError();
     }
 

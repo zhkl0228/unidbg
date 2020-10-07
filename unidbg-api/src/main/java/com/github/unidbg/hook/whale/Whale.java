@@ -5,7 +5,7 @@ import com.github.unidbg.Family;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -57,7 +57,7 @@ public final class Whale extends BaseHook implements IWhale {
     public void inlineHookFunction(long address, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup, enablePostCall);
-        WInlineHookFunction.call(emulator, UnicornPointer.pointer(emulator, address), replace, backup);
+        WInlineHookFunction.call(emulator, UnidbgPointer.pointer(emulator, address), replace, backup);
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.github.unidbg.debugger.ida;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.debugger.AbstractDebugServer;
@@ -257,8 +258,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             newBuf.put(Utils.pack_dd(0x1));
             newBuf.put(Utils.pack_dd(0x1));
             newBuf.put(Utils.pack_dd(0x0));
-            Unicorn unicorn = emulator.getUnicorn();
-            byte[] data = unicorn.mem_read(address & (~1), size);
+            Backend backend = emulator.getBackend();
+            byte[] data = backend.mem_read(address & (~1), size);
             newBuf.put(Utils.pack_dd(data.length));
             newBuf.put(data);
             sendAck(Utils.flipBuffer(newBuf));
@@ -390,8 +391,8 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             log.debug("requestReadMemory address=0x" + Long.toHexString(address) + ", size=" + size);
         }
         try {
-            Unicorn u = emulator.getUnicorn();
-            byte[] data = u.mem_read(address - 1, size);
+            Backend backend = emulator.getBackend();
+            byte[] data = backend.mem_read(address - 1, size);
             ByteBuffer newBuf = ByteBuffer.allocate(data.length + 0x10);
             newBuf.put(Utils.pack_dd(size));
             newBuf.put(data);
@@ -418,7 +419,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
         sendAck();
     }
 
-    private Queue<DebuggerEvent> eventQueue = new LinkedBlockingQueue<>();
+    private final Queue<DebuggerEvent> eventQueue = new LinkedBlockingQueue<>();
 
     private void syncDebuggerEvent(ByteBuffer buffer) {
         long b = Utils.unpack_dd(buffer);

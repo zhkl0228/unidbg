@@ -1,9 +1,9 @@
 package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 
@@ -93,7 +93,7 @@ public abstract class AbstractFileIO implements NewFileIO {
     }
 
     @Override
-    public int recvfrom(Unicorn unicorn, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {
+    public int recvfrom(Backend backend, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {
         throw new AbstractMethodError(getClass().getName() + ": recvfrom buf=" + buf + ", len=" + len + ", flags=0x" + Integer.toHexString(flags) + ", src_addr=" + src_addr + ", addrlen=" + addrlen);
     }
 
@@ -119,9 +119,9 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public final long mmap2(Emulator<?> emulator, long addr, int aligned, int prot, int offset, int length) throws IOException {
-        Unicorn unicorn = emulator.getUnicorn();
+        Backend backend = emulator.getBackend();
         byte[] data = getMmapData(offset, length);
-        unicorn.mem_map(addr, aligned, prot);
+        backend.mem_map(addr, aligned, prot);
         emulator.getMemory().pointer(addr).write(data);
         return addr;
     }
@@ -146,7 +146,7 @@ public abstract class AbstractFileIO implements NewFileIO {
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         throw new UnsupportedOperationException(getClass().getName());
     }
 

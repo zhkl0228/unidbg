@@ -3,7 +3,7 @@ package com.github.unidbg.linux.android.dvm.array;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.linux.android.dvm.*;
 import com.github.unidbg.memory.MemoryBlock;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 abstract class BaseArray<T> extends DvmObject<T> implements Array<T> {
@@ -15,7 +15,7 @@ abstract class BaseArray<T> extends DvmObject<T> implements Array<T> {
     private MemoryBlock memoryBlock;
 
     @Override
-    public UnicornPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
+    public UnidbgPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
         if (memoryBlock != null) {
             throw new IllegalStateException("Already allocated array memory");
         }

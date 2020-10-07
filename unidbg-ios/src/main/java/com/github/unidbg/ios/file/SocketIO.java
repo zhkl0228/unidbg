@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
@@ -10,7 +11,6 @@ import com.github.unidbg.unix.struct.SockAddr;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 import java.io.IOException;
 import java.net.*;
@@ -219,12 +219,12 @@ public abstract class SocketIO extends BaseDarwinFileIO implements DarwinFileIO 
     }
 
     @Override
-    public int recvfrom(Unicorn unicorn, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {
+    public int recvfrom(Backend backend, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {
         if (flags == 0x0 && src_addr == null && addrlen == null) {
-            return read(unicorn, buf, len);
+            return read(backend, buf, len);
         }
 
-        return super.recvfrom(unicorn, buf, len, flags, src_addr, addrlen);
+        return super.recvfrom(backend, buf, len, flags, src_addr, addrlen);
     }
 
     @Override

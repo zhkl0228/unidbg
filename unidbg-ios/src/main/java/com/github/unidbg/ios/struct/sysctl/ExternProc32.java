@@ -1,10 +1,8 @@
 package com.github.unidbg.ios.struct.sysctl;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.unix.struct.ITimerVal32;
-import com.github.unidbg.unix.struct.ITimerVal64;
 import com.github.unidbg.unix.struct.TimeVal32;
-import com.github.unidbg.unix.struct.TimeVal64;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
@@ -13,7 +11,7 @@ import java.util.List;
 /**
  * extern_proc
  */
-public class ExternProc32 extends UnicornStructure {
+public class ExternProc32 extends UnidbgStructure {
 
     private static final int MAXCOMLEN = 16; /* max command name remembered */
 

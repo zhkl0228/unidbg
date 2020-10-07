@@ -1,7 +1,7 @@
 package com.github.unidbg.ios.struct.objc;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
@@ -36,17 +36,17 @@ public class ObjcClass extends ObjcObject implements ObjcConstants {
     }
 
     private ClassRW data() {
-        UnicornPointer pointer = (UnicornPointer) data;
+        UnidbgPointer pointer = (UnidbgPointer) data;
         long address = pointer.peer & ~CLASS_FAST_FLAG_MASK;
-        ClassRW classRW = new ClassRW(UnicornPointer.pointer(emulator, address));
+        ClassRW classRW = new ClassRW(UnidbgPointer.pointer(emulator, address));
         classRW.unpack();
         return classRW;
     }
 
     private ClassRO ro() {
-        UnicornPointer pointer = (UnicornPointer) data;
+        UnidbgPointer pointer = (UnidbgPointer) data;
         long address = pointer.peer & ~CLASS_FAST_FLAG_MASK;
-        ClassRO classRO = new ClassRO(UnicornPointer.pointer(emulator, address));
+        ClassRO classRO = new ClassRO(UnidbgPointer.pointer(emulator, address));
         classRO.unpack();
         return classRO;
     }

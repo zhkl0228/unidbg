@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class Dirent extends UnicornStructure {
+public class Dirent extends UnidbgStructure {
 
     public static final byte DT_DIR = 4;
     public static final byte DT_REG = 8;

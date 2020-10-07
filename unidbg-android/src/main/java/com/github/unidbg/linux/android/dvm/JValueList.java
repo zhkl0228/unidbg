@@ -1,6 +1,6 @@
 package com.github.unidbg.linux.android.dvm;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -10,7 +10,7 @@ class JValueList extends VaList {
 
     private static final Log log = LogFactory.getLog(JValueList.class);
 
-    JValueList(BaseVM vm, UnicornPointer jvalue, DvmMethod method) {
+    JValueList(BaseVM vm, UnidbgPointer jvalue, DvmMethod method) {
         super(vm, method, method.decodeArgsShorty());
 
         String shorty = method.decodeArgsShorty();
@@ -21,7 +21,7 @@ class JValueList extends VaList {
             for (char c : chars) {
                 switch (c) {
                     case 'L':
-                        UnicornPointer ptr = (UnicornPointer) pointer.getPointer(0);
+                        UnidbgPointer ptr = (UnidbgPointer) pointer.getPointer(0);
                         buffer.putInt((int) ptr.toUIntPeer());
                         break;
                     case 'B': {

@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class VMStatistics extends UnicornStructure {
+public class VMStatistics extends UnidbgStructure {
 
     public VMStatistics(Pointer p) {
         super(p);

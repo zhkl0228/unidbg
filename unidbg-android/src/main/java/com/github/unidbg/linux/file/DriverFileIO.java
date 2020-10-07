@@ -1,14 +1,14 @@
 package com.github.unidbg.linux.file;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, AndroidFileIO {
 
@@ -49,7 +49,7 @@ public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, Androi
     }
 
     @Override
-    public int read(Unicorn unicorn, Pointer buffer, int count) {
+    public int read(Backend backend, Pointer buffer, int count) {
         throw new AbstractMethodError();
     }
 
@@ -108,7 +108,7 @@ public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, Androi
             long offset = System.currentTimeMillis();
             long tv_sec = offset / 1000000000L;
             long tv_nsec = offset % 1000000000L;
-            Pointer pointer = UnicornPointer.pointer(emulator, argp);
+            Pointer pointer = UnidbgPointer.pointer(emulator, argp);
             if (pointer == null) {
                 throw new IllegalArgumentException();
             }

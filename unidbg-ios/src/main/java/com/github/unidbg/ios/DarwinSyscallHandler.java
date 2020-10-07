@@ -7,8 +7,8 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.struct.VMStatistics;
 import com.github.unidbg.ios.struct.kernel.*;
-import com.github.unidbg.pointer.UnicornPointer;
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -52,7 +52,7 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
 
     protected int getfsstat64(Emulator<DarwinFileIO> emulator) {
         RegisterContext context = emulator.getContext();
-        UnicornPointer buf = context.getPointerArg(0);
+        UnidbgPointer buf = context.getPointerArg(0);
         int bufSize = context.getIntArg(1);
         int flags = context.getIntArg(2);
         if (log.isDebugEnabled()) {
@@ -64,7 +64,7 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
 
         buf.setSize(bufSize);
         Pointer pointer = buf;
-        int statfs_size = UnicornStructure.calculateSize(StatFS.class);
+        int statfs_size = UnidbgStructure.calculateSize(StatFS.class);
         for (int i = 0; i < MOUNTED_FS.length && bufSize >= statfs_size; i++, bufSize -= statfs_size, pointer = pointer.share(statfs_size)) {
             byte[] data = Base64.decodeBase64(MOUNTED_FS[i]);
             pointer.write(0, data, 0, data.length);
@@ -103,7 +103,7 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
     protected final int listxattr(Emulator<DarwinFileIO> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer path = context.getPointerArg(0);
-        UnicornPointer namebuf = context.getPointerArg(1);
+        UnidbgPointer namebuf = context.getPointerArg(1);
         int size = context.getIntArg(2);
         int options = context.getIntArg(3);
         String pathname = path.getString(0);
@@ -159,7 +159,7 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
         }
 
         if (args.flavor == HostStatisticsRequest.HOST_VM_INFO) {
-            int size = UnicornStructure.calculateSize(VMStatistics.class);
+            int size = UnidbgStructure.calculateSize(VMStatistics.class);
             HostStatisticsReply reply = new HostStatisticsReply(request, size);
             reply.unpack();
 

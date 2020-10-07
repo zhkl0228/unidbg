@@ -1,12 +1,12 @@
 package com.github.unidbg.ios.struct.objc;
 
-import com.github.unidbg.pointer.UnicornStructure;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class ClassRW extends UnicornStructure implements ObjcConstants {
+public class ClassRW extends UnidbgStructure implements ObjcConstants {
 
     ClassRW(Pointer p) {
         super(p);

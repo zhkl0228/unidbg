@@ -2,7 +2,7 @@ package net.fornwall.jelf;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unwind.Frame;
 import com.github.unidbg.unwind.Unwinder;
 import com.github.unidbg.utils.Inspector;
@@ -77,8 +77,8 @@ public class ArmExIdx {
         }
 
         if (fun == entry) { // first instruction of function
-            UnicornPointer ip = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
-            UnicornPointer fp = UnicornPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+            UnidbgPointer ip = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
+            UnidbgPointer fp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
             Frame frame = unwinder.createFrame(ip, fp);
             if (frame != null) {
                 context.ip = frame.ip.peer;
@@ -100,7 +100,7 @@ public class ArmExIdx {
             instruction = Arrays.copyOfRange(bb.array(), 1, 4);
         } else {
             long addr = value + offset - 4;
-            UnicornPointer pointer = UnicornPointer.pointer(emulator, module.base + addr);
+            UnidbgPointer pointer = UnidbgPointer.pointer(emulator, module.base + addr);
             assert pointer != null;
             value = pointer.getInt(0);
             if ((value & ARM_EXIDX_COMPACT) == 0) {
@@ -252,7 +252,7 @@ public class ArmExIdx {
 
         Long pc = context.loc[UNW_ARM_PC];
         if (pc != null) {
-            return unwinder.createFrame(UnicornPointer.pointer(emulator, pc), UnicornPointer.pointer(emulator, context.cfa));
+            return unwinder.createFrame(UnidbgPointer.pointer(emulator, pc), UnidbgPointer.pointer(emulator, context.cfa));
         }
 
         return null;
@@ -299,7 +299,7 @@ public class ArmExIdx {
                             list.add(reg);
                         }
 
-                        UnicornPointer sp = UnicornPointer.pointer(emulator, context.cfa);
+                        UnidbgPointer sp = UnidbgPointer.pointer(emulator, context.cfa);
                         assert sp != null;
                         long value = sp.getInt(0) & 0xffffffffL;
                         context.loc[m] = value;

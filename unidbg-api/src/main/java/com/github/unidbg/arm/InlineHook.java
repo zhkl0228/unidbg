@@ -2,32 +2,32 @@ package com.github.unidbg.arm;
 
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.hook.HookCallback;
 import com.github.unidbg.hook.InterceptCallback;
 import com.github.unidbg.memory.SvcMemory;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 
 import java.util.Arrays;
 
 /**
  * Use HookZz
  */
-@SuppressWarnings("unused")
+@Deprecated
 public class InlineHook {
 
     /**
      * 只能hook thumb指令: PUSH {R4-R7,LR}，即函数入口
      */
     public static void simpleThumbHook(Emulator<?> emulator, long address, final HookCallback callback) {
-        Unicorn unicorn = emulator.getUnicorn();
-        final Pointer pointer = UnicornPointer.pointer(emulator, address);
+        final Backend backend = emulator.getBackend();
+        final Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalArgumentException();
         }
@@ -49,7 +49,7 @@ public class InlineHook {
 
             emulator.getSvcMemory().registerSvc(new ThumbSvc() {
                 @Override
-                public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                     if (svcNumber < 0 || svcNumber > 0xff) {
                         throw new IllegalStateException("service number out of range");
                     }
@@ -68,7 +68,7 @@ public class InlineHook {
                     if (callback != null) {
                         return callback.onHook(emulator);
                     }
-                    return ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                    return backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                 }
             });
         } finally {
@@ -82,7 +82,7 @@ public class InlineHook {
      * 只能hook arm指令：STMFD SP!, {R4-R9,LR}或STMFD SP!, {R4-R11,LR}，即函数入口
      */
     public static void simpleArmHook(Emulator<?> emulator, long address, final HookCallback callback) {
-        final Pointer pointer = UnicornPointer.pointer(emulator, address);
+        final Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalArgumentException();
         }
@@ -104,7 +104,7 @@ public class InlineHook {
 
             emulator.getSvcMemory().registerSvc(new ArmSvc() {
                 @Override
-                public UnicornPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                     try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
                         KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                 "svc #0x" + Integer.toHexString(svcNumber),
@@ -119,7 +119,7 @@ public class InlineHook {
                     if (callback != null) {
                         return callback.onHook(emulator);
                     }
-                    return ((Number) emulator.getUnicorn().reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
+                    return emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                 }
             });
         } finally {
@@ -143,7 +143,7 @@ public class InlineHook {
      */
     @Deprecated
     public static void simpleThumbIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
-        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalArgumentException();
         }
@@ -171,7 +171,7 @@ public class InlineHook {
      */
     @Deprecated
     public static void simpleArmIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
-        Pointer pointer = UnicornPointer.pointer(emulator, address);
+        Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalArgumentException();
         }

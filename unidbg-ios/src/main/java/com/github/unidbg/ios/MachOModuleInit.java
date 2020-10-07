@@ -2,7 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.PointerNumber;
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,12 +14,12 @@ class MachOModuleInit extends InitFunction {
 
     private static final Log log = LogFactory.getLog(MachOModuleInit.class);
 
-    private final UnicornPointer envp;
-    private final UnicornPointer apple;
-    private final UnicornPointer vars;
+    private final UnidbgPointer envp;
+    private final UnidbgPointer apple;
+    private final UnidbgPointer vars;
     private final boolean isModInit;
 
-    MachOModuleInit(MachOModule module, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars, boolean isModInit, long address) {
+    MachOModuleInit(MachOModule module, UnidbgPointer envp, UnidbgPointer apple, UnidbgPointer vars, boolean isModInit, long address) {
         super(module.base, module.name, address);
         this.envp = envp;
         this.apple = apple;
@@ -56,13 +56,13 @@ class MachOModuleInit extends InitFunction {
     }
 
     // (int argc, const char* argv[], const char* envp[], const char* apple[], const struct ProgramVars* vars)
-    private static void callModInit(Emulator<?> emulator, long address, int argc, UnicornPointer argv, UnicornPointer envp, UnicornPointer apple, UnicornPointer vars) {
+    private static void callModInit(Emulator<?> emulator, long address, int argc, UnidbgPointer argv, UnidbgPointer envp, UnidbgPointer apple, UnidbgPointer vars) {
         List<Number> list = new ArrayList<>(5);
         list.add(argc);
-        list.add(argv == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, argv.peer)));
-        list.add(envp == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, envp.peer)));
-        list.add(apple == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, apple.peer)));
-        list.add(vars == null ? null : new PointerNumber(UnicornPointer.pointer(emulator, vars.peer)));
+        list.add(argv == null ? null : new PointerNumber(UnidbgPointer.pointer(emulator, argv.peer)));
+        list.add(envp == null ? null : new PointerNumber(UnidbgPointer.pointer(emulator, envp.peer)));
+        list.add(apple == null ? null : new PointerNumber(UnidbgPointer.pointer(emulator, apple.peer)));
+        list.add(vars == null ? null : new PointerNumber(UnidbgPointer.pointer(emulator, vars.peer)));
         emulator.eFunc(address, list.toArray(new Number[0]));
     }
 

@@ -1,5 +1,6 @@
 package com.github.unidbg;
 
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.debugger.DebuggerType;
@@ -80,7 +81,8 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
      * @param begin start address
      * @param until stop address
      */
-    Unicorn eBlock(long begin, long until);
+    @Deprecated
+    void eBlock(long begin, long until);
 
     /**
      * 是否正在运行
@@ -105,7 +107,7 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
 
     Memory getMemory();
 
-    Unicorn getUnicorn();
+    Backend getBackend();
 
     int getPid();
 

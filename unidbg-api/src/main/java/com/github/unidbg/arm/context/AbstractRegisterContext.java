@@ -1,6 +1,6 @@
 package com.github.unidbg.arm.context;
 
-import com.github.unidbg.pointer.UnicornPointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public abstract class AbstractRegisterContext implements RegisterContext {
 
@@ -11,7 +11,7 @@ public abstract class AbstractRegisterContext implements RegisterContext {
 
     @Override
     public final long getLongArg(int index) {
-        UnicornPointer pointer = getPointerArg(index);
+        UnidbgPointer pointer = getPointerArg(index);
         return pointer == null ? 0 : pointer.peer;
     }
 
