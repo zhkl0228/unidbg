@@ -1,6 +1,5 @@
 package com.github.unidbg.arm.backend;
 
-import unicorn.EventMemHook;
 import unicorn.Unicorn;
 
 public interface Backend {
@@ -37,6 +36,8 @@ public interface Backend {
     void hook_add_new(EventMemHook callback, int type, Object user_data);
 
     void hook_add_new(InterruptHook callback, Object user_data);
+
+    Unicorn.UnHook hook_add_new(BlockHook callback, long begin, long end, Object user_data);
 
     void emu_start(long begin, long until, long timeout, long count);
 

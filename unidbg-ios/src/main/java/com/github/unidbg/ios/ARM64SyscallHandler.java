@@ -275,7 +275,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 0));
                     return;
                 case 98:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 0));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
                     return;
                 case 116:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
@@ -620,7 +620,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 1));
                 return true;
             case 98:
-                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 1));
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
                 return true;
             case 190:
             case 340:
@@ -2782,11 +2782,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return sendto(emulator, sockfd, buf, len, flags, dest_addr, addrlen);
     }
 
-    private int connect(Emulator<?> emulator, int offset) {
+    private int connect(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
-        int sockfd = context.getIntArg(offset);
-        Pointer addr = context.getPointerArg(offset + 1);
-        int addrlen = context.getIntArg(offset + 2);
+        int sockfd = context.getIntArg(0);
+        Pointer addr = context.getPointerArg(1);
+        int addrlen = context.getIntArg(2);
         return connect(emulator, sockfd, addr, addrlen);
     }
 

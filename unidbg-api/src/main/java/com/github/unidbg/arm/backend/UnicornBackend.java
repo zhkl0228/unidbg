@@ -1,6 +1,5 @@
 package com.github.unidbg.arm.backend;
 
-import unicorn.EventMemHook;
 import unicorn.Unicorn;
 
 public class UnicornBackend implements Backend {
@@ -117,8 +116,13 @@ public class UnicornBackend implements Backend {
     }
 
     @Override
-    public void hook_add_new(EventMemHook callback, int type, Object user_data) {
-        unicorn.hook_add_new(callback, type, user_data);
+    public void hook_add_new(final EventMemHook callback, int type, Object user_data) {
+        unicorn.hook_add_new(new unicorn.EventMemHook() {
+            @Override
+            public boolean hook(Unicorn u, long address, int size, long value, Object user) {
+                return callback.hook(UnicornBackend.this, address, size, value, user);
+            }
+        }, type, user_data);
     }
 
     @Override
@@ -129,6 +133,16 @@ public class UnicornBackend implements Backend {
                 callback.hook(UnicornBackend.this, intno, user);
             }
         }, user_data);
+    }
+
+    @Override
+    public Unicorn.UnHook hook_add_new(final BlockHook callback, long begin, long end, Object user_data) {
+        return unicorn.hook_add_new(new unicorn.BlockHook() {
+            @Override
+            public void hook(Unicorn u, long address, int size, Object user) {
+                callback.hook(UnicornBackend.this, address, size, user);
+            }
+        }, begin, end, user_data);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.EventMemHook;
 import com.github.unidbg.arm.context.BackendArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.Debugger;
@@ -25,8 +26,6 @@ import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
-import unicorn.EventMemHook;
-import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.File;
@@ -53,7 +52,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
         backend.hook_add_new(new EventMemHook() {
             @Override
-            public boolean hook(Unicorn u, long address, int size, long value, Object user) {
+            public boolean hook(Backend backend, long address, int size, long value, Object user) {
                 RegisterContext context = getContext();
                 log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value) + ", PC=" + context.getPCPointer() + ", LR=" + context.getLRPointer());
                 return false;
