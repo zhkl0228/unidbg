@@ -1,6 +1,9 @@
 package com.github.unidbg.linux.android.dvm.array;
 
-import com.github.unidbg.linux.android.dvm.*;
+import com.github.unidbg.linux.android.dvm.Array;
+import com.github.unidbg.linux.android.dvm.DvmObject;
+import com.github.unidbg.linux.android.dvm.StringObject;
+import com.github.unidbg.linux.android.dvm.VM;
 
 import java.util.Arrays;
 

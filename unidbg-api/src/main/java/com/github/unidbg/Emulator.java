@@ -14,7 +14,6 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.serialize.Serializable;
 import com.github.unidbg.spi.*;
 import com.github.unidbg.unwind.Unwinder;
-import unicorn.Unicorn;
 
 import java.io.Closeable;
 import java.io.File;
@@ -38,19 +37,15 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     /**
      * trace memory read
      */
-    @SuppressWarnings("unused")
     Emulator<T> traceRead();
     Emulator<T> traceRead(long begin, long end);
-    @SuppressWarnings("unused")
     Emulator<T> traceRead(long begin, long end, TraceReadListener listener);
 
     /**
      * trace memory write
      */
-    @SuppressWarnings("unused")
     Emulator<T> traceWrite();
     Emulator<T> traceWrite(long begin, long end);
-    @SuppressWarnings("unused")
     Emulator<T> traceWrite(long begin, long end, TraceWriteListener listener);
 
     /**
@@ -64,10 +59,8 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     /**
      * redirect trace out
      */
-    @SuppressWarnings("unused")
     void redirectTrace(File outFile);
 
-    @SuppressWarnings("unused")
     void runAsm(String...asm);
 
     Number[] eFunc(long begin, Number... arguments);
@@ -87,7 +80,6 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     /**
      * 是否正在运行
      */
-    @SuppressWarnings("unused")
     boolean isRunning();
 
     /**
@@ -124,7 +116,6 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     SyscallHandler<T> getSyscallHandler();
 
     Family getFamily();
-    @SuppressWarnings("unused")
     LibraryFile createURLibraryFile(URL url, String libName);
 
     Dlfcn getDlfcn();

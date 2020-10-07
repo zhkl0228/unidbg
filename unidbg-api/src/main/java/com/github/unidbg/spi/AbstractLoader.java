@@ -1,7 +1,6 @@
 package com.github.unidbg.spi;
 
 import com.github.unidbg.*;
-import com.github.unidbg.Module;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.Backend;

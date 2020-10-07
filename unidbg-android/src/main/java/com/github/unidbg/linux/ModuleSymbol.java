@@ -4,8 +4,8 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.hook.HookListener;
+import com.github.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
 

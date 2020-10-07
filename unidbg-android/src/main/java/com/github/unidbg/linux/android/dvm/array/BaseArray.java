@@ -1,7 +1,9 @@
 package com.github.unidbg.linux.android.dvm.array;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.linux.android.dvm.*;
+import com.github.unidbg.linux.android.dvm.Array;
+import com.github.unidbg.linux.android.dvm.DvmClass;
+import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;

@@ -1,7 +1,6 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.*;
-import com.github.unidbg.Module;
 import com.github.unidbg.arm.*;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;

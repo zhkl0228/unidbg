@@ -35,7 +35,9 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.*;
+import unicorn.ArmConst;
+import unicorn.UnicornConst;
+import unicorn.UnicornException;
 
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
