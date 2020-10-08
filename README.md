@@ -43,6 +43,7 @@ Simple tests under src/test directory
 
 ## Thanks
 - [unicorn](https://github.com/zhkl0228/unicorn)
+- [dynarmic](https://github.com/MerryMage/dynarmic)
 - [HookZz](https://github.com/jmpews/Dobby)
 - [xHook](https://github.com/iqiyi/xHook)
 - [AndroidNativeEmu](https://github.com/AeonLucid/AndroidNativeEmu)

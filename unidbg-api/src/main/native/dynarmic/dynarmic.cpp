@@ -9,6 +9,7 @@
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
 
+#include <sys/mman.h>
 #include "dynarmic.h"
 
 #ifdef __cplusplus
@@ -39,11 +40,50 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
   for (khiter_t k = kh_begin(dynarmic->memory); k < kh_end(dynarmic->memory); k++) {
     if(kh_exist(dynarmic->memory, k)) {
       t_memory_page page = kh_value(dynarmic->memory, k);
+      int ret = munmap(page->addr, PAGE_SIZE);
+      if(ret != 0) {
+        fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
+      }
       free(page);
     }
   }
   kh_destroy(memory, dynarmic->memory);
   free(dynarmic);
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_map
+ * Signature: (JJJI)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1map
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size, jint perms) {
+  if(address & PAGE_MASK) {
+    return 1;
+  }
+  if(size == 0 || (size & PAGE_MASK)) {
+    return 2;
+  }
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  khash_t(memory) *memory = dynarmic->memory;
+  int ret;
+  for(long vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
+      fprintf(stderr, "mem_map failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+    void *addr = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(addr == MAP_FAILED) {
+      fprintf(stderr, "mmap failed[%s->%s:%d]: addr=%p\n", __FILE__, __func__, __LINE__, (void*)addr);
+      return 4;
+    }
+    khiter_t k = kh_put(memory, memory, vaddr, &ret);
+    t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
+    page->addr = addr;
+    page->perms = perms;
+    kh_value(memory, k) = page;
+  }
+  return 0;
 }
 
 #ifdef __cplusplus

@@ -2,9 +2,10 @@
 #include "com_github_unidbg_arm_backend_dynarmic_Dynarmic.h"
 
 #define PAGE_SIZE 0x1000 // 4k
+#define PAGE_MASK PAGE_SIZE-1
 
 typedef struct memory_page {
-  char *ptr;
+  void *addr;
   int perms;
 } *t_memory_page;
 
