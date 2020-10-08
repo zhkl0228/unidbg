@@ -1,8 +1,31 @@
 package com.github.unidbg.arm.backend;
 
+import com.github.unidbg.arm.backend.dynarmic.Dynarmic;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
 public class DynarmicBackend implements Backend {
+
+    private static final Log log = LogFactory.getLog(DynarmicBackend.class);
+
+    public static Backend tryInitialize(boolean is64Bit) {
+        try {
+            return new DynarmicBackend(is64Bit);
+        } catch (Throwable throwable) {
+            if (log.isDebugEnabled()) {
+                log.debug("initialize dynarmic failed", throwable);
+            }
+            return null;
+        }
+    }
+
+    private final Dynarmic dynarmic;
+
+    private DynarmicBackend(boolean is64Bit) {
+        this.dynarmic = new Dynarmic(is64Bit);
+    }
 
     @Override
     public void emu_start(long begin, long until, long timeout, long count) {
@@ -16,7 +39,7 @@ public class DynarmicBackend implements Backend {
 
     @Override
     public void destroy() {
-        throw new AbstractMethodError();
+        IOUtils.closeQuietly(dynarmic);
     }
 
     @Override
