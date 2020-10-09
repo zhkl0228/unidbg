@@ -111,7 +111,7 @@ public class Cpsr {
         return value & MODE_MASK;
     }
 
-    void switchUserMode() {
+    public final void switchUserMode() {
         value &= ~MODE_MASK;
         value |= ARMEmulator.USR_MODE;
         backend.reg_write(regId, value);

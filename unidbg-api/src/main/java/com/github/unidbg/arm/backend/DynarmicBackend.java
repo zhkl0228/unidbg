@@ -1,18 +1,19 @@
 package com.github.unidbg.arm.backend;
 
-import com.github.unidbg.arm.backend.dynarmic.Dynarmic;
+import com.github.unidbg.arm.backend.dynarmic.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
-public class DynarmicBackend implements Backend {
+public abstract class DynarmicBackend implements Backend {
 
     private static final Log log = LogFactory.getLog(DynarmicBackend.class);
 
-    static Backend tryInitialize(boolean is64Bit) {
+    static DynarmicBackend tryInitialize(boolean is64Bit) {
         try {
-            return new DynarmicBackend(is64Bit);
+            Dynarmic dynarmic = new Dynarmic(is64Bit);
+            return is64Bit ? new DynarmicBackend64(dynarmic) : new DynarmicBackend32(dynarmic);
         } catch (Throwable throwable) {
             if (log.isDebugEnabled()) {
                 log.debug("initialize dynarmic failed", throwable);
@@ -23,8 +24,17 @@ public class DynarmicBackend implements Backend {
 
     private final Dynarmic dynarmic;
 
-    private DynarmicBackend(boolean is64Bit) {
-        this.dynarmic = new Dynarmic(is64Bit);
+    protected DynarmicBackend(Dynarmic dynarmic) {
+        this.dynarmic = dynarmic;
+    }
+
+    @Override
+    public final void switchUserMode() {
+        // Only user-mode is emulated, there is no emulation of any other privilege levels.
+    }
+
+    @Override
+    public final void enableVFP() {
     }
 
     @Override
@@ -40,16 +50,6 @@ public class DynarmicBackend implements Backend {
     @Override
     public void destroy() {
         IOUtils.closeQuietly(dynarmic);
-    }
-
-    @Override
-    public Number reg_read(int regId) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
-    public void reg_write(int regId, Number value) {
-        throw new AbstractMethodError();
     }
 
     @Override
@@ -77,14 +77,26 @@ public class DynarmicBackend implements Backend {
         throw new AbstractMethodError();
     }
 
+    private EventMemHookNotifier eventMemHookNotifier;
+
     @Override
     public void hook_add_new(EventMemHook callback, int type, Object user_data) {
-        throw new AbstractMethodError();
+        if (eventMemHookNotifier != null) {
+            throw new IllegalStateException();
+        } else {
+            eventMemHookNotifier = new EventMemHookNotifier(callback, type, user_data);
+        }
     }
+
+    private InterruptHookNotifier interruptHookNotifier;
 
     @Override
     public void hook_add_new(InterruptHook callback, Object user_data) {
-        throw new AbstractMethodError();
+        if (interruptHookNotifier != null) {
+            throw new IllegalStateException();
+        } else {
+            interruptHookNotifier = new InterruptHookNotifier(callback, user_data);
+        }
     }
 
     @Override

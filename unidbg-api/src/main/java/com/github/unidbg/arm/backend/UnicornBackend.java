@@ -1,13 +1,38 @@
 package com.github.unidbg.arm.backend;
 
+import com.github.unidbg.arm.Cpsr;
+import unicorn.Arm64Const;
+import unicorn.ArmConst;
 import unicorn.Unicorn;
+import unicorn.UnicornConst;
 
 public class UnicornBackend implements Backend {
 
+    private final boolean is64Bit;
     private final Unicorn unicorn;
 
-    UnicornBackend(Unicorn unicorn) {
-        this.unicorn = unicorn;
+    UnicornBackend(boolean is64Bit) {
+        this.is64Bit = is64Bit;
+        this.unicorn = new Unicorn(is64Bit ? UnicornConst.UC_ARCH_ARM64 : UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM);
+    }
+
+    @Override
+    public void switchUserMode() {
+        Cpsr.getArm(this).switchUserMode();
+    }
+
+    @Override
+    public void enableVFP() {
+        if (is64Bit) {
+            long value = reg_read(Arm64Const.UC_ARM64_REG_CPACR_EL1).longValue();
+            value |= 0x300000; // set the FPEN bits
+            reg_write(Arm64Const.UC_ARM64_REG_CPACR_EL1, value);
+        } else {
+            int value = reg_read(ArmConst.UC_ARM_REG_C1_C0_2).intValue();
+            value |= (0xf << 20);
+            reg_write(ArmConst.UC_ARM_REG_C1_C0_2, value);
+            reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
+        }
     }
 
     @Override

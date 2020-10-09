@@ -4,6 +4,9 @@ import unicorn.Unicorn;
 
 public interface Backend {
 
+    void switchUserMode();
+    void enableVFP();
+
     Number reg_read(int regId);
 
     byte[] reg_read(int regId, int regSize);

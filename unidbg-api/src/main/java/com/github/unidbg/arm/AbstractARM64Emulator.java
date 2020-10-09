@@ -47,7 +47,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     public AbstractARM64Emulator(String processName, File rootDir, Family family, String... envs) {
         super(true, processName, 0xffffe0000L, 0x10000, rootDir, family);
 
-        Cpsr.getArm64(backend).switchUserMode();
+        backend.switchUserMode();
 
         backend.hook_add_new(new EventMemHook() {
             @Override
@@ -62,7 +62,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
         this.syscallHandler = createSyscallHandler(svcMemory);
 
-        enableVFP();
+        backend.enableVFP();
         this.memory = createMemory(syscallHandler, envs);
         this.dlfcn = createDyld(svcMemory);
         this.memory.addHookListener(dlfcn);
@@ -104,12 +104,6 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             KeystoneEncoded encoded = keystone.assemble(assembly);
             return encoded.getMachineCode();
         }
-    }
-
-    private void enableVFP() {
-        long value = backend.reg_read(Arm64Const.UC_ARM64_REG_CPACR_EL1).longValue();
-        value |= 0x300000; // set the FPEN bits
-        backend.reg_write(Arm64Const.UC_ARM64_REG_CPACR_EL1, value);
     }
 
     @Override

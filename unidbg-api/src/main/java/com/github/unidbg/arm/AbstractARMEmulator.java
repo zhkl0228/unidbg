@@ -48,7 +48,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public AbstractARMEmulator(String processName, File rootDir, Family family, String... envs) {
         super(false, processName, 0xfffe0000L, 0x10000, rootDir, family);
 
-        Cpsr.getArm(backend).switchUserMode();
+        backend.switchUserMode();
 
         backend.hook_add_new(new EventMemHook() {
             @Override
@@ -61,7 +61,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
         this.syscallHandler = createSyscallHandler(svcMemory);
 
-        enableVFP();
+        backend.enableVFP();
         this.memory = createMemory(syscallHandler, envs);
         this.dlfcn = createDyld(svcMemory);
         this.memory.addHookListener(dlfcn);
@@ -106,13 +106,6 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
             KeystoneEncoded encoded = keystone.assemble(assembly);
             return encoded.getMachineCode();
         }
-    }
-
-    private void enableVFP() {
-        int value = ((Number) backend.reg_read(ArmConst.UC_ARM_REG_C1_C0_2)).intValue();
-        value |= (0xf << 20);
-        backend.reg_write(ArmConst.UC_ARM_REG_C1_C0_2, value);
-        backend.reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
     }
 
     @Override
