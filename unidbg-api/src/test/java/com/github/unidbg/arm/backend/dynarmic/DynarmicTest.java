@@ -7,12 +7,14 @@ public class DynarmicTest extends TestCase {
 
     public void testInitialize() {
         try (Dynarmic dynarmic = new Dynarmic(true)) {
-            assertTrue(dynarmic.nativeHandle > 0L);
             dynarmic.mem_map(0x0, 0x1000, UnicornConst.UC_PROT_WRITE);
+            dynarmic.mem_protect(0x0, 0x1000, UnicornConst.UC_PROT_READ);
+            dynarmic.mem_unmap(0x0, 0x1000);
         }
         try (Dynarmic dynarmic = new Dynarmic(false)) {
-            assertTrue(dynarmic.nativeHandle > 0L);
             dynarmic.mem_map(0x2000, 0x1000 * 3, UnicornConst.UC_PROT_READ);
+            dynarmic.mem_unmap(0x2000, 0x1000 * 2);
+            dynarmic.mem_protect(0x4000, 0x1000, UnicornConst.UC_PROT_WRITE);
         }
     }
 

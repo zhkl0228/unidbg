@@ -25,10 +25,26 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_unmap
+ * Signature: (JJJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1unmap
+  (JNIEnv *, jclass, jlong, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    mem_map
  * Signature: (JJJI)I
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1map
+  (JNIEnv *, jclass, jlong, jlong, jlong, jint);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_protect
+ * Signature: (JJJI)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1protect
   (JNIEnv *, jclass, jlong, jlong, jlong, jint);
 
 #ifdef __cplusplus

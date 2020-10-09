@@ -176,6 +176,39 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_unmap
+ * Signature: (JJJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1unmap
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size) {
+  if(address & PAGE_MASK) {
+    return 1;
+  }
+  if(size == 0 || (size & PAGE_MASK)) {
+    return 2;
+  }
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  khash_t(memory) *memory = dynarmic->memory;
+  int ret;
+  for(long vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+    t_memory_page page = kh_value(memory, k);
+    int ret = munmap(page->addr, PAGE_SIZE);
+    if(ret != 0) {
+      fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
+    }
+    free(page);
+    kh_del(memory, memory, k);
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    mem_map
  * Signature: (JJJI)I
  */
@@ -205,6 +238,34 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     page->addr = addr;
     page->perms = perms;
     kh_value(memory, k) = page;
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_protect
+ * Signature: (JJJI)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1protect
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size, jint perms) {
+  if(address & PAGE_MASK) {
+    return 1;
+  }
+  if(size == 0 || (size & PAGE_MASK)) {
+    return 2;
+  }
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  khash_t(memory) *memory = dynarmic->memory;
+  int ret;
+  for(long vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_protect failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+    t_memory_page page = kh_value(memory, k);
+    page->perms = perms;
   }
   return 0;
 }

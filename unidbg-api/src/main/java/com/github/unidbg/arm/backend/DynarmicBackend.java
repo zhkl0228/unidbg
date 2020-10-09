@@ -69,12 +69,12 @@ public abstract class DynarmicBackend implements Backend {
 
     @Override
     public void mem_protect(long address, long size, int perms) {
-        throw new AbstractMethodError();
+        dynarmic.mem_protect(address, size, perms);
     }
 
     @Override
     public void mem_unmap(long address, long size) {
-        throw new AbstractMethodError();
+        dynarmic.mem_unmap(address, size);
     }
 
     private EventMemHookNotifier eventMemHookNotifier;
