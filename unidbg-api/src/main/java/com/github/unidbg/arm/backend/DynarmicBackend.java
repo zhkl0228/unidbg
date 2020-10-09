@@ -10,7 +10,7 @@ public class DynarmicBackend implements Backend {
 
     private static final Log log = LogFactory.getLog(DynarmicBackend.class);
 
-    public static Backend tryInitialize(boolean is64Bit) {
+    static Backend tryInitialize(boolean is64Bit) {
         try {
             return new DynarmicBackend(is64Bit);
         } catch (Throwable throwable) {
@@ -64,7 +64,7 @@ public class DynarmicBackend implements Backend {
 
     @Override
     public void mem_map(long address, long size, int perms) {
-        throw new AbstractMethodError();
+        dynarmic.mem_map(address, size, perms);
     }
 
     @Override

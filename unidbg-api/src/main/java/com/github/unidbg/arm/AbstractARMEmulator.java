@@ -46,7 +46,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     private final Dlfcn dlfcn;
 
     public AbstractARMEmulator(String processName, File rootDir, Family family, String... envs) {
-        super(UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM, processName, 0xfffe0000L, 0x10000, rootDir, family);
+        super(false, processName, 0xfffe0000L, 0x10000, rootDir, family);
 
         Cpsr.getArm(backend).switchUserMode();
 

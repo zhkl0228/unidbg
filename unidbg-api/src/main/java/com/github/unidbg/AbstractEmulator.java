@@ -3,8 +3,8 @@ package com.github.unidbg;
 import com.github.unidbg.arm.ARMSvcMemory;
 import com.github.unidbg.arm.Arguments;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.arm.backend.ReadHook;
-import com.github.unidbg.arm.backend.UnicornBackend;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebugServer;
@@ -33,7 +33,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 import java.io.*;
@@ -73,7 +72,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     private final Family family;
 
-    public AbstractEmulator(int unicorn_arch, int unicorn_mode, String processName, long svcBase, int svcSize, File rootDir, Family family) {
+    public AbstractEmulator(boolean is64Bit, String processName, long svcBase, int svcSize, File rootDir, Family family) {
         super();
         this.family = family;
 
@@ -91,7 +90,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new IllegalStateException("mkdirs failed: " + rootDir);
         }
         this.fileSystem = createFileSystem(rootDir);
-        this.backend = new UnicornBackend(new Unicorn(unicorn_arch, unicorn_mode));
+        this.backend = BackendFactory.createBackend(is64Bit);
         this.processName = processName == null ? "unidbg" : processName;
         this.registerContext = createRegisterContext(backend);
 

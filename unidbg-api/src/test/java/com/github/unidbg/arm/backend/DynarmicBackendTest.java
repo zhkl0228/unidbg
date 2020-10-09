@@ -1,7 +1,5 @@
-package com.github.unidbg.arm.backend.dynarmic;
+package com.github.unidbg.arm.backend;
 
-import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.arm.backend.DynarmicBackend;
 import junit.framework.TestCase;
 
 public class DynarmicBackendTest extends TestCase {

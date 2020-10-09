@@ -6,7 +6,7 @@ public class UnicornBackend implements Backend {
 
     private final Unicorn unicorn;
 
-    public UnicornBackend(Unicorn unicorn) {
+    UnicornBackend(Unicorn unicorn) {
         this.unicorn = unicorn;
     }
 

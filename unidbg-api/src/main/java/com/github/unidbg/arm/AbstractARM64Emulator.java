@@ -45,7 +45,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     private final Dlfcn dlfcn;
 
     public AbstractARM64Emulator(String processName, File rootDir, Family family, String... envs) {
-        super(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM, processName, 0xffffe0000L, 0x10000, rootDir, family);
+        super(true, processName, 0xffffe0000L, 0x10000, rootDir, family);
 
         Cpsr.getArm64(backend).switchUserMode();
 

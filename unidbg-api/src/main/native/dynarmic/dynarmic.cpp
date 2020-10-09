@@ -37,9 +37,10 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nativeDestroy
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
-  for (khiter_t k = kh_begin(dynarmic->memory); k < kh_end(dynarmic->memory); k++) {
-    if(kh_exist(dynarmic->memory, k)) {
-      t_memory_page page = kh_value(dynarmic->memory, k);
+  khash_t(memory) *memory = dynarmic->memory;
+  for (khiter_t k = kh_begin(memory); k < kh_end(memory); k++) {
+    if(kh_exist(memory, k)) {
+      t_memory_page page = kh_value(memory, k);
       int ret = munmap(page->addr, PAGE_SIZE);
       if(ret != 0) {
         fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
@@ -47,7 +48,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
       free(page);
     }
   }
-  kh_destroy(memory, dynarmic->memory);
+  kh_destroy(memory, memory);
   free(dynarmic);
 }
 
