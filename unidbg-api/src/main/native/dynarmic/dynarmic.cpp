@@ -111,6 +111,9 @@ public:
     }
 };
 
+static u64 tpidrro_el0 = 0;
+static u64 tpidr_el0 = 0;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,6 +132,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     DynarmicCallbacks64 callbacks;
     Dynarmic::A64::UserConfig config;
     config.callbacks = &callbacks;
+    config.tpidrro_el0 = &tpidrro_el0;
+    config.tpidr_el0 = &tpidr_el0;
     Dynarmic::A64::Jit jit{config};
     dynarmic->jit64 = &jit;
   }
