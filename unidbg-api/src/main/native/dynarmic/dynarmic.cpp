@@ -109,10 +109,19 @@ public:
     u64 GetCNTPCT() override {
         return 0;
     }
+
+    u64 tpidrro_el0 = 0;
+    u64 tpidr_el0 = 0;
 };
 
-static u64 tpidrro_el0 = 0;
-static u64 tpidr_el0 = 0;
+KHASH_MAP_INIT_INT64(memory, t_memory_page)
+
+typedef struct dynarmic {
+  bool is64Bit;
+  khash_t(memory) *memory;
+  DynarmicCallbacks64 *cb64;
+  Dynarmic::A64::Jit *jit64;
+} *t_dynarmic;
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,10 +140,12 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
   if(dynarmic->is64Bit) {
     DynarmicCallbacks64 callbacks;
     Dynarmic::A64::UserConfig config;
-    config.callbacks = &callbacks;
-    config.tpidrro_el0 = &tpidrro_el0;
-    config.tpidr_el0 = &tpidr_el0;
+    DynarmicCallbacks64 *cb = &callbacks;
+    config.callbacks = cb;
+    config.tpidrro_el0 = &cb->tpidrro_el0;
+    config.tpidr_el0 = &cb->tpidr_el0;
     Dynarmic::A64::Jit jit{config};
+    dynarmic->cb64 = cb;
     dynarmic->jit64 = &jit;
   }
   return (jlong) dynarmic;

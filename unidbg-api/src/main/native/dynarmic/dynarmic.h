@@ -14,11 +14,3 @@ typedef struct memory_page {
   void *addr;
   int perms;
 } *t_memory_page;
-
-KHASH_MAP_INIT_INT64(memory, t_memory_page)
-
-typedef struct dynarmic {
-  bool is64Bit;
-  khash_t(memory) *memory;
-  Dynarmic::A64::Jit *jit64;
-} *t_dynarmic;
