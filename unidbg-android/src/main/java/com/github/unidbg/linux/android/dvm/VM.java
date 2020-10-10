@@ -2,6 +2,7 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.linux.android.dvm.apk.AssetResolver;
 import com.sun.jna.Pointer;
 
 import java.io.File;
@@ -54,6 +55,8 @@ public interface VM {
      * @return 可返回null
      */
     byte[] openAsset(String fileName);
+
+    void setAssetResolver(AssetResolver assetResolver);
 
     /**
      * 设置apkFile以后，可调用该方法获取AndroidManifest.xml

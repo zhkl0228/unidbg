@@ -6,6 +6,7 @@ import com.github.unidbg.linux.android.ElfLibraryFile;
 import com.github.unidbg.linux.android.dvm.api.Signature;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
 import com.github.unidbg.linux.android.dvm.apk.ApkFactory;
+import com.github.unidbg.linux.android.dvm.apk.AssetResolver;
 import com.github.unidbg.spi.LibraryFile;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -225,7 +226,21 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
     @Override
     public byte[] openAsset(String fileName) {
+        if (assetResolver != null) {
+            byte[] bytes = assetResolver.resolveAsset(fileName);
+            if (bytes != null) {
+                return bytes;
+            }
+        }
+
         return apk == null ? null : apk.openAsset(fileName);
+    }
+
+    private AssetResolver assetResolver;
+
+    @Override
+    public void setAssetResolver(AssetResolver assetResolver) {
+        this.assetResolver = assetResolver;
     }
 
     @Override
