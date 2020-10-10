@@ -47,6 +47,22 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1protect
   (JNIEnv *, jclass, jlong, jlong, jlong, jint);
 
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_sp
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1sp
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_write
+ * Signature: (JIJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1write
+  (JNIEnv *, jclass, jlong, jint, jlong);
+
 #ifdef __cplusplus
 }
 #endif

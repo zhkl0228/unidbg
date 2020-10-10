@@ -119,8 +119,8 @@ KHASH_MAP_INIT_INT64(memory, t_memory_page)
 typedef struct dynarmic {
   bool is64Bit;
   khash_t(memory) *memory;
-  DynarmicCallbacks64 *cb64;
-  Dynarmic::A64::Jit *jit64;
+  std::shared_ptr<DynarmicCallbacks64> cb64;
+  std::shared_ptr<Dynarmic::A64::Jit> jit64;
 } *t_dynarmic;
 
 #ifdef __cplusplus
@@ -138,15 +138,15 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
   dynarmic->is64Bit = is64Bit == JNI_TRUE;
   dynarmic->memory = kh_init(memory);
   if(dynarmic->is64Bit) {
-    DynarmicCallbacks64 callbacks;
+    std::shared_ptr<DynarmicCallbacks64> cb = std::make_shared<DynarmicCallbacks64>();
+    DynarmicCallbacks64 *callbacks = cb.get();
+
     Dynarmic::A64::UserConfig config;
-    DynarmicCallbacks64 *cb = &callbacks;
-    config.callbacks = cb;
-    config.tpidrro_el0 = &cb->tpidrro_el0;
-    config.tpidr_el0 = &cb->tpidr_el0;
-    Dynarmic::A64::Jit jit{config};
+    config.callbacks = callbacks;
+    config.tpidrro_el0 = &callbacks->tpidrro_el0;
+    config.tpidr_el0 = &callbacks->tpidr_el0;
     dynarmic->cb64 = cb;
-    dynarmic->jit64 = &jit;
+    dynarmic->jit64 = std::make_shared<Dynarmic::A64::Jit>(config);
   }
   return (jlong) dynarmic;
 }
@@ -266,6 +266,48 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     }
     t_memory_page page = kh_value(memory, k);
     page->perms = perms;
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_sp
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1sp
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    if(jit) {
+      jit.get()->SetSP(value);
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_write
+ * Signature: (JIJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1write
+  (JNIEnv *env, jclass clazz, jlong handle, jint index, jlong value) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    if(jit) {
+      jit.get()->SetRegister(index, value);
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
   }
   return 0;
 }

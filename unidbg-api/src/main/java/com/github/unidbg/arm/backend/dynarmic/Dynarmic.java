@@ -25,6 +25,10 @@ public class Dynarmic implements Closeable {
     private static native int mem_map(long handle, long address, long size, int perms);
     private static native int mem_protect(long handle, long address, long size, int perms);
 
+    private static native int reg_set_sp(long handle, long value);
+
+    private static native int reg_write(long handle, int index, long value);
+
     private final long nativeHandle;
 
     public Dynarmic(boolean is64Bit) {
@@ -56,6 +60,29 @@ public class Dynarmic implements Closeable {
             log.debug("mem_protect address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", perms=0b" + Integer.toBinaryString(perms));
         }
         int ret = mem_protect(nativeHandle, address, size, perms);
+        if (ret != 0) {
+            throw new DynarmicException("ret=" + ret);
+        }
+    }
+
+    public void reg_set_sp(long value) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_sp_sp value=0x" + Long.toHexString(value));
+        }
+        int ret = reg_set_sp(nativeHandle, value);
+        if (ret != 0) {
+            throw new DynarmicException("ret=" + ret);
+        }
+    }
+
+    public void reg_write64(int index, long value) {
+        if (index < 0 || index > 30) {
+            throw new IllegalArgumentException("index=" + index);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("reg_write64 index=" + index + ", value=0x" + Long.toHexString(value));
+        }
+        int ret = reg_write(nativeHandle, index, value);
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }

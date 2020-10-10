@@ -22,7 +22,7 @@ public abstract class DynarmicBackend implements Backend {
         }
     }
 
-    private final Dynarmic dynarmic;
+    protected final Dynarmic dynarmic;
 
     protected DynarmicBackend(Dynarmic dynarmic) {
         this.dynarmic = dynarmic;
