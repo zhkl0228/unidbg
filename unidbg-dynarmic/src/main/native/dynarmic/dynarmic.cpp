@@ -72,16 +72,31 @@ public:
     }
 
     void MemoryWrite8(u64 vaddr, u8 value) override {
-        fprintf(stderr, "MemoryWrite8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+        }
     }
     void MemoryWrite16(u64 vaddr, u16 value) override {
         fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
         abort();
     }
     void MemoryWrite32(u64 vaddr, u32 value) override {
-        fprintf(stderr, "MemoryWrite32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        if(vaddr & 3) {
+            fprintf(stderr, "MemoryWrite32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return;
+        }
+        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+        }
     }
     void MemoryWrite64(u64 vaddr, u64 value) override {
         if(vaddr & 7) {
@@ -400,6 +415,28 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_read_sp64
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1read_1sp64
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    if(jit) {
+      return jit.get()->GetSP();
+    } else {
+      abort();
+      return 1;
+    }
+  } else {
+    abort();
+    return -1;
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_tpidr_el0
  * Signature: (JJ)I
  */
@@ -438,6 +475,28 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
     return -1;
   }
   return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_read
+ * Signature: (JI)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1read
+  (JNIEnv *env, jclass clazz, jlong handle, jint index) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    if(jit) {
+      return jit.get()->GetRegister(index);
+    } else {
+      abort();
+      return -1;
+    }
+  } else {
+    abort();
+    return -1;
+  }
 }
 
 /*

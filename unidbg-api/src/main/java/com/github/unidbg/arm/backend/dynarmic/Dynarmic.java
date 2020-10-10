@@ -20,9 +20,11 @@ public class Dynarmic implements Closeable {
     private static native byte[] mem_read(long handle, long address, int size);
 
     private static native int reg_set_sp64(long handle, long value);
+    private static native long reg_read_sp64(long handle);
     private static native int reg_set_tpidr_el0(long handle, long value);
 
     private static native int reg_write(long handle, int index, long value);
+    private static native long reg_read(long handle, int index);
 
     private static native int run(long handle, long pc);
 
@@ -86,6 +88,13 @@ public class Dynarmic implements Closeable {
         }
     }
 
+    public long reg_read_sp64() {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_read_sp64");
+        }
+        return reg_read_sp64(nativeHandle);
+    }
+
     public void reg_set_tpidr_el0(long value) {
         if (log.isDebugEnabled()) {
             log.debug("reg_set_tpidr_el0 value=0x" + Long.toHexString(value));
@@ -107,6 +116,13 @@ public class Dynarmic implements Closeable {
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }
+    }
+
+    public long reg_read64(int index) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_read64 index=" + index);
+        }
+        return reg_read(nativeHandle, index);
     }
 
     public void mem_write(long address, byte[] bytes) {
