@@ -20,6 +20,9 @@ public class DynarmicBackend64 extends DynarmicBackend {
             case Arm64Const.UC_ARM64_REG_SP:
                 dynarmic.reg_set_sp64(value.longValue());
                 break;
+            case Arm64Const.UC_ARM64_REG_TPIDR_EL0:
+                dynarmic.reg_set_tpidr_el0(value.longValue());
+                break;
             default:
                 throw new UnsupportedOperationException("regId=" + regId);
         }

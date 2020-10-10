@@ -30,6 +30,7 @@ public class Dynarmic implements Closeable {
     private static native int mem_write(long handle, long address, byte[] bytes);
 
     private static native int reg_set_sp64(long handle, long value);
+    private static native void reg_set_tpidr_el0(long handle, long value);
 
     private static native int reg_write(long handle, int index, long value);
 
@@ -82,6 +83,13 @@ public class Dynarmic implements Closeable {
         }
     }
 
+    public void reg_set_tpidr_el0(long value) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_set_tpidr_el0 value=0x" + Long.toHexString(value));
+        }
+        reg_set_tpidr_el0(nativeHandle, value);
+    }
+
     public void reg_write64(int index, long value) {
         if (index < 0 || index > 30) {
             throw new IllegalArgumentException("index=" + index);
@@ -96,14 +104,11 @@ public class Dynarmic implements Closeable {
     }
 
     public void mem_write(long address, byte[] bytes) {
-        if (log.isDebugEnabled()) {
-            byte[] tmp = bytes;
-            if (bytes.length >= 512) {
-                tmp = Arrays.copyOf(bytes, 512);
-            }
-            log.debug(Inspector.inspectString(tmp, "mem_write address=0x" + Long.toHexString(address) + ", size=" + bytes.length));
-        }
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_write(nativeHandle, address, bytes);
+        if (log.isDebugEnabled()) {
+            log.debug("mem_write address=0x" + Long.toHexString(address) + ", size=" + bytes.length + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }
@@ -113,5 +118,4 @@ public class Dynarmic implements Closeable {
     public void close() {
         nativeDestroy(nativeHandle);
     }
-
 }

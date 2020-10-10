@@ -277,8 +277,30 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1write
   (JNIEnv *env, jclass clazz, jlong handle, jlong address, jbyteArray bytes) {
+  jsize size = env->GetArrayLength(bytes);
+  jbyte *data = env->GetByteArrayElements(bytes, NULL);
   t_dynarmic dynarmic = (t_dynarmic) handle;
-  return 1;
+  khash_t(memory) *memory = dynarmic->memory;
+  char *src = (char *)data;
+  long vaddr_end = address + size;
+  for(long vaddr = address & ~PAGE_MASK; vaddr < vaddr_end; vaddr += PAGE_SIZE) {
+    long start = vaddr < address ? address - vaddr : 0;
+    long end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
+    long len = end - start;
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_write failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 1;
+    }
+    t_memory_page page = kh_value(memory, k);
+    char *addr = (char *)page->addr;
+    char *dest = &addr[start];
+//    printf("mem_write address=%p, vaddr=%p, start=%ld, len=%ld, addr=%p, dest=%p\n", (void*)address, (void*)vaddr, start, len, addr, dest);
+    memcpy(dest, src, len);
+    src += len;
+  }
+  env->ReleaseByteArrayElements(bytes, data, JNI_ABORT);
+  return 0;
 }
 
 /*
@@ -300,6 +322,20 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
     return -1;
   }
   return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_tpidr_el0
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1tpidr_1el0
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<DynarmicCallbacks64> cb = dynarmic->cb64;
+    cb.get()->tpidr_el0 = value;
+  }
 }
 
 /*
