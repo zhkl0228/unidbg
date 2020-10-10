@@ -305,6 +305,36 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_read
+ * Signature: (JJI)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1read
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jint size) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  khash_t(memory) *memory = dynarmic->memory;
+  jbyteArray bytes = env->NewByteArray(size);
+  long dest = 0;
+  long vaddr_end = address + size;
+  for(long vaddr = address & ~PAGE_MASK; vaddr < vaddr_end; vaddr += PAGE_SIZE) {
+    long start = vaddr < address ? address - vaddr : 0;
+    long end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
+    long len = end - start;
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_read failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return NULL;
+    }
+    t_memory_page page = kh_value(memory, k);
+    char *addr = (char *)page->addr;
+    jbyte *src = (jbyte *)&addr[start];
+    env->SetByteArrayRegion(bytes, dest, len, src);
+    dest += len;
+  }
+  return bytes;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_sp64
  * Signature: (JJ)I
  */

@@ -54,7 +54,7 @@ public abstract class DynarmicBackend implements Backend {
 
     @Override
     public byte[] mem_read(long address, long size) {
-        throw new AbstractMethodError();
+        return dynarmic.mem_read(address, (int) size);
     }
 
     @Override

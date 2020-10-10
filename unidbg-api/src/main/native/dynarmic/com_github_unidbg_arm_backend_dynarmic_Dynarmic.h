@@ -57,6 +57,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_read
+ * Signature: (JJI)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1read
+  (JNIEnv *, jclass, jlong, jlong, jint);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_sp64
  * Signature: (JJ)I
  */

@@ -1,12 +1,10 @@
 package com.github.unidbg.arm.backend.dynarmic;
 
-import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class Dynarmic implements Closeable {
 
@@ -28,6 +26,7 @@ public class Dynarmic implements Closeable {
     private static native int mem_protect(long handle, long address, long size, int perms);
 
     private static native int mem_write(long handle, long address, byte[] bytes);
+    private static native byte[] mem_read(long handle, long address, int size);
 
     private static native int reg_set_sp64(long handle, long value);
     private static native int reg_set_tpidr_el0(long handle, long value);
@@ -115,6 +114,18 @@ public class Dynarmic implements Closeable {
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }
+    }
+
+    public byte[] mem_read(long address, int size) {
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        byte[] ret = mem_read(nativeHandle, address, size);
+        if (log.isDebugEnabled()) {
+            log.debug("mem_read address=0x" + Long.toHexString(address) + ", size=" + size + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
+        if (ret == null) {
+            throw new DynarmicException();
+        }
+        return ret;
     }
 
     @Override
