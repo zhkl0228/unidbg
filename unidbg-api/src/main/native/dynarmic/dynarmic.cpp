@@ -327,15 +327,22 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_tpidr_el0
- * Signature: (JJ)V
+ * Signature: (JJ)I
  */
-JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1tpidr_1el0
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1tpidr_1el0
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
     std::shared_ptr<DynarmicCallbacks64> cb = dynarmic->cb64;
-    cb.get()->tpidr_el0 = value;
+    if(cb) {
+      cb.get()->tpidr_el0 = value;
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
   }
+  return 0;
 }
 
 /*
