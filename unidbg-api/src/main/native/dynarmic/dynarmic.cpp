@@ -272,10 +272,21 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
- * Method:    reg_set_sp
+ * Method:    mem_write
+ * Signature: (JJ[B)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1write
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jbyteArray bytes) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  return 1;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_sp64
  * Signature: (JJ)I
  */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1sp
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1sp64
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {

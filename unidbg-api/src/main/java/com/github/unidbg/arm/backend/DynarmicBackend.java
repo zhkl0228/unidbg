@@ -59,7 +59,7 @@ public abstract class DynarmicBackend implements Backend {
 
     @Override
     public void mem_write(long address, byte[] bytes) {
-        throw new AbstractMethodError();
+        dynarmic.mem_write(address, bytes);
     }
 
     @Override

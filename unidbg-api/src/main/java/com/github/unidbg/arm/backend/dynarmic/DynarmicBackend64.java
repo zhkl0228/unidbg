@@ -18,7 +18,7 @@ public class DynarmicBackend64 extends DynarmicBackend {
     public void reg_write(int regId, Number value) {
         switch (regId) {
             case Arm64Const.UC_ARM64_REG_SP:
-                dynarmic.reg_set_sp(value.longValue());
+                dynarmic.reg_set_sp64(value.longValue());
                 break;
             default:
                 throw new UnsupportedOperationException("regId=" + regId);
