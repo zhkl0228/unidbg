@@ -24,10 +24,23 @@ public class Dynarmic implements Closeable {
 
     private static native int reg_write(long handle, int index, long value);
 
+    private static native int run(long handle, long pc);
+
     private final long nativeHandle;
 
     public Dynarmic(boolean is64Bit) {
         this.nativeHandle = nativeInitialize(is64Bit);
+    }
+
+    public void emu_start(long begin) {
+        if (log.isDebugEnabled()) {
+            log.debug("emu_start begin=0x" + Long.toHexString(begin));
+        }
+
+        int ret = run(nativeHandle, begin);
+        if (ret != 0) {
+            throw new DynarmicException("ret=" + ret);
+        }
     }
 
     public void mem_unmap(long address, long size) {

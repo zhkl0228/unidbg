@@ -11,6 +11,20 @@ using u16 = std::uint16_t;
 using u32 = std::uint32_t;
 using u64 = std::uint64_t;
 
+KHASH_MAP_INIT_INT64(memory, t_memory_page)
+
+static void *get_memory(khash_t(memory) *memory, long vaddr) {
+    long base = vaddr & ~PAGE_MASK;
+    long off = vaddr - base;
+    khiter_t k = kh_get(memory, memory, base);
+    if(k == kh_end(memory)) {
+      return NULL;
+    }
+    t_memory_page page = kh_value(memory, k);
+    char *addr = (char *)page->addr;
+    return &addr[off];
+}
+
 class DynarmicCallbacks64 final : public Dynarmic::A64::UserCallbacks {
 public:
     u8 MemoryRead8(u64 vaddr) override {
@@ -24,14 +38,34 @@ public:
         return 0;
     }
     u32 MemoryRead32(u64 vaddr) override {
-        fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
-        return 0;
+        if(vaddr & 3) {
+            fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return 0;
+        }
+        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        if(dest) {
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return 0;
+        }
     }
     u64 MemoryRead64(u64 vaddr) override {
-        fprintf(stderr, "MemoryRead64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
-        return 0;
+        if(vaddr & 7) {
+            fprintf(stderr, "MemoryRead64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return 0;
+        }
+        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        if(dest) {
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return 0;
+        }
     }
     Dynarmic::A64::Vector MemoryRead128(u64 vaddr) override {
         return {MemoryRead64(vaddr), MemoryRead64(vaddr + 8)};
@@ -50,8 +84,18 @@ public:
         abort();
     }
     void MemoryWrite64(u64 vaddr, u64 value) override {
-        fprintf(stderr, "MemoryWrite64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        if(vaddr & 7) {
+            fprintf(stderr, "MemoryWrite64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return;
+        }
+        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+        }
     }
     void MemoryWrite128(u64 vaddr, Dynarmic::A64::Vector value) override {
         MemoryWrite64(vaddr, value[0]);
@@ -112,9 +156,8 @@ public:
 
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
+    khash_t(memory) *memory = NULL;
 };
-
-KHASH_MAP_INIT_INT64(memory, t_memory_page)
 
 typedef struct dynarmic {
   bool is64Bit;
@@ -147,6 +190,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.tpidr_el0 = &callbacks->tpidr_el0;
     dynarmic->cb64 = cb;
     dynarmic->jit64 = std::make_shared<Dynarmic::A64::Jit>(config);
+    callbacks->memory = dynarmic->memory;
   }
   return (jlong) dynarmic;
 }
@@ -387,6 +431,29 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
     std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
     if(jit) {
       jit.get()->SetRegister(index, value);
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    run
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_run
+  (JNIEnv *env, jclass clazz, jlong handle, jlong pc) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    if(jit) {
+      Dynarmic::A64::Jit *cpu = jit.get();
+      cpu->SetPC(pc);
+      cpu->Run();
     } else {
       return 1;
     }

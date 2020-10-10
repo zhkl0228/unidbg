@@ -39,7 +39,7 @@ public abstract class DynarmicBackend implements Backend {
 
     @Override
     public void emu_start(long begin, long until, long timeout, long count) {
-        throw new AbstractMethodError();
+        dynarmic.emu_start(begin);
     }
 
     @Override
