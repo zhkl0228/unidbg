@@ -1,9 +1,14 @@
 package com.github.unidbg.arm.backend;
 
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import junit.framework.TestCase;
 import unicorn.Arm64Const;
 
 public class DynarmicBackendTest extends TestCase {
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     public void testInitialize() {
         Backend backend = DynarmicBackend.tryInitialize(true);

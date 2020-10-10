@@ -4,17 +4,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.Closeable;
-import java.io.IOException;
 
 public class Dynarmic implements Closeable {
-
-    static {
-        try {
-            org.scijava.nativelib.NativeLoader.loadLibrary("dynarmic");
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 
     private static final Log log = LogFactory.getLog(Dynarmic.class);
 

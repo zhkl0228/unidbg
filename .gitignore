@@ -11,3 +11,5 @@
 /unidbg-ios/unidbg-ios.iml
 /unidbg-ios/target/
 /unidbg-android/target/
+/unidbg-dynarmic/target/
+/unidbg-dynarmic/unidbg-dynarmic.iml

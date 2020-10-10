@@ -5,6 +5,10 @@ import unicorn.UnicornConst;
 
 public class DynarmicTest extends TestCase {
 
+    static {
+        DynarmicLoader.useDynarmic();
+    }
+
     public void testInitialize() {
         try (Dynarmic dynarmic = new Dynarmic(true)) {
             dynarmic.mem_map(0x0, 0x1000, UnicornConst.UC_PROT_WRITE);
