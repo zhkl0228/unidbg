@@ -6,6 +6,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.arm.backend.ReadHook;
 import com.github.unidbg.arm.backend.WriteHook;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebugServer;
 import com.github.unidbg.debugger.Debugger;
@@ -393,7 +394,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
             }
         } catch (RuntimeException e) {
-            if (!entry && e instanceof UnicornException && !log.isDebugEnabled()) {
+            if (!entry && (e instanceof UnicornException || e instanceof DynarmicException) && !log.isDebugEnabled()) {
                 log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);
                 return -1;
             }

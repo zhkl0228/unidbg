@@ -14,3 +14,5 @@ typedef struct memory_page {
   void *addr;
   int perms;
 } *t_memory_page;
+
+KHASH_MAP_INIT_INT64(memory, t_memory_page)

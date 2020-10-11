@@ -2,7 +2,6 @@ package com.github.unidbg.arm.backend.dynarmic;
 
 import com.github.unidbg.arm.backend.DynarmicBackend;
 import unicorn.Arm64Const;
-import unicorn.UnicornException;
 
 public class DynarmicBackend64 extends DynarmicBackend {
 
@@ -18,7 +17,7 @@ public class DynarmicBackend64 extends DynarmicBackend {
             case Arm64Const.UC_ARM64_REG_SP:
                 return dynarmic.reg_read_sp64();
             default:
-                throw new UnicornException("regId=" + regId);
+                throw new DynarmicException("regId=" + regId);
         }
     }
 
@@ -39,7 +38,7 @@ public class DynarmicBackend64 extends DynarmicBackend {
                 dynarmic.reg_set_tpidr_el0(value.longValue());
                 break;
             default:
-                throw new UnicornException("regId=" + regId);
+                throw new DynarmicException("regId=" + regId);
         }
     }
 

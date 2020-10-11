@@ -4,14 +4,8 @@
 #include <exception>
 
 #include <sys/mman.h>
+
 #include "dynarmic.h"
-
-using u8 = std::uint8_t;
-using u16 = std::uint16_t;
-using u32 = std::uint32_t;
-using u64 = std::uint64_t;
-
-KHASH_MAP_INIT_INT64(memory, t_memory_page)
 
 static void *get_memory(khash_t(memory) *memory, long vaddr) {
     long base = vaddr & ~PAGE_MASK;
@@ -26,16 +20,38 @@ static void *get_memory(khash_t(memory) *memory, long vaddr) {
 }
 
 class DynarmicCallbacks64 final : public Dynarmic::A64::UserCallbacks {
+
+    using u8 = std::uint8_t;
+    using u16 = std::uint16_t;
+    using u32 = std::uint32_t;
+    using u64 = std::uint64_t;
+
 public:
+    DynarmicCallbacks64(khash_t(memory) *memory)
+        : memory{memory} {}
+
+    ~DynarmicCallbacks64() = default;
+
     u8 MemoryRead8(u64 vaddr) override {
         fprintf(stderr, "MemoryRead8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
         abort();
         return 0;
     }
     u16 MemoryRead16(u64 vaddr) override {
-        fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
-        return 0;
+        if(vaddr & 1) {
+            fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return 0;
+        }
+        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        if(dest) {
+//            printf("MemoryRead16[%s->%s:%d]: vaddr=%p, data=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, dest[0]);
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return 0;
+        }
     }
     u32 MemoryRead32(u64 vaddr) override {
         if(vaddr & 3) {
@@ -45,6 +61,7 @@ public:
         }
         u32 *dest = (u32 *) get_memory(memory, vaddr);
         if(dest) {
+            printf("MemoryRead32[%s->%s:%d]: vaddr=%p, data=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, dest[0]);
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
@@ -81,8 +98,19 @@ public:
         }
     }
     void MemoryWrite16(u64 vaddr, u16 value) override {
-        fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        if(vaddr & 1) {
+            fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return;
+        }
+        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+        }
+
     }
     void MemoryWrite32(u64 vaddr, u32 value) override {
         if(vaddr & 3) {
@@ -120,27 +148,26 @@ public:
     bool MemoryWriteExclusive8(u64 vaddr, std::uint8_t value, std::uint8_t expected) override {
         fprintf(stderr, "MemoryWriteExclusive8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
         abort();
-        return false;
+        return true;
     }
     bool MemoryWriteExclusive16(u64 vaddr, std::uint16_t value, std::uint16_t expected) override {
-        fprintf(stderr, "MemoryWriteExclusive16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
-        return false;
+        MemoryWrite16(vaddr, value);
+        return true;
     }
     bool MemoryWriteExclusive32(u64 vaddr, std::uint32_t value, std::uint32_t expected) override {
         fprintf(stderr, "MemoryWriteExclusive32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
         abort();
-        return false;
+        return true;
     }
     bool MemoryWriteExclusive64(u64 vaddr, std::uint64_t value, std::uint64_t expected) override {
         fprintf(stderr, "MemoryWriteExclusive64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
         abort();
-        return false;
+        return true;
     }
     bool MemoryWriteExclusive128(u64 vaddr, Dynarmic::A64::Vector value, Dynarmic::A64::Vector expected) override {
         fprintf(stderr, "MemoryWriteExclusive128[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
         abort();
-        return false;
+        return true;
     }
 
     void InterpreterFallback(u64 pc, std::size_t num_instructions) override {
@@ -159,16 +186,18 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
+        this->ticks += ticks;
     }
 
     u64 GetTicksRemaining() override {
-        return (u64) -1;
+        return 0x10000000000;
     }
 
     u64 GetCNTPCT() override {
-        return 0;
+        return 0x10000000000;
     }
 
+    u64 ticks = 0;
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
     khash_t(memory) *memory = NULL;
@@ -196,16 +225,16 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
   dynarmic->is64Bit = is64Bit == JNI_TRUE;
   dynarmic->memory = kh_init(memory);
   if(dynarmic->is64Bit) {
-    std::shared_ptr<DynarmicCallbacks64> cb = std::make_shared<DynarmicCallbacks64>();
+    std::shared_ptr<DynarmicCallbacks64> cb = std::make_shared<DynarmicCallbacks64>(dynarmic->memory);
     DynarmicCallbacks64 *callbacks = cb.get();
 
     Dynarmic::A64::UserConfig config;
     config.callbacks = callbacks;
     config.tpidrro_el0 = &callbacks->tpidrro_el0;
     config.tpidr_el0 = &callbacks->tpidr_el0;
+
     dynarmic->cb64 = cb;
     dynarmic->jit64 = std::make_shared<Dynarmic::A64::Jit>(config);
-    callbacks->memory = dynarmic->memory;
   }
   return (jlong) dynarmic;
 }
@@ -520,6 +549,12 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_run
     return -1;
   }
   return 0;
+}
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+  return JNI_VERSION_1_6;
 }
 
 #ifdef __cplusplus
