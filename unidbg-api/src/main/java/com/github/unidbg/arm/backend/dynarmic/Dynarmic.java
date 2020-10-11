@@ -9,6 +9,8 @@ public class Dynarmic implements Closeable {
 
     private static final Log log = LogFactory.getLog(Dynarmic.class);
 
+    private static native int setDynarmicCallback(long handle, DynarmicCallback callback);
+
     private static native long nativeInitialize(boolean is64Bit);
     private static native void nativeDestroy(long handle);
 
@@ -19,6 +21,7 @@ public class Dynarmic implements Closeable {
     private static native int mem_write(long handle, long address, byte[] bytes);
     private static native byte[] mem_read(long handle, long address, int size);
 
+    private static native long reg_read_pc64(long handle);
     private static native int reg_set_sp64(long handle, long value);
     private static native long reg_read_sp64(long handle);
     private static native int reg_set_tpidr_el0(long handle, long value);
@@ -27,11 +30,23 @@ public class Dynarmic implements Closeable {
     private static native long reg_read(long handle, int index);
 
     private static native int run(long handle, long pc);
+    private static native int emu_stop(long handle);
 
     private final long nativeHandle;
 
     public Dynarmic(boolean is64Bit) {
         this.nativeHandle = nativeInitialize(is64Bit);
+    }
+
+    public void setDynarmicCallback(DynarmicCallback callback) {
+        if (log.isDebugEnabled()) {
+            log.debug("setDynarmicCallback callback" + callback);
+        }
+
+        int ret = setDynarmicCallback(nativeHandle, callback);
+        if (ret != 0) {
+            throw new DynarmicException("ret=" + ret);
+        }
     }
 
     public void emu_start(long begin) {
@@ -40,6 +55,17 @@ public class Dynarmic implements Closeable {
         }
 
         int ret = run(nativeHandle, begin);
+        if (ret != 0) {
+            throw new DynarmicException("ret=" + ret);
+        }
+    }
+
+    public void emu_stop() {
+        if (log.isDebugEnabled()) {
+            log.debug("emu_stop");
+        }
+
+        int ret = emu_stop(nativeHandle);
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }
@@ -88,11 +114,20 @@ public class Dynarmic implements Closeable {
         }
     }
 
-    public long reg_read_sp64() {
+    public long reg_read_pc64() {
+        long pc = reg_read_pc64(nativeHandle);
         if (log.isDebugEnabled()) {
-            log.debug("reg_read_sp64");
+            log.debug("reg_read_pc64=0x" + Long.toHexString(pc));
         }
-        return reg_read_sp64(nativeHandle);
+        return pc;
+    }
+
+    public long reg_read_sp64() {
+        long sp = reg_read_sp64(nativeHandle);
+        if (log.isDebugEnabled()) {
+            log.debug("reg_read_sp64=0x" + Long.toHexString(sp));
+        }
+        return sp;
     }
 
     public void reg_set_tpidr_el0(long value) {

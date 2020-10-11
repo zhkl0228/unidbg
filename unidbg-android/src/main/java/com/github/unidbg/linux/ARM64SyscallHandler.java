@@ -387,7 +387,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             return;
         }
 
-        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", LR=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR) + ", syscall=" + syscall, exception);
+        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", LR=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR) + ", syscall=" + syscall, exception);
 
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;

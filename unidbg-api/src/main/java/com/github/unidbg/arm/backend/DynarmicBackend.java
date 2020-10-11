@@ -6,7 +6,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
 
-public abstract class DynarmicBackend implements Backend {
+public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     private static final Log log = LogFactory.getLog(DynarmicBackend.class);
 
@@ -26,6 +26,15 @@ public abstract class DynarmicBackend implements Backend {
 
     protected DynarmicBackend(Dynarmic dynarmic) {
         this.dynarmic = dynarmic;
+        this.dynarmic.setDynarmicCallback(this);
+    }
+
+    @Override
+    public void callSVC(int swi) {
+        if (log.isDebugEnabled()) {
+            log.debug("callSVC swi=" + swi);
+        }
+        interruptHookNotifier.notifyCallSVC(this);
     }
 
     @Override
@@ -44,7 +53,7 @@ public abstract class DynarmicBackend implements Backend {
 
     @Override
     public void emu_stop() {
-        throw new AbstractMethodError();
+        dynarmic.emu_stop();
     }
 
     @Override

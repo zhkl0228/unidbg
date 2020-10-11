@@ -7,6 +7,9 @@
 
 #include "dynarmic.h"
 
+static JavaVM* cachedJVM = NULL;
+static jmethodID callSVC = NULL;
+
 static void *get_memory(khash_t(memory) *memory, long vaddr) {
     long base = vaddr & ~PAGE_MASK;
     long off = vaddr - base;
@@ -32,10 +35,19 @@ public:
 
     ~DynarmicCallbacks64() = default;
 
+    u32 MemoryReadCode(u64 vaddr) override {
+        return MemoryRead32(vaddr);
+    }
+
     u8 MemoryRead8(u64 vaddr) override {
-        fprintf(stderr, "MemoryRead8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
-        return 0;
+        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        if(dest) {
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return 0;
+        }
     }
     u16 MemoryRead16(u64 vaddr) override {
         if(vaddr & 1) {
@@ -155,8 +167,7 @@ public:
         return true;
     }
     bool MemoryWriteExclusive32(u64 vaddr, std::uint32_t value, std::uint32_t expected) override {
-        fprintf(stderr, "MemoryWriteExclusive32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        MemoryWrite32(vaddr, value);
         return true;
     }
     bool MemoryWriteExclusive64(u64 vaddr, std::uint64_t value, std::uint64_t expected) override {
@@ -181,8 +192,13 @@ public:
     }
 
     void CallSVC(u32 swi) override {
-        fprintf(stderr, "CallSVC[%s->%s:%d]: swi=%d\n", __FILE__, __func__, __LINE__, swi);
-        abort();
+        JNIEnv *env;
+        cachedJVM->AttachCurrentThread((void **)&env, NULL);
+        env->CallVoidMethod(callback, callSVC, swi);
+        if (env->ExceptionCheck()) {
+            cpu->HaltExecution();
+        }
+        cachedJVM->DetachCurrentThread();
     }
 
     void AddTicks(u64 ticks) override {
@@ -201,6 +217,8 @@ public:
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
     khash_t(memory) *memory = NULL;
+    jobject callback = NULL;
+    std::shared_ptr<Dynarmic::A64::Jit> cpu;
 };
 
 typedef struct dynarmic {
@@ -213,6 +231,27 @@ typedef struct dynarmic {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    setDynarmicCallback
+ * Signature: (JLcom/github/unidbg/arm/backend/dynarmic/DynarmicCallback;)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_setDynarmicCallback
+  (JNIEnv *env, jclass clazz, jlong handle, jobject callback) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<DynarmicCallbacks64> cb = dynarmic->cb64;
+    if(cb) {
+      cb.get()->callback = env->NewGlobalRef(callback);
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
+  }
+  return 0;
+}
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
@@ -235,6 +274,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
 
     dynarmic->cb64 = cb;
     dynarmic->jit64 = std::make_shared<Dynarmic::A64::Jit>(config);
+    callbacks->cpu = dynarmic->jit64;
   }
   return (jlong) dynarmic;
 }
@@ -259,6 +299,10 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
     }
   }
   kh_destroy(memory, memory);
+  std::shared_ptr<DynarmicCallbacks64> cb64 = dynarmic->cb64;
+  if(cb64) {
+    env->DeleteGlobalRef(cb64.get()->callback);
+  }
   free(dynarmic);
 }
 
@@ -423,6 +467,28 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmi
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_read_pc64
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1read_1pc64
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    if(jit) {
+      return jit.get()->GetPC();
+    } else {
+      abort();
+      return 1;
+    }
+  } else {
+    abort();
+    return -1;
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_sp64
  * Signature: (JJ)I
  */
@@ -551,9 +617,43 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_run
   return 0;
 }
 
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    emu_stop
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_1stop
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    if(jit) {
+      Dynarmic::A64::Jit *cpu = jit.get();
+      cpu->HaltExecution();
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
+  }
+  return 0;
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
+
+  JNIEnv *env;
+  if (JNI_OK != vm->GetEnv((void **)&env, JNI_VERSION_1_6)) {
+    return JNI_ERR;
+  }
+  jclass cDynarmicCallback = env->FindClass("com/github/unidbg/arm/backend/dynarmic/DynarmicCallback");
+  if (env->ExceptionCheck()) {
+    return JNI_ERR;
+  }
+  callSVC = env->GetMethodID(cDynarmicCallback, "callSVC", "(I)V");
+  cachedJVM = vm;
+
   return JNI_VERSION_1_6;
 }
 
