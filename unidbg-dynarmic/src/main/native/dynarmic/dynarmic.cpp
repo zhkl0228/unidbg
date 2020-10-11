@@ -37,7 +37,7 @@ public:
 
     u32 MemoryReadCode(u64 vaddr) override {
         u32 code = MemoryRead32(vaddr);
-        printf("MemoryReadCode[%s->%s:%d]: vaddr=%p, code=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, code);
+//        printf("MemoryReadCode[%s->%s:%d]: vaddr=%p, code=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, code);
         return code;
     }
 
@@ -53,13 +53,12 @@ public:
     }
     u16 MemoryRead16(u64 vaddr) override {
         if(vaddr & 1) {
-            fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
-            return 0;
+            const u8 a{MemoryRead8(vaddr)};
+            const u8 b{MemoryRead8(vaddr + sizeof(u8))};
+            return (static_cast<u16>(b) << 8) | a;
         }
         u16 *dest = (u16 *) get_memory(memory, vaddr);
         if(dest) {
-//            printf("MemoryRead16[%s->%s:%d]: vaddr=%p, data=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, dest[0]);
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
@@ -69,9 +68,9 @@ public:
     }
     u32 MemoryRead32(u64 vaddr) override {
         if(vaddr & 3) {
-            fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
-            return 0;
+            const u16 a{MemoryRead16(vaddr)};
+            const u16 b{MemoryRead16(vaddr + sizeof(u16))};
+            return (static_cast<u32>(b) << 16) | a;
         }
         u32 *dest = (u32 *) get_memory(memory, vaddr);
         if(dest) {
@@ -84,9 +83,9 @@ public:
     }
     u64 MemoryRead64(u64 vaddr) override {
         if(vaddr & 7) {
-            fprintf(stderr, "MemoryRead64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
-            return 0;
+            const u32 a{MemoryRead32(vaddr)};
+            const u32 b{MemoryRead32(vaddr + sizeof(u32))};
+            return (static_cast<u64>(b) << 32) | a;
         }
         u64 *dest = (u64 *) get_memory(memory, vaddr);
         if(dest) {
@@ -112,8 +111,8 @@ public:
     }
     void MemoryWrite16(u64 vaddr, u16 value) override {
         if(vaddr & 1) {
-            fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
+            MemoryWrite8(vaddr, static_cast<u8>(value));
+            MemoryWrite8(vaddr + sizeof(u8), static_cast<u8>(value >> 8));
             return;
         }
         u16 *dest = (u16 *) get_memory(memory, vaddr);
@@ -127,8 +126,8 @@ public:
     }
     void MemoryWrite32(u64 vaddr, u32 value) override {
         if(vaddr & 3) {
-            fprintf(stderr, "MemoryWrite32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
+            MemoryWrite16(vaddr, static_cast<u16>(value));
+            MemoryWrite16(vaddr + sizeof(u16), static_cast<u16>(value >> 16));
             return;
         }
         u32 *dest = (u32 *) get_memory(memory, vaddr);
@@ -141,8 +140,8 @@ public:
     }
     void MemoryWrite64(u64 vaddr, u64 value) override {
         if(vaddr & 7) {
-            fprintf(stderr, "MemoryWrite64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
+            MemoryWrite32(vaddr, static_cast<u32>(value));
+            MemoryWrite32(vaddr + sizeof(u32), static_cast<u32>(value >> 32));
             return;
         }
         u64 *dest = (u64 *) get_memory(memory, vaddr);
@@ -182,7 +181,7 @@ public:
     }
 
     void InterpreterFallback(u64 pc, std::size_t num_instructions) override {
-        fprintf(stderr, "InterpreterFallback[%s->%s:%d]: pc=%p, num_instructions=%lu\n", __FILE__, __func__, __LINE__, (void*)pc, num_instructions);
+        fprintf(stderr, "Unicorn fallback @ 0x%llx for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
         abort();
     }
 

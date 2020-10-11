@@ -62,6 +62,13 @@ public class DynarmicBackend64 extends DynarmicBackend {
         switch (regId) {
             case Arm64Const.UC_ARM64_REG_X0:
             case Arm64Const.UC_ARM64_REG_X1:
+            case Arm64Const.UC_ARM64_REG_X2:
+            case Arm64Const.UC_ARM64_REG_X3:
+            case Arm64Const.UC_ARM64_REG_X4:
+            case Arm64Const.UC_ARM64_REG_X5:
+            case Arm64Const.UC_ARM64_REG_X6:
+            case Arm64Const.UC_ARM64_REG_X7:
+            case Arm64Const.UC_ARM64_REG_X8:
                 dynarmic.reg_write64(regId - Arm64Const.UC_ARM64_REG_X0, value.longValue());
                 break;
             case Arm64Const.UC_ARM64_REG_SP:
