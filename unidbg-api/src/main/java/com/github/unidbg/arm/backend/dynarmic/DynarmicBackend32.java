@@ -9,6 +9,11 @@ public class DynarmicBackend32 extends DynarmicBackend {
     }
 
     @Override
+    public void callSVC(long pc, int swi) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
     public Number reg_read(int regId) {
         throw new AbstractMethodError();
     }

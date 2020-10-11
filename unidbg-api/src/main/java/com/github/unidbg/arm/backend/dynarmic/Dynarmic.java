@@ -29,7 +29,7 @@ public class Dynarmic implements Closeable {
     private static native int reg_write(long handle, int index, long value);
     private static native long reg_read(long handle, int index);
 
-    private static native int run(long handle, long pc);
+    private static native int emu_start(long handle, long pc);
     private static native int emu_stop(long handle);
 
     private final long nativeHandle;
@@ -54,7 +54,7 @@ public class Dynarmic implements Closeable {
             log.debug("emu_start begin=0x" + Long.toHexString(begin));
         }
 
-        int ret = run(nativeHandle, begin);
+        int ret = emu_start(nativeHandle, begin);
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }

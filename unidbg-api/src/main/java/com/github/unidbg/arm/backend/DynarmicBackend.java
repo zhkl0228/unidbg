@@ -30,14 +30,6 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     }
 
     @Override
-    public void callSVC(int swi) {
-        if (log.isDebugEnabled()) {
-            log.debug("callSVC swi=" + swi);
-        }
-        interruptHookNotifier.notifyCallSVC(this);
-    }
-
-    @Override
     public final void switchUserMode() {
         // Only user-mode is emulated, there is no emulation of any other privilege levels.
     }
@@ -97,7 +89,7 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
         }
     }
 
-    private InterruptHookNotifier interruptHookNotifier;
+    protected InterruptHookNotifier interruptHookNotifier;
 
     @Override
     public void hook_add_new(InterruptHook callback, Object user_data) {

@@ -36,7 +36,9 @@ public:
     ~DynarmicCallbacks64() = default;
 
     u32 MemoryReadCode(u64 vaddr) override {
-        return MemoryRead32(vaddr);
+        u32 code = MemoryRead32(vaddr);
+        printf("MemoryReadCode[%s->%s:%d]: vaddr=%p, code=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, code);
+        return code;
     }
 
     u8 MemoryRead8(u64 vaddr) override {
@@ -73,7 +75,6 @@ public:
         }
         u32 *dest = (u32 *) get_memory(memory, vaddr);
         if(dest) {
-            printf("MemoryRead32[%s->%s:%d]: vaddr=%p, data=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, dest[0]);
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
@@ -171,8 +172,7 @@ public:
         return true;
     }
     bool MemoryWriteExclusive64(u64 vaddr, std::uint64_t value, std::uint64_t expected) override {
-        fprintf(stderr, "MemoryWriteExclusive64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        MemoryWrite64(vaddr, value);
         return true;
     }
     bool MemoryWriteExclusive128(u64 vaddr, Dynarmic::A64::Vector value, Dynarmic::A64::Vector expected) override {
@@ -194,7 +194,7 @@ public:
     void CallSVC(u32 swi) override {
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
-        env->CallVoidMethod(callback, callSVC, swi);
+        env->CallVoidMethod(callback, callSVC, cpu->GetPC(), swi);
         if (env->ExceptionCheck()) {
             cpu->HaltExecution();
         }
@@ -596,15 +596,16 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
- * Method:    run
+ * Method:    emu_start
  * Signature: (JJ)I
  */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_run
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_1start
   (JNIEnv *env, jclass clazz, jlong handle, jlong pc) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
     std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
     if(jit) {
+      std::shared_ptr<DynarmicCallbacks64> cb = dynarmic->cb64;
       Dynarmic::A64::Jit *cpu = jit.get();
       cpu->SetPC(pc);
       cpu->Run();
@@ -651,7 +652,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   if (env->ExceptionCheck()) {
     return JNI_ERR;
   }
-  callSVC = env->GetMethodID(cDynarmicCallback, "callSVC", "(I)V");
+  callSVC = env->GetMethodID(cDynarmicCallback, "callSVC", "(JI)V");
   cachedJVM = vm;
 
   return JNI_VERSION_1_6;

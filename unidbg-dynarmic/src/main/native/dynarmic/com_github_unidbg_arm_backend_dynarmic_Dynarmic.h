@@ -121,10 +121,10 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
- * Method:    run
+ * Method:    emu_start
  * Signature: (JJ)I
  */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_run
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_1start
   (JNIEnv *, jclass, jlong, jlong);
 
 /*

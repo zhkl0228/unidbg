@@ -1,12 +1,36 @@
 package com.github.unidbg.arm.backend.dynarmic;
 
 import com.github.unidbg.arm.backend.DynarmicBackend;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
 public class DynarmicBackend64 extends DynarmicBackend {
 
+    private static final Log log = LogFactory.getLog(DynarmicBackend64.class);
+
     public DynarmicBackend64(Dynarmic dynarmic) {
         super(dynarmic);
+    }
+
+    protected long until;
+
+    @Override
+    public void emu_start(long begin, long until, long timeout, long count) {
+        this.until = until + 4;
+        super.emu_start(begin, until, timeout, count);
+    }
+
+    @Override
+    public void callSVC(long pc, int swi) {
+        if (log.isDebugEnabled()) {
+            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", swi=" + swi);
+        }
+        if (pc == until) {
+            emu_stop();
+            return;
+        }
+        interruptHookNotifier.notifyCallSVC(this);
     }
 
     @Override
