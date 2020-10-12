@@ -140,6 +140,19 @@ public class Dynarmic implements Closeable {
         }
     }
 
+    public void reg_write32(int index, long value) {
+        if (index < 0 || index > 15) {
+            throw new IllegalArgumentException("index=" + index);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("reg_write32 index=" + index + ", value=0x" + Long.toHexString(value));
+        }
+        int ret = reg_write(nativeHandle, index, value & 0xffffffffL);
+        if (ret != 0) {
+            throw new DynarmicException("ret=" + ret);
+        }
+    }
+
     public void reg_write64(int index, long value) {
         if (index < 0 || index > 30) {
             throw new IllegalArgumentException("index=" + index);
@@ -151,6 +164,13 @@ public class Dynarmic implements Closeable {
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }
+    }
+
+    public int reg_read32(int index) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_read32 index=" + index);
+        }
+        return (int) (reg_read(nativeHandle, index) & 0xffffffffL);
     }
 
     public long reg_read64(int index) {

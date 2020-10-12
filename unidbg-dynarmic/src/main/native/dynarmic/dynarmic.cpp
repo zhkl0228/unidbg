@@ -22,12 +22,179 @@ static void *get_memory(khash_t(memory) *memory, long vaddr) {
     return &addr[off];
 }
 
-class DynarmicCallbacks64 final : public Dynarmic::A64::UserCallbacks {
+using u8 = std::uint8_t;
+using u16 = std::uint16_t;
+using u32 = std::uint32_t;
+using u64 = std::uint64_t;
 
-    using u8 = std::uint8_t;
-    using u16 = std::uint16_t;
-    using u32 = std::uint32_t;
-    using u64 = std::uint64_t;
+class DynarmicCallbacks32 : public Dynarmic::A32::UserCallbacks {
+public:
+    DynarmicCallbacks32(khash_t(memory) *memory)
+        : memory{memory} {}
+
+    ~DynarmicCallbacks32() = default;
+
+    u8 MemoryRead8(u32 vaddr) override {
+        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        if(dest) {
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead8[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+            return 0;
+        }
+    }
+    u16 MemoryRead16(u32 vaddr) override {
+        if(vaddr & 1) {
+            const u8 a{MemoryRead8(vaddr)};
+            const u8 b{MemoryRead8(vaddr + sizeof(u8))};
+            return (static_cast<u16>(b) << 8) | a;
+        }
+        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        if(dest) {
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+            return 0;
+        }
+    }
+    u32 MemoryRead32(u32 vaddr) override {
+        if(vaddr & 3) {
+            const u16 a{MemoryRead16(vaddr)};
+            const u16 b{MemoryRead16(vaddr + sizeof(u16))};
+            return (static_cast<u32>(b) << 16) | a;
+        }
+        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        if(dest) {
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+            return 0;
+        }
+    }
+    u64 MemoryRead64(u32 vaddr) override {
+        if(vaddr & 7) {
+            const u32 a{MemoryRead32(vaddr)};
+            const u32 b{MemoryRead32(vaddr + sizeof(u32))};
+            return (static_cast<u64>(b) << 32) | a;
+        }
+        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        if(dest) {
+            return dest[0];
+        } else {
+            fprintf(stderr, "MemoryRead64[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+            return 0;
+        }
+    }
+
+    void MemoryWrite8(u32 vaddr, u8 value) override {
+        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite8[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+        }
+    }
+    void MemoryWrite16(u32 vaddr, u16 value) override {
+        if(vaddr & 1) {
+            MemoryWrite8(vaddr, static_cast<u8>(value));
+            MemoryWrite8(vaddr + sizeof(u8), static_cast<u8>(value >> 8));
+            return;
+        }
+        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+        }
+    }
+    void MemoryWrite32(u32 vaddr, u32 value) override {
+        if(vaddr & 3) {
+            MemoryWrite16(vaddr, static_cast<u16>(value));
+            MemoryWrite16(vaddr + sizeof(u16), static_cast<u16>(value >> 16));
+            return;
+        }
+        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+        }
+    }
+    void MemoryWrite64(u32 vaddr, u64 value) override {
+        if(vaddr & 7) {
+            MemoryWrite32(vaddr, static_cast<u32>(value));
+            MemoryWrite32(vaddr + sizeof(u32), static_cast<u32>(value >> 32));
+            return;
+        }
+        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        if(dest) {
+            dest[0] = value;
+        } else {
+            fprintf(stderr, "MemoryWrite64[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            abort();
+        }
+    }
+
+    bool MemoryWriteExclusive8(u32 vaddr, u8 value, u8 expected) override {
+        fprintf(stderr, "MemoryWriteExclusive8[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+        abort();
+        return true;
+    }
+    bool MemoryWriteExclusive16(u32 vaddr, u16 value, u16 expected) override {
+        MemoryWrite16(vaddr, value);
+        return true;
+    }
+    bool MemoryWriteExclusive32(u32 vaddr, u32 value, u32 expected) override {
+        MemoryWrite32(vaddr, value);
+        return true;
+    }
+    bool MemoryWriteExclusive64(u32 vaddr, u64 value, u64 expected) override {
+        MemoryWrite64(vaddr, value);
+        return true;
+    }
+
+    void InterpreterFallback(u32 pc, std::size_t num_instructions) override {
+        fprintf(stderr, "Unicorn fallback @ 0x%x for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
+        abort();
+    }
+
+    void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
+        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d\n", __FILE__, __func__, __LINE__, pc, exception);
+        abort();
+    }
+
+    void CallSVC(u32 swi) override {
+        JNIEnv *env;
+        cachedJVM->AttachCurrentThread((void **)&env, NULL);
+        env->CallVoidMethod(callback, callSVC, cpu->Regs()[15], swi);
+        if (env->ExceptionCheck()) {
+            cpu->HaltExecution();
+        }
+        cachedJVM->DetachCurrentThread();
+    }
+
+    void AddTicks(u64 ticks) override {
+        this->ticks += ticks;
+    }
+
+    u64 GetTicksRemaining() override {
+        return 0x10000000000;
+    }
+
+    u64 ticks = 0;
+    khash_t(memory) *memory = NULL;
+    jobject callback = NULL;
+    std::shared_ptr<Dynarmic::A32::Jit> cpu;
+};
+
+class DynarmicCallbacks64 final : public Dynarmic::A64::UserCallbacks {
 
 public:
     DynarmicCallbacks64(khash_t(memory) *memory)
@@ -225,6 +392,8 @@ typedef struct dynarmic {
   khash_t(memory) *memory;
   std::shared_ptr<DynarmicCallbacks64> cb64;
   std::shared_ptr<Dynarmic::A64::Jit> jit64;
+  std::shared_ptr<DynarmicCallbacks32> cb32;
+  std::shared_ptr<Dynarmic::A32::Jit> jit32;
 } *t_dynarmic;
 
 #ifdef __cplusplus
@@ -247,7 +416,12 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_setD
       return 1;
     }
   } else {
-    return -1;
+    std::shared_ptr<DynarmicCallbacks32> cb = dynarmic->cb32;
+    if(cb) {
+      cb.get()->callback = env->NewGlobalRef(callback);
+    } else {
+      return 1;
+    }
   }
   return 0;
 }
@@ -274,6 +448,16 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     dynarmic->cb64 = cb;
     dynarmic->jit64 = std::make_shared<Dynarmic::A64::Jit>(config);
     callbacks->cpu = dynarmic->jit64;
+  } else {
+    std::shared_ptr<DynarmicCallbacks32> cb = std::make_shared<DynarmicCallbacks32>(dynarmic->memory);
+    DynarmicCallbacks32 *callbacks = cb.get();
+
+    Dynarmic::A32::UserConfig config;
+    config.callbacks = callbacks;
+
+    dynarmic->cb32 = cb;
+    dynarmic->jit32 = std::make_shared<Dynarmic::A32::Jit>(config);
+    callbacks->cpu = dynarmic->jit32;
   }
   return (jlong) dynarmic;
 }
@@ -566,7 +750,12 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
       return 1;
     }
   } else {
-    return -1;
+    std::shared_ptr<Dynarmic::A32::Jit> jit = dynarmic->jit32;
+    if(jit) {
+      jit.get()->Regs()[index] = (u32) value;
+    } else {
+      return 1;
+    }
   }
   return 0;
 }
@@ -588,8 +777,13 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
       return -1;
     }
   } else {
-    abort();
-    return -1;
+    std::shared_ptr<Dynarmic::A32::Jit> jit = dynarmic->jit32;
+    if(jit) {
+      return jit.get()->Regs()[index];
+    } else {
+      abort();
+      return -1;
+    }
   }
 }
 
@@ -612,7 +806,15 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
       return 1;
     }
   } else {
-    return -1;
+    std::shared_ptr<Dynarmic::A32::Jit> jit = dynarmic->jit32;
+    if(jit) {
+      std::shared_ptr<DynarmicCallbacks32> cb = dynarmic->cb32;
+      Dynarmic::A32::Jit *cpu = jit.get();
+      cpu->Regs()[15] = (u32) pc;
+      cpu->Run();
+    } else {
+      return 1;
+    }
   }
   return 0;
 }

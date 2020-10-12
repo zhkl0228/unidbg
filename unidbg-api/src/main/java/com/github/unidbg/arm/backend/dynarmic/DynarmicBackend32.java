@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend.dynarmic;
 
 import com.github.unidbg.arm.backend.DynarmicBackend;
+import unicorn.ArmConst;
 
 public class DynarmicBackend32 extends DynarmicBackend {
 
@@ -15,12 +16,28 @@ public class DynarmicBackend32 extends DynarmicBackend {
 
     @Override
     public Number reg_read(int regId) {
-        throw new AbstractMethodError();
+        switch (regId) {
+            case ArmConst.UC_ARM_REG_SP:
+                return dynarmic.reg_read32(13);
+            default:
+                throw new DynarmicException("regId=" + regId);
+        }
     }
 
     @Override
     public void reg_write(int regId, Number value) {
-        throw new AbstractMethodError();
+        switch (regId) {
+            case ArmConst.UC_ARM_REG_SP:
+                dynarmic.reg_write32(13, value.intValue());
+                break;
+            case ArmConst.UC_ARM_REG_LR:
+                dynarmic.reg_write32(14, value.intValue());
+                break;
+            case ArmConst.UC_ARM_REG_C13_C0_3: // TODO
+                break;
+            default:
+                throw new DynarmicException("regId=" + regId);
+        }
     }
 
 }
