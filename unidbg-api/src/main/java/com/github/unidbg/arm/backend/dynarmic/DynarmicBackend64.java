@@ -1,6 +1,10 @@
 package com.github.unidbg.arm.backend.dynarmic;
 
+import capstone.Capstone;
+import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.DynarmicBackend;
+import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -9,8 +13,8 @@ public class DynarmicBackend64 extends DynarmicBackend {
 
     private static final Log log = LogFactory.getLog(DynarmicBackend64.class);
 
-    public DynarmicBackend64(Dynarmic dynarmic) {
-        super(dynarmic);
+    public DynarmicBackend64(Emulator<?> emulator, Dynarmic dynarmic) {
+        super(emulator, dynarmic);
     }
 
     protected long until;
@@ -19,6 +23,28 @@ public class DynarmicBackend64 extends DynarmicBackend {
     public void emu_start(long begin, long until, long timeout, long count) {
         this.until = until + 4;
         super.emu_start(begin, until, timeout, count);
+    }
+
+    @Override
+    public boolean handleInterpreterFallback(long pc, int num_instructions) {
+        if (num_instructions != 1) {
+            return false;
+        }
+        byte[] code = mem_read(pc, 4);
+        Capstone.CsInsn ins = emulator.disassemble(pc, code, false, 1)[0];
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(code, "handleInterpreterFallback pc=0x" + Long.toHexString(pc) + ", " + String.format("0x%08x: %s %s", ins.address, ins.mnemonic, ins.opStr)));
+        }
+
+        switch (ins.mnemonic) {
+            case "ic": {
+                // eg: ic ivau, x2
+                return true;
+            }
+            case "nop":
+            default:
+                return false;
+        }
     }
 
     @Override

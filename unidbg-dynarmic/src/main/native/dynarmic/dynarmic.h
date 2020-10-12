@@ -9,6 +9,7 @@
 
 #define PAGE_SIZE 0x1000 // 4k
 #define PAGE_MASK (PAGE_SIZE-1)
+#define UC_PROT_WRITE 2
 
 typedef struct memory_page {
   void *addr;

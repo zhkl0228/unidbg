@@ -11,7 +11,7 @@ public class DynarmicBackendTest extends TestCase {
     }
 
     public void testInitialize() {
-        Backend backend = DynarmicBackend.tryInitialize(true);
+        Backend backend = DynarmicBackend.tryInitialize(null, true);
         assertNotNull(backend);
         backend.mem_map(0xffffe0000L, 0x10000, 0b101);
         backend.mem_map(0xbffe0000L, 0x20000, 0b11);
@@ -19,7 +19,7 @@ public class DynarmicBackendTest extends TestCase {
         backend.reg_write(Arm64Const.UC_ARM64_REG_SP, 0xbffffc00L);
         backend.destroy();
 
-        backend = DynarmicBackend.tryInitialize(false);
+        backend = DynarmicBackend.tryInitialize(null, false);
         assertNotNull(backend);
         backend.destroy();
     }

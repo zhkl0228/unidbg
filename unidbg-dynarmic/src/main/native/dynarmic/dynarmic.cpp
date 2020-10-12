@@ -10,6 +10,7 @@
 
 static JavaVM* cachedJVM = NULL;
 static jmethodID callSVC = NULL;
+static jmethodID handleInterpreterFallback = NULL;
 
 static void *get_memory(khash_t(memory) *memory, long vaddr) {
     long base = vaddr & ~PAGE_MASK;
@@ -205,6 +206,16 @@ public:
 
     ~DynarmicCallbacks64() = default;
 
+    bool IsReadOnlyMemory(u64 vaddr) override {
+        long base = vaddr & ~PAGE_MASK;
+        khiter_t k = kh_get(memory, memory, base);
+        if(k == kh_end(memory)) {
+          return false;
+        }
+        t_memory_page page = kh_value(memory, k);
+        return (page->perms & UC_PROT_WRITE) == 0;
+    }
+
     u32 MemoryReadCode(u64 vaddr) override {
         u32 code = MemoryRead32(vaddr);
 //        printf("MemoryReadCode[%s->%s:%d]: vaddr=%p, code=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, code);
@@ -351,8 +362,19 @@ public:
     }
 
     void InterpreterFallback(u64 pc, std::size_t num_instructions) override {
-        fprintf(stderr, "Unicorn fallback @ 0x%llx for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
-        abort();
+        JNIEnv *env;
+        cachedJVM->AttachCurrentThread((void **)&env, NULL);
+        jboolean processed = env->CallBooleanMethod(callback, handleInterpreterFallback, pc, num_instructions);
+        if (env->ExceptionCheck()) {
+            cpu->HaltExecution();
+        }
+        if(processed == JNI_TRUE) {
+            cpu->SetPC(pc + 4);
+        } else {
+            fprintf(stderr, "Unicorn fallback @ 0x%llx for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
+            abort();
+        }
+        cachedJVM->DetachCurrentThread();
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
@@ -868,6 +890,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_ERR;
   }
   callSVC = env->GetMethodID(cDynarmicCallback, "callSVC", "(JI)V");
+  handleInterpreterFallback = env->GetMethodID(cDynarmicCallback, "handleInterpreterFallback", "(JI)Z");
   cachedJVM = vm;
 
   return JNI_VERSION_1_6;

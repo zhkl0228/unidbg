@@ -31,7 +31,7 @@ public class Utilities32 extends AbstractJni {
     private final AndroidEmulator emulator;
     private final VM vm;
 
-    private final DvmClass Utilities;
+    private final DvmClass cUtilities;
 
     private Utilities32() {
         emulator = createARMEmulator();
@@ -48,7 +48,7 @@ public class Utilities32 extends AbstractJni {
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), false);
         dm.callJNI_OnLoad(emulator);
 
-        Utilities = vm.resolveClass("org/telegram/messenger/Utilities");
+        cUtilities = vm.resolveClass("org/telegram/messenger/Utilities");
     }
 
     private void destroy() throws IOException {
@@ -71,7 +71,7 @@ public class Utilities32 extends AbstractJni {
         ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
-        Utilities.callStaticJniMethod(emulator, "aesCbcEncryptionByteArray([B[B[BIIII)V", vm.addLocalObject(data),
+        cUtilities.callStaticJniMethod(emulator, "aesCbcEncryptionByteArray([B[B[BIIII)V", vm.addLocalObject(data),
                 vm.addLocalObject(new ByteArray(vm, key)),
                 vm.addLocalObject(new ByteArray(vm, iv)),
                 0, data.length(), 0, 0);
@@ -83,7 +83,7 @@ public class Utilities32 extends AbstractJni {
         ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
-        Utilities.callStaticJniMethod(emulator, "aesCtrDecryptionByteArray([B[B[BIII)V", vm.addLocalObject(data),
+        cUtilities.callStaticJniMethod(emulator, "aesCtrDecryptionByteArray([B[B[BIII)V", vm.addLocalObject(data),
                 vm.addLocalObject(new ByteArray(vm, key)),
                 vm.addLocalObject(new ByteArray(vm, iv)),
                 0, data.length(), 0);
@@ -95,7 +95,7 @@ public class Utilities32 extends AbstractJni {
         byte[] password = "123456".getBytes();
         byte[] salt = new byte[8];
         ByteArray dst = new ByteArray(vm, new byte[64]);
-        Utilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
+        cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
                 vm.addLocalObject(new ByteArray(vm, salt)),
                 vm.addLocalObject(dst), 100000);
         Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");

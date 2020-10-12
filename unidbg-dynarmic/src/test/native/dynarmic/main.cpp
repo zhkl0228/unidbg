@@ -16,6 +16,12 @@ public:
     u64 ticks_left = 0;
     std::array<u8, 2048> memory{};
 
+    u32 MemoryReadCode(u32 vaddr) override {
+        u32 code = MemoryRead32(vaddr);
+        printf("MemoryReadCode[%s->%s:%d]: vaddr=0x%x, code=0x%x\n", __FILE__, __func__, __LINE__, vaddr, code);
+        return code;
+    }
+
     u8 MemoryRead8(u32 vaddr) override {
         if (vaddr >= memory.size()) {
             return 0;
@@ -94,19 +100,23 @@ int main(int argc, char** argv) {
     env.ticks_left = 1;
 
     // Write some code to memory.
+//    env.MemoryWrite32(0, 0xe7fe2200); // mov r2, #0 : b +#0 (infinite loop)
     env.MemoryWrite32(0, 0x3f70ee1d); // mrc p15, #0, r3, c13, c0, #3
+//    env.MemoryWrite32(0, 0xee1d3f70); // mrc p15, #0, r3, c13, c0, #3
 
     // Setup registers.
     cpu.Regs()[0] = 1;
     cpu.Regs()[1] = 2;
+    cpu.Regs()[2] = 3;
     cpu.Regs()[15] = 0; // PC = 0
     cpu.SetCpsr(0x00000030); // Thumb mode
 
     // Execute!
+    printf("Execute cpu\n");
     cpu.Run();
 
     // Here we would expect cpu.Regs()[0] == 8
-    printf("R0: %u\n", cpu.Regs()[0]);
+    printf("R2: %u\n", cpu.Regs()[2]);
 
     return 0;
 }

@@ -3,7 +3,6 @@ package com.sun.jna;
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
-import com.github.unidbg.debugger.DebuggerType;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.Dobby;
@@ -38,7 +37,7 @@ public class JniDispatch64 extends AbstractJni {
     private final AndroidEmulator emulator;
     private final Module module;
 
-    private final DvmClass Native;
+    private final DvmClass cNative;
 
     private JniDispatch64() {
         emulator = createARMEmulator();
@@ -52,7 +51,7 @@ public class JniDispatch64 extends AbstractJni {
         dm.callJNI_OnLoad(emulator);
         this.module = dm.getModule();
 
-        Native = vm.resolveClass("com/sun/jna/Native");
+        cNative = vm.resolveClass("com/sun/jna/Native");
 
         Symbol __system_property_get = module.findSymbolByName("__system_property_get", true);
         MemoryBlock block = memory.malloc(0x10);
@@ -102,7 +101,7 @@ public class JniDispatch64 extends AbstractJni {
 
         long start = System.currentTimeMillis();
         final int size = 0x20;
-        Number ret = Native.callStaticJniMethodLong(emulator, "malloc(J)J", size);
+        Number ret = cNative.callStaticJniMethodLong(emulator, "malloc(J)J", size);
         Pointer pointer = UnidbgPointer.pointer(emulator, ret.intValue() & 0xffffffffL);
         assert pointer != null;
         pointer.setString(0, getClass().getName());
@@ -119,14 +118,14 @@ public class JniDispatch64 extends AbstractJni {
             }
         });
 
-        StringObject version = Native.callStaticJniMethodObject(emulator, "getNativeVersion()Ljava/lang/String;");
+        StringObject version = cNative.callStaticJniMethodObject(emulator, "getNativeVersion()Ljava/lang/String;");
         System.out.println("getNativeVersion version=" + version.getValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        StringObject checksum = Native.callStaticJniMethodObject(emulator, "getAPIChecksum()Ljava/lang/String;");
+        StringObject checksum = cNative.callStaticJniMethodObject(emulator, "getAPIChecksum()Ljava/lang/String;");
         System.out.println("getAPIChecksum checksum=" + checksum.getValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-        emulator.attach(DebuggerType.ANDROID_SERVER_V7);
-        ret = Native.callStaticJniMethodInt(emulator, "sizeof(I)I", 0);
+//        emulator.attach(DebuggerType.ANDROID_SERVER_V7);
+        ret = cNative.callStaticJniMethodInt(emulator, "sizeof(I)I", 0);
         System.out.println("sizeof POINTER_SIZE=" + ret.intValue() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 

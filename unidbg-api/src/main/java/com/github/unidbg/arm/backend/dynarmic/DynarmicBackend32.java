@@ -1,12 +1,13 @@
 package com.github.unidbg.arm.backend.dynarmic;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.DynarmicBackend;
 import unicorn.ArmConst;
 
 public class DynarmicBackend32 extends DynarmicBackend {
 
-    public DynarmicBackend32(Dynarmic dynarmic) {
-        super(dynarmic);
+    public DynarmicBackend32(Emulator<?> emulator, Dynarmic dynarmic) {
+        super(emulator, dynarmic);
     }
 
     @Override
@@ -16,6 +17,11 @@ public class DynarmicBackend32 extends DynarmicBackend {
 
     @Override
     public void callSVC(long pc, int swi) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    public boolean handleInterpreterFallback(long pc, int num_instructions) {
         throw new AbstractMethodError();
     }
 

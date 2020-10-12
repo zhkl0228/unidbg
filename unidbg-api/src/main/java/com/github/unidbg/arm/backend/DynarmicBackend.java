@@ -1,5 +1,6 @@
 package com.github.unidbg.arm.backend;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.dynarmic.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -10,10 +11,10 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     private static final Log log = LogFactory.getLog(DynarmicBackend.class);
 
-    static DynarmicBackend tryInitialize(boolean is64Bit) {
+    static DynarmicBackend tryInitialize(Emulator<?> emulator, boolean is64Bit) {
         try {
             Dynarmic dynarmic = new Dynarmic(is64Bit);
-            return is64Bit ? new DynarmicBackend64(dynarmic) : new DynarmicBackend32(dynarmic);
+            return is64Bit ? new DynarmicBackend64(emulator, dynarmic) : new DynarmicBackend32(emulator, dynarmic);
         } catch (Throwable throwable) {
             if (log.isDebugEnabled()) {
                 log.debug("initialize dynarmic failed", throwable);
@@ -22,9 +23,11 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
         }
     }
 
+    protected final Emulator<?> emulator;
     protected final Dynarmic dynarmic;
 
-    protected DynarmicBackend(Dynarmic dynarmic) {
+    protected DynarmicBackend(Emulator<?> emulator, Dynarmic dynarmic) {
+        this.emulator = emulator;
         this.dynarmic = dynarmic;
         this.dynarmic.setDynarmicCallback(this);
     }

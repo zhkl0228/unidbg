@@ -91,7 +91,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new IllegalStateException("mkdirs failed: " + rootDir);
         }
         this.fileSystem = createFileSystem(rootDir);
-        this.backend = BackendFactory.createBackend(is64Bit);
+        this.backend = BackendFactory.createBackend(this, is64Bit);
         this.processName = processName == null ? "unidbg" : processName;
         this.registerContext = createRegisterContext(backend);
 
