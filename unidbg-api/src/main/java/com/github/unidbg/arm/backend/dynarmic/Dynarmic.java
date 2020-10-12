@@ -144,10 +144,11 @@ public class Dynarmic implements Closeable {
         if (index < 0 || index > 15) {
             throw new IllegalArgumentException("index=" + index);
         }
+        value &= 0xffffffffL;
         if (log.isDebugEnabled()) {
             log.debug("reg_write32 index=" + index + ", value=0x" + Long.toHexString(value));
         }
-        int ret = reg_write(nativeHandle, index, value & 0xffffffffL);
+        int ret = reg_write(nativeHandle, index, value);
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }

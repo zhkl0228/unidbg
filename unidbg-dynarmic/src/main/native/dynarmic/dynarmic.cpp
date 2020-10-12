@@ -34,6 +34,12 @@ public:
 
     ~DynarmicCallbacks32() = default;
 
+    u32 MemoryReadCode(u32 vaddr) override {
+        u32 code = MemoryRead32(vaddr);
+        printf("MemoryReadCode[%s->%s:%d]: vaddr=0x%x, code=0x%x\n", __FILE__, __func__, __LINE__, vaddr, code);
+        return code;
+    }
+
     u8 MemoryRead8(u32 vaddr) override {
         u8 *dest = (u8 *) get_memory(memory, vaddr);
         if(dest) {

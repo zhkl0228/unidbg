@@ -10,6 +10,11 @@ public class DynarmicBackend32 extends DynarmicBackend {
     }
 
     @Override
+    public void emu_start(long begin, long until, long timeout, long count) {
+        super.emu_start(begin & 0xffffffffL, until, timeout, count);
+    }
+
+    @Override
     public void callSVC(long pc, int swi) {
         throw new AbstractMethodError();
     }
