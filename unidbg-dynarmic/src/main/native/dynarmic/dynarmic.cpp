@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 
 #include "dynarmic.h"
+#include "arm_dynarmic_cp15.h"
 
 static JavaVM* cachedJVM = NULL;
 static jmethodID callSVC = NULL;
@@ -22,15 +23,10 @@ static void *get_memory(khash_t(memory) *memory, long vaddr) {
     return &addr[off];
 }
 
-using u8 = std::uint8_t;
-using u16 = std::uint16_t;
-using u32 = std::uint32_t;
-using u64 = std::uint64_t;
-
-class DynarmicCallbacks32 : public Dynarmic::A32::UserCallbacks {
+class DynarmicCallbacks32 final : public Dynarmic::A32::UserCallbacks {
 public:
     DynarmicCallbacks32(khash_t(memory) *memory)
-        : memory{memory} {}
+        : memory{memory}, cp15(std::make_shared<DynarmicCP15>()) {}
 
     ~DynarmicCallbacks32() = default;
 
@@ -198,6 +194,7 @@ public:
     khash_t(memory) *memory = NULL;
     jobject callback = NULL;
     std::shared_ptr<Dynarmic::A32::Jit> cpu;
+    std::shared_ptr<DynarmicCP15> cp15;
 };
 
 class DynarmicCallbacks64 final : public Dynarmic::A64::UserCallbacks {
@@ -460,6 +457,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
 
     Dynarmic::A32::UserConfig config;
     config.callbacks = callbacks;
+    config.coprocessors[15] = callbacks->cp15;
 
     dynarmic->cb32 = cb;
     dynarmic->jit32 = std::make_shared<Dynarmic::A32::Jit>(config);
@@ -491,6 +489,10 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
   std::shared_ptr<DynarmicCallbacks64> cb64 = dynarmic->cb64;
   if(cb64) {
     env->DeleteGlobalRef(cb64.get()->callback);
+  }
+  std::shared_ptr<DynarmicCallbacks32> cb32 = dynarmic->cb32;
+  if(cb32) {
+    env->DeleteGlobalRef(cb32.get()->callback);
   }
   free(dynarmic);
 }
@@ -816,7 +818,13 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
     if(jit) {
       std::shared_ptr<DynarmicCallbacks32> cb = dynarmic->cb32;
       Dynarmic::A32::Jit *cpu = jit.get();
-      cpu->Regs()[15] = (u32) pc;
+      bool thumb = pc & 1;
+      if(pc & 1) {
+        cpu->SetCpsr(0x00000030); // Thumb mode
+      } else {
+        cpu->SetCpsr(0x00000000); // Arm mode
+      }
+      cpu->Regs()[15] = (u32) (pc & ~1);
       cpu->Run();
     } else {
       return 1;

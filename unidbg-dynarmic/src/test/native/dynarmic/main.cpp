@@ -67,7 +67,7 @@ public:
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
-        // Do something.
+        printf("ExceptionRaised(exception = %lu, pc = 0x%08X, code = 0x%08X)\n", static_cast<std::size_t>(exception), pc, MemoryReadCode(pc));
     }
 
     void AddTicks(u64 ticks) override {
@@ -94,8 +94,7 @@ int main(int argc, char** argv) {
     env.ticks_left = 1;
 
     // Write some code to memory.
-    env.MemoryWrite16(0, 0x0088); // lsls r0, r1, #2
-    env.MemoryWrite16(2, 0xE7FE); // b +#0 (infinite loop)
+    env.MemoryWrite32(0, 0x3f70ee1d); // mrc p15, #0, r3, c13, c0, #3
 
     // Setup registers.
     cpu.Regs()[0] = 1;
