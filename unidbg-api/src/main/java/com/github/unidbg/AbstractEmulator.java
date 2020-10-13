@@ -39,7 +39,6 @@ import unicorn.UnicornException;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * abstract emulator
@@ -50,7 +49,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     private static final Log log = LogFactory.getLog(AbstractEmulator.class);
 
-    public static final long DEFAULT_TIMEOUT = TimeUnit.HOURS.toMicros(1);
+    public static final long DEFAULT_TIMEOUT = 0;
 
     protected final Backend backend;
 
