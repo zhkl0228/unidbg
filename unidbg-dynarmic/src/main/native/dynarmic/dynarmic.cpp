@@ -13,15 +13,15 @@ static JavaVM* cachedJVM = NULL;
 static jmethodID callSVC = NULL;
 static jmethodID handleInterpreterFallback = NULL;
 
-static char *get_memory_page(khash_t(memory) *memory, long vaddr, size_t num_page_table_entries, void **page_table) {
-    long idx = vaddr >> PAGE_BITS;
+static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
+    u64 idx = vaddr >> PAGE_BITS;
     if(page_table && idx < num_page_table_entries) {
       char *addr = (char *)page_table[idx];
       if(addr) {
         return addr;
       }
     }
-    long base = vaddr & ~PAGE_MASK;
+    u64 base = vaddr & ~PAGE_MASK;
     khiter_t k = kh_get(memory, memory, base);
     if(k == kh_end(memory)) {
       return NULL;
@@ -30,7 +30,7 @@ static char *get_memory_page(khash_t(memory) *memory, long vaddr, size_t num_pag
     return (char *)page->addr;
 }
 
-static void *get_memory(khash_t(memory) *memory, long vaddr, size_t num_page_table_entries, void **page_table) {
+static void *get_memory(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     char *page = get_memory_page(memory, vaddr, num_page_table_entries, page_table);
     return page ? &page[vaddr & PAGE_MASK] : NULL;
 }
@@ -220,7 +220,7 @@ public:
     ~DynarmicCallbacks64() = default;
 
     bool IsReadOnlyMemory(u64 vaddr) override {
-        long base = vaddr & ~PAGE_MASK;
+        u64 base = vaddr & ~PAGE_MASK;
         khiter_t k = kh_get(memory, memory, base);
         if(k == kh_end(memory)) {
           return false;
@@ -675,11 +675,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
   char *src = (char *)data;
-  long vaddr_end = address + size;
-  for(long vaddr = address & ~PAGE_MASK; vaddr < vaddr_end; vaddr += PAGE_SIZE) {
-    long start = vaddr < address ? address - vaddr : 0;
-    long end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
-    long len = end - start;
+  u64 vaddr_end = address + size;
+  for(u64 vaddr = address & ~PAGE_MASK; vaddr < vaddr_end; vaddr += PAGE_SIZE) {
+    u64 start = vaddr < address ? address - vaddr : 0;
+    u64 end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
+    u64 len = end - start;
     char *addr = get_memory_page(memory, vaddr, dynarmic->num_page_table_entries, dynarmic->page_table);
     if(addr == NULL) {
       fprintf(stderr, "mem_write failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
@@ -704,12 +704,12 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmi
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
   jbyteArray bytes = env->NewByteArray(size);
-  long dest = 0;
-  long vaddr_end = address + size;
-  for(long vaddr = address & ~PAGE_MASK; vaddr < vaddr_end; vaddr += PAGE_SIZE) {
-    long start = vaddr < address ? address - vaddr : 0;
-    long end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
-    long len = end - start;
+  u64 dest = 0;
+  u64 vaddr_end = address + size;
+  for(u64 vaddr = address & ~PAGE_MASK; vaddr < vaddr_end; vaddr += PAGE_SIZE) {
+    u64 start = vaddr < address ? address - vaddr : 0;
+    u64 end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
+    u64 len = end - start;
     char *addr = get_memory_page(memory, vaddr, dynarmic->num_page_table_entries, dynarmic->page_table);
     if(addr == NULL) {
       fprintf(stderr, "mem_read failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
