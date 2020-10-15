@@ -3,6 +3,7 @@ package org.telegram.messenger;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.AbstractJni;
@@ -32,6 +33,10 @@ public class Utilities64 extends AbstractJni {
     private final VM vm;
 
     private final DvmClass cUtilities;
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     private Utilities64() {
         emulator = createARMEmulator();
@@ -91,14 +96,16 @@ public class Utilities64 extends AbstractJni {
     }
 
     private void pbkdf2() {
-        long start = System.currentTimeMillis();
         byte[] password = "123456".getBytes();
         byte[] salt = new byte[8];
         ByteArray dst = new ByteArray(vm, new byte[64]);
-        cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
-                vm.addLocalObject(new ByteArray(vm, salt)),
-                vm.addLocalObject(dst), 100000);
-        Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
+        for (int i = 0; i < 3; i++) {
+            long start = System.currentTimeMillis();
+            cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
+                    vm.addLocalObject(new ByteArray(vm, salt)),
+                    vm.addLocalObject(dst), 100000);
+            Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
     }
 
 }
