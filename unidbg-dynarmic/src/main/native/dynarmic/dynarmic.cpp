@@ -4,6 +4,7 @@
 #include <exception>
 
 #include <sys/mman.h>
+#include <sys/errno.h>
 
 #include "dynarmic.h"
 #include "arm_dynarmic_cp15.h"
@@ -12,16 +13,26 @@ static JavaVM* cachedJVM = NULL;
 static jmethodID callSVC = NULL;
 static jmethodID handleInterpreterFallback = NULL;
 
-static void *get_memory(khash_t(memory) *memory, long vaddr) {
+static char *get_memory_page(khash_t(memory) *memory, long vaddr, size_t num_page_table_entries, void **page_table) {
+    long idx = vaddr >> PAGE_BITS;
+    if(page_table && idx < num_page_table_entries) {
+      char *addr = (char *)page_table[idx];
+      if(addr) {
+        return addr;
+      }
+    }
     long base = vaddr & ~PAGE_MASK;
-    long off = vaddr - base;
     khiter_t k = kh_get(memory, memory, base);
     if(k == kh_end(memory)) {
       return NULL;
     }
     t_memory_page page = kh_value(memory, k);
-    char *addr = (char *)page->addr;
-    return &addr[off];
+    return (char *)page->addr;
+}
+
+static void *get_memory(khash_t(memory) *memory, long vaddr, size_t num_page_table_entries, void **page_table) {
+    char *page = get_memory_page(memory, vaddr, num_page_table_entries, page_table);
+    return page ? &page[vaddr & PAGE_MASK] : NULL;
 }
 
 class DynarmicCallbacks32 final : public Dynarmic::A32::UserCallbacks {
@@ -38,7 +49,7 @@ public:
     }
 
     u8 MemoryRead8(u32 vaddr) override {
-        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        u8 *dest = (u8 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -53,7 +64,7 @@ public:
             const u8 b{MemoryRead8(vaddr + sizeof(u8))};
             return (static_cast<u16>(b) << 8) | a;
         }
-        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        u16 *dest = (u16 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -68,7 +79,7 @@ public:
             const u16 b{MemoryRead16(vaddr + sizeof(u16))};
             return (static_cast<u32>(b) << 16) | a;
         }
-        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        u32 *dest = (u32 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -83,7 +94,7 @@ public:
             const u32 b{MemoryRead32(vaddr + sizeof(u32))};
             return (static_cast<u64>(b) << 32) | a;
         }
-        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        u64 *dest = (u64 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -94,7 +105,7 @@ public:
     }
 
     void MemoryWrite8(u32 vaddr, u8 value) override {
-        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        u8 *dest = (u8 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -108,7 +119,7 @@ public:
             MemoryWrite8(vaddr + sizeof(u8), static_cast<u8>(value >> 8));
             return;
         }
-        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        u16 *dest = (u16 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -122,7 +133,7 @@ public:
             MemoryWrite16(vaddr + sizeof(u16), static_cast<u16>(value >> 16));
             return;
         }
-        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        u32 *dest = (u32 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -136,7 +147,7 @@ public:
             MemoryWrite32(vaddr + sizeof(u32), static_cast<u32>(value >> 32));
             return;
         }
-        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        u64 *dest = (u64 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -193,6 +204,8 @@ public:
 
     u64 ticks = 0;
     khash_t(memory) *memory = NULL;
+    size_t num_page_table_entries;
+    void **page_table = NULL;
     jobject callback = NULL;
     std::shared_ptr<Dynarmic::A32::Jit> cpu;
     std::shared_ptr<DynarmicCP15> cp15;
@@ -223,7 +236,7 @@ public:
     }
 
     u8 MemoryRead8(u64 vaddr) override {
-        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        u8 *dest = (u8 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -238,7 +251,7 @@ public:
             const u8 b{MemoryRead8(vaddr + sizeof(u8))};
             return (static_cast<u16>(b) << 8) | a;
         }
-        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        u16 *dest = (u16 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -253,7 +266,7 @@ public:
             const u16 b{MemoryRead16(vaddr + sizeof(u16))};
             return (static_cast<u32>(b) << 16) | a;
         }
-        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        u32 *dest = (u32 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -268,7 +281,7 @@ public:
             const u32 b{MemoryRead32(vaddr + sizeof(u32))};
             return (static_cast<u64>(b) << 32) | a;
         }
-        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        u64 *dest = (u64 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             return dest[0];
         } else {
@@ -282,7 +295,7 @@ public:
     }
 
     void MemoryWrite8(u64 vaddr, u8 value) override {
-        u8 *dest = (u8 *) get_memory(memory, vaddr);
+        u8 *dest = (u8 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -296,7 +309,7 @@ public:
             MemoryWrite8(vaddr + sizeof(u8), static_cast<u8>(value >> 8));
             return;
         }
-        u16 *dest = (u16 *) get_memory(memory, vaddr);
+        u16 *dest = (u16 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -311,7 +324,7 @@ public:
             MemoryWrite16(vaddr + sizeof(u16), static_cast<u16>(value >> 16));
             return;
         }
-        u32 *dest = (u32 *) get_memory(memory, vaddr);
+        u32 *dest = (u32 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -325,7 +338,7 @@ public:
             MemoryWrite32(vaddr + sizeof(u32), static_cast<u32>(value >> 32));
             return;
         }
-        u64 *dest = (u64 *) get_memory(memory, vaddr);
+        u64 *dest = (u64 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
             dest[0] = value;
         } else {
@@ -408,6 +421,8 @@ public:
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
     khash_t(memory) *memory = NULL;
+    size_t num_page_table_entries;
+    void **page_table = NULL;
     jobject callback = NULL;
     std::shared_ptr<Dynarmic::A64::Jit> cpu;
 };
@@ -415,6 +430,8 @@ public:
 typedef struct dynarmic {
   bool is64Bit;
   khash_t(memory) *memory;
+  size_t num_page_table_entries;
+  void **page_table;
   std::shared_ptr<DynarmicCallbacks64> cb64;
   std::shared_ptr<Dynarmic::A64::Jit> jit64;
   std::shared_ptr<DynarmicCallbacks32> cb32;
@@ -470,6 +487,25 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.tpidrro_el0 = &callbacks->tpidrro_el0;
     config.tpidr_el0 = &callbacks->tpidr_el0;
 
+    dynarmic->num_page_table_entries = 1ULL << (PAGE_TABLE_ADDRESS_SPACE_BITS - PAGE_BITS);
+    size_t size = dynarmic->num_page_table_entries * sizeof(void*);
+    dynarmic->page_table = (void **)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if(dynarmic->page_table == MAP_FAILED) {
+      fprintf(stderr, "nativeInitialize mmap failed[%s->%s:%d] size=0x%zx, errno=%d, msg=%s\n", __FILE__, __func__, __LINE__, size, errno, strerror(errno));
+      dynarmic->page_table = NULL;
+    } else {
+      callbacks->num_page_table_entries = dynarmic->num_page_table_entries;
+      callbacks->page_table = dynarmic->page_table;
+
+      // Memory
+      config.page_table = dynarmic->page_table;
+      config.page_table_address_space_bits = PAGE_TABLE_ADDRESS_SPACE_BITS;
+      config.silently_mirror_page_table = false;
+      config.absolute_offset_page_table = false;
+      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+    }
+
     dynarmic->cb64 = cb;
     dynarmic->jit64 = std::make_shared<Dynarmic::A64::Jit>(config);
     callbacks->cpu = dynarmic->jit64;
@@ -516,6 +552,12 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
   if(cb32) {
     env->DeleteGlobalRef(cb32.get()->callback);
   }
+  if(dynarmic->page_table) {
+    int ret = munmap(dynarmic->page_table, dynarmic->num_page_table_entries * sizeof(void*));
+    if(ret != 0) {
+      fprintf(stderr, "munmap failed[%s->%s:%d]: page_table=%p, ret=%d\n", __FILE__, __func__, __LINE__, dynarmic->page_table, ret);
+    }
+  }
   free(dynarmic);
 }
 
@@ -540,6 +582,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     if(k == kh_end(memory)) {
       fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return 3;
+    }
+    if(dynarmic->page_table && (vaddr >> PAGE_BITS) < dynarmic->num_page_table_entries) {
+      dynarmic->page_table[vaddr >> PAGE_BITS] = NULL;
     }
     t_memory_page page = kh_value(memory, k);
     int ret = munmap(page->addr, PAGE_SIZE);
@@ -577,6 +622,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     if(addr == MAP_FAILED) {
       fprintf(stderr, "mmap failed[%s->%s:%d]: addr=%p\n", __FILE__, __func__, __LINE__, (void*)addr);
       return 4;
+    }
+    if(dynarmic->page_table && (vaddr >> PAGE_BITS) < dynarmic->num_page_table_entries) {
+      dynarmic->page_table[vaddr >> PAGE_BITS] = addr;
     }
     khiter_t k = kh_put(memory, memory, vaddr, &ret);
     t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
@@ -632,13 +680,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     long start = vaddr < address ? address - vaddr : 0;
     long end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
     long len = end - start;
-    khiter_t k = kh_get(memory, memory, vaddr);
-    if(k == kh_end(memory)) {
+    char *addr = get_memory_page(memory, vaddr, dynarmic->num_page_table_entries, dynarmic->page_table);
+    if(addr == NULL) {
       fprintf(stderr, "mem_write failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return 1;
     }
-    t_memory_page page = kh_value(memory, k);
-    char *addr = (char *)page->addr;
     char *dest = &addr[start];
 //    printf("mem_write address=%p, vaddr=%p, start=%ld, len=%ld, addr=%p, dest=%p\n", (void*)address, (void*)vaddr, start, len, addr, dest);
     memcpy(dest, src, len);
@@ -664,13 +710,11 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmi
     long start = vaddr < address ? address - vaddr : 0;
     long end = vaddr + PAGE_SIZE <= vaddr_end ? PAGE_SIZE : (vaddr_end - vaddr);
     long len = end - start;
-    khiter_t k = kh_get(memory, memory, vaddr);
-    if(k == kh_end(memory)) {
+    char *addr = get_memory_page(memory, vaddr, dynarmic->num_page_table_entries, dynarmic->page_table);
+    if(addr == NULL) {
       fprintf(stderr, "mem_read failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return NULL;
     }
-    t_memory_page page = kh_value(memory, k);
-    char *addr = (char *)page->addr;
     jbyte *src = (jbyte *)&addr[start];
     env->SetByteArrayRegion(bytes, dest, len, src);
     dest += len;
