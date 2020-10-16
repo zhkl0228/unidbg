@@ -3,6 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
@@ -17,6 +18,10 @@ import com.sun.jna.Pointer;
 import java.io.File;
 
 public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     @Override
     protected LibraryResolver createLibraryResolver() {

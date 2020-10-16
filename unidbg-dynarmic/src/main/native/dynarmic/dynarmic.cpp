@@ -507,6 +507,9 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
       callbacks->num_page_table_entries = dynarmic->num_page_table_entries;
       callbacks->page_table = dynarmic->page_table;
 
+      // Unpredictable instructions
+      config.define_unpredictable_behaviour = true;
+
       // Memory
       config.page_table = dynarmic->page_table;
       config.page_table_address_space_bits = PAGE_TABLE_ADDRESS_SPACE_BITS;
