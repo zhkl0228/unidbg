@@ -97,10 +97,34 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_read_nzcv
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1read_1nzcv
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_nzcv
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1nzcv
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_tpidr_el0
  * Signature: (JJ)I
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1tpidr_1el0
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_tpidrro_el0
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1tpidrro_1el0
   (JNIEnv *, jclass, jlong, jlong);
 
 /*

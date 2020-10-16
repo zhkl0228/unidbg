@@ -77,7 +77,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     protected void setupTraps() {
-        int size = 0x1000;
+        int size = 0x10000;
         backend.mem_map(LR, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
         ByteBuffer buffer = ByteBuffer.allocate(size);
         buffer.order(ByteOrder.LITTLE_ENDIAN);

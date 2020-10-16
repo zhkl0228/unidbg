@@ -88,7 +88,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     protected void setupTraps() {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            int size = 0x1000;
+            int size = 0x10000;
             backend.mem_map(LR, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
             KeystoneEncoded encoded = keystone.assemble("svc #0");
             byte[] b0 = encoded.getMachineCode();

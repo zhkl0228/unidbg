@@ -186,7 +186,7 @@ public:
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
-        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d (instr = 0x%08X)\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         abort();
     }
 
@@ -401,7 +401,7 @@ public:
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
-        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d (instr = 0x%08X)\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         abort();
     }
 
@@ -812,6 +812,49 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_read_nzcv
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1read_1nzcv
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
+    if(jit) {
+      return jit->GetPstate();
+    } else {
+      abort();
+      return 1;
+    }
+  } else {
+    abort();
+    return -1;
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_nzcv
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1nzcv
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
+    if(jit) {
+      jit->SetPstate(value);
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_tpidr_el0
  * Signature: (JJ)I
  */
@@ -822,6 +865,27 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
     DynarmicCallbacks64 *cb = dynarmic->cb64;
     if(cb) {
       cb->tpidr_el0 = value;
+    } else {
+      return 1;
+    }
+  } else {
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_set_tpidrro_el0
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1set_1tpidrro_1el0
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    DynarmicCallbacks64 *cb = dynarmic->cb64;
+    if(cb) {
+      cb->tpidrro_el0 = value;
     } else {
       return 1;
     }

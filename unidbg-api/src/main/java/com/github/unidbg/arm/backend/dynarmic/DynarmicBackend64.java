@@ -2,7 +2,6 @@ package com.github.unidbg.arm.backend.dynarmic;
 
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.DynarmicBackend;
 import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
@@ -71,6 +70,7 @@ public class DynarmicBackend64 extends DynarmicBackend {
             case Arm64Const.UC_ARM64_REG_X6:
             case Arm64Const.UC_ARM64_REG_X7:
             case Arm64Const.UC_ARM64_REG_X8:
+            case Arm64Const.UC_ARM64_REG_X16:
                 return dynarmic.reg_read64(regId - Arm64Const.UC_ARM64_REG_X0);
             case Arm64Const.UC_ARM64_REG_SP:
                 return dynarmic.reg_read_sp64();
@@ -78,6 +78,8 @@ public class DynarmicBackend64 extends DynarmicBackend {
                 return dynarmic.reg_read64(30);
             case Arm64Const.UC_ARM64_REG_PC:
                 return dynarmic.reg_read_pc64();
+            case Arm64Const.UC_ARM64_REG_NZCV:
+                return dynarmic.reg_read_nzcv();
             default:
                 throw new DynarmicException("regId=" + regId);
         }
@@ -105,6 +107,12 @@ public class DynarmicBackend64 extends DynarmicBackend {
                 break;
             case Arm64Const.UC_ARM64_REG_TPIDR_EL0:
                 dynarmic.reg_set_tpidr_el0(value.longValue());
+                break;
+            case Arm64Const.UC_ARM64_REG_TPIDRRO_EL0:
+                dynarmic.reg_set_tpidrro_el0(value.longValue());
+                break;
+            case Arm64Const.UC_ARM64_REG_NZCV:
+                dynarmic.reg_set_nzcv(value.longValue());
                 break;
             default:
                 throw new DynarmicException("regId=" + regId);
