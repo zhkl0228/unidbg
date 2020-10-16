@@ -14,15 +14,12 @@ import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
-import keystone.Keystone;
-import keystone.KeystoneArchitecture;
-import keystone.KeystoneEncoded;
-import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class ArmLD64 extends Dlfcn {
 
@@ -74,30 +71,26 @@ public class ArmLD64 extends Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                                        "sub sp, sp, #0x10",
-                                        "stp x29, x30, [sp]",
-                                        "svc #0x" + Integer.toHexString(svcNumber),
-
-                                        "ldr x7, [sp]",
-                                        "add sp, sp, #0x8", // manipulated stack in dlopen
-                                        "cmp x7, #0",
-                                        "b.eq #0x24",
-                                        "adr lr, #-0xf", // jump to ldr x7, [sp]
-                                        "br x7", // call init array
-
-                                        "ldr x0, [sp]", // with return address
-                                        "add sp, sp, #0x8",
-
-                                        "ldp x29, x30, [sp]",
-                                        "add sp, sp, #0x10",
-                                        "ret"));
-                                byte[] code = encoded.getMachineCode();
-                                UnidbgPointer pointer = svcMemory.allocate(code.length, "dlopen");
-                                pointer.write(0, code, 0, code.length);
-                                return pointer;
-                            }
+                            ByteBuffer buffer = ByteBuffer.allocate(56);
+                            buffer.order(ByteOrder.LITTLE_ENDIAN);
+                            buffer.putInt(0xd10043ff); // "sub sp, sp, #0x10"
+                            buffer.putInt(0xa9007bfd); // "stp x29, x30, [sp]"
+                            buffer.putInt(Arm64Svc.assembleSvc(svcNumber)); // "svc #0x" + Integer.toHexString(svcNumber)
+                            buffer.putInt(0xf94003e7); // "ldr x7, [sp]"
+                            buffer.putInt(0x910023ff); // "add sp, sp, #0x8", manipulated stack in dlopen
+                            buffer.putInt(0xf10000ff); // "cmp x7, #0"
+                            buffer.putInt(0x54000060); // "b.eq #0x24"
+                            buffer.putInt(0x10ffff9e); // "adr lr, #-0xf", jump to ldr x7, [sp]
+                            buffer.putInt(0xd61f00e0); // "br x7", call init array
+                            buffer.putInt(0xf94003e0); // "ldr x0, [sp]", with return address
+                            buffer.putInt(0x910023ff); // "add sp, sp, #0x8"
+                            buffer.putInt(0xa9407bfd); // "ldp x29, x30, [sp]"
+                            buffer.putInt(0x910043ff); // "add sp, sp, #0x10"
+                            buffer.putInt(0xd65f03c0); // "ret"
+                            byte[] code = buffer.array();
+                            UnidbgPointer pointer = svcMemory.allocate(code.length, "dlopen");
+                            pointer.write(0, code, 0, code.length);
+                            return pointer;
                         }
                         @Override
                         public long handle(Emulator<?> emulator) {

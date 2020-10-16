@@ -76,16 +76,13 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     protected void setupTraps() {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-            backend.mem_map(LR, 0x10000, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
-            KeystoneEncoded encoded = keystone.assemble("svc #0");
-            byte[] b0 = encoded.getMachineCode();
-            ByteBuffer buffer = ByteBuffer.allocate(0x10000);
-            for (int i = 0; i < 0x10000; i += b0.length) {
-                buffer.put(b0);
-            }
-            memory.pointer(LR).write(buffer.array());
+        int size = 0x1000;
+        backend.mem_map(LR, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        for (int i = 0; i < size; i += 4) {
+            buffer.putInt(0x010000d4); // svc #0
         }
+        memory.pointer(LR).write(buffer.array());
     }
 
     @Override
