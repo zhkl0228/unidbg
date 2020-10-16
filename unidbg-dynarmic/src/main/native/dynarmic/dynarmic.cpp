@@ -36,11 +36,17 @@ static void *get_memory(khash_t(memory) *memory, u64 vaddr, size_t num_page_tabl
 }
 
 class DynarmicCallbacks32 final : public Dynarmic::A32::UserCallbacks {
+private:
+    ~DynarmicCallbacks32() = default;
+
 public:
+    void destroy() {
+        this->cp15 = nullptr;
+        delete this;
+    }
+
     DynarmicCallbacks32(khash_t(memory) *memory)
         : memory{memory}, cp15(std::make_shared<DynarmicCP15>()) {}
-
-    ~DynarmicCallbacks32() = default;
 
     u32 MemoryReadCode(u32 vaddr) override {
         u32 code = MemoryRead32(vaddr);
@@ -180,7 +186,7 @@ public:
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
-        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d\n", __FILE__, __func__, __LINE__, pc, exception);
+        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d (instr = 0x%08X)\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         abort();
     }
 
@@ -207,17 +213,21 @@ public:
     size_t num_page_table_entries;
     void **page_table = NULL;
     jobject callback = NULL;
-    std::shared_ptr<Dynarmic::A32::Jit> cpu;
+    Dynarmic::A32::Jit *cpu;
     std::shared_ptr<DynarmicCP15> cp15;
 };
 
 class DynarmicCallbacks64 final : public Dynarmic::A64::UserCallbacks {
+private:
+    ~DynarmicCallbacks64() = default;
 
 public:
+    void destroy() {
+        delete this;
+    }
+
     DynarmicCallbacks64(khash_t(memory) *memory)
         : memory{memory} {}
-
-    ~DynarmicCallbacks64() = default;
 
     bool IsReadOnlyMemory(u64 vaddr) override {
         u64 base = vaddr & ~PAGE_MASK;
@@ -391,7 +401,7 @@ public:
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
-        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=%p, exception=%d\n", __FILE__, __func__, __LINE__, (void*)pc, exception);
+        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d (instr = 0x%08X)\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         abort();
     }
 
@@ -424,7 +434,7 @@ public:
     size_t num_page_table_entries;
     void **page_table = NULL;
     jobject callback = NULL;
-    std::shared_ptr<Dynarmic::A64::Jit> cpu;
+    Dynarmic::A64::Jit *cpu;
 };
 
 typedef struct dynarmic {
@@ -432,10 +442,10 @@ typedef struct dynarmic {
   khash_t(memory) *memory;
   size_t num_page_table_entries;
   void **page_table;
-  std::shared_ptr<DynarmicCallbacks64> cb64;
-  std::shared_ptr<Dynarmic::A64::Jit> jit64;
-  std::shared_ptr<DynarmicCallbacks32> cb32;
-  std::shared_ptr<Dynarmic::A32::Jit> jit32;
+  DynarmicCallbacks64 *cb64;
+  Dynarmic::A64::Jit *jit64;
+  DynarmicCallbacks32 *cb32;
+  Dynarmic::A32::Jit *jit32;
 } *t_dynarmic;
 
 #ifdef __cplusplus
@@ -451,16 +461,16 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_setD
   (JNIEnv *env, jclass clazz, jlong handle, jobject callback) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<DynarmicCallbacks64> cb = dynarmic->cb64;
+    DynarmicCallbacks64 *cb = dynarmic->cb64;
     if(cb) {
-      cb.get()->callback = env->NewGlobalRef(callback);
+      cb->callback = env->NewGlobalRef(callback);
     } else {
       return 1;
     }
   } else {
-    std::shared_ptr<DynarmicCallbacks32> cb = dynarmic->cb32;
+    DynarmicCallbacks32 *cb = dynarmic->cb32;
     if(cb) {
-      cb.get()->callback = env->NewGlobalRef(callback);
+      cb->callback = env->NewGlobalRef(callback);
     } else {
       return 1;
     }
@@ -480,8 +490,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
   dynarmic->memory = kh_init(memory);
   kh_resize(memory, dynarmic->memory, 0x1000);
   if(dynarmic->is64Bit) {
-    std::shared_ptr<DynarmicCallbacks64> cb = std::make_shared<DynarmicCallbacks64>(dynarmic->memory);
-    DynarmicCallbacks64 *callbacks = cb.get();
+    DynarmicCallbacks64 *callbacks = new DynarmicCallbacks64(dynarmic->memory);
 
     Dynarmic::A64::UserConfig config;
     config.callbacks = callbacks;
@@ -507,19 +516,18 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
       config.only_detect_misalignment_via_page_table_on_page_boundary = true;
     }
 
-    dynarmic->cb64 = cb;
-    dynarmic->jit64 = std::make_shared<Dynarmic::A64::Jit>(config);
+    dynarmic->cb64 = callbacks;
+    dynarmic->jit64 = new Dynarmic::A64::Jit(config);
     callbacks->cpu = dynarmic->jit64;
   } else {
-    std::shared_ptr<DynarmicCallbacks32> cb = std::make_shared<DynarmicCallbacks32>(dynarmic->memory);
-    DynarmicCallbacks32 *callbacks = cb.get();
+    DynarmicCallbacks32 *callbacks = new DynarmicCallbacks32(dynarmic->memory);
 
     Dynarmic::A32::UserConfig config;
     config.callbacks = callbacks;
     config.coprocessors[15] = callbacks->cp15;
 
-    dynarmic->cb32 = cb;
-    dynarmic->jit32 = std::make_shared<Dynarmic::A32::Jit>(config);
+    dynarmic->cb32 = callbacks;
+    dynarmic->jit32 = new Dynarmic::A32::Jit(config);
     callbacks->cpu = dynarmic->jit32;
   }
   return (jlong) dynarmic;
@@ -545,13 +553,21 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
     }
   }
   kh_destroy(memory, memory);
-  std::shared_ptr<DynarmicCallbacks64> cb64 = dynarmic->cb64;
-  if(cb64) {
-    env->DeleteGlobalRef(cb64.get()->callback);
+  if(dynarmic->jit64) {
+    delete dynarmic->jit64;
   }
-  std::shared_ptr<DynarmicCallbacks32> cb32 = dynarmic->cb32;
+  DynarmicCallbacks64 *cb64 = dynarmic->cb64;
+  if(cb64) {
+    env->DeleteGlobalRef(cb64->callback);
+    cb64->destroy();
+  }
+  if(dynarmic->jit32) {
+    delete dynarmic->jit32;
+  }
+  DynarmicCallbacks32 *cb32 = dynarmic->cb32;
   if(cb32) {
-    env->DeleteGlobalRef(cb32.get()->callback);
+    env->DeleteGlobalRef(cb32->callback);
+    cb32->destroy();
   }
   if(dynarmic->page_table) {
     int ret = munmap(dynarmic->page_table, dynarmic->num_page_table_entries * sizeof(void*));
@@ -732,9 +748,9 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      return jit.get()->GetPC();
+      return jit->GetPC();
     } else {
       abort();
       return 1;
@@ -754,9 +770,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      jit.get()->SetSP(value);
+      jit->SetSP(value);
     } else {
       return 1;
     }
@@ -775,9 +791,9 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      return jit.get()->GetSP();
+      return jit->GetSP();
     } else {
       abort();
       return 1;
@@ -797,9 +813,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<DynarmicCallbacks64> cb = dynarmic->cb64;
+    DynarmicCallbacks64 *cb = dynarmic->cb64;
     if(cb) {
-      cb.get()->tpidr_el0 = value;
+      cb->tpidr_el0 = value;
     } else {
       return 1;
     }
@@ -818,16 +834,16 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
   (JNIEnv *env, jclass clazz, jlong handle, jint index, jlong value) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      jit.get()->SetRegister(index, value);
+      jit->SetRegister(index, value);
     } else {
       return 1;
     }
   } else {
-    std::shared_ptr<Dynarmic::A32::Jit> jit = dynarmic->jit32;
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
     if(jit) {
-      jit.get()->Regs()[index] = (u32) value;
+      jit->Regs()[index] = (u32) value;
     } else {
       return 1;
     }
@@ -844,17 +860,17 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
   (JNIEnv *env, jclass clazz, jlong handle, jint index) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      return jit.get()->GetRegister(index);
+      return jit->GetRegister(index);
     } else {
       abort();
       return -1;
     }
   } else {
-    std::shared_ptr<Dynarmic::A32::Jit> jit = dynarmic->jit32;
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
     if(jit) {
-      return jit.get()->Regs()[index];
+      return jit->Regs()[index];
     } else {
       abort();
       return -1;
@@ -871,20 +887,18 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
   (JNIEnv *env, jclass clazz, jlong handle, jlong pc) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      std::shared_ptr<DynarmicCallbacks64> cb = dynarmic->cb64;
-      Dynarmic::A64::Jit *cpu = jit.get();
+      Dynarmic::A64::Jit *cpu = jit;
       cpu->SetPC(pc);
       cpu->Run();
     } else {
       return 1;
     }
   } else {
-    std::shared_ptr<Dynarmic::A32::Jit> jit = dynarmic->jit32;
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
     if(jit) {
-      std::shared_ptr<DynarmicCallbacks32> cb = dynarmic->cb32;
-      Dynarmic::A32::Jit *cpu = jit.get();
+      Dynarmic::A32::Jit *cpu = jit;
       bool thumb = pc & 1;
       if(pc & 1) {
         cpu->SetCpsr(0x00000030); // Thumb mode
@@ -909,9 +923,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    std::shared_ptr<Dynarmic::A64::Jit> jit = dynarmic->jit64;
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      Dynarmic::A64::Jit *cpu = jit.get();
+      Dynarmic::A64::Jit *cpu = jit;
       cpu->HaltExecution();
     } else {
       return 1;

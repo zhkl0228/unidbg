@@ -31,6 +31,7 @@ import unicorn.UnicornConst;
 import java.io.File;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public abstract class AbstractARM64Emulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
@@ -79,8 +80,10 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         int size = 0x1000;
         backend.mem_map(LR, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
         ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        int code = Arm64Svc.assembleSvc(0);
         for (int i = 0; i < size; i += 4) {
-            buffer.putInt(0x010000d4); // svc #0
+            buffer.putInt(code); // svc #0
         }
         memory.pointer(LR).write(buffer.array());
     }
