@@ -478,6 +478,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
   t_dynarmic dynarmic = (t_dynarmic) calloc(1, sizeof(struct dynarmic));
   dynarmic->is64Bit = is64Bit == JNI_TRUE;
   dynarmic->memory = kh_init(memory);
+  kh_resize(memory, dynarmic->memory, 0x1000);
   if(dynarmic->is64Bit) {
     std::shared_ptr<DynarmicCallbacks64> cb = std::make_shared<DynarmicCallbacks64>(dynarmic->memory);
     DynarmicCallbacks64 *callbacks = cb.get();
