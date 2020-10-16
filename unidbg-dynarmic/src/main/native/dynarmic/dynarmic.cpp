@@ -553,16 +553,22 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
     }
   }
   kh_destroy(memory, memory);
-  if(dynarmic->jit64) {
-    delete dynarmic->jit64;
+  Dynarmic::A64::Jit *jit64 = dynarmic->jit64;
+  if(jit64) {
+    jit64->ClearCache();
+    jit64->Reset();
+    delete jit64;
   }
   DynarmicCallbacks64 *cb64 = dynarmic->cb64;
   if(cb64) {
     env->DeleteGlobalRef(cb64->callback);
     cb64->destroy();
   }
-  if(dynarmic->jit32) {
-    delete dynarmic->jit32;
+  Dynarmic::A32::Jit *jit32 = dynarmic->jit32;
+  if(jit32) {
+    jit32->ClearCache();
+    jit32->Reset();
+    delete jit32;
   }
   DynarmicCallbacks32 *cb32 = dynarmic->cb32;
   if(cb32) {
