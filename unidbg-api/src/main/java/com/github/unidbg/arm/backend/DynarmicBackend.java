@@ -130,7 +130,7 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     @Override
     public Unicorn.UnHook debugger_add(DebugHook callback, long begin, long end, Object user_data) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override

@@ -362,8 +362,7 @@ public:
     }
 
     bool MemoryWriteExclusive8(u64 vaddr, std::uint8_t value, std::uint8_t expected) override {
-        fprintf(stderr, "MemoryWriteExclusive8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        MemoryWrite8(vaddr, value);
         return true;
     }
     bool MemoryWriteExclusive16(u64 vaddr, std::uint16_t value, std::uint16_t expected) override {
@@ -379,8 +378,7 @@ public:
         return true;
     }
     bool MemoryWriteExclusive128(u64 vaddr, Dynarmic::A64::Vector value, Dynarmic::A64::Vector expected) override {
-        fprintf(stderr, "MemoryWriteExclusive128[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-        abort();
+        MemoryWrite128(vaddr, value);
         return true;
     }
 
