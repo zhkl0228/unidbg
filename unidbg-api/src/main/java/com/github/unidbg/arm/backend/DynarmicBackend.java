@@ -33,6 +33,15 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     }
 
     @Override
+    public void handleExceptionRaised(long pc, int exception) {
+        try {
+            emulator.attach().debug();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public final void switchUserMode() {
         // Only user-mode is emulated, there is no emulation of any other privilege levels.
     }

@@ -9,4 +9,6 @@ public interface DynarmicCallback {
      */
     boolean handleInterpreterFallback(long pc, int num_instructions);
 
+    void handleExceptionRaised(long pc, int exception);
+
 }

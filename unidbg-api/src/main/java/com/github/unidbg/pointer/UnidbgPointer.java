@@ -456,7 +456,7 @@ public class UnidbgPointer extends Pointer {
         }
         StringBuilder sb = new StringBuilder();
         if (memoryMap == null) {
-            sb.append("unicorn");
+            sb.append("unidbg");
         } else {
             if ((memoryMap.prot & UnicornConst.UC_PROT_READ) != 0) {
                 sb.append('R');

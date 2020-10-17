@@ -12,6 +12,7 @@
 static JavaVM* cachedJVM = NULL;
 static jmethodID callSVC = NULL;
 static jmethodID handleInterpreterFallback = NULL;
+static jmethodID handleExceptionRaised = NULL;
 
 static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     u64 idx = vaddr >> PAGE_BITS;
@@ -50,7 +51,6 @@ public:
 
     u32 MemoryReadCode(u32 vaddr) override {
         u32 code = MemoryRead32(vaddr);
-        printf("MemoryReadCode[%s->%s:%d]: vaddr=0x%x, code=0x%x\n", __FILE__, __func__, __LINE__, vaddr, code);
         return code;
     }
 
@@ -186,7 +186,11 @@ public:
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
-        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        JNIEnv *env;
+        cachedJVM->AttachCurrentThread((void **)&env, NULL);
+        env->CallVoidMethod(callback, handleExceptionRaised, pc, exception);
+        cachedJVM->DetachCurrentThread();
         abort();
     }
 
@@ -241,7 +245,6 @@ public:
 
     u32 MemoryReadCode(u64 vaddr) override {
         u32 code = MemoryRead32(vaddr);
-//        printf("MemoryReadCode[%s->%s:%d]: vaddr=%p, code=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, code);
         return code;
     }
 
@@ -399,7 +402,11 @@ public:
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
-        fprintf(stderr, "ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        JNIEnv *env;
+        cachedJVM->AttachCurrentThread((void **)&env, NULL);
+        env->CallVoidMethod(callback, handleExceptionRaised, pc, exception);
+        cachedJVM->DetachCurrentThread();
         abort();
     }
 
@@ -526,6 +533,26 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     Dynarmic::A32::UserConfig config;
     config.callbacks = callbacks;
     config.coprocessors[15] = callbacks->cp15;
+
+    dynarmic->num_page_table_entries = Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES;
+    size_t size = dynarmic->num_page_table_entries * sizeof(void*);
+    dynarmic->page_table = (void **)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if(dynarmic->page_table == MAP_FAILED) {
+      fprintf(stderr, "nativeInitialize mmap failed[%s->%s:%d] size=0x%zx, errno=%d, msg=%s\n", __FILE__, __func__, __LINE__, size, errno, strerror(errno));
+      dynarmic->page_table = NULL;
+    } else {
+      callbacks->num_page_table_entries = dynarmic->num_page_table_entries;
+      callbacks->page_table = dynarmic->page_table;
+
+      // Unpredictable instructions
+      config.define_unpredictable_behaviour = true;
+
+      // Memory
+      config.page_table = reinterpret_cast<std::array<std::uint8_t*, Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES>*>(dynarmic->page_table);
+      config.absolute_offset_page_table = false;
+      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+    }
 
     dynarmic->cb32 = callbacks;
     dynarmic->jit32 = new Dynarmic::A32::Jit(config);
@@ -951,6 +978,51 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_read_cpsr
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1read_1cpsr
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    abort();
+    return 1;
+  } else {
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
+    if(jit) {
+      return jit->Cpsr();
+    } else {
+      abort();
+      return -1;
+    }
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_write_c13_c0_3
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1write_1c13_1c0_13
+  (JNIEnv *env, jclass clazz, jlong handle, jint value) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    abort();
+    return 1;
+  } else {
+    DynarmicCallbacks32 *cb32 = dynarmic->cb32;
+    if(cb32) {
+      cb32->cp15.get()->uro = value;
+      return 0;
+    } else {
+      abort();
+      return -1;
+    }
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    emu_start
  * Signature: (JJ)I
  */
@@ -1021,6 +1093,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   }
   callSVC = env->GetMethodID(cDynarmicCallback, "callSVC", "(JI)V");
   handleInterpreterFallback = env->GetMethodID(cDynarmicCallback, "handleInterpreterFallback", "(JI)Z");
+  handleExceptionRaised = env->GetMethodID(cDynarmicCallback, "handleExceptionRaised", "(JI)V");
   cachedJVM = vm;
 
   return JNI_VERSION_1_6;
