@@ -13,6 +13,8 @@ static JavaVM* cachedJVM = NULL;
 static jmethodID callSVC = NULL;
 static jmethodID handleInterpreterFallback = NULL;
 static jmethodID handleExceptionRaised = NULL;
+static jmethodID handleMemoryReadFailed = NULL;
+static jmethodID handleMemoryWriteFailed = NULL;
 
 static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     u64 idx = vaddr >> PAGE_BITS;
@@ -51,6 +53,7 @@ public:
 
     u32 MemoryReadCode(u32 vaddr) override {
         u32 code = MemoryRead32(vaddr);
+//        printf("MemoryReadCode[%s->%s:%d]: vaddr=0x%x, code=0x%x\n", __FILE__, __func__, __LINE__, vaddr, code);
         return code;
     }
 
@@ -87,9 +90,14 @@ public:
         }
         u32 *dest = (u32 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
         if(dest) {
+//            printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x, value=0x%x\n", __FILE__, __func__, __LINE__, vaddr, dest[0]);
             return dest[0];
         } else {
-            fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 4);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }
@@ -186,7 +194,7 @@ public:
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
-        printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
         env->CallVoidMethod(callback, handleExceptionRaised, pc, exception);
@@ -365,20 +373,44 @@ public:
     }
 
     bool MemoryWriteExclusive8(u64 vaddr, std::uint8_t value, std::uint8_t expected) override {
-        MemoryWrite8(vaddr, value);
-        return true;
+        u8 *dest = (u8 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
+        if(dest) {
+            return __sync_bool_compare_and_swap(dest, expected, value);
+        } else {
+            fprintf(stderr, "MemoryWriteExclusive8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return false;
+        }
     }
     bool MemoryWriteExclusive16(u64 vaddr, std::uint16_t value, std::uint16_t expected) override {
-        MemoryWrite16(vaddr, value);
-        return true;
+        u16 *dest = (u16 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
+        if(dest) {
+            return __sync_bool_compare_and_swap(dest, expected, value);
+        } else {
+            fprintf(stderr, "MemoryWriteExclusive16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return false;
+        }
     }
     bool MemoryWriteExclusive32(u64 vaddr, std::uint32_t value, std::uint32_t expected) override {
-        MemoryWrite32(vaddr, value);
-        return true;
+        u32 *dest = (u32 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
+        if(dest) {
+            return __sync_bool_compare_and_swap(dest, expected, value);
+        } else {
+            fprintf(stderr, "MemoryWriteExclusive32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return false;
+        }
     }
     bool MemoryWriteExclusive64(u64 vaddr, std::uint64_t value, std::uint64_t expected) override {
-        MemoryWrite64(vaddr, value);
-        return true;
+        u64 *dest = (u64 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
+        if(dest) {
+            return __sync_bool_compare_and_swap(dest, expected, value);
+        } else {
+            fprintf(stderr, "MemoryWriteExclusive64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            abort();
+            return false;
+        }
     }
     bool MemoryWriteExclusive128(u64 vaddr, Dynarmic::A64::Vector value, Dynarmic::A64::Vector expected) override {
         MemoryWrite128(vaddr, value);
@@ -402,7 +434,7 @@ public:
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
-        printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
         env->CallVoidMethod(callback, handleExceptionRaised, pc, exception);
@@ -451,6 +483,7 @@ typedef struct dynarmic {
   Dynarmic::A64::Jit *jit64;
   DynarmicCallbacks32 *cb32;
   Dynarmic::A32::Jit *jit32;
+  Dynarmic::ExclusiveMonitor *monitor;
 } *t_dynarmic;
 
 #ifdef __cplusplus
@@ -494,6 +527,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
   dynarmic->is64Bit = is64Bit == JNI_TRUE;
   dynarmic->memory = kh_init(memory);
   kh_resize(memory, dynarmic->memory, 0x1000);
+  dynarmic->monitor = new Dynarmic::ExclusiveMonitor(1);
   if(dynarmic->is64Bit) {
     DynarmicCallbacks64 *callbacks = new DynarmicCallbacks64(dynarmic->memory);
 
@@ -501,6 +535,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.callbacks = callbacks;
     config.tpidrro_el0 = &callbacks->tpidrro_el0;
     config.tpidr_el0 = &callbacks->tpidr_el0;
+    config.processor_id = 0;
+    config.global_monitor = dynarmic->monitor;
 
     dynarmic->num_page_table_entries = 1ULL << (PAGE_TABLE_ADDRESS_SPACE_BITS - PAGE_BITS);
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);
@@ -533,6 +569,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     Dynarmic::A32::UserConfig config;
     config.callbacks = callbacks;
     config.coprocessors[15] = callbacks->cp15;
+    config.processor_id = 0;
+    config.global_monitor = dynarmic->monitor;
 
     dynarmic->num_page_table_entries = Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES;
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);
@@ -609,6 +647,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
       fprintf(stderr, "munmap failed[%s->%s:%d]: page_table=%p, ret=%d\n", __FILE__, __func__, __LINE__, dynarmic->page_table, ret);
     }
   }
+  delete dynarmic->monitor;
   free(dynarmic);
 }
 
@@ -1094,6 +1133,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   callSVC = env->GetMethodID(cDynarmicCallback, "callSVC", "(JI)V");
   handleInterpreterFallback = env->GetMethodID(cDynarmicCallback, "handleInterpreterFallback", "(JI)Z");
   handleExceptionRaised = env->GetMethodID(cDynarmicCallback, "handleExceptionRaised", "(JI)V");
+  handleMemoryReadFailed = env->GetMethodID(cDynarmicCallback, "handleMemoryReadFailed", "(JI)V");
+  handleMemoryWriteFailed = env->GetMethodID(cDynarmicCallback, "handleMemoryWriteFailed", "(JI)V");
   cachedJVM = vm;
 
   return JNI_VERSION_1_6;

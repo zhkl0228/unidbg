@@ -66,7 +66,6 @@ CallbackOrAccessTwoWords DynarmicCP15::CompileSendTwoWords(bool two, unsigned op
 
 CallbackOrAccessOneWord DynarmicCP15::CompileGetOneWord(bool two, unsigned opc1, CoprocReg CRn,
                                                         CoprocReg CRm, unsigned opc2) {
-    printf("CompileGetOneWord two=%d, opc1=%u, CRn=%d, CRm=%d, opc2=%u\n", two, opc1, CRn, CRm, opc2);
     if (!two && CRn == CoprocReg::C13 && opc1 == 0 && CRm == CoprocReg::C0) {
         switch (opc2) {
         case 2:

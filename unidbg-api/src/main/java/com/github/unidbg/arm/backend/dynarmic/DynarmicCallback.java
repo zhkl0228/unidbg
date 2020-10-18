@@ -11,4 +11,7 @@ public interface DynarmicCallback {
 
     void handleExceptionRaised(long pc, int exception);
 
+    void handleMemoryReadFailed(long vaddr, int size);
+    void handleMemoryWriteFailed(long vaddr, int size);
+
 }

@@ -4,6 +4,8 @@
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
 
+#include <dynarmic/exclusive_monitor.h>
+
 #include "khash.h"
 #include "com_github_unidbg_arm_backend_dynarmic_Dynarmic.h"
 

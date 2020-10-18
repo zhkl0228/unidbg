@@ -620,9 +620,11 @@ public abstract class AbstractARMDebugger implements Debugger {
         long next = 0;
         boolean on = false;
         StringBuilder sb = new StringBuilder();
+        long nextAddr = address;
         for (CodeHistory history : Collections.singletonList(new CodeHistory(address, size, ARM.isThumb(emulator.getBackend())))) {
             Capstone.CsInsn ins = history.disassemble(emulator);
             if (ins == null) {
+                nextAddr += size;
                 continue;
             }
             if (history.address == address) {
@@ -636,9 +638,9 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
             }
             sb.append(ARM.assembleDetail(emulator, ins, history.address, history.thumb, on)).append('\n');
+            nextAddr += ins.bytes.length;
         }
-        long nextAddr = address + size;
-        Capstone.CsInsn[] insns = emulator.disassemble(nextAddr, 4 * 10, 10);
+        Capstone.CsInsn[] insns = emulator.disassemble(nextAddr, 4 * 15, 15);
         for (Capstone.CsInsn ins : insns) {
             if (nextAddr == address) {
                 sb.append("=> *");

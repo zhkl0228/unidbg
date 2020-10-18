@@ -42,6 +42,24 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     }
 
     @Override
+    public void handleMemoryReadFailed(long vaddr, int size) {
+        try {
+            emulator.attach().debug();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void handleMemoryWriteFailed(long vaddr, int size) {
+        try {
+            emulator.attach().debug();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public final void switchUserMode() {
         // Only user-mode is emulated, there is no emulation of any other privilege levels.
     }
@@ -114,22 +132,18 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     @Override
     public void addBreakPoint(long address) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public void removeBreakPoint(long address) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setSingleStep(int singleStep) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setFastDebug(boolean fastDebug) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
