@@ -93,6 +93,8 @@ public class DynarmicBackend64 extends DynarmicBackend {
                 return dynarmic.reg_read64(regId - Arm64Const.UC_ARM64_REG_X0);
             case Arm64Const.UC_ARM64_REG_SP:
                 return dynarmic.reg_read_sp64();
+            case Arm64Const.UC_ARM64_REG_FP:
+                return dynarmic.reg_read64(29);
             case Arm64Const.UC_ARM64_REG_LR:
                 return dynarmic.reg_read64(30);
             case Arm64Const.UC_ARM64_REG_PC:

@@ -55,10 +55,6 @@ public class Dynarmic implements Closeable {
     }
 
     public void emu_start(long begin) {
-        if (log.isDebugEnabled()) {
-            log.debug("emu_start begin=0x" + Long.toHexString(begin));
-        }
-
         int ret = emu_start(nativeHandle, begin);
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);

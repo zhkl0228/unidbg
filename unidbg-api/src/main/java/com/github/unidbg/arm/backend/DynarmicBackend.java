@@ -70,6 +70,9 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     @Override
     public void emu_start(long begin, long until, long timeout, long count) {
+        if (log.isDebugEnabled()) {
+            log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
+        }
         dynarmic.emu_start(begin);
     }
 
@@ -173,7 +176,7 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     @Override
     public byte[] reg_read(int regId, int regSize) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override

@@ -2,22 +2,36 @@ package com.github.unidbg.arm.backend.dynarmic;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.DynarmicBackend;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 
 public class DynarmicBackend32 extends DynarmicBackend {
+
+    private static final Log log = LogFactory.getLog(DynarmicBackend32.class);
 
     public DynarmicBackend32(Emulator<?> emulator, Dynarmic dynarmic) {
         super(emulator, dynarmic);
     }
 
+    protected long until;
+
     @Override
     public void emu_start(long begin, long until, long timeout, long count) {
+        this.until = until + 4;
         super.emu_start(begin & 0xffffffffL, until, timeout, count);
     }
 
     @Override
     public void callSVC(long pc, int swi) {
-        throw new AbstractMethodError();
+        if (log.isDebugEnabled()) {
+            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", swi=" + swi);
+        }
+        if (pc == until) {
+            emu_stop();
+            return;
+        }
+        interruptHookNotifier.notifyCallSVC(this);
     }
 
     @Override

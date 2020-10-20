@@ -434,6 +434,16 @@ public:
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
+        switch (exception) {
+            case Dynarmic::A64::Exception::Yield:
+                return;
+            case Dynarmic::A64::Exception::WaitForInterrupt:
+            case Dynarmic::A64::Exception::WaitForEvent:
+            case Dynarmic::A64::Exception::SendEvent:
+            case Dynarmic::A64::Exception::SendEventLocal:
+            default:
+                break;
+        }
         printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);

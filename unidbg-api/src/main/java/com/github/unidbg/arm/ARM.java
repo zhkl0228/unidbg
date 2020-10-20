@@ -148,69 +148,101 @@ public class ARM {
                     builder.append(String.format(Locale.US, " PC=%s", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC)));
                     break;
                 case ArmConst.UC_ARM_REG_Q0:
-                    builder.append("\n>>>");
                     byte[] data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append("\n>>>");
+                        builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q1:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q2:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q3:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q4:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q5:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q6:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q7:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q8:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q9:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q10:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q11:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q12:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q13:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q14:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q15:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
             }
         }
@@ -408,134 +440,198 @@ public class ARM {
                     builder.append(String.format(Locale.US, "\nPC=%s", UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC)));
                     break;
                 case Arm64Const.UC_ARM64_REG_Q0:
-                    builder.append("\n>>>");
                     byte[] data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append("\n>>>");
+                        builder.append(String.format(Locale.US, " q0=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q1:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q1=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q2:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q2=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q3:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q3=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q4:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q4=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q5:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q5=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q6:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q6=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q7:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q7=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q8:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q8=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q9:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q9=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q10:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q10=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q11:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q11=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q12:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q12=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q13:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q13=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q14:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q14=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q15:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q15=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q16:
-                    builder.append("\n>>>");
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q16=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append("\n>>>");
+                        builder.append(String.format(Locale.US, " q16=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q17:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q17=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q17=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q18:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q18=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q18=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q19:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q19=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q19=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q20:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q20=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q20=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q21:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q21=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q21=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q22:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q22=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q22=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q23:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q23=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q23=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q24:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q24=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q24=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q25:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q25=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q25=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q26:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q26=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q26=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q27:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q27=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q27=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q28:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q28=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q28=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q29:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q29=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q29=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q30:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q30=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q30=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q31:
                     data = backend.reg_read(reg, 16);
-                    builder.append(String.format(Locale.US, " q31=0x%s", newBigInteger(data).toString(16)));
+                    if (data != null) {
+                        builder.append(String.format(Locale.US, " q31=0x%s", newBigInteger(data).toString(16)));
+                    }
                     break;
             }
         }
