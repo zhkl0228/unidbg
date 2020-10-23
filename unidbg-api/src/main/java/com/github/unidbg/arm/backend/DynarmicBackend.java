@@ -68,11 +68,14 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     public final void enableVFP() {
     }
 
+    protected long until;
+
     @Override
-    public void emu_start(long begin, long until, long timeout, long count) {
+    public final void emu_start(long begin, long until, long timeout, long count) {
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
         }
+        this.until = until + 4;
         dynarmic.emu_start(begin);
     }
 

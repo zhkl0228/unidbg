@@ -1,9 +1,7 @@
 package com.github.unidbg.arm.backend.dynarmic;
 
-import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.DynarmicBackend;
-import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -16,17 +14,9 @@ public class DynarmicBackend64 extends DynarmicBackend {
         super(emulator, dynarmic);
     }
 
-    protected long until;
-
-    @Override
-    public void emu_start(long begin, long until, long timeout, long count) {
-        this.until = until + 4;
-        super.emu_start(begin, until, timeout, count);
-    }
-
     @Override
     public boolean handleInterpreterFallback(long pc, int num_instructions) {
-        if (num_instructions != 1) {
+        /*if (num_instructions != 1) {
             return false;
         }
         byte[] code = mem_read(pc, 4);
@@ -43,7 +33,8 @@ public class DynarmicBackend64 extends DynarmicBackend {
             case "nop":
             default:
                 return false;
-        }
+        }*/
+        return false;
     }
 
     @Override

@@ -14,14 +14,6 @@ public class DynarmicBackend32 extends DynarmicBackend {
         super(emulator, dynarmic);
     }
 
-    protected long until;
-
-    @Override
-    public void emu_start(long begin, long until, long timeout, long count) {
-        this.until = until + 4;
-        super.emu_start(begin & 0xffffffffL, until, timeout, count);
-    }
-
     @Override
     public void callSVC(long pc, int swi) {
         if (log.isDebugEnabled()) {

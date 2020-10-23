@@ -51,9 +51,9 @@ public:
     DynarmicCallbacks32(khash_t(memory) *memory)
         : memory{memory}, cp15(std::make_shared<DynarmicCP15>()) {}
 
-    u32 MemoryReadCode(u32 vaddr) override {
-        u32 code = MemoryRead32(vaddr);
-//        printf("MemoryReadCode[%s->%s:%d]: vaddr=0x%x, code=0x%x\n", __FILE__, __func__, __LINE__, vaddr, code);
+    u16 MemoryReadThumbCode(u32 vaddr) override {
+        u16 code = MemoryRead16(vaddr);
+//        printf("MemoryReadThumbCode[%s->%s:%d]: vaddr=0x%x, code=0x%04x\n", __FILE__, __func__, __LINE__, vaddr, code);
         return code;
     }
 
@@ -373,44 +373,20 @@ public:
     }
 
     bool MemoryWriteExclusive8(u64 vaddr, std::uint8_t value, std::uint8_t expected) override {
-        u8 *dest = (u8 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
-        if(dest) {
-            return __sync_bool_compare_and_swap(dest, expected, value);
-        } else {
-            fprintf(stderr, "MemoryWriteExclusive8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
-            return false;
-        }
+        MemoryWrite8(vaddr, value);
+        return true;
     }
     bool MemoryWriteExclusive16(u64 vaddr, std::uint16_t value, std::uint16_t expected) override {
-        u16 *dest = (u16 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
-        if(dest) {
-            return __sync_bool_compare_and_swap(dest, expected, value);
-        } else {
-            fprintf(stderr, "MemoryWriteExclusive16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
-            return false;
-        }
+        MemoryWrite16(vaddr, value);
+        return true;
     }
     bool MemoryWriteExclusive32(u64 vaddr, std::uint32_t value, std::uint32_t expected) override {
-        u32 *dest = (u32 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
-        if(dest) {
-            return __sync_bool_compare_and_swap(dest, expected, value);
-        } else {
-            fprintf(stderr, "MemoryWriteExclusive32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
-            return false;
-        }
+        MemoryWrite32(vaddr, value);
+        return true;
     }
     bool MemoryWriteExclusive64(u64 vaddr, std::uint64_t value, std::uint64_t expected) override {
-        u64 *dest = (u64 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
-        if(dest) {
-            return __sync_bool_compare_and_swap(dest, expected, value);
-        } else {
-            fprintf(stderr, "MemoryWriteExclusive64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-            abort();
-            return false;
-        }
+        MemoryWrite64(vaddr, value);
+        return true;
     }
     bool MemoryWriteExclusive128(u64 vaddr, Dynarmic::A64::Vector value, Dynarmic::A64::Vector expected) override {
         MemoryWrite128(vaddr, value);
@@ -1093,9 +1069,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
       Dynarmic::A32::Jit *cpu = jit;
       bool thumb = pc & 1;
       if(pc & 1) {
-        cpu->SetCpsr(0x00000030); // Thumb mode
+        cpu->SetCpsr(0x00000030); // Thumb user mode
       } else {
-        cpu->SetCpsr(0x00000000); // Arm mode
+        cpu->SetCpsr(0x000001d0); // Arm user mode
       }
       cpu->Regs()[15] = (u32) (pc & ~1);
       cpu->Run();
@@ -1123,7 +1099,13 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
       return 1;
     }
   } else {
-    return -1;
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
+    if(jit) {
+      Dynarmic::A32::Jit *cpu = jit;
+      cpu->HaltExecution();
+    } else {
+      return 1;
+    }
   }
   return 0;
 }
