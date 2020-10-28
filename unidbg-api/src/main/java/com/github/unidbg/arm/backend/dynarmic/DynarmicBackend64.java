@@ -16,24 +16,11 @@ public class DynarmicBackend64 extends DynarmicBackend {
 
     @Override
     public boolean handleInterpreterFallback(long pc, int num_instructions) {
-        /*if (num_instructions != 1) {
-            return false;
+        try {
+            emulator.attach().debug();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        byte[] code = mem_read(pc, 4);
-        Capstone.CsInsn ins = emulator.disassemble(pc, code, false, 1)[0];
-        if (log.isDebugEnabled()) {
-            log.debug(Inspector.inspectString(code, "handleInterpreterFallback pc=0x" + Long.toHexString(pc) + ", " + String.format("0x%08x: %s %s", ins.address, ins.mnemonic, ins.opStr)));
-        }
-
-        switch (ins.mnemonic) {
-            case "ic": {
-                // eg: ic ivau, x2
-                return true;
-            }
-            case "nop":
-            default:
-                return false;
-        }*/
         return false;
     }
 

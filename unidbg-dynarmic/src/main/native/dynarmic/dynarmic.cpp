@@ -2,6 +2,11 @@
 #include <cstdint>
 #include <cstdio>
 #include <exception>
+#include <iostream>
+
+#include <execinfo.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include <sys/mman.h>
 #include <sys/errno.h>
@@ -15,6 +20,16 @@ static jmethodID handleInterpreterFallback = NULL;
 static jmethodID handleExceptionRaised = NULL;
 static jmethodID handleMemoryReadFailed = NULL;
 static jmethodID handleMemoryWriteFailed = NULL;
+
+static void print_stack() {
+    const int asize = 100;
+    void *array[asize];
+    size_t size = backtrace(array, asize);
+
+    // print out all the frames to stderr
+    std::cerr << "stack trace: " << std::endl;
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+}
 
 static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     u64 idx = vaddr >> PAGE_BITS;
@@ -93,6 +108,8 @@ public:
 //            printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x, value=0x%x\n", __FILE__, __func__, __LINE__, vaddr, dest[0]);
             return dest[0];
         } else {
+            print_stack();
+
             printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
             JNIEnv *env;
             cachedJVM->AttachCurrentThread((void **)&env, NULL);
@@ -217,7 +234,7 @@ public:
     }
 
     u64 GetTicksRemaining() override {
-        return 0x10000000000;
+        return 0x10000000000ULL;
     }
 
     u64 ticks = 0;
@@ -241,7 +258,7 @@ public:
     DynarmicCallbacks64(khash_t(memory) *memory)
         : memory{memory} {}
 
-    bool IsReadOnlyMemory(u64 vaddr) override {
+    /*bool IsReadOnlyMemory(u64 vaddr) override {
         u64 base = vaddr & ~PAGE_MASK;
         khiter_t k = kh_get(memory, memory, base);
         if(k == kh_end(memory)) {
@@ -249,10 +266,11 @@ public:
         }
         t_memory_page page = kh_value(memory, k);
         return (page->perms & UC_PROT_WRITE) == 0;
-    }
+    }*/
 
     u32 MemoryReadCode(u64 vaddr) override {
         u32 code = MemoryRead32(vaddr);
+//        printf("MemoryReadCode[%s->%s:%d]: vaddr=0x%llx, code=0x%08x\n", __FILE__, __func__, __LINE__, vaddr, code);
         return code;
     }
 
@@ -443,11 +461,11 @@ public:
     }
 
     u64 GetTicksRemaining() override {
-        return 0x10000000000;
+        return 0x10000000000ULL;
     }
 
     u64 GetCNTPCT() override {
-        return 0x10000000000;
+        return 0x10000000000ULL;
     }
 
     u64 ticks = 0;
@@ -523,6 +541,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.tpidr_el0 = &callbacks->tpidr_el0;
     config.processor_id = 0;
     config.global_monitor = dynarmic->monitor;
+    config.wall_clock_cntpct = false;
+
+    config.unsafe_optimizations = true;
+    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
+    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
 
     dynarmic->num_page_table_entries = 1ULL << (PAGE_TABLE_ADDRESS_SPACE_BITS - PAGE_BITS);
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);
@@ -557,6 +580,12 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.coprocessors[15] = callbacks->cp15;
     config.processor_id = 0;
     config.global_monitor = dynarmic->monitor;
+    config.always_little_endian = true;
+    config.wall_clock_cntpct = false;
+
+    config.unsafe_optimizations = true;
+    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
+    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
 
     dynarmic->num_page_table_entries = Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES;
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);

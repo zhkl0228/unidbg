@@ -182,4 +182,9 @@ public final class HookZz extends BaseHook implements IHookZz {
             throw new IllegalStateException("ret=" + ret);
         }
     }
+
+    @Override
+    public void switch_to_file_log(String path) {
+        throw new UnsupportedOperationException();
+    }
 }

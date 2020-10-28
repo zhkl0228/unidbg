@@ -35,6 +35,7 @@ public final class Dobby extends BaseHook implements IHookZz {
     private static final int RT_SUCCESS = 0;
 
     private final Symbol dobby_enable_near_branch_trampoline, dobby_disable_near_branch_trampoline;
+    private final Symbol switch_to_file_log;
 
     private final Symbol dobbyHook;
     private final Symbol dobbyInstrument;
@@ -63,6 +64,16 @@ public final class Dobby extends BaseHook implements IHookZz {
         if (dobbyInstrument == null) {
             throw new IllegalStateException("dobbyInstrument is null");
         }
+
+        switch_to_file_log = module.findSymbolByName(isIOS ? "_switch_to_file_log" : "switch_to_file_log", false);
+    }
+
+    @Override
+    public void switch_to_file_log(String path) {
+        if (switch_to_file_log == null) {
+            throw new UnsupportedOperationException();
+        }
+        switch_to_file_log.call(emulator, path);
     }
 
     @Override

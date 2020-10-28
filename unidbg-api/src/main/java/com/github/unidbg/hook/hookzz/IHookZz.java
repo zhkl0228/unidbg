@@ -10,6 +10,8 @@ public interface IHookZz extends IHook {
     void enable_arm_arm64_b_branch();
     void disable_arm_arm64_b_branch();
 
+    void switch_to_file_log(String path);
+
     <T extends RegisterContext> void wrap(long functionAddress, WrapCallback<T> callback);
     <T extends RegisterContext> void wrap(Symbol symbol, WrapCallback<T> callback);
 
