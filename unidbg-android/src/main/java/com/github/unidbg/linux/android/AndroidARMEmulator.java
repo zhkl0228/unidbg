@@ -16,16 +16,13 @@ import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unwind.Unwinder;
-import keystone.Keystone;
-import keystone.KeystoneArchitecture;
-import keystone.KeystoneEncoded;
-import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * android arm emulator
@@ -83,32 +80,28 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
     protected final void setupTraps() {
         super.setupTraps();
 
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            KeystoneEncoded encoded = keystone.assemble("bx lr", 0xffff0fa0);
-            byte[] __kuser_memory_barrier = encoded.getMachineCode();
+        int __kuser_memory_barrier = 0xe12fff1e; // bx lr
+        memory.pointer(0xffff0fa0L).setInt(0, __kuser_memory_barrier);
 
-            encoded = keystone.assemble(Arrays.asList(
-                    "dmb sy",
-                    "ldrex r3, [r2]",
-                    "subs r3, r3, r0",
-                    "strexeq r3, r1, [r2]",
-                    "teqeq r3, #1",
-                    "beq #0xffff0fc4",
-                    "rsbs r0, r3, #0",
-                    "b #0xffff0fa0"), 0xffff0fc0);
-            byte[] __kuser_cmpxchg = encoded.getMachineCode();
-            memory.pointer(0xffff0fa0L).write(__kuser_memory_barrier);
-            memory.pointer(0xffff0fc0L).write(__kuser_cmpxchg);
+        ByteBuffer buffer = ByteBuffer.allocate(32);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putInt(0xf57ff05f); // dmb sy
+        buffer.putInt(0xe1923f9f); // ldrex r3, [r2]
+        buffer.putInt(0xe0533000); // subs r3, r3, r0
+        buffer.putInt(0x01823f91); // strexeq r3, r1, [r2]
+        buffer.putInt(0x03330001); // teqeq r3, #1
+        buffer.putInt(0x0afffffa); // beq #0xffff0fc4
+        buffer.putInt(0xe2730000); // rsbs r0, r3, #0
+        buffer.putInt(0xeaffffef); // b #0xffff0fa0
+        byte[] __kuser_cmpxchg = buffer.array();
+        memory.pointer(0xffff0fc0L).write(__kuser_cmpxchg);
 
-            if (log.isDebugEnabled()) {
-                log.debug("__kuser_memory_barrier");
-                for (int i = 0; i < __kuser_memory_barrier.length; i += 4) {
-                    printAssemble(System.err, 0xffff0fa0L + i, 4);
-                }
-                log.debug("__kuser_cmpxchg");
-                for (int i = 0; i < __kuser_cmpxchg.length; i += 4) {
-                    printAssemble(System.err, 0xffff0fc0L + i, 4);
-                }
+        if (log.isDebugEnabled()) {
+            log.debug("__kuser_memory_barrier");
+            printAssemble(System.err, 0xffff0fa0L, 4);
+            log.debug("__kuser_cmpxchg");
+            for (int i = 0; i < __kuser_cmpxchg.length; i += 4) {
+                printAssemble(System.err, 0xffff0fc0L + i, 4);
             }
         }
     }

@@ -13,15 +13,12 @@ import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
-import keystone.Keystone;
-import keystone.KeystoneArchitecture;
-import keystone.KeystoneEncoded;
-import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class ArmLD extends Dlfcn {
 
@@ -63,20 +60,19 @@ public class ArmLD extends Dlfcn {
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                                        "push {r4-r7, lr}",
-                                        "svc #0x" + Integer.toHexString(svcNumber),
-                                        "pop {r7}", // manipulated stack in dlopen
-                                        "cmp r7, #0",
-                                        "subne lr, pc, #16", // jump to pop {r7}
-                                        "bxne r7", // call init array
-                                        "pop {r0, r4-r7, pc}")); // with return address
-                                byte[] code = encoded.getMachineCode();
-                                UnidbgPointer pointer = svcMemory.allocate(code.length, "dlopen");
-                                pointer.write(0, code, 0, code.length);
-                                return pointer;
-                            }
+                            ByteBuffer buffer = ByteBuffer.allocate(28);
+                            buffer.order(ByteOrder.LITTLE_ENDIAN);
+                            buffer.putInt(0xe92d40f0); // push {r4-r7, lr}
+                            buffer.putInt(ArmSvc.assembleSvc(svcNumber)); // svc #svcNumber
+                            buffer.putInt(0xe49d7004); // pop {r7}
+                            buffer.putInt(0xe3570000); // cmp r7, #0
+                            buffer.putInt(0x124fe010); // subne lr, pc, #16
+                            buffer.putInt(0x112fff17); // bxne r7
+                            buffer.putInt(0xe8bd80f1); // pop {r0, r4-r7, pc} with return address
+                            byte[] code = buffer.array();
+                            UnidbgPointer pointer = svcMemory.allocate(code.length, "dlopen");
+                            pointer.write(code);
+                            return pointer;
                         }
                         @Override
                         public long handle(Emulator<?> emulator) {

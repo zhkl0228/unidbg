@@ -3,6 +3,7 @@ package org.telegram.messenger;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.AbstractJni;
@@ -33,6 +34,10 @@ public class Utilities32 extends AbstractJni {
 
     private final DvmClass cUtilities;
 
+    static {
+        DynarmicLoader.useDynarmic();
+    }
+
     private Utilities32() {
         emulator = createARMEmulator();
         final Memory memory = emulator.getMemory();
@@ -45,7 +50,7 @@ public class Utilities32 extends AbstractJni {
         new AndroidModule(emulator, vm).register(memory);
 
         vm.setVerbose(true);
-        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), false);
+        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), true);
         dm.callJNI_OnLoad(emulator);
 
         cUtilities = vm.resolveClass("org/telegram/messenger/Utilities");

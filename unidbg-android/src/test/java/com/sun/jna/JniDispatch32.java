@@ -2,6 +2,7 @@ package com.sun.jna;
 
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -38,6 +39,10 @@ public class JniDispatch32 extends AbstractJni {
     private final Module module;
 
     private final DvmClass cNative;
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     private JniDispatch32() {
         emulator = createARMEmulator();

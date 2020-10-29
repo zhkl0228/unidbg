@@ -14,6 +14,7 @@
 #define PAGE_SIZE (1UL << PAGE_BITS)
 #define PAGE_MASK (PAGE_SIZE-1)
 #define UC_PROT_WRITE 2
+#define PAGE_EXISTS_BIT (1<<25)
 
 typedef struct memory_page {
   void *addr;

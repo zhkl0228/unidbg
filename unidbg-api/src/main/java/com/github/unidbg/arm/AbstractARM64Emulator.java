@@ -40,7 +40,6 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     protected final Memory memory;
     private final UnixSyscallHandler<T> syscallHandler;
 
-    private final Capstone capstoneArm64;
     public static final long LR = 0xffffff80001f0000L;
 
     private final Dlfcn dlfcn;
@@ -70,10 +69,17 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
         backend.hook_add_new(syscallHandler, this);
 
-        this.capstoneArm64 = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
-        this.capstoneArm64.setDetail(Capstone.CS_OPT_ON);
-
         setupTraps();
+    }
+
+    private Capstone capstoneArm64Cache;
+
+    private synchronized Capstone createCapstoneArm64() {
+        if (capstoneArm64Cache == null) {
+            this.capstoneArm64Cache = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+            this.capstoneArm64Cache.setDetail(Capstone.CS_OPT_ON);
+        }
+        return capstoneArm64Cache;
     }
 
     protected void setupTraps() {
@@ -126,7 +132,9 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             io.close();
         }
 
-        capstoneArm64.close();
+        if (capstoneArm64Cache != null) {
+            capstoneArm64Cache.close();
+        }
     }
 
     @Override
@@ -169,7 +177,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     @Override
     public Capstone.CsInsn[] disassemble(long address, int size, long count) {
         byte[] code = backend.mem_read(address, size);
-        return capstoneArm64.disasm(code, address, count);
+        return createCapstoneArm64().disasm(code, address, count);
     }
 
     @Override
@@ -177,7 +185,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         if (thumb) {
             throw new IllegalStateException();
         }
-        return capstoneArm64.disasm(code, address, count);
+        return createCapstoneArm64().disasm(code, address, count);
     }
 
     private void printAssemble(PrintStream out, Capstone.CsInsn[] insns, long address) {

@@ -21,7 +21,7 @@ static jmethodID handleExceptionRaised = NULL;
 static jmethodID handleMemoryReadFailed = NULL;
 static jmethodID handleMemoryWriteFailed = NULL;
 
-static void print_stack() {
+static inline void print_stack() {
     const int asize = 100;
     void *array[asize];
     size_t size = backtrace(array, asize);
@@ -34,10 +34,7 @@ static void print_stack() {
 static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     u64 idx = vaddr >> PAGE_BITS;
     if(page_table && idx < num_page_table_entries) {
-      char *addr = (char *)page_table[idx];
-      if(addr) {
-        return addr;
-      }
+      return (char *)page_table[idx];
     }
     u64 base = vaddr & ~PAGE_MASK;
     khiter_t k = kh_get(memory, memory, base);
@@ -48,7 +45,7 @@ static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page
     return (char *)page->addr;
 }
 
-static void *get_memory(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
+static inline void *get_memory(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     char *page = get_memory_page(memory, vaddr, num_page_table_entries, page_table);
     return page ? &page[vaddr & PAGE_MASK] : NULL;
 }
@@ -65,6 +62,11 @@ public:
 
     DynarmicCallbacks32(khash_t(memory) *memory)
         : memory{memory}, cp15(std::make_shared<DynarmicCP15>()) {}
+
+    bool IsReadOnlyMemory(u32 vaddr) override {
+        u32 idx;
+        return mem_map && (idx = vaddr >> PAGE_BITS) < num_page_table_entries && mem_map[idx] & PAGE_EXISTS_BIT && (mem_map[idx] & UC_PROT_WRITE) == 0;
+    }
 
     u16 MemoryReadThumbCode(u32 vaddr) override {
         u16 code = MemoryRead16(vaddr);
@@ -239,6 +241,7 @@ public:
 
     u64 ticks = 0;
     khash_t(memory) *memory = NULL;
+    int *mem_map = NULL;
     size_t num_page_table_entries;
     void **page_table = NULL;
     jobject callback = NULL;
@@ -258,15 +261,10 @@ public:
     DynarmicCallbacks64(khash_t(memory) *memory)
         : memory{memory} {}
 
-    /*bool IsReadOnlyMemory(u64 vaddr) override {
-        u64 base = vaddr & ~PAGE_MASK;
-        khiter_t k = kh_get(memory, memory, base);
-        if(k == kh_end(memory)) {
-          return false;
-        }
-        t_memory_page page = kh_value(memory, k);
-        return (page->perms & UC_PROT_WRITE) == 0;
-    }*/
+    bool IsReadOnlyMemory(u64 vaddr) override {
+        u64 idx;
+        return mem_map && (idx = vaddr >> PAGE_BITS) < num_page_table_entries && mem_map[idx] & PAGE_EXISTS_BIT && (mem_map[idx] & UC_PROT_WRITE) == 0;
+    }
 
     u32 MemoryReadCode(u64 vaddr) override {
         u32 code = MemoryRead32(vaddr);
@@ -472,6 +470,7 @@ public:
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
     khash_t(memory) *memory = NULL;
+    int *mem_map = NULL;
     size_t num_page_table_entries;
     void **page_table = NULL;
     jobject callback = NULL;
@@ -481,6 +480,7 @@ public:
 typedef struct dynarmic {
   bool is64Bit;
   khash_t(memory) *memory;
+  int *mem_map = NULL;
   size_t num_page_table_entries;
   void **page_table;
   DynarmicCallbacks64 *cb64;
@@ -550,12 +550,15 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     dynarmic->num_page_table_entries = 1ULL << (PAGE_TABLE_ADDRESS_SPACE_BITS - PAGE_BITS);
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);
     dynarmic->page_table = (void **)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if(dynarmic->page_table == MAP_FAILED) {
+//    size_t map_size = dynarmic->num_page_table_entries * sizeof(int);
+//    dynarmic->mem_map = (int *)mmap(NULL, map_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if(dynarmic->page_table == MAP_FAILED/* || dynarmic->mem_map == MAP_FAILED*/) {
       fprintf(stderr, "nativeInitialize mmap failed[%s->%s:%d] size=0x%zx, errno=%d, msg=%s\n", __FILE__, __func__, __LINE__, size, errno, strerror(errno));
       dynarmic->page_table = NULL;
     } else {
       callbacks->num_page_table_entries = dynarmic->num_page_table_entries;
       callbacks->page_table = dynarmic->page_table;
+//      callbacks->mem_map = dynarmic->mem_map;
 
       // Unpredictable instructions
       config.define_unpredictable_behaviour = true;
@@ -590,12 +593,15 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     dynarmic->num_page_table_entries = Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES;
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);
     dynarmic->page_table = (void **)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if(dynarmic->page_table == MAP_FAILED) {
+//    size_t map_size = dynarmic->num_page_table_entries * sizeof(int);
+//    dynarmic->mem_map = (int *)mmap(NULL, map_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if(dynarmic->page_table == MAP_FAILED/* || dynarmic->mem_map == MAP_FAILED*/) {
       fprintf(stderr, "nativeInitialize mmap failed[%s->%s:%d] size=0x%zx, errno=%d, msg=%s\n", __FILE__, __func__, __LINE__, size, errno, strerror(errno));
       dynarmic->page_table = NULL;
     } else {
       callbacks->num_page_table_entries = dynarmic->num_page_table_entries;
       callbacks->page_table = dynarmic->page_table;
+//      callbacks->mem_map = dynarmic->mem_map;
 
       // Unpredictable instructions
       config.define_unpredictable_behaviour = true;
@@ -662,6 +668,12 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nati
       fprintf(stderr, "munmap failed[%s->%s:%d]: page_table=%p, ret=%d\n", __FILE__, __func__, __LINE__, dynarmic->page_table, ret);
     }
   }
+  if(dynarmic->mem_map) {
+    int ret = munmap(dynarmic->mem_map, dynarmic->num_page_table_entries * sizeof(int));
+    if(ret != 0) {
+      fprintf(stderr, "munmap failed[%s->%s:%d]: mem_map=%p, ret=%d\n", __FILE__, __func__, __LINE__, dynarmic->mem_map, ret);
+    }
+  }
   delete dynarmic->monitor;
   free(dynarmic);
 }
@@ -681,8 +693,19 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
   }
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
+  int *mem_map = dynarmic->mem_map;
   int ret;
-  for(long vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+  for(u64 vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    u64 idx = vaddr >> PAGE_BITS;
+    if(mem_map && idx < dynarmic->num_page_table_entries) {
+      int mask = mem_map[idx];
+      if(mask & PAGE_EXISTS_BIT) {
+        mem_map[idx] = 0;
+      } else {
+        fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p, mask=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, mask);
+        return 3;
+      }
+    }
     khiter_t k = kh_get(memory, memory, vaddr);
     if(k == kh_end(memory)) {
       fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
@@ -717,19 +740,30 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
   }
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
+  int *mem_map = dynarmic->mem_map;
   int ret;
-  for(long vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
-    if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
+  for(u64 vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    u64 idx = vaddr >> PAGE_BITS;
+    if(mem_map && idx < dynarmic->num_page_table_entries) {
+      int mask = mem_map[idx];
+      if(mask & PAGE_EXISTS_BIT) {
+        fprintf(stderr, "mem_map failed[%s->%s:%d]: vaddr=%p, mask=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, mask);
+        return 3;
+      } else {
+        mem_map[idx] = perms | PAGE_EXISTS_BIT;
+      }
+    } else if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
       fprintf(stderr, "mem_map failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return 3;
     }
+
     void *addr = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if(addr == MAP_FAILED) {
       fprintf(stderr, "mmap failed[%s->%s:%d]: addr=%p\n", __FILE__, __func__, __LINE__, (void*)addr);
       return 4;
     }
-    if(dynarmic->page_table && (vaddr >> PAGE_BITS) < dynarmic->num_page_table_entries) {
-      dynarmic->page_table[vaddr >> PAGE_BITS] = addr;
+    if(dynarmic->page_table && idx < dynarmic->num_page_table_entries) {
+      dynarmic->page_table[idx] = addr;
     }
     khiter_t k = kh_put(memory, memory, vaddr, &ret);
     t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
@@ -755,8 +789,21 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
   }
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
+  int *mem_map = dynarmic->mem_map;
   int ret;
-  for(long vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+  for(u64 vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    u64 idx = vaddr >> PAGE_BITS;
+    if(mem_map && idx < dynarmic->num_page_table_entries) {
+      int mask = mem_map[idx];
+      if(mask & PAGE_EXISTS_BIT) {
+        mem_map[idx] = perms | PAGE_EXISTS_BIT;
+        continue;
+      } else {
+        fprintf(stderr, "mem_protect failed[%s->%s:%d]: vaddr=%p, mask=0x%x\n", __FILE__, __func__, __LINE__, (void*)vaddr, mask);
+        return 3;
+      }
+    }
+
     khiter_t k = kh_get(memory, memory, vaddr);
     if(k == kh_end(memory)) {
       fprintf(stderr, "mem_protect failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);

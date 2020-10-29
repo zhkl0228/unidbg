@@ -31,6 +31,7 @@ import unicorn.UnicornConst;
 import java.io.File;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
@@ -40,8 +41,6 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     protected final Memory memory;
     private final UnixSyscallHandler<T> syscallHandler;
-
-    private final Capstone capstoneArm, capstoneThumb;
 
     private final Dlfcn dlfcn;
 
@@ -68,12 +67,25 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
         backend.hook_add_new(syscallHandler, this);
 
-        this.capstoneArm = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
-        this.capstoneArm.setDetail(Capstone.CS_OPT_ON);
-        this.capstoneThumb = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
-        this.capstoneThumb.setDetail(Capstone.CS_OPT_ON);
-
         setupTraps();
+    }
+
+    private Capstone capstoneArmCache, capstoneThumbCache;
+
+    private synchronized Capstone createThumbCapstone() {
+        if (capstoneThumbCache == null) {
+            this.capstoneThumbCache = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
+            this.capstoneThumbCache.setDetail(Capstone.CS_OPT_ON);
+        }
+        return capstoneThumbCache;
+    }
+
+    private synchronized Capstone createArmCapstone() {
+        if (capstoneArmCache == null) {
+            this.capstoneArmCache = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
+            this.capstoneArmCache.setDetail(Capstone.CS_OPT_ON);
+        }
+        return capstoneArmCache;
     }
 
     @Override
@@ -87,18 +99,15 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     protected void setupTraps() {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            int size = 0x10000;
-            backend.mem_map(LR, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
-            KeystoneEncoded encoded = keystone.assemble("svc #0");
-            byte[] b0 = encoded.getMachineCode();
-            ByteBuffer buffer = ByteBuffer.allocate(size);
-            // write "mov pc, #0" to all kernel trap addresses so they will throw exception
-            for (int i = 0; i < size; i += b0.length) {
-                buffer.put(b0);
-            }
-            memory.pointer(LR).write(buffer.array());
+        int size = 0x10000;
+        backend.mem_map(LR, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        int code = ArmSvc.assembleSvc(0);
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < size; i += 4) {
+            buffer.putInt(code); // svc #0
         }
+        memory.pointer(LR).write(buffer.array());
     }
 
     @Override
@@ -129,8 +138,12 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
             io.close();
         }
 
-        capstoneThumb.close();
-        capstoneArm.close();
+        if (capstoneThumbCache != null) {
+            capstoneThumbCache.close();
+        }
+        if (capstoneArmCache != null) {
+            capstoneArmCache.close();
+        }
     }
 
     @Override
@@ -174,12 +187,12 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public Capstone.CsInsn[] disassemble(long address, int size, long count) {
         boolean thumb = ARM.isThumb(backend);
         byte[] code = backend.mem_read(address, size);
-        return thumb ? capstoneThumb.disasm(code, address, count) : capstoneArm.disasm(code, address, count);
+        return thumb ? createThumbCapstone().disasm(code, address, count) : createArmCapstone().disasm(code, address, count);
     }
 
     @Override
     public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb, long count) {
-        return thumb ? capstoneThumb.disasm(code, address, count) : capstoneArm.disasm(code, address, count);
+        return thumb ? createThumbCapstone().disasm(code, address, count) : createArmCapstone().disasm(code, address, count);
     }
 
     private void printAssemble(PrintStream out, Capstone.CsInsn[] insns, long address, boolean thumb) {

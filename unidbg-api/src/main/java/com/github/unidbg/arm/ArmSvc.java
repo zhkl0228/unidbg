@@ -4,30 +4,26 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Svc;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import keystone.Keystone;
-import keystone.KeystoneArchitecture;
-import keystone.KeystoneEncoded;
-import keystone.KeystoneMode;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public abstract class ArmSvc implements Svc {
 
-    @Override
-    public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-        return register(svcMemory, svcNumber, KeystoneMode.Arm);
+    public static int assembleSvc(int svcNumber) {
+        return 0xef000000 | svcNumber;
     }
 
-    static UnidbgPointer register(SvcMemory svcMemory, int svcNumber, KeystoneMode mode) {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, mode)) {
-            KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                    "svc #0x" + Integer.toHexString(svcNumber),
-                    "bx lr"));
-            byte[] code = encoded.getMachineCode();
-            UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmSvc");
-            pointer.write(0, code, 0, code.length);
-            return pointer;
-        }
+    @Override
+    public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putInt(assembleSvc(svcNumber)); // svc #svcNumber
+        buffer.putInt(0xe12fff1e); // bx lr
+        byte[] code = buffer.array();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmSvc");
+        pointer.write(code);
+        return pointer;
     }
 
     @Override
