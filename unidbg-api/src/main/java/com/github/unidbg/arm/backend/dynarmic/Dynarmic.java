@@ -9,6 +9,12 @@ public class Dynarmic implements Closeable {
 
     private static final Log log = LogFactory.getLog(Dynarmic.class);
 
+    static final String USE_DYNARMIC_BACKEND_KEY = "use.dynarmic.backend";
+
+    public static boolean isUseDynarmic() {
+        return Boolean.parseBoolean(System.getProperty(USE_DYNARMIC_BACKEND_KEY));
+    }
+
     private static native int setDynarmicCallback(long handle, DynarmicCallback callback);
 
     private static native long nativeInitialize(boolean is64Bit);

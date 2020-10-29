@@ -10,7 +10,7 @@ public class DynarmicLoader {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        System.setProperty("use.dynarmic.backend", "true");
+        System.setProperty(Dynarmic.USE_DYNARMIC_BACKEND_KEY, "true");
     }
 
 }
