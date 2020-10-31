@@ -65,7 +65,7 @@ class RunExecutable {
         }
     }
 
-    static void run(File executable, ModuleListener listener, Object...args) throws IOException {
+    static void run(File executable, ModuleListener listener, String...args) throws IOException {
         run(executable, listener, null, args);
     }
 

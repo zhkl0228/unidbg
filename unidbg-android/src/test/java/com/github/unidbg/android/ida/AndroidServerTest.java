@@ -5,6 +5,7 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.file.FileResult;
@@ -33,6 +34,10 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     public static void main(String[] args) throws IOException {
         new AndroidServerTest().test();
@@ -72,7 +77,7 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
     private final File executable;
 
     private AndroidServerTest() throws IOException {
-        executable = new File("src/test/resources/example_binaries/ida/android_server_7.4");
+        executable = new File("unidbg-android/src/test/resources/example_binaries/ida/android_server_7.4");
         emulator = new MyAndroidARMEmulator(executable);
         emulator.getSyscallHandler().addIOResolver(this);
         Memory memory = emulator.getMemory();

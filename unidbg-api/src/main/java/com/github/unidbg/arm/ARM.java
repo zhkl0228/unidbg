@@ -6,6 +6,7 @@ import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
@@ -1006,7 +1007,7 @@ public class ARM {
                     sb.append(" (-0x").append(Integer.toHexString(-value)).append(")");
                 }
             }
-        } catch (UnicornException exception) {
+        } catch (UnicornException | DynarmicException exception) {
             sb.append(" => ").append(exception.getMessage());
         }
     }

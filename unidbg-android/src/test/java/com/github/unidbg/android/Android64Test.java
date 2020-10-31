@@ -3,6 +3,7 @@ package com.github.unidbg.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
@@ -19,6 +20,10 @@ import java.io.File;
 import java.io.IOException;
 
 public class Android64Test {
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     public static void main(String[] args) throws IOException {
         Logger.getLogger("com.github.unidbg.linux.ARM64SyscallHandler").setLevel(Level.INFO);

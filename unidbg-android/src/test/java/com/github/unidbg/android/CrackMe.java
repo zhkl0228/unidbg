@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.xhook.IxHook;
@@ -21,6 +22,10 @@ import java.io.IOException;
 
 public class CrackMe {
 
+    static {
+        DynarmicLoader.useDynarmic();
+    }
+
     public static void main(String[] args) throws IOException {
         new CrackMe().crack();
     }
@@ -30,7 +35,7 @@ public class CrackMe {
     private final File executable;
 
     public CrackMe() throws IOException {
-        executable = new File("src/test/resources/example_binaries/crackme1");
+        executable = new File("unidbg-android/src/test/resources/example_binaries/crackme1");
         emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs"));
         Memory memory = emulator.getMemory();
         LibraryResolver resolver = new AndroidResolver(19);
@@ -47,7 +52,7 @@ public class CrackMe {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 String str = emulator.getContext().getPointerArg(0).getString(0);
-                System.err.println(String.format("strlen[\"%s\"] called from %s", str, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                System.err.printf("strlen[\"%s\"] called from %s%n", str, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 return HookStatus.RET(emulator, originFunction);
             }
         });
@@ -55,7 +60,7 @@ public class CrackMe {
             @Override
             public HookStatus onCall(Emulator<?> emulator, long originFunction) {
                 String str = emulator.getContext().getPointerArg(0).getString(0);
-                System.err.println(String.format("puts[\"%s\"] called from %s", str, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
+                System.err.printf("puts[\"%s\"] called from %s%n", str, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 if (str.startsWith("yes")) {
                     canStop = true;
                 }

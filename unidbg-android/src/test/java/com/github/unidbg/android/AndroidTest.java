@@ -3,6 +3,7 @@ package com.github.unidbg.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
@@ -17,6 +18,10 @@ import java.io.File;
 import java.io.IOException;
 
 public class AndroidTest {
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     public static void main(String[] args) throws IOException {
         new AndroidTest().test();
