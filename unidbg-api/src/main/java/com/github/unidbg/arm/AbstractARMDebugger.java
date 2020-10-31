@@ -42,21 +42,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private static final Log log = LogFactory.getLog(AbstractARMDebugger.class);
 
-    private static class BreakPointImpl implements BreakPoint {
-        final BreakPointCallback callback;
-        final boolean thumb;
-        boolean isTemporary;
-        public BreakPointImpl(BreakPointCallback callback, boolean thumb) {
-            this.callback = callback;
-            this.thumb = thumb;
-        }
-        @Override
-        public void setTemporary(boolean temporary) {
-            this.isTemporary = true;
-        }
-    }
-
-    private final Map<Long, BreakPointImpl> breakMap = new LinkedHashMap<>();
+    private final Map<Long, BreakPoint> breakMap = new LinkedHashMap<>();
 
     protected final Emulator<?> emulator;
 
@@ -107,9 +93,8 @@ public abstract class AbstractARMDebugger implements Debugger {
         if (log.isDebugEnabled()) {
             log.debug("addBreakPoint address=0x" + Long.toHexString(address));
         }
-        BreakPointImpl breakPoint = new BreakPointImpl(callback, thumb);
+        BreakPoint breakPoint = emulator.getBackend().addBreakPoint(address, callback, thumb);
         breakMap.put(address, breakPoint);
-        emulator.getBackend().addBreakPoint(address);
         return breakPoint;
     }
 
@@ -120,8 +105,7 @@ public abstract class AbstractARMDebugger implements Debugger {
 
         if (breakMap.containsKey(address)) {
             breakMap.remove(address);
-            emulator.getBackend().removeBreakPoint(address);
-            return true;
+            return emulator.getBackend().removeBreakPoint(address);
         } else {
             return false;
         }
@@ -136,11 +120,12 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     @Override
     public void onBreak(Backend backend, long address, int size, Object user) {
-        BreakPointImpl breakPoint = breakMap.get(address);
-        if (breakPoint != null && breakPoint.isTemporary) {
+        BreakPoint breakPoint = breakMap.get(address);
+        if (breakPoint != null && breakPoint.isTemporary()) {
             removeBreakPoint(address);
         }
-        if (breakPoint != null && breakPoint.callback != null && breakPoint.callback.onHit(emulator, address)) {
+        BreakPointCallback callback;
+        if (breakPoint != null && (callback = breakPoint.getCallback()) != null && callback.onHit(emulator, address)) {
             return;
         }
         try {
@@ -535,13 +520,13 @@ public abstract class AbstractARMDebugger implements Debugger {
             Memory memory = emulator.getMemory();
             StringBuilder sb = new StringBuilder("* means temporary bp:\n");
             String maxLengthSoName = memory.getMaxLengthLibraryName();
-            for (Map.Entry<Long, BreakPointImpl> entry : breakMap.entrySet()) {
+            for (Map.Entry<Long, BreakPoint> entry : breakMap.entrySet()) {
                 address = entry.getKey();
-                BreakPointImpl bp = entry.getValue();
+                BreakPoint bp = entry.getValue();
                 Capstone.CsInsn ins = null;
                 try {
                     byte[] code = backend.mem_read(address, 4);
-                    Capstone.CsInsn[] insns = emulator.disassemble(address, code, bp.thumb, 1);
+                    Capstone.CsInsn[] insns = emulator.disassemble(address, code, bp.isThumb(), 1);
                     if (insns != null && insns.length > 0) {
                         ins = insns[0];
                     }
@@ -549,11 +534,11 @@ public abstract class AbstractARMDebugger implements Debugger {
 
                 if (ins == null) {
                     sb.append(String.format("[%" + String.valueOf(maxLengthSoName).length() + "s]", "0x" + Long.toHexString(address)));
-                    if (bp.isTemporary) {
+                    if (bp.isTemporary()) {
                         sb.append('*');
                     }
                 } else {
-                    sb.append(ARM.assembleDetail(emulator, ins, address, bp.thumb, bp.isTemporary));
+                    sb.append(ARM.assembleDetail(emulator, ins, address, bp.isThumb(), bp.isTemporary()));
                 }
                 sb.append("\n");
             }

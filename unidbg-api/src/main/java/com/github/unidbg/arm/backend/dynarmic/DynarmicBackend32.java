@@ -2,6 +2,10 @@ package com.github.unidbg.arm.backend.dynarmic;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.DynarmicBackend;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
@@ -90,6 +94,14 @@ public class DynarmicBackend32 extends DynarmicBackend {
                 break;
             default:
                 throw new DynarmicException("regId=" + regId);
+        }
+    }
+
+    @Override
+    protected byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb) {
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, thumb ? KeystoneMode.ArmThumb : KeystoneMode.Arm)) {
+            KeystoneEncoded encoded = keystone.assemble("bkpt #" + svcNumber);
+            return encoded.getMachineCode();
         }
     }
 

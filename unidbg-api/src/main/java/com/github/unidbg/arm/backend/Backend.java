@@ -1,5 +1,7 @@
 package com.github.unidbg.arm.backend;
 
+import com.github.unidbg.debugger.BreakPoint;
+import com.github.unidbg.debugger.BreakPointCallback;
 import unicorn.Unicorn;
 
 public interface Backend {
@@ -23,8 +25,8 @@ public interface Backend {
 
     void mem_unmap(long address, long size);
 
-    void addBreakPoint(long address);
-    void removeBreakPoint(long address);
+    BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb);
+    boolean removeBreakPoint(long address);
     void setSingleStep(int singleStep);
     void setFastDebug(boolean fastDebug);
 

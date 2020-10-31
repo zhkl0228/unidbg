@@ -1,6 +1,8 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.arm.Cpsr;
+import com.github.unidbg.debugger.BreakPoint;
+import com.github.unidbg.debugger.BreakPointCallback;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
@@ -76,14 +78,43 @@ public class UnicornBackend implements Backend {
         unicorn.mem_unmap(address, size);
     }
 
-    @Override
-    public void addBreakPoint(long address) {
-        unicorn.addBreakPoint(address);
+    private static class BreakPointImpl implements BreakPoint {
+        final BreakPointCallback callback;
+        final boolean thumb;
+        boolean isTemporary;
+        public BreakPointImpl(BreakPointCallback callback, boolean thumb) {
+            this.callback = callback;
+            this.thumb = thumb;
+        }
+        @Override
+        public void setTemporary(boolean temporary) {
+            this.isTemporary = true;
+        }
+        @Override
+        public boolean isTemporary() {
+            return isTemporary;
+        }
+        @Override
+        public BreakPointCallback getCallback() {
+            return callback;
+        }
+        @Override
+        public boolean isThumb() {
+            return thumb;
+        }
     }
 
     @Override
-    public void removeBreakPoint(long address) {
+    public BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb) {
+        BreakPointImpl breakPoint = new BreakPointImpl(callback, thumb);
+        unicorn.addBreakPoint(address);
+        return breakPoint;
+    }
+
+    @Override
+    public boolean removeBreakPoint(long address) {
         unicorn.removeBreakPoint(address);
+        return true;
     }
 
     @Override

@@ -2,6 +2,10 @@ package com.github.unidbg.arm.backend.dynarmic;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.DynarmicBackend;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -138,4 +142,11 @@ public class DynarmicBackend64 extends DynarmicBackend {
         }
     }
 
+    @Override
+    protected byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb) {
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+            KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
+            return encoded.getMachineCode();
+        }
+    }
 }
