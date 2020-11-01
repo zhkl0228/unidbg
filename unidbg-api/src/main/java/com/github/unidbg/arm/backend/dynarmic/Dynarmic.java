@@ -38,6 +38,7 @@ public class Dynarmic implements Closeable {
     private static native int reg_write(long handle, int index, long value);
     private static native long reg_read(long handle, int index);
     private static native int reg_read_cpsr(long handle);
+    private static native int reg_write_cpsr(long handle, int value);
     private static native int reg_write_c13_c0_3(long handle, int value);
 
     private static native int emu_start(long handle, long pc);
@@ -224,6 +225,16 @@ public class Dynarmic implements Closeable {
             log.debug("reg_read_cpsr");
         }
         return reg_read_cpsr(nativeHandle);
+    }
+
+    public void reg_write_cpsr(int value) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_write_cpsr value=0x" + Integer.toHexString(value));
+        }
+        int ret = reg_write_cpsr(nativeHandle, value);
+        if (ret != 0) {
+            throw new DynarmicException("ret=" + ret);
+        }
     }
 
     public long reg_read64(int index) {

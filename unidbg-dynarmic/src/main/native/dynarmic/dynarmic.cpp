@@ -80,6 +80,10 @@ public:
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead8[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 1);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }
@@ -1103,6 +1107,29 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
     Dynarmic::A32::Jit *jit = dynarmic->jit32;
     if(jit) {
       return jit->Cpsr();
+    } else {
+      abort();
+      return -1;
+    }
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_write_cpsr
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1write_1cpsr
+  (JNIEnv *env, jclass clazz, jlong handle, jint value) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    abort();
+    return 1;
+  } else {
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
+    if(jit) {
+      jit->SetCpsr(value);
+      return 0;
     } else {
       abort();
       return -1;

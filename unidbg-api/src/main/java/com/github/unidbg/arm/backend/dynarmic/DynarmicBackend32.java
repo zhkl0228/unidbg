@@ -92,6 +92,9 @@ public class DynarmicBackend32 extends DynarmicBackend {
             case ArmConst.UC_ARM_REG_C13_C0_3:
                 dynarmic.reg_write_c13_c0_3(value.intValue());
                 break;
+            case ArmConst.UC_ARM_REG_CPSR:
+                dynarmic.reg_write_cpsr(value.intValue());
+                break;
             default:
                 throw new DynarmicException("regId=" + regId);
         }

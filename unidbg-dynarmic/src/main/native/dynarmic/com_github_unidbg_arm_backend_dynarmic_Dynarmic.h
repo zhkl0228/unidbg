@@ -153,6 +153,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_write_cpsr
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1write_1cpsr
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_write_c13_c0_3
  * Signature: (JI)I
  */
