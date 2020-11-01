@@ -2,6 +2,7 @@ package com.github.unidbg.android;
 
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
@@ -21,6 +22,10 @@ import java.io.File;
 import java.io.IOException;
 
 public class QDReaderJni extends AbstractJni implements ModuleListener {
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     private static final int SDK = 23;
 

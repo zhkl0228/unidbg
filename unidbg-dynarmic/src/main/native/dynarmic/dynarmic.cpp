@@ -143,6 +143,10 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite8[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 1);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
     }
@@ -171,6 +175,10 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 4);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
     }
@@ -213,6 +221,7 @@ public:
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
+        cpu->Regs()[15] = pc;
         printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
@@ -429,6 +438,7 @@ public:
         switch (exception) {
             case Dynarmic::A64::Exception::Yield:
                 return;
+            case Dynarmic::A64::Exception::Breakpoint: // brk
             case Dynarmic::A64::Exception::WaitForInterrupt:
             case Dynarmic::A64::Exception::WaitForEvent:
             case Dynarmic::A64::Exception::SendEvent:
@@ -436,6 +446,7 @@ public:
             default:
                 break;
         }
+        cpu->SetPC(pc);
         printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);

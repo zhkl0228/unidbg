@@ -2,6 +2,7 @@ package com.sun.jna;
 
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -25,6 +26,10 @@ import java.io.File;
 import java.io.IOException;
 
 public class JniDispatch64 extends AbstractJni {
+
+    static {
+        DynarmicLoader.useDynarmic();
+    }
 
     private static LibraryResolver createLibraryResolver() {
         return new AndroidResolver(23);
