@@ -245,14 +245,12 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
-        this->ticks += ticks;
     }
 
     u64 GetTicksRemaining() override {
         return 0x10000000000ULL;
     }
 
-    u64 ticks = 0;
     khash_t(memory) *memory = NULL;
     int *mem_map = NULL;
     size_t num_page_table_entries;
@@ -470,7 +468,6 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
-        this->ticks += ticks;
     }
 
     u64 GetTicksRemaining() override {
@@ -481,7 +478,6 @@ public:
         return 0x10000000000ULL;
     }
 
-    u64 ticks = 0;
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
     khash_t(memory) *memory = NULL;
@@ -556,7 +552,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.tpidr_el0 = &callbacks->tpidr_el0;
     config.processor_id = 0;
     config.global_monitor = dynarmic->monitor;
-    config.wall_clock_cntpct = false;
+    config.wall_clock_cntpct = true;
 
     config.unsafe_optimizations = true;
     config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
@@ -576,15 +572,15 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
 //      callbacks->mem_map = dynarmic->mem_map;
 
       // Unpredictable instructions
-      config.define_unpredictable_behaviour = true;
+      config.define_unpredictable_behaviour = false;
 
       // Memory
       config.page_table = dynarmic->page_table;
       config.page_table_address_space_bits = PAGE_TABLE_ADDRESS_SPACE_BITS;
       config.silently_mirror_page_table = false;
       config.absolute_offset_page_table = false;
-      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
-      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+//      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+//      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
     }
 
     dynarmic->cb64 = callbacks;
@@ -598,12 +594,12 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.coprocessors[15] = callbacks->cp15;
     config.processor_id = 0;
     config.global_monitor = dynarmic->monitor;
-    config.always_little_endian = true;
-    config.wall_clock_cntpct = false;
+    config.always_little_endian = false;
+    config.wall_clock_cntpct = true;
 
-    config.unsafe_optimizations = true;
-    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
-    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
+//    config.unsafe_optimizations = true;
+//    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
+//    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
 
     dynarmic->num_page_table_entries = Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES;
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);
@@ -619,13 +615,13 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
 //      callbacks->mem_map = dynarmic->mem_map;
 
       // Unpredictable instructions
-      config.define_unpredictable_behaviour = true;
+      config.define_unpredictable_behaviour = false;
 
       // Memory
       config.page_table = reinterpret_cast<std::array<std::uint8_t*, Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES>*>(dynarmic->page_table);
       config.absolute_offset_page_table = false;
-      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
-      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+//      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+//      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
     }
 
     dynarmic->cb32 = callbacks;
@@ -779,6 +775,8 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     }
     if(dynarmic->page_table && idx < dynarmic->num_page_table_entries) {
       dynarmic->page_table[idx] = addr;
+    } else {
+      // 0xffffff80001f0000ULL: 0x10000
     }
     khiter_t k = kh_put(memory, memory, vaddr, &ret);
     t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
