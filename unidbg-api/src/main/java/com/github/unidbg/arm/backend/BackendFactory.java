@@ -11,6 +11,8 @@ public class BackendFactory {
             Backend backend = DynarmicBackend.tryInitialize(emulator, is64Bit);
             if (backend != null) {
                 return backend;
+            } else if (Dynarmic.isForceUseDynarmic()) {
+                throw new IllegalStateException("Initialize dynarmic backend failed");
             }
         }
         return new UnicornBackend(is64Bit);

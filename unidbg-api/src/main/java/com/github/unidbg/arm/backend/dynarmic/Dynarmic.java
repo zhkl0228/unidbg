@@ -10,9 +10,14 @@ public class Dynarmic implements Closeable {
     private static final Log log = LogFactory.getLog(Dynarmic.class);
 
     static final String USE_DYNARMIC_BACKEND_KEY = "use.dynarmic.backend";
+    static final String FORCE_USE_DYNARMIC_KEY = "force.use.dynarmic";
 
     public static boolean isUseDynarmic() {
         return Boolean.parseBoolean(System.getProperty(USE_DYNARMIC_BACKEND_KEY));
+    }
+
+    public static boolean isForceUseDynarmic() {
+        return Boolean.parseBoolean(System.getProperty(FORCE_USE_DYNARMIC_KEY));
     }
 
     private static native int setDynarmicCallback(long handle, DynarmicCallback callback);
