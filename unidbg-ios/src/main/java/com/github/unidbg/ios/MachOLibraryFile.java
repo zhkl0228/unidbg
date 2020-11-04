@@ -1,6 +1,7 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Utils;
 import com.github.unidbg.spi.LibraryFile;
 import org.apache.commons.io.FileUtils;
 
@@ -41,13 +42,7 @@ public class MachOLibraryFile implements LibraryFile {
 
     @Override
     public ByteBuffer mapBuffer() throws IOException {
-        return mapBuffer(file);
-    }
-
-    static ByteBuffer mapBuffer(File file) throws IOException {
-        FileInputStream inputStream = new FileInputStream(file);
-        FileChannel channel = inputStream.getChannel();
-        return channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+        return Utils.mapBuffer(file);
     }
 
     @Override

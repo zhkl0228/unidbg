@@ -1,6 +1,7 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Utils;
 import com.github.unidbg.spi.LibraryFile;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -51,7 +52,7 @@ public class URLibraryFile implements LibraryFile {
     @Override
     public ByteBuffer mapBuffer() throws IOException {
         if ("file".equalsIgnoreCase(url.getProtocol())) {
-            return MachOLibraryFile.mapBuffer(new File(url.getPath()));
+            return Utils.mapBuffer(new File(url.getPath()));
         } else {
             return ByteBuffer.wrap(readToByteArray());
         }

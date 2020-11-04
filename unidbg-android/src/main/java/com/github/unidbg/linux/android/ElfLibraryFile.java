@@ -1,6 +1,7 @@
 package com.github.unidbg.linux.android;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Utils;
 import com.github.unidbg.spi.LibraryFile;
 import org.apache.commons.io.FileUtils;
 
@@ -43,8 +44,8 @@ public class ElfLibraryFile implements LibraryFile {
     }
 
     @Override
-    public ByteBuffer mapBuffer() {
-        throw new UnsupportedOperationException();
+    public ByteBuffer mapBuffer() throws IOException {
+        return Utils.mapBuffer(elfFile);
     }
 
     @Override

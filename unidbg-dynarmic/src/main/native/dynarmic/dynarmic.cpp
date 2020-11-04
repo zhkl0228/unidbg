@@ -554,9 +554,9 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
     config.global_monitor = dynarmic->monitor;
     config.wall_clock_cntpct = true;
 
-    config.unsafe_optimizations = true;
-    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
-    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
+//    config.unsafe_optimizations = true;
+//    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_UnfuseFMA;
+//    config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
 
     dynarmic->num_page_table_entries = 1ULL << (PAGE_TABLE_ADDRESS_SPACE_BITS - PAGE_BITS);
     size_t size = dynarmic->num_page_table_entries * sizeof(void*);
@@ -572,7 +572,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
 //      callbacks->mem_map = dynarmic->mem_map;
 
       // Unpredictable instructions
-      config.define_unpredictable_behaviour = false;
+      config.define_unpredictable_behaviour = true;
 
       // Memory
       config.page_table = dynarmic->page_table;
@@ -615,7 +615,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
 //      callbacks->mem_map = dynarmic->mem_map;
 
       // Unpredictable instructions
-      config.define_unpredictable_behaviour = false;
+      config.define_unpredictable_behaviour = true;
 
       // Memory
       config.page_table = reinterpret_cast<std::array<std::uint8_t*, Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES>*>(dynarmic->page_table);

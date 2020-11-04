@@ -11,8 +11,8 @@ public class ZeroFileIO extends DriverFileIO {
     }
 
     @Override
-    public int read(Backend backend, Pointer buffer, int count) {
-        buffer.write(0, new byte[count], 0, count);
+    public int read(Backend backend, Pointer pointer, int count) {
+        pointer.write(0, new byte[count], 0, count);
         return count;
     }
 

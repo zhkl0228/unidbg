@@ -1,9 +1,21 @@
 package com.github.unidbg;
 
+import com.github.unidbg.utils.Inspector;
+import com.sun.jna.Pointer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 public class Utils {
+
+    private static final Log log = LogFactory.getLog(Utils.class);
 
     /** Returns val represented by the specified number of hex digits. */
     private static String digits(long val, int digits) {
@@ -65,6 +77,57 @@ public class Utils {
             shift += 7;
         }
         return result;
+    }
+
+    public static ByteBuffer mapBuffer(File file) throws IOException {
+        FileInputStream inputStream = new FileInputStream(file);
+        FileChannel channel = inputStream.getChannel();
+        return channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+    }
+
+    public static int readFile(RandomAccessFile randomAccessFile, Pointer buffer, final int _count) {
+        try {
+            int count = _count;
+            if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {
+                count = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
+
+                /*
+                 * lseek() allows the file offset to be set beyond the end of the file
+                 *        (but this does not change the size of the file).  If data is later
+                 *        written at this point, subsequent reads of the data in the gap (a
+                 *        "hole") return null bytes ('\0') until data is actually written into
+                 *        the gap.
+                 */
+                if (count < 0) {
+                    log.warn("read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+                    return 0;
+                }
+            }
+
+            byte[] data = new byte[count];
+            int read = randomAccessFile.read(data);
+            if (read <= 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug("read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+                }
+                return read;
+            }
+
+            if (randomAccessFile.getFilePointer() > randomAccessFile.length()) {
+                throw new IllegalStateException("fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
+            }
+
+            if(read > count) {
+                throw new IllegalStateException("count=" + count + ", read=" + read);
+            }
+            if (log.isDebugEnabled() && data.length < 0x3000) {
+                Inspector.inspect(data, "read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+            }
+            buffer.write(0, data, 0, read);
+            return read;
+        } catch (IOException e) {
+            throw new IllegalStateException();
+        }
     }
 
 }

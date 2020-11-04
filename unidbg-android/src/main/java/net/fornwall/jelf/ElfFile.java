@@ -255,58 +255,18 @@ public final class ElfFile {
 		return programHeaders[index].getValue();
 	}
 
-	public static ElfFile fromStream(InputStream in) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		int totalRead = 0;
-		byte[] buffer = new byte[8096];
-		boolean firstRead = true;
-		while (true) {
-			int readNow = in.read(buffer, totalRead, buffer.length - totalRead);
-			if (readNow == -1) {
-				return fromBytes(baos.toByteArray());
-			} else {
-				if (firstRead) {
-					// Abort early.
-					if (readNow < 4) {
-						throw new ElfException("Bad first read");
-					} else {
-						if (!(0x7f == buffer[0] && 'E' == buffer[1] && 'L' == buffer[2] && 'F' == buffer[3]))
-							throw new ElfException("Bad magic number for file");
-					}
-					firstRead = false;
-				}
-				baos.write(buffer, 0, readNow);
-			}
-		}
+	public static ElfFile fromBytes(ByteBuffer buffer) throws ElfException {
+		return new ElfFile(buffer);
 	}
 
-	public static ElfFile fromFile(File file) throws ElfException, IOException {
-		byte[] buffer = new byte[(int) file.length()];
-		try (FileInputStream in = new FileInputStream(file)) {
-			int totalRead = 0;
-			while (totalRead < buffer.length) {
-				int readNow = in.read(buffer, totalRead, buffer.length - totalRead);
-				if (readNow == -1) {
-					throw new ElfException("Premature end of file");
-				} else {
-					totalRead += readNow;
-				}
-			}
-		}
-		return new ElfFile(ByteBuffer.wrap(buffer));
-	}
-
-	public static ElfFile fromBytes(byte[] buffer) throws ElfException {
-		return new ElfFile(ByteBuffer.wrap(buffer));
-	}
-
-	public ElfFile(ByteBuffer buffer) throws ElfException {
+	private ElfFile(ByteBuffer buffer) throws ElfException {
 		byte[] ident = new byte[16];
 		final ElfParser parser = new ElfParser(this, buffer);
 
 		int bytesRead = parser.read(ident);
-		if (bytesRead != ident.length)
+		if (bytesRead != ident.length) {
 			throw new ElfException("Error reading elf header (read " + bytesRead + "bytes - expected to read " + ident.length + "bytes)");
+		}
 
 		if (!(0x7f == ident[0] && 'E' == ident[1] && 'L' == ident[2] && 'F' == ident[3])) throw new ElfException("Bad magic number for file");
 
