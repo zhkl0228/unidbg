@@ -1,6 +1,7 @@
 package net.fornwall.jelf;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -15,6 +16,7 @@ import java.util.Arrays;
  * http://www.sco.com/developers/gabi/latest/ch5.pheader.html#p_type
  * http://stackoverflow.com/questions/22612735/how-can-i-find-the-dynamic-libraries-required-by-an-elf-binary-in-c
  */
+@SuppressWarnings("unused")
 public class ElfSegment {
 
 	/** Type defining that the array element is unused. Other member values are undefined. */
@@ -138,7 +140,7 @@ public class ElfSegment {
 		case PT_LOAD:
 			ptLoad = new MemoizedObject<byte[]>() {
 				@Override
-				protected byte[] computeValue() throws ElfException, IOException {
+				protected byte[] computeValue() throws ElfException {
 					parser.seek(ElfSegment.this.offset);
 					byte[] buffer = new byte[(int) file_size];
 					parser.read(buffer);
@@ -165,11 +167,10 @@ public class ElfSegment {
 		case PT_ARM_EXIDX:
 			arm_exidx = new MemoizedObject<ArmExIdx>() {
 				@Override
-				protected ArmExIdx computeValue() throws ElfException, IOException {
+				protected ArmExIdx computeValue() throws ElfException {
 					parser.seek(ElfSegment.this.offset);
-					byte[] buffer = new byte[(int) file_size];
-					parser.read(buffer);
-					return new ArmExIdx(ElfSegment.this.virtual_address, Arrays.copyOf(buffer, (int) mem_size));
+					ByteBuffer buffer = parser.readBuffer((int) file_size);
+					return new ArmExIdx(ElfSegment.this.virtual_address, buffer);
 				}
 			};
             break;
@@ -212,12 +213,25 @@ public class ElfSegment {
 			break;
 		}
 
-		String pFlagsString = "";
-		if ((flags & /* PF_R= */4) != 0) pFlagsString += (pFlagsString.isEmpty() ? "" : "|") + "read";
-		if ((flags & /* PF_W= */2) != 0) pFlagsString += (pFlagsString.isEmpty() ? "" : "|") + "write";
-		if ((flags & /* PF_X= */1) != 0) pFlagsString += (pFlagsString.isEmpty() ? "" : "|") + "execute";
-
-		if (pFlagsString.isEmpty()) pFlagsString = "0x" + Long.toHexString(flags);
+		StringBuilder pFlagsString = new StringBuilder();
+		if ((flags & /* PF_R= */4) != 0) {
+			pFlagsString.append("read");
+		}
+		if ((flags & /* PF_W= */2) != 0) {
+			if (pFlagsString.length() > 0) {
+				pFlagsString.append("|");
+			}
+			pFlagsString.append("write");
+		}
+		if ((flags & /* PF_X= */1) != 0) {
+			if (pFlagsString.length() > 0) {
+				pFlagsString.append("|");
+			}
+			pFlagsString.append("execute");
+		}
+		if (pFlagsString.length() == 0) {
+			pFlagsString.append("0x").append(Long.toHexString(flags));
+		}
 
 		return "ElfProgramHeader[p_type=" + typeString + ", p_filesz=" + file_size + ", p_memsz=" + mem_size + ", p_flags=" + pFlagsString + ", p_align="
 				+ alignment + ", range=[0x" + Long.toHexString(virtual_address) + "-0x" + Long.toHexString(virtual_address + mem_size) + "]]";

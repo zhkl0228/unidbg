@@ -2,6 +2,7 @@ package com.github.unidbg;
 
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -80,16 +81,21 @@ public class Utils {
     }
 
     public static ByteBuffer mapBuffer(File file) throws IOException {
-        FileInputStream inputStream = new FileInputStream(file);
-        FileChannel channel = inputStream.getChannel();
-        return channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+        FileChannel channel = null;
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            channel = inputStream.getChannel();
+            return channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+        } finally {
+            IOUtils.closeQuietly(channel);
+        }
     }
 
     public static int readFile(RandomAccessFile randomAccessFile, Pointer buffer, final int _count) {
         try {
             int count = _count;
-            if (count > randomAccessFile.length() - randomAccessFile.getFilePointer()) {
-                count = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
+            long remaining = randomAccessFile.length() - randomAccessFile.getFilePointer();
+            if (count > remaining) {
+                count = (int) remaining;
 
                 /*
                  * lseek() allows the file offset to be set beyond the end of the file
@@ -104,27 +110,33 @@ public class Utils {
                 }
             }
 
-            byte[] data = new byte[count];
-            int read = randomAccessFile.read(data);
-            if (read <= 0) {
-                if (log.isDebugEnabled()) {
-                    log.debug("read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+            int total = 0;
+            byte[] buf = new byte[Math.min(0x1000, count)];
+            Pointer pointer = buffer;
+            while (total < count) {
+                int read = randomAccessFile.read(buf, 0, Math.min(buf.length, count - total));
+                if (read <= 0) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", read=" + read + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+                    }
+                    return total;
                 }
-                return read;
-            }
 
-            if (randomAccessFile.getFilePointer() > randomAccessFile.length()) {
-                throw new IllegalStateException("fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
-            }
+                if (randomAccessFile.getFilePointer() > randomAccessFile.length()) {
+                    throw new IllegalStateException("fp=" + randomAccessFile.getFilePointer() + ", length=" + randomAccessFile.length());
+                }
 
-            if(read > count) {
-                throw new IllegalStateException("count=" + count + ", read=" + read);
+                if(read > buf.length) {
+                    throw new IllegalStateException("count=" + buf.length + ", read=" + read);
+                }
+                if (log.isDebugEnabled()) {
+                    Inspector.inspect(buf, "read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", read=" + read + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+                }
+                pointer.write(0, buf, 0, read);
+                total += read;
+                pointer = pointer.share(read);
             }
-            if (log.isDebugEnabled() && data.length < 0x3000) {
-                Inspector.inspect(data, "read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
-            }
-            buffer.write(0, data, 0, read);
-            return read;
+            return total;
         } catch (IOException e) {
             throw new IllegalStateException();
         }

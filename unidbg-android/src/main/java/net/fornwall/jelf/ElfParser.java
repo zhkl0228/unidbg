@@ -117,9 +117,19 @@ class ElfParser implements ElfDataIn {
 		throw new ElfException("Cannot find segment for address " + Long.toHexString(address));
 	}
 
-	public int read(byte[] data) {
+	int read(byte[] data) {
 		fsFile.get(data);
 		return data.length;
+	}
+
+	ByteBuffer readBuffer(int length) {
+		int limit = fsFile.limit();
+		try {
+			fsFile.limit(fsFile.position() + length);
+			return fsFile.slice();
+		} finally {
+			fsFile.limit(limit);
+		}
 	}
 
 }

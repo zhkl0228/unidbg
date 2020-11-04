@@ -1,14 +1,12 @@
 package net.fornwall.jelf;
 
-import java.io.IOException;
-
 final class ElfStringTable {
 
 	/** The string table data. */
-	private final byte data[];
+	private final byte[] data;
 
 	/** Reads all the strings from [offset, length]. */
-	ElfStringTable(ElfParser parser, long offset, int length) throws ElfException, IOException {
+	ElfStringTable(ElfParser parser, long offset, int length) throws ElfException {
 		parser.seek(offset);
 		data = new byte[length];
 		int bytesRead = parser.read(data);

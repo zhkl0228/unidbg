@@ -45,18 +45,18 @@ public class ArmExIdx {
     }
 
     private final long virtualAddress;
-    private final byte[] data;
+    private final ByteBuffer buffer;
 
-    ArmExIdx(long virtualAddress, byte[] data) {
+    ArmExIdx(long virtualAddress, ByteBuffer buffer) {
         this.virtualAddress = virtualAddress;
-        this.data = data;
+        this.buffer = buffer;
+        this.buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 
     public Frame arm_exidx_step(Emulator<?> emulator, Unwinder unwinder, Module module, long fun, DwarfCursor context) {
         int value = ARM_EXIDX_CANT_UNWIND;
 
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.position(0);
         long offset = virtualAddress;
         int entry = 0;
         while (buffer.hasRemaining()) {
