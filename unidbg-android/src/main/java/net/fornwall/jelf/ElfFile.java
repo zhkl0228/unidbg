@@ -1,6 +1,7 @@
 package net.fornwall.jelf;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 
 /**
  * An ELF (Executable and Linkable Format) file can be a relocatable, executable, shared or core file.
@@ -16,6 +17,7 @@ import java.io.*;
  * Elf64_Half: 2 bytes
  * </pre>
  */
+@SuppressWarnings("unused")
 public final class ElfFile {
 
 	/** Relocatable file type. A possible value of {@link #file_type}. */
@@ -98,12 +100,12 @@ public final class ElfFile {
 	 * Elf{32,64}_Ehdr#e_shstrndx. Index into the section header table associated with the section name string table.
 	 * SH_UNDEF if there is no section name string table.
 	 */
-	private short sh_string_ndx; // Elf32_Half
+	private final int sh_string_ndx; // Elf32_Half
 
 	/** MemoizedObject array of section headers associated with this ELF file. */
-	private MemoizedObject<ElfSection>[] sectionHeaders;
+	private final MemoizedObject<ElfSection>[] sectionHeaders;
 	/** MemoizedObject array of program headers associated with this ELF file. */
-	private MemoizedObject<ElfSegment>[] programHeaders;
+	private final MemoizedObject<ElfSegment>[] programHeaders;
 
 	/** Used to cache symbol table lookup. */
 	private ElfSection symbolTableSection;
@@ -223,8 +225,8 @@ public final class ElfFile {
 	 */
 	public ElfSymbol getELFSymbol(long address) throws ElfException, IOException {
 		// Check dynamic symbol table for address.
-		ElfSymbol symbol = null;
-		long value = 0L;
+		ElfSymbol symbol;
+		long value;
 
 		ElfSection sh = getDynamicSymbolTableSection();
 		if (sh != null) {
@@ -291,16 +293,16 @@ public final class ElfFile {
 				}
 			}
 		}
-		return new ElfFile(new ByteArrayInputStream(buffer));
+		return new ElfFile(ByteBuffer.wrap(buffer));
 	}
 
-	public static ElfFile fromBytes(byte[] buffer) throws ElfException, IOException {
-		return new ElfFile(new ByteArrayInputStream(buffer));
+	public static ElfFile fromBytes(byte[] buffer) throws ElfException {
+		return new ElfFile(ByteBuffer.wrap(buffer));
 	}
 
-	public ElfFile(ByteArrayInputStream baos) throws ElfException, IOException {
+	public ElfFile(ByteBuffer buffer) throws ElfException {
 		byte[] ident = new byte[16];
-		final ElfParser parser = new ElfParser(this, baos);
+		final ElfParser parser = new ElfParser(this, buffer);
 
 		int bytesRead = parser.read(ident);
 		if (bytesRead != ident.length)
@@ -334,7 +336,7 @@ public final class ElfFile {
 			throw new ElfException("e_shnum is SHN_UNDEF(0), which is not supported yet"
 					+ " (the actual number of section header table entries is contained in the sh_size field of the section header at index 0)");
 		}
-		sh_string_ndx = parser.readShort();
+		sh_string_ndx = parser.readShort() & 0xffff;
 		if (sh_string_ndx == /* SHN_XINDEX= */0xffff) {
 			throw new ElfException("e_shstrndx is SHN_XINDEX(0xffff), which is not supported yet"
 					+ " (the actual index of the section name string table section is contained in the sh_link field of the section header at index 0)");
@@ -356,7 +358,7 @@ public final class ElfFile {
 			final long programHeaderOffset = ph_offset + (i * ph_entry_size);
 			programHeaders[i] = new MemoizedObject<ElfSegment>() {
 				@Override
-				public ElfSegment computeValue() throws IOException {
+				public ElfSegment computeValue() {
 					return new ElfSegment(parser, programHeaderOffset);
 				}
 			};

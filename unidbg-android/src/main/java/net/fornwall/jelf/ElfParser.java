@@ -1,23 +1,21 @@
 package net.fornwall.jelf;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /** Package internal class used for parsing ELF files. */
 class ElfParser implements ElfDataIn {
 
 	final ElfFile elfFile;
-	private final ByteArrayInputStream fsFile;
+	private final ByteBuffer fsFile;
 
-	ElfParser(ElfFile elfFile, ByteArrayInputStream fsFile) {
+	ElfParser(ElfFile elfFile, ByteBuffer fsFile) {
 		this.elfFile = elfFile;
 		this.fsFile = fsFile;
 	}
 
 	void seek(long offset) {
-		fsFile.reset();
-		if (fsFile.skip(offset) != offset)
-			throw new ElfException("seeking outside file");
+		fsFile.position((int) offset);
 	}
 
 	/**
@@ -37,8 +35,7 @@ class ElfParser implements ElfDataIn {
 
 	@Override
 	public short readUnsignedByte() {
-		int val = fsFile.read();
-		if (val < 0) throw new ElfException("Trying to read outside file");
+		int val = fsFile.get() & 0xff;
 		return (short) val;
 	}
 
@@ -59,7 +56,9 @@ class ElfParser implements ElfDataIn {
 		int ch4 = readUnsignedByte();
 		int val = ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4));
 
-		if (elfFile.encoding == ElfFile.DATA_LSB) val = byteSwap(val);
+		if (elfFile.encoding == ElfFile.DATA_LSB) {
+			val = byteSwap(val);
+		}
 		return val;
 	}
 
@@ -77,7 +76,9 @@ class ElfParser implements ElfDataIn {
 		int val2 = ((ch5 << 24) + (ch6 << 16) + (ch7 << 8) + (ch8));
 
 		long val = ((long) (val1) << 32) + (val2 & 0xFFFFFFFFL);
-		if (elfFile.encoding == ElfFile.DATA_LSB) val = byteSwap(val);
+		if (elfFile.encoding == ElfFile.DATA_LSB) {
+			val = byteSwap(val);
+		}
 		return val;
 	}
 
@@ -116,8 +117,9 @@ class ElfParser implements ElfDataIn {
 		throw new ElfException("Cannot find segment for address " + Long.toHexString(address));
 	}
 
-	public int read(byte[] data) throws IOException {
-		return fsFile.read(data);
+	public int read(byte[] data) {
+		fsFile.get(data);
+		return data.length;
 	}
 
 }
