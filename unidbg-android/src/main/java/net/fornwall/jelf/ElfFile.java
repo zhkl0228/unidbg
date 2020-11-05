@@ -329,7 +329,7 @@ public final class ElfFile {
 	public String getInterpreter() throws IOException {
 		for (MemoizedObject<ElfSegment> programHeader : programHeaders) {
 			ElfSegment ph = programHeader.getValue();
-			if (ph.type == ElfSegment.PT_INTERP) return ph.getIntepreter();
+			if (ph.type == ElfSegment.PT_INTERP) return ph.getInterpreter();
 		}
 		return null;
 	}

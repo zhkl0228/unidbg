@@ -294,7 +294,7 @@ public class UnidbgPointer extends Pointer {
     public String getString(long offset, String encoding) {
         long addr = peer + offset;
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(0x40);
         while (true) {
             byte[] data = backend.mem_read(addr, 0x10);
             int length = data.length;

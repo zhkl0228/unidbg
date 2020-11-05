@@ -327,8 +327,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         setMMapBaseAddress(load_base + size);
 
         final List<MemRegion> regions = new ArrayList<>(5);
-        ArmExIdx armExIdx = null;
-        GnuEhFrameHeader ehFrameHeader = null;
+        MemoizedObject<ArmExIdx> armExIdx = null;
+        MemoizedObject<GnuEhFrameHeader> ehFrameHeader = null;
         for (int i = 0; i < elfFile.num_ph; i++) {
             ElfSegment ph = elfFile.getProgramHeader(i);
             switch (ph.type) {
@@ -340,7 +340,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
                     final long begin = load_base + ph.virtual_address;
                     Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName());
-                    pointer(begin).write(ph.getPtLoadData());
+                    ph.getPtLoadData().write(pointer(begin));
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
                     break;
@@ -349,7 +349,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     break;
                 case ElfSegment.PT_INTERP:
                     if (log.isDebugEnabled()) {
-                        log.debug("[" + libraryFile.getName() + "]interp=" + ph.getIntepreter());
+                        log.debug("[" + libraryFile.getName() + "]interp=" + ph.getInterpreter());
                     }
                     break;
                 case ElfSegment.PT_GNU_EH_FRAME:

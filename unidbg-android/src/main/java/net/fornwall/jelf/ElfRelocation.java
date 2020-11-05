@@ -47,8 +47,13 @@ public class ElfRelocation implements Cloneable {
         return offset;
     }
 
+    private ElfSymbol symbol;
+
     public ElfSymbol symbol() throws IOException {
-        return symtab.getELFSymbol(sym());
+        if (symbol == null) {
+            symbol = symtab.getELFSymbol(sym());
+        }
+        return symbol;
     }
 
     public int sym() {

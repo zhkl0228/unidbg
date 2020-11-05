@@ -2,7 +2,6 @@ package net.fornwall.jelf;
 
 import com.github.unidbg.Utils;
 import com.github.unidbg.utils.Inspector;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -30,13 +29,9 @@ public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRel
 
     private final boolean rela;
 
-    public AndroidRelocationIterator(int objectSize, SymbolLocator symtab, byte[] androidRelData, boolean rela) {
-        if (log.isDebugEnabled()) {
-            Inspector.inspect(androidRelData, "androidRelData hex=" + Hex.encodeHexString(androidRelData));
-        }
-
+    public AndroidRelocationIterator(int objectSize, SymbolLocator symtab, ByteBuffer buffer, boolean rela) {
         this.objectSize = objectSize;
-        this.buffer = ByteBuffer.wrap(androidRelData);
+        this.buffer = buffer;
         this.rela = rela;
         reloc_ = new ElfRelocation(objectSize, symtab);
 

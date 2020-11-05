@@ -11,10 +11,7 @@ import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
-import net.fornwall.jelf.ArmExIdx;
-import net.fornwall.jelf.ElfSymbol;
-import net.fornwall.jelf.GnuEhFrameHeader;
-import net.fornwall.jelf.SymbolLocator;
+import net.fornwall.jelf.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -77,12 +74,12 @@ public class LinuxModule extends Module {
     private final SymbolLocator dynsym;
     private final List<ModuleSymbol> unresolvedSymbol;
     public final List<InitFunction> initFunctionList;
-    public final ArmExIdx armExIdx;
-    public final GnuEhFrameHeader ehFrameHeader;
+    public final MemoizedObject<ArmExIdx> armExIdx;
+    public final MemoizedObject<GnuEhFrameHeader> ehFrameHeader;
 
     LinuxModule(long base, long size, String name, SymbolLocator dynsym,
                 List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
-                ArmExIdx armExIdx, GnuEhFrameHeader ehFrameHeader) {
+                MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader) {
         super(name, base, size, neededLibraries, regions);
 
         this.dynsym = dynsym;

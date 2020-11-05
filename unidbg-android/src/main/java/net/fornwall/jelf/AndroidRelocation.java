@@ -1,15 +1,16 @@
 package net.fornwall.jelf;
 
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 public class AndroidRelocation implements Iterable<MemoizedObject<ElfRelocation>> {
 
     private final ElfParser parser;
     private final SymbolLocator symtab;
-    private final byte[] androidRelData;
+    private final ByteBuffer androidRelData;
     private final boolean rela;
 
-    AndroidRelocation(ElfParser parser, SymbolLocator symtab, byte[] androidRelData, boolean rela) {
+    AndroidRelocation(ElfParser parser, SymbolLocator symtab, ByteBuffer androidRelData, boolean rela) {
         this.parser = parser;
         this.symtab = symtab;
         this.androidRelData = androidRelData;

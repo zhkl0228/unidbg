@@ -1,23 +1,29 @@
 package net.fornwall.jelf;
 
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+
+import java.nio.ByteBuffer;
+
 final class ElfStringTable {
 
 	/** The string table data. */
-	private final byte[] data;
+	private final ByteBuffer buffer;
 
 	/** Reads all the strings from [offset, length]. */
 	ElfStringTable(ElfParser parser, long offset, int length) throws ElfException {
 		parser.seek(offset);
-		data = new byte[length];
-		int bytesRead = parser.read(data);
-		if (bytesRead != length)
-			throw new ElfException("Error reading string table (read " + bytesRead + "bytes - expected to " + "read " + data.length + "bytes)");
+		buffer = parser.readBuffer(length);
 	}
 
+	private final ByteOutputStream baos = new ByteOutputStream(16);
+
 	String get(int index) {
-		int endPtr = index;
-		while (data[endPtr] != '\0')
-			endPtr++;
-		return new String(data, index, endPtr - index);
+		buffer.position(index);
+		baos.reset();
+		byte b;
+		while((b = buffer.get()) != 0) {
+			baos.write(b);
+		}
+		return baos.toString();
 	}
 }

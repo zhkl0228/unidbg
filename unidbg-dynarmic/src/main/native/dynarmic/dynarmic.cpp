@@ -722,8 +722,8 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
       fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return 3;
     }
-    if(dynarmic->page_table && (vaddr >> PAGE_BITS) < dynarmic->num_page_table_entries) {
-      dynarmic->page_table[vaddr >> PAGE_BITS] = NULL;
+    if(dynarmic->page_table && idx < dynarmic->num_page_table_entries) {
+      dynarmic->page_table[idx] = NULL;
     }
     t_memory_page page = kh_value(memory, k);
     int ret = munmap(page->addr, PAGE_SIZE);

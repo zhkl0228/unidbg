@@ -7,8 +7,11 @@ import com.github.unidbg.unwind.SimpleARMUnwinder;
 import net.fornwall.jelf.ArmExIdx;
 import net.fornwall.jelf.DwarfCursor;
 import net.fornwall.jelf.GnuEhFrameHeader;
+import net.fornwall.jelf.MemoizedObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.io.IOException;
 
 class AndroidARMUnwinder extends SimpleARMUnwinder {
 
@@ -23,18 +26,18 @@ class AndroidARMUnwinder extends SimpleARMUnwinder {
     protected Frame unw_step(Emulator<?> emulator, Frame frame) {
         try {
             LinuxModule module = (LinuxModule) emulator.getMemory().findModuleByAddress(this.context.ip);
-            GnuEhFrameHeader ehFrameHeader = module == null ? null : module.ehFrameHeader;
+            MemoizedObject<GnuEhFrameHeader> ehFrameHeader = module == null ? null : module.ehFrameHeader;
             if (ehFrameHeader != null) {
                 long fun = this.context.ip - module.base;
-                Frame ret = ehFrameHeader.dwarf_step(emulator, this, module, fun, context);
+                Frame ret = ehFrameHeader.getValue().dwarf_step(emulator, this, module, fun, context);
                 if (ret != null) {
                     return ret;
                 }
             }
-            ArmExIdx armExIdx = module == null ? null : module.armExIdx;
+            MemoizedObject<ArmExIdx> armExIdx = module == null ? null : module.armExIdx;
             if (armExIdx != null) {
                 long fun = this.context.ip - module.base;
-                return armExIdx.arm_exidx_step(emulator, this, module, fun, context);
+                return armExIdx.getValue().arm_exidx_step(emulator, this, module, fun, context);
             }
         } catch (RuntimeException exception) {
             Log log = LogFactory.getLog(GnuEhFrameHeader.class);
@@ -44,6 +47,8 @@ class AndroidARMUnwinder extends SimpleARMUnwinder {
             if (log.isDebugEnabled()) {
                 throw exception;
             }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
 
         return super.unw_step(emulator, frame);

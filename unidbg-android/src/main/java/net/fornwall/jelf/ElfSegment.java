@@ -2,7 +2,6 @@ package net.fornwall.jelf;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * Class corresponding to the Elf32_Phdr/Elf64_Phdr struct.
@@ -76,7 +75,7 @@ public class ElfSegment {
 	public final long alignment; // Elf32_Word
 
 	private MemoizedObject<String> ptInterpreter;
-	private MemoizedObject<byte[]> ptLoad;
+	private MemoizedObject<PtLoadData> ptLoad;
 	private MemoizedObject<GnuEhFrameHeader> ehFrameHeader;
 	private MemoizedObject<ElfDynamicStructure> dynamicStructure;
 	private MemoizedObject<ArmExIdx> arm_exidx;
@@ -138,13 +137,12 @@ public class ElfSegment {
 			};
 			break;
 		case PT_LOAD:
-			ptLoad = new MemoizedObject<byte[]>() {
+			ptLoad = new MemoizedObject<PtLoadData>() {
 				@Override
-				protected byte[] computeValue() throws ElfException {
+				protected PtLoadData computeValue() throws ElfException {
 					parser.seek(ElfSegment.this.offset);
-					byte[] buffer = new byte[(int) file_size];
-					parser.read(buffer);
-					return Arrays.copyOf(buffer, (int) mem_size);
+					ByteBuffer buffer = parser.readBuffer((int) file_size);
+					return new PtLoadData(buffer);
 				}
 			};
 			break;
@@ -238,11 +236,11 @@ public class ElfSegment {
 	}
 
 	/** Only for {@link #PT_INTERP} headers. */
-	public String getIntepreter() throws IOException {
+	public String getInterpreter() throws IOException {
 		return (ptInterpreter == null) ? null : ptInterpreter.getValue();
 	}
 
-	public byte[] getPtLoadData() throws IOException {
+	public PtLoadData getPtLoadData() throws IOException {
 		return ptLoad == null ? null : ptLoad.getValue();
 	}
 
@@ -250,11 +248,11 @@ public class ElfSegment {
 	    return dynamicStructure == null ? null : dynamicStructure.getValue();
     }
 
-    public GnuEhFrameHeader getEhFrameHeader() throws IOException {
-		return ehFrameHeader == null ? null : ehFrameHeader.getValue();
+    public MemoizedObject<GnuEhFrameHeader> getEhFrameHeader() {
+		return ehFrameHeader;
 	}
 
-    public ArmExIdx getARMExIdxData() throws IOException {
-		return arm_exidx == null ? null : arm_exidx.getValue();
+    public MemoizedObject<ArmExIdx> getARMExIdxData() {
+		return arm_exidx;
 	}
 }
