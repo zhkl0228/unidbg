@@ -1,7 +1,7 @@
 package net.fornwall.jelf;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
 final class ElfStringTable {
@@ -15,7 +15,7 @@ final class ElfStringTable {
 		buffer = parser.readBuffer(length);
 	}
 
-	private final ByteOutputStream baos = new ByteOutputStream(16);
+	private final ByteArrayOutputStream baos = new ByteArrayOutputStream(16);
 
 	String get(int index) {
 		buffer.position(index);
