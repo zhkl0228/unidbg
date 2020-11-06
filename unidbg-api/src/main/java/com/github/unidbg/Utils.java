@@ -142,4 +142,8 @@ public class Utils {
         }
     }
 
+    public static File getClassLocation(Class<?> clazz) {
+        return new File(clazz.getProtectionDomain().getCodeSource().getLocation().getPath());
+    }
+
 }

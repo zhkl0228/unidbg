@@ -235,12 +235,10 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     @Override
     public void hook_add_new(ReadHook callback, long begin, long end, Object user_data) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public void hook_add_new(WriteHook callback, long begin, long end, Object user_data) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

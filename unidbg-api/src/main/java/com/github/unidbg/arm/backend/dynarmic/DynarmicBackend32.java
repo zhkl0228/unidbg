@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend.dynarmic;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.DynarmicBackend;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -27,7 +28,7 @@ public class DynarmicBackend32 extends DynarmicBackend {
             emu_stop();
             return;
         }
-        interruptHookNotifier.notifyCallSVC(this);
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_SWI);
     }
 
     @Override

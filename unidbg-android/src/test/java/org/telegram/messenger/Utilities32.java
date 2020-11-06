@@ -96,14 +96,16 @@ public class Utilities32 extends AbstractJni {
     }
 
     private void pbkdf2() {
-        long start = System.currentTimeMillis();
         byte[] password = "123456".getBytes();
         byte[] salt = new byte[8];
         ByteArray dst = new ByteArray(vm, new byte[64]);
-        cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
-                vm.addLocalObject(new ByteArray(vm, salt)),
-                vm.addLocalObject(dst), 100000);
-        Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
+        for (int i = 0; i < 3; i++) {
+            long start = System.currentTimeMillis();
+            cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
+                    vm.addLocalObject(new ByteArray(vm, salt)),
+                    vm.addLocalObject(dst), 100000);
+            Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
     }
 
 }
