@@ -2,6 +2,7 @@
 #import "../frameworks.h"
 
 NSString *const CTRadioAccessTechnologyLTE = @"CTRadioAccessTechnologyLTE";
+NSString *const CTCallStateDisconnected = @"CTCallStateDisconnected";
 
 @interface CTCarrier : NSObject
 @property(nonatomic, assign) NSString *carrierName;

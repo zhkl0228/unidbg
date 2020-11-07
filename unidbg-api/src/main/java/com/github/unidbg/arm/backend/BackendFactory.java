@@ -10,6 +10,7 @@ public class BackendFactory {
         if (useDynarmic) {
             Backend backend = DynarmicBackend.tryInitialize(emulator, is64Bit);
             if (backend != null) {
+                Dynarmic.onBackendInitialized();
                 return backend;
             } else if (Dynarmic.isForceUseDynarmic()) {
                 throw new IllegalStateException("Initialize dynarmic backend failed");

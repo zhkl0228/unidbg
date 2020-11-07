@@ -16,6 +16,10 @@ public class Dynarmic implements Closeable {
         return Boolean.parseBoolean(System.getProperty(USE_DYNARMIC_BACKEND_KEY));
     }
 
+    public static void onBackendInitialized() {
+        System.setProperty(USE_DYNARMIC_BACKEND_KEY, "false");
+    }
+
     public static boolean isForceUseDynarmic() {
         return Boolean.parseBoolean(System.getProperty(FORCE_USE_DYNARMIC_KEY));
     }

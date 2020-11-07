@@ -2573,6 +2573,37 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 4808: // vm_read_overwrite
+            {
+                VmReadOverwriteRequest args = new VmReadOverwriteRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_read_overwrite args=" + args + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                }
+
+                byte[] data = backend.mem_read(args.address, args.size);
+                emulator.getMemory().pointer(args.data).write(data);
+
+                VmReadOverwriteReply reply = new VmReadOverwriteReply(request);
+                reply.unpack();
+
+                header.msgh_bits &= 0xff;
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 0;
+                reply.NDR = args.NDR;
+                reply.outSize = args.size;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_read_overwrite reply=" + reply + ", header=" + header);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             case 216: // host_statistics
                 if (host_statistics(request, header)) {
                     return MACH_MSG_SUCCESS;
