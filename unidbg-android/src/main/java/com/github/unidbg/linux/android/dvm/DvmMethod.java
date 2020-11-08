@@ -222,12 +222,8 @@ public class DvmMethod extends Hashable {
     }
 
     DvmObject<?> newObjectV(VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("newObjectV signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).newObjectV(vm, dvmClass, signature, vaList);
+        return checkJni(vm, dvmClass).newObjectV(vm, dvmClass, this, vaList);
     }
 
     int newObject(VarArg varArg) {

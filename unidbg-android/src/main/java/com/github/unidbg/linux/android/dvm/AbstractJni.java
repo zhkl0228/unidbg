@@ -452,6 +452,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
+        return newObjectV(vm, dvmClass, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
     public DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         switch (signature) {
             case "java/io/ByteArrayInputStream-><init>([B)V": {

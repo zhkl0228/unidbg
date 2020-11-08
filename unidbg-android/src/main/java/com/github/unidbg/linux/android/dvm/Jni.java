@@ -27,6 +27,7 @@ public interface Jni {
     DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
     DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
+    DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList);
     DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
     DvmObject<?> allocObject(BaseVM vm, DvmClass dvmClass, String signature);
