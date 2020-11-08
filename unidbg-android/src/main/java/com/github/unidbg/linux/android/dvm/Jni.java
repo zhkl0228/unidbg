@@ -40,6 +40,7 @@ public interface Jni {
 
     boolean callBooleanMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);
 
+    boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
     boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
     int callIntMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);

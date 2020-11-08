@@ -403,6 +403,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        return callBooleanMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
     public boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "java/util/Enumeration->hasMoreElements()Z":

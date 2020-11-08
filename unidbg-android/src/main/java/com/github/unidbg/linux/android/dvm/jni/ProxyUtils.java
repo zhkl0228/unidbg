@@ -158,8 +158,14 @@ class ProxyUtils {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, varArg);
-        Method method = clazz.getDeclaredMethod(dvmMethod.getMethodName(), classes.toArray(new Class[0]));
-        return new ProxyMethod(method, args.toArray());
+        Class<?>[] types = classes.toArray(new Class[0]);
+        try {
+            Method method = clazz.getDeclaredMethod(dvmMethod.getMethodName(), types);
+            return new ProxyMethod(method, args.toArray());
+        } catch (NoSuchMethodException e) {
+            Method method = clazz.getMethod(dvmMethod.getMethodName(), types);
+            return new ProxyMethod(method, args.toArray());
+        }
     }
 
     static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VaList vaList) throws NoSuchMethodException {
@@ -170,8 +176,14 @@ class ProxyUtils {
         if (clazz == UUID.class && "createString".equals(methodName)) {
             methodName = "toString";
         }
-        Method method = clazz.getDeclaredMethod(methodName, classes.toArray(new Class[0]));
-        return new ProxyMethod(method, args.toArray());
+        Class<?>[] types = classes.toArray(new Class[0]);
+        try {
+            Method method = clazz.getDeclaredMethod(methodName, types);
+            return new ProxyMethod(method, args.toArray());
+        } catch (NoSuchMethodException e) {
+            Method method = clazz.getMethod(methodName, types);
+            return new ProxyMethod(method, args.toArray());
+        }
     }
 
     static ProxyField findField(Class<?> clazz, DvmField dvmField) throws NoSuchFieldException {

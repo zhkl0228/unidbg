@@ -22,7 +22,7 @@ class ProxyJni extends JniFunction {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
             ProxyCall proxyCall = ProxyUtils.findConstructor(clazz, dvmMethod, varArg);
             Object obj = proxyCall.call(null);
-            return ProxyDvmObject.createDvmObject(vm, obj);
+            return ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             log.warn("newObject", e);
         }
@@ -36,7 +36,7 @@ class ProxyJni extends JniFunction {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
             ProxyCall proxyCall = ProxyUtils.findConstructor(clazz, dvmMethod, vaList);
             Object obj = proxyCall.call(null);
-            return ProxyDvmObject.createDvmObject(vm, obj);
+            return ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             log.warn("newObjectV", e);
         }
@@ -50,7 +50,7 @@ class ProxyJni extends JniFunction {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
             ProxyCall proxyCall = ProxyUtils.findMethod(clazz, dvmMethod, varArg);
             Object obj = proxyCall.call(null);
-            return obj == null ? null : ProxyDvmObject.createDvmObject(vm, obj);
+            return obj == null ? null : ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             log.warn("callStaticObjectMethod", e);
         }
@@ -76,7 +76,7 @@ class ProxyJni extends JniFunction {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
             ProxyCall proxyCall = ProxyUtils.findMethod(clazz, dvmMethod, vaList);
             Object obj = proxyCall.call(null);
-            return obj == null ? null : ProxyDvmObject.createDvmObject(vm, obj);
+            return obj == null ? null : ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             log.warn("callStaticObjectMethodV", e);
         }
@@ -105,7 +105,7 @@ class ProxyJni extends JniFunction {
                 throw new IllegalStateException("obj is null: " + dvmObject);
             }
             Object obj = proxyCall.call(thisObj);
-            return obj == null ? null : ProxyDvmObject.createDvmObject(vm, obj);
+            return obj == null ? null : ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             log.warn("callObjectMethod", e);
         }
@@ -130,6 +130,23 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
+            ProxyCall proxyCall = ProxyUtils.findMethod(clazz, dvmMethod, vaList);
+            Object thisObj = dvmObject.getValue();
+            if (thisObj == null) {
+                throw new IllegalStateException("obj is null: " + dvmObject);
+            }
+            Object obj = proxyCall.call(thisObj);
+            return (Boolean) obj;
+        } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
+            log.warn("callBooleanMethodV", e);
+        }
+        return super.callBooleanMethodV(vm, dvmObject, dvmMethod, vaList);
+    }
+
+    @Override
     public DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
@@ -139,7 +156,7 @@ class ProxyJni extends JniFunction {
                 throw new IllegalStateException("obj is null: " + dvmObject);
             }
             Object obj = proxyCall.call(thisObj);
-            return obj == null ? null : ProxyDvmObject.createDvmObject(vm, obj);
+            return obj == null ? null : ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
             log.warn("callObjectMethodV", e);
         }
@@ -157,7 +174,7 @@ class ProxyJni extends JniFunction {
                 throw new IllegalStateException("obj is null: " + dvmObject);
             }
             Object obj = field.get(thisObj);
-            return obj == null ? null : ProxyDvmObject.createDvmObject(vm, obj);
+            return obj == null ? null : ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             log.warn("getObjectField: " + dvmField, e);
         }
@@ -188,7 +205,7 @@ class ProxyJni extends JniFunction {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
             ProxyField field = ProxyUtils.findField(clazz, dvmField);
             Object obj = field.get(null);
-            return obj == null ? null : ProxyDvmObject.createDvmObject(vm, obj);
+            return obj == null ? null : ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             log.warn("getStaticObjectField", e);
         }

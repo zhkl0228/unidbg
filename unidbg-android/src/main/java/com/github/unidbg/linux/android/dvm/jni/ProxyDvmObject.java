@@ -1,14 +1,11 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
-import com.github.unidbg.linux.android.dvm.BaseVM;
-import com.github.unidbg.linux.android.dvm.DvmClass;
-import com.github.unidbg.linux.android.dvm.DvmObject;
-import com.github.unidbg.linux.android.dvm.StringObject;
+import com.github.unidbg.linux.android.dvm.*;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
 
-class ProxyDvmObject extends DvmObject<Object> {
+public class ProxyDvmObject extends DvmObject<Object> {
 
-    private static DvmClass getObjectType(BaseVM vm, Class<?> clazz) {
+    private static DvmClass getObjectType(VM vm, Class<?> clazz) {
         Class<?> superClass = clazz.getSuperclass();
         DvmClass[] interfaces = new DvmClass[clazz.getInterfaces().length + (superClass == null ? 0 : 1)];
         int i = 0;
@@ -21,7 +18,7 @@ class ProxyDvmObject extends DvmObject<Object> {
         return vm.resolveClass(clazz.getName().replace('.', '/'), interfaces);
     }
 
-    static DvmObject<?> createDvmObject(BaseVM vm, Object value) {
+    public static DvmObject<?> createObject(VM vm, Object value) {
         if (value instanceof String) {
             return new StringObject(vm, (String) value);
         }
@@ -32,7 +29,7 @@ class ProxyDvmObject extends DvmObject<Object> {
         return new ProxyDvmObject(vm, value);
     }
 
-    private ProxyDvmObject(BaseVM vm, Object value) {
+    private ProxyDvmObject(VM vm, Object value) {
         super(getObjectType(vm, value.getClass()), value);
     }
 
