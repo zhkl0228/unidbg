@@ -87,6 +87,7 @@ public interface Jni {
     void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, double value);
     void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, String signature, double value);
 
+    void setLongField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, long value);
     void setLongField(BaseVM vm, DvmObject<?> dvmObject, String signature, long value);
 
     void setObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, DvmObject<?> value);
