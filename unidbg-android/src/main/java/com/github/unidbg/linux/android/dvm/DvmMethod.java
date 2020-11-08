@@ -168,12 +168,8 @@ public class DvmMethod extends Hashable {
     }
 
     long callStaticLongMethodV(VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticLongMethodV signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticLongMethodV(vm, dvmClass, signature, vaList);
+        return checkJni(vm, dvmClass).callStaticLongMethodV(vm, dvmClass, this, vaList);
     }
 
     int CallStaticBooleanMethod(VarArg varArg) {

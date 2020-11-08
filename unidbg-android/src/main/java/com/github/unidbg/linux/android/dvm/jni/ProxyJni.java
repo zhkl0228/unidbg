@@ -71,6 +71,18 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmClass.getName());
+            ProxyCall proxyCall = ProxyUtils.findMethod(clazz, dvmMethod, vaList);
+            return (Long) proxyCall.call(null);
+        } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
+            log.warn("callStaticLongMethodV", e);
+        }
+        return super.callStaticLongMethodV(vm, dvmClass, dvmMethod, vaList);
+    }
+
+    @Override
     public DvmObject<?> callObjectMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());

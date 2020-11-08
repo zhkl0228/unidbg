@@ -373,6 +373,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
+        return callStaticLongMethodV(vm, dvmClass, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
     public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new UnsupportedOperationException(signature);
     }
