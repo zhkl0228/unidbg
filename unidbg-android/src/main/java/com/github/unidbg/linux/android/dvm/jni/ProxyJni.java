@@ -52,7 +52,7 @@ class ProxyJni extends JniFunction {
             proxyCall.call(null);
             return;
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
-            log.warn("callStaticObjectMethod", e);
+            log.warn("callStaticVoidMethodV", e);
         }
         super.callStaticVoidMethodV(vm, dvmClass, dvmMethod, vaList);
     }
@@ -72,4 +72,18 @@ class ProxyJni extends JniFunction {
         return super.getStaticObjectField(vm, dvmClass, dvmField);
     }
 
+    @Override
+    public int getStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmClass.getName());
+            Field field = clazz.getField(dvmField.getFieldName());
+            field.setAccessible(true);
+            Object obj = field.get(null);
+            return (Integer) obj;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("getStaticIntField", e);
+        }
+
+        return super.getStaticIntField(vm, dvmClass, dvmField);
+    }
 }

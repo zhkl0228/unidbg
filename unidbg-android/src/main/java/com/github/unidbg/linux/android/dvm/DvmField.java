@@ -39,12 +39,8 @@ public class DvmField extends Hashable {
     }
 
     int getStaticIntField() {
-        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
-        if (log.isDebugEnabled()) {
-            log.debug("getStaticIntField dvmClass=" + dvmClass + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).getStaticIntField(vm, dvmClass, signature);
+        return checkJni(vm, dvmClass).getStaticIntField(vm, dvmClass, this);
     }
 
     DvmObject<?> getObjectField(DvmObject<?> dvmObject) {

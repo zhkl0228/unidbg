@@ -53,6 +53,7 @@ public interface Jni {
 
     DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
+    int getStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature);
 
     DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
