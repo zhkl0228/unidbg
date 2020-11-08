@@ -18,10 +18,12 @@ public interface Jni {
 
     long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
+    DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
     DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
     DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
 
+    DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
     DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
     DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList);
@@ -52,6 +54,7 @@ public interface Jni {
 
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature);
 
+    DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
     DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature);
 
     boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature);

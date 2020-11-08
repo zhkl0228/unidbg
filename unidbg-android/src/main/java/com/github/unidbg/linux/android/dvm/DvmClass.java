@@ -55,8 +55,7 @@ public class DvmClass extends DvmObject<String> {
             log.debug("allocObject signature=" + signature);
         }
         BaseVM vm = this.vm;
-        checkJni(vm);
-        return vm.jni.allocObject(vm, this, signature);
+        return checkJni(vm, this).allocObject(vm, this, signature);
     }
 
     private final Map<Integer, DvmMethod> staticMethodMap = new HashMap<>();
@@ -80,8 +79,7 @@ public class DvmClass extends DvmObject<String> {
         if (log.isDebugEnabled()) {
             log.debug("getStaticMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
-        checkJni(vm);
-        if (vm.jni.acceptMethod(this, signature, true)) {
+        if (checkJni(vm, this).acceptMethod(this, signature, true)) {
             staticMethodMap.put(hash, new DvmMethod(this, methodName, args, true));
             return hash;
         } else {
