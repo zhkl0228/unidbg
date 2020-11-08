@@ -10,9 +10,14 @@ class ProxyField {
         this.field = field;
     }
 
-    public Object get(Object thisObj) throws IllegalAccessException {
+    final Object get(Object thisObj) throws IllegalAccessException {
         field.setAccessible(true);
         return field.get(thisObj);
+    }
+
+    final long getLong(Object thisObj) throws IllegalAccessException {
+        field.setAccessible(true);
+        return field.getLong(thisObj);
     }
 
 }

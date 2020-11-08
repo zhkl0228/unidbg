@@ -403,6 +403,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public long getLongField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        return getLongField(vm, dvmObject, dvmField.getSignature());
+    }
+
+    @Override
     public long getLongField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
         throw new UnsupportedOperationException(signature);
     }

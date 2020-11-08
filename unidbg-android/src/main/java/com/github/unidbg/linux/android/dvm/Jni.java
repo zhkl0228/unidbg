@@ -65,6 +65,7 @@ public interface Jni {
 
     int getIntField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 
+    long getLongField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
     long getLongField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 
     DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
