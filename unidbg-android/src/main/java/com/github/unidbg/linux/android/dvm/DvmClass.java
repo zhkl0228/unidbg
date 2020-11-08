@@ -86,7 +86,9 @@ public class DvmClass extends DvmObject<Class<?>> {
             log.debug("getStaticMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         if (checkJni(vm, this).acceptMethod(this, signature, true)) {
-            staticMethodMap.put(hash, new DvmMethod(this, methodName, args, true));
+            if (!staticMethodMap.containsKey(hash)) {
+                staticMethodMap.put(hash, new DvmMethod(this, methodName, args, true));
+            }
             return hash;
         } else {
             return 0;
@@ -115,7 +117,9 @@ public class DvmClass extends DvmObject<Class<?>> {
             log.debug("getMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptMethod(this, signature, false)) {
-            methodMap.put(hash, new DvmMethod(this, methodName, args, false));
+            if (!methodMap.containsKey(hash)) {
+                methodMap.put(hash, new DvmMethod(this, methodName, args, false));
+            }
             return hash;
         } else {
             return 0;
@@ -144,7 +148,9 @@ public class DvmClass extends DvmObject<Class<?>> {
             log.debug("getFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptField(this, signature, false)) {
-            fieldMap.put(hash, new DvmField(this, fieldName, fieldType));
+            if (!fieldMap.containsKey(hash)) {
+                fieldMap.put(hash, new DvmField(this, fieldName, fieldType, false));
+            }
             return hash;
         } else {
             return 0;
@@ -173,7 +179,9 @@ public class DvmClass extends DvmObject<Class<?>> {
             log.debug("getStaticFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptField(this, signature, true)) {
-            staticFieldMap.put(hash, new DvmField(this, fieldName, fieldType));
+            if (!staticFieldMap.containsKey(hash)) {
+                staticFieldMap.put(hash, new DvmField(this, fieldName, fieldType, true));
+            }
             return hash;
         } else {
             return 0;

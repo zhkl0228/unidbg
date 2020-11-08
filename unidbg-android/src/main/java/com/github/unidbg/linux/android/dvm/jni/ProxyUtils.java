@@ -134,7 +134,7 @@ class ProxyUtils {
         }
     }
 
-    private static boolean matchesTypes(Class<?>[] parameterTypes, Class<?>[] types) {
+    private static boolean matchesTypes(Class<?>[] parameterTypes, Class<?>[] types, boolean strict) {
         if (parameterTypes.length != types.length) {
             return false;
         }
@@ -143,38 +143,38 @@ class ProxyUtils {
                 continue;
             }
 
-            if (types[i] != parameterTypes[i]) {
-                return false;
+            if (strict) {
+                if (parameterTypes[i] != types[i]) {
+                    return false;
+                }
+            } else {
+                if (!parameterTypes[i].isAssignableFrom(types[i])) {
+                    return false;
+                }
             }
         }
         return true;
     }
 
     private static Method matchMethodTypes(Class<?> clazz, String methodName, Class<?>[] types) throws NoSuchMethodException {
-        boolean hasNull = false;
-        for (Class<?> cc : types) {
-            if (cc == null) {
-                hasNull = true;
-                break;
-            }
-        }
-        if (!hasNull) {
-            return null;
-        }
-
-        Set<Method> methods = new HashSet<>();
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (methodName.equals(method.getName()) && method.getParameterTypes().length == types.length) {
+        List<Method> methods = new ArrayList<>();
+        for (Method method : clazz.getMethods()) {
+            if (method.getParameterTypes().length == types.length && methodName.equals(method.getName())) {
                 methods.add(method);
             }
         }
-        for (Method method : clazz.getMethods()) {
-            if (methodName.equals(method.getName()) && method.getParameterTypes().length == types.length) {
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.getParameterTypes().length == types.length && methodName.equals(method.getName())) {
                 methods.add(method);
             }
         }
         for (Method method : methods) {
-            if (matchesTypes(method.getParameterTypes(), types)) {
+            if (matchesTypes(method.getParameterTypes(), types, true)) {
+                return method;
+            }
+        }
+        for (Method method : methods) {
+            if (matchesTypes(method.getParameterTypes(), types, false)) {
                 return method;
             }
         }
@@ -182,19 +182,13 @@ class ProxyUtils {
     }
 
     private static Constructor<?> matchConstructorTypes(Class<?> clazz, Class<?>[] types) throws NoSuchMethodException {
-        boolean hasNull = false;
-        for (Class<?> cc : types) {
-            if (cc == null) {
-                hasNull = true;
-                break;
+        for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
+            if (matchesTypes(constructor.getParameterTypes(), types, true)) {
+                return constructor;
             }
         }
-        if (!hasNull) {
-            return null;
-        }
-
         for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-            if (matchesTypes(constructor.getParameterTypes(), types)) {
+            if (matchesTypes(constructor.getParameterTypes(), types, false)) {
                 return constructor;
             }
         }
@@ -208,11 +202,12 @@ class ProxyUtils {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, varArg);
+        if (dvmMethod.member != null) {
+            return new ProxyConstructor((Constructor<?>) dvmMethod.member, args.toArray());
+        }
         Class<?>[] types = classes.toArray(new Class<?>[0]);
         Constructor<?> constructor = matchConstructorTypes(clazz, types);
-        if (constructor == null) {
-            constructor = clazz.getDeclaredConstructor(types);
-        }
+        dvmMethod.setMember(constructor);
         return new ProxyConstructor(constructor, args.toArray());
     }
 
@@ -223,11 +218,12 @@ class ProxyUtils {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, vaList);
+        if (dvmMethod.member != null) {
+            return new ProxyConstructor((Constructor<?>) dvmMethod.member, args.toArray());
+        }
         Class<?>[] types = classes.toArray(new Class<?>[0]);
         Constructor<?> constructor = matchConstructorTypes(clazz, types);
-        if (constructor == null) {
-            constructor = clazz.getDeclaredConstructor(types);
-        }
+        dvmMethod.setMember(constructor);
         return new ProxyConstructor(constructor, args.toArray());
     }
 
@@ -235,49 +231,40 @@ class ProxyUtils {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, varArg);
+        if (dvmMethod.member != null) {
+            return new ProxyMethod((Method) dvmMethod.member, args.toArray());
+        }
         Class<?>[] types = classes.toArray(new Class[0]);
-        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName() , types);
-        if (method != null) {
-            return new ProxyMethod(method, args.toArray());
-        }
-        try {
-            method = clazz.getDeclaredMethod(dvmMethod.getMethodName(), types);
-            return new ProxyMethod(method, args.toArray());
-        } catch (NoSuchMethodException e) {
-            method = clazz.getMethod(dvmMethod.getMethodName(), types);
-            return new ProxyMethod(method, args.toArray());
-        }
+        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types);
+        dvmMethod.setMember(method);
+        return new ProxyMethod(method, args.toArray());
     }
 
     static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VaList vaList) throws NoSuchMethodException {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, vaList);
-        String methodName = dvmMethod.getMethodName();
-        if (clazz == UUID.class && "createString".equals(methodName)) {
-            methodName = "toString";
+        if (dvmMethod.member != null) {
+            return new ProxyMethod((Method) dvmMethod.member, args.toArray());
         }
         Class<?>[] types = classes.toArray(new Class[0]);
-        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName() , types);
-        if (method != null) {
-            return new ProxyMethod(method, args.toArray());
-        }
-        try {
-            method = clazz.getDeclaredMethod(methodName, types);
-            return new ProxyMethod(method, args.toArray());
-        } catch (NoSuchMethodException e) {
-            method = clazz.getMethod(methodName, types);
-            return new ProxyMethod(method, args.toArray());
-        }
+        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types);
+        dvmMethod.setMember(method);
+        return new ProxyMethod(method, args.toArray());
     }
 
     static ProxyField findField(Class<?> clazz, DvmField dvmField) throws NoSuchFieldException {
+        if (dvmField.filed != null) {
+            return new ProxyField(dvmField.filed);
+        }
         String fieldName = dvmField.getFieldName();
         try {
-            Field field = clazz.getDeclaredField(fieldName);
+            Field field = clazz.getField(fieldName);
+            dvmField.setFiled(field);
             return new ProxyField(field);
         } catch (NoSuchFieldException e) {
-            Field field = clazz.getField(fieldName);
+            Field field = clazz.getDeclaredField(fieldName);
+            dvmField.setFiled(field);
             return new ProxyField(field);
         }
     }

@@ -3,6 +3,9 @@ package com.github.unidbg.linux.android.dvm;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 public class DvmField extends Hashable {
 
     private static final Log log = LogFactory.getLog(DvmField.class);
@@ -10,11 +13,13 @@ public class DvmField extends Hashable {
     private final DvmClass dvmClass;
     final String fieldName;
     final String fieldType;
+    private final boolean isStatic;
 
-    DvmField(DvmClass dvmClass, String fieldName, String fieldType) {
+    DvmField(DvmClass dvmClass, String fieldName, String fieldType, boolean isStatic) {
         this.dvmClass = dvmClass;
         this.fieldName = fieldName;
         this.fieldType = fieldType;
+        this.isStatic = isStatic;
     }
 
     public DvmClass getDvmClass() {
@@ -132,6 +137,15 @@ public class DvmField extends Hashable {
         }
         BaseVM vm = this.dvmClass.vm;
         return checkJni(vm, dvmClass).getStaticLongField(this.dvmClass.vm, dvmClass, signature);
+    }
+
+    public Field filed;
+
+    public void setFiled(Field filed) {
+        if (Modifier.isStatic(filed.getModifiers()) ^ isStatic) {
+            throw new IllegalStateException(toString());
+        }
+        this.filed = filed;
     }
 
     @Override

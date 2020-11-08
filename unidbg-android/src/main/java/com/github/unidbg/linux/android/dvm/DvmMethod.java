@@ -3,6 +3,10 @@ package com.github.unidbg.linux.android.dvm;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
+import java.util.UUID;
+
 public class DvmMethod extends Hashable {
 
     private static final Log log = LogFactory.getLog(DvmMethod.class);
@@ -24,6 +28,10 @@ public class DvmMethod extends Hashable {
     }
 
     public String getMethodName() {
+        // bug fix for android UUID.createString
+        if (UUID.class.getName().equals(dvmClass.getName()) && "createString".equals(methodName)) {
+            return "toString";
+        }
         return methodName;
     }
 
@@ -296,6 +304,17 @@ public class DvmMethod extends Hashable {
             isArray = false;
         }
         return sb.toString();
+    }
+
+    public Member member;
+
+    public void setMember(Member member) {
+        if (Modifier.isStatic(member.getModifiers()) ^ isStatic) {
+            throw new IllegalStateException(toString());
+        }
+        if (member.getDeclaringClass().getName().equals(dvmClass.getName())) {
+            this.member = member;
+        }
     }
 
     @Override
