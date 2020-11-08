@@ -339,6 +339,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        return callIntMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
     public int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "android/os/Bundle->getInt(Ljava/lang/String;)I":
