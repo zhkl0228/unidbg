@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 class ProxyUtils {
 
@@ -165,16 +166,21 @@ class ProxyUtils {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, vaList);
-        Method method = clazz.getDeclaredMethod(dvmMethod.getMethodName(), classes.toArray(new Class[0]));
+        String methodName = dvmMethod.getMethodName();
+        if (clazz == UUID.class && "createString".equals(methodName)) {
+            methodName = "toString";
+        }
+        Method method = clazz.getDeclaredMethod(methodName, classes.toArray(new Class[0]));
         return new ProxyMethod(method, args.toArray());
     }
 
     static ProxyField findField(Class<?> clazz, DvmField dvmField) throws NoSuchFieldException {
+        String fieldName = dvmField.getFieldName();
         try {
-            Field field = clazz.getDeclaredField(dvmField.getFieldName());
+            Field field = clazz.getDeclaredField(fieldName);
             return new ProxyField(field);
         } catch (NoSuchFieldException e) {
-            Field field = clazz.getField(dvmField.getFieldName());
+            Field field = clazz.getField(fieldName);
             return new ProxyField(field);
         }
     }

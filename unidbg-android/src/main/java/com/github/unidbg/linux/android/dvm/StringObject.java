@@ -12,8 +12,6 @@ public class StringObject extends DvmObject<String> {
         }
     }
 
-    MemoryBlock memoryBlock;
-
     @Override
     public String toString() {
         if (value == null) {

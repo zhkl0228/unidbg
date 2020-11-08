@@ -1575,7 +1575,7 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _GetStringChars = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                StringObject string = getObject(UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1).toIntPeer());
+                DvmObject<String> string = getObject(UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1).toIntPeer());
                 Pointer isCopy = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);
@@ -1601,7 +1601,7 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _ReleaseStringChars = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                StringObject string = getObject(UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1).toIntPeer());
+                DvmObject<String> string = getObject(UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1).toIntPeer());
                 Pointer pointer = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));

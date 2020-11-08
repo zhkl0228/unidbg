@@ -148,6 +148,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        return callObjectMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
     public DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         switch (signature) {
             case "android/app/Application->getAssets()Landroid/content/res/AssetManager;":

@@ -2,6 +2,7 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 
 import java.util.ArrayList;
@@ -113,6 +114,16 @@ public class DvmObject<T> extends Hashable {
             }
         }
         return Module.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
+    }
+
+    protected MemoryBlock memoryBlock;
+
+    public void setMemoryBlock(MemoryBlock memoryBlock) {
+        this.memoryBlock = memoryBlock;
+    }
+
+    public MemoryBlock getMemoryBlock() {
+        return memoryBlock;
     }
 
     @Override
