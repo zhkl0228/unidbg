@@ -67,6 +67,7 @@ public interface Jni {
     DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
     DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature);
 
+    boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
     boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 
     int getIntField(BaseVM vm, DvmObject<?> dvmObject, String signature);

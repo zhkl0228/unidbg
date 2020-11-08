@@ -20,4 +20,9 @@ class ProxyField {
         return field.getLong(thisObj);
     }
 
+    final boolean getBoolean(Object thisObj) throws IllegalAccessException {
+        field.setAccessible(true);
+        return field.getBoolean(thisObj);
+    }
+
 }
