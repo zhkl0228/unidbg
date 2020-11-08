@@ -4,7 +4,6 @@ import com.github.unidbg.linux.android.dvm.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 class ProxyJni extends JniFunction {
@@ -89,11 +88,28 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField);
+            Object thisObj = dvmObject.getValue();
+            if (thisObj == null) {
+                throw new IllegalStateException("obj is null: " + dvmObject);
+            }
+            Object obj = field.get(thisObj);
+            return obj == null ? null : new ProxyDvmObject(vm, obj);
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("getObjectField: " + dvmField, e);
+        }
+
+        return super.getObjectField(vm, dvmObject, dvmField);
+    }
+
+    @Override
     public DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
-            Field field = clazz.getField(dvmField.getFieldName());
-            field.setAccessible(true);
+            ProxyField field = ProxyUtils.findField(clazz, dvmField);
             Object obj = field.get(null);
             return obj == null ? null : new ProxyDvmObject(vm, obj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
@@ -107,8 +123,7 @@ class ProxyJni extends JniFunction {
     public int getStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
-            Field field = clazz.getField(dvmField.getFieldName());
-            field.setAccessible(true);
+            ProxyField field = ProxyUtils.findField(clazz, dvmField);
             Object obj = field.get(null);
             return (Integer) obj;
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {

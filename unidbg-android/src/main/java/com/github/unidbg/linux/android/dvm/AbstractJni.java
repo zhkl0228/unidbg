@@ -77,6 +77,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        return getObjectField(vm, dvmObject, dvmField.getSignature());
+    }
+
+    @Override
     public DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
         if ("android/content/pm/PackageInfo->signatures:[Landroid/content/pm/Signature;".equals(signature) &&
                 dvmObject instanceof PackageInfo) {

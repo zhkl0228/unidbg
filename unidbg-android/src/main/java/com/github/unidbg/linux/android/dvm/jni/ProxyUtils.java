@@ -3,6 +3,7 @@ package com.github.unidbg.linux.android.dvm.jni;
 import com.github.unidbg.linux.android.dvm.*;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,6 +167,16 @@ class ProxyUtils {
         parseMethodArgs(dvmMethod, classes, args, vaList);
         Method method = clazz.getDeclaredMethod(dvmMethod.getMethodName(), classes.toArray(new Class[0]));
         return new ProxyMethod(method, args.toArray());
+    }
+
+    static ProxyField findField(Class<?> clazz, DvmField dvmField) throws NoSuchFieldException {
+        try {
+            Field field = clazz.getDeclaredField(dvmField.getFieldName());
+            return new ProxyField(field);
+        } catch (NoSuchFieldException e) {
+            Field field = clazz.getField(dvmField.getFieldName());
+            return new ProxyField(field);
+        }
     }
 
 }
