@@ -36,6 +36,7 @@ public interface Jni {
 
     void callVoidMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);
 
+    void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
     void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
     boolean callBooleanMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);

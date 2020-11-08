@@ -1,5 +1,7 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
+import unicorn.UnicornException;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -14,8 +16,16 @@ class ProxyMethod implements ProxyCall {
     }
 
     @Override
-    public Object call(Object obj) throws IllegalAccessException, InvocationTargetException, InstantiationException {
-        method.setAccessible(true);
-        return method.invoke(obj, args);
+    public Object call(Object obj) throws IllegalAccessException, InvocationTargetException {
+        try {
+            method.setAccessible(true);
+            return method.invoke(obj, args);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getTargetException();
+            if (cause instanceof UnicornException) {
+                throw (UnicornException) cause;
+            }
+            throw e;
+        }
     }
 }

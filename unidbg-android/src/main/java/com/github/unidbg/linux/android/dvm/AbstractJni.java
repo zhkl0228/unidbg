@@ -641,6 +641,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        callVoidMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
     public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         throw new UnsupportedOperationException(signature);
     }
