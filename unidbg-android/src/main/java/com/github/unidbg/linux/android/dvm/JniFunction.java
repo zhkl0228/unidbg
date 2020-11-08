@@ -263,6 +263,11 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public void setObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, DvmObject<?> value) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
     public void setObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature, DvmObject<?> value) {
         throw new UnsupportedOperationException(signature);
     }
