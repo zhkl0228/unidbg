@@ -233,6 +233,23 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public void setIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, int value) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField);
+            Object thisObj = dvmObject.getValue();
+            if (thisObj == null) {
+                throw new IllegalStateException("obj is null: " + dvmObject);
+            }
+            field.setInt(thisObj, value);
+            return;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("setIntField: " + dvmField, e);
+        }
+        super.setIntField(vm, dvmObject, dvmField, value);
+    }
+
+    @Override
     public DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());

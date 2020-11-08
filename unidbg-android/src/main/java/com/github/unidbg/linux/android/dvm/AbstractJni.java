@@ -535,6 +535,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public void setIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, int value) {
+        setIntField(vm, dvmObject, dvmField.getSignature(), value);
+    }
+
+    @Override
     public void setIntField(BaseVM vm, DvmObject<?> dvmObject, String signature, int value) {
         throw new UnsupportedOperationException(signature);
     }

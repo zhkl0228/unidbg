@@ -80,6 +80,7 @@ public interface Jni {
 
     void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature, boolean value);
 
+    void setIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, int value);
     void setIntField(BaseVM vm, DvmObject<?> dvmObject, String signature, int value);
 
     void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, String signature, double value);
