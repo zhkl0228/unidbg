@@ -63,6 +63,11 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new UnsupportedOperationException(signature);
     }

@@ -41,12 +41,8 @@ public class DvmMethod extends Hashable {
     }
 
     DvmObject<?>  callStaticObjectMethodV(VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("CallStaticObjectMethodV signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticObjectMethodV(vm, dvmClass, signature, vaList);
+        return checkJni(vm, dvmClass).callStaticObjectMethodV(vm, dvmClass, this, vaList);
     }
 
     DvmObject<?>  callStaticObjectMethodA(VaList vaList) {

@@ -116,16 +116,6 @@ public class DvmObject<T> extends Hashable {
         return Module.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
     }
 
-    protected MemoryBlock memoryBlock;
-
-    public void setMemoryBlock(MemoryBlock memoryBlock) {
-        this.memoryBlock = memoryBlock;
-    }
-
-    public MemoryBlock getMemoryBlock() {
-        return memoryBlock;
-    }
-
     @Override
     public String toString() {
         if (objectType == null) {

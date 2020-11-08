@@ -296,6 +296,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
+        return callStaticObjectMethodV(vm, dvmClass, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
     public DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         switch (signature) {
             case "com/android/internal/os/BinderInternal->getContextObject()Landroid/os/IBinder;":
