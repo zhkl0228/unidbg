@@ -105,12 +105,8 @@ public class DvmField extends Hashable {
     }
     
     void setDoubleField(DvmObject<?> dvmObject, double value) {
-        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
-        if (log.isDebugEnabled()) {
-            log.debug("setDoubleField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
-        }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).setDoubleField(dvmClass.vm, dvmObject, signature, value);
+        checkJni(vm, dvmClass).setDoubleField(dvmClass.vm, dvmObject, this, value);
     }
 
     void setStaticLongField(long value) {

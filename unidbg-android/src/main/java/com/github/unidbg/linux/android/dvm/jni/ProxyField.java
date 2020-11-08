@@ -30,4 +30,9 @@ class ProxyField {
         field.setInt(thisObj, value);
     }
 
+    final void setDouble(Object thisObj, double value) throws IllegalAccessException {
+        field.setAccessible(true);
+        field.setDouble(thisObj, value);
+    }
+
 }

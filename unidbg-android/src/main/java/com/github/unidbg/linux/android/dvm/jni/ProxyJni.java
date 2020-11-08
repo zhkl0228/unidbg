@@ -250,6 +250,23 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, double value) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField);
+            Object thisObj = dvmObject.getValue();
+            if (thisObj == null) {
+                throw new IllegalStateException("obj is null: " + dvmObject);
+            }
+            field.setDouble(thisObj, value);
+            return;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("setDoubleField: " + dvmField, e);
+        }
+        super.setDoubleField(vm, dvmObject, dvmField, value);
+    }
+
+    @Override
     public DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());

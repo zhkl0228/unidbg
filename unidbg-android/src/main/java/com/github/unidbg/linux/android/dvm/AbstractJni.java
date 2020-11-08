@@ -553,7 +553,12 @@ public abstract class AbstractJni implements Jni {
     public void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature, boolean value) {
         throw new UnsupportedOperationException(signature);
     }
-    
+
+    @Override
+    public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, double value) {
+        setDoubleField(vm, dvmObject, dvmField.getSignature(), value);
+    }
+
     @Override
     public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, String signature, double value) {
         throw new UnsupportedOperationException(signature);
