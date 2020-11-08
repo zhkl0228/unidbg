@@ -212,12 +212,8 @@ public class DvmMethod extends Hashable {
     }
 
     void callStaticVoidMethodV(VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticVoidMethodV signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).callStaticVoidMethodV(vm, dvmClass, signature, vaList);
+        checkJni(vm, dvmClass).callStaticVoidMethodV(vm, dvmClass, this, vaList);
     }
 
     void callStaticVoidMethodA(VaList vaList) {

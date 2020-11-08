@@ -6,11 +6,11 @@ import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
-import com.github.unidbg.linux.android.dvm.AbstractJni;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.linux.android.dvm.jni.ProxyClassFactory;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.android.AndroidModule;
@@ -19,7 +19,7 @@ import com.github.unidbg.virtualmodule.android.JniGraphics;
 import java.io.File;
 import java.io.IOException;
 
-public class Utilities64 extends AbstractJni {
+public class Utilities64 {
 
     private static LibraryResolver createLibraryResolver() {
         return new AndroidResolver(23);
@@ -44,7 +44,7 @@ public class Utilities64 extends AbstractJni {
         memory.setLibraryResolver(createLibraryResolver());
 
         vm = emulator.createDalvikVM(null);
-        vm.setJni(this);
+        vm.setDvmClassFactory(new ProxyClassFactory());
         Module module = new JniGraphics(emulator, vm).register(memory);
         assert module != null;
         new AndroidModule(emulator, vm).register(memory);

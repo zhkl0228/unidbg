@@ -1,9 +1,6 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
-import com.github.unidbg.linux.android.dvm.DvmMethod;
-import com.github.unidbg.linux.android.dvm.DvmObject;
-import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.linux.android.dvm.VarArg;
+import com.github.unidbg.linux.android.dvm.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -48,9 +45,13 @@ class ProxyUtils {
                     offset++;
                     break;*/
                 case 'L':
-                    DvmObject<?> obj = varArg.getObject(offset);
-                    classes.add(obj.getValue().getClass());
-                    args.add(obj.getValue());
+                    DvmObject<?> dvmObject = varArg.getObject(offset);
+                    if (dvmObject == null) {
+                        throw new IllegalStateException();
+                    }
+                    Object obj = dvmObject.getValue();
+                    classes.add(obj.getClass());
+                    args.add(obj);
                     offset++;
                     break;
                 /*case 'D':
@@ -61,6 +62,68 @@ class ProxyUtils {
                     args.add(varArg.getLong(offset));
                     offset++;
                     break;*/
+                default:
+                    throw new IllegalStateException("c=" + c);
+            }
+        }
+    }
+
+    private static void parseMethodArgs(DvmMethod dvmMethod, List<Class<?>> classes, List<Object> args, VaList vaList) {
+        String shorty = dvmMethod.decodeArgsShorty();
+        char[] chars = shorty.toCharArray();
+        int offset = 0;
+        for (char c : chars) {
+            switch (c) {
+                case 'B':
+                    classes.add(byte.class);
+                    args.add((byte) vaList.getInt(offset));
+                    offset += 4;
+                    break;
+                case 'C':
+                    classes.add(char.class);
+                    args.add((char) vaList.getInt(offset));
+                    offset += 4;
+                    break;
+                case 'I':
+                    classes.add(int.class);
+                    args.add(vaList.getInt(offset));
+                    offset += 4;
+                    break;
+                case 'S':
+                    classes.add(short.class);
+                    args.add((short) vaList.getInt(offset));
+                    offset += 4;
+                    break;
+                case 'Z':
+                    classes.add(boolean.class);
+                    args.add(vaList.getInt(offset) == VM.JNI_TRUE);
+                    offset += 4;
+                    break;
+                case 'F':
+                    classes.add(float.class);
+                    args.add(vaList.getFloat(offset));
+                    offset += 4;
+                    break;
+                case 'L':
+                    DvmObject<?> dvmObject = vaList.getObject(offset);
+                    if (dvmObject == null) {
+                        throw new IllegalStateException();
+                    }
+                    Object obj = dvmObject.getValue();
+                    classes.add(obj.getClass());
+                    args.add(obj);
+                    offset += 4;
+                    break;
+                case 'D':
+                    classes.add(double.class);
+                    args.add(vaList.getDouble(offset));
+                    offset += 8;
+                    break;
+                case 'J':
+                    classes.add(long.class);
+                    args.add(vaList.getLong(offset));
+                    offset += 8;
+                    break;
                 default:
                     throw new IllegalStateException("c=" + c);
             }
@@ -82,6 +145,14 @@ class ProxyUtils {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, varArg);
+        Method method = clazz.getDeclaredMethod(dvmMethod.getMethodName(), classes.toArray(new Class[0]));
+        return new ProxyMethod(method, args.toArray());
+    }
+
+    static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VaList vaList) throws NoSuchMethodException {
+        List<Class<?>> classes = new ArrayList<>(10);
+        List<Object> args = new ArrayList<>(10);
+        parseMethodArgs(dvmMethod, classes, args, vaList);
         Method method = clazz.getDeclaredMethod(dvmMethod.getMethodName(), classes.toArray(new Class[0]));
         return new ProxyMethod(method, args.toArray());
     }
