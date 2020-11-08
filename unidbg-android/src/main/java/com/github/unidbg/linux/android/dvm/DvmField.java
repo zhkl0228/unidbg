@@ -54,12 +54,8 @@ public class DvmField extends Hashable {
     }
 
     int getIntField(DvmObject<?> dvmObject) {
-        String signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
-        if (log.isDebugEnabled()) {
-            log.debug("getIntField dvmObject=" + dvmObject + ", fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).getIntField(dvmClass.vm, dvmObject, signature);
+        return checkJni(vm, dvmClass).getIntField(dvmClass.vm, dvmObject, this);
     }
 
     long getLongField(DvmObject<?> dvmObject) {
@@ -98,21 +94,13 @@ public class DvmField extends Hashable {
     }
 
     void setStaticLongField(long value) {
-        String signature = this.dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
-        if (log.isDebugEnabled()) {
-            log.debug("setStaticLongField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature + ", value=" + value);
-        }
         BaseVM vm = this.dvmClass.vm;
-        checkJni(vm, dvmClass).setStaticLongField(this.dvmClass.vm, dvmClass, signature, value);
+        checkJni(vm, dvmClass).setStaticLongField(this.dvmClass.vm, dvmClass, this, value);
     }
 
     long getStaticLongField() {
-        String signature = this.dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
-        if (log.isDebugEnabled()) {
-            log.debug("getStaticLongField fieldName=" + fieldName + ", fieldType=" + fieldType + ", signature=" + signature);
-        }
         BaseVM vm = this.dvmClass.vm;
-        return checkJni(vm, dvmClass).getStaticLongField(this.dvmClass.vm, dvmClass, signature);
+        return checkJni(vm, dvmClass).getStaticLongField(this.dvmClass.vm, dvmClass, this);
     }
 
     public Field filed;

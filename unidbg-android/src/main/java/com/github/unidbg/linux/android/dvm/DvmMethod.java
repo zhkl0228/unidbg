@@ -54,12 +54,8 @@ public class DvmMethod extends Hashable {
     }
 
     DvmObject<?>  callStaticObjectMethodA(VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("CallStaticObjectMethodA signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticObjectMethodV(vm, dvmClass, signature, vaList);
+        return checkJni(vm, dvmClass).callStaticObjectMethodV(vm, dvmClass, this, vaList);
     }
 
     DvmObject<?>  callObjectMethod(DvmObject<?>  dvmObject, VarArg varArg) {
@@ -68,21 +64,13 @@ public class DvmMethod extends Hashable {
     }
 
     long callLongMethod(DvmObject<?>  dvmObject, VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callLongMethod signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callLongMethod(vm, dvmObject, signature, varArg);
+        return checkJni(vm, dvmClass).callLongMethod(vm, dvmObject, this, varArg);
     }
 
     long callLongMethodV(DvmObject<?>  dvmObject, VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callLongMethodV signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callLongMethodV(vm, dvmObject, signature, vaList);
+        return checkJni(vm, dvmClass).callLongMethodV(vm, dvmObject, this, vaList);
     }
 
     DvmObject<?>  callObjectMethodV(DvmObject<?>  dvmObject, VaList vaList) {
@@ -91,12 +79,8 @@ public class DvmMethod extends Hashable {
     }
 
     DvmObject<?>  callObjectMethodA(DvmObject<?>  dvmObject, VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callObjectMethodA signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callObjectMethodV(vm, dvmObject, signature, vaList);
+        return checkJni(vm, dvmClass).callObjectMethodV(vm, dvmObject, this, vaList);
     }
 
     int callIntMethodV(DvmObject<?>  dvmObject, VaList vaList) {
@@ -105,12 +89,8 @@ public class DvmMethod extends Hashable {
     }
 
     int callBooleanMethod(DvmObject<?>  dvmObject, VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callBooleanMethod signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callBooleanMethod(dvmClass.vm, dvmObject, signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callBooleanMethod(dvmClass.vm, dvmObject, this, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callBooleanMethodV(DvmObject<?>  dvmObject, VaList vaList) {
@@ -119,48 +99,28 @@ public class DvmMethod extends Hashable {
     }
 
     int callIntMethod(DvmObject<?>  dvmObject, VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callIntMethod signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callIntMethod(vm, dvmObject, signature, varArg);
+        return checkJni(vm, dvmClass).callIntMethod(vm, dvmObject, this, varArg);
     }
 
     void callVoidMethod(DvmObject<?>  dvmObject, VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callVoidMethod signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).callVoidMethod(vm, dvmObject, signature, varArg);
+        checkJni(vm, dvmClass).callVoidMethod(vm, dvmObject, this, varArg);
     }
 
     int callStaticIntMethod(VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticIntMethod signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticIntMethod(vm, dvmClass, signature, varArg);
+        return checkJni(vm, dvmClass).callStaticIntMethod(vm, dvmClass, this, varArg);
     }
 
     int callStaticIntMethodV(VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticIntMethodV signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticIntMethodV(vm, dvmClass, signature, vaList);
+        return checkJni(vm, dvmClass).callStaticIntMethodV(vm, dvmClass, this, vaList);
     }
 
     long callStaticLongMethod(VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticLongMethod signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticLongMethod(vm, dvmClass, signature, varArg);
+        return checkJni(vm, dvmClass).callStaticLongMethod(vm, dvmClass, this, varArg);
     }
 
     long callStaticLongMethodV(VaList vaList) {
@@ -169,30 +129,18 @@ public class DvmMethod extends Hashable {
     }
 
     int CallStaticBooleanMethod(VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticBooleanMethod signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticBooleanMethod(vm, dvmClass, signature, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callStaticBooleanMethod(vm, dvmClass, this, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callStaticBooleanMethodV(VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticBooleanMethodV signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticBooleanMethodV(vm, dvmClass, signature, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callStaticBooleanMethodV(vm, dvmClass, this, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     void callStaticVoidMethod(VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callStaticVoidMethodV signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).callStaticVoidMethod(vm, dvmClass, signature, varArg);
+        checkJni(vm, dvmClass).callStaticVoidMethod(vm, dvmClass, this, varArg);
     }
 
     void callStaticVoidMethodV(VaList vaList) {
@@ -234,21 +182,13 @@ public class DvmMethod extends Hashable {
     }
 
     float callFloatMethodV(DvmObject<?>  dvmObject, VaList vaList) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callFloatMethodV signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callFloatMethodV(vm, dvmObject, signature, vaList);
+        return checkJni(vm, dvmClass).callFloatMethodV(vm, dvmObject, this, vaList);
     }
 
     final DvmObject<?>  toReflectedMethod() {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("toReflectedMethod signature=" + signature);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).toReflectedMethod(vm, dvmClass, signature);
+        return checkJni(vm, dvmClass).toReflectedMethod(vm, dvmClass, this);
     }
 
     public final String decodeArgsShorty() {

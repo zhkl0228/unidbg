@@ -3,6 +3,11 @@ package com.github.unidbg.linux.android.dvm;
 public abstract class JniFunction implements Jni {
 
     @Override
+    public void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         throw new UnsupportedOperationException(signature);
     }
@@ -18,8 +23,18 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
 
     @Override
@@ -28,13 +43,28 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public int callStaticIntMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public int callStaticIntMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         throw new UnsupportedOperationException(signature);
     }
 
     @Override
+    public int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
         throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public long callStaticLongMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
 
     @Override
@@ -98,6 +128,11 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public void callVoidMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public void callVoidMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
         throw new UnsupportedOperationException(signature);
     }
@@ -113,6 +148,11 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public boolean callBooleanMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public boolean callBooleanMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
         throw new UnsupportedOperationException(signature);
     }
@@ -125,6 +165,11 @@ public abstract class JniFunction implements Jni {
     @Override
     public boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public int callIntMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
 
     @Override
@@ -153,13 +198,28 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public long callLongMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public long callLongMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
         throw new UnsupportedOperationException(signature);
     }
 
     @Override
+    public long callLongMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
     public long callLongMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
         throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public float callFloatMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
 
     @Override
@@ -205,6 +265,11 @@ public abstract class JniFunction implements Jni {
     @Override
     public boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
         throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public int getIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
     }
 
     @Override
@@ -283,13 +348,28 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value) {
         throw new UnsupportedOperationException(signature);
     }
 
     @Override
+    public long getStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
     public long getStaticLongField(BaseVM vm, DvmClass dvmClass, String signature) {
         throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public DvmObject<?> toReflectedMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
 
     @Override
