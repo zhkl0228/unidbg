@@ -78,6 +78,7 @@ public interface Jni {
     DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
     DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 
+    void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, boolean value);
     void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature, boolean value);
 
     void setIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, int value);

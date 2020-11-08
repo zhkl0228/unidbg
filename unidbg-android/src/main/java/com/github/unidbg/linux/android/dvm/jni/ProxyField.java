@@ -40,4 +40,9 @@ class ProxyField {
         field.set(thisObj, value);
     }
 
+    final void setBoolean(Object thisObj, boolean value) throws IllegalAccessException {
+        field.setAccessible(true);
+        field.setBoolean(thisObj, value);
+    }
+
 }

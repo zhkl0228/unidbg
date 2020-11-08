@@ -233,6 +233,11 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, boolean value) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
     public void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature, boolean value) {
         throw new UnsupportedOperationException(signature);
     }

@@ -555,6 +555,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, boolean value) {
+        setBooleanField(vm, dvmObject, dvmField.getSignature(), value);
+    }
+
+    @Override
     public void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature, boolean value) {
         throw new UnsupportedOperationException(signature);
     }
