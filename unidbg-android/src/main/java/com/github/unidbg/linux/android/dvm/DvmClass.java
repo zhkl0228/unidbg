@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class DvmClass extends DvmObject<String> {
+public class DvmClass extends DvmObject<Class<?>> {
 
     private static final Log log = LogFactory.getLog(DvmClass.class);
 
@@ -19,16 +19,22 @@ public class DvmClass extends DvmObject<String> {
 
     public final BaseVM vm;
     private final DvmClass[] interfaceClasses;
+    private final String className;
 
     protected DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
-        super(ROOT_CLASS.equals(className) ? null : vm.resolveClass(ROOT_CLASS), className);
+        this(vm, className, interfaceClasses, null);
+    }
+
+    protected DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses, Class<?> value) {
+        super(ROOT_CLASS.equals(className) ? null : vm.resolveClass(ROOT_CLASS), value);
         this.vm = vm;
         this.interfaceClasses = interfaceClasses;
+        this.className = className;
     }
 
     @Override
     public DvmClass getObjectType() {
-        if (ROOT_CLASS.equals(value)) {
+        if (ROOT_CLASS.equals(className)) {
             return this;
         }
 
@@ -36,11 +42,11 @@ public class DvmClass extends DvmObject<String> {
     }
 
     public String getClassName() {
-        return value;
+        return className;
     }
 
     public String getName() {
-        return value.replace('/', '.');
+        return className.replace('/', '.');
     }
 
     public DvmObject<?> newObject(Object value) {

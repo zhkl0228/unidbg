@@ -510,6 +510,11 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public DvmObject<?> callObjectMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
+        return callObjectMethod(vm, dvmObject, dvmMethod.getSignature(), varArg);
+    }
+
+    @Override
     public DvmObject<?> callObjectMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
         switch (signature) {
             case "java/lang/String->getBytes(Ljava/lang/String;)[B": {

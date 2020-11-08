@@ -43,6 +43,7 @@ public interface Jni {
 
     int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
+    DvmObject<?> callObjectMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg);
     DvmObject<?> callObjectMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);
 
     long callLongMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg);

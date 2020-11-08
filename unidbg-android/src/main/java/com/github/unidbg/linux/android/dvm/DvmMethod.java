@@ -59,12 +59,8 @@ public class DvmMethod extends Hashable {
     }
 
     DvmObject<?>  callObjectMethod(DvmObject<?>  dvmObject, VarArg varArg) {
-        String signature = dvmClass.getClassName() + "->" + methodName + args;
-        if (log.isDebugEnabled()) {
-            log.debug("callObjectMethod signature=" + signature + ", dvmObject=" + dvmObject);
-        }
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callObjectMethod(vm, dvmObject, signature, varArg);
+        return checkJni(vm, dvmClass).callObjectMethod(vm, dvmObject, this, varArg);
     }
 
     long callLongMethod(DvmObject<?>  dvmObject, VarArg varArg) {
