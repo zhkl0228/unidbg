@@ -5,7 +5,7 @@ import com.github.unidbg.linux.android.dvm.DvmClass;
 
 class ProxyDvmClass extends DvmClass {
 
-    ProxyDvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses, ClassLoader classLoader) {
+    ProxyDvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses, ProxyClassLoader classLoader) {
         super(vm, className, interfaceClasses, null);
 
         setJni(new ProxyJni(classLoader));

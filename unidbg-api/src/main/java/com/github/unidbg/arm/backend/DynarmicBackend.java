@@ -225,7 +225,7 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     @Override
     public Unicorn.UnHook hook_add_new(CodeHook callback, long begin, long end, Object user_data) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override

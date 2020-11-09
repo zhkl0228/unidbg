@@ -10,9 +10,9 @@ class ProxyJni extends JniFunction {
 
     private static final Log log = LogFactory.getLog(ProxyJni.class);
 
-    private final ClassLoader classLoader;
+    private final ProxyClassLoader classLoader;
 
-    ProxyJni(ClassLoader classLoader) {
+    ProxyJni(ProxyClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 

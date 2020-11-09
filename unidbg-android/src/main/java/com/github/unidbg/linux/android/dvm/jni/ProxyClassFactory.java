@@ -6,14 +6,19 @@ import com.github.unidbg.linux.android.dvm.DvmClassFactory;
 
 public class ProxyClassFactory implements DvmClassFactory {
 
-    private final ClassLoader classLoader;
+    private final ProxyClassLoader classLoader;
 
     public ProxyClassFactory() {
         this(ProxyClassFactory.class.getClassLoader());
     }
 
     public ProxyClassFactory(ClassLoader classLoader) {
-        this.classLoader = classLoader;
+        this.classLoader = new ProxyClassLoader(classLoader);
+    }
+
+    public DvmClassFactory configClassNameMapper(ClassNameMapper mapper) {
+        classLoader.setClassNameMapper(mapper);
+        return this;
     }
 
     @Override
