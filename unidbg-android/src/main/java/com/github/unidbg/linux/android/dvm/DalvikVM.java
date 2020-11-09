@@ -84,7 +84,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.printf("JNIEnv->ToReflectedMethod(%s, %s, %s) was called from %s%n", dvmClass.value, dvmMethod.methodName, dvmMethod.isStatic ? "is static" : "not static", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->ToReflectedMethod(%s, %s, %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.isStatic ? "is static" : "not static", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
 
                     return addLocalObject(dvmMethod.toReflectedMethod());
@@ -238,7 +238,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     DvmObject<?> obj = dvmClass.allocObject();
                     if (verbose) {
-                        System.out.printf("JNIEnv->AllocObject(%s => %s) was called from %s%n", dvmClass.value, obj, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->AllocObject(%s => %s) was called from %s%n", dvmClass.getClassName(), obj, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return addLocalObject(obj);
                 }
@@ -259,7 +259,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.printf("JNIEnv->NewObject(%s, %s) was called from %s%n", dvmClass.value, dvmMethod.methodName, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->NewObject(%s, %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return dvmMethod.newObject(ArmVarArg.create(emulator, DalvikVM.this));
                 }
@@ -361,7 +361,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     DvmObject<?> ret = dvmMethod.callObjectMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallObjectMethod(%s, %s%s => %s) was called from %s%n", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallObjectMethod(%s, %s%s => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return addObject(ret, false);
                 }
@@ -434,7 +434,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     int ret = dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallBooleanMethod(%s, %s%s => %s) was called from %s%n", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret == VM.JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallBooleanMethod(%s, %s%s => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret == VM.JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return ret;
                 }
@@ -482,7 +482,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     int ret = dvmMethod.callIntMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallIntMethod(%s, %s%s => 0x%x) was called from %s%n", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallIntMethod(%s, %s%s => 0x%x) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return ret;
                 }
@@ -530,7 +530,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     long ret = dvmMethod.callLongMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallLongMethod(%s, %s%s => 0x%xL) was called from %s%n", dvmClass.value, dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallLongMethod(%s, %s%s => 0x%xL) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     emulator.getBackend().reg_write(ArmConst.UC_ARM_REG_R1, (int) (ret >> 32));
                     return (ret & 0xffffffffL);
@@ -608,7 +608,7 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new UnicornException();
                 } else {
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallVoidMethod(%s, %s%s) was called from %s%n", dvmClass.value, dvmMethod.methodName, dvmMethod.args, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallVoidMethod(%s, %s%s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     dvmMethod.callVoidMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     return 0;
@@ -634,7 +634,7 @@ public class DalvikVM extends BaseVM implements VM {
                     VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     dvmMethod.callVoidMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called from %s%n", dvmClass.value, dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return 0;
                 }
@@ -659,7 +659,7 @@ public class DalvikVM extends BaseVM implements VM {
                     VaList vaList = new JValueList(DalvikVM.this, jvalue, dvmMethod);
                     dvmMethod.callVoidMethodA(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallVoidMethodA(%s, %s(%s)) was called from %s%n", dvmClass.value, dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallVoidMethodA(%s, %s(%s)) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return 0;
                 }
@@ -685,7 +685,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM.this, jvalue, dvmMethod);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallNonVirtualVoidMethodA(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.value, dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallNonVirtualVoidMethodA(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return 0;
                 }
@@ -1778,7 +1778,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("RegisterNatives dvmClass=" + dvmClass + ", methods=" + methods + ", nMethods=" + nMethods);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.value, methods, nMethods, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.getClassName(), methods, nMethods, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 for (int i = 0; i < nMethods; i++) {
                     Pointer method = methods.share(i * 0xc);
@@ -1793,7 +1793,7 @@ public class DalvikVM extends BaseVM implements VM {
                     dvmClass.nativesMap.put(methodName + signatureValue, (UnidbgPointer) fnPtr);
 
                     if (verbose) {
-                        System.out.printf("RegisterNative(%s, %s%s, %s)%n", dvmClass.value, methodName, signatureValue, fnPtr);
+                        System.out.printf("RegisterNative(%s, %s%s, %s)%n", dvmClass.getClassName(), methodName, signatureValue, fnPtr);
                     }
                 }
                 return JNI_OK;
