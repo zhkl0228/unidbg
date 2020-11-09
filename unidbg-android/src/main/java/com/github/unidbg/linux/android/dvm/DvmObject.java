@@ -2,7 +2,7 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.memory.MemoryBlock;
+import com.github.unidbg.linux.android.dvm.array.ByteArray;
 import com.github.unidbg.pointer.UnidbgPointer;
 
 import java.util.ArrayList;
@@ -107,6 +107,11 @@ public class DvmObject<T> extends Hashable {
                     StringObject str = new StringObject(vm, (String) arg);
                     list.add(str.hashCode());
                     vm.addLocalObject(str);
+                    continue;
+                } else if(arg instanceof byte[]) {
+                    ByteArray array = new ByteArray(vm, (byte[]) arg);
+                    list.add(array.hashCode());
+                    vm.addLocalObject(array);
                     continue;
                 }
 

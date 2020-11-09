@@ -25,6 +25,11 @@ class ProxyField {
         return field.getBoolean(thisObj);
     }
 
+    final int getInt(Object thisObj) throws IllegalAccessException {
+        field.setAccessible(true);
+        return field.getInt(thisObj);
+    }
+
     final void setInt(Object thisObj, int value) throws IllegalAccessException {
         field.setAccessible(true);
         field.setInt(thisObj, value);
