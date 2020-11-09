@@ -3,6 +3,7 @@ package com.github.unidbg.linux.android.dvm;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.util.UUID;
@@ -249,6 +250,7 @@ public class DvmMethod extends Hashable {
     public Member member;
 
     public void setMember(Member member) {
+        ((AccessibleObject) member).setAccessible(true);
         if (Modifier.isStatic(member.getModifiers()) ^ isStatic) {
             throw new IllegalStateException(toString());
         }

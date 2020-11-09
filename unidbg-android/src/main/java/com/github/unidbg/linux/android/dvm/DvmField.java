@@ -106,6 +106,7 @@ public class DvmField extends Hashable {
     public Field filed;
 
     public void setFiled(Field filed) {
+        filed.setAccessible(true);
         if (Modifier.isStatic(filed.getModifiers()) ^ isStatic) {
             throw new IllegalStateException(toString());
         }

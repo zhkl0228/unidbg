@@ -18,7 +18,6 @@ class ProxyConstructor implements ProxyCall {
     @Override
     public Object call(Object obj) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         try {
-            constructor.setAccessible(true);
             return constructor.newInstance(args);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();

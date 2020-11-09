@@ -18,7 +18,6 @@ class ProxyMethod implements ProxyCall {
     @Override
     public Object call(Object obj) throws IllegalAccessException, InvocationTargetException {
         try {
-            method.setAccessible(true);
             return method.invoke(obj, args);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
