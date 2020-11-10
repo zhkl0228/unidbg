@@ -6,8 +6,6 @@ import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.api.Bitmap;
-import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
@@ -110,12 +108,9 @@ public class JniGraphics extends VirtualModule<VM> {
                 }
             }
 
-            Memory memory = emulator.getMemory();
-            MemoryBlock memoryBlock = memory.malloc(image.getWidth() * image.getHeight() * 4);
-            Pointer pointer = memoryBlock.getPointer();
+            Pointer pointer = bitmap.allocateMemoryBlock(emulator, image.getWidth() * image.getHeight() * 4);
             pointer.write(0, buffer.array(), 0, buffer.capacity());
             addrPtr.setPointer(0, pointer);
-            bitmap.memoryBlock = memoryBlock;
 
             if (log.isDebugEnabled()) {
                 log.debug(Inspector.inspectString(buffer.array(), "AndroidBitmap_lockPixels buffer=" + buffer));
@@ -133,11 +128,7 @@ public class JniGraphics extends VirtualModule<VM> {
         Pointer env = context.getPointerArg(0);
         UnidbgPointer jbitmap = context.getPointerArg(1);
         Bitmap bitmap = vm.getObject(jbitmap.toIntPeer());
-        MemoryBlock memoryBlock = bitmap.memoryBlock;
-        if (memoryBlock != null) {
-            memoryBlock.free(true);
-            bitmap.memoryBlock = null;
-        }
+        bitmap.freeMemoryBlock(null);
         if (log.isDebugEnabled()) {
             log.debug("AndroidBitmap_unlockPixels env=" + env + ", bitmap=" + bitmap);
         }

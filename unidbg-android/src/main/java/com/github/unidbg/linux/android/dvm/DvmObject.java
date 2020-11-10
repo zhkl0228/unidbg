@@ -3,12 +3,14 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DvmObject<T> extends Hashable {
+public class DvmObject<T> extends Hashable implements MemoryBlockObject {
 
     private final DvmClass objectType;
     protected T value;
@@ -131,4 +133,29 @@ public class DvmObject<T> extends Hashable {
 
         return objectType.getName() + "@" + Integer.toHexString(hashCode());
     }
+
+    private MemoryBlock memoryBlock;
+
+    @Override
+    public final UnidbgPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
+        if (memoryBlock != null) {
+            throw new IllegalStateException("Already allocated array memory");
+        }
+
+        memoryBlock = emulator.getMemory().malloc(length);
+        return memoryBlock.getPointer();
+    }
+
+    @Override
+    public final void freeMemoryBlock(Pointer pointer) {
+        if (this.memoryBlock != null && (pointer == null || this.memoryBlock.isSame(pointer))) {
+            this.memoryBlock.free(true);
+            this.memoryBlock = null;
+        }
+    }
+
+    final void onDeleteRef() {
+        freeMemoryBlock(null);
+    }
+
 }

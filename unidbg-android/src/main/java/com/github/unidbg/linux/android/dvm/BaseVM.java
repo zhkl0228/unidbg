@@ -134,6 +134,9 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     final void deleteLocalRefs() {
+        for (DvmObject<?> obj : localObjectMap.values()) {
+            obj.onDeleteRef();
+        }
         localObjectMap.clear();
     }
 

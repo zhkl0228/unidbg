@@ -2,6 +2,7 @@ package com.kanxue.test2;
 
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
@@ -34,7 +35,7 @@ public class MainActivity {
         memory.setLibraryResolver(resolver);
 
         vm = emulator.createDalvikVM(null);
-        vm.setVerbose(true);
+        vm.setVerbose(false);
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libnative-lib.so"), false);
         dm.callJNI_OnLoad(emulator);
     }
@@ -46,20 +47,18 @@ public class MainActivity {
             'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
     };
 
+    static {
+        DynarmicLoader.useDynarmic();
+    }
+
     private void crack() {
         DvmObject<?> obj = ProxyDvmObject.createObject(vm, this);
         long start = System.currentTimeMillis();
-        boolean success = obj.callJniMethodInt(emulator, "jnitest(Ljava/lang/String;)Z", "XuE") == VM.JNI_TRUE;
-        if (success) {
-            System.out.println("offset=" + (System.currentTimeMillis() - start) + "ms");
-            return;
-        }
-        start = System.currentTimeMillis();
         for (char a : LETTERS) {
             for (char b : LETTERS) {
                 for (char c : LETTERS) {
                     String str = "" + a + b + c;
-                    success = obj.callJniMethodInt(emulator, "jnitest(Ljava/lang/String;)Z", str) == VM.JNI_TRUE;
+                    boolean success = obj.callJniMethodInt(emulator, "jnitest(Ljava/lang/String;)Z", str) == VM.JNI_TRUE;
                     if (success) {
                         System.out.println("Found: " + str + ", off=" + (System.currentTimeMillis() - start) + "ms");
                         return;

@@ -8,7 +8,6 @@ import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
 import com.github.unidbg.linux.android.dvm.array.*;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
@@ -169,7 +168,10 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteGlobalRef object=" + object);
                 }
-                globalObjectMap.remove(object.toIntPeer());
+                DvmObject<?> obj = globalObjectMap.remove(object.toIntPeer());
+                if (obj != null) {
+                    obj.onDeleteRef();
+                }
                 return 0;
             }
         });
@@ -181,7 +183,10 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteLocalRef object=" + object);
                 }
-                localObjectMap.remove(object.toIntPeer());
+                DvmObject<?> obj = localObjectMap.remove(object.toIntPeer());
+                if (obj != null) {
+                    obj.onDeleteRef();
+                }
                 return 0;
             }
         });
@@ -1372,10 +1377,9 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
-                MemoryBlock memoryBlock = emulator.getMemory().malloc(data.length);
-                memoryBlock.getPointer().write(0, data, 0, data.length);
-                string.memoryBlock = memoryBlock;
-                return memoryBlock.getPointer().toIntPeer();
+                UnidbgPointer pointer = string.allocateMemoryBlock(emulator, data.length);
+                pointer.write(0, data, 0, data.length);
+                return pointer.toIntPeer();
             }
         });
 
@@ -1390,10 +1394,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseStringUTFChars string=" + string + ", pointer=" + pointer + ", lr=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
-                if (string.memoryBlock != null && string.memoryBlock.isSame(pointer)) {
-                    string.memoryBlock.free(true);
-                    string.memoryBlock = null;
-                }
+                string.freeMemoryBlock(pointer);
                 return 0;
             }
         });
@@ -1591,10 +1592,9 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetStringChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
-                MemoryBlock memoryBlock = emulator.getMemory().malloc(data.length);
-                memoryBlock.getPointer().write(0, data, 0, data.length);
-                string.memoryBlock = memoryBlock;
-                return memoryBlock.getPointer().toIntPeer();
+                UnidbgPointer pointer = string.allocateMemoryBlock(emulator, data.length);
+                pointer.write(0, data, 0, data.length);
+                return pointer.toIntPeer();
             }
         });
 
@@ -1606,10 +1606,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
-                if (string.memoryBlock != null && string.memoryBlock.isSame(pointer)) {
-                    string.memoryBlock.free(true);
-                    string.memoryBlock = null;
-                }
+                string.freeMemoryBlock(pointer);
                 return 0;
             }
         });
