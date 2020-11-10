@@ -6,8 +6,7 @@ import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.MemoryBlock;
+import com.github.unidbg.linux.android.dvm.api.Asset;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.virtualmodule.VirtualModule;
@@ -122,12 +121,9 @@ public class AndroidModule extends VirtualModule<VM> {
         if (mode == AASSET_MODE_STREAMING || AASSET_MODE_BUFFER == mode) {
             byte[] data = vm.openAsset(filename);
             if (data != null) {
-                Memory memory = emulator.getMemory();
-                MemoryBlock block = memory.malloc(data.length + 8, true);
-                block.getPointer().setInt(0, 0); // index
-                block.getPointer().setInt(4, data.length);
-                block.getPointer().write(8, data, 0, data.length);
-                return vm.addLocalObject(vm.resolveClass("android/content/res/Asset").newObject(block));
+                Asset asset = new Asset(vm, filename);
+                asset.open(emulator, data);
+                return vm.addLocalObject(asset);
             }
         }
         throw new UnicornException("filename=" + filename + ", mode=" + mode);
@@ -135,58 +131,47 @@ public class AndroidModule extends VirtualModule<VM> {
 
     private static long close(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnidbgPointer asset = context.getPointerArg(0);
-        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
-        MemoryBlock block = (MemoryBlock) obj.getValue();
+        UnidbgPointer pointer = context.getPointerArg(0);
+        Asset asset = vm.getObject(pointer.toIntPeer());
+        asset.close();
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_close asset=" + asset + ", pointer=" + block.getPointer() + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_close pointer=" + pointer + ", LR=" + context.getLRPointer());
         }
-        block.free(true);
         return 0;
     }
 
     private static long getBuffer(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnidbgPointer asset = context.getPointerArg(0);
-        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
-        MemoryBlock block = (MemoryBlock) obj.getValue();
-        UnidbgPointer buffer = block.getPointer().share(8, 0);
+        UnidbgPointer pointer = context.getPointerArg(0);
+        Asset asset = vm.getObject(pointer.toIntPeer());
+        UnidbgPointer buffer = asset.getBuffer();
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_getBuffer asset=" + asset + ", buffer=" + buffer + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_getBuffer pointer=" + pointer + ", buffer=" + buffer + ", LR=" + context.getLRPointer());
         }
         return buffer.peer;
     }
 
     private static long getLength(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnidbgPointer asset = context.getPointerArg(0);
-        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
-        MemoryBlock block = (MemoryBlock) obj.getValue();
-        int length = block.getPointer().getInt(4);
+        UnidbgPointer pointer = context.getPointerArg(0);
+        Asset asset = vm.getObject(pointer.toIntPeer());
+        int length = asset.getLength();
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_getLength asset=" + asset + ", length=" + length + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_getLength pointer=" + pointer + ", length=" + length + ", LR=" + context.getLRPointer());
         }
         return length;
     }
 
     private static long read(Emulator<?> emulator, VM vm) {
         RegisterContext context = emulator.getContext();
-        UnidbgPointer asset = context.getPointerArg(0);
+        UnidbgPointer pointer = context.getPointerArg(0);
         Pointer buf = context.getPointerArg(1);
         int count = context.getIntArg(2);
-        DvmObject<?> obj = vm.getObject(asset.toIntPeer());
-        MemoryBlock block = (MemoryBlock) obj.getValue();
-        Pointer pointer = block.getPointer();
-        int index = pointer.getInt(0);
-        int length = pointer.getInt(4);
-        Pointer data = pointer.share(8, 0);
+        Asset asset = vm.getObject(pointer.toIntPeer());
+        byte[] bytes = asset.read(count);
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_read asset=" + asset + ", buf=" + buf + ", count=" + count + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_read pointer=" + pointer + ", buf=" + buf + ", count=" + count + ", LR=" + context.getLRPointer());
         }
-        int remaining = length - index;
-        int read = Math.min(remaining, count);
-        pointer.setInt(0, index + read);
-        byte[] bytes = data.getByteArray(index, read);
         buf.write(0, bytes, 0, bytes.length);
         return bytes.length;
     }

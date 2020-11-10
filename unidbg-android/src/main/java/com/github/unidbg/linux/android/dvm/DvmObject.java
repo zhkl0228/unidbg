@@ -134,7 +134,7 @@ public class DvmObject<T> extends Hashable {
         return objectType.getName() + "@" + Integer.toHexString(hashCode());
     }
 
-    private MemoryBlock memoryBlock;
+    protected MemoryBlock memoryBlock;
 
     protected final UnidbgPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
         if (memoryBlock != null) {
