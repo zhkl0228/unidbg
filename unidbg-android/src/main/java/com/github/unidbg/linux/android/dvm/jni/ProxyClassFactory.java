@@ -16,7 +16,7 @@ public class ProxyClassFactory implements DvmClassFactory {
         this.classLoader = new ProxyClassLoader(classLoader);
     }
 
-    public DvmClassFactory configClassNameMapper(ClassNameMapper mapper) {
+    public DvmClassFactory configClassNameMapper(ProxyClassMapper mapper) {
         classLoader.setClassNameMapper(mapper);
         return this;
     }

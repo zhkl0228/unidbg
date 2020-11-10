@@ -8,16 +8,16 @@ class ProxyClassLoader {
         this.classLoader = classLoader;
     }
 
-    private ClassNameMapper classNameMapper;
+    private ProxyClassMapper classNameMapper;
 
-    final void setClassNameMapper(ClassNameMapper classNameMapper) {
+    final void setClassNameMapper(ProxyClassMapper classNameMapper) {
         this.classNameMapper = classNameMapper;
     }
 
     final Class<?> loadClass(String name) throws ClassNotFoundException {
-        String newName = classNameMapper == null ? null : classNameMapper.map(name);
-        if (newName != null) {
-            name = newName;
+        Class<?> newClass = classNameMapper == null ? null : classNameMapper.map(name);
+        if (newClass != null) {
+            return newClass;
         }
         return classLoader.loadClass(name);
     }
