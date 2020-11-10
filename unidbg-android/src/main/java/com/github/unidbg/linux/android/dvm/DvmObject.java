@@ -10,7 +10,7 @@ import com.sun.jna.Pointer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DvmObject<T> extends Hashable implements MemoryBlockObject {
+public class DvmObject<T> extends Hashable {
 
     private final DvmClass objectType;
     protected T value;
@@ -136,8 +136,7 @@ public class DvmObject<T> extends Hashable implements MemoryBlockObject {
 
     private MemoryBlock memoryBlock;
 
-    @Override
-    public final UnidbgPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
+    protected final UnidbgPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
         if (memoryBlock != null) {
             throw new IllegalStateException("Already allocated array memory");
         }
@@ -146,8 +145,7 @@ public class DvmObject<T> extends Hashable implements MemoryBlockObject {
         return memoryBlock.getPointer();
     }
 
-    @Override
-    public final void freeMemoryBlock(Pointer pointer) {
+    protected final void freeMemoryBlock(Pointer pointer) {
         if (this.memoryBlock != null && (pointer == null || this.memoryBlock.isSame(pointer))) {
             this.memoryBlock.free(true);
             this.memoryBlock = null;

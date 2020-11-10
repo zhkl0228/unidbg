@@ -108,8 +108,7 @@ public class JniGraphics extends VirtualModule<VM> {
                 }
             }
 
-            Pointer pointer = bitmap.allocateMemoryBlock(emulator, image.getWidth() * image.getHeight() * 4);
-            pointer.write(0, buffer.array(), 0, buffer.capacity());
+            Pointer pointer = bitmap.lockPixels(emulator, image, buffer);
             addrPtr.setPointer(0, pointer);
 
             if (log.isDebugEnabled()) {
@@ -128,7 +127,7 @@ public class JniGraphics extends VirtualModule<VM> {
         Pointer env = context.getPointerArg(0);
         UnidbgPointer jbitmap = context.getPointerArg(1);
         Bitmap bitmap = vm.getObject(jbitmap.toIntPeer());
-        bitmap.freeMemoryBlock(null);
+        bitmap.unlockPixels();
         if (log.isDebugEnabled()) {
             log.debug("AndroidBitmap_unlockPixels env=" + env + ", bitmap=" + bitmap);
         }

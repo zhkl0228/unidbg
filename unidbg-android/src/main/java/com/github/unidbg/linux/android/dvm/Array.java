@@ -1,6 +1,6 @@
 package com.github.unidbg.linux.android.dvm;
 
-public interface Array<T> extends MemoryBlockObject {
+public interface Array<T> {
 
     int length();
 
