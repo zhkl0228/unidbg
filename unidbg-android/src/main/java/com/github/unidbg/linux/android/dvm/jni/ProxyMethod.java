@@ -8,10 +8,12 @@ import java.lang.reflect.Method;
 
 class ProxyMethod implements ProxyCall {
 
+    private final ProxyDvmObjectVisitor visitor;
     private final Method method;
     private final Object[] args;
 
-    ProxyMethod(Method method, Object[] args) {
+    ProxyMethod(ProxyDvmObjectVisitor visitor, Method method, Object[] args) {
+        this.visitor = visitor;
         this.method = method;
         this.args = args;
     }
@@ -21,6 +23,9 @@ class ProxyMethod implements ProxyCall {
         try {
             patch(obj, args);
 
+            if (visitor != null) {
+                visitor.onProxyVisit(method, obj, args);
+            }
             return method.invoke(obj, args);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();

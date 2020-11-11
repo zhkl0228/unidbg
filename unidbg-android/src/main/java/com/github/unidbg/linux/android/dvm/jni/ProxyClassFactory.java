@@ -21,9 +21,16 @@ public class ProxyClassFactory implements DvmClassFactory {
         return this;
     }
 
+    private ProxyDvmObjectVisitor visitor;
+
+    public DvmClassFactory configObjectVisitor(ProxyDvmObjectVisitor visitor) {
+        this.visitor = visitor;
+        return this;
+    }
+
     @Override
     public DvmClass createClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
-        return new ProxyDvmClass(vm, className, interfaceClasses, classLoader);
+        return new ProxyDvmClass(vm, className, interfaceClasses, classLoader, visitor);
     }
 
 }

@@ -3,14 +3,26 @@ package com.github.unidbg.linux.android.dvm.jni;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 
-class ReflectedMethod {
+public class ProxyReflectedMethod {
 
-    final int accessFlags;
+    int accessFlags;
     private final Method method;
 
-    ReflectedMethod(Method method) {
+    ProxyReflectedMethod(Method method) {
         this.method = method;
         this.accessFlags = method.getModifiers();
+    }
+
+    public int getAccessFlags() {
+        return accessFlags;
+    }
+
+    public void setAccessFlags(int accessFlags) {
+        this.accessFlags = accessFlags;
+    }
+
+    public Method getMethod() {
+        return method;
     }
 
     public Class<?> getDeclaringClass() {

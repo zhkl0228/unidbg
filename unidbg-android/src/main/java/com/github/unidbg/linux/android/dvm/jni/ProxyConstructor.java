@@ -8,10 +8,12 @@ import java.lang.reflect.InvocationTargetException;
 
 class ProxyConstructor implements ProxyCall {
 
+    private final ProxyDvmObjectVisitor visitor;
     private final Constructor<?> constructor;
     private final Object[] args;
 
-    ProxyConstructor(Constructor<?> constructor, Object[] args) {
+    ProxyConstructor(ProxyDvmObjectVisitor visitor, Constructor<?> constructor, Object[] args) {
+        this.visitor = visitor;
         this.constructor = constructor;
         this.args = args;
     }
@@ -19,7 +21,11 @@ class ProxyConstructor implements ProxyCall {
     @Override
     public Object call(VM vm, Object obj) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         try {
-            return constructor.newInstance(args);
+            Object inst = constructor.newInstance(args);
+            if (visitor != null) {
+                visitor.onProxyVisit(constructor, inst, args);
+            }
+            return inst;
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
             if (cause instanceof UnicornException) {
