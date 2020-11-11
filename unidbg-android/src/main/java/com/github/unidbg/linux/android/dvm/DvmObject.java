@@ -51,6 +51,11 @@ public class DvmObject<T> extends Hashable {
     }
 
     @SuppressWarnings("unused")
+    public boolean callJniMethodBoolean(Emulator<?> emulator, String method, Object...args) {
+        return callJniMethodInt(emulator, method, args) == VM.JNI_TRUE;
+    }
+
+    @SuppressWarnings("unused")
     public int callJniMethodInt(Emulator<?> emulator, String method, Object...args) {
         if (objectType == null) {
             throw new IllegalStateException("objectType is null");

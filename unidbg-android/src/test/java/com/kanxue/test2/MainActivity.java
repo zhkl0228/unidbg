@@ -58,7 +58,7 @@ public class MainActivity {
             for (char b : LETTERS) {
                 for (char c : LETTERS) {
                     String str = "" + a + b + c;
-                    boolean success = obj.callJniMethodInt(emulator, "jnitest(Ljava/lang/String;)Z", str) == VM.JNI_TRUE;
+                    boolean success = obj.callJniMethodBoolean(emulator, "jnitest(Ljava/lang/String;)Z", str);
                     if (success) {
                         System.out.println("Found: " + str + ", off=" + (System.currentTimeMillis() - start) + "ms");
                         return;

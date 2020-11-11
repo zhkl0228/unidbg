@@ -20,11 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Use HookZz
- */
-@Deprecated
-public class ThumbIntercept extends ThumbSvc {
+class ThumbIntercept extends ThumbSvc {
 
     private final Pointer pointer;
     private final InterceptCallback callback;

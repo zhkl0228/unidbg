@@ -5,6 +5,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 class ProxyJni extends JniFunction {
 
@@ -360,6 +363,22 @@ class ProxyJni extends JniFunction {
             log.warn("callFloatMethodV", e);
         }
         return super.callFloatMethodV(vm, dvmObject, dvmMethod, vaList);
+    }
+
+    @Override
+    public DvmObject<?> toReflectedMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmClass.getName());
+            List<Class<?>> classes = new ArrayList<>(10);
+            ProxyUtils.parseMethodArgs(dvmMethod, classes);
+            Class<?>[] types = classes.toArray(new Class[0]);
+            Method method = ProxyUtils.matchMethodTypes(clazz, dvmMethod.getMethodName(), types);
+            return ProxyDvmObject.createObject(vm, method);
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            log.warn("toReflectedMethod", e);
+        }
+
+        return super.toReflectedMethod(vm, dvmClass, dvmMethod);
     }
 
     @Override

@@ -52,7 +52,7 @@ class ProxyUtils {
                     } else {
                         Object obj = dvmObject.getValue();
                         classes.add(obj.getClass());
-                        args.add(obj);
+                        args.add(unpack(dvmObject));
                     }
                     offset++;
                     break;
@@ -114,7 +114,7 @@ class ProxyUtils {
                     } else {
                         Object obj = dvmObject.getValue();
                         classes.add(obj.getClass());
-                        args.add(obj);
+                        args.add(unpack(dvmObject));
                     }
                     offset += 4;
                     break;
@@ -127,6 +127,67 @@ class ProxyUtils {
                     classes.add(long.class);
                     args.add(vaList.getLong(offset));
                     offset += 8;
+                    break;
+                default:
+                    throw new IllegalStateException("c=" + c);
+            }
+        }
+    }
+
+    private static Object unpack(DvmObject<?> dvmObject) {
+        if (dvmObject == null) {
+            return null;
+        }
+        Object obj = dvmObject.getValue();
+        if (obj instanceof DvmObject) {
+            return unpack((DvmObject<?>) obj);
+        } else {
+            Class<?> clazz = obj.getClass();
+            if (clazz.isArray() && DvmObject.class.isAssignableFrom(clazz.getComponentType())) {
+                Object[] dvmArray = (Object[]) obj;
+                Object[] array = new Object[dvmArray.length];
+                for (int i = 0; i < dvmArray.length; i++) {
+                    DvmObject<?> dvm = (DvmObject<?>) dvmArray[i];
+                    array[i] = unpack(dvm);
+                }
+                return array;
+            }
+
+            return obj;
+        }
+    }
+
+    static void parseMethodArgs(DvmMethod dvmMethod, List<Class<?>> classes) {
+        String shorty = dvmMethod.decodeArgsShorty();
+        char[] chars = shorty.toCharArray();
+        for (char c : chars) {
+            switch (c) {
+                case 'B':
+                    classes.add(byte.class);
+                    break;
+                case 'C':
+                    classes.add(char.class);
+                    break;
+                case 'I':
+                    classes.add(int.class);
+                    break;
+                case 'S':
+                    classes.add(short.class);
+                    break;
+                case 'Z':
+                    classes.add(boolean.class);
+                    break;
+                case 'F':
+                    classes.add(float.class);
+                    break;
+                case 'L':
+                    classes.add(null);
+                    break;
+                case 'D':
+                    classes.add(double.class);
+                    break;
+                case 'J':
+                    classes.add(long.class);
                     break;
                 default:
                     throw new IllegalStateException("c=" + c);
@@ -156,7 +217,7 @@ class ProxyUtils {
         return true;
     }
 
-    private static Method matchMethodTypes(Class<?> clazz, String methodName, Class<?>[] types) throws NoSuchMethodException {
+    static Method matchMethodTypes(Class<?> clazz, String methodName, Class<?>[] types) throws NoSuchMethodException {
         List<Method> methods = new ArrayList<>();
         for (Method method : clazz.getMethods()) {
             if (method.getParameterTypes().length == types.length && methodName.equals(method.getName())) {

@@ -17,9 +17,9 @@ import unicorn.ArmConst;
 import java.util.Arrays;
 
 /**
- * Use HookZz
+ * Use debugger
  */
-@Deprecated
+@SuppressWarnings("unused")
 public class InlineHook {
 
     /**
@@ -36,7 +36,7 @@ public class InlineHook {
             capstone = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
             capstone.setDetail(Capstone.CS_OPT_ON);
 
-            byte[] code = getThumbCode(pointer);
+            byte[] code = readThumbCode(pointer);
             Capstone.CsInsn[] insns = capstone.disasm(code, 0, 1);
             if (insns == null || insns.length < 1) {
                 throw new IllegalArgumentException("Invalid hook address: " + pointer);
@@ -129,7 +129,7 @@ public class InlineHook {
         }
     }
 
-    private static byte[] getThumbCode(Pointer pointer) {
+    private static byte[] readThumbCode(Pointer pointer) {
         short ins = pointer.getShort(0);
         if(ARM.isThumb32(ins)) { // thumb32
             return pointer.getByteArray(0, 4);
@@ -138,10 +138,6 @@ public class InlineHook {
         }
     }
 
-    /**
-     * Use HookZz.instrument
-     */
-    @Deprecated
     public static void simpleThumbIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
         Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {
@@ -152,7 +148,7 @@ public class InlineHook {
             capstone = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
             capstone.setDetail(Capstone.CS_OPT_ON);
 
-            byte[] code = getThumbCode(pointer);
+            byte[] code = readThumbCode(pointer);
             Capstone.CsInsn[] insns = capstone.disasm(code, 0, 1);
             if (insns == null || insns.length < 1) {
                 throw new IllegalArgumentException("Invalid intercept address: " + pointer);
@@ -166,10 +162,6 @@ public class InlineHook {
         }
     }
 
-    /**
-     * Use HookZz.instrument
-     */
-    @Deprecated
     public static void simpleArmIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
         Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {

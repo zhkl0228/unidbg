@@ -18,6 +18,8 @@ class ProxyMethod implements ProxyCall {
     @Override
     public Object call(Object obj) throws IllegalAccessException, InvocationTargetException {
         try {
+            patch(obj, args);
+
             return method.invoke(obj, args);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
@@ -25,6 +27,15 @@ class ProxyMethod implements ProxyCall {
                 throw (UnicornException) cause;
             }
             throw e;
+        }
+    }
+
+    private void patch(Object obj, Object[] args) {
+        if (obj instanceof ClassLoader &&
+                "loadClass".equals(method.getName()) &&
+                args.length == 1) {
+            String binaryName = (String) args[0];
+            args[0] = binaryName.replace('/', '.');
         }
     }
 }

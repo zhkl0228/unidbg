@@ -19,11 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Use HookZz
- */
-@Deprecated
-public class ArmIntercept extends ArmSvc {
+class ArmIntercept extends ArmSvc {
 
     private final Pointer pointer;
     private final InterceptCallback callback;
