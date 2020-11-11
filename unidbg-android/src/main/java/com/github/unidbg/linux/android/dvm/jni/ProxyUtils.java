@@ -5,6 +5,7 @@ import com.github.unidbg.linux.android.dvm.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 class ProxyUtils {
@@ -217,15 +218,21 @@ class ProxyUtils {
         return true;
     }
 
-    static Method matchMethodTypes(Class<?> clazz, String methodName, Class<?>[] types) throws NoSuchMethodException {
+    static Method matchMethodTypes(Class<?> clazz, String methodName, Class<?>[] types, boolean isStatic) throws NoSuchMethodException {
         List<Method> methods = new ArrayList<>();
-        for (Method method : clazz.getMethods()) {
-            if (method.getParameterTypes().length == types.length && methodName.equals(method.getName())) {
-                methods.add(method);
+        if (isStatic) {
+            for (Method method : clazz.getMethods()) {
+                if (method.getParameterTypes().length == types.length &&
+                        methodName.equals(method.getName()) &&
+                        Modifier.isStatic(method.getModifiers())) {
+                    methods.add(method);
+                }
             }
         }
         for (Method method : clazz.getDeclaredMethods()) {
-            if (method.getParameterTypes().length == types.length && methodName.equals(method.getName())) {
+            if (method.getParameterTypes().length == types.length &&
+                    methodName.equals(method.getName()) &&
+                    isStatic == Modifier.isStatic(method.getModifiers())) {
                 methods.add(method);
             }
         }
@@ -239,7 +246,15 @@ class ProxyUtils {
                 return method;
             }
         }
-        throw new NoSuchMethodException(Arrays.toString(types));
+
+        Class<?> parentClass = clazz.getSuperclass();
+        if (!isStatic && parentClass != null) {
+            try {
+                return matchMethodTypes(parentClass, methodName, types, false);
+            } catch(NoSuchMethodException ignored) {}
+        }
+
+        throw new NoSuchMethodException(clazz.getName() + "." + methodName + Arrays.toString(types));
     }
 
     private static Constructor<?> matchConstructorTypes(Class<?> clazz, Class<?>[] types) throws NoSuchMethodException {
@@ -253,7 +268,7 @@ class ProxyUtils {
                 return constructor;
             }
         }
-        throw new NoSuchMethodException(Arrays.toString(types));
+        throw new NoSuchMethodException(clazz.getName() + ".<init>" + Arrays.toString(types));
     }
 
     static ProxyCall findConstructor(Class<?> clazz, DvmMethod dvmMethod, VarArg varArg) throws NoSuchMethodException {
@@ -288,7 +303,7 @@ class ProxyUtils {
         return new ProxyConstructor(constructor, args.toArray());
     }
 
-    static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VarArg varArg) throws NoSuchMethodException {
+    static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VarArg varArg, boolean isStatic) throws NoSuchMethodException {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, varArg);
@@ -296,12 +311,12 @@ class ProxyUtils {
             return new ProxyMethod((Method) dvmMethod.member, args.toArray());
         }
         Class<?>[] types = classes.toArray(new Class[0]);
-        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types);
+        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
         dvmMethod.setMember(method);
         return new ProxyMethod(method, args.toArray());
     }
 
-    static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VaList vaList) throws NoSuchMethodException {
+    static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VaList vaList, boolean isStatic) throws NoSuchMethodException {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, vaList);
@@ -309,7 +324,7 @@ class ProxyUtils {
             return new ProxyMethod((Method) dvmMethod.member, args.toArray());
         }
         Class<?>[] types = classes.toArray(new Class[0]);
-        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types);
+        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
         dvmMethod.setMember(method);
         return new ProxyMethod(method, args.toArray());
     }

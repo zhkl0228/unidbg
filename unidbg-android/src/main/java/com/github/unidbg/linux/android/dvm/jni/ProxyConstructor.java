@@ -1,5 +1,6 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
+import com.github.unidbg.linux.android.dvm.VM;
 import unicorn.UnicornException;
 
 import java.lang.reflect.Constructor;
@@ -16,13 +17,17 @@ class ProxyConstructor implements ProxyCall {
     }
 
     @Override
-    public Object call(Object obj) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+    public Object call(VM vm, Object obj) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         try {
             return constructor.newInstance(args);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
             if (cause instanceof UnicornException) {
                 throw (UnicornException) cause;
+            }
+            if (cause instanceof ProxyDvmException) {
+                vm.throwException(ProxyDvmObject.createObject(vm, cause));
+                return null;
             }
             throw e;
         }

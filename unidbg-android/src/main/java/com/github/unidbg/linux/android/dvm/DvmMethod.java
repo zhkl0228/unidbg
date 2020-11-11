@@ -44,6 +44,10 @@ public class DvmMethod extends Hashable {
         return dvmClass.getClassName() + "->" + methodName + args;
     }
 
+    public boolean isStatic() {
+        return isStatic;
+    }
+
     DvmObject<?>  callStaticObjectMethod(VarArg varArg) {
         BaseVM vm = dvmClass.vm;
         return checkJni(vm, dvmClass).callStaticObjectMethod(vm, dvmClass, this, varArg);

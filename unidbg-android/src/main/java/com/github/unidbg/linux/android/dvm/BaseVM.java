@@ -138,6 +138,11 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             obj.onDeleteRef();
         }
         localObjectMap.clear();
+
+        if (throwable != null) {
+            throwable.onDeleteRef();
+            throwable = null;
+        }
     }
 
     private class ApkLibraryFile implements LibraryFile {

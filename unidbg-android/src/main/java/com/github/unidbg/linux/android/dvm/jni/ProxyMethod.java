@@ -1,5 +1,6 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
+import com.github.unidbg.linux.android.dvm.VM;
 import unicorn.UnicornException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -16,7 +17,7 @@ class ProxyMethod implements ProxyCall {
     }
 
     @Override
-    public Object call(Object obj) throws IllegalAccessException, InvocationTargetException {
+    public Object call(VM vm, Object obj) throws IllegalAccessException, InvocationTargetException {
         try {
             patch(obj, args);
 
@@ -26,14 +27,22 @@ class ProxyMethod implements ProxyCall {
             if (cause instanceof UnicornException) {
                 throw (UnicornException) cause;
             }
+            if (cause instanceof ProxyDvmException) {
+                vm.throwException(ProxyDvmObject.createObject(vm, cause));
+                return null;
+            }
+            if (cause instanceof ClassNotFoundException) {
+                vm.throwException(ProxyDvmObject.createObject(vm, cause));
+                return null;
+            }
             throw e;
         }
     }
 
     private void patch(Object obj, Object[] args) {
         if (obj instanceof ClassLoader &&
-                "loadClass".equals(method.getName()) &&
-                args.length == 1) {
+                args.length == 1 &&
+                ("loadClass".equals(method.getName()) || "findClass".equals(method.getName()))) {
             String binaryName = (String) args[0];
             args[0] = binaryName.replace('/', '.');
         }
