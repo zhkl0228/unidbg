@@ -7,6 +7,8 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.Arrays;
+
 class VaList64 extends VaList {
 
     private static final Log log = LogFactory.getLog(VaList64.class);
@@ -20,12 +22,11 @@ class VaList64 extends VaList {
         int mask_integer = va_list.getInt(24);
         int mask_float = va_list.getInt(28);
 
-        String shorty = method.decodeArgsShorty();
+        Shorty[] shorties = method.decodeArgsShorty();
 
-        char[] chars = shorty.toCharArray();
-        if (chars.length > 0) {
-            for (char c : chars) {
-                switch (c) {
+        if (shorties.length > 0) {
+            for (Shorty shorty : shorties) {
+                switch (shorty.getType()) {
                     case 'B':
                     case 'C':
                     case 'I':
@@ -126,14 +127,14 @@ class VaList64 extends VaList {
                         break;
                     }
                     default:
-                        throw new IllegalStateException("c=" + c);
+                        throw new IllegalStateException("c=" + shorty.getType());
                 }
             }
         }
 
         buffer.flip();
         if (log.isDebugEnabled()) {
-            log.debug(Inspector.inspectString(buffer.array(), "VaList64 base_p=0x" + Long.toHexString(base_p) + ", base_integer=0x" + Long.toHexString(base_integer) + ", base_float=0x" + Long.toHexString(base_float) + ", mask_integer=0x" + Long.toHexString(mask_integer & 0xffffffffL) + ", mask_float=0x" + Long.toHexString(mask_float & 0xffffffffL) + ", args=" + method.args + ", shorty=" + shorty));
+            log.debug(Inspector.inspectString(buffer.array(), "VaList64 base_p=0x" + Long.toHexString(base_p) + ", base_integer=0x" + Long.toHexString(base_integer) + ", base_float=0x" + Long.toHexString(base_float) + ", mask_integer=0x" + Long.toHexString(mask_integer & 0xffffffffL) + ", mask_float=0x" + Long.toHexString(mask_float & 0xffffffffL) + ", args=" + method.args + ", shorty=" + Arrays.toString(shorties)));
         }
     }
 }

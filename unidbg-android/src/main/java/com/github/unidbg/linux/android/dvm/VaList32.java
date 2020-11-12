@@ -7,6 +7,8 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.Arrays;
+
 class VaList32 extends VaList {
 
     private static final Log log = LogFactory.getLog(VaList32.class);
@@ -14,13 +16,12 @@ class VaList32 extends VaList {
     VaList32(Emulator<?> emulator, BaseVM vm, UnidbgPointer va_list, DvmMethod method) {
         super(vm, method, method.decodeArgsShorty());
 
-        String shorty = method.decodeArgsShorty();
+        Shorty[] shorties = method.decodeArgsShorty();
 
-        char[] chars = shorty.toCharArray();
-        if (chars.length > 0) {
+        if (shorties.length > 0) {
             UnidbgPointer pointer = va_list;
-            for (char c : chars) {
-                switch (c) {
+            for (Shorty shorty : shorties) {
+                switch (shorty.getType()) {
                     case 'L':
                     case 'B':
                     case 'C':
@@ -53,14 +54,14 @@ class VaList32 extends VaList {
                         break;
                     }
                     default:
-                        throw new IllegalStateException("c=" + c);
+                        throw new IllegalStateException("c=" + shorty.getType());
                 }
             }
         }
 
         buffer.flip();
         if (log.isDebugEnabled()) {
-            log.debug(Inspector.inspectString(buffer.array(), "VaList64 args=" + method.args + ", shorty=" + shorty));
+            log.debug(Inspector.inspectString(buffer.array(), "VaList64 args=" + method.args + ", shorty=" + Arrays.toString(shorties)));
         }
     }
 }

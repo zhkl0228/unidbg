@@ -6,6 +6,8 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.Arrays;
+
 class JValueList extends VaList {
 
     private static final Log log = LogFactory.getLog(JValueList.class);
@@ -13,13 +15,12 @@ class JValueList extends VaList {
     JValueList(BaseVM vm, UnidbgPointer jvalue, DvmMethod method) {
         super(vm, method, method.decodeArgsShorty());
 
-        String shorty = method.decodeArgsShorty();
+        Shorty[] shorties = method.decodeArgsShorty();
 
-        char[] chars = shorty.toCharArray();
-        if (chars.length > 0) {
+        if (shorties.length > 0) {
             Pointer pointer = jvalue;
-            for (char c : chars) {
-                switch (c) {
+            for (Shorty shorty : shorties) {
+                switch (shorty.getType()) {
                     case 'L':
                         UnidbgPointer ptr = (UnidbgPointer) pointer.getPointer(0);
                         buffer.putInt((int) ptr.toUIntPeer());
@@ -60,7 +61,7 @@ class JValueList extends VaList {
                         break;
                     }
                     default:
-                        throw new IllegalStateException("c=" + c);
+                        throw new IllegalStateException("c=" + shorty.getType());
                 }
 
                 pointer = pointer.share(8);
@@ -69,7 +70,7 @@ class JValueList extends VaList {
 
         buffer.flip();
         if (log.isDebugEnabled()) {
-            log.debug(Inspector.inspectString(buffer.array(), "JValueList args=" + method.args + ", shorty=" + shorty));
+            log.debug(Inspector.inspectString(buffer.array(), "JValueList args=" + method.args + ", shorty=" + Arrays.toString(shorties)));
         }
     }
 

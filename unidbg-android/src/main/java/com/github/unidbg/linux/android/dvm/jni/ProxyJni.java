@@ -372,7 +372,7 @@ class ProxyJni extends JniFunction {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
             List<Class<?>> classes = new ArrayList<>(10);
-            ProxyUtils.parseMethodArgs(dvmMethod, classes);
+            ProxyUtils.parseMethodArgs(dvmMethod, classes, clazz.getClassLoader());
             Class<?>[] types = classes.toArray(new Class[0]);
             Method method = ProxyUtils.matchMethodTypes(clazz, dvmMethod.getMethodName(), types, dvmMethod.isStatic());
             return ProxyDvmObject.createObject(vm, new ProxyReflectedMethod(method));

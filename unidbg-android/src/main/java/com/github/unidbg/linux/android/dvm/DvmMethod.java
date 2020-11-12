@@ -6,6 +6,8 @@ import org.apache.commons.logging.LogFactory;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class DvmMethod extends Hashable {
@@ -196,11 +198,19 @@ public class DvmMethod extends Hashable {
         return checkJni(vm, dvmClass).toReflectedMethod(vm, dvmClass, this);
     }
 
-    public final String decodeArgsShorty() {
-        StringBuilder sb = new StringBuilder();
+    private Shorty[] shortyCache;
+
+    public final Shorty[] decodeArgsShorty() {
+        if (shortyCache != null) {
+            return shortyCache;
+        }
+
         char[] chars = args.toCharArray();
-        boolean isArray = false;
+        List<Shorty> list = new ArrayList<>(chars.length);
+        int arrayDimensions = 0;
         boolean isType = false;
+        Shorty shorty = null;
+        StringBuilder binaryName = new StringBuilder();
         for (int i = 1; i < chars.length; i++) {
             char c = chars[i];
             if (c == ')') {
@@ -210,6 +220,10 @@ public class DvmMethod extends Hashable {
             if (isType) {
                 if (c == ';') {
                     isType = false;
+                    shorty.setBinaryName(binaryName.toString());
+                    binaryName.delete(0, binaryName.length());
+                } else {
+                    binaryName.append(c);
                 }
                 continue;
             }
@@ -231,7 +245,7 @@ public class DvmMethod extends Hashable {
                     type = c;
                     break;
                 case '[':
-                    isArray = true;
+                    arrayDimensions++;
                     break;
                 default:
                     throw new IllegalStateException("i=" + i + ", char=" + chars[i] + ", args=" + args);
@@ -241,14 +255,12 @@ public class DvmMethod extends Hashable {
                 continue;
             }
 
-            if (isArray) {
-                sb.append('L');
-            } else {
-                sb.append(type);
-            }
-            isArray = false;
+            shorty = new Shorty(arrayDimensions, type);
+            list.add(shorty);
+            arrayDimensions = 0;
         }
-        return sb.toString();
+        shortyCache = list.toArray(new Shorty[0]);
+        return shortyCache;
     }
 
     public Member member;

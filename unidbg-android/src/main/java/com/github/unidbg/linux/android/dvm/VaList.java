@@ -11,17 +11,16 @@ public abstract class VaList {
     private final DvmMethod method;
     final ByteBuffer buffer;
 
-    protected VaList(BaseVM vm, DvmMethod method, String shorty) {
+    protected VaList(BaseVM vm, DvmMethod method, Shorty[] shorties) {
         this.vm = vm;
         this.method = method;
 
-        char[] chars = shorty.toCharArray();
-        if (chars.length == 0) {
+        if (shorties.length == 0) {
             buffer = ByteBuffer.allocate(0);
         } else {
             int total = 0;
-            for (char c : chars) {
-                switch (c) {
+            for (Shorty shorty : shorties) {
+                switch (shorty.getType()) {
                     case 'B':
                     case 'C':
                     case 'I':
@@ -36,7 +35,7 @@ public abstract class VaList {
                         total += 8;
                         break;
                     default:
-                        throw new IllegalStateException("c=" + c);
+                        throw new IllegalStateException("c=" + shorty.getType());
                 }
             }
             buffer = ByteBuffer.allocate(total);
@@ -45,13 +44,12 @@ public abstract class VaList {
     }
 
     final String formatArgs() {
-        String shorty = method.decodeArgsShorty();
-        char[] chars = shorty.toCharArray();
-        List<String> format = new ArrayList<>(chars.length);
-        List<Object> args = new ArrayList<>(chars.length);
+        Shorty[] shorties = method.decodeArgsShorty();
+        List<String> format = new ArrayList<>(shorties.length);
+        List<Object> args = new ArrayList<>(shorties.length);
         int offset = 0;
-        for (char c : chars) {
-            switch (c) {
+        for (Shorty shorty : shorties) {
+            switch (shorty.getType()) {
                 case 'B':
                     format.add("%s");
                     args.add((byte) getInt(offset));
@@ -98,7 +96,7 @@ public abstract class VaList {
                     offset += 8;
                     break;
                 default:
-                    throw new IllegalStateException("c=" + c);
+                    throw new IllegalStateException("c=" + shorty.getType());
             }
         }
         StringBuilder sb = new StringBuilder();
