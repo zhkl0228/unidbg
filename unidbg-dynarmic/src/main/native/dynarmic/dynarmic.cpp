@@ -539,9 +539,24 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_setD
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nativeInitialize
   (JNIEnv *env, jclass clazz, jboolean is64Bit) {
   t_dynarmic dynarmic = (t_dynarmic) calloc(1, sizeof(struct dynarmic));
+  if(dynarmic == NULL) {
+    fprintf(stderr, "calloc dynarmic failed: size=%lu\n", sizeof(struct dynarmic));
+    abort();
+    return 0;
+  }
   dynarmic->is64Bit = is64Bit == JNI_TRUE;
   dynarmic->memory = kh_init(memory);
-  kh_resize(memory, dynarmic->memory, 0x1000);
+  if(dynarmic->memory == NULL) {
+    fprintf(stderr, "kh_init memory failed\n");
+    abort();
+    return 0;
+  }
+  int ret = kh_resize(memory, dynarmic->memory, 0x1000);
+  if(ret == -1) {
+    fprintf(stderr, "kh_resize memory failed\n");
+    abort();
+    return 0;
+  }
   dynarmic->monitor = new Dynarmic::ExclusiveMonitor(1);
   if(dynarmic->is64Bit) {
     DynarmicCallbacks64 *callbacks = new DynarmicCallbacks64(dynarmic->memory);
@@ -780,6 +795,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     }
     khiter_t k = kh_put(memory, memory, vaddr, &ret);
     t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
+    if(page == NULL) {
+      fprintf(stderr, "calloc page failed: size=%lu\n", sizeof(struct memory_page));
+      abort();
+      return 0;
+    }
     page->addr = addr;
     page->perms = perms;
     kh_value(memory, k) = page;
