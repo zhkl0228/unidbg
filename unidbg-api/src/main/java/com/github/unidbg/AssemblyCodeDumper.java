@@ -2,9 +2,9 @@ package com.github.unidbg;
 
 import capstone.Capstone;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.listener.TraceCodeListener;
-import unicorn.UnicornException;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -60,7 +60,7 @@ public class AssemblyCodeDumper implements CodeHook {
                     }
                     listener.onInstruction(emulator, address, insns[0]);
                 }
-            } catch (UnicornException e) {
+            } catch (BackendException e) {
                 throw new IllegalStateException(e);
             }
         }

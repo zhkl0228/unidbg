@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -14,7 +15,6 @@ import keystone.KeystoneMode;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import unicorn.ArmConst;
-import unicorn.UnicornException;
 
 import java.util.Scanner;
 import java.util.concurrent.Callable;
@@ -35,7 +35,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
             try {
                 emulator.showRegs();
                 nextAddress = disassemble(emulator, address, size, thumb);
-            } catch (UnicornException e) {
+            } catch (BackendException e) {
                 e.printStackTrace();
             }
         }

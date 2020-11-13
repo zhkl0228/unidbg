@@ -1,6 +1,6 @@
 package com.github.unidbg;
 
-import unicorn.UnicornException;
+import com.github.unidbg.arm.backend.BackendException;
 
-public class StopEmulatorException extends UnicornException {
+public class StopEmulatorException extends BackendException {
 }

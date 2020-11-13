@@ -1,7 +1,7 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.linux.android.dvm.VM;
-import unicorn.UnicornException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -28,8 +28,8 @@ class ProxyConstructor implements ProxyCall {
             return inst;
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
-            if (cause instanceof UnicornException) {
-                throw (UnicornException) cause;
+            if (cause instanceof BackendException) {
+                throw (BackendException) cause;
             }
             if (cause instanceof ProxyDvmException) {
                 vm.throwException(ProxyDvmObject.createObject(vm, cause));

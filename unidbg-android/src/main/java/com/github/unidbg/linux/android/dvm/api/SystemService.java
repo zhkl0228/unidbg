@@ -1,9 +1,9 @@
 package com.github.unidbg.linux.android.dvm.api;
 
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.VM;
-import unicorn.UnicornException;
 
 public class SystemService extends DvmObject<String> {
 
@@ -39,7 +39,7 @@ public class SystemService extends DvmObject<String> {
             case INPUT_METHOD_SERVICE:
                 return vm.resolveClass("android/view/inputmethod/InputMethodManager");
             default:
-                throw new UnicornException("service failed: " + serviceName);
+                throw new BackendException("service failed: " + serviceName);
         }
     }
 

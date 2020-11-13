@@ -7,6 +7,7 @@ import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
@@ -27,7 +28,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
-import unicorn.UnicornException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +59,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         }
 
         if (intno != ARMEmulator.EXCP_SWI) {
-            throw new UnicornException("intno=" + intno);
+            throw new BackendException("intno=" + intno);
         }
 
         final int svcNumber = (pc.getInt(-4) >> 5) & 0xffff;
@@ -85,7 +85,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 }
                 backend.emu_stop();
-                throw new UnicornException("svc number: " + svcNumber);
+                throw new BackendException("svc number: " + svcNumber);
             }
 
             if (log.isDebugEnabled()) {
@@ -1183,7 +1183,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             return stat64(emulator, path, statbuf);
         } else {
             if (dirfd != IO.AT_FDCWD) {
-                throw new UnicornException("dirfd=" + dirfd);
+                throw new BackendException("dirfd=" + dirfd);
             }
 
             log.warn("fstatat64 dirfd=" + dirfd + ", pathname=" + path + ", statbuf=" + statbuf + ", flags=" + flags);
@@ -1216,7 +1216,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             return fd;
         } else {
             if (dirfd != IO.AT_FDCWD) {
-                throw new UnicornException();
+                throw new BackendException();
             }
 
             log.warn(msg);
@@ -1278,7 +1278,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         int bufSize = context.getIntArg(3);
         String path = pathname.getString(0);
         if (dirfd != IO.AT_FDCWD) {
-            throw new UnicornException();
+            throw new BackendException();
         }
         return readlink(emulator, path, buf, bufSize);
     }

@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.debugger.AbstractDebugServer;
@@ -20,7 +21,6 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.UnicornConst;
-import unicorn.UnicornException;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -400,7 +400,7 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             newBuf.put(Utils.pack_dd(size));
             newBuf.put(data);
             sendAck(Utils.flipBuffer(newBuf));
-        } catch (UnicornException e) {
+        } catch (BackendException e) {
             if (log.isDebugEnabled()) {
                 log.debug("read memory failed: address=0x" + Long.toHexString(address), e);
             }

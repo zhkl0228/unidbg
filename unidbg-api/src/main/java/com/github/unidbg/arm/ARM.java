@@ -6,7 +6,7 @@ import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
@@ -14,7 +14,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
-import unicorn.UnicornException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -1007,7 +1006,7 @@ public class ARM {
                     sb.append(" (-0x").append(Integer.toHexString(-value)).append(")");
                 }
             }
-        } catch (UnicornException | DynarmicException exception) {
+        } catch (BackendException exception) {
             sb.append(" => ").append(exception.getMessage());
         }
     }

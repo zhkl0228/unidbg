@@ -4,6 +4,7 @@ import capstone.Arm;
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.hook.InterceptCallback;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -13,7 +14,6 @@ import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.ArmConst;
-import unicorn.UnicornException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +55,7 @@ class ArmIntercept extends ArmSvc {
         if ("push".equals(insn.mnemonic)) {
             evalPush(backend, emulator);
         } else {
-            throw new UnicornException(insn.mnemonic + " " + insn.opStr);
+            throw new BackendException(insn.mnemonic + " " + insn.opStr);
         }
     }
 

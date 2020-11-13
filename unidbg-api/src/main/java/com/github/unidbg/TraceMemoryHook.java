@@ -1,6 +1,7 @@
 package com.github.unidbg;
 
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.ReadHook;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -8,7 +9,6 @@ import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.codec.binary.Hex;
-import unicorn.UnicornException;
 
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
@@ -49,7 +49,7 @@ class TraceMemoryHook implements ReadHook, WriteHook {
             if (traceReadListener == null || traceReadListener.onRead(emulator, address, data, value)) {
                 printMsg("### Memory READ at 0x", emulator, address, size, value);
             }
-        } catch (UnicornException e) {
+        } catch (BackendException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -79,7 +79,7 @@ class TraceMemoryHook implements ReadHook, WriteHook {
             if (traceWriteListener == null || traceWriteListener.onWrite(emulator, address, size, value)) {
                 printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
             }
-        } catch (UnicornException e) {
+        } catch (BackendException e) {
             throw new IllegalStateException(e);
         }
     }

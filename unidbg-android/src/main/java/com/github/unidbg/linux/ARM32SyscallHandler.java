@@ -7,6 +7,7 @@ import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileIO;
@@ -30,7 +31,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
-import unicorn.UnicornException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -73,7 +73,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         }
 
         if (intno != ARMEmulator.EXCP_SWI) {
-            throw new UnicornException("intno=" + intno);
+            throw new BackendException("intno=" + intno);
         }
 
         final int svcNumber;
@@ -514,7 +514,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         int bufSize = context.getIntArg(3);
         String path = pathname.getString(0);
         if (dirfd != IO.AT_FDCWD) {
-            throw new UnicornException();
+            throw new BackendException();
         }
         return readlink(emulator, path, buf, bufSize);
     }
@@ -576,10 +576,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             log.debug("mremap old_address=" + old_address + ", old_size=" + old_size + ", new_size=" + new_size + ", flags=" + flags + ", new_address=" + new_address);
         }
         if (old_size == 0) {
-            throw new UnicornException("old_size is zero");
+            throw new BackendException("old_size is zero");
         }
         if ((flags & MREMAP_MAYMOVE) == 0) {
-            throw new UnicornException("flags=" + flags);
+            throw new BackendException("flags=" + flags);
         }
 
         Memory memory = emulator.getMemory();
@@ -595,7 +595,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 return (int) pointer.toUIntPeer();
             }
         }
-        throw new UnicornException();
+        throw new BackendException();
     }
 
     protected int ptrace(Emulator<?> emulator) {
@@ -1847,7 +1847,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             log.debug("fstatat64 dirfd=" + dirfd + ", pathname=" + path + ", statbuf=" + statbuf + ", flags=" + flags);
         }
         if (dirfd != IO.AT_FDCWD && !path.startsWith("/")) {
-            throw new UnicornException();
+            throw new BackendException();
         }
         return stat64(emulator, path, statbuf);
     }
@@ -1888,7 +1888,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             return fd;
         } else {
             if (dirfd != IO.AT_FDCWD) {
-                throw new UnicornException();
+                throw new BackendException();
             }
 
             log.warn(msg);

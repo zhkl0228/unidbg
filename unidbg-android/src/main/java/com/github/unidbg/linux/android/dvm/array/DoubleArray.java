@@ -1,10 +1,10 @@
 package com.github.unidbg.linux.android.dvm.array;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import unicorn.UnicornException;
 
 public class DoubleArray extends BaseArray<double[]> implements PrimitiveArray<double[]> {
 
@@ -24,11 +24,11 @@ public class DoubleArray extends BaseArray<double[]> implements PrimitiveArray<d
 
     @Override
     public UnidbgPointer _GetArrayCritical(Emulator<?> emulator, Pointer isCopy) {
-        throw new UnicornException();
+        throw new BackendException();
     }
 
     @Override
     public void _ReleaseArrayCritical(Pointer elems, int mode) {
-        throw new UnicornException();
+        throw new BackendException();
     }
 }

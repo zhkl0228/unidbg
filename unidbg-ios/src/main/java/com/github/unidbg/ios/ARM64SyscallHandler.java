@@ -8,6 +8,7 @@ import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -37,7 +38,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.UnicornConst;
-import unicorn.UnicornException;
 
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
@@ -77,7 +77,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
 
         if (intno != ARMEmulator.EXCP_SWI) {
-            throw new UnicornException("intno=" + intno);
+            throw new BackendException("intno=" + intno);
         }
 
         final int svcNumber = (pc.getInt(-4) >> 5) & 0xffff;
@@ -103,7 +103,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     return;
                 }
                 backend.emu_stop();
-                throw new UnicornException("svc number: " + svcNumber + ", NR=" + NR + ", intno=" + intno);
+                throw new BackendException("svc number: " + svcNumber + ", NR=" + NR + ", intno=" + intno);
             }
 
             if (log.isDebugEnabled()) {
@@ -1169,7 +1169,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return result.io.fstatfs(new StatFS(buf));
         }
         log.info("statfs64 pathPointer=" + pathPointer + ", buf=" + buf + ", path=" + path);
-        throw new UnicornException("statfs64 path=" + path + ", buf=" + buf);
+        throw new BackendException("statfs64 path=" + path + ", buf=" + buf);
     }
 
     private long bsdthread_create(Emulator<?> emulator) {
@@ -1767,7 +1767,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int tag = flags >> 24;
         boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
         if (!anywhere) {
-            throw new UnicornException("_kernelrpc_mach_vm_map_trap fixed");
+            throw new BackendException("_kernelrpc_mach_vm_map_trap fixed");
         }
 
         MachOLoader loader = (MachOLoader) emulator.getMemory();

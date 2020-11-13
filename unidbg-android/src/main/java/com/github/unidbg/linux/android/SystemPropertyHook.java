@@ -4,13 +4,13 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.UnicornException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -62,7 +62,7 @@ public class SystemPropertyHook implements HookListener {
 
                 byte[] data = value.getBytes(StandardCharsets.UTF_8);
                 if (data.length >= PROP_VALUE_MAX) {
-                    throw new UnicornException("invalid property value length: key=" + key + ", value=" + value);
+                    throw new BackendException("invalid property value length: key=" + key + ", value=" + value);
                 }
 
                 context.getPointerArg(1).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);

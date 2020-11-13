@@ -3,6 +3,7 @@ package com.github.unidbg.virtualmodule.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.VM;
@@ -13,7 +14,6 @@ import com.github.unidbg.virtualmodule.VirtualModule;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.UnicornException;
 
 import java.util.Map;
 
@@ -87,7 +87,7 @@ public class AndroidModule extends VirtualModule<VM> {
         symbols.put("AAsset_read", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnicornException();
+                throw new BackendException();
             }
         } : new ArmSvc() {
             @Override
@@ -126,7 +126,7 @@ public class AndroidModule extends VirtualModule<VM> {
                 return vm.addLocalObject(asset);
             }
         }
-        throw new UnicornException("filename=" + filename + ", mode=" + mode);
+        throw new BackendException("filename=" + filename + ", mode=" + mode);
     }
 
     private static long close(Emulator<?> emulator, VM vm) {

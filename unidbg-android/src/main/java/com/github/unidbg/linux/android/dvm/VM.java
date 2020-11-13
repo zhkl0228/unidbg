@@ -32,6 +32,9 @@ public interface VM {
 
     <T extends DvmObject<?>> T getObject(int hash);
 
+    /**
+     * Use vm.setDvmClassFactory(new ProxyClassFactory()) instead
+     */
     void setJni(Jni jni);
 
     void printMemoryInfo();

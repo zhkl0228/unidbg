@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -14,7 +15,6 @@ import keystone.KeystoneMode;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import unicorn.Arm64Const;
-import unicorn.UnicornException;
 
 import java.util.Scanner;
 import java.util.concurrent.Callable;
@@ -34,7 +34,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
             try {
                 emulator.showRegs();
                 nextAddress = disassemble(emulator, address, size, false);
-            } catch (UnicornException e) {
+            } catch (BackendException e) {
                 e.printStackTrace();
             }
         }
@@ -229,14 +229,14 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     }
                 }
                 if ("blr".equals(line)) { // break LR
-                    long addr = ((Number) backend.reg_read(Arm64Const.UC_ARM64_REG_LR)).longValue();
+                    long addr = backend.reg_read(Arm64Const.UC_ARM64_REG_LR).longValue();
                     addBreakPoint(addr);
                     Module module = findModuleByAddress(emulator, addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
                 if ("r".equals(line)) {
-                    long addr = ((Number) backend.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+                    long addr = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
                     if (removeBreakPoint(addr)) {
                         Module module = findModuleByAddress(emulator, addr);
                         System.out.println("Remove breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
@@ -244,7 +244,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                     continue;
                 }
                 if ("b".equals(line)) {
-                    long addr = ((Number) backend.reg_read(Arm64Const.UC_ARM64_REG_PC)).longValue();
+                    long addr = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
                     addBreakPoint(addr);
                     Module module = findModuleByAddress(emulator, addr);
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));

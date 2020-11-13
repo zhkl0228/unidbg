@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.*;
 import com.github.unidbg.arm.*;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
@@ -16,7 +17,6 @@ import com.github.unidbg.ios.struct.kernel.Pthread64;
 import com.github.unidbg.ios.struct.kernel.VmRemapRequest;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo32;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo64;
-import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.*;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
@@ -32,7 +32,10 @@ import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.*;
+import unicorn.Arm64Const;
+import unicorn.ArmConst;
+import unicorn.Unicorn;
+import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -1716,7 +1719,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         int prot = memoryMap == null ? args.inheritance : memoryMap.prot;
         try {
             backend.mem_map(args.target_address, args.size, prot);
-        } catch (UnicornException e) {
+        } catch (BackendException e) {
             throw new IllegalStateException("remap target_address=0x" + Long.toHexString(args.target_address) + ", size=" + args.size, e);
         }
         if (this.memoryMap.put(args.target_address, new MemoryMap(args.target_address, args.size, prot)) != null) {

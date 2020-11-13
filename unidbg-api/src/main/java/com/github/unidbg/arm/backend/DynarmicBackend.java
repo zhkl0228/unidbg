@@ -19,7 +19,7 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
 
     private static final Log log = LogFactory.getLog(DynarmicBackend.class);
 
-    static DynarmicBackend tryInitialize(Emulator<?> emulator, boolean is64Bit) {
+    static DynarmicBackend tryInitialize(Emulator<?> emulator, boolean is64Bit) throws BackendException {
         try {
             Dynarmic dynarmic = new Dynarmic(is64Bit);
             return is64Bit ? new DynarmicBackend64(emulator, dynarmic) : new DynarmicBackend32(emulator, dynarmic);
@@ -34,10 +34,14 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     protected final Emulator<?> emulator;
     protected final Dynarmic dynarmic;
 
-    protected DynarmicBackend(Emulator<?> emulator, Dynarmic dynarmic) {
+    protected DynarmicBackend(Emulator<?> emulator, Dynarmic dynarmic) throws BackendException {
         this.emulator = emulator;
         this.dynarmic = dynarmic;
-        this.dynarmic.setDynarmicCallback(this);
+        try {
+            this.dynarmic.setDynarmicCallback(this);
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     private static final int EXCEPTION_BREAKPOINT = 8;
@@ -84,17 +88,25 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     protected long until;
 
     @Override
-    public final void emu_start(long begin, long until, long timeout, long count) {
+    public final void emu_start(long begin, long until, long timeout, long count) throws BackendException {
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
         }
         this.until = until + 4;
-        dynarmic.emu_start(begin);
+        try {
+            dynarmic.emu_start(begin);
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void emu_stop() {
-        dynarmic.emu_stop();
+    public void emu_stop() throws BackendException {
+        try {
+            dynarmic.emu_stop();
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
@@ -103,28 +115,48 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     }
 
     @Override
-    public byte[] mem_read(long address, long size) {
-        return dynarmic.mem_read(address, (int) size);
+    public byte[] mem_read(long address, long size) throws BackendException {
+        try {
+            return dynarmic.mem_read(address, (int) size);
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_write(long address, byte[] bytes) {
-        dynarmic.mem_write(address, bytes);
+    public void mem_write(long address, byte[] bytes) throws BackendException {
+        try {
+            dynarmic.mem_write(address, bytes);
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_map(long address, long size, int perms) {
-        dynarmic.mem_map(address, size, perms);
+    public void mem_map(long address, long size, int perms) throws BackendException {
+        try {
+            dynarmic.mem_map(address, size, perms);
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_protect(long address, long size, int perms) {
-        dynarmic.mem_protect(address, size, perms);
+    public void mem_protect(long address, long size, int perms) throws BackendException {
+        try {
+            dynarmic.mem_protect(address, size, perms);
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_unmap(long address, long size) {
-        dynarmic.mem_unmap(address, size);
+    public void mem_unmap(long address, long size) throws BackendException {
+        try {
+            dynarmic.mem_unmap(address, size);
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     private EventMemHookNotifier eventMemHookNotifier;

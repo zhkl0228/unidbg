@@ -5,6 +5,7 @@ import capstone.Arm_const;
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.hook.InterceptCallback;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -14,7 +15,6 @@ import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.ArmConst;
-import unicorn.UnicornException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,7 +90,7 @@ class ThumbIntercept extends ThumbSvc {
                 evalBL(backend, true, emulator);
                 break;
             default:
-                throw new UnicornException(insn.mnemonic + " " + insn.opStr);
+                throw new BackendException(insn.mnemonic + " " + insn.opStr);
         }
     }
 
@@ -117,7 +117,7 @@ class ThumbIntercept extends ThumbSvc {
         Arm.OpInfo opInfo = (Arm.OpInfo) this.insn.operands;
         int opCount = opInfo.op.length;
         if (opCount != 2 && opCount != 3) {
-            throw new UnicornException("opCount=" + opCount);
+            throw new BackendException("opCount=" + opCount);
         }
 
         long o1 = backend.reg_read(opInfo.op[opCount - 2].value.reg).intValue() & 0xffffffffL;
@@ -138,7 +138,7 @@ class ThumbIntercept extends ThumbSvc {
         Arm.OpInfo opInfo = (Arm.OpInfo) this.insn.operands;
         int opCount = opInfo.op.length;
         if (opCount != 2 && opCount != 3) {
-            throw new UnicornException("opCount=" + opCount);
+            throw new BackendException("opCount=" + opCount);
         }
 
         int o1 = backend.reg_read(opInfo.op[opCount - 2].value.reg).intValue();
@@ -166,7 +166,7 @@ class ThumbIntercept extends ThumbSvc {
             case Arm_const.ARM_OP_IMM:
                 return op.value.imm;
             default:
-                throw new UnicornException("op.type=" + op.type);
+                throw new BackendException("op.type=" + op.type);
         }
     }
 
@@ -174,7 +174,7 @@ class ThumbIntercept extends ThumbSvc {
         Arm.OpInfo opInfo = (Arm.OpInfo) this.insn.operands;
         int opCount = opInfo.op.length;
         if (opCount != 2 && opCount != 3) {
-            throw new UnicornException("opCount=" + opCount);
+            throw new BackendException("opCount=" + opCount);
         }
         long o1 = backend.reg_read(opInfo.op[opCount - 2].value.reg).intValue() & 0xffffffffL;
         long o2 = backend.reg_read(opInfo.op[opCount - 1].value.reg).intValue() & 0xffffffffL;

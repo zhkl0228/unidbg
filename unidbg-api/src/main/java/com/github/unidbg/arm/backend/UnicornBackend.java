@@ -3,19 +3,20 @@ package com.github.unidbg.arm.backend;
 import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
-import unicorn.Arm64Const;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
+import unicorn.*;
 
 public class UnicornBackend implements Backend {
 
     private final boolean is64Bit;
     private final Unicorn unicorn;
 
-    UnicornBackend(boolean is64Bit) {
+    UnicornBackend(boolean is64Bit) throws BackendException {
         this.is64Bit = is64Bit;
-        this.unicorn = new Unicorn(is64Bit ? UnicornConst.UC_ARCH_ARM64 : UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM);
+        try {
+            this.unicorn = new Unicorn(is64Bit ? UnicornConst.UC_ARCH_ARM64 : UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
@@ -38,44 +39,76 @@ public class UnicornBackend implements Backend {
     }
 
     @Override
-    public Number reg_read(int regId) {
-        return (Number) unicorn.reg_read(regId);
+    public Number reg_read(int regId) throws BackendException {
+        try {
+            return (Number) unicorn.reg_read(regId);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public byte[] reg_read(int regId, int regSize) {
-        return unicorn.reg_read(regId, regSize);
+    public byte[] reg_read(int regId, int regSize) throws BackendException {
+        try {
+            return unicorn.reg_read(regId, regSize);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void reg_write(int regId, Number value) {
-        unicorn.reg_write(regId, value);
+    public void reg_write(int regId, Number value) throws BackendException {
+        try {
+            unicorn.reg_write(regId, value);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public byte[] mem_read(long address, long size) {
-        return unicorn.mem_read(address, size);
+    public byte[] mem_read(long address, long size) throws BackendException {
+        try {
+            return unicorn.mem_read(address, size);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_write(long address, byte[] bytes) {
-        unicorn.mem_write(address, bytes);
+    public void mem_write(long address, byte[] bytes) throws BackendException {
+        try {
+            unicorn.mem_write(address, bytes);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_map(long address, long size, int perms) {
-        unicorn.mem_map(address, size, perms);
+    public void mem_map(long address, long size, int perms) throws BackendException {
+        try {
+            unicorn.mem_map(address, size, perms);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_protect(long address, long size, int perms) {
-        unicorn.mem_protect(address, size, perms);
+    public void mem_protect(long address, long size, int perms) throws BackendException {
+        try {
+            unicorn.mem_protect(address, size, perms);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void mem_unmap(long address, long size) {
-        unicorn.mem_unmap(address, size);
+    public void mem_unmap(long address, long size) throws BackendException {
+        try {
+            unicorn.mem_unmap(address, size);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     private static class BreakPointImpl implements BreakPoint {
@@ -128,92 +161,133 @@ public class UnicornBackend implements Backend {
     }
 
     @Override
-    public Unicorn.UnHook hook_add_new(final CodeHook callback, long begin, long end, Object user_data) {
-        return unicorn.hook_add_new(new unicorn.CodeHook() {
-            @Override
-            public void hook(Unicorn u, long address, int size, Object user) {
-                callback.hook(UnicornBackend.this, address, size, user);
-            }
-        }, begin, end, user_data);
+    public Unicorn.UnHook hook_add_new(final CodeHook callback, long begin, long end, Object user_data) throws BackendException {
+        try {
+            return unicorn.hook_add_new(new unicorn.CodeHook() {
+                @Override
+                public void hook(Unicorn u, long address, int size, Object user) {
+                    callback.hook(UnicornBackend.this, address, size, user);
+                }
+            }, begin, end, user_data);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public Unicorn.UnHook debugger_add(final DebugHook callback, long begin, long end, Object user_data) {
-        return unicorn.debugger_add(new unicorn.DebugHook() {
-            @Override
-            public void onBreak(Unicorn u, long address, int size, Object user) {
-                callback.onBreak(UnicornBackend.this, address, size, user);
-            }
-            @Override
-            public void hook(Unicorn u, long address, int size, Object user) {
-                callback.hook(UnicornBackend.this, address, size, user);
-            }
-        }, begin, end, user_data);
+    public Unicorn.UnHook debugger_add(final DebugHook callback, long begin, long end, Object user_data) throws BackendException {
+        try {
+            return unicorn.debugger_add(new unicorn.DebugHook() {
+                @Override
+                public void onBreak(Unicorn u, long address, int size, Object user) {
+                    callback.onBreak(UnicornBackend.this, address, size, user);
+                }
+
+                @Override
+                public void hook(Unicorn u, long address, int size, Object user) {
+                    callback.hook(UnicornBackend.this, address, size, user);
+                }
+            }, begin, end, user_data);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void hook_add_new(final ReadHook callback, long begin, long end, Object user_data) {
-        unicorn.hook_add_new(new unicorn.ReadHook() {
-            @Override
-            public void hook(Unicorn u, long address, int size, Object user) {
-                callback.hook(UnicornBackend.this, address, size, user);
-            }
-        }, begin, end, user_data);
+    public void hook_add_new(final ReadHook callback, long begin, long end, Object user_data) throws BackendException {
+        try {
+            unicorn.hook_add_new(new unicorn.ReadHook() {
+                @Override
+                public void hook(Unicorn u, long address, int size, Object user) {
+                    callback.hook(UnicornBackend.this, address, size, user);
+                }
+            }, begin, end, user_data);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void hook_add_new(final WriteHook callback, long begin, long end, Object user_data) {
-        unicorn.hook_add_new(new unicorn.WriteHook() {
-            @Override
-            public void hook(Unicorn u, long address, int size, long value, Object user) {
-                callback.hook(UnicornBackend.this, address, size, value, user);
-            }
-        }, begin, end, user_data);
+    public void hook_add_new(final WriteHook callback, long begin, long end, Object user_data) throws BackendException {
+        try {
+            unicorn.hook_add_new(new unicorn.WriteHook() {
+                @Override
+                public void hook(Unicorn u, long address, int size, long value, Object user) {
+                    callback.hook(UnicornBackend.this, address, size, value, user);
+                }
+            }, begin, end, user_data);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void hook_add_new(final EventMemHook callback, int type, Object user_data) {
-        unicorn.hook_add_new(new unicorn.EventMemHook() {
-            @Override
-            public boolean hook(Unicorn u, long address, int size, long value, Object user) {
-                return callback.hook(UnicornBackend.this, address, size, value, user);
-            }
-        }, type, user_data);
+    public void hook_add_new(final EventMemHook callback, int type, Object user_data) throws BackendException {
+        try {
+            unicorn.hook_add_new(new unicorn.EventMemHook() {
+                @Override
+                public boolean hook(Unicorn u, long address, int size, long value, Object user) {
+                    return callback.hook(UnicornBackend.this, address, size, value, user);
+                }
+            }, type, user_data);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void hook_add_new(final InterruptHook callback, Object user_data) {
-        unicorn.hook_add_new(new unicorn.InterruptHook() {
-            @Override
-            public void hook(Unicorn u, int intno, Object user) {
-                callback.hook(UnicornBackend.this, intno, user);
-            }
-        }, user_data);
+    public void hook_add_new(final InterruptHook callback, Object user_data) throws BackendException {
+        try {
+            unicorn.hook_add_new(new unicorn.InterruptHook() {
+                @Override
+                public void hook(Unicorn u, int intno, Object user) {
+                    callback.hook(UnicornBackend.this, intno, user);
+                }
+            }, user_data);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public Unicorn.UnHook hook_add_new(final BlockHook callback, long begin, long end, Object user_data) {
-        return unicorn.hook_add_new(new unicorn.BlockHook() {
-            @Override
-            public void hook(Unicorn u, long address, int size, Object user) {
-                callback.hook(UnicornBackend.this, address, size, user);
-            }
-        }, begin, end, user_data);
+    public Unicorn.UnHook hook_add_new(final BlockHook callback, long begin, long end, Object user_data) throws BackendException {
+        try {
+            return unicorn.hook_add_new(new unicorn.BlockHook() {
+                @Override
+                public void hook(Unicorn u, long address, int size, Object user) {
+                    callback.hook(UnicornBackend.this, address, size, user);
+                }
+            }, begin, end, user_data);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void emu_start(long begin, long until, long timeout, long count) {
-        unicorn.emu_start(begin, until, timeout, count);
+    public void emu_start(long begin, long until, long timeout, long count) throws BackendException {
+        try {
+            unicorn.emu_start(begin, until, timeout, count);
+        } catch (UnicornException e) {
+            throw new BackendException();
+        }
     }
 
     @Override
-    public void emu_stop() {
-        unicorn.emu_stop();
+    public void emu_stop() throws BackendException {
+        try {
+            unicorn.emu_stop();
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
-    public void destroy() {
-        unicorn.closeAll();
+    public void destroy() throws BackendException {
+        try {
+            unicorn.closeAll();
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override

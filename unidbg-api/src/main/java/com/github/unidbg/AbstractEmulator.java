@@ -2,11 +2,7 @@ package com.github.unidbg;
 
 import com.github.unidbg.arm.ARMSvcMemory;
 import com.github.unidbg.arm.Arguments;
-import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.arm.backend.BackendFactory;
-import com.github.unidbg.arm.backend.ReadHook;
-import com.github.unidbg.arm.backend.WriteHook;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
+import com.github.unidbg.arm.backend.*;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebugServer;
 import com.github.unidbg.debugger.Debugger;
@@ -34,7 +30,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
-import unicorn.UnicornException;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -393,7 +388,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
             }
         } catch (RuntimeException e) {
-            if (!entry && (e instanceof UnicornException || e instanceof DynarmicException) && !log.isDebugEnabled()) {
+            if (!entry && e instanceof BackendException && !log.isDebugEnabled()) {
                 log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);
                 return -1;
             }
