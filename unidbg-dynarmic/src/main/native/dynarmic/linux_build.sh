@@ -1,4 +1,4 @@
-JAVA_INC="$(realpath "$JAVA_HOME"/include)"
+JAVA_INC="$JAVA_HOME"/include
 JAVA_PLATFORM_INC="$(dirname "$(find "$JAVA_INC" -name jni_md.h)")"
 
 c++ -m64 -o libdynarmic.so -shared -fPIC -std=c++17 -O2 \
