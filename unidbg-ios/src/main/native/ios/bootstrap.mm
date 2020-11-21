@@ -83,7 +83,7 @@ static CFMutableDictionaryRef makeDictionary() {
   NSLog(@"NSUserDefaults name=%@, synchronize=%d", name, success);
 
   NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
-  NSLog(@"NSURLSessionConfiguration configuration=%@", configuration);
+  NSLog(@"NSURLSessionConfiguration configuration=%@, NSUUID=%@", configuration, [[NSUUID new] UUIDString]);
 }
 -(NSString *) description {
   return @"This is ObjC TEST";

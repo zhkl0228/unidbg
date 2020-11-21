@@ -111,11 +111,20 @@ public class DynarmicBackend32 extends DynarmicBackend {
     }
 
     @Override
+    public byte[] reg_read_vector(int regId) throws BackendException {
+        return null;
+    }
+
+    @Override
+    public void reg_write_vector(int regId, byte[] vector) throws BackendException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb) {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, thumb ? KeystoneMode.ArmThumb : KeystoneMode.Arm)) {
             KeystoneEncoded encoded = keystone.assemble("bkpt #" + svcNumber);
             return encoded.getMachineCode();
         }
     }
-
 }

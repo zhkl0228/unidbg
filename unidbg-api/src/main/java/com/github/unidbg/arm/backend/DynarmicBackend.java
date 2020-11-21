@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class DynarmicBackend implements Backend, DynarmicCallback {
+public abstract class DynarmicBackend extends AbstractBackend implements Backend, DynarmicCallback {
 
     private static final Log log = LogFactory.getLog(DynarmicBackend.class);
 
@@ -276,11 +276,6 @@ public abstract class DynarmicBackend implements Backend, DynarmicCallback {
     @Override
     public Unicorn.UnHook hook_add_new(BlockHook callback, long begin, long end, Object user_data) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public byte[] reg_read(int regId, int regSize) {
-        return null;
     }
 
     @Override

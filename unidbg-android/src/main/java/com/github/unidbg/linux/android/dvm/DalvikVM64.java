@@ -528,13 +528,12 @@ public class DalvikVM64 extends BaseVM implements VM {
                     if (verbose) {
                         System.out.printf("JNIEnv->CallFloatMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
                     }
-                    ByteBuffer buffer = ByteBuffer.allocate(4);
+                    ByteBuffer buffer = ByteBuffer.allocate(16);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     buffer.putFloat(ret);
                     buffer.flip();
-                    long s0 = (buffer.getInt() & 0xffffffffL);
-                    emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_S0, s0);
-                    return s0;
+                    emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
+                    return emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
                 }
             }
         });

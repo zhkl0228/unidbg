@@ -153,6 +153,28 @@ public class DynarmicBackend64 extends DynarmicBackend {
     }
 
     @Override
+    public byte[] reg_read_vector(int regId) throws BackendException {
+        return null;
+    }
+
+    @Override
+    public void reg_write_vector(int regId, byte[] vector) throws BackendException {
+        try {
+            if (vector.length != 16) {
+                throw new IllegalStateException("Invalid vector size");
+            }
+
+            if (regId >= Arm64Const.UC_ARM64_REG_Q0 && regId <= Arm64Const.UC_ARM64_REG_Q31) {
+                dynarmic.reg_set_vector(regId - Arm64Const.UC_ARM64_REG_Q0, vector);
+            } else {
+                throw new UnsupportedOperationException("regId=" + regId);
+            }
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
+    }
+
+    @Override
     protected byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb) {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
             KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);

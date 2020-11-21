@@ -119,6 +119,19 @@ static void test_statfs() {
   printf("test_statfs size=%d, ret=%d, hex=%s\n", (int) sizeof(stb), ret, buf);
 }
 
+static float sFloat = 0.0023942017f;
+
+static float* float_func() {
+  return &sFloat;
+}
+
+static void test_float() {
+  float *f = float_func();
+  void *ptr = f;
+  unsigned int *ip = (unsigned int *) ptr;
+  printf("test_float size=%zu, ip=0x%x\n", sizeof(float), *ip);
+}
+
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -132,6 +145,7 @@ int main() {
   }
   test_backtrace();
   test_statfs();
+  test_float();
   char sdk[PROP_VALUE_MAX];
   __system_property_get("ro.build.version.sdk", sdk);
   printf("Press any key to exit: cmp=%d\n", strcmp("23", sdk));

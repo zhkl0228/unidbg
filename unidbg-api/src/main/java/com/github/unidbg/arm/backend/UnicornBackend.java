@@ -5,7 +5,7 @@ import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import unicorn.*;
 
-public class UnicornBackend implements Backend {
+public class UnicornBackend extends AbstractBackend implements Backend {
 
     private final boolean is64Bit;
     private final Unicorn unicorn;
@@ -38,10 +38,18 @@ public class UnicornBackend implements Backend {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public Number reg_read(int regId) throws BackendException {
+    public byte[] reg_read_vector(int regId) throws BackendException {
         try {
-            return (Number) unicorn.reg_read(regId);
+            if (is64Bit) {
+                if (regId < Arm64Const.UC_ARM64_REG_Q0 || regId > Arm64Const.UC_ARM64_REG_Q31) {
+                    throw new UnsupportedOperationException("regId=" + regId);
+                }
+                return unicorn.reg_read(regId, 16);
+            } else {
+                throw new UnsupportedOperationException();
+            }
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
@@ -49,9 +57,28 @@ public class UnicornBackend implements Backend {
 
     @SuppressWarnings("deprecation")
     @Override
-    public byte[] reg_read(int regId, int regSize) throws BackendException {
+    public void reg_write_vector(int regId, byte[] vector) throws BackendException {
+        if (vector.length != 16) {
+            throw new IllegalStateException("Invalid vector size");
+        }
         try {
-            return unicorn.reg_read(regId, regSize);
+            if (is64Bit) {
+                if (regId < Arm64Const.UC_ARM64_REG_Q0 || regId > Arm64Const.UC_ARM64_REG_Q31) {
+                    throw new UnsupportedOperationException("regId=" + regId);
+                }
+                unicorn.reg_write(regId, vector);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        } catch (UnicornException e) {
+            throw new BackendException(e);
+        }
+    }
+
+    @Override
+    public Number reg_read(int regId) throws BackendException {
+        try {
+            return (Number) unicorn.reg_read(regId);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }

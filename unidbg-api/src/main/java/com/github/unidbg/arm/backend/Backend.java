@@ -11,7 +11,8 @@ public interface Backend {
 
     Number reg_read(int regId)throws BackendException;
 
-    byte[] reg_read(int regId, int regSize) throws BackendException;
+    byte[] reg_read_vector(int regId) throws BackendException;
+    void reg_write_vector(int regId, byte[] vector) throws BackendException;
 
     void reg_write(int regId, Number value) throws BackendException;
 
