@@ -816,6 +816,34 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetFloatField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetFloatField object=" + object + ", jfieldID=" + jfieldID);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException();
+                } else {
+                    float ret = dvmField.getFloatField(dvmObject);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->GetFloatField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                    ByteBuffer buffer = ByteBuffer.allocate(4);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putFloat(ret);
+                    buffer.flip();
+                    return (buffer.getInt() & 0xffffffffL);
+                }
+            }
+        });
+
         Pointer _SetObjectField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1953,6 +1981,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x180, _GetBooleanField);
         impl.setPointer(0x190, _GetIntField);
         impl.setPointer(0x194, _GetLongField);
+        impl.setPointer(0x198, _GetFloatField);
         impl.setPointer(0x1a0, _SetObjectField);
         impl.setPointer(0x1a4, _SetBooleanField);
         impl.setPointer(0x1b4, _SetIntField);

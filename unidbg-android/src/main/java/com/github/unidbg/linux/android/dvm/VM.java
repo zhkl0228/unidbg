@@ -26,6 +26,9 @@ public interface VM {
 
     Pointer getJNIEnv();
 
+    /**
+     * @param interfaceClasses 如果不为空的话，第一个为superClass，其它的为interfaces
+     */
     DvmClass resolveClass(String className, DvmClass... interfaceClasses);
 
     DvmClass findClass(String className);

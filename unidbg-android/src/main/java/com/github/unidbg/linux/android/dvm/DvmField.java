@@ -1,14 +1,9 @@
 package com.github.unidbg.linux.android.dvm;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 public class DvmField extends Hashable {
-
-    private static final Log log = LogFactory.getLog(DvmField.class);
 
     private final DvmClass dvmClass;
     final String fieldName;
@@ -61,6 +56,11 @@ public class DvmField extends Hashable {
     long getLongField(DvmObject<?> dvmObject) {
         BaseVM vm = dvmClass.vm;
         return checkJni(vm, dvmClass).getLongField(dvmClass.vm, dvmObject, this);
+    }
+
+    float getFloatField(DvmObject<?> dvmObject) {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).getFloatField(dvmClass.vm, dvmObject, this);
     }
 
     void setObjectField(DvmObject<?> dvmObject, DvmObject<?> value) {

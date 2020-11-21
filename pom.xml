@@ -4,7 +4,7 @@
     <groupId>com.github.zhkl0228</groupId>
     <artifactId>unidbg-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.0</version>
+    <version>0.9.1-SNAPSHOT</version>
     <modules>
         <module>unidbg-api</module>
         <module>unidbg-android</module>

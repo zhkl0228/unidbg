@@ -29,8 +29,8 @@ public class ProxyClassFactory implements DvmClassFactory {
     }
 
     @Override
-    public DvmClass createClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
-        return new ProxyDvmClass(vm, className, interfaceClasses, classLoader, visitor);
+    public DvmClass createClass(BaseVM vm, String className, DvmClass superClass, DvmClass[] interfaceClasses) {
+        return new ProxyDvmClass(vm, className, superClass, interfaceClasses, classLoader, visitor);
     }
 
 }

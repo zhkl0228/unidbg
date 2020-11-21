@@ -532,7 +532,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     buffer.putFloat(ret);
                     buffer.flip();
-                    return (buffer.getInt() & 0xffffffffL);
+                    long s0 = (buffer.getInt() & 0xffffffffL);
+                    emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_S0, s0);
+                    return s0;
                 }
             }
         });

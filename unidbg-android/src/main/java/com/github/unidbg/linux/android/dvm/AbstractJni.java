@@ -488,6 +488,16 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public float getFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        return getFloatField(vm, dvmObject, dvmField.getSignature());
+    }
+
+    @Override
+    public float getFloatField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
         callStaticVoidMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }

@@ -26,6 +26,13 @@ class ProxyField {
         return field.getLong(thisObj);
     }
 
+    final float getFloat(Object thisObj) throws IllegalAccessException {
+        if (visitor != null) {
+            visitor.onProxyVisit(field, thisObj, null);
+        }
+        return field.getFloat(thisObj);
+    }
+
     final boolean getBoolean(Object thisObj) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);

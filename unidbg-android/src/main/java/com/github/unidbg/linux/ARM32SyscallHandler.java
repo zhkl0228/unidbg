@@ -1562,7 +1562,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         machine.setString(0, "armv7l");
 
         Pointer domainname = machine.share(SYS_NMLN);
-        domainname.setString(0, "");
+        domainname.setString(0, "localdomain");
 
         return 0;
     }

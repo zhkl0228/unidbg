@@ -88,6 +88,9 @@ public interface Jni {
     long getLongField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
     long getLongField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 
+    float getFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
+    float getFloatField(BaseVM vm, DvmObject<?> dvmObject, String signature);
+
     DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
     DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 

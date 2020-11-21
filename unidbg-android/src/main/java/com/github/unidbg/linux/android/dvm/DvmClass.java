@@ -18,18 +18,28 @@ public class DvmClass extends DvmObject<Class<?>> {
     private static final String ROOT_CLASS = "java/lang/Class";
 
     public final BaseVM vm;
+    private final DvmClass superClass;
     private final DvmClass[] interfaceClasses;
     private final String className;
 
-    protected DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
-        this(vm, className, interfaceClasses, null);
+    protected DvmClass(BaseVM vm, String className, DvmClass superClass, DvmClass[] interfaceClasses) {
+        this(vm, className, superClass, interfaceClasses, null);
     }
 
-    protected DvmClass(BaseVM vm, String className, DvmClass[] interfaceClasses, Class<?> value) {
+    protected DvmClass(BaseVM vm, String className, DvmClass superClass, DvmClass[] interfaceClasses, Class<?> value) {
         super(ROOT_CLASS.equals(className) ? null : vm.resolveClass(ROOT_CLASS), value);
         this.vm = vm;
+        this.superClass = superClass;
         this.interfaceClasses = interfaceClasses;
         this.className = className;
+    }
+
+    public DvmClass getSuperclass() {
+        return superClass;
+    }
+
+    public DvmClass[] getInterfaces() {
+        return interfaceClasses;
     }
 
     @Override

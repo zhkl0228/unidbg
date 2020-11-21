@@ -419,6 +419,23 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public float getFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField, visitor);
+            Object thisObj = dvmObject.getValue();
+            if (thisObj == null) {
+                throw new IllegalStateException("obj is null: " + dvmObject);
+            }
+            return field.getFloat(thisObj);
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("getFloatField: " + dvmField, e);
+        }
+
+        return super.getFloatField(vm, dvmObject, dvmField);
+    }
+
+    @Override
     public boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());

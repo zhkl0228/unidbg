@@ -74,12 +74,17 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     public final DvmClass resolveClass(String className, DvmClass... interfaceClasses) {
         int hash = Objects.hash(className);
         DvmClass dvmClass = classMap.get(hash);
+        DvmClass superClass = null;
+        if (interfaceClasses != null && interfaceClasses.length > 0) {
+            superClass = interfaceClasses[0];
+            interfaceClasses = Arrays.copyOfRange(interfaceClasses, 1, interfaceClasses.length);
+        }
         if (dvmClass == null) {
             if (dvmClassFactory != null) {
-                dvmClass = dvmClassFactory.createClass(this, className, interfaceClasses);
+                dvmClass = dvmClassFactory.createClass(this, className, superClass, interfaceClasses);
             }
             if (dvmClass == null) {
-                dvmClass = this.createClass(this, className, interfaceClasses);
+                dvmClass = this.createClass(this, className, superClass, interfaceClasses);
             }
             classMap.put(hash, dvmClass);
             addObject(dvmClass, true);
@@ -88,8 +93,8 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     @Override
-    public DvmClass createClass(BaseVM vm, String className, DvmClass[] interfaceClasses) {
-        return new DvmClass(vm, className, interfaceClasses);
+    public DvmClass createClass(BaseVM vm, String className, DvmClass superClass, DvmClass[] interfaceClasses) {
+        return new DvmClass(vm, className, superClass, interfaceClasses);
     }
 
     final int addObject(DvmObject<?> object, boolean global) {

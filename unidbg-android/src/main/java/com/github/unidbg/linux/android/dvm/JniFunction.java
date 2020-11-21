@@ -288,6 +288,16 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public float getFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
+    public float getFloatField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
         throw new UnsupportedOperationException(dvmField.getSignature());
     }

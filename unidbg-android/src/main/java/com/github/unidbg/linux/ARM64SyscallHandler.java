@@ -904,10 +904,10 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         version.setString(0, "#1 SMP PREEMPT Thu Apr 19 14:36:58 CST 2018"); /* Operating system version */
 
         Pointer machine = version.share(SYS_NMLN);
-        machine.setString(0, "arm64-v8a"); /* Hardware identifier */
+        machine.setString(0, "armv8l"); /* Hardware identifier */
 
         Pointer domainName = machine.share(SYS_NMLN);
-        domainName.setString(0, ""); /* NIS or YP domain name */
+        domainName.setString(0, "localdomain"); /* NIS or YP domain name */
 
         return 0;
     }
