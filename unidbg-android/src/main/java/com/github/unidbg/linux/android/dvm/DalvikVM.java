@@ -1648,6 +1648,10 @@ public class DalvikVM extends BaseVM implements VM {
             @Override
             public long handle(Emulator<?> emulator) {
                 Pointer bytes = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                if (bytes == null) {
+                    return VM.JNI_NULL;
+                }
+
                 String string = bytes.getString(0);
                 if (log.isDebugEnabled()) {
                     log.debug("NewStringUTF bytes=" + bytes + ", string=" + string);

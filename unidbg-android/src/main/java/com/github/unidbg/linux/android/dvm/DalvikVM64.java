@@ -531,9 +531,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                     ByteBuffer buffer = ByteBuffer.allocate(16);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     buffer.putFloat(ret);
-                    buffer.flip();
                     emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
-                    return emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
+                    buffer.flip();
+                    return (buffer.getInt() & 0xffffffffL);
                 }
             }
         });
@@ -720,9 +720,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                     ByteBuffer buffer = ByteBuffer.allocate(16);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     buffer.putFloat(ret);
-                    buffer.flip();
                     emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
-                    return emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
+                    buffer.flip();
+                    return (buffer.getInt() & 0xffffffffL);
                 }
             }
         });
@@ -1441,6 +1441,10 @@ public class DalvikVM64 extends BaseVM implements VM {
             @Override
             public long handle(Emulator<?> emulator) {
                 Pointer bytes = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                if (bytes == null) {
+                    return VM.JNI_NULL;
+                }
+
                 String string = bytes.getString(0);
                 if (log.isDebugEnabled()) {
                     log.debug("NewStringUTF bytes=" + bytes + ", string=" + string);
