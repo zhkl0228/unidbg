@@ -166,7 +166,9 @@ public class UnidbgPointer extends Pointer {
 
     @Override
     public void write(long offset, short[] buf, int index, int length) {
-        throw new AbstractMethodError();
+        for (int i = index; i < length; i++) {
+            setShort((i - index) * 2 + offset, buf[i]);
+        }
     }
 
     @Override
@@ -197,7 +199,9 @@ public class UnidbgPointer extends Pointer {
 
     @Override
     public void write(long offset, double[] buf, int index, int length) {
-        throw new AbstractMethodError();
+        for (int i = index; i < length; i++) {
+            setDouble((i - index) * 8 + offset, buf[i]);
+        }
     }
 
     @Override

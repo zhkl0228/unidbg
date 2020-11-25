@@ -8,10 +8,7 @@ import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
-import com.github.unidbg.linux.android.dvm.array.ArrayObject;
-import com.github.unidbg.linux.android.dvm.array.ByteArray;
-import com.github.unidbg.linux.android.dvm.array.DoubleArray;
-import com.github.unidbg.linux.android.dvm.array.IntArray;
+import com.github.unidbg.linux.android.dvm.array.*;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
@@ -1505,6 +1502,46 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetShortArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                ShortArray array = getObject(context.getPointerArg(1).toIntPeer());
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetShortArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                }
+                short[] data = Arrays.copyOfRange(array.value, start, start + length);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetShortArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                }
+                buf.write(0, data, 0, data.length);
+                return 0;
+            }
+        });
+
+        Pointer _GetDoubleArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                DoubleArray array = getObject(context.getPointerArg(1).toIntPeer());
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetDoubleArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                }
+                double[] data = Arrays.copyOfRange(array.value, start, start + length);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                }
+                buf.write(0, data, 0, data.length);
+                return 0;
+            }
+        });
+
         Pointer _SetByteArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1730,6 +1767,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x600, _ReleaseByteArrayElements);
         impl.setPointer(0x618, _ReleaseIntArrayElements);
         impl.setPointer(0x640, _GetByteArrayRegion);
+        impl.setPointer(0x650, _GetShortArrayRegion);
+        impl.setPointer(0x670, _GetDoubleArrayRegion);
         impl.setPointer(0x680, _SetByteArrayRegion);
         impl.setPointer(0x698, _SetIntArrayRegion);
         impl.setPointer(0x6B0, _SetDoubleArrayRegion);

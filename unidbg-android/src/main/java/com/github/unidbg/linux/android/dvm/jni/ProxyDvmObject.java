@@ -32,6 +32,9 @@ public class ProxyDvmObject extends DvmObject<Object> {
         if (value instanceof byte[]) {
             return new ByteArray(vm, (byte[]) value);
         }
+        if (value instanceof short[]) {
+            return new ShortArray(vm, (short[]) value);
+        }
         if (value instanceof int[]) {
             return new IntArray(vm, (int[]) value);
         }
