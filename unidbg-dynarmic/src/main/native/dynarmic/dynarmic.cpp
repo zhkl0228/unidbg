@@ -289,6 +289,10 @@ public:
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 1);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }
@@ -594,8 +598,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
       config.page_table_address_space_bits = PAGE_TABLE_ADDRESS_SPACE_BITS;
       config.silently_mirror_page_table = false;
       config.absolute_offset_page_table = false;
-//      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
-//      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
     }
 
     dynarmic->cb64 = callbacks;
@@ -635,8 +639,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
       // Memory
       config.page_table = reinterpret_cast<std::array<std::uint8_t*, Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES>*>(dynarmic->page_table);
       config.absolute_offset_page_table = false;
-//      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
-//      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+      config.only_detect_misalignment_via_page_table_on_page_boundary = true;
     }
 
     dynarmic->cb32 = callbacks;
