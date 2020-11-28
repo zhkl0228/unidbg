@@ -78,6 +78,9 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     final DvmMethod getStaticMethod(int hash) {
         DvmMethod method = staticMethodMap.get(hash);
+        if (method == null && superClass != null) {
+            method = superClass.getStaticMethod(hash);
+        }
         if (method == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
                 method = interfaceClass.getStaticMethod(hash);
@@ -109,6 +112,9 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     final DvmMethod getMethod(int hash) {
         DvmMethod method = methodMap.get(hash);
+        if (method == null && superClass != null) {
+            method = superClass.getMethod(hash);
+        }
         if (method == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
                 method = interfaceClass.getMethod(hash);
@@ -140,6 +146,9 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     final DvmField getField(int hash) {
         DvmField field = fieldMap.get(hash);
+        if (field == null && superClass != null) {
+            field = superClass.getField(hash);
+        }
         if (field == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
                 field = interfaceClass.getField(hash);
@@ -171,6 +180,9 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     final DvmField getStaticField(int hash) {
         DvmField field = staticFieldMap.get(hash);
+        if (field == null && superClass != null) {
+            field = superClass.getStaticField(hash);
+        }
         if (field == null) {
             for (DvmClass interfaceClass : interfaceClasses) {
                 field = interfaceClass.getStaticField(hash);
@@ -286,6 +298,9 @@ public class DvmClass extends DvmObject<Class<?>> {
             return true;
         }
 
+        if (superClass != null && dvmClass == superClass) {
+            return true;
+        }
         for (DvmClass dc : interfaceClasses) {
             if (dc == dvmClass) {
                 return true;

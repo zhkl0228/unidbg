@@ -8,9 +8,6 @@ import java.util.List;
 
 public class Dirent extends UnidbgStructure {
 
-    public static final byte DT_DIR = 4;
-    public static final byte DT_REG = 8;
-
     public Dirent(Pointer p) {
         super(p);
     }

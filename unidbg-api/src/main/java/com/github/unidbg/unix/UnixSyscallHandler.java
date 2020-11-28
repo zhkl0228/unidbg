@@ -126,15 +126,29 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             return FileResult.success(failResult.io);
         }
         
-        if (pathname.indexOf(("/proc/" + emulator.getPid() + "/fd/")) == 0) {
+        if (pathname.startsWith("/proc/" + emulator.getPid() + "/fd/") || pathname.startsWith("/proc/self/fd/")) {
             int fd = Integer.parseInt(pathname.substring(pathname.lastIndexOf("/") + 1));
             T file = fdMap.get(fd);
             if (file != null) {
                 return FileResult.success(file);
             }
         }
+        if (("/proc/" + emulator.getPid() + "/fd").equals(pathname) || "/proc/self/fd".equals(pathname)) {
+            return createFdDir(oflags, pathname);
+        }
+        if (("/proc/" + emulator.getPid() + "/task/").equals(pathname) || "/proc/self/task/".equals(pathname)) {
+            return createTaskDir(emulator, oflags, pathname);
+        }
         
         return failResult;
+    }
+
+    protected FileResult<T> createTaskDir(Emulator<T> emulator, int oflags, String pathname) {
+        throw new UnsupportedOperationException(pathname);
+    }
+
+    protected FileResult<T> createFdDir(int oflags, String pathname) {
+        throw new UnsupportedOperationException(pathname);
     }
 
     protected abstract T createByteArrayFileIO(String pathname, int oflags, byte[] data);

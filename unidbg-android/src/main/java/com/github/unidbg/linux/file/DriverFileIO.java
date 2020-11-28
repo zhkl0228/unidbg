@@ -131,12 +131,13 @@ public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, Androi
 
     @Override
     public int fstat(Emulator<?> emulator, com.github.unidbg.file.linux.StatStructure stat) {
-        throw new UnsupportedOperationException();
+//        throw new UnsupportedOperationException(path);
+        return 0;
     }
 
     @Override
     public int getdents64(Pointer dirp, int size) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(path);
     }
 
     @Override

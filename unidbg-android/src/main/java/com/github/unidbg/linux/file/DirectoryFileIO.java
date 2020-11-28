@@ -16,11 +16,29 @@ import java.util.*;
 
 public class DirectoryFileIO extends BaseAndroidFileIO {
 
+    public enum DirentType {
+        DT_FIFO(1), /* FIFO */
+        DT_CHR(2), /* character device */
+        DT_DIR(4), /* directory */
+        DT_BLK(6), /* block device */
+        DT_REG(8), /* regular file */
+        DT_LNK(10), /* symbolic link */
+        DT_SOCK(12), /* socket */
+        DT_WHT(14); /* whiteout */
+        private final byte type;
+        DirentType(int type) {
+            this.type = (byte) type;
+        }
+    }
+
     public static class DirectoryEntry {
-        private final boolean isFile;
+        private final DirentType type;
         private final String name;
         public DirectoryEntry(boolean isFile, String name) {
-            this.isFile = isFile;
+            this(isFile ? DirentType.DT_REG : DirentType.DT_DIR, name);
+        }
+        public DirectoryEntry(DirentType type, String name) {
+            this.type = type;
             this.name = name;
         }
     }
@@ -74,7 +92,7 @@ public class DirectoryFileIO extends BaseAndroidFileIO {
             dirent.d_ino = 0;
             dirent.d_off = 0;
             dirent.d_reclen = (short) d_reclen;
-            dirent.d_type = entry.isFile ? Dirent.DT_REG : Dirent.DT_DIR;
+            dirent.d_type = entry.type.type;
             dirent.d_name = Arrays.copyOf(data, data.length + 1);
             dirent.pack();
             offset += d_reclen;
