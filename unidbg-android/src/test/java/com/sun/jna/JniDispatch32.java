@@ -22,6 +22,8 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
+import king.trace.GlobalData;
+import king.trace.KingTrace;
 
 import java.io.File;
 import java.io.IOException;
