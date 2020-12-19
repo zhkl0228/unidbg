@@ -10,7 +10,7 @@ import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.utils.Inspector;
-import java.io.FileNotFoundException;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,7 +92,7 @@ public class KingTrace implements CodeHook {
         out.print(msg+"\n");
     }
 
-    private void dump_ldr(Backend backend,String Opstr){
+    private void dump_ldr(Backend backend, String Opstr){
         if(!GlobalData.is_dump_ldr){
             return;
         }
@@ -146,13 +146,18 @@ public class KingTrace implements CodeHook {
         }
     }
 
-    private void printTrace(Backend backend,Capstone.CsInsn[] insns , long address) {
+    private void printTrace(Backend backend, Capstone.CsInsn[] insns , long address) {
         for (Capstone.CsInsn ins : insns) {
             //查询上否有上一条缓存的指令，有的话，则查询上次的改动寄存器的数值。然后再打印
             if (GlobalData.has_pre && !GlobalData.pre_regname.equals("")){
                 Integer regindex = reg_names.get(GlobalData.pre_regname.toUpperCase());
                 Number regvalue = backend.reg_read(regindex);
-                GlobalData.pre_codestr+=String.format("\t//%s=0x%x" , GlobalData.pre_regname,regvalue);
+                if(emulator.is32Bit() || GlobalData.pre_regname.toUpperCase().startsWith("W")){
+                    GlobalData.pre_codestr+=String.format("\t//%s=0x%x" , GlobalData.pre_regname,OtherTools.toUnsignedInt(regvalue.intValue()));
+                }else{
+                    GlobalData.pre_codestr+=String.format("\t//%s=0x%x" , GlobalData.pre_regname,OtherTools.toUnsignedLong(regvalue.longValue()));
+                }
+
                 printMsg(GlobalData.pre_codestr);
                 //是否要dump汇编str
                 if(GlobalData.is_dump_str){
@@ -201,7 +206,7 @@ public class KingTrace implements CodeHook {
             }
 
             //拼接当前行的汇编指令
-            String opstr=ARM.assembleDetail(emulator, ins, address, false);
+            String opstr= ARM.assembleDetail(emulator, ins, address, false);
             //从当前行指令中匹配出所有的寄存器
             String pattern = "";
             if(emulator.is64Bit()){
@@ -249,16 +254,16 @@ public class KingTrace implements CodeHook {
             for(String reg:regs){
                 Integer regindex=reg_names.get(reg.toUpperCase());
                 Number regvalue=backend.reg_read(regindex);
-                if(emulator.is64Bit()){
-                    curRegs+=String.format("%s=0x%x\t" , reg,regvalue.longValue());
+                if(emulator.is32Bit()||reg.toUpperCase().startsWith("W")){
+                    curRegs+=String.format("%s=0x%x\t" , reg,OtherTools.toUnsignedInt(regvalue.intValue()));
                 }else if(emulator.is32Bit()){
-                    curRegs+=String.format("%s=0x%x\t" , reg,regvalue.intValue());
+                    curRegs+=String.format("%s=0x%x\t" , reg,OtherTools.toUnsignedLong(regvalue.longValue()));
                 }
             }
-            if(opstr.contains(" ldr")){
-                String ldrstr=opstr.split("ldr")[1];
-                dump_ldr(backend,ldrstr);
-            }
+//            if(opstr.contains(" ldr")){
+//                String ldrstr=opstr.split("ldr")[1];
+//                dump_ldr(backend,ldrstr);
+//            }
 
 
 
