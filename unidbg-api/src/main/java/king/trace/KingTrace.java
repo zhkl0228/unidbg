@@ -7,6 +7,7 @@ import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
+import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.utils.Inspector;
@@ -29,6 +30,13 @@ public class KingTrace implements CodeHook {
             reg_names=GlobalData.arm64_reg_names;
         }else{
             reg_names=GlobalData.arm_reg_names;
+        }
+        MemTrace memtrace=new MemTrace(false);
+        //将所有监控的内存监控地址都trace下
+        for(Integer key:GlobalData.watch_address.keySet()){
+            long start=key;
+            long end=GlobalData.watch_address.get(key);
+            emulator.getBackend().hook_add_new((WriteHook) memtrace,start,end,emulator);
         }
     }
 
@@ -193,17 +201,18 @@ public class KingTrace implements CodeHook {
                 GlobalData.has_pre=false;
             }
             //内存监控，发生变化就打印
-            if (GlobalData.watch_address.size()>0){
-                for (Integer watch:GlobalData.watch_address.keySet()) {
-                    byte[] idata= backend.mem_read(watch,GlobalData.watch_print_size);
-                    String hexstr= OtherTools.byteToString(idata);
-                    if(GlobalData.watch_address.get(watch).equals(hexstr)){
-                        continue;
-                    }
-                    GlobalData.watch_address.put(watch,hexstr);
-                    Inspector.inspect(idata, String.format("watch_address:%x onchange",watch));
-                }
-            }
+//            if (GlobalData.watch_address.size()>0){
+//                for (Integer watch:GlobalData.watch_address.keySet()) {
+//                    byte[] idata= backend.mem_read(watch,GlobalData.watch_print_size);
+//                    String hexstr= OtherTools.byteToString(idata);
+//                    if(GlobalData.watch_address.get(watch).equals(hexstr)){
+//                        continue;
+//                    }
+//                    GlobalData.watch_address.put(watch,hexstr);
+//                    Inspector.inspect(idata, String.format("watch_address:%x onchange",watch));
+//                }
+//            }
+
 
             //拼接当前行的汇编指令
             String opstr= ARM.assembleDetail(emulator, ins, address, false);
@@ -256,7 +265,7 @@ public class KingTrace implements CodeHook {
                 Number regvalue=backend.reg_read(regindex);
                 if(emulator.is32Bit()||reg.toUpperCase().startsWith("W")){
                     curRegs+=String.format("%s=0x%x\t" , reg,OtherTools.toUnsignedInt(regvalue.intValue()));
-                }else if(emulator.is32Bit()){
+                }else{
                     curRegs+=String.format("%s=0x%x\t" , reg,OtherTools.toUnsignedLong(regvalue.longValue()));
                 }
             }

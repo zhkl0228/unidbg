@@ -13,7 +13,7 @@ public class GlobalData {
     //是否有记录上一次的数据
     public static boolean has_pre;
     //监控的地址
-    public static Map<Integer,String> watch_address=new HashMap<Integer,String>();
+    public static Map<Integer,Integer> watch_address=new HashMap<Integer,Integer>();
     //监控地址打印的内存数据长度
     public static int watch_print_size=0x20;
     //计算结果和汇编的分隔符
