@@ -1,6 +1,7 @@
 package com.github.unidbg.unwind;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.pointer.UnidbgPointer;
 import unicorn.ArmConst;
@@ -23,27 +24,10 @@ public class SimpleARMUnwinder extends Unwinder {
                 return new Frame(ip, null);
             }
 
-            return new Frame(adjust_ip(ip), fp);
+            return new Frame(ARM.adjust_ip(ip), fp);
         } else {
             return null;
         }
-    }
-
-    private UnidbgPointer adjust_ip(UnidbgPointer ip) {
-        int adjust = 4;
-
-        boolean thumb = (ip.peer & 1) == 1;
-        if (thumb) {
-            /* Thumb instructions, the currently executing instruction could be
-             * 2 or 4 bytes, so adjust appropriately.
-             */
-            int value = ip.share(-5).getInt(0);
-            if ((value & 0xe000f000L) != 0xe000f000L) {
-                adjust = 2;
-            }
-        }
-
-        return ip.share(-adjust, 0);
     }
 
     private Frame initFrame(Emulator<?> emulator) {

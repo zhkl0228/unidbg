@@ -1106,4 +1106,21 @@ public class ARM {
         return args;
     }
 
+    public static UnidbgPointer adjust_ip(UnidbgPointer ip) {
+        int adjust = 4;
+
+        boolean thumb = (ip.peer & 1) == 1;
+        if (thumb) {
+            /* Thumb instructions, the currently executing instruction could be
+             * 2 or 4 bytes, so adjust appropriately.
+             */
+            int value = ip.share(-5).getInt(0);
+            if ((value & 0xe000f000L) != 0xe000f000L) {
+                adjust = 2;
+            }
+        }
+
+        return ip.share(-adjust, 0);
+    }
+
 }
