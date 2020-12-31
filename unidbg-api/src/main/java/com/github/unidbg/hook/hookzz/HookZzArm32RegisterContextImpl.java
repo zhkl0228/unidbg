@@ -37,7 +37,52 @@ public class HookZzArm32RegisterContextImpl extends HookZzRegisterContext implem
         }
 
         UnidbgPointer sp = getStackPointer();
-        return sp.getPointer((index - 4) * emulator.getPointerSize());
+        return sp.getPointer((long) (index - 4) * emulator.getPointerSize());
+    }
+
+    @Override
+    public void setR0(int r0) {
+        reg_ctx.setInt(0, r0);
+    }
+
+    @Override
+    public void setR1(int r1) {
+        reg_ctx.setInt(4, r1);
+    }
+
+    @Override
+    public void setR2(int r2) {
+        reg_ctx.setInt(8, r2);
+    }
+
+    @Override
+    public void setR3(int r3) {
+        reg_ctx.setInt(12, r3);
+    }
+
+    @Override
+    public void setR4(int r4) {
+        reg_ctx.setInt(16, r4);
+    }
+
+    @Override
+    public void setR5(int r5) {
+        reg_ctx.setInt(20, r5);
+    }
+
+    @Override
+    public void setR6(int r6) {
+        reg_ctx.setInt(24, r6);
+    }
+
+    @Override
+    public void setR7(int r7) {
+        reg_ctx.setInt(28, r7);
+    }
+
+    @Override
+    public void setStackPointer(Pointer sp) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

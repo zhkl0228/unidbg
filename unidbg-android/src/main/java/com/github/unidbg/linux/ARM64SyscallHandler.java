@@ -987,7 +987,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
     private final long nanoTime = System.nanoTime();
 
-    private int clock_gettime(Emulator<?> emulator) {
+    protected int clock_gettime(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int clk_id = context.getIntArg(0);
         Pointer tp = context.getPointerArg(1);

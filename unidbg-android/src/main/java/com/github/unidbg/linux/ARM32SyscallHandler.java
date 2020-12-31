@@ -1667,7 +1667,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
     private final long nanoTime = System.nanoTime();
 
-    private int clock_gettime(Backend backend, Emulator<?> emulator) {
+    protected int clock_gettime(Backend backend, Emulator<?> emulator) {
         int clk_id = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
         Pointer tp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
         long offset = clk_id == CLOCK_REALTIME ? System.currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;

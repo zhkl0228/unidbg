@@ -25,7 +25,7 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
         }
 
         UnidbgPointer sp = getStackPointer();
-        return sp.getPointer((index - 8) * emulator.getPointerSize());
+        return sp.getPointer((long) (index - 8) * emulator.getPointerSize());
     }
 
     @Override
@@ -49,6 +49,20 @@ public class HookZzArm64RegisterContextImpl extends HookZzRegisterContext implem
     @Override
     public long getFp() {
         return reg_ctx.getLong(29 * 8);
+    }
+
+    @Override
+    public void setXLong(int index, long value) {
+        if (index >= 0 && index <= 28) {
+            reg_ctx.setLong(index * 8, value);
+        } else {
+            throw new IllegalArgumentException("invalid index: " + index);
+        }
+    }
+
+    @Override
+    public void setStackPointer(Pointer sp) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
