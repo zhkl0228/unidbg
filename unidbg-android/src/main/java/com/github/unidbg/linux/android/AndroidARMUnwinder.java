@@ -4,10 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.linux.LinuxModule;
 import com.github.unidbg.unwind.Frame;
 import com.github.unidbg.unwind.SimpleARMUnwinder;
-import net.fornwall.jelf.ArmExIdx;
-import net.fornwall.jelf.DwarfCursor;
-import net.fornwall.jelf.GnuEhFrameHeader;
-import net.fornwall.jelf.MemoizedObject;
+import net.fornwall.jelf.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -19,7 +16,7 @@ class AndroidARMUnwinder extends SimpleARMUnwinder {
 
     public AndroidARMUnwinder(Emulator<?> emulator) {
         super(emulator);
-        this.context = new DwarfCursor(emulator);
+        this.context = new DwarfCursor32(emulator);
     }
 
     @Override

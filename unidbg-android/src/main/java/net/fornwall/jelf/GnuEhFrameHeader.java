@@ -118,7 +118,7 @@ public class GnuEhFrameHeader {
         int b;
         do {
             b = dataIn.readUnsignedByte(); off.pos++;
-            result |= (b & 0x7f) << shift;
+            result |= (long) (b & 0x7f) << shift;
             shift += 7;
         } while ((b & 0x80) != 0);
         return result;
@@ -131,11 +131,11 @@ public class GnuEhFrameHeader {
         int b;
         do {
             b = dataIn.readUnsignedByte(); off.pos++;
-            result |= (b & 0x7f) << shift;
+            result |= (long) (b & 0x7f) << shift;
             shift += 7;
         } while ((b & 0x80) != 0);
         if (((b & 0x40) != 0)) {
-            result |= -(1 << shift);
+            result |= -(1L << shift);
         }
         return result;
     }
@@ -224,7 +224,7 @@ public class GnuEhFrameHeader {
                 case DW_LOC_REGISTER:
                     vsp = UnidbgPointer.pointer(emulator, context.loc[(int) loc.cfa_rule.values[0]] + loc.cfa_rule.values[1]);
                     assert vsp != null;
-                    context.loc[emulator.is32Bit() ? 13 : 31] = vsp.peer;
+                    context.loc[emulator.is32Bit() ? DwarfCursor32.SP : DwarfCursor64.SP] = vsp.peer;
                     if (log.isDebugEnabled()) {
                         log.debug("dwarf_step cfa = " + (emulator.is32Bit() ? "r" : "x") + loc.cfa_rule.values[0] + " + " + loc.cfa_rule.values[1] + " => 0x" + Long.toHexString(vsp.peer));
                     }
@@ -419,6 +419,7 @@ public class GnuEhFrameHeader {
             if (i == fde.cie.cfa_instructions.length) {
                 loc_pc = new dwarf_loc_t(loc_init);
                 loc = loc_pc;
+                stepped = true;
             }
 
             int op = instructions[i] & 0xff;

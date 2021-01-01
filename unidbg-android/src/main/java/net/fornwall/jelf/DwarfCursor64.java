@@ -6,6 +6,10 @@ import unicorn.Arm64Const;
 
 public class DwarfCursor64 extends DwarfCursor {
 
+    private static final int FP = 29;
+    private static final int LR = 30;
+    public static final int SP = 31;
+
     public DwarfCursor64(Emulator<?> emulator) {
         super(new Long[100]);
 
@@ -16,11 +20,11 @@ public class DwarfCursor64 extends DwarfCursor {
         UnidbgPointer x29 = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_FP);
         UnidbgPointer x30 = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR);
         UnidbgPointer x31 = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
-        loc[29] = x29 == null ? 0 : x29.peer;
-        loc[30] = x30 == null ? 0 : x30.peer;
-        loc[31] = x31 == null ? 0 : x31.peer;
+        loc[FP] = x29 == null ? 0 : x29.peer;
+        loc[LR] = x30 == null ? 0 : x30.peer;
+        loc[SP] = x31 == null ? 0 : x31.peer;
 
-        this.cfa = loc[31];
+        this.cfa = loc[SP];
         this.ip = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC).peer;
     }
 }
