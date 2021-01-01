@@ -34,10 +34,12 @@ public class DvmClass extends DvmObject<Class<?>> {
         this.className = className;
     }
 
+    @SuppressWarnings("unused")
     public DvmClass getSuperclass() {
         return superClass;
     }
 
+    @SuppressWarnings("unused")
     public DvmClass[] getInterfaces() {
         return interfaceClasses;
     }
@@ -234,7 +236,7 @@ public class DvmClass extends DvmObject<Class<?>> {
         UnidbgPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index != -1) {
-            String symbolName = "Java_" + getClassName().replace('/', '_') + "_" + method.substring(0, index);
+            String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_') + "_" + method.substring(0, index);
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
                 if (symbol != null) {
