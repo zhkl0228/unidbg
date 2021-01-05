@@ -10,6 +10,7 @@
         <module>unidbg-android</module>
         <module>unidbg-ios</module>
         <module>unidbg-dynarmic</module>
+        <module>unidbg-hypervisor</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

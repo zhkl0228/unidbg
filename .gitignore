@@ -13,3 +13,5 @@
 /unidbg-android/target/
 /unidbg-dynarmic/target/
 /unidbg-dynarmic/unidbg-dynarmic.iml
+/unidbg-hypervisor/unidbg-hypervisor.iml
+/unidbg-hypervisor/target/
