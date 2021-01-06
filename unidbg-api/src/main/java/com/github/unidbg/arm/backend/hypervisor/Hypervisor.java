@@ -3,7 +3,9 @@ package com.github.unidbg.arm.backend.hypervisor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class Hypervisor {
+import java.io.Closeable;
+
+public class Hypervisor implements Closeable {
 
     private static final Log log = LogFactory.getLog(Hypervisor.class);
 
@@ -24,7 +26,8 @@ public class Hypervisor {
 
     private static native int setHypervisorCallback(long handle, HypervisorCallback callback);
 
-    private static native long createVM(boolean is64Bit);
+    private static native long nativeInitialize(boolean is64Bit);
+    private static native void nativeDestroy(long handle);
 
     private static native int mem_unmap(long handle, long address, long size);
     private static native int mem_map(long handle, long address, long size, int perms);
@@ -33,7 +36,7 @@ public class Hypervisor {
     private final long nativeHandle;
 
     public Hypervisor(boolean is64Bit) {
-        this.nativeHandle = createVM(is64Bit);
+        this.nativeHandle = nativeInitialize(is64Bit);
     }
 
     public void setHypervisorCallback(HypervisorCallback callback) {
@@ -56,6 +59,11 @@ public class Hypervisor {
         if (ret != 0) {
             throw new HypervisorException("ret=" + ret);
         }
+    }
+
+    @Override
+    public void close() {
+        nativeDestroy(nativeHandle);
     }
 
 }

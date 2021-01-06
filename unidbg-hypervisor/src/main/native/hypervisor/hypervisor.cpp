@@ -1,8 +1,7 @@
 #include <assert.h>
+#include <pthread.h>
 #include <sys/mman.h>
 #include <sys/errno.h>
-
-#include <Hypervisor/Hypervisor.h>
 
 #include "hypervisor.h"
 
@@ -11,7 +10,42 @@ typedef struct hypervisor {
   khash_t(memory) *memory;
   size_t num_page_table_entries;
   void **page_table;
+  pthread_key_t cpu_key;
 } *t_hypervisor;
+
+typedef struct hypervisor_cpu {
+  hv_vcpu_t vcpu;
+  hv_vcpu_exit_t *vcpu_exit;
+} *t_hypervisor_cpu;
+
+static t_hypervisor_cpu get_hypervisor_cpu(t_hypervisor hypervisor) {
+  t_hypervisor_cpu cpu = (t_hypervisor_cpu) pthread_getspecific(hypervisor->cpu_key);
+  if(cpu) {
+    return cpu;
+  } else {
+    cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
+    HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, NULL));
+    assert(pthread_setspecific(hypervisor->cpu_key, cpu) == 0);
+    return cpu;
+  }
+}
+
+static void destroy_hypervisor_cpu(void *data) {
+  t_hypervisor_cpu cpu = (t_hypervisor_cpu) data;
+  HYP_ASSERT_SUCCESS(hv_vcpu_destroy(cpu->vcpu));
+  free(cpu);
+}
+
+__attribute__((constructor))
+static void init() {
+  // Create the VM
+  HYP_ASSERT_SUCCESS(hv_vm_create(NULL));
+}
+
+__attribute__((destructor))
+static void destroy() {
+  HYP_ASSERT_SUCCESS(hv_vm_destroy());
+}
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
@@ -25,18 +59,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
- * Method:    createVM
+ * Method:    nativeInitialize
  * Signature: (Z)J
  */
-JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_createVM
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_nativeInitialize
   (JNIEnv *env, jclass clazz, jboolean is64Bit) {
-  // Create the VM
-  HYP_ASSERT_SUCCESS(hv_vm_create(NULL));
-
-  uint32_t max_vcpu_count = 0;
-  HYP_ASSERT_SUCCESS(hv_vm_get_max_vcpu_count(&max_vcpu_count));
-  printf("createVM max_vcpu_count=%u\n", max_vcpu_count);
-
   t_hypervisor hypervisor = (t_hypervisor) calloc(1, sizeof(struct hypervisor));
   if(hypervisor == NULL) {
     fprintf(stderr, "calloc hypervisor failed: size=%lu\n", sizeof(struct hypervisor));
@@ -64,7 +91,39 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
     abort();
     return 0;
   }
+  assert(pthread_key_create(&hypervisor->cpu_key, destroy_hypervisor_cpu) == 0);
   return (jlong) hypervisor;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    nativeDestroy
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_nativeDestroy
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  khash_t(memory) *memory = hypervisor->memory;
+  for (khiter_t k = kh_begin(memory); k < kh_end(memory); k++) {
+    if(kh_exist(memory, k)) {
+      t_memory_page page = kh_value(memory, k);
+      HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, PAGE_SIZE));
+      int ret = munmap(page->addr, PAGE_SIZE);
+      if(ret != 0) {
+        fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
+      }
+      free(page);
+    }
+  }
+  kh_destroy(memory, memory);
+  if(hypervisor->page_table) {
+    int ret = munmap(hypervisor->page_table, hypervisor->num_page_table_entries * sizeof(void*));
+    if(ret != 0) {
+      fprintf(stderr, "munmap failed[%s->%s:%d]: page_table=%p, ret=%d\n", __FILE__, __func__, __LINE__, hypervisor->page_table, ret);
+    }
+  }
+  assert(pthread_key_delete(hypervisor->cpu_key) == 0);
+  free(hypervisor);
 }
 
 /*
@@ -109,9 +168,10 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     }
     page->addr = addr;
     page->perms = perms;
+    page->ipa = vaddr;
     kh_value(memory, k) = page;
 
-    HYP_ASSERT_SUCCESS(hv_vm_map(addr, vaddr, PAGE_SIZE, perms));
+    HYP_ASSERT_SUCCESS(hv_vm_map(addr, page->ipa, PAGE_SIZE, perms));
   }
   return 0;
 }

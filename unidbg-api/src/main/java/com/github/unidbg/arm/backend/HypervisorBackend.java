@@ -5,6 +5,7 @@ import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import com.github.unidbg.arm.backend.hypervisor.*;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
@@ -40,7 +41,6 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
 
     @Override
     public void enableVFP() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -134,7 +134,6 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
 
     @Override
     public void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -159,7 +158,7 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
 
     @Override
     public void destroy() throws BackendException {
-        throw new UnsupportedOperationException();
+        IOUtils.closeQuietly(hypervisor);
     }
 
     @Override

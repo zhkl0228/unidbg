@@ -1,6 +1,8 @@
 #include "khash.h"
 #include "com_github_unidbg_arm_backend_hypervisor_Hypervisor.h"
 
+#include <Hypervisor/Hypervisor.h>
+
 // Diagnostics
 #define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
 
@@ -12,6 +14,7 @@
 typedef struct memory_page {
   void *addr;
   int perms;
+  hv_ipa_t ipa;
 } *t_memory_page;
 
 KHASH_MAP_INIT_INT64(memory, t_memory_page)
