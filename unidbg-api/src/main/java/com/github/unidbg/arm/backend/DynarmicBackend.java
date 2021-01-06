@@ -60,19 +60,15 @@ public abstract class DynarmicBackend extends AbstractBackend implements Backend
 
     @Override
     public void handleMemoryReadFailed(long vaddr, int size) {
-        try {
-            emulator.attach().debug();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (eventMemHookNotifier != null) {
+            eventMemHookNotifier.handleMemoryReadFailed(this, vaddr, size);
         }
     }
 
     @Override
     public void handleMemoryWriteFailed(long vaddr, int size) {
-        try {
-            emulator.attach().debug();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (eventMemHookNotifier != null) {
+            eventMemHookNotifier.handleMemoryWriteFailed(this, vaddr, size);
         }
     }
 

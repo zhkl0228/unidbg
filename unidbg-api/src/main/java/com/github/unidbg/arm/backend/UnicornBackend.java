@@ -21,7 +21,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
 
     @Override
     public void switchUserMode() {
-        Cpsr.getArm(this).switchUserMode();
+        if (!is64Bit) {
+            Cpsr.getArm(this).switchUserMode();
+        }
     }
 
     @Override
