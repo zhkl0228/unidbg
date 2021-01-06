@@ -10,4 +10,8 @@ public class HypervisorBackend32 extends HypervisorBackend {
         super(emulator, hypervisor);
     }
 
+    @Override
+    public void switchUserMode() {
+        throw new UnsupportedOperationException();
+    }
 }

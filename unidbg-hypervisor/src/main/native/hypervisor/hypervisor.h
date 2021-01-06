@@ -5,7 +5,9 @@
 #define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
 
 #define PAGE_TABLE_ADDRESS_SPACE_BITS 32
-#define PAGE_BITS 12 // 4k
+#define PAGE_BITS 14 // 16k
+#define PAGE_SIZE (1UL << PAGE_BITS)
+#define PAGE_MASK (PAGE_SIZE-1)
 
 typedef struct memory_page {
   void *addr;

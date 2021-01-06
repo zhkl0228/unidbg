@@ -1,6 +1,5 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
-import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -27,6 +26,10 @@ public class Hypervisor {
 
     private static native long createVM(boolean is64Bit);
 
+    private static native int mem_unmap(long handle, long address, long size);
+    private static native int mem_map(long handle, long address, long size, int perms);
+    private static native int mem_protect(long handle, long address, long size, int perms);
+
     private final long nativeHandle;
 
     public Hypervisor(boolean is64Bit) {
@@ -40,7 +43,18 @@ public class Hypervisor {
 
         int ret = setHypervisorCallback(nativeHandle, callback);
         if (ret != 0) {
-            throw new DynarmicException("ret=" + ret);
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
+    public void mem_map(long address, long size, int perms) {
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        int ret = mem_map(nativeHandle, address, size, perms);
+        if (log.isDebugEnabled()) {
+            log.debug("mem_map address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", perms=0b" + Integer.toBinaryString(perms) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
         }
     }
 

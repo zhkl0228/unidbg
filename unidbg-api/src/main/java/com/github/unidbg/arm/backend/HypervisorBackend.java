@@ -2,10 +2,7 @@ package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
-import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorBackend32;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorBackend64;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorCallback;
+import com.github.unidbg.arm.backend.hypervisor.*;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import org.apache.commons.logging.Log;
@@ -39,11 +36,6 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
         } catch (DynarmicException e) {
             throw new BackendException(e);
         }
-    }
-
-    @Override
-    public void switchUserMode() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -83,7 +75,11 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
 
     @Override
     public void mem_map(long address, long size, int perms) throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            hypervisor.mem_map(address, size, perms);
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override

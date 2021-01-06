@@ -10,4 +10,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         super(emulator, hypervisor);
     }
 
+    @Override
+    public void switchUserMode() {
+    }
 }
