@@ -98,7 +98,7 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
     }
 
     @Override
-    public int getPageAlign() {
+    protected int getPageAlignInternal() {
         return 0x4000;
     }
 

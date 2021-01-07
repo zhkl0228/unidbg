@@ -262,12 +262,22 @@ public class ARM {
             switch (reg) {
                 case Arm64Const.UC_ARM64_REG_NZCV:
                     Cpsr cpsr = Cpsr.getArm64(backend);
-                    builder.append(String.format(Locale.US, "\nnzcv: N=%d, Z=%d, C=%d, V=%d, T=%d, mode=0b",
-                            cpsr.isNegative() ? 1 : 0,
-                            cpsr.isZero() ? 1 : 0,
-                            cpsr.hasCarry() ? 1 : 0,
-                            cpsr.isOverflow() ? 1 : 0,
-                            cpsr.isThumb() ? 1 : 0)).append(Integer.toBinaryString(cpsr.getMode()));
+                    if (cpsr.isA32()) {
+                        builder.append(String.format(Locale.US, " cpsr: N=%d, Z=%d, C=%d, V=%d, T=%d, mode=0b",
+                                cpsr.isNegative() ? 1 : 0,
+                                cpsr.isZero() ? 1 : 0,
+                                cpsr.hasCarry() ? 1 : 0,
+                                cpsr.isOverflow() ? 1 : 0,
+                                cpsr.isThumb() ? 1 : 0)).append(Integer.toBinaryString(cpsr.getMode()));
+                    } else {
+                        int el = cpsr.getEL();
+                        builder.append(String.format(Locale.US, "\nnzcv: N=%d, Z=%d, C=%d, V=%d, EL%d, use SP_EL",
+                                cpsr.isNegative() ? 1 : 0,
+                                cpsr.isZero() ? 1 : 0,
+                                cpsr.hasCarry() ? 1 : 0,
+                                cpsr.isOverflow() ? 1 : 0,
+                                el)).append((cpsr.getValue() & 1) == 0 ? 0 : el);
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_X0:
                     number = backend.reg_read(reg);

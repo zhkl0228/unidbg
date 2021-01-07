@@ -6,6 +6,7 @@
 // Diagnostics
 #define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
 #define HV_REG_SP HV_SYS_REG_SP_EL0
+#define REG_VBAR_EL1 0xf0000000LL
 
 #define PAGE_TABLE_ADDRESS_SPACE_BITS 32
 #define PAGE_BITS 14 // 16k

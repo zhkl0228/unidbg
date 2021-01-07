@@ -44,7 +44,8 @@ static t_hypervisor_cpu get_hypervisor_cpu(t_hypervisor hypervisor) {
   } else {
     cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
     HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, NULL));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c4));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
     assert(pthread_setspecific(hypervisor->cpu_key, cpu) == 0);
     printf("create_hypervisor_cpu=%p\n", cpu);
     return cpu;
@@ -358,16 +359,35 @@ static bool handle_exception(t_hypervisor_cpu cpu) {
   uint64_t syndrome = cpu->vcpu_exit->exception.syndrome;
   uint8_t ec = (syndrome >> 26) & 0x3f;
   switch(ec) {
+    case 0x16: { // Exception Class 0x16 is "HVC instruction execution in AArch64 state, when HVC is not disabled."
+      uint64_t esr = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ESR_EL1, &esr));
+      uint64_t far = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_FAR_EL1, &far));
+      printf("HVC ESR_EL1=0x%llx, FAR_EL1=0x%llx\n", esr, far);
+//      break;
+    }
     default:
       uint64_t pc = 0;
-      HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &pc));
+      uint64_t cpsr = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
       uint64_t sp = 0;
-      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_REG_SP, &sp));
-      fprintf(stderr, "Unexpected VM exception: 0x%llx, EC 0x%x, VirtAddr 0x%llx, IPA 0x%llx\n",
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SP_EL1, &sp));
+      uint64_t esr = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ESR_EL1, &esr));
+      uint64_t far = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_FAR_EL1, &far));
+      fprintf(stderr, "Unexpected VM exception: 0x%llx, EC 0x%x, VirtAddr 0x%llx, IPA 0x%llx, ELR_EL1 0x%llx, SPSR_EL1 0x%llx, SP_EL1 0x%llx, ESR_EL1 0x%llx, FAR_EL1 0x%llx\n",
                           syndrome,
                           ec,
                           cpu->vcpu_exit->exception.virtual_address,
-                          cpu->vcpu_exit->exception.physical_address
+                          cpu->vcpu_exit->exception.physical_address,
+                          pc,
+                          cpsr,
+                          sp,
+                          esr,
+                          far
                       );
       return false;
   }

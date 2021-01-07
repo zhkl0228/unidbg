@@ -99,7 +99,20 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
         setContextEmulator(this);
         this.svcMemory = new ARMSvcMemory(svcBase, svcSize, this);
+
+        this.backend.onInitialize();
     }
+
+    @Override
+    public final int getPageAlign() {
+        int pageSize = backend.getPageSize();
+        if (pageSize == 0) {
+            pageSize = getPageAlignInternal();
+        }
+        return pageSize;
+    }
+
+    protected abstract int getPageAlignInternal();
 
     @Override
     public Family getFamily() {

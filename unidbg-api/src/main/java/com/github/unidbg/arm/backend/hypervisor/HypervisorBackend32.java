@@ -14,4 +14,19 @@ public class HypervisorBackend32 extends HypervisorBackend {
     public void switchUserMode() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void reg_write(int regId, Number value) throws BackendException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Number reg_read(int regId) throws BackendException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb) {
+        throw new UnsupportedOperationException();
+    }
 }

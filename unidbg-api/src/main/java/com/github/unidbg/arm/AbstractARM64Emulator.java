@@ -40,7 +40,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     protected final Memory memory;
     private final UnixSyscallHandler<T> syscallHandler;
 
-    public static final long LR = 0xffffff80001f0000L;
+    public static final long LR = 0x7ffff0000L;
 
     private final Dlfcn dlfcn;
 
@@ -205,7 +205,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
-    public int getPageAlign() {
+    protected int getPageAlignInternal() {
         return PAGE_ALIGN;
     }
 

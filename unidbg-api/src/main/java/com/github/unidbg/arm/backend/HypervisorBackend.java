@@ -1,16 +1,18 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import com.github.unidbg.arm.backend.hypervisor.*;
-import com.github.unidbg.debugger.BreakPoint;
-import com.github.unidbg.debugger.BreakPointCallback;
+import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Unicorn;
+import unicorn.UnicornConst;
 
-public abstract class HypervisorBackend extends AbstractBackend implements Backend, HypervisorCallback {
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+public abstract class HypervisorBackend extends FastBackend implements Backend, HypervisorCallback {
 
     private static final Log log = LogFactory.getLog(HypervisorBackend.class);
 
@@ -26,17 +28,34 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
         }
     }
 
-    protected final Emulator<?> emulator;
     protected final Hypervisor hypervisor;
 
+    private static final long REG_VBAR_EL1 = 0xf0000000L;
+
     protected HypervisorBackend(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
-        this.emulator = emulator;
+        super(emulator);
         this.hypervisor = hypervisor;
         try {
             this.hypervisor.setHypervisorCallback(this);
-        } catch (DynarmicException e) {
+        } catch (HypervisorException e) {
             throw new BackendException(e);
         }
+    }
+
+    @Override
+    public void onInitialize() {
+        super.onInitialize();
+
+        mem_map(REG_VBAR_EL1, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        while (buffer.hasRemaining()) {
+            buffer.putInt(0xd4000002); // hvc #0
+            buffer.putInt(0xd69f03e0); // eret
+        }
+        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
+        assert ptr != null;
+        ptr.write(buffer.array());
     }
 
     @Override
@@ -44,13 +63,8 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
     }
 
     @Override
-    public Number reg_read(int regId) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public byte[] reg_read_vector(int regId) throws BackendException {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
@@ -59,18 +73,21 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
     }
 
     @Override
-    public void reg_write(int regId, Number value) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public byte[] mem_read(long address, long size) throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            return hypervisor.mem_read(address, (int) size);
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
     public void mem_write(long address, byte[] bytes) throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            hypervisor.mem_write(address, bytes);
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
@@ -93,33 +110,13 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
     }
 
     @Override
-    public BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean removeBreakPoint(long address) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setSingleStep(int singleStep) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setFastDebug(boolean fastDebug) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Unicorn.UnHook hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Unicorn.UnHook debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
@@ -138,7 +135,6 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
 
     @Override
     public void hook_add_new(InterruptHook callback, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -146,9 +142,19 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
         throw new UnsupportedOperationException();
     }
 
+    protected long until;
+
     @Override
     public void emu_start(long begin, long until, long timeout, long count) throws BackendException {
-        throw new UnsupportedOperationException();
+        if (log.isDebugEnabled()) {
+            log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
+        }
+        this.until = until + 4;
+        try {
+            hypervisor.emu_start(begin);
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
@@ -174,5 +180,10 @@ public abstract class HypervisorBackend extends AbstractBackend implements Backe
     @Override
     public long context_alloc() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getPageSize() {
+        return 0x4000;
     }
 }

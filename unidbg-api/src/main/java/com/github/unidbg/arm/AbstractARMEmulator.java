@@ -259,7 +259,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    public int getPageAlign() {
+    protected int getPageAlignInternal() {
         return PAGE_ALIGN;
     }
 

@@ -40,6 +40,16 @@ public class Cpsr {
         this.value = backend.reg_read(regId).intValue();
     }
 
+    public int getValue() {
+        return value;
+    }
+
+    private static final int A32_BIT = 4;
+
+    boolean isA32() {
+        return hasBit(value, A32_BIT);
+    }
+
     private static final int THUMB_BIT = 5;
 
     boolean isThumb() {
@@ -109,6 +119,10 @@ public class Cpsr {
 
     int getMode() {
         return value & MODE_MASK;
+    }
+
+    int getEL() {
+        return (value >> 2) & 3;
     }
 
     public final void switchUserMode() {
