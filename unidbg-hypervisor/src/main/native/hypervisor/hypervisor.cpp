@@ -12,6 +12,7 @@ typedef struct hypervisor {
   void **page_table;
   pthread_key_t cpu_key;
   jobject callback = NULL;
+  bool stop_request = false;
 } *t_hypervisor;
 
 static jmethodID handleException = NULL;
@@ -159,6 +160,44 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    mem_unmap
+ * Signature: (JJJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1unmap
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size) {
+  if(address & PAGE_MASK) {
+    return 1;
+  }
+  if(size == 0 || (size & PAGE_MASK)) {
+    return 2;
+  }
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  khash_t(memory) *memory = hypervisor->memory;
+  int ret;
+  for(uint64_t vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    uint64_t idx = vaddr >> PAGE_BITS;
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+    if(hypervisor->page_table && idx < hypervisor->num_page_table_entries) {
+      hypervisor->page_table[idx] = NULL;
+    }
+    t_memory_page page = kh_value(memory, k);
+    HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, PAGE_SIZE));
+    int ret = munmap(page->addr, PAGE_SIZE);
+    if(ret != 0) {
+      fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
+    }
+    free(page);
+    kh_del(memory, memory, k);
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    mem_map
  * Signature: (JJJI)I
  */
@@ -202,10 +241,36 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     page->ipa = vaddr;
     kh_value(memory, k) = page;
 
-    if(0x40ae81d0 >= page->ipa && 0x40ae81d0 < page->ipa + PAGE_SIZE) {
-      printf("hv_vm_map addr=%p, ipa=0x%llx, size=0x%lx, perms=0x%x\n", addr, page->ipa, size, perms);
-    }
     HYP_ASSERT_SUCCESS(hv_vm_map(addr, page->ipa, PAGE_SIZE, perms));
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    mem_protect
+ * Signature: (JJJI)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1protect
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size, jint perms) {
+  if(address & PAGE_MASK) {
+    return 1;
+  }
+  if(size == 0 || (size & PAGE_MASK)) {
+    return 2;
+  }
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  khash_t(memory) *memory = hypervisor->memory;
+  int ret;
+  for(uint64_t vaddr = address; vaddr < address + size; vaddr += PAGE_SIZE) {
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_protect failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+    t_memory_page page = kh_value(memory, k);
+    page->perms = perms;
+    HYP_ASSERT_SUCCESS(hv_vm_protect(page->ipa, PAGE_SIZE, perms));
   }
   return 0;
 }
@@ -494,6 +559,7 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
                           esr,
                           far
                       );
+      abort();
       return false;
   }
   return true;
@@ -511,6 +577,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
   HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c0));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_PC, pc));
+  hypervisor->stop_request = false;
   printf("emu_start pc=0x%lx\n", pc);
   while(true) {
     HYP_ASSERT_SUCCESS(hv_vcpu_run(cpu->vcpu));
@@ -528,7 +595,23 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
         abort();
         break;
     }
+
+    if(hypervisor->stop_request) {
+      break;
+    }
   }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    emu_stop
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_emu_1stop
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  hypervisor->stop_request = true;
   return 0;
 }
 

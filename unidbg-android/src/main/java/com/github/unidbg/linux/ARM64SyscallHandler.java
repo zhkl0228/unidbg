@@ -49,7 +49,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void hook(Backend backend, int intno, Object user) {
+    public void hook(Backend backend, int intno, int swi, Object user) {
         Emulator<AndroidFileIO> emulator = (Emulator<AndroidFileIO>) user;
         UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
 
@@ -62,13 +62,11 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             throw new BackendException("intno=" + intno);
         }
 
-        final int svcNumber = (pc.getInt(-4) >> 5) & 0xffff;
-
         int NR = backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue();
         String syscall = null;
         Throwable exception = null;
         try {
-            if (svcNumber == 0 && NR == 0 && backend.reg_read(Arm64Const.UC_ARM64_REG_X16).intValue() == Svc.CALLBACK_SYSCALL_NUMBER) { // callback
+            if (swi == 0 && NR == 0 && backend.reg_read(Arm64Const.UC_ARM64_REG_X16).intValue() == Svc.CALLBACK_SYSCALL_NUMBER) { // callback
                 int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
@@ -76,16 +74,16 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 }
                 backend.emu_stop();
-                throw new IllegalStateException("svc number: " + svcNumber);
+                throw new IllegalStateException("svc number: " + swi);
             }
-            if (svcNumber != 0) {
-                Svc svc = svcMemory.getSvc(svcNumber);
+            if (swi != 0) {
+                Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, svc.handle(emulator));
                     return;
                 }
                 backend.emu_stop();
-                throw new BackendException("svc number: " + svcNumber);
+                throw new BackendException("svc number: " + swi);
             }
 
             if (log.isDebugEnabled()) {
@@ -274,7 +272,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             return;
         }
 
-        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", LR=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR) + ", syscall=" + syscall, exception);
+        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(swi) + ", PC=" + pc + ", LR=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR) + ", syscall=" + syscall, exception);
 
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
@@ -587,7 +585,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         Pointer sigmask = context.getPointerArg(3);
         int count = 0;
         for (int i = 0; i < nfds; i++) {
-            Pointer pollfd = fds.share(i * 8);
+            Pointer pollfd = fds.share(i * 8L);
             int fd = pollfd.getInt(0);
             short events = pollfd.getShort(4); // requested events
             if (log.isDebugEnabled()) {
@@ -1035,8 +1033,8 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         int iovcnt = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             for (int i = 0; i < iovcnt; i++) {
-                Pointer iov_base = iov.getPointer(i * 16);
-                long iov_len = iov.getLong(i * 16 + 8);
+                Pointer iov_base = iov.getPointer(i * 16L);
+                long iov_len = iov.getLong(i * 16L + 8);
                 byte[] data = iov_base.getByteArray(0, (int) iov_len);
                 Inspector.inspect(data, "writev fd=" + fd + ", iov=" + iov + ", iov_base=" + iov_base);
             }
@@ -1050,8 +1048,8 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
         int count = 0;
         for (int i = 0; i < iovcnt; i++) {
-            Pointer iov_base = iov.getPointer(i * 16);
-            long iov_len = iov.getLong(i * 16 + 8);
+            Pointer iov_base = iov.getPointer(i * 16L);
+            long iov_len = iov.getLong(i * 16L + 8);
             byte[] data = iov_base.getByteArray(0, (int) iov_len);
             count += file.write(data);
         }
@@ -1088,7 +1086,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             case FUTEX_WAKE:
                 return 0;
             default:
-                throw new AbstractMethodError();
+                throw new AbstractMethodError("futex_op=0x" + Integer.toHexString(futex_op));
         }
     }
 

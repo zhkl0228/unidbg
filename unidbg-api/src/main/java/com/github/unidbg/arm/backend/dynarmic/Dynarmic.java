@@ -231,6 +231,9 @@ public class Dynarmic implements Closeable {
     }
 
     public int reg_read32(int index) {
+        if (index < 0 || index > 15) {
+            throw new IllegalArgumentException("index=" + index);
+        }
         if (log.isDebugEnabled()) {
             log.debug("reg_read32 index=" + index);
         }
@@ -255,6 +258,9 @@ public class Dynarmic implements Closeable {
     }
 
     public long reg_read64(int index) {
+        if (index < 0 || index > 30) {
+            throw new IllegalArgumentException("index=" + index);
+        }
         if (log.isDebugEnabled()) {
             log.debug("reg_read64 index=" + index);
         }

@@ -65,10 +65,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void hook(Backend backend, int intno, Object user) {
+    public void hook(Backend backend, int intno, int swi, Object user) {
         Emulator<DarwinFileIO> emulator = (Emulator<DarwinFileIO>) user;
         UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
-        final boolean isThumb = ARM.isThumb(backend);
         final int bkpt;
         if (ARM.isThumb(backend)) {
             bkpt = pc.getShort(0) & 0xff;
@@ -86,18 +85,11 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             throw new BackendException("intno=" + intno);
         }
 
-        final int svcNumber;
-        if (isThumb) {
-            svcNumber = pc.getShort(-2) & 0xff;
-        } else {
-            svcNumber = pc.getInt(-4) & 0xffffff;
-        }
-
         int NR = backend.reg_read(ArmConst.UC_ARM_REG_R12).intValue();
         String syscall = null;
         Throwable exception = null;
         try {
-            if (svcNumber == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.CALLBACK_SYSCALL_NUMBER && (backend.reg_read(ArmConst.UC_ARM_REG_R7).intValue()) == 0) { // callback
+            if (swi == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.CALLBACK_SYSCALL_NUMBER && (backend.reg_read(ArmConst.UC_ARM_REG_R7).intValue()) == 0) { // callback
                 int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
@@ -105,16 +97,16 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     return;
                 }
                 backend.emu_stop();
-                throw new IllegalStateException("svc number: " + svcNumber);
+                throw new IllegalStateException("svc number: " + swi);
             }
-            if (svcNumber != DARWIN_SWI_SYSCALL) {
-                Svc svc = svcMemory.getSvc(svcNumber);
+            if (swi != DARWIN_SWI_SYSCALL) {
+                Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));
                     return;
                 }
                 backend.emu_stop();
-                throw new IllegalStateException("svc number: " + svcNumber + ", NR=" + NR);
+                throw new IllegalStateException("svc number: " + swi + ", NR=" + NR);
             }
 
             if (log.isDebugEnabled()) {
@@ -432,7 +424,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             exception = e;
         }
 
-        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
+        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(swi) + ", PC=" + pc + ", syscall=" + syscall, exception);
 
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
@@ -2410,8 +2402,8 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
 
         int count = 0;
         for (int i = 0; i < iovcnt; i++) {
-            Pointer iov_base = iov.getPointer(i * 8);
-            int iov_len = iov.getInt(i * 8 + 4);
+            Pointer iov_base = iov.getPointer(i * 8L);
+            int iov_len = iov.getInt(i * 8L + 4);
             byte[] data = iov_base.getByteArray(0, iov_len);
             count += file.write(data);
         }

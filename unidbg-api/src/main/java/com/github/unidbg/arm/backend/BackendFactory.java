@@ -28,7 +28,7 @@ public class BackendFactory {
                 throw new IllegalStateException("Initialize hypervisor backend failed");
             }
         }
-        return new UnicornBackend(is64Bit);
+        return new UnicornBackend(emulator, is64Bit);
     }
 
 }

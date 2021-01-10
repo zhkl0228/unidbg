@@ -1,7 +1,4 @@
-package com.github.unidbg.arm.backend.dynarmic;
-
-import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.arm.backend.InterruptHook;
+package com.github.unidbg.arm.backend;
 
 public class InterruptHookNotifier {
 
@@ -13,8 +10,8 @@ public class InterruptHookNotifier {
         this.user_data = user_data;
     }
 
-    public void notifyCallSVC(Backend backend, int intno) {
-        callback.hook(backend, intno, user_data);
+    public void notifyCallSVC(Backend backend, int intno, int swi) {
+        callback.hook(backend, intno, swi, user_data);
     }
 
 }

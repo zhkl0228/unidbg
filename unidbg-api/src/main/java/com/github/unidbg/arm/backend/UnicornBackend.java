@@ -1,16 +1,21 @@
 package com.github.unidbg.arm.backend;
 
+import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
+import com.github.unidbg.pointer.UnidbgPointer;
 import unicorn.*;
 
 public class UnicornBackend extends AbstractBackend implements Backend {
 
+    private final Emulator<?> emulator;
     private final boolean is64Bit;
     private final Unicorn unicorn;
 
-    UnicornBackend(boolean is64Bit) throws BackendException {
+    UnicornBackend(Emulator<?> emulator, boolean is64Bit) throws BackendException {
+        this.emulator = emulator;
         this.is64Bit = is64Bit;
         try {
             this.unicorn = new Unicorn(is64Bit ? UnicornConst.UC_ARCH_ARM64 : UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM);
@@ -270,7 +275,20 @@ public class UnicornBackend extends AbstractBackend implements Backend {
             unicorn.hook_add_new(new unicorn.InterruptHook() {
                 @Override
                 public void hook(Unicorn u, int intno, Object user) {
-                    callback.hook(UnicornBackend.this, intno, user);
+                    int swi;
+                    if (is64Bit) {
+                        UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
+                        swi = (pc.getInt(-4) >> 5) & 0xffff;
+                    } else {
+                        UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
+                        boolean isThumb = ARM.isThumb(UnicornBackend.this);
+                        if (isThumb) {
+                            swi = pc.getShort(-2) & 0xff;
+                        } else {
+                            swi = pc.getInt(-4) & 0xffffff;
+                        }
+                    }
+                    callback.hook(UnicornBackend.this, intno, swi, user);
                 }
             }, user_data);
         } catch (UnicornException e) {

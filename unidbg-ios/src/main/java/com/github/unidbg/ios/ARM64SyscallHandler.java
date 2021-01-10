@@ -67,7 +67,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void hook(Backend backend, int intno, Object user) {
+    public void hook(Backend backend, int intno, int swi, Object user) {
         Emulator<DarwinFileIO> emulator = (Emulator<DarwinFileIO>) user;
         UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
 
@@ -80,13 +80,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             throw new BackendException("intno=" + intno);
         }
 
-        final int svcNumber = (pc.getInt(-4) >> 5) & 0xffff;
-
         int NR = backend.reg_read(Arm64Const.UC_ARM64_REG_X16).intValue();
         String syscall = null;
         Throwable exception = null;
         try {
-            if (svcNumber == 0 && NR == Svc.CALLBACK_SYSCALL_NUMBER && backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue() == 0) { // callback
+            if (swi == 0 && NR == Svc.CALLBACK_SYSCALL_NUMBER && backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue() == 0) { // callback
                 int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
@@ -94,16 +92,16 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     return;
                 }
                 backend.emu_stop();
-                throw new IllegalStateException("svc number: " + svcNumber);
+                throw new IllegalStateException("svc number: " + swi);
             }
-            if (svcNumber != DARWIN_SWI_SYSCALL) {
-                Svc svc = svcMemory.getSvc(svcNumber);
+            if (swi != DARWIN_SWI_SYSCALL) {
+                Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, svc.handle(emulator));
                     return;
                 }
                 backend.emu_stop();
-                throw new BackendException("svc number: " + svcNumber + ", NR=" + NR + ", intno=" + intno);
+                throw new BackendException("svc number: " + swi + ", NR=" + NR + ", intno=" + intno);
             }
 
             if (log.isDebugEnabled()) {
@@ -115,7 +113,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             if (isIndirect) {
                 int indirectNR = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).intValue();
                 if (!handleIndirect(emulator, indirectNR)) {
-                    log.warn("handleInterrupt intno=" + intno + ", indirectNR=" + indirectNR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc);
+                    log.warn("handleInterrupt intno=" + intno + ", indirectNR=" + indirectNR + ", svcNumber=0x" + Integer.toHexString(swi) + ", PC=" + pc);
                     if (log.isDebugEnabled()) {
                         createBreaker(emulator).debug();
                     }
@@ -445,7 +443,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             exception = e;
         }
 
-        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(svcNumber) + ", PC=" + pc + ", syscall=" + syscall, exception);
+        log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(swi) + ", PC=" + pc + ", syscall=" + syscall, exception);
         if (log.isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
@@ -1536,7 +1534,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         int sizeOfSDL = UnidbgStructure.calculateSize(SockAddrDL.class);
                         int entrySize = UnidbgStructure.calculateSize(IfMsgHeader.class) + sizeOfSDL;
                         if (bufferSize != null) {
-                            bufferSize.setLong(0, entrySize * networkIFList.size());
+                            bufferSize.setLong(0, (long) entrySize * networkIFList.size());
                         }
                         if (buffer != null) {
                             Pointer pointer = buffer;
@@ -2728,8 +2726,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int iovcnt = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             for (int i = 0; i < iovcnt; i++) {
-                Pointer iov_base = iov.getPointer(i * 16);
-                long iov_len = iov.getLong(i * 16 + 8);
+                Pointer iov_base = iov.getPointer(i * 16L);
+                long iov_len = iov.getLong(i * 16L + 8);
                 byte[] data = iov_base.getByteArray(0, (int) iov_len);
                 Inspector.inspect(data, "writev fd=" + fd + ", iov=" + iov + ", iov_base=" + iov_base);
             }
@@ -2743,8 +2741,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
         int count = 0;
         for (int i = 0; i < iovcnt; i++) {
-            Pointer iov_base = iov.getPointer(i * 16);
-            long iov_len = iov.getLong(i * 16 + 8);
+            Pointer iov_base = iov.getPointer(i * 16L);
+            long iov_len = iov.getLong(i * 16L + 8);
             byte[] data = iov_base.getByteArray(0, (int) iov_len);
             count += file.write(data);
         }

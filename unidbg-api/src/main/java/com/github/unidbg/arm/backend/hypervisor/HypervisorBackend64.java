@@ -4,6 +4,7 @@ import capstone.Arm64;
 import capstone.Arm64_const;
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.HypervisorBackend;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -29,6 +30,17 @@ public class HypervisorBackend64 extends HypervisorBackend {
         this.capstone.setDetail(Capstone.CS_OPT_ON);
     }
 
+    private void callSVC(long pc, int swi) {
+        if (log.isDebugEnabled()) {
+            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until) + ", swi=" + swi);
+        }
+        if (pc == until) {
+            emu_stop();
+            return;
+        }
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_SWI, swi);
+    }
+
     @Override
     public boolean handleException(long esr, long far, long elr) {
         if (log.isDebugEnabled()) {
@@ -36,6 +48,11 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
         int ec = (int) ((esr >> 26) & 0x3f);
         switch (ec) {
+            case EC_AA64_SVC: {
+                int swi = (int) (esr & 0xffff);
+                callSVC(elr, swi);
+                return true;
+            }
             case EC_DATAABORT: {
                 boolean isv = (esr & ARM_EL_ISV) != 0;
                 boolean isWrite = ((esr >> 6) & 1) != 0;
@@ -59,6 +76,16 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     private final ExclusiveMonitor exclusiveMonitor = new ExclusiveMonitor();
 
+    private static boolean is64BitReg(Arm64.Operand operand) {
+        if (operand.type != Arm64_const.ARM64_OP_REG) {
+            throw new IllegalArgumentException("type=" + operand.type);
+        }
+        Arm64.OpValue value = operand.value;
+        if (value.reg >= Arm64_const.ARM64_REG_X0 && value.reg <= Arm64_const.ARM64_REG_X28) {
+            return true;
+        } else return value.reg == Arm64_const.ARM64_REG_X29 || value.reg == Arm64_const.ARM64_REG_X30;
+    }
+
     private boolean handleExclusiveAccess(long vaddr, long elr) {
         Pointer pointer = UnidbgPointer.pointer(emulator, vaddr);
         assert pointer != null;
@@ -70,6 +97,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             log.debug("handleExclusiveAccess vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn.mnemonic + " " + insn.opStr);
         }
         switch (insn.mnemonic) {
+            case "ldxrh":
             case "ldaxrh": {
                 Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
                 Arm64.Operand operand = opInfo.op[0];
@@ -79,11 +107,27 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }
+            case "stlxrh":
+            case "stxrh": {
+                Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
+                Arm64.Operand o1 = opInfo.op[0];
+                Arm64.Operand o2 = opInfo.op[1];
+                Arm64.OpValue ws = o1.value;
+                Arm64.OpValue wt = o2.value;
+                Number value = reg_read(wt.reg);
+                boolean release = "stlxrh".equals(insn.mnemonic);
+                boolean success = exclusiveMonitor.storeExclusive(pointer, 2, release);
+                reg_write(ws.reg, success ? 0 : 1);
+                pointer.setShort(0, value.shortValue());
+                hypervisor.reg_set_elr_el1(elr + 4);
+                return true;
+            }
+            case "ldxr":
             case "ldaxr": {
                 Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
                 Arm64.Operand operand = opInfo.op[0];
                 Arm64.OpValue value = operand.value;
-                if (value.reg >= Arm64_const.ARM64_REG_X0 && value.reg <= Arm64_const.ARM64_REG_X28) {
+                if (is64BitReg(operand)) {
                     exclusiveMonitor.loadAcquireExclusive(pointer, 8);
                     reg_write(value.reg, pointer.getLong(0));
                 } else {
@@ -93,6 +137,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }
+            case "stlxr":
             case "stxr": {
                 Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
                 Arm64.Operand o1 = opInfo.op[0];
@@ -100,13 +145,13 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 Arm64.OpValue ws = o1.value;
                 Arm64.OpValue wt = o2.value;
                 Number value = reg_read(wt.reg);
-                if (wt.reg >= Arm64_const.ARM64_REG_X0 && wt.reg <= Arm64_const.ARM64_REG_X28) {
-                    boolean success = exclusiveMonitor.storeExclusive(pointer, 8);
-                    exclusiveMonitor.loadAcquireExclusive(pointer, 8);
+                boolean release = "stlxr".equals(insn.mnemonic);
+                if (is64BitReg(o2)) {
+                    boolean success = exclusiveMonitor.storeExclusive(pointer, 8, release);
                     reg_write(ws.reg, success ? 0 : 1);
                     pointer.setLong(0, value.longValue());
                 } else {
-                    boolean success = exclusiveMonitor.storeExclusive(pointer, 4);
+                    boolean success = exclusiveMonitor.storeExclusive(pointer, 4, release);
                     reg_write(ws.reg, success ? 0 : 1);
                     pointer.setInt(0, value.intValue());
                 }
@@ -164,10 +209,37 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 case Arm64Const.UC_ARM64_REG_X28:
                     hypervisor.reg_write64(regId - Arm64Const.UC_ARM64_REG_X0, value.longValue());
                     break;
+                case Arm64Const.UC_ARM64_REG_W0:
+                case Arm64Const.UC_ARM64_REG_W1:
+                case Arm64Const.UC_ARM64_REG_W2:
                 case Arm64Const.UC_ARM64_REG_W3:
                 case Arm64Const.UC_ARM64_REG_W4:
                 case Arm64Const.UC_ARM64_REG_W5:
+                case Arm64Const.UC_ARM64_REG_W6:
+                case Arm64Const.UC_ARM64_REG_W7:
+                case Arm64Const.UC_ARM64_REG_W8:
+                case Arm64Const.UC_ARM64_REG_W9:
+                case Arm64Const.UC_ARM64_REG_W10:
                 case Arm64Const.UC_ARM64_REG_W11:
+                case Arm64Const.UC_ARM64_REG_W12:
+                case Arm64Const.UC_ARM64_REG_W13:
+                case Arm64Const.UC_ARM64_REG_W14:
+                case Arm64Const.UC_ARM64_REG_W15:
+                case Arm64Const.UC_ARM64_REG_W16:
+                case Arm64Const.UC_ARM64_REG_W17:
+                case Arm64Const.UC_ARM64_REG_W18:
+                case Arm64Const.UC_ARM64_REG_W19:
+                case Arm64Const.UC_ARM64_REG_W20:
+                case Arm64Const.UC_ARM64_REG_W21:
+                case Arm64Const.UC_ARM64_REG_W22:
+                case Arm64Const.UC_ARM64_REG_W23:
+                case Arm64Const.UC_ARM64_REG_W24:
+                case Arm64Const.UC_ARM64_REG_W25:
+                case Arm64Const.UC_ARM64_REG_W26:
+                case Arm64Const.UC_ARM64_REG_W27:
+                case Arm64Const.UC_ARM64_REG_W28:
+                case Arm64Const.UC_ARM64_REG_W29:
+                case Arm64Const.UC_ARM64_REG_W30:
                     hypervisor.reg_write64(regId - Arm64Const.UC_ARM64_REG_W0, value.longValue());
                     break;
                 case Arm64Const.UC_ARM64_REG_SP:
@@ -230,7 +302,37 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 case Arm64Const.UC_ARM64_REG_X27:
                 case Arm64Const.UC_ARM64_REG_X28:
                     return hypervisor.reg_read64(regId - Arm64Const.UC_ARM64_REG_X0);
+                case Arm64Const.UC_ARM64_REG_W0:
+                case Arm64Const.UC_ARM64_REG_W1:
+                case Arm64Const.UC_ARM64_REG_W2:
+                case Arm64Const.UC_ARM64_REG_W3:
                 case Arm64Const.UC_ARM64_REG_W4:
+                case Arm64Const.UC_ARM64_REG_W5:
+                case Arm64Const.UC_ARM64_REG_W6:
+                case Arm64Const.UC_ARM64_REG_W7:
+                case Arm64Const.UC_ARM64_REG_W8:
+                case Arm64Const.UC_ARM64_REG_W9:
+                case Arm64Const.UC_ARM64_REG_W10:
+                case Arm64Const.UC_ARM64_REG_W11:
+                case Arm64Const.UC_ARM64_REG_W12:
+                case Arm64Const.UC_ARM64_REG_W13:
+                case Arm64Const.UC_ARM64_REG_W14:
+                case Arm64Const.UC_ARM64_REG_W15:
+                case Arm64Const.UC_ARM64_REG_W16:
+                case Arm64Const.UC_ARM64_REG_W17:
+                case Arm64Const.UC_ARM64_REG_W18:
+                case Arm64Const.UC_ARM64_REG_W19:
+                case Arm64Const.UC_ARM64_REG_W20:
+                case Arm64Const.UC_ARM64_REG_W21:
+                case Arm64Const.UC_ARM64_REG_W22:
+                case Arm64Const.UC_ARM64_REG_W23:
+                case Arm64Const.UC_ARM64_REG_W24:
+                case Arm64Const.UC_ARM64_REG_W25:
+                case Arm64Const.UC_ARM64_REG_W26:
+                case Arm64Const.UC_ARM64_REG_W27:
+                case Arm64Const.UC_ARM64_REG_W28:
+                case Arm64Const.UC_ARM64_REG_W29:
+                case Arm64Const.UC_ARM64_REG_W30:
                     return (int) (hypervisor.reg_read64(regId - Arm64Const.UC_ARM64_REG_W0) & 0xffffffffL);
                 case Arm64Const.UC_ARM64_REG_SP:
                     return hypervisor.reg_read_sp64();

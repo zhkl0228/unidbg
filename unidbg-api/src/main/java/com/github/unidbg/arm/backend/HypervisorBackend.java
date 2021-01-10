@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import com.github.unidbg.arm.backend.hypervisor.*;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.io.IOUtils;
@@ -102,12 +103,20 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     @Override
     public void mem_protect(long address, long size, int perms) throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            hypervisor.mem_protect(address, size, perms);
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
     public void mem_unmap(long address, long size) throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            hypervisor.mem_unmap(address, size);
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
@@ -134,8 +143,15 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     public void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException {
     }
 
+    protected InterruptHookNotifier interruptHookNotifier;
+
     @Override
     public void hook_add_new(InterruptHook callback, Object user_data) throws BackendException {
+        if (interruptHookNotifier != null) {
+            throw new IllegalStateException();
+        } else {
+            interruptHookNotifier = new InterruptHookNotifier(callback, user_data);
+        }
     }
 
     @Override
@@ -152,7 +168,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         }
         this.until = until + 4;
         try {
-            UnidbgPointer.pointer(emulator, 0x40ae81d0).setInt(0, 1);
             hypervisor.emu_start(begin);
         } catch (HypervisorException e) {
             throw new BackendException(e);
@@ -161,7 +176,11 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     @Override
     public void emu_stop() throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            hypervisor.emu_stop();
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override

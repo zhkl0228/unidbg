@@ -1,6 +1,5 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
-import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -52,6 +51,7 @@ public class Hypervisor implements Closeable {
     private static native long reg_read_cpacr_el1(long handle);
 
     private static native int emu_start(long handle, long pc);
+    private static native int emu_stop(long handle);
 
     private final long nativeHandle;
 
@@ -75,6 +75,28 @@ public class Hypervisor implements Closeable {
         int ret = mem_map(nativeHandle, address, size, perms);
         if (log.isDebugEnabled()) {
             log.debug("mem_map address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", perms=0b" + Integer.toBinaryString(perms) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
+    public void mem_protect(long address, long size, int perms) {
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        int ret = mem_protect(nativeHandle, address, size, perms);
+        if (log.isDebugEnabled()) {
+            log.debug("mem_protect address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", perms=0b" + Integer.toBinaryString(perms) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
+    public void mem_unmap(long address, long size) {
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        int ret = mem_unmap(nativeHandle, address, size);
+        if (log.isDebugEnabled()) {
+            log.debug("mem_unmap address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
         if (ret != 0) {
             throw new HypervisorException("ret=" + ret);
@@ -178,6 +200,9 @@ public class Hypervisor implements Closeable {
     }
 
     public long reg_read64(int index) {
+        if (index < 0 || index > 30) {
+            throw new IllegalArgumentException("index=" + index);
+        }
         if (log.isDebugEnabled()) {
             log.debug("reg_read64 index=" + index);
         }
@@ -219,7 +244,18 @@ public class Hypervisor implements Closeable {
     public void emu_start(long begin) {
         int ret = emu_start(nativeHandle, begin);
         if (ret != 0) {
-            throw new DynarmicException("ret=" + ret);
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
+    public void emu_stop() {
+        if (log.isDebugEnabled()) {
+            log.debug("emu_stop");
+        }
+
+        int ret = emu_stop(nativeHandle);
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
         }
     }
 

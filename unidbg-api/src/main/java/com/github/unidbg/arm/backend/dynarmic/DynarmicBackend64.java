@@ -39,7 +39,7 @@ public class DynarmicBackend64 extends DynarmicBackend {
             emu_stop();
             return;
         }
-        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_SWI);
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_SWI, swi);
     }
 
     @Override

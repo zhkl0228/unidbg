@@ -23,13 +23,13 @@ class ExclusiveMonitor {
         memoryData.put(pointer, pointer.getByteArray(0, size));
     }
 
-    synchronized boolean storeExclusive(Pointer pointer, int size) {
-        byte[] read = memoryData.remove(pointer);
+    synchronized boolean storeExclusive(Pointer pointer, int size, boolean release) {
+        byte[] read = release ? memoryData.remove(pointer) : memoryData.get(pointer);
         if (read == null) {
             return false;
         }
         if (read.length != size) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("length=" + read.length + ", size=" + size);
         }
         return Arrays.equals(read, pointer.getByteArray(0, size));
     }
