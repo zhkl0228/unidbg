@@ -11,6 +11,11 @@ public class HypervisorBackend32 extends HypervisorBackend {
     }
 
     @Override
+    public boolean handleException(long esr, long far, long elr) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void enableVFP() {
         throw new UnsupportedOperationException();
     }
