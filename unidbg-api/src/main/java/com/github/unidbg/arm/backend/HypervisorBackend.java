@@ -50,16 +50,17 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         while (buffer.hasRemaining()) {
-            buffer.putInt(0xd4000002); // hvc #0
+            if (buffer.position() == 0x400) {
+                buffer.putInt(0xd4000002); // hvc #0
+            } else {
+                buffer.putInt(0xd4000003); // smc #0
+            }
+//            buffer.putInt(0xd4200000); // brk #0
             buffer.putInt(0xd69f03e0); // eret
         }
         UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
         assert ptr != null;
         ptr.write(buffer.array());
-    }
-
-    @Override
-    public void enableVFP() {
     }
 
     @Override
@@ -151,6 +152,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         }
         this.until = until + 4;
         try {
+            UnidbgPointer.pointer(emulator, 0x40ae81d0).setInt(0, 1);
             hypervisor.emu_start(begin);
         } catch (HypervisorException e) {
             throw new BackendException(e);

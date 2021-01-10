@@ -39,6 +39,7 @@ public class Hypervisor implements Closeable {
     private static native int reg_set_tpidr_el0(long handle, long value);
     private static native int reg_set_tpidrro_el0(long handle, long value);
     private static native int reg_set_nzcv(long handle, long value);
+    private static native int reg_set_cpacr_el1(long handle, long value);
 
     private static native int mem_write(long handle, long address, byte[] bytes);
     private static native byte[] mem_read(long handle, long address, int size);
@@ -47,6 +48,7 @@ public class Hypervisor implements Closeable {
     private static native long reg_read_sp64(long handle);
     private static native long reg_read_pc64(long handle);
     private static native long reg_read_nzcv(long handle);
+    private static native long reg_read_cpacr_el1(long handle);
 
     private static native int emu_start(long handle, long pc);
 
@@ -131,6 +133,16 @@ public class Hypervisor implements Closeable {
         }
     }
 
+    public void reg_set_cpacr_el1(long value) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_set_cpacr_el1 value=0x" + Long.toHexString(value));
+        }
+        int ret = reg_set_cpacr_el1(nativeHandle, value);
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
     public void mem_write(long address, byte[] bytes) {
         long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_write(nativeHandle, address, bytes);
@@ -181,6 +193,14 @@ public class Hypervisor implements Closeable {
         long nzcv = reg_read_nzcv(nativeHandle);
         if (log.isDebugEnabled()) {
             log.debug("reg_read_nzcv=0x" + Long.toHexString(nzcv));
+        }
+        return nzcv;
+    }
+
+    public long reg_read_cpacr_el1() {
+        long nzcv = reg_read_cpacr_el1(nativeHandle);
+        if (log.isDebugEnabled()) {
+            log.debug("reg_read_cpacr_el1=0x" + Long.toHexString(nzcv));
         }
         return nzcv;
     }

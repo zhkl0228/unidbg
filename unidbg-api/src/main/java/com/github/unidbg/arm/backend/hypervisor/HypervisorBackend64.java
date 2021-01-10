@@ -16,6 +16,13 @@ public class HypervisorBackend64 extends HypervisorBackend {
     }
 
     @Override
+    public void enableVFP() {
+        long value = reg_read(Arm64Const.UC_ARM64_REG_CPACR_EL1).longValue();
+        value |= 0x300000; // set the FPEN bits
+        reg_write(Arm64Const.UC_ARM64_REG_CPACR_EL1, value);
+    }
+
+    @Override
     public void switchUserMode() {
     }
 
@@ -69,6 +76,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 case Arm64Const.UC_ARM64_REG_NZCV:
                     hypervisor.reg_set_nzcv(value.longValue());
                     break;
+                case Arm64Const.UC_ARM64_REG_CPACR_EL1:
+                    hypervisor.reg_set_cpacr_el1(value.longValue());
+                    break;
                 default:
                     throw new HypervisorException("regId=" + regId);
             }
@@ -121,6 +131,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
                     return hypervisor.reg_read_pc64();
                 case Arm64Const.UC_ARM64_REG_NZCV:
                     return hypervisor.reg_read_nzcv();
+                case Arm64Const.UC_ARM64_REG_CPACR_EL1:
+                    return hypervisor.reg_read_cpacr_el1();
                 default:
                     throw new HypervisorException("regId=" + regId);
             }

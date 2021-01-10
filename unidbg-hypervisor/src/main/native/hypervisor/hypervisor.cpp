@@ -44,8 +44,9 @@ static t_hypervisor_cpu get_hypervisor_cpu(t_hypervisor hypervisor) {
   } else {
     cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
     HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, NULL));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c0));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
+    // Trap debug access (BRK)
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_trap_debug_exceptions(cpu->vcpu, true));
     assert(pthread_setspecific(hypervisor->cpu_key, cpu) == 0);
     printf("create_hypervisor_cpu=%p\n", cpu);
     return cpu;
@@ -155,7 +156,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1map
   (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size, jint perms) {
-  printf("mem_map address=0x%lx, size=0x%lx, perms=0x%x\n", address, size, perms);
   if(address & PAGE_MASK) {
     return 1;
   }
@@ -194,6 +194,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     page->ipa = vaddr;
     kh_value(memory, k) = page;
 
+    if(0x40ae81d0 >= page->ipa && 0x40ae81d0 < page->ipa + PAGE_SIZE) {
+      printf("hv_vm_map addr=%p, ipa=0x%llx, size=0x%lx, perms=0x%x\n", addr, page->ipa, size, perms);
+    }
     HYP_ASSERT_SUCCESS(hv_vm_map(addr, page->ipa, PAGE_SIZE, perms));
   }
   return 0;
@@ -236,6 +239,19 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(hypervisor);
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDR_EL0, value));
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    reg_set_cpacr_el1
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1set_1cpacr_1el1
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(hypervisor);
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CPACR_EL1, value));
   return 0;
 }
 
@@ -355,17 +371,79 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
   return cpsr;
 }
 
-static bool handle_exception(t_hypervisor_cpu cpu) {
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    reg_read_cpacr_el1
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1read_1cpacr_1el1
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(hypervisor);
+  uint64_t cpacr = 0;
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_CPACR_EL1, &cpacr));
+  return cpacr;
+}
+
+static bool handle_exception_el1(t_hypervisor hypervisor, t_hypervisor_cpu cpu, uint64_t syndrome, uint64_t far) {
+  bool advance_pc = false;
+  uint32_t ec = syn_get_ec(syndrome);
+  uint64_t elr;
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &elr));
+  fprintf(stderr, "handle_exception_el1 syndrome=0x%llx, far=0x%llx, ec=0x%x, ELR_EL1=0x%llx\n", syndrome, far, ec, elr);
+  switch (ec) {
+    case EC_DATAABORT: {
+      bool isv = syndrome & ARM_EL_ISV;
+      bool iswrite = (syndrome >> 6) & 1;
+      bool s1ptw = (syndrome >> 7) & 1;
+      uint32_t sas = (syndrome >> 22) & 3;
+      uint32_t len = 1 << sas;
+      uint32_t srt = (syndrome >> 16) & 0x1f;
+      uint64_t vaddr = far;
+      fprintf(stderr, "EC_DATAABORT isv=%d, iswrite=%d, s1ptw=%d, sas=%d, len=%d, srt=%d, vaddr=0x%llx\n", isv, iswrite, s1ptw, sas, len, srt, vaddr);
+      if(isv == 0) {
+        return false;
+      }
+      if(iswrite) {
+        abort();
+      } else {
+        switch(len) {
+          case 1:
+            uint8_t *dest = (uint8_t *) get_memory(hypervisor->memory, vaddr, hypervisor->num_page_table_entries, hypervisor->page_table);
+            if(dest) {
+              assert(srt < 31);
+              hv_reg_t reg = (hv_reg_t) (HV_REG_X0 + srt);
+              HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, reg, dest[0]));
+            } else {
+              fprintf(stderr, "MemoryRead8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+              return false;
+            }
+            advance_pc = true;
+            break;
+        }
+      }
+      break;
+    }
+  }
+  if(advance_pc) {
+    uint64_t pc;
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &pc));
+    assert(hypervisor->is64Bit);
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, pc + 4));
+  }
+  return advance_pc;
+}
+
+static bool handle_exception(t_hypervisor hypervisor, t_hypervisor_cpu cpu) {
   uint64_t syndrome = cpu->vcpu_exit->exception.syndrome;
-  uint8_t ec = (syndrome >> 26) & 0x3f;
+  uint32_t ec = syn_get_ec(syndrome);
   switch(ec) {
     case 0x16: { // Exception Class 0x16 is "HVC instruction execution in AArch64 state, when HVC is not disabled."
       uint64_t esr = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ESR_EL1, &esr));
       uint64_t far = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_FAR_EL1, &far));
-      printf("HVC ESR_EL1=0x%llx, FAR_EL1=0x%llx\n", esr, far);
-//      break;
+      return handle_exception_el1(hypervisor, cpu, esr, far);
     }
     default:
       uint64_t pc = 0;
@@ -404,6 +482,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(hypervisor);
 
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c0));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_PC, pc));
   printf("emu_start pc=0x%lx\n", pc);
   while(true) {
@@ -411,7 +490,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
     switch(cpu->vcpu_exit->reason) {
       case HV_EXIT_REASON_EXCEPTION: {
-        if(handle_exception(cpu)) {
+        if(handle_exception(hypervisor, cpu)) {
           break;
         } else {
           return 1;
