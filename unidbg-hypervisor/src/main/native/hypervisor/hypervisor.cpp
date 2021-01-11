@@ -52,7 +52,6 @@ static t_hypervisor_cpu get_hypervisor_cpu(t_hypervisor hypervisor) {
     // Trap debug access (BRK)
     HYP_ASSERT_SUCCESS(hv_vcpu_set_trap_debug_exceptions(cpu->vcpu, true));
     assert(pthread_setspecific(hypervisor->cpu_key, cpu) == 0);
-    printf("create_hypervisor_cpu=%p\n", cpu);
     return cpu;
   }
 }
@@ -66,12 +65,14 @@ static void destroy_hypervisor_cpu(void *data) {
 
 __attribute__((constructor))
 static void init() {
+  printf("hv_vm_create\n");
   HYP_ASSERT_SUCCESS(hv_vm_create(NULL));
 }
 
 __attribute__((destructor))
 static void destroy() {
   HYP_ASSERT_SUCCESS(hv_vm_destroy());
+  printf("hv_vm_destroy\n");
 }
 
 /*
@@ -154,7 +155,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
       fprintf(stderr, "munmap failed[%s->%s:%d]: page_table=%p, ret=%d\n", __FILE__, __func__, __LINE__, hypervisor->page_table, ret);
     }
   }
-  assert(pthread_key_delete(hypervisor->cpu_key) == 0);
   free(hypervisor);
 }
 
