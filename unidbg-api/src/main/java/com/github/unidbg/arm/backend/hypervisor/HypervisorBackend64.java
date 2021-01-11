@@ -65,7 +65,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                     log.debug("handle EC_DATAABORT isv=" + isv + ", isWrite=" + isWrite + ", s1ptw=" + s1ptw + ", len=" + len + ", srt=" + srt + ", dfsc=0x" + Integer.toHexString(dfsc) + ", vaddr=0x" + Long.toHexString(far));
                 }
                 if (dfsc == 0x21) {
-                    throw new IllegalStateException("Alignment fault.");
+                    throw new IllegalStateException("Alignment fault: 0x" + Long.toHexString(far));
                 }
                 if(dfsc == 0x35) { // IMPLEMENTATION DEFINED fault (Unsupported Exclusive or Atomic access).
                     return handleExclusiveAccess(far, elr);
