@@ -1,7 +1,6 @@
 #include "khash.h"
+#include "vcpu.h"
 #include "com_github_unidbg_arm_backend_hypervisor_Hypervisor.h"
-
-#include <Hypervisor/Hypervisor.h>
 
 // Diagnostics
 #define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
@@ -10,8 +9,8 @@
 
 #define PAGE_TABLE_ADDRESS_SPACE_BITS 32
 #define PAGE_BITS 14 // 16k
-#define PAGE_SIZE (1UL << PAGE_BITS)
-#define PAGE_MASK (PAGE_SIZE-1)
+#define HYP_PAGE_SIZE (1UL << PAGE_BITS)
+#define HYP_PAGE_MASK (HYP_PAGE_SIZE-1)
 
 typedef struct memory_page {
   void *addr;

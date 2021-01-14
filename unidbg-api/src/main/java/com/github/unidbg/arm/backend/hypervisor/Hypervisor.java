@@ -1,5 +1,6 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
+import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -40,6 +41,8 @@ public class Hypervisor implements Closeable {
     private static native int reg_set_nzcv(long handle, long value);
     private static native int reg_set_cpacr_el1(long handle, long value);
     private static native int reg_set_elr_el1(long handle, long value);
+    private static native byte[] reg_read_vector(long handle, int index);
+    private static native int reg_set_vector(long handle, int index, byte[] vector);
 
     private static native int mem_write(long handle, long address, byte[] bytes);
     private static native byte[] mem_read(long handle, long address, int size);
@@ -171,6 +174,22 @@ public class Hypervisor implements Closeable {
             log.debug("reg_set_elr_el1 value=0x" + Long.toHexString(value));
         }
         int ret = reg_set_elr_el1(nativeHandle, value);
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
+    public byte[] reg_read_vector(int index) {
+        byte[] ret = reg_read_vector(nativeHandle, index);
+        if (ret == null) {
+            throw new HypervisorException();
+        } else {
+            return ret;
+        }
+    }
+
+    public void reg_set_vector(int index, byte[] vector) {
+        int ret = reg_set_vector(nativeHandle, index, vector);
         if (ret != 0) {
             throw new HypervisorException("ret=" + ret);
         }

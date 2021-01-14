@@ -1,12 +1,12 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import com.github.unidbg.arm.backend.hypervisor.*;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import unicorn.Arm64Const;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
@@ -66,12 +66,32 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     @Override
     public byte[] reg_read_vector(int regId) throws BackendException {
-        return null;
+        try {
+            if (regId >= Arm64Const.UC_ARM64_REG_Q0 && regId <= Arm64Const.UC_ARM64_REG_Q31) {
+                return hypervisor.reg_read_vector(regId - Arm64Const.UC_ARM64_REG_Q0);
+            } else {
+                throw new UnsupportedOperationException("regId=" + regId);
+            }
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
     public void reg_write_vector(int regId, byte[] vector) throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            if (vector.length != 16) {
+                throw new IllegalStateException("Invalid vector size");
+            }
+
+            if (regId >= Arm64Const.UC_ARM64_REG_Q0 && regId <= Arm64Const.UC_ARM64_REG_Q31) {
+                hypervisor.reg_set_vector(regId - Arm64Const.UC_ARM64_REG_Q0, vector);
+            } else {
+                throw new UnsupportedOperationException("regId=" + regId);
+            }
+        } catch (HypervisorException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
