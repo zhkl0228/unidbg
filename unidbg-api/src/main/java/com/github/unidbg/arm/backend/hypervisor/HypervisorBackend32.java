@@ -3,6 +3,7 @@ package com.github.unidbg.arm.backend.hypervisor;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.HypervisorBackend;
+import unicorn.ArmConst;
 
 public class HypervisorBackend32 extends HypervisorBackend {
 
@@ -17,12 +18,11 @@ public class HypervisorBackend32 extends HypervisorBackend {
 
     @Override
     public void enableVFP() {
-        throw new UnsupportedOperationException();
+        reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
     }
 
     @Override
     public void switchUserMode() {
-        throw new UnsupportedOperationException();
     }
 
     @Override

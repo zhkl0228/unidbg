@@ -10,9 +10,9 @@
 #include "com_github_unidbg_arm_backend_dynarmic_Dynarmic.h"
 
 #define PAGE_TABLE_ADDRESS_SPACE_BITS 32
-#define PAGE_BITS 12 // 4k
-#define PAGE_SIZE (1UL << PAGE_BITS)
-#define PAGE_MASK (PAGE_SIZE-1)
+#define DYN_PAGE_BITS 12 // 4k
+#define DYN_PAGE_SIZE (1UL << DYN_PAGE_BITS)
+#define DYN_PAGE_MASK (DYN_PAGE_SIZE-1)
 #define UC_PROT_WRITE 2
 
 typedef struct memory_page {

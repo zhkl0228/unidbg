@@ -22,7 +22,7 @@ static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num
     if(page_table && idx < num_page_table_entries) {
       return (char *)page_table[idx];
     }
-    uint64_t base = vaddr & ~HYP_PAGE_MASK;
+    uint64_t base = vaddr & ~HVF_PAGE_MASK;
     khiter_t k = kh_get(memory, memory, base);
     if(k == kh_end(memory)) {
       return NULL;
@@ -33,7 +33,7 @@ static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num
 
 static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
     char *page = get_memory_page(memory, vaddr, num_page_table_entries, page_table);
-    return page ? &page[vaddr & HYP_PAGE_MASK] : NULL;
+    return page ? &page[vaddr & HVF_PAGE_MASK] : NULL;
 }
 
 typedef struct hypervisor_cpu {
@@ -85,7 +85,7 @@ static void init() {
 
 __attribute__((destructor))
 static void destroy() {
-  HYP_ASSERT_SUCCESS(hv_vm_destroy());
+  hv_vm_destroy();
 }
 
 /*
@@ -150,8 +150,8 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   for (khiter_t k = kh_begin(memory); k < kh_end(memory); k++) {
     if(kh_exist(memory, k)) {
       t_memory_page page = kh_value(memory, k);
-      HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, HYP_PAGE_SIZE));
-      int ret = munmap(page->addr, HYP_PAGE_SIZE);
+      HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, HVF_PAGE_SIZE));
+      int ret = munmap(page->addr, HVF_PAGE_SIZE);
       if(ret != 0) {
         fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
       }
@@ -178,16 +178,16 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1unmap
   (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size) {
-  if(address & HYP_PAGE_MASK) {
+  if(address & HVF_PAGE_MASK) {
     return 1;
   }
-  if(size == 0 || (size & HYP_PAGE_MASK)) {
+  if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
   int ret;
-  for(uint64_t vaddr = address; vaddr < address + size; vaddr += HYP_PAGE_SIZE) {
+  for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
     uint64_t idx = vaddr >> PAGE_BITS;
     khiter_t k = kh_get(memory, memory, vaddr);
     if(k == kh_end(memory)) {
@@ -198,8 +198,8 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
       hypervisor->page_table[idx] = NULL;
     }
     t_memory_page page = kh_value(memory, k);
-    HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, HYP_PAGE_SIZE));
-    int ret = munmap(page->addr, HYP_PAGE_SIZE);
+    HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, HVF_PAGE_SIZE));
+    int ret = munmap(page->addr, HVF_PAGE_SIZE);
     if(ret != 0) {
       fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
     }
@@ -216,23 +216,23 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1map
   (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size, jint perms) {
-  if(address & HYP_PAGE_MASK) {
+  if(address & HVF_PAGE_MASK) {
     return 1;
   }
-  if(size == 0 || (size & HYP_PAGE_MASK)) {
+  if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
   int ret;
-  for(uint64_t vaddr = address; vaddr < address + size; vaddr += HYP_PAGE_SIZE) {
+  for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
     uint64_t idx = vaddr >> PAGE_BITS;
     if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
       fprintf(stderr, "mem_map failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return 3;
     }
 
-    void *addr = mmap(NULL, HYP_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void *addr = mmap(NULL, HVF_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if(addr == MAP_FAILED) {
       fprintf(stderr, "mmap failed[%s->%s:%d]: addr=%p\n", __FILE__, __func__, __LINE__, (void*)addr);
       return 4;
@@ -254,7 +254,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     page->ipa = vaddr;
     kh_value(memory, k) = page;
 
-    HYP_ASSERT_SUCCESS(hv_vm_map(addr, page->ipa, HYP_PAGE_SIZE, perms));
+    HYP_ASSERT_SUCCESS(hv_vm_map(addr, page->ipa, HVF_PAGE_SIZE, perms));
   }
   return 0;
 }
@@ -266,16 +266,16 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1protect
   (JNIEnv *env, jclass clazz, jlong handle, jlong address, jlong size, jint perms) {
-  if(address & HYP_PAGE_MASK) {
+  if(address & HVF_PAGE_MASK) {
     return 1;
   }
-  if(size == 0 || (size & HYP_PAGE_MASK)) {
+  if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
   int ret;
-  for(uint64_t vaddr = address; vaddr < address + size; vaddr += HYP_PAGE_SIZE) {
+  for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
     khiter_t k = kh_get(memory, memory, vaddr);
     if(k == kh_end(memory)) {
       fprintf(stderr, "mem_protect failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
@@ -283,7 +283,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     }
     t_memory_page page = kh_value(memory, k);
     page->perms = perms;
-    HYP_ASSERT_SUCCESS(hv_vm_protect(page->ipa, HYP_PAGE_SIZE, perms));
+    HYP_ASSERT_SUCCESS(hv_vm_protect(page->ipa, HVF_PAGE_SIZE, perms));
   }
   return 0;
 }
@@ -416,9 +416,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   khash_t(memory) *memory = hypervisor->memory;
   char *src = (char *)data;
   uint64_t vaddr_end = address + size;
-  for(uint64_t vaddr = address & ~HYP_PAGE_MASK; vaddr < vaddr_end; vaddr += HYP_PAGE_SIZE) {
+  for(uint64_t vaddr = address & ~HVF_PAGE_MASK; vaddr < vaddr_end; vaddr += HVF_PAGE_SIZE) {
     uint64_t start = vaddr < address ? address - vaddr : 0;
-    uint64_t end = vaddr + HYP_PAGE_SIZE <= vaddr_end ? HYP_PAGE_SIZE : (vaddr_end - vaddr);
+    uint64_t end = vaddr + HVF_PAGE_SIZE <= vaddr_end ? HVF_PAGE_SIZE : (vaddr_end - vaddr);
     uint64_t len = end - start;
     char *addr = get_memory_page(memory, vaddr, hypervisor->num_page_table_entries, hypervisor->page_table);
     if(addr == NULL) {
@@ -446,9 +446,9 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hyper
   jbyteArray bytes = env->NewByteArray(size);
   uint64_t dest = 0;
   uint64_t vaddr_end = address + size;
-  for(uint64_t vaddr = address & ~HYP_PAGE_MASK; vaddr < vaddr_end; vaddr += HYP_PAGE_SIZE) {
+  for(uint64_t vaddr = address & ~HVF_PAGE_MASK; vaddr < vaddr_end; vaddr += HVF_PAGE_SIZE) {
     uint64_t start = vaddr < address ? address - vaddr : 0;
-    uint64_t end = vaddr + HYP_PAGE_SIZE <= vaddr_end ? HYP_PAGE_SIZE : (vaddr_end - vaddr);
+    uint64_t end = vaddr + HVF_PAGE_SIZE <= vaddr_end ? HVF_PAGE_SIZE : (vaddr_end - vaddr);
     uint64_t len = end - start;
     char *addr = get_memory_page(memory, vaddr, hypervisor->num_page_table_entries, hypervisor->page_table);
     if(addr == NULL) {
