@@ -50,7 +50,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(t_hypervisor hypervisor) {
     cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
     HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, NULL));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SCTLR_EL1, 0x00c51864));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SCTLR_EL1, 0x4c59864));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
@@ -65,7 +65,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(t_hypervisor hypervisor) {
     assert(vcpu != NULL);
     cpu->cpu = vcpu;
 
-    vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << 12);
+    vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC);
 
     return cpu;
   }
@@ -546,6 +546,7 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &elr));
       jboolean handled = env->CallBooleanMethod(hypervisor->callback, handleException, esr, far, elr);
       if (env->ExceptionCheck()) {
+        printf("handle_exception HV_SYS_REG_HCR_EL2=0x%llx\n", cpu->cpu->HV_SYS_REG_HCR_EL2);
         return false;
       }
       return handled == JNI_TRUE;

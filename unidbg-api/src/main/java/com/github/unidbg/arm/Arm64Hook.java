@@ -14,6 +14,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public abstract class Arm64Hook extends Arm64Svc {
@@ -32,10 +34,10 @@ public abstract class Arm64Hook extends Arm64Svc {
 
     @Override
     public final UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-            KeystoneEncoded encoded;
-            if (enablePostCall) {
-                encoded = keystone.assemble(Arrays.asList(
+        byte[] code;
+        if (enablePostCall) {
+            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                         "sub sp, sp, #0x10",
                         "stp x29, x30, [sp]",
                         "svc #0x" + Integer.toHexString(svcNumber),
@@ -53,20 +55,22 @@ public abstract class Arm64Hook extends Arm64Svc {
                         "ldp x29, x30, [sp]",
                         "add sp, sp, #0x10",
                         "ret"));
-            } else {
-                encoded = keystone.assemble(Arrays.asList(
-                        "svc #0x" + Integer.toHexString(svcNumber),
-                        "ldr x17, [sp], #0x8",
-                        "br x17")); // manipulated stack in handle
+                code = encoded.getMachineCode();
             }
-            byte[] code = encoded.getMachineCode();
-            UnidbgPointer pointer = svcMemory.allocate(code.length, "Arm64Hook");
-            pointer.write(0, code, 0, code.length);
-            if (log.isDebugEnabled()) {
-                log.debug("ARM64 hook: pointer=" + pointer);
-            }
-            return pointer;
+        } else {
+            ByteBuffer buffer = ByteBuffer.allocate(12);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.putInt(Arm64Svc.assembleSvc(svcNumber)); // svc #0xsvcNumber
+            buffer.putInt(0xf84087f1); // ldr x17, [sp], #0x8
+            buffer.putInt(0xd61f0220); // br x17: manipulated stack in handle
+            code = buffer.array();
         }
+        UnidbgPointer pointer = svcMemory.allocate(code.length, "Arm64Hook");
+        pointer.write(0, code, 0, code.length);
+        if (log.isDebugEnabled()) {
+            log.debug("ARM64 hook: pointer=" + pointer);
+        }
+        return pointer;
     }
 
     @Override

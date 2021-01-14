@@ -231,6 +231,8 @@ typedef struct vcpus {
   char _p1[0x28];
 } *t_vcpus;
 
+#define HCR_EL2$DC 12
+
 extern "C" t_vcpu_context _hv_vcpu_get_context(hv_vcpu_t vcpu);
 
 extern "C" hv_return_t _hv_vcpu_get_ext_reg(hv_vcpu_t vcpu, bool error, uint64_t *value);

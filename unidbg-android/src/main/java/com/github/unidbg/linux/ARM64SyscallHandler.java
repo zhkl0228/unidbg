@@ -1102,7 +1102,8 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         long address = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
         int length = backend.reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
         int prot = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
-        long alignedAddress = address / ARMEmulator.PAGE_ALIGN * ARMEmulator.PAGE_ALIGN; // >> 12 << 12;
+        long pageAlign = emulator.getPageAlign();
+        long alignedAddress = address / pageAlign * pageAlign;
         long offset = address - alignedAddress;
 
         long alignedLength = ARM.alignSize(length + offset, emulator.getPageAlign());
