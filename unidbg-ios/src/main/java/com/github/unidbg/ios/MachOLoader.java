@@ -100,9 +100,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         this.setErrno(0);
     }
 
-    private static final int __TSD_THREAD_SELF = 0;
-    private static final int __TSD_ERRNO = 1;
-    private static final int __TSD_MIG_REPLY = 2;
+    private static final long __TSD_THREAD_SELF = 0;
+    private static final long __TSD_ERRNO = 1;
+    private static final long __TSD_MIG_REPLY = 2;
 //    private static final int __PTK_FRAMEWORK_OBJC_KEY5 = 0x2d;
 
     private void initializeTSD(String[] envs) {
@@ -142,9 +142,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         vars = allocateStack(emulator.getPointerSize() * 5);
         vars.setPointer(0, null); // _NSGetMachExecuteHeader
         vars.setPointer(emulator.getPointerSize(), _NSGetArgc);
-        vars.setPointer(2 * emulator.getPointerSize(), _NSGetArgv);
-        vars.setPointer(3 * emulator.getPointerSize(), _NSGetEnviron);
-        vars.setPointer(4 * emulator.getPointerSize(), _NSGetProgname);
+        vars.setPointer(2L * emulator.getPointerSize(), _NSGetArgv);
+        vars.setPointer(3L * emulator.getPointerSize(), _NSGetEnviron);
+        vars.setPointer(4L * emulator.getPointerSize(), _NSGetProgname);
 
         final UnidbgPointer thread = allocateStack(UnidbgStructure.calculateSize(emulator.is64Bit() ? Pthread64.class : Pthread32.class)); // reserve space for pthread_internal_t
         Pthread pthread = Pthread.create(emulator, thread);
@@ -533,7 +533,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     if (machHeader == -1 && isTextSeg) {
                         machHeader = begin;
                     }
-                    Alignment alignment = this.mem_map(begin, segmentCommand.vmsize(), prot, dyId);
+                    Alignment alignment = this.mem_map(begin, segmentCommand.vmsize(), prot, dyId, emulator.getPageAlign());
                     write_mem((int) segmentCommand.fileoff(), (int) segmentCommand.filesize(), begin, buffer);
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand.vmaddr()));
@@ -574,7 +574,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     if (machHeader == -1 && isTextSeg) {
                         machHeader = begin;
                     }
-                    Alignment alignment = this.mem_map(begin, segmentCommand64.vmsize(), prot, dyId);
+                    Alignment alignment = this.mem_map(begin, segmentCommand64.vmsize(), prot, dyId, emulator.getPageAlign());
                     if (log.isDebugEnabled()) {
                         log.debug("mem_map address=0x" + Long.toHexString(alignment.address) + ", size=0x" + Long.toHexString(alignment.size));
                     }
@@ -861,7 +861,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     address += Utils.readULEB128(buffer).longValue();
                     break;
                 case REBASE_OPCODE_ADD_ADDR_IMM_SCALED:
-                    address += (immediate * emulator.getPointerSize());
+                    address += ((long) immediate * emulator.getPointerSize());
                     break;
                 case REBASE_OPCODE_DO_REBASE_IMM_TIMES:
                     for (int i = 0; i < immediate; i++) {
@@ -1295,7 +1295,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         throw new IllegalStateException();
                     }
                     ret &= doBindAt(log, libraryOrdinal, type, address, symbolName, symbolFlags, addend, module);
-                    address += (immediate*emulator.getPointerSize() + emulator.getPointerSize());
+                    address += ((long) immediate *emulator.getPointerSize() + emulator.getPointerSize());
                     break;
                 case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
                     count = Utils.readULEB128(buffer).intValue();

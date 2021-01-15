@@ -1,6 +1,7 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.*;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
 import com.github.unidbg.memory.MemRegion;
@@ -521,7 +522,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         });
         UnidbgPointer first = list.get(0);
         UnidbgPointer last = list.get(list.size() - 1);
-        Alignment alignment = emulator.align(first.peer, last.peer - first.peer);
+        Alignment alignment = ARM.align(first.peer, last.peer - first.peer, emulator.getPageAlign());
         final long base = alignment.address;
         final long size = alignment.size;
 

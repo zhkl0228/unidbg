@@ -4,6 +4,7 @@ import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -36,7 +37,7 @@ public class LinuxModule extends Module {
         });
         UnidbgPointer first = list.get(0);
         UnidbgPointer last = list.get(list.size() - 1);
-        Alignment alignment = emulator.align(first.peer, last.peer - first.peer);
+        Alignment alignment = ARM.align(first.peer, last.peer - first.peer, emulator.getPageAlign());
         final long base = alignment.address;
         final long size = alignment.size;
 

@@ -12,7 +12,7 @@ public class PtLoadData {
         this.buffer = buffer;
     }
 
-    public void write(final Pointer ptr) {
+    public void writeTo(final Pointer ptr) {
         Pointer pointer = ptr;
         byte[] buf = new byte[Math.min(0x1000, buffer.remaining())];
         while (buffer.hasRemaining()) {

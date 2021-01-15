@@ -634,7 +634,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_nat
       // Memory
       config.page_table = reinterpret_cast<std::array<std::uint8_t*, Dynarmic::A32::UserConfig::NUM_PAGE_TABLE_ENTRIES>*>(dynarmic->page_table);
       config.absolute_offset_page_table = false;
-      config.detect_misaligned_access_via_page_table = 16 | 32 | 64;
+      config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
       config.only_detect_misalignment_via_page_table_on_page_boundary = true;
     }
 

@@ -336,8 +336,8 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         return malloc(length, true);
     }
 
-    protected final Alignment mem_map(long address, long size, int prot, String libraryName) {
-        Alignment alignment = emulator.align(address, size);
+    protected final Alignment mem_map(long address, long size, int prot, String libraryName, long align) {
+        Alignment alignment = ARM.align(address, size, align);
 
         if (log.isDebugEnabled()) {
             log.debug("[" + libraryName + "]0x" + Long.toHexString(alignment.address) + " - 0x" + Long.toHexString(alignment.address + alignment.size) + ", size=0x" + Long.toHexString(alignment.size) + ", prot=" + prot);
