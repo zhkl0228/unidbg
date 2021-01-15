@@ -234,9 +234,9 @@ extern "C" hv_return_t _hv_vcpu_set_control_field(hv_vcpu_t vcpu, int index, uin
 static t_vcpus lookupVcpu(hv_vcpu_t vcpu) {
   const struct mach_header *header = 0;
   intptr_t slide = 0;
-  for (uint32_t i = 0; i < _dyld_image_count(); i++) {
+  for (uint32_t i = 0, count = _dyld_image_count(); i < count; i++) {
     const char *name = _dyld_get_image_name(i);
-    if(strlen(name) > 0 && strstr(name, "/Hypervisor")) {
+    if(strlen(name) > 0 && strstr(name, "/System/Library/Frameworks/Hypervisor.framework/")) {
       slide = _dyld_get_image_vmaddr_slide(i);
       header = _dyld_get_image_header(i);
       break;
