@@ -65,14 +65,14 @@ static t_hypervisor_cpu get_hypervisor_cpu(t_hypervisor hypervisor) {
     assert(vcpu != NULL);
     cpu->cpu = vcpu;
 
-    vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC);
+    vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC); // set stage 1 as normal memory
 
     return cpu;
   }
 }
 
 static void destroy_hypervisor_cpu(void *data) {
-  printf("destroy_hypervisor_cpu data=%p\n", data);
+//  printf("destroy_hypervisor_cpu data=%p\n", data);
   t_hypervisor_cpu cpu = (t_hypervisor_cpu) data;
   HYP_ASSERT_SUCCESS(hv_vcpu_destroy(cpu->vcpu));
   free(cpu);
