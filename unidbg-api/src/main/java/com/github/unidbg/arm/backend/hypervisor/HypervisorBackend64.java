@@ -1,14 +1,9 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
-import capstone.Arm64;
-import capstone.Arm64_const;
-import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.HypervisorBackend;
-import com.github.unidbg.pointer.UnidbgPointer;
-import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -21,13 +16,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     private static final Log log = LogFactory.getLog(HypervisorBackend64.class);
 
-    private final Capstone capstone;
-
     public HypervisorBackend64(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator, hypervisor);
-
-        this.capstone = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
-        this.capstone.setDetail(Capstone.CS_OPT_ON);
     }
 
     private void callSVC(long pc, int swi) {
@@ -64,114 +54,10 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 if (log.isDebugEnabled()) {
                     log.debug("handle EC_DATAABORT isv=" + isv + ", isWrite=" + isWrite + ", s1ptw=" + s1ptw + ", len=" + len + ", srt=" + srt + ", dfsc=0x" + Integer.toHexString(dfsc) + ", vaddr=0x" + Long.toHexString(far));
                 }
-                if(dfsc == 0x35) { // IMPLEMENTATION DEFINED fault (Unsupported Exclusive or Atomic access).
-                    return handleExclusiveAccess(far, elr);
-                }
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
-        }
-    }
-
-    private final ExclusiveMonitor exclusiveMonitor = new ExclusiveMonitor();
-
-    private static boolean is64BitReg(Arm64.Operand operand) {
-        if (operand.type != Arm64_const.ARM64_OP_REG) {
-            throw new IllegalArgumentException("type=" + operand.type);
-        }
-        Arm64.OpValue value = operand.value;
-        if (value.reg >= Arm64_const.ARM64_REG_X0 && value.reg <= Arm64_const.ARM64_REG_X28) {
-            return true;
-        } else return value.reg == Arm64_const.ARM64_REG_X29 || value.reg == Arm64_const.ARM64_REG_X30;
-    }
-
-    private static boolean is32BitReg(Arm64.Operand operand) {
-        if (operand.type != Arm64_const.ARM64_OP_REG) {
-            throw new IllegalArgumentException("type=" + operand.type);
-        }
-        Arm64.OpValue value = operand.value;
-        return value.reg >= Arm64_const.ARM64_REG_W0 && value.reg <= Arm64_const.ARM64_REG_W30;
-    }
-
-    private boolean handleExclusiveAccess(long vaddr, long elr) {
-        Pointer pointer = UnidbgPointer.pointer(emulator, vaddr);
-        assert pointer != null;
-        Pointer pc = UnidbgPointer.pointer(emulator, elr);
-        assert pc != null;
-        byte[] code = pc.getByteArray(0, 4);
-        Capstone.CsInsn insn = capstone.disasm(code, elr, 1)[0];
-        if (log.isDebugEnabled()) {
-            log.debug("handleExclusiveAccess vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn.mnemonic + " " + insn.opStr);
-        }
-        Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
-        if (opInfo.updateFlags || opInfo.writeback) {
-            throw new UnsupportedOperationException();
-        }
-        switch (insn.mnemonic) {
-            case "ldxrh":
-            case "ldaxrh": {
-                Arm64.Operand operand = opInfo.op[0];
-                Arm64.OpValue value = operand.value;
-                exclusiveMonitor.loadAcquireExclusive(pointer, 2);
-                reg_write(value.reg, pointer.getShort(0) & 0xffffffffL);
-                hypervisor.reg_set_elr_el1(elr + 4);
-                return true;
-            }
-            case "stlxrh":
-            case "stxrh": {
-                Arm64.Operand o1 = opInfo.op[0];
-                Arm64.Operand o2 = opInfo.op[1];
-                Arm64.OpValue ws = o1.value;
-                Arm64.OpValue wt = o2.value;
-                Number value = reg_read(wt.reg);
-                boolean release = "stlxrh".equals(insn.mnemonic);
-                boolean success = exclusiveMonitor.storeExclusive(pointer, 2, release);
-                reg_write(ws.reg, success ? 0 : 1);
-                pointer.setShort(0, value.shortValue());
-                hypervisor.reg_set_elr_el1(elr + 4);
-                return true;
-            }
-            case "ldxr":
-            case "ldaxr": {
-                Arm64.Operand operand = opInfo.op[0];
-                Arm64.OpValue value = operand.value;
-                if (is64BitReg(operand)) {
-                    exclusiveMonitor.loadAcquireExclusive(pointer, 8);
-                    reg_write(value.reg, pointer.getLong(0));
-                } else if(is32BitReg(operand)) {
-                    exclusiveMonitor.loadAcquireExclusive(pointer, 4);
-                    reg_write(value.reg, pointer.getInt(0) & 0xffffffffL);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-                hypervisor.reg_set_elr_el1(elr + 4);
-                return true;
-            }
-            case "stlxr":
-            case "stxr": {
-                Arm64.Operand o1 = opInfo.op[0];
-                Arm64.Operand o2 = opInfo.op[1];
-                Arm64.OpValue ws = o1.value;
-                Arm64.OpValue wt = o2.value;
-                Number value = reg_read(wt.reg);
-                boolean release = "stlxr".equals(insn.mnemonic);
-                if (is64BitReg(o2)) {
-                    boolean success = exclusiveMonitor.storeExclusive(pointer, 8, release);
-                    reg_write(ws.reg, success ? 0 : 1);
-                    pointer.setLong(0, value.longValue());
-                } else if(is32BitReg(o2)) {
-                    boolean success = exclusiveMonitor.storeExclusive(pointer, 4, release);
-                    reg_write(ws.reg, success ? 0 : 1);
-                    pointer.setInt(0, value.intValue());
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-                hypervisor.reg_set_elr_el1(elr + 4);
-                return true;
-            }
-            default:
-                throw new UnsupportedOperationException(insn.mnemonic);
         }
     }
 
