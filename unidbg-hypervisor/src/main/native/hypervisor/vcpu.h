@@ -1,20 +1,10 @@
 #include <Hypervisor/Hypervisor.h>
 
-#include <stdio.h>
-
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 
-static void hex(char *buf, void *ptr, size_t size) {
-  const char *data = (const char *) ptr;
-  int idx = 0;
-  for(int i = 0; i < size; i++) {
-    idx += sprintf(&buf[idx], "%02x", data[i] & 0xff);
-  }
-}
-
 typedef struct vcpu_context {
-  char _p00[8];
+  uint64_t magic;
   uint64_t HV_REG_X0;
   uint64_t HV_REG_X1;
   uint64_t HV_REG_X2;
@@ -50,7 +40,7 @@ typedef struct vcpu_context {
   uint64_t HV_REG_PC; // 0x108
   uint64_t HV_REG_CPSR; // 0x110
 
-  char _p111[0x28];
+  char _pad1[0x28];
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q0;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q1;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q2;
@@ -84,7 +74,7 @@ typedef struct vcpu_context {
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q30;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q31;
 
-  char _p0[0x10];
+  char _pad2[0x10];
   uint64_t HV_SYS_REG_MDSCR_EL1;
   uint64_t HV_SYS_REG_TPIDR_EL1;
   uint64_t HV_SYS_REG_TPIDR_EL0;
@@ -101,7 +91,7 @@ typedef struct vcpu_context {
   uint64_t HV_SYS_REG_ELR_EL1;
   uint64_t HV_SYS_REG_FAR_EL1;
   uint64_t HV_SYS_REG_ESR_EL1;
-  char _p002[0x10];
+  char _pad3[0x10];
   uint64_t HV_SYS_REG_VBAR_EL1; // 0x3e0
   uint64_t HV_SYS_REG_CNTV_CVAL_EL0;
   uint64_t HV_SYS_REG_MAIR_EL1;
@@ -113,7 +103,7 @@ typedef struct vcpu_context {
   uint64_t HV_SYS_REG_AFSR1_EL1;
   uint64_t HV_SYS_REG_CONTEXTIDR_EL1;
   uint64_t HV_SYS_REG_CNTV_CTL_EL0; // 0x430
-  char _p11[8];
+  uint64_t unknown0x438;
   uint64_t HV_SYS_REG_CNTKCTL_EL1;
   uint64_t HV_SYS_REG_DBGBVR0_EL1;
   uint64_t HV_SYS_REG_DBGBCR0_EL1;
@@ -180,7 +170,7 @@ typedef struct vcpu_context {
   uint64_t HV_SYS_REG_DBGWVR15_EL1;
   uint64_t HV_SYS_REG_DBGWCR15_EL1;
   uint64_t HV_SYS_REG_MDCCINT_EL1;
-  char _p2[0x18];
+  char _pad4[0x18];
   uint64_t control_field_0;
   uint64_t control_field_6;
   uint64_t control_field_1;
@@ -202,7 +192,7 @@ typedef struct vcpu_context {
   uint64_t control_field_11;
   uint64_t unknown0x700; // hv_vcpu_set_trap_debug_reg_accesses and hv_vcpu_set_trap_debug_exceptions related
   uint64_t exec_time; // the cumulative execution time of a vCPU, in nanoseconds.
-  char _p3[0x60];
+  char _pad5[0x60];
   uint64_t HV_SYS_REG_APGAKEYHI_EL1; // 0x770
   uint64_t HV_SYS_REG_APGAKEYLO_EL1;
   uint64_t HV_SYS_REG_APIAKEYHI_EL1;
@@ -226,9 +216,9 @@ typedef struct vcpus {
   uint64_t HV_SYS_REG_ID_AA64MMFR2_EL1;
   uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;
   uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;
-  char _p0[0x98];
+  char _pad1[0x98];
   uint64_t HV_SYS_REG_HCR_EL2;
-  char _p1[0x28];
+  char _pad2[0x28];
 } *t_vcpus;
 
 #define HCR_EL2$DC 12
@@ -239,7 +229,7 @@ extern "C" hv_return_t _hv_vcpu_get_ext_reg(hv_vcpu_t vcpu, bool error, uint64_t
 
 extern "C" hv_return_t _hv_vcpu_set_control_field(hv_vcpu_t vcpu, int index, uint64_t value);
 
-#define HY_VCPUS_OFFSET 0x1E286010
+#define HY_VCPUS_OFFSET 0x1e286010L
 
 static t_vcpus lookupVcpu(hv_vcpu_t vcpu) {
   struct task_dyld_info dyld_info;
@@ -248,7 +238,7 @@ static t_vcpus lookupVcpu(hv_vcpu_t vcpu) {
   assert(task_info(task, TASK_DYLD_INFO, (task_info_t)&dyld_info, &count) == 0);
   struct dyld_all_image_infos* infos = (struct dyld_all_image_infos*)(uintptr_t)dyld_info.all_image_info_addr;
   uint64_t hypervisor_load_address = 0;
-  for(int i=0; i < infos->infoArrayCount; ++i) {
+  for(int i = 0; i < infos->infoArrayCount; i++) {
     const char *path = infos->infoArray[i].imageFilePath;
     if(strlen(path) > 0 && strstr(path, "/Hypervisor")) {
       hypervisor_load_address = (uint64_t) infos->infoArray[i].imageLoadAddress;
