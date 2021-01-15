@@ -5,5 +5,4 @@ JAVA_PLATFORM_INC="$(dirname "$(find "$JAVA_INC" -name jni_md.h)")"
   xcrun -sdk macosx clang++ -m64 -o libhypervisor.dylib -shared -std=c++17 -O2 -mmacosx-version-min=11.0 \
   -framework Hypervisor hypervisor.cpp \
   -I "$JAVA_INC" -I "$JAVA_PLATFORM_INC" && \
-#  codesign --entitlements hypervisor.entitlements --force -s - "$JAVA_HOME"/bin/java && \
   mv libhypervisor.dylib ../../resources/natives/osx_arm64
