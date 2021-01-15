@@ -1,5 +1,7 @@
 #include <Hypervisor/Hypervisor.h>
 
+#include <stdio.h>
+#include <mach-o/nlist.h>
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 
@@ -229,27 +231,51 @@ extern "C" hv_return_t _hv_vcpu_get_ext_reg(hv_vcpu_t vcpu, bool error, uint64_t
 
 extern "C" hv_return_t _hv_vcpu_set_control_field(hv_vcpu_t vcpu, int index, uint64_t value);
 
-#define HY_VCPUS_OFFSET 0x1e286010L
-
 static t_vcpus lookupVcpu(hv_vcpu_t vcpu) {
-  struct task_dyld_info dyld_info;
-  mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
-  task_t task = mach_task_self();
-  assert(task_info(task, TASK_DYLD_INFO, (task_info_t)&dyld_info, &count) == 0);
-  struct dyld_all_image_infos* infos = (struct dyld_all_image_infos*)(uintptr_t)dyld_info.all_image_info_addr;
-  uint64_t hypervisor_load_address = 0;
-  for(int i = 0; i < infos->infoArrayCount; i++) {
-    const char *path = infos->infoArray[i].imageFilePath;
-    if(strlen(path) > 0 && strstr(path, "/Hypervisor")) {
-      hypervisor_load_address = (uint64_t) infos->infoArray[i].imageLoadAddress;
+  const struct mach_header *header = 0;
+  intptr_t slide = 0;
+  for (uint32_t i = 0; i < _dyld_image_count(); i++) {
+    const char *name = _dyld_get_image_name(i);
+    if(strlen(name) > 0 && strstr(name, "/Hypervisor")) {
+      slide = _dyld_get_image_vmaddr_slide(i);
+      header = _dyld_get_image_header(i);
       break;
     }
   }
-  if(hypervisor_load_address > 0) {
-    t_vcpus vcpus = (t_vcpus) (hypervisor_load_address + HY_VCPUS_OFFSET);
-    t_vcpus cpu = vcpus + vcpu;
-    if(cpu->context == _hv_vcpu_get_context(vcpu)) {
-      return cpu;
+  if(header) {
+    struct segment_command_64 *cur_seg_cmd;
+    struct segment_command_64 *linkedit_segment = NULL;
+    struct symtab_command* symtab_cmd = NULL;
+    uintptr_t cur = (uintptr_t)header + sizeof(struct mach_header_64);
+    for (uint i = 0; i < header->ncmds; i++, cur += cur_seg_cmd->cmdsize) {
+      cur_seg_cmd = (struct segment_command_64 *)cur;
+      if (cur_seg_cmd->cmd == LC_SEGMENT_64) {
+        if (strcmp(cur_seg_cmd->segname, SEG_LINKEDIT) == 0) {
+          linkedit_segment = cur_seg_cmd;
+        }
+      } else if (cur_seg_cmd->cmd == LC_SYMTAB) {
+        symtab_cmd = (struct symtab_command*)cur_seg_cmd;
+      }
+    }
+    if(symtab_cmd && linkedit_segment) {
+      const uintptr_t linkedit_base = (uintptr_t)slide + linkedit_segment->vmaddr - linkedit_segment->fileoff;
+      char *strtab = (char *)(linkedit_base + symtab_cmd->stroff);
+
+      struct nlist_64 *symtab = (struct nlist_64 *)(linkedit_base + symtab_cmd->symoff);
+      for(uint i = 0; i < symtab_cmd->nsyms; i++, symtab++) {
+        uint32_t strtab_offset = symtab->n_un.n_strx;
+        char *symbol_name = strtab + strtab_offset;
+        if(strcmp(symbol_name, "_vcpus") == 0) {
+          t_vcpus vcpus = (t_vcpus) (symtab->n_value + slide);
+          t_vcpus cpu = vcpus + vcpu;
+          if(cpu->context == _hv_vcpu_get_context(vcpu)) {
+            return cpu;
+          } else {
+            fprintf(stderr, "Verify _vcpus failed: vcpus=%p, sizeof(struct vcpus)=%lu, vcpu=%llu\n", vcpus, sizeof(struct vcpus), vcpu);
+            abort();
+          }
+        }
+      }
     }
   }
   return NULL;
