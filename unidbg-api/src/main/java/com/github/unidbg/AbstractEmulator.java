@@ -438,18 +438,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     protected abstract void closeInternal();
 
     @Override
-    public Alignment align(long addr, long size) {
-        long to = getPageAlign();
-        long mask = -to;
-        long right = addr + size;
-        right = (right + to - 1) & mask;
-        addr &= mask;
-        size = right - addr;
-        size = (size + to - 1) & mask;
-        return new Alignment(addr, size);
-    }
-
-    @Override
     public Backend getBackend() {
         return backend;
     }

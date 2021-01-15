@@ -3,6 +3,7 @@ package com.github.unidbg.arm;
 import capstone.Arm;
 import capstone.Arm_const;
 import capstone.Capstone;
+import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
@@ -818,6 +819,16 @@ public class ARM {
 
     public static int alignSize(int size) {
         return (int) alignSize(size, ALIGN_SIZE_BASE);
+    }
+
+    public static Alignment align(long addr, long size, long alignment) {
+        long mask = -alignment;
+        long right = addr + size;
+        right = (right + alignment - 1) & mask;
+        addr &= mask;
+        size = right - addr;
+        size = (size + alignment - 1) & mask;
+        return new Alignment(addr, size);
     }
 
     public static long alignSize(long size, long align) {

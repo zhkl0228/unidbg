@@ -95,8 +95,6 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     Module loadLibrary(File libraryFile) throws IOException;
     Module loadLibrary(File libraryFile, boolean forceCallInit) throws IOException;
 
-    Alignment align(long addr, long size);
-
     Memory getMemory();
 
     Backend getBackend();

@@ -143,14 +143,14 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         final Pointer argv = allocateStack(0x100);
         assert argv != null;
         argv.setPointer(emulator.getPointerSize(), programNamePointer);
-        argv.setPointer(2 * emulator.getPointerSize(), environ);
-        argv.setPointer(3 * emulator.getPointerSize(), auxv);
+        argv.setPointer(2L * emulator.getPointerSize(), environ);
+        argv.setPointer(3L * emulator.getPointerSize(), auxv);
 
         final UnidbgPointer tls = allocateStack(0x80 * 4); // tls size
         assert tls != null;
         tls.setPointer(emulator.getPointerSize(), thread);
-        this.errno = tls.share(emulator.getPointerSize() * 2);
-        tls.setPointer(emulator.getPointerSize() * 3, argv);
+        this.errno = tls.share(emulator.getPointerSize() * 2L);
+        tls.setPointer(emulator.getPointerSize() * 3L, argv);
 
         if (emulator.is32Bit()) {
             backend.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
@@ -308,6 +308,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         long start = System.currentTimeMillis();
         long bound_high = 0;
+        long align = 0;
         for (int i = 0; i < elfFile.num_ph; i++) {
             ElfSegment ph = elfFile.getProgramHeader(i);
             if (ph.type == ElfSegment.PT_LOAD && ph.mem_size > 0) {
@@ -316,14 +317,17 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 if (bound_high < high) {
                     bound_high = high;
                 }
+                if (ph.alignment > align) {
+                    align = ph.alignment;
+                }
             }
         }
 
         ElfDynamicStructure dynamicStructure = null;
 
-        final long baseAlign = emulator.getPageAlign();
+        final long baseAlign = Math.max(emulator.getPageAlign(), align);
         final long load_base = ((mmapBaseAddress - 1) / baseAlign + 1) * baseAlign;
-        long size = emulator.align(0, bound_high).size;
+        long size = ARM.align(0, bound_high, baseAlign).size;
         setMMapBaseAddress(load_base + size);
 
         final List<MemRegion> regions = new ArrayList<>(5);
@@ -339,8 +343,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     }
 
                     final long begin = load_base + ph.virtual_address;
-                    Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName());
-                    ph.getPtLoadData().write(pointer(begin));
+                    Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
+                    ph.getPtLoadData().writeTo(pointer(begin));
 
                     regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
                     break;
@@ -512,7 +516,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     throw new IllegalStateException("DT_PREINIT_ARRAY is null");
                 }
                 for (int i = 0; i < count; i++) {
-                    Pointer func = pointer.getPointer(i * emulator.getPointerSize());
+                    Pointer func = pointer.getPointer((long) i * emulator.getPointerSize());
                     if (func != null) {
                         initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnidbgPointer) func).peer));
                     }
@@ -533,7 +537,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     throw new IllegalStateException("DT_INIT_ARRAY is null");
                 }
                 for (int i = 0; i < count; i++) {
-                    Pointer func = pointer.getPointer(i * emulator.getPointerSize());
+                    Pointer func = pointer.getPointer((long) i * emulator.getPointerSize());
                     if (func != null) {
                         initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnidbgPointer) func).peer));
                     }
