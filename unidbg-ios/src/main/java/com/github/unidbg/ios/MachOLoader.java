@@ -1458,11 +1458,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     @Override
-    public File dumpHeap() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Module dlopen(String path) {
         return dlopen(path, true);
     }

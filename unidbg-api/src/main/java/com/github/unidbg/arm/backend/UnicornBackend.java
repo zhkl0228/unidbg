@@ -311,7 +311,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     }
 
     @Override
-    public void emu_start(long begin, long until, long timeout, long count) throws BackendException {
+    public final synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
         try {
             unicorn.emu_start(begin, until, timeout, count);
         } catch (UnicornException e) {
