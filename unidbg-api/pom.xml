@@ -28,6 +28,11 @@
             <version>0.9.3</version>
         </dependency>
         <dependency>
+            <groupId>com.github.zhkl0228</groupId>
+            <artifactId>jna_silicon</artifactId>
+            <version>4.5.2-1</version>
+        </dependency>
+        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.6</version>

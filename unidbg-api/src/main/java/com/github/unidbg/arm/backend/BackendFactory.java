@@ -12,17 +12,6 @@ public class BackendFactory {
     }
 
     public static Backend createBackend(Emulator<?> emulator, boolean is64Bit) {
-        boolean useDynarmic = Dynarmic.isUseDynarmic();
-        if (useDynarmic) {
-            Backend backend = DynarmicBackend.tryInitialize(emulator, is64Bit);
-            if (backend != null) {
-                Dynarmic.onBackendInitialized();
-                return backend;
-            } else if (Dynarmic.isForceUseDynarmic()) {
-                throw new IllegalStateException("Initialize dynarmic backend failed");
-            }
-        }
-
         boolean useHypervisor = Hypervisor.isUseHypervisor();
         if (useHypervisor) {
             Backend backend = HypervisorBackend.tryInitialize(emulator, is64Bit);
@@ -31,6 +20,17 @@ public class BackendFactory {
                 return backend;
             } else if (Hypervisor.isForceUseHypervisor()) {
                 throw new IllegalStateException("Initialize hypervisor backend failed");
+            }
+        }
+
+        boolean useDynarmic = Dynarmic.isUseDynarmic();
+        if (useDynarmic) {
+            Backend backend = DynarmicBackend.tryInitialize(emulator, is64Bit);
+            if (backend != null) {
+                Dynarmic.onBackendInitialized();
+                return backend;
+            } else if (Dynarmic.isForceUseDynarmic()) {
+                throw new IllegalStateException("Initialize dynarmic backend failed");
             }
         }
         return new UnicornBackend(emulator, is64Bit);
