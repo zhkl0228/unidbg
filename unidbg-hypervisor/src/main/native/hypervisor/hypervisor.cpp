@@ -636,11 +636,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   if (JNI_OK != vm->GetEnv((void **)&env, JNI_VERSION_1_6)) {
     return JNI_ERR;
   }
-  jclass cHypervisorCallbackCallback = env->FindClass("com/github/unidbg/arm/backend/hypervisor/HypervisorCallback");
+  jclass cHypervisorCallback = env->FindClass("com/github/unidbg/arm/backend/hypervisor/HypervisorCallback");
   if (env->ExceptionCheck()) {
     return JNI_ERR;
   }
-  handleException = env->GetMethodID(cHypervisorCallbackCallback, "handleException", "(JJJ)Z");
+  handleException = env->GetMethodID(cHypervisorCallback, "handleException", "(JJJ)Z");
 
   return JNI_VERSION_1_6;
 }
