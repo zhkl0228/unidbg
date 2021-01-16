@@ -15,17 +15,17 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unicorn</artifactId>
-            <version>1.0.9</version>
+            <version>1.0.10</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>capstone</artifactId>
-            <version>3.0.8</version>
+            <version>3.0.9</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>keystone</artifactId>
-            <version>0.9.2</version>
+            <version>0.9.3</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>demumble</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
         </dependency>
     </dependencies>
 </project>

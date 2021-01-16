@@ -5,7 +5,7 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
+import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.file.FileResult;
@@ -36,7 +36,7 @@ import java.util.Arrays;
 public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
 
     static {
-        DynarmicLoader.useDynarmic();
+        HypervisorLoader.useHypervisor();
     }
 
     public static void main(String[] args) throws IOException {
