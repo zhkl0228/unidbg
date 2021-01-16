@@ -1195,6 +1195,33 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallStaticFloatMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallStaticFloatMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    float ret = dvmMethod.callStaticFloatMethod(ArmVarArg.create(emulator, DalvikVM.this));
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallStaticFloatMethod(%s, %s%s) => %s was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                    ByteBuffer buffer = ByteBuffer.allocate(4);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putFloat(ret);
+                    buffer.flip();
+                    return (buffer.getInt() & 0xffffffffL);
+                }
+            }
+        });
+
         Pointer _CallStaticVoidMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1303,6 +1330,29 @@ public class DalvikVM extends BaseVM implements VM {
                         System.out.printf("JNIEnv->GetStaticObjectField(%s, %s %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, dvmField.fieldType, obj, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
                     return addLocalObject(obj);
+                }
+            }
+        });
+
+        Pointer _GetStaticBooleanField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetStaticBooleanField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException();
+                } else {
+                    boolean ret = dvmField.getStaticBooleanField();
+                    if (verbose) {
+                        System.out.printf("JNIEnv->GetStaticBooleanField(%s, %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                    return ret ? VM.JNI_TRUE : VM.JNI_FALSE;
                 }
             }
         });
@@ -1815,7 +1865,7 @@ public class DalvikVM extends BaseVM implements VM {
                     System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.getClassName(), methods, nMethods, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                 }
                 for (int i = 0; i < nMethods; i++) {
-                    Pointer method = methods.share(i * 0xc);
+                    Pointer method = methods.share(i * 0xcL);
                     Pointer name = method.getPointer(0);
                     Pointer signature = method.getPointer(4);
                     Pointer fnPtr = method.getPointer(8);
@@ -2001,11 +2051,13 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x208, _CallStaticIntMethodV);
         impl.setPointer(0x210, _CallStaticLongMethod);
         impl.setPointer(0x214, _CallStaticLongMethodV);
+        impl.setPointer(0x21c, _CallStaticFloatMethod);
         impl.setPointer(0x234, _CallStaticVoidMethod);
         impl.setPointer(0x238, _CallStaticVoidMethodV);
         impl.setPointer(0x23c, _CallStaticVoidMethodA);
         impl.setPointer(0x240, _GetStaticFieldID);
         impl.setPointer(0x244, _GetStaticObjectField);
+        impl.setPointer(0x248, _GetStaticBooleanField);
         impl.setPointer(0x258, _GetStaticIntField);
         impl.setPointer(0x25c, _GetStaticLongField);
         impl.setPointer(0x280, _SetStaticLongField);
@@ -2080,8 +2132,8 @@ public class DalvikVM extends BaseVM implements VM {
         for (int i = 0; i < emulator.getPointerSize() * 8; i += emulator.getPointerSize()) {
             _JNIInvokeInterface.setInt(i, i);
         }
-        _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 4, _AttachCurrentThread);
-        _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 6, _GetEnv);
+        _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 4L, _AttachCurrentThread);
+        _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 6L, _GetEnv);
 
         _JavaVM.setPointer(0, _JNIInvokeInterface);
 
