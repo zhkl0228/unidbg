@@ -1,13 +1,15 @@
 package com.github.unidbg.android;
 
+import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
+import com.github.unidbg.linux.android.dvm.*;
 import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
@@ -19,10 +21,10 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 
-public class Android64Test {
+public class Android64Test extends AbstractJni {
 
     static {
-        HypervisorLoader.useHypervisor();
+        DynarmicLoader.useDynarmic();
     }
 
     public static void main(String[] args) throws IOException {
@@ -30,7 +32,7 @@ public class Android64Test {
         new Android64Test().test();
     }
 
-    private final Emulator<?> emulator;
+    private final AndroidEmulator emulator;
     private final Module module;
 
     private static class MyARMSyscallHandler extends ARM64SyscallHandler {
@@ -58,14 +60,37 @@ public class Android64Test {
 //        emulator.traceCode();
         module = emulator.loadLibrary(executable);
 
+        VM vm = emulator.createDalvikVM(null);
+        vm.setVerbose(true);
+        vm.setJni(this);
+        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/native/android/libs/arm64-v8a/libnative.so"), false);
+        dm.callJNI_OnLoad(emulator);
+
         {
             Pointer pointer = memory.allocateStack(0x100);
             System.out.println(new Stat64(pointer));
         }
     }
 
+    @Override
+    public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        if ("com/github/unidbg/android/AndroidTest->testStaticFloat()F".equals(signature)) {
+            return 0.0023942017F;
+        }
+
+        return super.callStaticFloatMethod(vm, dvmClass, signature, varArg);
+    }
+
+    @Override
+    public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature) {
+        if ("com/github/unidbg/android/AndroidTest->staticBooleanField:Z".equals(signature)) {
+            return true;
+        }
+
+        return super.getStaticBooleanField(vm, dvmClass, signature);
+    }
+
     private void test() {
-//        emulator.traceCode();
 //        emulator.attach().addBreakPoint(null, 0x40080648);
         System.err.println("exit code: " + module.callEntry(emulator));
     }

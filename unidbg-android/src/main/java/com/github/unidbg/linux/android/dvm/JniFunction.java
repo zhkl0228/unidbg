@@ -3,6 +3,16 @@ package com.github.unidbg.linux.android.dvm;
 public abstract class JniFunction implements Jni {
 
     @Override
+    public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
+    public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
         throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
@@ -234,6 +244,16 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
+    public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature) {
         throw new UnsupportedOperationException(signature);
     }
 

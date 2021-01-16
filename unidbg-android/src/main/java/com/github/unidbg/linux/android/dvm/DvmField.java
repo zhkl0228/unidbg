@@ -38,6 +38,11 @@ public class DvmField extends Hashable {
         return checkJni(vm, dvmClass).getStaticObjectField(vm, dvmClass, this);
     }
 
+    boolean getStaticBooleanField() {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).getStaticBooleanField(vm, dvmClass, this);
+    }
+
     int getStaticIntField() {
         BaseVM vm = dvmClass.vm;
         return checkJni(vm, dvmClass).getStaticIntField(vm, dvmClass, this);

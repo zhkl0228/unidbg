@@ -132,6 +132,9 @@ static void test_float() {
   printf("test_float size=%zu, ip=0x%x\n", sizeof(float), *ip);
 }
 
+static void test_jni_float() {
+}
+
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -146,6 +149,7 @@ int main() {
   test_backtrace();
   test_statfs();
   test_float();
+  test_jni_float();
   char sdk[PROP_VALUE_MAX];
   __system_property_get("ro.build.version.sdk", sdk);
   printf("Press any key to exit: cmp=%d\n", strcmp("23", sdk));

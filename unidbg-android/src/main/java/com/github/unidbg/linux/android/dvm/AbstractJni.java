@@ -67,6 +67,16 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
+        return getStaticBooleanField(vm, dvmClass, dvmField.getSignature());
+    }
+
+    @Override
+    public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public int getStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
         return getStaticIntField(vm, dvmClass, dvmField.getSignature());
     }
@@ -494,6 +504,16 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public float getFloatField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
+        return callStaticFloatMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
+    }
+
+    @Override
+    public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         throw new UnsupportedOperationException(signature);
     }
 

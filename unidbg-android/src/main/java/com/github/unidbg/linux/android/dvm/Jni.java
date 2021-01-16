@@ -2,6 +2,9 @@ package com.github.unidbg.linux.android.dvm;
 
 public interface Jni {
 
+    float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
+    float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
+
     void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
     void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
@@ -72,6 +75,9 @@ public interface Jni {
 
     DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
     DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
+
+    boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
+    boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature);
 
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature);
