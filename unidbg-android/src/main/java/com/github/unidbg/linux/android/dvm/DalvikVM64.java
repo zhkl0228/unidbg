@@ -529,7 +529,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     buffer.putFloat(ret);
                     emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
-                    return 0L;
+                    return context.getLongArg(0);
                 }
             }
         });
@@ -717,7 +717,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     buffer.putFloat(ret);
                     emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
-                    return 0L;
+                    return context.getLongArg(0);
                 }
             }
         });
@@ -1032,8 +1032,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticFloatMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticFloatMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
@@ -1050,7 +1051,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     buffer.putFloat(ret);
                     emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
-                    return 0L;
+                    return context.getLongArg(0);
                 }
             }
         });
