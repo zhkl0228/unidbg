@@ -3,6 +3,7 @@ package org.telegram.messenger;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -36,6 +37,7 @@ public class Utilities64 {
 
     static {
         HypervisorLoader.useHypervisor();
+        DynarmicLoader.useDynarmic();
     }
 
     private Utilities64() {
