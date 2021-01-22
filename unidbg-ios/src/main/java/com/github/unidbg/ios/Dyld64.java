@@ -3,10 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.arm.AbstractARM64Emulator;
-import com.github.unidbg.arm.Arm64Hook;
-import com.github.unidbg.arm.Arm64Svc;
-import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.*;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
@@ -68,6 +65,7 @@ public class Dyld64 extends Dyld {
     private long _os_trace_redirect_func;
     private long sandbox_check;
     private long __availability_version_check;
+    private long _dispatch_after, _dispatch_async;
 
     @Override
     final int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address) {
@@ -353,6 +351,46 @@ public class Dyld64 extends Dyld {
                                     }).peer;
                                 }
                                 return __availability_version_check;
+                            }
+                            if ("dispatch_after".equals(symbolName)) {
+                                if (_dispatch_after == 0) {
+                                    _dispatch_after = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
+                                        @Override
+                                        public long handle(Emulator<?> emulator) {
+                                            RegisterContext context = emulator.getContext();
+                                            System.out.println("dispatch_after block=" + context.getPointerArg(2));
+                                            return context.getLongArg(0);
+                                        }
+                                    } : new ArmSvc() {
+                                        @Override
+                                        public long handle(Emulator<?> emulator) {
+                                            RegisterContext context = emulator.getContext();
+                                            System.out.println("dispatch_after block=" + context.getPointerArg(2));
+                                            return context.getIntArg(0);
+                                        }
+                                    }).peer;
+                                }
+                                return _dispatch_after;
+                            }
+                            if ("dispatch_async".equals(symbolName)) {
+                                if (_dispatch_async == 0) {
+                                    _dispatch_async = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
+                                        @Override
+                                        public long handle(Emulator<?> emulator) {
+                                            RegisterContext context = emulator.getContext();
+                                            System.out.println("dispatch_async block=" + context.getPointerArg(1));
+                                            return context.getLongArg(0);
+                                        }
+                                    } : new ArmSvc() {
+                                        @Override
+                                        public long handle(Emulator<?> emulator) {
+                                            RegisterContext context = emulator.getContext();
+                                            System.out.println("dispatch_async block=" + context.getPointerArg(1));
+                                            return context.getIntArg(0);
+                                        }
+                                    }).peer;
+                                }
+                                return _dispatch_async;
                             }
 
                             return dlsym(emulator, handle, "_" + symbolName);
