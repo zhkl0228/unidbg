@@ -204,7 +204,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     protected long until;
 
     @Override
-    public void emu_start(long begin, long until, long timeout, long count) throws BackendException {
+    public final synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
         }

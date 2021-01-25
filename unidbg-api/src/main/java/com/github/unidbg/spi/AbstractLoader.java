@@ -303,14 +303,6 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         }
     }
 
-    @Override
-    public final File dumpStack() throws IOException {
-        UnidbgPointer sp = UnidbgPointer.register(emulator, emulator.is32Bit() ? ArmConst.UC_ARM_REG_SP : Arm64Const.UC_ARM64_REG_SP);
-        File outFile = File.createTempFile("stack_0x" + Long.toHexString(sp.peer) + "_", ".dat");
-        dump(sp, STACK_BASE - sp.peer, outFile);
-        return outFile;
-    }
-
     protected final void dump(Pointer pointer, long size, File outFile) throws IOException {
         FileOutputStream outputStream = null;
         try {

@@ -96,13 +96,6 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
     }
 
-    @Override
-    public File dumpHeap() throws IOException {
-        File outFile = File.createTempFile("heap_0x" + Long.toHexString(HEAP_BASE) + "_", ".dat");
-        dump(UnidbgPointer.pointer(emulator, HEAP_BASE), brk - HEAP_BASE, outFile);
-        return outFile;
-    }
-
     private void initializeTLS(String[] envs) {
         final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
 
@@ -641,6 +634,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
     }
 
+    private static final long HEAP_BASE = 0x8048000;
     private long brk;
 
     @Override
