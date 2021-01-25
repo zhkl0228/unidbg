@@ -6,4 +6,5 @@ Allows you to emulate an Android ARM64 native library on Apple Silicon.<br>
 ```
 cd unidbg-hypervisor/src/main/native/hypervisor
 sudo ./ldid -M -Shypervisor.entitlements "$JAVA_HOME"/bin/java
+sudo ./ldid -M -Shypervisor.entitlements "$JAVA_HOME"/jre/bin/java
 ```
