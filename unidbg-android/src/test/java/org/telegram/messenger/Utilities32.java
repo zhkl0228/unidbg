@@ -15,11 +15,12 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.android.AndroidModule;
 import com.github.unidbg.virtualmodule.android.JniGraphics;
+import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.IOException;
 
-public class Utilities32 {
+public class Utilities32 extends TestCase {
 
     private static LibraryResolver createLibraryResolver() {
         return new AndroidResolver(23);
@@ -38,7 +39,7 @@ public class Utilities32 {
         DynarmicLoader.useDynarmic();
     }
 
-    private Utilities32() {
+    public Utilities32() {
         emulator = createARMEmulator();
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
@@ -50,7 +51,8 @@ public class Utilities32 {
         new AndroidModule(emulator, vm).register(memory);
 
         vm.setVerbose(true);
-        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), true);
+        File file = new File("src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so");
+        DalvikModule dm = vm.loadLibrary(file.canRead() ? file : new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), true);
         dm.callJNI_OnLoad(emulator);
 
         cUtilities = vm.resolveClass("org/telegram/messenger/Utilities");
@@ -59,6 +61,19 @@ public class Utilities32 {
     private void destroy() throws IOException {
         emulator.close();
         System.out.println("destroy");
+    }
+
+    public void test() throws Exception {
+        this.aesCbcEncryptionByteArray();
+        this.aesCtrDecryptionByteArray();
+        this.pbkdf2();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+
+        destroy();
     }
 
     public static void main(String[] args) throws Exception {
