@@ -227,8 +227,9 @@ public class Dyld64 extends Dyld {
                                         "ldr x7, [sp]",
                                         "add sp, sp, #0x8", // manipulated stack in dlopen
                                         "cmp x7, #0",
-                                        "b.eq #0x24",
+                                        "b.eq #0x28",
                                         "adr lr, #-0xf", // jump to ldr x7, [sp]
+                                        "bic lr, lr, #0x1",
                                         "br x7", // call init array
 
                                         "ldr x0, [sp]", // with return address
@@ -499,8 +500,9 @@ public class Dyld64 extends Dyld {
                                         "ldr x7, [sp]",
                                         "add sp, sp, #0x8", // manipulated stack in __dyld_register_func_for_add_image
                                         "cmp x7, #0",
-                                        "b.eq #0x34",
+                                        "b.eq #0x38",
                                         "adr lr, #-0xf", // jump to ldr x7, [sp]
+                                        "bic lr, lr, #0x1",
 
                                         "ldr x0, [sp]",
                                         "add sp, sp, #0x8",
@@ -588,8 +590,9 @@ public class Dyld64 extends Dyld {
                                         "ldr x7, [sp]",
                                         "add sp, sp, #0x8", // manipulated stack in dyld_image_state_change_handler
                                         "cmp x7, #0",
-                                        "b.eq #0x3c",
+                                        "b.eq #0x40",
                                         "adr lr, #-0xf", // jump to ldr x7, [sp]
+                                        "bic lr, lr, #0x1",
 
                                         "ldr x0, [sp]",
                                         "add sp, sp, #0x8",
