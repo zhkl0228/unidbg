@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.hypervisor.*;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.io.IOUtils;
@@ -31,7 +32,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     protected final Hypervisor hypervisor;
 
-    private static final long REG_VBAR_EL1 = 0xf0000000L;
+    protected static final long REG_VBAR_EL1 = 0xf0000000L;
 
     protected HypervisorBackend(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator);
@@ -51,13 +52,23 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         while (buffer.hasRemaining()) {
+            if (buffer.position() == 0x0) { // Try switch A32
+//                buffer.putInt(0xd4000001); // svc #0
+//                buffer.putInt(0xd4000002); // hvc #0
+                buffer.putInt(0xd69f03e0); // eret
+//                buffer.putInt(0xef000000); // armv7 svc #0
+                buffer.putInt(0xd4000001); // svc #0
+                continue;
+            }
             if (buffer.position() == 0x400) {
                 buffer.putInt(0xd4000002); // hvc #0
             } else {
                 buffer.putInt(0xd4000003); // smc #0
             }
 //            buffer.putInt(0xd4200000); // brk #0
-            buffer.putInt(0xd69f03e0); // eret
+            if (buffer.hasRemaining()) {
+                buffer.putInt(0xd69f03e0); // eret
+            }
         }
         UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
         assert ptr != null;
@@ -172,6 +183,17 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         } else {
             interruptHookNotifier = new InterruptHookNotifier(callback, user_data);
         }
+    }
+
+    protected final void callSVC(long pc, int swi) {
+        if (log.isDebugEnabled()) {
+            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until) + ", swi=" + swi);
+        }
+        if (pc == until) {
+            emu_stop();
+            return;
+        }
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_SWI, swi);
     }
 
     @Override

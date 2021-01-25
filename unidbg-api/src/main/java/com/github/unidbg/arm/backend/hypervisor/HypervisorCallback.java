@@ -8,6 +8,6 @@ public interface HypervisorCallback {
     int ARM_EL_ISV_SHIFT = 24;
     int ARM_EL_ISV = (1 << ARM_EL_ISV_SHIFT);
 
-    boolean handleException(long esr, long far, long elr);
+    boolean handleException(long esr, long far, long elr, long spsr);
 
 }

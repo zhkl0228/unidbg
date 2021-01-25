@@ -1,7 +1,6 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.HypervisorBackend;
 import keystone.Keystone;
@@ -20,19 +19,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
         super(emulator, hypervisor);
     }
 
-    private void callSVC(long pc, int swi) {
-        if (log.isDebugEnabled()) {
-            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until) + ", swi=" + swi);
-        }
-        if (pc == until) {
-            emu_stop();
-            return;
-        }
-        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_SWI, swi);
-    }
-
     @Override
-    public boolean handleException(long esr, long far, long elr) {
+    public boolean handleException(long esr, long far, long elr, long spsr) {
         if (log.isDebugEnabled()) {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr));
         }

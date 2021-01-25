@@ -43,6 +43,7 @@ public class Hypervisor implements Closeable {
     private static native int reg_set_elr_el1(long handle, long value);
     private static native byte[] reg_read_vector(long handle, int index);
     private static native int reg_set_vector(long handle, int index, byte[] vector);
+    private static native int reg_set_spsr_el1(long handle, long value);
 
     private static native int mem_write(long handle, long address, byte[] bytes);
     private static native byte[] mem_read(long handle, long address, int size);
@@ -190,6 +191,16 @@ public class Hypervisor implements Closeable {
 
     public void reg_set_vector(int index, byte[] vector) {
         int ret = reg_set_vector(nativeHandle, index, vector);
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
+    public void reg_set_spsr_el1(long value) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_set_spsr_el1 value=0x" + Long.toHexString(value));
+        }
+        int ret = reg_set_spsr_el1(nativeHandle, value);
         if (ret != 0) {
             throw new HypervisorException("ret=" + ret);
         }

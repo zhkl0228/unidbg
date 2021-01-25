@@ -343,10 +343,27 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     }
 
                     final long begin = load_base + ph.virtual_address;
-                    Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
-                    ph.getPtLoadData().writeTo(pointer(begin));
 
-                    regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
+                    Alignment check = ARM.align(begin, ph.mem_size, Math.max(emulator.getPageAlign(), ph.alignment));
+                    final int regionSize = regions.size();
+                    MemRegion last = regionSize <= 0 ? null : regions.get(regionSize - 1);
+                    MemRegion overall = null;
+                    if (last != null && check.address >= last.begin && check.address < last.end) {
+                        overall = last;
+                    }
+                    if (overall != null) {
+                        long overallSize = overall.end - check.address;
+                        backend.mem_protect(check.address, overallSize, overall.perms | prot);
+                        if (ph.mem_size > overallSize) {
+                            Alignment alignment = this.mem_map(begin + overallSize, ph.mem_size - overallSize, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
+                            regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
+                        }
+                    } else {
+                        Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
+                        regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
+                    }
+
+                    ph.getPtLoadData().writeTo(pointer(begin));
                     break;
                 case ElfSegment.PT_DYNAMIC:
                     dynamicStructure = ph.getDynamicStructure();
