@@ -124,7 +124,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
     cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
     HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, NULL));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SCTLR_EL1, 0x4c59864));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
@@ -364,7 +364,13 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     page->ipa = vaddr;
     kh_value(memory, k) = page;
 
-    HYP_ASSERT_SUCCESS(hv_vm_map(addr, page->ipa, HVF_PAGE_SIZE, perms));
+    hv_return_t ret = hv_vm_map(addr, page->ipa, HVF_PAGE_SIZE, perms);
+    if(ret != HV_SUCCESS) {
+      if(page->ipa != 0xffffff80001f0000ULL) {
+        fprintf(stderr, "hv_vm_map failed addr=%p, ipa=0x%llx, perms=0x%x, ret=%d\n", addr, page->ipa, perms, ret);
+      }
+      return 5;
+    }
   }
   return 0;
 }
@@ -487,6 +493,19 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDRRO_EL0, value));
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    reg_set_nzcv
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1set_1nzcv
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, value));
   return 0;
 }
 

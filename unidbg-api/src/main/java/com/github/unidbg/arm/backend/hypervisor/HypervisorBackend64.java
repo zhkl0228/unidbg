@@ -1,8 +1,13 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
+import capstone.Arm64;
+import capstone.Capstone;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.HypervisorBackend;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -19,12 +24,22 @@ public class HypervisorBackend64 extends HypervisorBackend {
         super(emulator, hypervisor);
     }
 
+    private Capstone capstoneInst;
+
+    private synchronized Capstone createCapstone() {
+        if (capstoneInst == null) {
+            this.capstoneInst = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+            this.capstoneInst.setDetail(Capstone.CS_OPT_ON);
+        }
+        return capstoneInst;
+    }
+
     @Override
     public boolean handleException(long esr, long far, long elr, long spsr) {
-        if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr));
-        }
         int ec = (int) ((esr >> 26) & 0x3f);
+        if (log.isDebugEnabled()) {
+            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec));
+        }
         switch (ec) {
             case EC_AA64_SVC: {
                 int swi = (int) (esr & 0xffff);
@@ -42,10 +57,57 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 if (log.isDebugEnabled()) {
                     log.debug("handle EC_DATAABORT isv=" + isv + ", isWrite=" + isWrite + ", s1ptw=" + s1ptw + ", len=" + len + ", srt=" + srt + ", dfsc=0x" + Integer.toHexString(dfsc) + ", vaddr=0x" + Long.toHexString(far));
                 }
+                if (dfsc == 0x00 && emulator.getFamily() == Family.iOS) {
+                    return handleCommRead(far, elr);
+                }
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
+        }
+    }
+
+    private boolean handleCommRead(long vaddr, long elr) {
+        Pointer pointer = UnidbgPointer.pointer(emulator, vaddr);
+        assert pointer != null;
+        Pointer pc = UnidbgPointer.pointer(emulator, elr);
+        assert pc != null;
+        byte[] code = pc.getByteArray(0, 4);
+        Capstone.CsInsn insn = createCapstone().disasm(code, elr, 1)[0];
+        if (log.isDebugEnabled()) {
+            log.debug("handleCommRead vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn.mnemonic + " " + insn.opStr);
+        }
+        Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
+        if (opInfo.updateFlags || opInfo.writeback || !insn.mnemonic.startsWith("ldr")) {
+            throw new UnsupportedOperationException();
+        }
+        if (vaddr == 0xffffff80001fc040L ||
+                vaddr == 0xffffff80001fc038L || // uint64_t max memory size
+                vaddr == 0xffffff80001fc058L) {
+            Arm64.Operand operand = opInfo.op[0];
+            Arm64.OpValue value = operand.value;
+            reg_write(value.reg, 0x0L);
+            hypervisor.reg_set_elr_el1(elr + 4);
+            return true;
+        } else if (vaddr == 0xffffff80001fc048L ||
+                vaddr == 0xffffff80001fc04cL ||
+                vaddr == 0xffffff80001fc050L ||
+                vaddr == 0xffffff80001fc060L ||
+                vaddr == 0xffffff80001fc064L) {
+            Arm64.Operand operand = opInfo.op[0];
+            Arm64.OpValue value = operand.value;
+            reg_write(value.reg, 0x0);
+            hypervisor.reg_set_elr_el1(elr + 4);
+            return true;
+        } else if (vaddr == 0xffffff80001fc022L || // uint8_t number of configured CPUs
+                vaddr == 0xffffff80001fc036L) { // uint8_t number of logical CPUs (hw.logicalcpu_max)
+            Arm64.Operand operand = opInfo.op[0];
+            Arm64.OpValue value = operand.value;
+            reg_write(value.reg, 1);
+            hypervisor.reg_set_elr_el1(elr + 4);
+            return true;
+        } else {
+            throw new UnsupportedOperationException(insn.mnemonic);
         }
     }
 
@@ -248,4 +310,13 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
     }
 
+    @Override
+    public synchronized void destroy() throws BackendException {
+        super.destroy();
+
+        if (capstoneInst != null) {
+            capstoneInst.close();
+            capstoneInst = null;
+        }
+    }
 }
