@@ -3,6 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
+import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
 import com.github.unidbg.memory.Memory;
 
 import java.io.File;
@@ -11,6 +12,7 @@ import java.io.IOException;
 public class A12ZTest {
 
     static {
+        HypervisorLoader.useHypervisor();
         DynarmicLoader.useDynarmic();
     }
 

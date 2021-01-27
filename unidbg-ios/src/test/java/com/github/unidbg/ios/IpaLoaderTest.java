@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
+import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
@@ -21,6 +22,7 @@ import java.util.concurrent.Callable;
 public class IpaLoaderTest implements EmulatorConfigurator {
 
     static {
+        HypervisorLoader.useHypervisor();
         DynarmicLoader.useDynarmic();
     }
 
