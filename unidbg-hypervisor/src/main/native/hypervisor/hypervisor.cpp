@@ -332,6 +332,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
+  if(address == 0xffffff80001f0000ULL) {
+    return 5;
+  }
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
   int ret;
@@ -366,10 +369,8 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
     hv_return_t ret = hv_vm_map(addr, page->ipa, HVF_PAGE_SIZE, perms);
     if(ret != HV_SUCCESS) {
-      if(page->ipa != 0xffffff80001f0000ULL) {
-        fprintf(stderr, "hv_vm_map failed addr=%p, ipa=0x%llx, perms=0x%x, ret=%d\n", addr, page->ipa, perms, ret);
-      }
-      return 5;
+      fprintf(stderr, "hv_vm_map failed addr=%p, ipa=0x%llx, perms=0x%x, ret=%d\n", addr, page->ipa, perms, ret);
+      return 6;
     }
   }
   return 0;
@@ -505,7 +506,13 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_hypervisor hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
-  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, value));
+  uint64_t cpsr = 0;
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
+  uint64_t mask = 0xf0000000ULL;
+  cpsr &= ~mask;
+  value &= mask;
+  cpsr |= value;
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, cpsr));
   return 0;
 }
 

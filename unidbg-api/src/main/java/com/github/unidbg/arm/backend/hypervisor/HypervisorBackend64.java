@@ -93,7 +93,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 vaddr == 0xffffff80001fc04cL ||
                 vaddr == 0xffffff80001fc050L ||
                 vaddr == 0xffffff80001fc060L ||
-                vaddr == 0xffffff80001fc064L) {
+                vaddr == 0xffffff80001fc064L ||
+                vaddr == 0xffffff80001fc090L) {
             Arm64.Operand operand = opInfo.op[0];
             Arm64.OpValue value = operand.value;
             reg_write(value.reg, 0x0);
