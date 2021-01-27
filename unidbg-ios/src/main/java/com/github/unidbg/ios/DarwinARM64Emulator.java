@@ -50,7 +50,7 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
 
         try {
             int size = 0x10000;
-            backend.mem_map(0xffffff80001f0000L, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+            backend.mem_map(MachO._KERNEL_BASE64, size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
 
             long _COMM_PAGE_MEMORY_SIZE = (MachO._COMM_PAGE64_BASE_ADDRESS+0x038);	// uint64_t max memory size */
             Pointer commPageMemorySize = UnidbgPointer.pointer(this, _COMM_PAGE_MEMORY_SIZE);

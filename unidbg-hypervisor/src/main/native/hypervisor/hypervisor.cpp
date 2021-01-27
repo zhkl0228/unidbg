@@ -332,9 +332,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
-  if(address == 0xffffff80001f0000ULL) {
-    return 5;
-  }
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
   int ret;
@@ -353,7 +350,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     if(hypervisor->page_table && idx < hypervisor->num_page_table_entries) {
       hypervisor->page_table[idx] = addr;
     } else {
-      // 0xffffff80001f0000ULL: 0x10000
+      fprintf(stderr, "mem_map warning[%s->%s:%d]: addr=%p, page_table=%p, idx=%llu, num_page_table_entries=%zu\n", __FILE__, __func__, __LINE__, (void*)addr, hypervisor->page_table, idx, hypervisor->num_page_table_entries);
     }
     khiter_t k = kh_put(memory, memory, vaddr, &ret);
     t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));

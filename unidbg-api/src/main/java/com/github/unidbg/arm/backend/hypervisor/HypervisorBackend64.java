@@ -34,6 +34,18 @@ public class HypervisorBackend64 extends HypervisorBackend {
         return capstoneInst;
     }
 
+    private static final long DARWIN_KERNEL_BASE = 0xffffff80001f0000L;
+    private static final long _COMM_PAGE64_BASE_ADDRESS = DARWIN_KERNEL_BASE + 0xc000 /* In TTBR0 */;
+
+    @Override
+    public void mem_map(long address, long size, int perms) throws BackendException {
+        if (address == DARWIN_KERNEL_BASE) {
+            throw new BackendException();
+        }
+
+        super.mem_map(address, size, perms);
+    }
+
     @Override
     public boolean handleException(long esr, long far, long elr, long spsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
@@ -78,37 +90,44 @@ public class HypervisorBackend64 extends HypervisorBackend {
             log.debug("handleCommRead vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn.mnemonic + " " + insn.opStr);
         }
         Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
-        if (opInfo.updateFlags || opInfo.writeback || !insn.mnemonic.startsWith("ldr")) {
+        if (opInfo.updateFlags || opInfo.writeback || !insn.mnemonic.startsWith("ldr") || vaddr < _COMM_PAGE64_BASE_ADDRESS) {
             throw new UnsupportedOperationException();
         }
-        if (vaddr == 0xffffff80001fc040L ||
-                vaddr == 0xffffff80001fc038L || // uint64_t max memory size
-                vaddr == 0xffffff80001fc058L) {
-            Arm64.Operand operand = opInfo.op[0];
-            Arm64.OpValue value = operand.value;
-            reg_write(value.reg, 0x0L);
-            hypervisor.reg_set_elr_el1(elr + 4);
-            return true;
-        } else if (vaddr == 0xffffff80001fc048L ||
-                vaddr == 0xffffff80001fc04cL ||
-                vaddr == 0xffffff80001fc050L ||
-                vaddr == 0xffffff80001fc060L ||
-                vaddr == 0xffffff80001fc064L ||
-                vaddr == 0xffffff80001fc090L) {
-            Arm64.Operand operand = opInfo.op[0];
-            Arm64.OpValue value = operand.value;
-            reg_write(value.reg, 0x0);
-            hypervisor.reg_set_elr_el1(elr + 4);
-            return true;
-        } else if (vaddr == 0xffffff80001fc022L || // uint8_t number of configured CPUs
-                vaddr == 0xffffff80001fc036L) { // uint8_t number of logical CPUs (hw.logicalcpu_max)
-            Arm64.Operand operand = opInfo.op[0];
-            Arm64.OpValue value = operand.value;
-            reg_write(value.reg, 1);
-            hypervisor.reg_set_elr_el1(elr + 4);
-            return true;
-        } else {
-            throw new UnsupportedOperationException(insn.mnemonic);
+        int offset = (int) (vaddr - _COMM_PAGE64_BASE_ADDRESS);
+        switch (offset) {
+            case 0x38: // uint64_t max memory size */
+            case 0x40:
+            case 0x58: {
+                Arm64.Operand operand = opInfo.op[0];
+                Arm64.OpValue value = operand.value;
+                reg_write(value.reg, 0x0L);
+                hypervisor.reg_set_elr_el1(elr + 4);
+                return true;
+            }
+            case 0x48:
+            case 0x4c:
+            case 0x50:
+            case 0x60:
+            case 0x64:
+            case 0x90: {
+                Arm64.Operand operand = opInfo.op[0];
+                Arm64.OpValue value = operand.value;
+                reg_write(value.reg, 0x0);
+                hypervisor.reg_set_elr_el1(elr + 4);
+                return true;
+            }
+            case 0x22: // uint8_t number of configured CPUs
+            case 0x34: // uint8_t number of active CPUs (hw.activecpu)
+            case 0x35: // uint8_t number of physical CPUs (hw.physicalcpu_max)
+            case 0x36: { // uint8_t number of logical CPUs (hw.logicalcpu_max)
+                Arm64.Operand operand = opInfo.op[0];
+                Arm64.OpValue value = operand.value;
+                reg_write(value.reg, 1);
+                hypervisor.reg_set_elr_el1(elr + 4);
+                return true;
+            }
+            default:
+                throw new UnsupportedOperationException("vaddr=0x" + Long.toHexString(vaddr));
         }
     }
 

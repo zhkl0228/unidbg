@@ -88,7 +88,9 @@ public interface MachO {
     int VM_MEMORY_REALLOC = 6;
 
     long _COMM_PAGE32_BASE_ADDRESS = (0xffff4000L);
-    long _COMM_PAGE64_BASE_ADDRESS = (0xffffff80001fc000L) /* In TTBR0 */;
+
+    long _KERNEL_BASE64 = 0xffffff80001f0000L;
+    long _COMM_PAGE64_BASE_ADDRESS = _KERNEL_BASE64 + 0xc000 /* In TTBR0 */;
 
     int VM_FLAGS_FIXED = 0x0000;
     int VM_FLAGS_ANYWHERE = 0x0001;
