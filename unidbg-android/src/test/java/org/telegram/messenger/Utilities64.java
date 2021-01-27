@@ -28,6 +28,8 @@ public class Utilities64 extends TestCase {
     }
 
     private static AndroidEmulator createARMEmulator() {
+        HypervisorLoader.useHypervisor();
+        DynarmicLoader.useDynarmic();
         return new AndroidARM64Emulator("org.telegram.messenger");
     }
 
@@ -35,11 +37,6 @@ public class Utilities64 extends TestCase {
     private final VM vm;
 
     private final DvmClass cUtilities;
-
-    static {
-        HypervisorLoader.useHypervisor();
-        DynarmicLoader.useDynarmic();
-    }
 
     public Utilities64() {
         emulator = createARMEmulator();

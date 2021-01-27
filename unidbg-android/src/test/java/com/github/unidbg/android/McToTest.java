@@ -14,10 +14,6 @@ import java.io.File;
 
 public class McToTest extends EmulatorTest<AndroidEmulator> {
 
-    static {
-        DynarmicLoader.useDynarmic();
-    }
-
     public static void main(String[] args) throws Exception {
         McToTest test = new McToTest();
         test.setUp();
@@ -45,6 +41,7 @@ public class McToTest extends EmulatorTest<AndroidEmulator> {
 
     @Override
     protected AndroidEmulator createARMEmulator() {
+        DynarmicLoader.useDynarmic();
         return new AndroidARMEmulator();
     }
 }

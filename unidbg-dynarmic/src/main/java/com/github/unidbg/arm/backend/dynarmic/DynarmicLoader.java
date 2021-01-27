@@ -11,6 +11,9 @@ public class DynarmicLoader {
         }
     }
 
+    /**
+     * 在创建模拟器之前调用
+     */
     public static void useDynarmic() {
         useDynarmic(false);
     }
@@ -20,6 +23,9 @@ public class DynarmicLoader {
         System.setProperty(Dynarmic.FORCE_USE_DYNARMIC_KEY, Boolean.toString(force));
     }
 
+    /**
+     * 在创建模拟器之前调用
+     */
     public static void forceUseDynarmic() {
         useDynarmic(true);
     }

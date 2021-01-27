@@ -35,10 +35,6 @@ import java.util.Arrays;
 
 public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
 
-    static {
-        HypervisorLoader.useHypervisor();
-    }
-
     public static void main(String[] args) throws IOException {
         new AndroidServer64Test().test();
     }
@@ -77,6 +73,8 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
     private final File executable;
 
     private AndroidServer64Test() throws IOException {
+        HypervisorLoader.useHypervisor();
+
         executable = new File("unidbg-android/src/test/resources/example_binaries/ida/android_server64_7.4");
         emulator = new MyAndroidARM64Emulator(executable);
         emulator.getSyscallHandler().addIOResolver(this);

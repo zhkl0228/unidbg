@@ -22,10 +22,6 @@ import java.io.IOException;
 
 public class CrackMe {
 
-    static {
-        DynarmicLoader.useDynarmic();
-    }
-
     public static void main(String[] args) throws IOException {
         new CrackMe().crack();
     }
@@ -35,6 +31,8 @@ public class CrackMe {
     private final File executable;
 
     public CrackMe() throws IOException {
+        DynarmicLoader.useDynarmic();
+
         executable = new File("unidbg-android/src/test/resources/example_binaries/crackme1");
         emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs"));
         Memory memory = emulator.getMemory();

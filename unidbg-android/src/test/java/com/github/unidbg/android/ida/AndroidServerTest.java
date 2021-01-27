@@ -35,10 +35,6 @@ import java.util.Arrays;
 
 public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
 
-    static {
-        DynarmicLoader.useDynarmic();
-    }
-
     public static void main(String[] args) throws IOException {
         new AndroidServerTest().test();
     }
@@ -77,6 +73,8 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
     private final File executable;
 
     private AndroidServerTest() throws IOException {
+        DynarmicLoader.useDynarmic();
+
         executable = new File("unidbg-android/src/test/resources/example_binaries/ida/android_server_7.4");
         emulator = new MyAndroidARMEmulator(executable);
         emulator.getSyscallHandler().addIOResolver(this);

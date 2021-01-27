@@ -23,10 +23,6 @@ import java.io.IOException;
 
 public class Android64Test extends AbstractJni {
 
-    static {
-        DynarmicLoader.useDynarmic();
-    }
-
     public static void main(String[] args) throws IOException {
         Logger.getLogger("com.github.unidbg.linux.ARM64SyscallHandler").setLevel(Level.INFO);
         new Android64Test().test();
@@ -46,6 +42,8 @@ public class Android64Test extends AbstractJni {
     }
 
     private Android64Test() throws IOException {
+        DynarmicLoader.useDynarmic();
+
         File executable = new File("unidbg-android/src/test/native/android/libs/arm64-v8a/test");
         emulator = new AndroidARM64Emulator(executable.getName(), new File("target/rootfs")) {
             @Override

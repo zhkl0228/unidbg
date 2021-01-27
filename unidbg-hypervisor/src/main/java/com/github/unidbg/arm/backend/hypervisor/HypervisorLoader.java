@@ -15,6 +15,9 @@ public class HypervisorLoader {
         }
     }
 
+    /**
+     * 在创建模拟器之前调用
+     */
     public static void useHypervisor() {
         useHypervisor(false);
     }
@@ -28,6 +31,9 @@ public class HypervisorLoader {
         System.setProperty(Hypervisor.FORCE_USE_HYPERVISOR_KEY, Boolean.toString(force));
     }
 
+    /**
+     * 在创建模拟器之前调用
+     */
     public static void forceUseHypervisor() {
         useHypervisor(true);
     }

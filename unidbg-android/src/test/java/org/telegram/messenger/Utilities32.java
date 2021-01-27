@@ -27,6 +27,7 @@ public class Utilities32 extends TestCase {
     }
 
     private static AndroidEmulator createARMEmulator() {
+        DynarmicLoader.useDynarmic();
         return new AndroidARMEmulator("org.telegram.messenger");
     }
 
@@ -34,10 +35,6 @@ public class Utilities32 extends TestCase {
     private final VM vm;
 
     private final DvmClass cUtilities;
-
-    static {
-        DynarmicLoader.useDynarmic();
-    }
 
     public Utilities32() {
         emulator = createARMEmulator();

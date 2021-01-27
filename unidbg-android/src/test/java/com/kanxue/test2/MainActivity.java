@@ -29,6 +29,8 @@ public class MainActivity {
     private final VM vm;
 
     private MainActivity() {
+        DynarmicLoader.useDynarmic();
+
         emulator = new AndroidARMEmulator();
         Memory memory = emulator.getMemory();
         LibraryResolver resolver = new AndroidResolver(23);
@@ -46,10 +48,6 @@ public class MainActivity {
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
             'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
     };
-
-    static {
-        DynarmicLoader.useDynarmic();
-    }
 
     private void crack() {
         DvmObject<?> obj = ProxyDvmObject.createObject(vm, this);

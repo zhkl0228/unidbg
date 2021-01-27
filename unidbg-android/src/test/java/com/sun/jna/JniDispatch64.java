@@ -31,15 +31,12 @@ import java.io.IOException;
 
 public class JniDispatch64 {
 
-    static {
-        HypervisorLoader.useHypervisor();
-    }
-
     private static LibraryResolver createLibraryResolver() {
         return new AndroidResolver(23);
     }
 
     private static AndroidEmulator createARMEmulator() {
+        HypervisorLoader.useHypervisor();
         return new AndroidARM64Emulator("com.sun.jna");
     }
 

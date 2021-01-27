@@ -20,11 +20,6 @@ import java.io.File;
 
 public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
 
-    static {
-        HypervisorLoader.useHypervisor();
-        DynarmicLoader.useDynarmic();
-    }
-
     @Override
     protected LibraryResolver createLibraryResolver() {
         return new DarwinResolver();
@@ -32,6 +27,8 @@ public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
 
     @Override
     protected DarwinARM64Emulator createARMEmulator() {
+        HypervisorLoader.useHypervisor();
+        DynarmicLoader.useDynarmic();
         return new DarwinARM64Emulator(new File("target/rootfs/classdump"));
     }
 

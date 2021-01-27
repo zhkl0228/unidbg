@@ -27,10 +27,6 @@ import java.io.IOException;
 
 public class QDReaderJni implements ModuleListener {
 
-    static {
-        DynarmicLoader.useDynarmic();
-    }
-
     private static final int SDK = 23;
 
     private static LibraryResolver createLibraryResolver() {
@@ -38,6 +34,7 @@ public class QDReaderJni implements ModuleListener {
     }
 
     private static AndroidEmulator createARMEmulator() {
+        DynarmicLoader.useDynarmic();
         return new AndroidARMEmulator("a.d.c");
     }
 

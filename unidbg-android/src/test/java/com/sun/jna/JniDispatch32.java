@@ -33,6 +33,7 @@ public class JniDispatch32 {
     }
 
     private static AndroidEmulator createARMEmulator() {
+        DynarmicLoader.useDynarmic();
         return new AndroidARMEmulator("com.sun.jna");
     }
 
@@ -40,10 +41,6 @@ public class JniDispatch32 {
     private final Module module;
 
     private final DvmClass cNative;
-
-    static {
-        DynarmicLoader.useDynarmic();
-    }
 
     private JniDispatch32() {
         emulator = createARMEmulator();

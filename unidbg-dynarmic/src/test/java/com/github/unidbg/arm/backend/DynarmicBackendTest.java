@@ -6,11 +6,8 @@ import unicorn.Arm64Const;
 
 public class DynarmicBackendTest extends TestCase {
 
-    static {
-        DynarmicLoader.useDynarmic();
-    }
-
     public void testInitialize() {
+        DynarmicLoader.useDynarmic();
         Backend backend = DynarmicBackend.tryInitialize(null, true);
         assertNotNull(backend);
         backend.mem_map(0xffffe0000L, 0x10000, 0b101);

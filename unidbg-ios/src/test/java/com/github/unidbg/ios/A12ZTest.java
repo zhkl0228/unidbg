@@ -11,12 +11,10 @@ import java.io.IOException;
 
 public class A12ZTest {
 
-    static {
+    public static void main(String[] args) throws IOException {
         HypervisorLoader.useHypervisor();
         DynarmicLoader.useDynarmic();
-    }
 
-    public static void main(String[] args) throws IOException {
         Emulator<?> emulator = new DarwinARM64Emulator();
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());

@@ -21,10 +21,6 @@ import java.io.IOException;
 
 public class AndroidTest extends AbstractJni {
 
-    static {
-        DynarmicLoader.useDynarmic();
-    }
-
     public static void main(String[] args) throws IOException {
         new AndroidTest().test();
     }
@@ -43,6 +39,8 @@ public class AndroidTest extends AbstractJni {
     }
 
     private AndroidTest() throws IOException {
+        DynarmicLoader.useDynarmic();
+
         File executable = new File("unidbg-android/src/test/native/android/libs/armeabi-v7a/test");
         emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs")) {
             @Override
