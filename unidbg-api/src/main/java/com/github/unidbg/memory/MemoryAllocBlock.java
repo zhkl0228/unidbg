@@ -35,8 +35,8 @@ public class MemoryAllocBlock implements MemoryBlock {
     }
 
     @Override
-    public void free(boolean runtime) {
-        if (runtime || free == null) {
+    public void free() {
+        if (free == null) {
             throw new UnsupportedOperationException();
         }
 

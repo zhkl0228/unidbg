@@ -25,7 +25,6 @@ public interface Memory extends IO, Loader, StackMemory {
     int mprotect(long address, int length, int prot);
     int brk(long address);
 
-    MemoryBlock malloc(int length);
     MemoryBlock malloc(int length, boolean runtime);
     UnidbgPointer mmap(int length, int prot);
     int munmap(long start, int length);

@@ -35,7 +35,7 @@ public class MemoryBlockImpl implements MemoryBlock {
     }
 
     @Override
-    public void free(boolean runtime) {
+    public void free() {
         memory.munmap(pointer.peer, (int) pointer.getSize());
     }
 

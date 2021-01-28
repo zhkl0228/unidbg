@@ -57,9 +57,16 @@ public class JniDispatch32 {
         cNative = vm.resolveClass("com/sun/jna/Native");
 
         Symbol __system_property_get = module.findSymbolByName("__system_property_get", true);
-        MemoryBlock block = memory.malloc(0x10);
-        Number ret = __system_property_get.call(emulator, "ro.build.version.sdk", block.getPointer())[0];
-        System.out.println("sdk=" + new String(block.getPointer().getByteArray(0, ret.intValue())) + ", libc=" + memory.findModule("libc.so"));
+        MemoryBlock block = null;
+        try {
+            block = memory.malloc(0x10, false);
+            Number ret = __system_property_get.call(emulator, "ro.build.version.sdk", block.getPointer())[0];
+            System.out.println("sdk=" + new String(block.getPointer().getByteArray(0, ret.intValue())) + ", libc=" + memory.findModule("libc.so"));
+        } finally {
+            if (block != null) {
+                block.free();
+            }
+        }
     }
 
     private void destroy() throws IOException {

@@ -70,7 +70,7 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
         System.out.println("block=" + block.getPointer());
 //        emulator.traceCode();
 //        emulator.attach().addBreakPoint(null, 0x4041ddac);
-        block.free(false);
+        block.free();
 
         ISubstrate substrate = Substrate.getInstance(emulator);
         Module cydiaSubstrate = substrate.getImageByName("/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");

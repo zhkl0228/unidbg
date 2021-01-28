@@ -9,6 +9,6 @@ public interface MemoryBlock {
 
     boolean isSame(Pointer pointer);
 
-    void free(boolean runtime);
+    void free();
 
 }

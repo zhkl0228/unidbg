@@ -146,13 +146,13 @@ public class DvmObject<T> extends Hashable {
             throw new IllegalStateException("Already allocated array memory");
         }
 
-        memoryBlock = emulator.getMemory().malloc(length);
+        memoryBlock = emulator.getMemory().malloc(length, true);
         return memoryBlock.getPointer();
     }
 
     protected final void freeMemoryBlock(Pointer pointer) {
         if (this.memoryBlock != null && (pointer == null || this.memoryBlock.isSame(pointer))) {
-            this.memoryBlock.free(true);
+            this.memoryBlock.free();
             this.memoryBlock = null;
         }
     }

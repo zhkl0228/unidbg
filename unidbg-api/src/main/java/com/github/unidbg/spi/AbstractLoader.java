@@ -7,7 +7,6 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.UnixEmulator;
@@ -321,11 +320,6 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         } finally {
             IOUtils.closeQuietly(outputStream);
         }
-    }
-
-    @Override
-    public final MemoryBlock malloc(int length) {
-        return malloc(length, true);
     }
 
     protected final Alignment mem_map(long address, long size, int prot, String libraryName, long align) {
