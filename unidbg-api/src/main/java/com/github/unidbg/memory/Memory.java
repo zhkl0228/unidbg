@@ -25,6 +25,11 @@ public interface Memory extends IO, Loader, StackMemory {
     int mprotect(long address, int length, int prot);
     int brk(long address);
 
+    /**
+     * 分配内存
+     * @param length 大小
+     * @param runtime <code>true</code>表示使用mmap按页大小分配，相应的调用MemoryBlock.free方法则使用munmap释放，<code>false</code>表示使用libc.malloc分配，相应的调用MemoryBlock.free方法则使用libc.free释放
+     */
     MemoryBlock malloc(int length, boolean runtime);
     UnidbgPointer mmap(int length, int prot);
     int munmap(long start, int length);
