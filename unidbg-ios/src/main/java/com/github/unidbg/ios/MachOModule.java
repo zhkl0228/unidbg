@@ -202,17 +202,27 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 //        return emulator.eFunc(machHeader + entryPoint, argc, argvPointer)[0].intValue();
     }
 
-    final void doInitialization(Emulator<?> emulator) {
-        if (loader.executableModule == null) {
-            vars.setPointer(0, UnidbgPointer.pointer(emulator, machHeader)); // _NSGetMachExecuteHeader
-        }
+    private boolean initialized;
 
-        callRoutines(emulator);
-        for (Module module : neededLibraries.values()) {
-            MachOModule mm = (MachOModule) module;
-            mm.doInitialization(emulator);
+    final void doInitialization(Emulator<?> emulator) {
+        try {
+            if (initialized) {
+                return;
+            }
+
+            if (loader.executableModule == null) {
+                vars.setPointer(0, UnidbgPointer.pointer(emulator, machHeader)); // _NSGetMachExecuteHeader
+            }
+
+            callRoutines(emulator);
+            for (Module module : neededLibraries.values()) {
+                MachOModule mm = (MachOModule) module;
+                mm.doInitialization(emulator);
+            }
+            callInitFunction(emulator);
+        } finally {
+            initialized = true;
         }
-        callInitFunction(emulator);
     }
 
     final void callRoutines(Emulator<?> emulator) {
