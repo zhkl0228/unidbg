@@ -346,7 +346,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
             if (traceOutFile != null) {
                 try {
-                    redirect = new PrintStream(traceOutFile);
+                    redirect = new PrintStream(new FileOutputStream(traceOutFile, true), false);
                 } catch (FileNotFoundException e) {
                     log.warn("Set trace out file failed", e);
                 }

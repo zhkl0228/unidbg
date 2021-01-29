@@ -26,10 +26,7 @@ import unicorn.ArmConst;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -469,7 +466,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                             if (!outFile.exists() && !outFile.createNewFile()) {
                                 throw new IllegalStateException("createNewFile: " + outFile);
                             }
-                            codeHook.setRedirect(new PrintStream(outFile));
+                            codeHook.setRedirect(new PrintStream(new FileOutputStream(outFile, true), false));
                             traceFile = outFile;
                         } catch (IOException e) {
                             System.err.println("Set trace redirect out file failed: " + outFile);
