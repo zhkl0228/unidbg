@@ -3,7 +3,6 @@ package com.github.unidbg.linux.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Utils;
 import com.github.unidbg.spi.LibraryFile;
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,11 +35,6 @@ public class ElfLibraryFile implements LibraryFile {
     public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
         File file = new File(elfFile.getParentFile(), soName);
         return file.canRead() ? new ElfLibraryFile(file) : null;
-    }
-
-    @Override
-    public byte[] readToByteArray() throws IOException {
-        return FileUtils.readFileToByteArray(elfFile);
     }
 
     @Override

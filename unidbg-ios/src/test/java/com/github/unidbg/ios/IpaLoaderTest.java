@@ -43,7 +43,7 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                 Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");
                 Pointer pointer = UnidbgPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
                 assert pointer != null;
-                System.out.println("_TelegramCoreVersionString=" + pointer.getString(0) + "\noffset=" + (System.currentTimeMillis() - start) + "ms");
+                System.out.println("_TelegramCoreVersionString=" + pointer.getString(0) + "offset=" + (System.currentTimeMillis() - start) + "ms");
                 return null;
             }
         });

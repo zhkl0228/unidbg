@@ -45,16 +45,11 @@ public class URLibraryFile implements LibraryFile {
     }
 
     @Override
-    public byte[] readToByteArray() throws IOException {
-        return IOUtils.toByteArray(url);
-    }
-
-    @Override
     public ByteBuffer mapBuffer() throws IOException {
         if ("file".equalsIgnoreCase(url.getProtocol())) {
             return Utils.mapBuffer(new File(url.getPath()));
         } else {
-            return ByteBuffer.wrap(readToByteArray());
+            return ByteBuffer.wrap(IOUtils.toByteArray(url));
         }
     }
 

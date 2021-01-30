@@ -177,10 +177,6 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             return libData == null ? null : new ApkLibraryFile(this.apk, soName, libData, packageName);
         }
         @Override
-        public byte[] readToByteArray() {
-            return soData;
-        }
-        @Override
         public ByteBuffer mapBuffer() {
             return ByteBuffer.wrap(soData);
         }

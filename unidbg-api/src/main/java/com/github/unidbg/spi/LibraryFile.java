@@ -13,8 +13,6 @@ public interface LibraryFile {
 
     LibraryFile resolveLibrary(Emulator<?> emulator, String soName) throws IOException;
 
-    byte[] readToByteArray() throws IOException;
-
     ByteBuffer mapBuffer() throws IOException;
 
     String getPath();

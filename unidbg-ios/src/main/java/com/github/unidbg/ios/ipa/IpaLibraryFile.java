@@ -69,11 +69,6 @@ public class IpaLibraryFile implements LibraryFile {
     }
 
     @Override
-    public byte[] readToByteArray() {
-        return data;
-    }
-
-    @Override
     public ByteBuffer mapBuffer() {
         return ByteBuffer.wrap(data);
     }
