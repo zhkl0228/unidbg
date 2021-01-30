@@ -11,6 +11,5 @@
 /unidbg-ios/unidbg-ios.iml
 /unidbg-ios/target/
 /unidbg-android/target/
-/unidbg-dynarmic/target/
+/backend/*/target/
 /backend/*/*.iml
-/unidbg-hypervisor/target/
