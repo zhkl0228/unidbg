@@ -1,6 +1,6 @@
-# unidbg-hypervisor
+# Apple silicon hypervisor backend
 
-Allows you to emulate an Android ARM64 native library on Apple Silicon.<br>
+Allows you to emulate Android ARM64 native library on Apple Silicon.<br>
 
 ## Sign the arm64 java binary
 ```
