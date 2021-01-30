@@ -9,7 +9,7 @@
 #include "khash.h"
 #include "com_github_unidbg_arm_backend_dynarmic_Dynarmic.h"
 
-#define PAGE_TABLE_ADDRESS_SPACE_BITS 39
+#define PAGE_TABLE_ADDRESS_SPACE_BITS 36
 #define DYN_PAGE_BITS 12 // 4k
 #define DYN_PAGE_SIZE (1UL << DYN_PAGE_BITS)
 #define DYN_PAGE_MASK (DYN_PAGE_SIZE-1)
