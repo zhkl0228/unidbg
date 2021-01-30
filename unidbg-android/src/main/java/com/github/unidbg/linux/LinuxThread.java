@@ -31,7 +31,7 @@ public class LinuxThread extends Thread {
 
     @Override
     public void runThread(Emulator<?> emulator, long __thread_entry) {
-        Backend unicorn = emulator.getBackend();
+        Backend backend = emulator.getBackend();
         if (this.context == 0) {
             log.info("run thread: fn=" + this.fn + ", arg=" + this.arg + ", child_stack=" + this.child_stack);
             if (__thread_entry == 0) {
@@ -40,15 +40,15 @@ public class LinuxThread extends Thread {
                 Module.emulateFunction(emulator, __thread_entry, this.fn, this.arg, this.child_stack);
             }
         } else {
-            unicorn.context_restore(this.context);
-            long pc = unicorn.reg_read(emulator.is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC).intValue() & 0xffffffffL;
+            backend.context_restore(this.context);
+            long pc = backend.reg_read(emulator.is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC).intValue() & 0xffffffffL;
             log.info("resume thread: fn=" + this.fn + ", arg=" + this.arg + ", child_stack=" + this.child_stack + ", pc=0x" + Long.toHexString(pc));
-            unicorn.emu_start(pc, 0, 0, 0);
+            backend.emu_start(pc, 0, 0, 0);
         }
         if (this.context == 0) {
-            this.context = unicorn.context_alloc();
+            this.context = backend.context_alloc();
         }
-        unicorn.context_save(this.context);
+        backend.context_save(this.context);
     }
 
 }

@@ -175,6 +175,10 @@ public class ElfSegment {
 		}
 	}
 
+	public static final int PF_R = 4;
+	public static final int PF_W = 2;
+	public static final int PF_X = 1;
+
 	@Override
 	public String toString() {
 		String typeString;
@@ -212,16 +216,16 @@ public class ElfSegment {
 		}
 
 		StringBuilder pFlagsString = new StringBuilder();
-		if ((flags & /* PF_R= */4) != 0) {
+		if ((flags & PF_R) != 0) {
 			pFlagsString.append("read");
 		}
-		if ((flags & /* PF_W= */2) != 0) {
+		if ((flags & PF_W) != 0) {
 			if (pFlagsString.length() > 0) {
 				pFlagsString.append("|");
 			}
 			pFlagsString.append("write");
 		}
-		if ((flags & /* PF_X= */1) != 0) {
+		if ((flags & PF_X) != 0) {
 			if (pFlagsString.length() > 0) {
 				pFlagsString.append("|");
 			}

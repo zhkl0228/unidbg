@@ -619,9 +619,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     private int get_segment_protection(int flags) {
         int prot = Unicorn.UC_PROT_NONE;
-        if ((flags & /* PF_R= */4) != 0) prot |= Unicorn.UC_PROT_READ;
-        if ((flags & /* PF_W= */2) != 0) prot |= Unicorn.UC_PROT_WRITE;
-        if ((flags & /* PF_X= */1) != 0) prot |= Unicorn.UC_PROT_EXEC;
+        if ((flags & ElfSegment.PF_R) != 0) prot |= Unicorn.UC_PROT_READ;
+        if ((flags & ElfSegment.PF_W) != 0) prot |= Unicorn.UC_PROT_WRITE;
+        if ((flags & ElfSegment.PF_X) != 0) prot |= Unicorn.UC_PROT_EXEC;
         return prot;
     }
 

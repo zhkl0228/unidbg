@@ -36,8 +36,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static unicorn.ArmConst.UC_ARM_REG_C13_C0_3;
-
 /**
  * http://androidxref.com/6.0.0_r5/xref/bionic/libc/kernel/uapi/asm-arm/asm/unistd.h
  */
@@ -687,7 +685,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("set_tls: " + tls);
         }
-        backend.reg_write(UC_ARM_REG_C13_C0_3, tls.peer);
+        backend.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tls.peer);
         return 0;
     }
 
