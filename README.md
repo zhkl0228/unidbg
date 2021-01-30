@@ -42,6 +42,8 @@ Simple tests under src/test directory
 - iOS [fishhook](https://github.com/facebook/fishhook) and substrate and [whale](https://github.com/asLody/whale) hook.
 - Support simple console debugger, gdb stub, experimental IDA android debugger server, instruction trace, memory read/write trace.
 - Support iOS objc and swift runtime.
+- Support [dynarmic](https://github.com/MerryMage/dynarmic) backend.
+- Support Apple M1 hypervisor backend.
 
 ## Thanks
 - [unicorn](https://github.com/zhkl0228/unicorn)
