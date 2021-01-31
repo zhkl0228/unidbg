@@ -43,8 +43,15 @@ public class Hypervisor implements Closeable {
 
     private final long nativeHandle;
 
+    private static Hypervisor singleInstance;
+
     public Hypervisor(boolean is64Bit) {
+        if (singleInstance != null) {
+            throw new IllegalStateException("Only one hypervisor VM instance per process allowed.");
+        }
+
         this.nativeHandle = nativeInitialize(is64Bit);
+        singleInstance = this;
     }
 
     public void setHypervisorCallback(HypervisorCallback callback) {
@@ -180,6 +187,7 @@ public class Hypervisor implements Closeable {
         }
     }
 
+    @SuppressWarnings("unused")
     public void reg_set_spsr_el1(long value) {
         if (log.isDebugEnabled()) {
             log.debug("reg_set_spsr_el1 value=0x" + Long.toHexString(value));
@@ -276,6 +284,8 @@ public class Hypervisor implements Closeable {
     @Override
     public void close() {
         nativeDestroy(nativeHandle);
+
+        singleInstance = null;
     }
 
 }
