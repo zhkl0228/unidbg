@@ -29,31 +29,13 @@ import java.util.Collection;
 
 public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> implements AndroidEmulator {
 
-    @SuppressWarnings("unused")
-    public AndroidARM64Emulator() {
-        this(null, null);
-    }
-
-    public AndroidARM64Emulator(String processName) {
-        this(processName, null);
+    protected AndroidARM64Emulator(String processName, File rootDir, Collection<BackendFactory> backendFactories) {
+        super(processName, rootDir, Family.Android64, backendFactories);
     }
 
     @Override
     protected FileSystem<AndroidFileIO> createFileSystem(File rootDir) {
         return new LinuxFileSystem(this, rootDir);
-    }
-
-    @SuppressWarnings("unused")
-    public AndroidARM64Emulator(File rootDir) {
-        this(null, rootDir);
-    }
-
-    public AndroidARM64Emulator(String processName, File rootDir) {
-        this(processName, rootDir, null);
-    }
-
-    public AndroidARM64Emulator(String processName, File rootDir, Collection<BackendFactory> backendFactories) {
-        super(processName, rootDir, Family.Android64, backendFactories);
     }
 
     @Override

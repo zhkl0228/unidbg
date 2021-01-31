@@ -17,7 +17,6 @@ import com.github.unidbg.unwind.Unwinder;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 
 /**
@@ -92,8 +91,8 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
      */
     void showRegs(int... regs);
 
-    Module loadLibrary(File libraryFile) throws IOException;
-    Module loadLibrary(File libraryFile, boolean forceCallInit) throws IOException;
+    Module loadLibrary(File libraryFile);
+    Module loadLibrary(File libraryFile, boolean forceCallInit);
 
     Memory getMemory();
 

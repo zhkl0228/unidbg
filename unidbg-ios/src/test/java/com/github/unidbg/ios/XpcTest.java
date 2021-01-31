@@ -4,8 +4,10 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.hook.Substrate;
@@ -16,7 +18,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 
-public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
+public class XpcTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -24,8 +26,8 @@ public class XpcTest extends EmulatorTest<DarwinARMEmulator> {
     }
 
     @Override
-    protected DarwinARMEmulator createARMEmulator() {
-        return new DarwinARMEmulator();
+    protected ARMEmulator<DarwinFileIO> createARMEmulator() {
+        return DarwinEmulatorBuilder.builder32().build();
     }
 
     private void processXpcNoPie() {

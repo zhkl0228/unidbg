@@ -35,22 +35,6 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
 
     private static final Log log = LogFactory.getLog(AndroidARMEmulator.class);
 
-    public AndroidARMEmulator() {
-        this(null, null);
-    }
-
-    public AndroidARMEmulator(String processName) {
-        this(processName, null);
-    }
-
-    public AndroidARMEmulator(File rootDir) {
-        this(null, rootDir);
-    }
-
-    public AndroidARMEmulator(String processName, File rootDir) {
-        this(processName, rootDir, null);
-    }
-
     protected AndroidARMEmulator(String processName, File rootDir, Collection<BackendFactory> backendFactories) {
         super(processName, rootDir, Family.Android32, backendFactories);
     }

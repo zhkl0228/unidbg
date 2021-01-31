@@ -2,10 +2,12 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.file.ios.DarwinFileIO;
 
 import java.io.File;
 
-public class MountTest extends EmulatorTest<DarwinARM64Emulator> {
+public class MountTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -13,8 +15,8 @@ public class MountTest extends EmulatorTest<DarwinARM64Emulator> {
     }
 
     @Override
-    protected DarwinARM64Emulator createARMEmulator() {
-        return new DarwinARM64Emulator();
+    protected ARMEmulator<DarwinFileIO> createARMEmulator() {
+        return DarwinEmulatorBuilder.builder64().build();
     }
 
     private void processMount() {

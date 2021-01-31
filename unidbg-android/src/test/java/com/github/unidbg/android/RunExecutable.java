@@ -4,7 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
 import com.github.unidbg.linux.LinuxModule;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
+import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -19,7 +19,10 @@ import java.io.IOException;
 class RunExecutable {
 
     static void run(File executable, ModuleListener listener, String[] preloads, String...args) throws IOException {
-        final Emulator<?> emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs"));
+        final Emulator<?> emulator = AndroidEmulatorBuilder.builder32()
+                .setProcessName(executable.getName())
+                .setRootDir(new File("target/rootfs"))
+                .build();
         try {
             long start = System.currentTimeMillis();
             Memory memory = emulator.getMemory();

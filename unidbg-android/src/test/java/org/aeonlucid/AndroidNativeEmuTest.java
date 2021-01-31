@@ -4,7 +4,7 @@ import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.android.EmulatorTest;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
+import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 
 import java.io.File;
@@ -16,7 +16,7 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
         return new AndroidResolver(23);
     }
 
-    public void testExample() throws Exception {
+    public void testExample() {
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libnative-lib.so"));
 
         emulator.traceCode();
@@ -28,7 +28,7 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
         System.out.println("eFunc length is: " + numbers[0].intValue());
     }
 
-    public void testCallTest() throws Exception {
+    public void testCallTest() {
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libnative-lib.so"));
 
         Number[] numbers = module.callFunction(emulator, "_Z4testv");
@@ -37,6 +37,6 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
 
     @Override
     protected AndroidEmulator createARMEmulator() {
-        return new AndroidARMEmulator(getClass().getSimpleName());
+        return AndroidEmulatorBuilder.builder32().setProcessName(getClass().getSimpleName()).build();
     }
 }

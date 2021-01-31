@@ -2,7 +2,9 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
@@ -16,7 +18,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 
-public class ClassDumpTest extends EmulatorTest<DarwinARMEmulator> {
+public class ClassDumpTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -24,8 +26,10 @@ public class ClassDumpTest extends EmulatorTest<DarwinARMEmulator> {
     }
 
     @Override
-    protected DarwinARMEmulator createARMEmulator() {
-        return new DarwinARMEmulator(new File("target/rootfs/classdump"));
+    protected ARMEmulator<DarwinFileIO> createARMEmulator() {
+        return DarwinEmulatorBuilder.builder32()
+                .setRootDir(new File("target/rootfs/classdump"))
+                .build();
     }
 
     public void testIgnore() {

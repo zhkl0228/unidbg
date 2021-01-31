@@ -23,24 +23,7 @@ import java.util.Collections;
 
 public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
 
-    public DarwinARMEmulator() {
-        this(null, null);
-    }
-
-    @SuppressWarnings("unused")
-    public DarwinARMEmulator(String processName) {
-        this(processName, null);
-    }
-
-    public DarwinARMEmulator(File rootDir) {
-        this(null, rootDir);
-    }
-
-    public DarwinARMEmulator(String processName, File rootDir, String... envs) {
-        this(processName, rootDir, null, envs);
-    }
-
-    public DarwinARMEmulator(String processName, File rootDir, Collection<BackendFactory> backendFactories, String... envs) {
+    protected DarwinARMEmulator(String processName, File rootDir, Collection<BackendFactory> backendFactories, String... envs) {
         super(processName, rootDir, Family.iOS, backendFactories, envs);
     }
 

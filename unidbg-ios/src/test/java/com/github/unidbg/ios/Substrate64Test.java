@@ -4,8 +4,10 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.MsgSendCallback;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -20,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 
-public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implements MsgSendCallback {
+public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> implements MsgSendCallback {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -28,8 +30,11 @@ public class Substrate64Test extends EmulatorTest<DarwinARM64Emulator> implement
     }
 
     @Override
-    protected DarwinARM64Emulator createARMEmulator() {
-        return new DarwinARM64Emulator(null, new File("target/rootfs/substrate"), "CFFIXED_USER_HOME=/var/mobile");
+    protected ARMEmulator<DarwinFileIO> createARMEmulator() {
+        return DarwinEmulatorBuilder.builder64()
+                .addEnv("CFFIXED_USER_HOME=/var/mobile")
+                .setRootDir(new File("target/rootfs/substrate"))
+                .build();
     }
 
     public void testMS() {
