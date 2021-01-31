@@ -11,10 +11,6 @@ public abstract class EmulatorBuilder<T extends ARMEmulator<?>> {
 
     protected final boolean is64Bit;
 
-    protected EmulatorBuilder() {
-        this(false);
-    }
-
     protected EmulatorBuilder(boolean is64Bit) {
         this.is64Bit = is64Bit;
     }

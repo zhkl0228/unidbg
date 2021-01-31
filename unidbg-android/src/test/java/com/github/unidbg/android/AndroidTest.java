@@ -39,19 +39,14 @@ public class AndroidTest extends AbstractJni {
 
     private AndroidTest() throws IOException {
         final File executable = new File("unidbg-android/src/test/native/android/libs/armeabi-v7a/test");
-        emulator = new EmulatorBuilder<AndroidEmulator>() {
+        emulator = new AndroidARMEmulator(executable.getName(),
+                new File("target/rootfs"),
+                Collections.<BackendFactory>singleton(new DynarmicFactory(true))) {
             @Override
-            public AndroidEmulator build() {
-                return new AndroidARMEmulator(executable.getName(),
-                        new File("target/rootfs"),
-                        Collections.<BackendFactory>singleton(new DynarmicFactory(true))) {
-                    @Override
-                    protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
-                        return new MyARMSyscallHandler(svcMemory);
-                    }
-                };
+            protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
+                return new MyARMSyscallHandler(svcMemory);
             }
-        }.build();
+        };
         Memory memory = emulator.getMemory();
         emulator.getSyscallHandler().setVerbose(false);
         LibraryResolver resolver = new AndroidResolver(19);

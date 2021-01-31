@@ -1,8 +1,11 @@
 package com.github.unidbg.android;
 
-import com.github.unidbg.*;
+import com.github.unidbg.AndroidEmulator;
+import com.github.unidbg.Emulator;
+import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.BackendFactory;
-import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
@@ -42,19 +45,14 @@ public class Android64Test extends AbstractJni {
 
     private Android64Test() throws IOException {
         final File executable = new File("unidbg-android/src/test/native/android/libs/arm64-v8a/test");
-        emulator = new EmulatorBuilder<AndroidEmulator>() {
+        emulator = new AndroidARM64Emulator(executable.getName(),
+                new File("target/rootfs"),
+                Collections.<BackendFactory>singleton(new HypervisorFactory(true))) {
             @Override
-            public AndroidEmulator build() {
-                return new AndroidARM64Emulator(executable.getName(),
-                        new File("target/rootfs"),
-                        Collections.<BackendFactory>singleton(new DynarmicFactory(true))) {
-                    @Override
-                    protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
-                        return new MyARMSyscallHandler(svcMemory);
-                    }
-                };
+            protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
+                return new MyARMSyscallHandler(svcMemory);
             }
-        }.build();
+        };
         Memory memory = emulator.getMemory();
         LibraryResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
