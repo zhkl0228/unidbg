@@ -29,7 +29,7 @@ public class Utilities64 extends TestCase {
 
     private static AndroidEmulator createARMEmulator() {
         return AndroidEmulatorBuilder
-                .builder64()
+                .for64Bit()
                 .setProcessName("org.telegram.messenger")
                 .addBackendFactory(new HypervisorFactory(true))
                 .addBackendFactory(new DynarmicFactory(true))

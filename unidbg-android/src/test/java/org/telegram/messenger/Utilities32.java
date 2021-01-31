@@ -28,7 +28,7 @@ public class Utilities32 extends TestCase {
 
     private static AndroidEmulator createARMEmulator() {
         return AndroidEmulatorBuilder
-                .builder32()
+                .for32Bit()
                 .setProcessName("org.telegram.messenger")
                 .addBackendFactory(new DynarmicFactory(true))
                 .build();

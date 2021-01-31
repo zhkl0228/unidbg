@@ -29,7 +29,7 @@ public class ClassDump64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.builder64();
+        DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.for64Bit();
         builder.setRootDir(new File("target/rootfs/classdump"));
         builder.addBackendFactory(new HypervisorFactory(true));
         builder.addBackendFactory(new DynarmicFactory(true));

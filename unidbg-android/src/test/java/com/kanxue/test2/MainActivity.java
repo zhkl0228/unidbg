@@ -30,7 +30,7 @@ public class MainActivity {
 
     private MainActivity() {
         emulator = AndroidEmulatorBuilder
-                .builder32()
+                .for32Bit()
                 .addBackendFactory(new DynarmicFactory(true))
                 .build();
         Memory memory = emulator.getMemory();

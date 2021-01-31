@@ -9,11 +9,11 @@ import java.util.List;
 
 public class DarwinEmulatorBuilder extends EmulatorBuilder<ARMEmulator<DarwinFileIO>> {
 
-    public static DarwinEmulatorBuilder builder32() {
+    public static DarwinEmulatorBuilder for32Bit() {
         return new DarwinEmulatorBuilder(false);
     }
 
-    public static DarwinEmulatorBuilder builder64() {
+    public static DarwinEmulatorBuilder for64Bit() {
         return new DarwinEmulatorBuilder(true);
     }
 

@@ -26,7 +26,7 @@ public class McToTest extends EmulatorTest<AndroidEmulator> {
         return new AndroidResolver(19);
     }
 
-    public void testMcTo() throws Exception {
+    public void testMcTo() {
         long start = System.currentTimeMillis();
         Backend backend = emulator.getBackend();
         new AndroidModule(emulator, emulator.createDalvikVM(null)).register(emulator.getMemory());
@@ -41,7 +41,7 @@ public class McToTest extends EmulatorTest<AndroidEmulator> {
 
     @Override
     protected AndroidEmulator createARMEmulator() {
-        return AndroidEmulatorBuilder.builder32()
+        return AndroidEmulatorBuilder.for32Bit()
                 .addBackendFactory(new DynarmicFactory(true))
                 .build();
     }

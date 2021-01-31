@@ -34,7 +34,7 @@ public class JniDispatch64 {
     }
 
     private static AndroidEmulator createARMEmulator() {
-        return AndroidEmulatorBuilder.builder64()
+        return AndroidEmulatorBuilder.for64Bit()
                 .setProcessName("com.sun.jna")
                 .addBackendFactory(new HypervisorFactory(true))
                 .build();

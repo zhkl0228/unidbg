@@ -37,6 +37,6 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
 
     @Override
     protected AndroidEmulator createARMEmulator() {
-        return AndroidEmulatorBuilder.builder32().setProcessName(getClass().getSimpleName()).build();
+        return AndroidEmulatorBuilder.for32Bit().setProcessName(getClass().getSimpleName()).build();
     }
 }

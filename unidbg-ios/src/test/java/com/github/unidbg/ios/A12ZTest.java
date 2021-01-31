@@ -12,7 +12,7 @@ import java.io.IOException;
 public class A12ZTest {
 
     public static void main(String[] args) throws IOException {
-        DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.builder64();
+        DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.for64Bit();
         builder.addBackendFactory(new HypervisorFactory(true));
         builder.addBackendFactory(new DynarmicFactory(true));
         Emulator<?> emulator = builder.build();

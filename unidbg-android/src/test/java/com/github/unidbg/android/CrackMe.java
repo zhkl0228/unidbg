@@ -30,9 +30,9 @@ public class CrackMe {
     private final Module module;
     private final File executable;
 
-    public CrackMe() throws IOException {
+    public CrackMe() {
         executable = new File("unidbg-android/src/test/resources/example_binaries/crackme1");
-        emulator = AndroidEmulatorBuilder.builder32()
+        emulator = AndroidEmulatorBuilder.for32Bit()
                 .setProcessName(executable.getName())
                 .setRootDir(new File("target/rootfs"))
                 .addBackendFactory(new DynarmicFactory(true))

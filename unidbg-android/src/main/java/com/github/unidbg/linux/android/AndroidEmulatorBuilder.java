@@ -5,11 +5,11 @@ import com.github.unidbg.EmulatorBuilder;
 
 public class AndroidEmulatorBuilder extends EmulatorBuilder<AndroidEmulator> {
 
-    public static AndroidEmulatorBuilder builder32() {
+    public static AndroidEmulatorBuilder for32Bit() {
         return new AndroidEmulatorBuilder(false);
     }
 
-    public static AndroidEmulatorBuilder builder64() {
+    public static AndroidEmulatorBuilder for64Bit() {
         return new AndroidEmulatorBuilder(true);
     }
 

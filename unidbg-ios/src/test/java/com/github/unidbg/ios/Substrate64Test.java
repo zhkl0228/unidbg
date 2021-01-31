@@ -31,7 +31,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        return DarwinEmulatorBuilder.builder64()
+        return DarwinEmulatorBuilder.for64Bit()
                 .addEnv("CFFIXED_USER_HOME=/var/mobile")
                 .setRootDir(new File("target/rootfs/substrate"))
                 .build();

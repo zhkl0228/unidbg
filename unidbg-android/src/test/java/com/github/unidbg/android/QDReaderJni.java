@@ -5,7 +5,6 @@ import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.xhook.IxHook;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.XHookImpl;
@@ -35,7 +34,7 @@ public class QDReaderJni implements ModuleListener {
     }
 
     private static AndroidEmulator createARMEmulator() {
-        return AndroidEmulatorBuilder.builder32()
+        return AndroidEmulatorBuilder.for32Bit()
                 .setProcessName("a.d.c")
                 .addBackendFactory(new DynarmicFactory(true))
                 .build();

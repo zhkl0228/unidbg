@@ -19,7 +19,7 @@ import java.io.IOException;
 class RunExecutable {
 
     static void run(File executable, ModuleListener listener, String[] preloads, String...args) throws IOException {
-        final Emulator<?> emulator = AndroidEmulatorBuilder.builder32()
+        final Emulator<?> emulator = AndroidEmulatorBuilder.for32Bit()
                 .setProcessName(executable.getName())
                 .setRootDir(new File("target/rootfs"))
                 .build();

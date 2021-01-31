@@ -27,7 +27,7 @@ public class ClassDumpTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        return DarwinEmulatorBuilder.builder32()
+        return DarwinEmulatorBuilder.for32Bit()
                 .setRootDir(new File("target/rootfs/classdump"))
                 .build();
     }

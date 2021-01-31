@@ -16,7 +16,7 @@ public class MountTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        return DarwinEmulatorBuilder.builder64().build();
+        return DarwinEmulatorBuilder.for64Bit().build();
     }
 
     private void processMount() {

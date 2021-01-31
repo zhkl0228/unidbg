@@ -36,7 +36,7 @@ public class JniDispatch32 {
     }
 
     private static AndroidEmulator createARMEmulator() {
-        return AndroidEmulatorBuilder.builder32()
+        return AndroidEmulatorBuilder.for32Bit()
                 .setProcessName("com.sun.jna")
                 .addBackendFactory(new DynarmicFactory(true))
                 .build();

@@ -27,7 +27,7 @@ public class XpcTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        return DarwinEmulatorBuilder.builder32().build();
+        return DarwinEmulatorBuilder.for32Bit().build();
     }
 
     private void processXpcNoPie() {

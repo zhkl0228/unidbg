@@ -30,7 +30,7 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        return DarwinEmulatorBuilder.builder32()
+        return DarwinEmulatorBuilder.for32Bit()
                 .setProcessName("com.substrate.test")
                 .setRootDir(new File("target/rootfs/substrate"))
                 .build();
