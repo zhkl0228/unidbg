@@ -5,6 +5,7 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.arm.backend.EventMemHook;
 import com.github.unidbg.arm.context.BackendArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -32,6 +33,7 @@ import java.io.File;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collection;
 
 public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
@@ -44,8 +46,8 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     private final Dlfcn dlfcn;
 
-    public AbstractARMEmulator(String processName, File rootDir, Family family, String... envs) {
-        super(false, processName, 0xfffe0000L, 0x10000, rootDir, family);
+    public AbstractARMEmulator(String processName, File rootDir, Family family, Collection<BackendFactory> backendFactories, String... envs) {
+        super(false, processName, 0xfffe0000L, 0x10000, rootDir, family, backendFactories);
 
         backend.switchUserMode();
 

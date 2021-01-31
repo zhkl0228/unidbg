@@ -11,18 +11,6 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
 
     private static final Log log = LogFactory.getLog(DynarmicBackend.class);
 
-    static DynarmicBackend tryInitialize(Emulator<?> emulator, boolean is64Bit) throws BackendException {
-        try {
-            Dynarmic dynarmic = new Dynarmic(is64Bit);
-            return is64Bit ? new DynarmicBackend64(emulator, dynarmic) : new DynarmicBackend32(emulator, dynarmic);
-        } catch (Throwable throwable) {
-            if (log.isDebugEnabled()) {
-                log.debug("initialize dynarmic failed", throwable);
-            }
-            return null;
-        }
-    }
-
     protected final Dynarmic dynarmic;
 
     protected DynarmicBackend(Emulator<?> emulator, Dynarmic dynarmic) throws BackendException {

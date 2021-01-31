@@ -3,6 +3,7 @@ package com.github.unidbg.linux.android;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.AbstractARMEmulator;
+import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.LinuxFileSystem;
@@ -23,6 +24,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collection;
 
 /**
  * android arm emulator
@@ -46,7 +48,11 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
     }
 
     public AndroidARMEmulator(String processName, File rootDir) {
-        super(processName, rootDir, Family.Android32);
+        this(processName, rootDir, null);
+    }
+
+    protected AndroidARMEmulator(String processName, File rootDir, Collection<BackendFactory> backendFactories) {
+        super(processName, rootDir, Family.Android32, backendFactories);
     }
 
     @Override

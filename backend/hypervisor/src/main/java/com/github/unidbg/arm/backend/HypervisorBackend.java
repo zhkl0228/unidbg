@@ -18,18 +18,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     private static final Log log = LogFactory.getLog(HypervisorBackend.class);
 
-    static HypervisorBackend tryInitialize(Emulator<?> emulator, boolean is64Bit) throws BackendException {
-        try {
-            Hypervisor hypervisor = new Hypervisor(is64Bit);
-            return is64Bit ? new HypervisorBackend64(emulator, hypervisor) : new HypervisorBackend32(emulator, hypervisor);
-        } catch (Throwable throwable) {
-            if (log.isDebugEnabled()) {
-                log.debug("initialize hypervisor failed", throwable);
-            }
-            return null;
-        }
-    }
-
     protected final Hypervisor hypervisor;
 
     protected static final long REG_VBAR_EL1 = 0xf0000000L;

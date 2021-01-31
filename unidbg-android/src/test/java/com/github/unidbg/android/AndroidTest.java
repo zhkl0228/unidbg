@@ -1,10 +1,8 @@
 package com.github.unidbg.android;
 
-import com.github.unidbg.AndroidEmulator;
-import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.Module;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
+import com.github.unidbg.*;
+import com.github.unidbg.arm.backend.BackendFactory;
+import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
@@ -18,6 +16,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 
 public class AndroidTest extends AbstractJni {
 
@@ -39,15 +38,20 @@ public class AndroidTest extends AbstractJni {
     }
 
     private AndroidTest() throws IOException {
-        DynarmicLoader.useDynarmic();
-
-        File executable = new File("unidbg-android/src/test/native/android/libs/armeabi-v7a/test");
-        emulator = new AndroidARMEmulator(executable.getName(), new File("target/rootfs")) {
+        final File executable = new File("unidbg-android/src/test/native/android/libs/armeabi-v7a/test");
+        emulator = new EmulatorBuilder<AndroidEmulator>() {
             @Override
-            protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
-                return new MyARMSyscallHandler(svcMemory);
+            public AndroidEmulator build() {
+                return new AndroidARMEmulator(executable.getName(),
+                        new File("target/rootfs"),
+                        Collections.<BackendFactory>singleton(new DynarmicFactory(true))) {
+                    @Override
+                    protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
+                        return new MyARMSyscallHandler(svcMemory);
+                    }
+                };
             }
-        };
+        }.build();
         Memory memory = emulator.getMemory();
         emulator.getSyscallHandler().setVerbose(false);
         LibraryResolver resolver = new AndroidResolver(19);

@@ -5,7 +5,6 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.file.FileResult;
@@ -73,8 +72,6 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
     private final File executable;
 
     private AndroidServer64Test() throws IOException {
-        HypervisorLoader.useHypervisor();
-
         executable = new File("unidbg-android/src/test/resources/example_binaries/ida/android_server64_7.4");
         emulator = new MyAndroidARM64Emulator(executable);
         emulator.getSyscallHandler().addIOResolver(this);

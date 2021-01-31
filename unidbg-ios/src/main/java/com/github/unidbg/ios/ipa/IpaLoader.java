@@ -5,7 +5,9 @@ import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.EmulatorBuilder;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.*;
 import com.github.unidbg.memory.Memory;
@@ -126,10 +128,17 @@ public abstract class IpaLoader {
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
     }
 
+    private final List<BackendFactory> backendFactories = new ArrayList<>(5);
+
+    public IpaLoader addBackendFactory(BackendFactory backendFactory) {
+        this.backendFactories.add(backendFactory);
+        return this;
+    }
+
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
-        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, getEnvs(rootDir));
+        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir));
         emulator.getSyscallHandler().setVerbose(log.isDebugEnabled());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);
@@ -143,7 +152,7 @@ public abstract class IpaLoader {
     LoadedIpa load64(EmulatorConfigurator configurator, String... loads) throws IOException {
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
-        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, getEnvs(rootDir));
+        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir));
         emulator.getSyscallHandler().setVerbose(log.isDebugEnabled());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);

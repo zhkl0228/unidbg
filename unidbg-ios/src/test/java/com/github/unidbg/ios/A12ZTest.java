@@ -2,8 +2,8 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.memory.Memory;
 
 import java.io.File;
@@ -12,10 +12,10 @@ import java.io.IOException;
 public class A12ZTest {
 
     public static void main(String[] args) throws IOException {
-        HypervisorLoader.useHypervisor();
-        DynarmicLoader.useDynarmic();
-
-        Emulator<?> emulator = new DarwinARM64Emulator();
+        DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.builder64();
+        builder.addBackendFactory(new HypervisorFactory(true));
+        builder.addBackendFactory(new DynarmicFactory(true));
+        Emulator<?> emulator = builder.build();
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
         emulator.getSyscallHandler().setVerbose(true);

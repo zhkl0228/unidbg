@@ -2,10 +2,11 @@ package com.github.unidbg.android;
 
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
+import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
+import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.XHookImpl;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
@@ -34,8 +35,10 @@ public class QDReaderJni implements ModuleListener {
     }
 
     private static AndroidEmulator createARMEmulator() {
-        DynarmicLoader.useDynarmic();
-        return new AndroidARMEmulator("a.d.c");
+        return AndroidEmulatorBuilder.builder32()
+                .setProcessName("a.d.c")
+                .addBackendFactory(new DynarmicFactory(true))
+                .build();
     }
 
     private final AndroidEmulator emulator;

@@ -2,9 +2,11 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
@@ -18,7 +20,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 
-public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
+public class ClassDump64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
@@ -26,10 +28,12 @@ public class ClassDump64Test extends EmulatorTest<DarwinARM64Emulator> {
     }
 
     @Override
-    protected DarwinARM64Emulator createARMEmulator() {
-        HypervisorLoader.useHypervisor();
-        DynarmicLoader.useDynarmic();
-        return new DarwinARM64Emulator(new File("target/rootfs/classdump"));
+    protected ARMEmulator<DarwinFileIO> createARMEmulator() {
+        DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.builder64();
+        builder.setRootDir(new File("target/rootfs/classdump"));
+        builder.addBackendFactory(new HypervisorFactory(true));
+        builder.addBackendFactory(new DynarmicFactory(true));
+        return builder.build();
     }
 
     public void testClassDump() {

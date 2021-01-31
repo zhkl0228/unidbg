@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.AbstractARMEmulator;
+import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.DarwinFileSystem;
@@ -17,6 +18,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Collections;
 
 public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
@@ -35,7 +37,11 @@ public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
     }
 
     public DarwinARMEmulator(String processName, File rootDir, String... envs) {
-        super(processName, rootDir, Family.iOS, envs);
+        this(processName, rootDir, null, envs);
+    }
+
+    public DarwinARMEmulator(String processName, File rootDir, Collection<BackendFactory> backendFactories, String... envs) {
+        super(processName, rootDir, Family.iOS, backendFactories, envs);
     }
 
     @Override

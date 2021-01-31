@@ -3,9 +3,9 @@ package org.telegram.messenger;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorLoader;
-import com.github.unidbg.linux.android.AndroidARM64Emulator;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
@@ -28,9 +28,12 @@ public class Utilities64 extends TestCase {
     }
 
     private static AndroidEmulator createARMEmulator() {
-        HypervisorLoader.useHypervisor();
-        DynarmicLoader.useDynarmic();
-        return new AndroidARM64Emulator("org.telegram.messenger");
+        return AndroidEmulatorBuilder
+                .builder64()
+                .setProcessName("org.telegram.messenger")
+                .addBackendFactory(new HypervisorFactory(true))
+                .addBackendFactory(new DynarmicFactory(true))
+                .build();
     }
 
     private final AndroidEmulator emulator;

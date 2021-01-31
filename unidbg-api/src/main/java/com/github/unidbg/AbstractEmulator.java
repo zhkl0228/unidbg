@@ -67,7 +67,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     private final Family family;
 
-    public AbstractEmulator(boolean is64Bit, String processName, long svcBase, int svcSize, File rootDir, Family family) {
+    public AbstractEmulator(boolean is64Bit, String processName, long svcBase, int svcSize, File rootDir, Family family, Collection<BackendFactory> backendFactories) {
         super();
         this.family = family;
 
@@ -85,7 +85,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             throw new IllegalStateException("mkdirs failed: " + rootDir);
         }
         this.fileSystem = createFileSystem(rootDir);
-        this.backend = BackendFactory.createBackend(this, is64Bit);
+        this.backend = BackendFactory.createBackend(this, is64Bit, backendFactories);
         this.processName = processName == null ? "unidbg" : processName;
         this.registerContext = createRegisterContext(backend);
 

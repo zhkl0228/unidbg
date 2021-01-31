@@ -5,8 +5,8 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.virtualmodule.android.AndroidModule;
 
@@ -41,7 +41,8 @@ public class McToTest extends EmulatorTest<AndroidEmulator> {
 
     @Override
     protected AndroidEmulator createARMEmulator() {
-        DynarmicLoader.useDynarmic();
-        return new AndroidARMEmulator();
+        return AndroidEmulatorBuilder.builder32()
+                .addBackendFactory(new DynarmicFactory(true))
+                .build();
     }
 }

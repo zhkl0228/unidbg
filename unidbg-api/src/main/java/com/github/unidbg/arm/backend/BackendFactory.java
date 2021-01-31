@@ -1,36 +1,43 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.backend.dynarmic.Dynarmic;
-import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
 import com.sun.jna.NativeLoader;
 
-public class BackendFactory {
+import java.util.Collection;
+
+public abstract class BackendFactory {
 
     static {
         NativeLoader.loadAppleSilicon();
     }
 
-    public static Backend createBackend(Emulator<?> emulator, boolean is64Bit) {
-        boolean useHypervisor = Hypervisor.isUseHypervisor();
-        if (useHypervisor) {
-            Backend backend = HypervisorBackend.tryInitialize(emulator, is64Bit);
-            if (backend != null) {
-                Hypervisor.onBackendInitialized();
-                return backend;
-            } else if (Hypervisor.isForceUseHypervisor()) {
-                throw new IllegalStateException("Initialize hypervisor backend failed");
+    private final boolean fallbackUnicorn;
+
+    protected BackendFactory(boolean fallbackUnicorn) {
+        this.fallbackUnicorn = fallbackUnicorn;
+    }
+
+    private Backend newBackend(Emulator<?> emulator, boolean is64Bit) {
+        try {
+            return newBackendInternal(emulator, is64Bit);
+        } catch (Throwable e) {
+            if (fallbackUnicorn) {
+                return null;
+            } else {
+                throw e;
             }
         }
+    }
 
-        boolean useDynarmic = Dynarmic.isUseDynarmic();
-        if (useDynarmic) {
-            Backend backend = DynarmicBackend.tryInitialize(emulator, is64Bit);
-            if (backend != null) {
-                Dynarmic.onBackendInitialized();
-                return backend;
-            } else if (Dynarmic.isForceUseDynarmic()) {
-                throw new IllegalStateException("Initialize dynarmic backend failed");
+    protected abstract Backend newBackendInternal(Emulator<?> emulator, boolean is64Bit);
+
+    public static Backend createBackend(Emulator<?> emulator, boolean is64Bit, Collection<BackendFactory> backendFactories) {
+        if (backendFactories != null) {
+            for (BackendFactory factory : backendFactories) {
+                Backend backend = factory.newBackend(emulator, is64Bit);
+                if (backend != null) {
+                    return backend;
+                }
             }
         }
         return new UnicornBackend(emulator, is64Bit);

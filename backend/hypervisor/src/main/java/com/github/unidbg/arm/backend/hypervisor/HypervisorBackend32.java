@@ -32,6 +32,7 @@ public class HypervisorBackend32 extends HypervisorBackend {
                 callSVC(elr, swi);
                 return true;
             }
+            case EC_DATAABORT:
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }

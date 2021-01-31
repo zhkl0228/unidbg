@@ -2,8 +2,8 @@ package com.kanxue.test2;
 
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmObject;
@@ -29,9 +29,10 @@ public class MainActivity {
     private final VM vm;
 
     private MainActivity() {
-        DynarmicLoader.useDynarmic();
-
-        emulator = new AndroidARMEmulator();
+        emulator = AndroidEmulatorBuilder
+                .builder32()
+                .addBackendFactory(new DynarmicFactory(true))
+                .build();
         Memory memory = emulator.getMemory();
         LibraryResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);

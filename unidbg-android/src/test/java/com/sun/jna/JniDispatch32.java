@@ -2,7 +2,7 @@ package com.sun.jna;
 
 import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.backend.dynarmic.DynarmicLoader;
+import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -13,10 +13,13 @@ import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.hook.whale.IWhale;
 import com.github.unidbg.hook.whale.Whale;
 import com.github.unidbg.hook.xhook.IxHook;
-import com.github.unidbg.linux.android.AndroidARMEmulator;
+import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.XHookImpl;
-import com.github.unidbg.linux.android.dvm.*;
+import com.github.unidbg.linux.android.dvm.DalvikModule;
+import com.github.unidbg.linux.android.dvm.DvmClass;
+import com.github.unidbg.linux.android.dvm.DvmObject;
+import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.jni.ProxyClassFactory;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
@@ -33,8 +36,10 @@ public class JniDispatch32 {
     }
 
     private static AndroidEmulator createARMEmulator() {
-        DynarmicLoader.useDynarmic();
-        return new AndroidARMEmulator("com.sun.jna");
+        return AndroidEmulatorBuilder.builder32()
+                .setProcessName("com.sun.jna")
+                .addBackendFactory(new DynarmicFactory(true))
+                .build();
     }
 
     private final AndroidEmulator emulator;
