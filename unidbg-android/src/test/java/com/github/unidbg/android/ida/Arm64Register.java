@@ -25,9 +25,8 @@ public class Arm64Register extends UnidbgStructure {
     }
 
     public void fill(Backend backend) {
-        for (int i = 0; i < 29; i++) {
-            int reg = Arm64Const.UC_ARM64_REG_X0 + i;
-            regs[i] = readReg(backend, reg);
+        for (int reg = Arm64Const.UC_ARM64_REG_X0; reg <= Arm64Const.UC_ARM64_REG_X28; reg++) {
+            regs[reg] = readReg(backend, reg);
         }
         regs[29] = readReg(backend, Arm64Const.UC_ARM64_REG_X29);
         regs[30] = readReg(backend, Arm64Const.UC_ARM64_REG_X30);

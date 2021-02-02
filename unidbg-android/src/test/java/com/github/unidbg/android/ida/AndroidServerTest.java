@@ -1,9 +1,6 @@
 package com.github.unidbg.android.ida;
 
-import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.Module;
-import com.github.unidbg.Symbol;
+import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.ida.Utils;
@@ -71,7 +68,7 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
     private final Module module;
     private final File executable;
 
-    private AndroidServerTest() throws IOException {
+    private AndroidServerTest() {
         executable = new File("unidbg-android/src/test/resources/example_binaries/ida/android_server_7.4");
         emulator = new MyAndroidARMEmulator(executable);
         emulator.getSyscallHandler().addIOResolver(this);
@@ -224,7 +221,7 @@ public class AndroidServerTest implements IOResolver<AndroidFileIO>, PTrace {
 //        emulator.traceWrite(0x804c538, 0x804c538 + 15);
 
 //        emulator.attach().addBreakPoint(null, 0x40066A58);
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
 
         System.err.println("exit code: " + module.callEntry(emulator, "--verbose"));
     }

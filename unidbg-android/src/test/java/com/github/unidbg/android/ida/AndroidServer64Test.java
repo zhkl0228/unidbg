@@ -1,9 +1,6 @@
 package com.github.unidbg.android.ida;
 
-import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
-import com.github.unidbg.Module;
-import com.github.unidbg.Symbol;
+import com.github.unidbg.*;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.ida.Utils;
@@ -71,7 +68,7 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
     private final Module module;
     private final File executable;
 
-    private AndroidServer64Test() throws IOException {
+    private AndroidServer64Test() {
         executable = new File("unidbg-android/src/test/resources/example_binaries/ida/android_server64_7.4");
         emulator = new MyAndroidARM64Emulator(executable);
         emulator.getSyscallHandler().addIOResolver(this);
@@ -208,7 +205,7 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
             }
         });
 
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
 //        emulator.attach().addBreakPoint(module, 0x02af44);
 //        emulator.traceWrite(0x40314530L, 0x40314530L + 3);
 
