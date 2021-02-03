@@ -158,6 +158,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 @end
 
 @interface UIScreen : NSObject
+@property(nonatomic, readonly, getter=isCaptured) BOOL captured;
 + (UIScreen *)mainScreen;
 - (CGRect)bounds;
 - (CGFloat)scale;

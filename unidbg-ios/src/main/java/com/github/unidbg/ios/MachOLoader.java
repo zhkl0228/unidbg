@@ -477,9 +477,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     break;
             }
         }
-        if (rpathSet.isEmpty()) {
-            rpathSet.addAll(parentRpath);
-        }
+        rpathSet.addAll(parentRpath);
 
         final long loadBase = isExecutable ? 0 : mmapBaseAddress;
         long machHeader = -1;
