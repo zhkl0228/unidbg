@@ -6,6 +6,7 @@
         <groupId>com.github.zhkl0228</groupId>
         <artifactId>unidbg-parent</artifactId>
         <version>0.9.3-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
