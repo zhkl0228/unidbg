@@ -430,6 +430,31 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallBooleanMethodA = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                UnidbgPointer jvalue = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallBooleanMethodA object=" + object + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
+                    int ret = dvmMethod.callBooleanMethodA(dvmObject, vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    }
+                    return ret;
+                }
+            }
+        });
+
         Pointer _CallIntMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1763,6 +1788,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x118, _CallObjectMethodV);
         impl.setPointer(0x128, _CallBooleanMethod);
         impl.setPointer(0x130, _CallBooleanMethodV);
+        impl.setPointer(0x138, _CallBooleanMethodA);
         impl.setPointer(0x188, _CallIntMethod);
         impl.setPointer(0x190, _CallIntMethodV);
         impl.setPointer(0x1a8, _CallLongMethodV);

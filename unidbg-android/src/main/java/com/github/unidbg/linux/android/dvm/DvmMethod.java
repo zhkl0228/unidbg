@@ -97,12 +97,17 @@ public class DvmMethod extends Hashable {
 
     int callBooleanMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callBooleanMethod(dvmClass.vm, dvmObject, this, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callBooleanMethod(vm, dvmObject, this, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callBooleanMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callBooleanMethodV(dvmClass.vm, dvmObject, this, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callBooleanMethodV(vm, dvmObject, this, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
+    }
+
+    int callBooleanMethodA(DvmObject<?>  dvmObject, VaList vaList) {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).callBooleanMethodV(vm, dvmObject, this, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     int callIntMethod(DvmObject<?>  dvmObject, VarArg varArg) {
