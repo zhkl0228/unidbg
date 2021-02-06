@@ -21,7 +21,7 @@ typedef struct kvm {
   void **page_table;
   pthread_key_t cpu_key;
   jobject callback;
-  bool stop_request = false;
+  bool stop_request;
 } *t_kvm;
 
 typedef struct kvm_cpu {
