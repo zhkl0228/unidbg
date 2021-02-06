@@ -3,8 +3,14 @@
 #include <sys/mman.h>
 #include <sys/errno.h>
 
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/kvm.h>
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
 
 #include "kvm.h"
 
@@ -25,7 +31,7 @@ typedef struct kvm_cpu {
 static void destroy_kvm_cpu(void *data) {
   printf("destroy_kvm_cpu data=%p\n", data);
   t_kvm_cpu cpu = (t_kvm_cpu) data;
-  close(vcpu->fd);
+  close(cpu->fd);
   free(cpu);
 }
 
@@ -36,7 +42,7 @@ __attribute__((constructor))
 static void init() {
   int kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
   if(kvm == -1) {
-    fprintf(stderr, "open /dev/kvm failed.\n")
+    fprintf(stderr, "open /dev/kvm failed.\n");
     abort();
     return;
   }
@@ -79,9 +85,9 @@ static void destroy() {
  * Signature: (Z)J
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitialize
-  (JNIEnv *, jclass, jboolean) {
+  (JNIEnv *env, jclass clazz, jboolean is64Bit) {
   t_kvm kvm = (t_kvm) calloc(1, sizeof(struct kvm));
-  if(hypervisor == NULL) {
+  if(kvm == NULL) {
     fprintf(stderr, "calloc kvm failed: size=%lu\n", sizeof(struct kvm));
     abort();
     return 0;
