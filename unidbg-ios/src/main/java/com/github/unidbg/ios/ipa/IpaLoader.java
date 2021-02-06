@@ -50,6 +50,7 @@ public abstract class IpaLoader {
     private final String executable;
     private final String bundleVersion;
     private final String bundleIdentifier;
+    private final String bundleAppDir;
 
     private final String executableBundlePath;
 
@@ -65,15 +66,19 @@ public abstract class IpaLoader {
         } catch (IOException e) {
             throw new IllegalStateException("load " + ipa.getAbsolutePath() + " failed", e);
         }
+        this.bundleAppDir = generateBundleDir();
         this.executableBundlePath = generateExecutableBundlePath();
     }
 
     public static final String APP_DIR = "/var/containers/Bundle/Application/";
     public static final String PAYLOAD_PREFIX = "Payload";
 
-    private String generateExecutableBundlePath() {
+    private String generateBundleDir(){
         UUID uuid = UUID.nameUUIDFromBytes(DigestUtils.md5(appDir + "_Application"));
-        return appDir.replace(PAYLOAD_PREFIX, APP_DIR + uuid.toString().toUpperCase()) + executable;
+        return APP_DIR + uuid.toString().toUpperCase();
+    }
+    private String generateExecutableBundlePath() {
+        return appDir.replace(PAYLOAD_PREFIX, this.bundleAppDir) + executable;
     }
 
     private static String parseExecutable(File ipa, String appDir) throws IOException {
@@ -134,7 +139,6 @@ public abstract class IpaLoader {
     }
 
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
-        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir)) {
         };
@@ -149,7 +153,6 @@ public abstract class IpaLoader {
     }
 
     LoadedIpa load64(EmulatorConfigurator configurator, String... loads) throws IOException {
-        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
         Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir)) {
         };
