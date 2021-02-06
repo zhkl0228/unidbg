@@ -143,6 +143,7 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
                     log.debug("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
                 }
             }
+            result.io.close();
             return ret;
         } else {
             log.info("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
