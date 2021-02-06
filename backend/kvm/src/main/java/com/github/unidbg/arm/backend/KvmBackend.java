@@ -4,12 +4,9 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.kvm.Kvm;
 import com.github.unidbg.arm.backend.kvm.KvmCallback;
 import com.github.unidbg.arm.backend.kvm.KvmException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.io.IOUtils;
 
 public abstract class KvmBackend extends FastBackend implements Backend, KvmCallback {
-
-    private static final Log log = LogFactory.getLog(KvmBackend.class);
 
     protected final Kvm kvm;
 
@@ -23,4 +20,8 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         }
     }
 
+    @Override
+    public final void destroy() throws BackendException {
+        IOUtils.closeQuietly(kvm);
+    }
 }

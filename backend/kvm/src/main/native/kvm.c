@@ -116,3 +116,36 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitial
   assert(pthread_key_create(&kvm->cpu_key, destroy_kvm_cpu) == 0);
   return (jlong) kvm;
 }
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    nativeDestroy
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_kvm kvm = (t_kvm) handle;
+  khash_t(memory) *memory = kvm->memory;
+  for (khiter_t k = kh_begin(memory); k < kh_end(memory); k++) {
+    if(kh_exist(memory, k)) {
+      t_memory_page page = kh_value(memory, k);
+//      HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, KVM_PAGE_SIZE));
+      int ret = munmap(page->addr, KVM_PAGE_SIZE);
+      if(ret != 0) {
+        fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
+      }
+      free(page);
+    }
+  }
+  kh_destroy(memory, memory);
+  if(kvm->callback) {
+    env->DeleteGlobalRef(kvm->callback);
+  }
+  if(kvm->page_table) {
+    int ret = munmap(kvm->page_table, kvm->num_page_table_entries * sizeof(void*));
+    if(ret != 0) {
+      fprintf(stderr, "munmap failed[%s->%s:%d]: page_table=%p, ret=%d\n", __FILE__, __func__, __LINE__, kvm->page_table, ret);
+    }
+  }
+  free(kvm);
+}

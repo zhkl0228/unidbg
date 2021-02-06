@@ -111,11 +111,6 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public void destroy() throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void context_restore(long context) {
         throw new UnsupportedOperationException();
     }
