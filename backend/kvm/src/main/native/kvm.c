@@ -139,7 +139,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
   }
   kh_destroy(memory, memory);
   if(kvm->callback) {
-    env->DeleteGlobalRef(kvm->callback);
+    (*env)->DeleteGlobalRef(env, kvm->callback);
   }
   if(kvm->page_table) {
     int ret = munmap(kvm->page_table, kvm->num_page_table_entries * sizeof(void*));
