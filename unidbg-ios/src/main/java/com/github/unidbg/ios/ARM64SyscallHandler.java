@@ -947,7 +947,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             if (verbose) {
                 System.out.printf("File stat '%s' from %s%n", pathname, emulator.getContext().getLRPointer());
             }
-            return result.io.fstat(emulator, new Stat64(statbuf));
+            int ret = result.io.fstat(emulator, new Stat64(statbuf));
+            result.io.close();
+            return ret;
         }
 
         int errno = result != null ? result.errno : UnixEmulator.ENOENT;

@@ -90,6 +90,7 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
             if (verbose) {
                 System.out.println(String.format("File access '%s' from %s", pathname, emulator.getContext().getLRPointer()));
             }
+            result.io.close();
             return 0;
         }
 
