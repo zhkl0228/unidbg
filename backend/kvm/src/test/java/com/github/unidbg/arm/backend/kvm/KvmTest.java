@@ -12,6 +12,7 @@ public class KvmTest extends TestCase {
     public void testBackend() {
         Backend backend = BackendFactory.createBackend(null, true, Collections.<BackendFactory>singleton(new KvmFactory(false)));
         assertNotNull(backend);
+        backend.destroy();
     }
 
 }
