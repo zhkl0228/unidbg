@@ -126,7 +126,8 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
-  for (khiter_t k = kh_begin(memory); k < kh_end(memory); k++) {
+  khiter_t k = kh_begin(memory);
+  for (; k < kh_end(memory); k++) {
     if(kh_exist(memory, k)) {
       t_memory_page page = kh_value(memory, k);
 //      HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, KVM_PAGE_SIZE));
