@@ -20,7 +20,7 @@ typedef struct kvm {
   size_t num_page_table_entries;
   void **page_table;
   pthread_key_t cpu_key;
-  jobject callback = NULL;
+  jobject callback;
   bool stop_request = false;
 } *t_kvm;
 
