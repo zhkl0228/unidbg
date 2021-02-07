@@ -30,11 +30,11 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
 
     private synchronized RandomAccessFile checkOpenFile() {
         try {
-            FileUtils.forceMkdir(file.getParentFile());
-            if (!file.exists() && !file.createNewFile()) {
-                throw new IOException("createNewFile failed: " + file);
-            }
             if (_randomAccessFile == null) {
+                FileUtils.forceMkdir(file.getParentFile());
+                if (!file.exists() && !file.createNewFile()) {
+                    throw new IOException("createNewFile failed: " + file);
+                }
                 _randomAccessFile = new RandomAccessFile(file, "rws");
             }
             return _randomAccessFile;
