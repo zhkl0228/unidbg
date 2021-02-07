@@ -9,7 +9,7 @@
 
 #define PAGE_TABLE_ADDRESS_SPACE_BITS 36
 #define PAGE_BITS 14 // 16k
-#define HVF_PAGE_SIZE (1UL << PAGE_BITS)
+#define HVF_PAGE_SIZE (1ULL << PAGE_BITS)
 #define HVF_PAGE_MASK (HVF_PAGE_SIZE-1)
 
 typedef struct memory_page {
