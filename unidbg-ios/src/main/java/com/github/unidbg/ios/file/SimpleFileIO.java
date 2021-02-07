@@ -16,7 +16,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 
@@ -102,11 +101,30 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
 
     @Override
     protected byte[] getMmapData(int offset, int length) throws IOException {
-        ByteBuffer buffer = Utils.mapBuffer(this.file);
-        buffer.position(offset);
-        byte[] data = new byte[Math.min(length, buffer.remaining())];
-        buffer.get(data);
-        return data;
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "r")) {
+            randomAccessFile.seek(offset);
+            int remaining = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
+            ByteArrayOutputStream baos = remaining <= 0 ? new ByteArrayOutputStream() : new ByteArrayOutputStream(Math.min(length, remaining));
+            byte[] buf = new byte[1024];
+            do {
+                int count = length - baos.size();
+                if (count == 0) {
+                    break;
+                }
+
+                if (count > buf.length) {
+                    count = buf.length;
+                }
+
+                int read = randomAccessFile.read(buf, 0, count);
+                if (read == -1) {
+                    break;
+                }
+
+                baos.write(buf, 0, read);
+            } while (true);
+            return baos.toByteArray();
+        }
     }
 
     @Override
