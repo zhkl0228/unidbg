@@ -294,9 +294,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
+
+  HYP_ASSERT_SUCCESS(hv_vm_unmap(address, size));
+
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
-  int ret;
   for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
     uint64_t idx = vaddr >> PAGE_BITS;
     khiter_t k = kh_get(memory, memory, vaddr);
@@ -308,7 +310,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
       hypervisor->page_table[idx] = NULL;
     }
     t_memory_page page = kh_value(memory, k);
-    HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, HVF_PAGE_SIZE));
     int ret = munmap(page->addr, HVF_PAGE_SIZE);
     if(ret != 0) {
       fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
@@ -334,6 +335,18 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   }
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
+
+  char *start_addr = (char *) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if(start_addr == MAP_FAILED) {
+    fprintf(stderr, "mmap failed[%s->%s:%d]: start_addr=%p\n", __FILE__, __func__, __LINE__, start_addr);
+    return 4;
+  }
+
+  if(hv_vm_map(start_addr, address, size, perms) != HV_SUCCESS) {
+    fprintf(stderr, "hv_vm_map failed start_addr=%p, ipa=0x%lx, perms=0x%x\n", start_addr, address, perms);
+    return 6;
+  }
+
   int ret;
   for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
     uint64_t idx = vaddr >> PAGE_BITS;
@@ -342,11 +355,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
       return 3;
     }
 
-    void *addr = mmap(NULL, HVF_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if(addr == MAP_FAILED) {
-      fprintf(stderr, "mmap failed[%s->%s:%d]: addr=%p\n", __FILE__, __func__, __LINE__, (void*)addr);
-      return 4;
-    }
+    void *addr = &start_addr[vaddr - address];
     if(hypervisor->page_table && idx < hypervisor->num_page_table_entries) {
       hypervisor->page_table[idx] = addr;
     } else {
@@ -363,12 +372,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     page->perms = perms;
     page->ipa = vaddr;
     kh_value(memory, k) = page;
-
-    hv_return_t ret = hv_vm_map(addr, page->ipa, HVF_PAGE_SIZE, perms);
-    if(ret != HV_SUCCESS) {
-      fprintf(stderr, "hv_vm_map failed addr=%p, ipa=0x%llx, perms=0x%x, ret=%d\n", addr, page->ipa, perms, ret);
-      return 6;
-    }
   }
   return 0;
 }
@@ -386,6 +389,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
+
+  HYP_ASSERT_SUCCESS(hv_vm_protect(address, size, perms));
+
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
   int ret;
@@ -397,7 +403,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     }
     t_memory_page page = kh_value(memory, k);
     page->perms = perms;
-    HYP_ASSERT_SUCCESS(hv_vm_protect(page->ipa, HVF_PAGE_SIZE, perms));
   }
   return 0;
 }
