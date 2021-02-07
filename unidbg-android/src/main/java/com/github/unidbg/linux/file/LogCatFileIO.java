@@ -32,8 +32,8 @@ public class LogCatFileIO extends SimpleFileIO {
     }
 
     @Override
-    void onCreate(RandomAccessFile randomAccessFile) throws IOException {
-        super.onCreate(randomAccessFile);
+    void onFileOpened(RandomAccessFile randomAccessFile) throws IOException {
+        super.onFileOpened(randomAccessFile);
 
         randomAccessFile.getChannel().truncate(0);
     }
