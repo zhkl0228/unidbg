@@ -64,6 +64,7 @@ static void init() {
   }
 
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
+
   int fd = ioctl(kvm, KVM_CREATE_VM, 0UL);
   if (fd == -1) {
     fprintf(stderr, "createVM failed\n");
@@ -72,7 +73,9 @@ static void init() {
   }
   close(kvm);
   gKvmFd = fd;
-  printf("initVM fd=%d, gRunSize=%d\n", fd, gRunSize);
+
+  int nr_slots = ioctl(fd, KVM_CAP_CHECK_EXTENSION_VM, KVM_CAP_NR_MEMSLOTS);
+  printf("initVM fd=%d, gRunSize=0x%x, nr_slots=0x%x\n", fd, gRunSize, nr_slots);
 }
 
 __attribute__((destructor))
