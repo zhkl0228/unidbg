@@ -14,6 +14,9 @@
 
 #include "kvm.h"
 
+static int gKvmFd = 0;
+static int gRunSize = 0;
+
 typedef struct kvm {
   bool is64Bit;
   khash_t(memory) *memory;
@@ -26,17 +29,16 @@ typedef struct kvm {
 
 typedef struct kvm_cpu {
   int fd;
+  struct kvm_run *run;
 } *t_kvm_cpu;
 
 static void destroy_kvm_cpu(void *data) {
   printf("destroy_kvm_cpu data=%p\n", data);
   t_kvm_cpu cpu = (t_kvm_cpu) data;
+  munmap(cpu->run, gRunSize);
   close(cpu->fd);
   free(cpu);
 }
-
-static int gKvmFd = 0;
-static int gRunSize = 0;
 
 __attribute__((constructor))
 static void init() {
