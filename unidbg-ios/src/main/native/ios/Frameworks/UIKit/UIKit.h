@@ -97,6 +97,7 @@ typedef enum UIStatusBarStyle : NSInteger {
 
 @property(nonatomic, getter=isStatusBarHidden) BOOL statusBarHidden;
 @property(nonatomic) UIStatusBarStyle statusBarStyle;
+@property(nonatomic, readonly, getter=isIgnoringInteractionEvents) BOOL ignoringInteractionEvents;
 
 + (UIApplication *)sharedApplication;
 
