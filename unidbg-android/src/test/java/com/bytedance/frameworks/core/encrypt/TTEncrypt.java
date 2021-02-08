@@ -22,6 +22,8 @@ import com.github.unidbg.linux.android.dvm.array.ByteArray;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import king.trace.GlobalData;
+import king.trace.KingTrace;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +52,15 @@ public class TTEncrypt {
         module = dm.getModule(); // 加载好的libttEncrypt.so对应为一个模块
 
         TTEncryptUtils = vm.resolveClass("com/bytedance/frameworks/core/encrypt/TTEncryptUtils");
+
+        GlobalData.ignoreModuleList.add("libc.so");
+        GlobalData.ignoreModuleList.add("libhookzz.so");
+        GlobalData.watch_address.put(0x401db840,"");
+        GlobalData.is_dump_ldr=true;
+        GlobalData.is_dump_str=true;
+        KingTrace trace=new KingTrace(emulator);
+        trace.initialize(1,0,null);
+        emulator.getBackend().hook_add_new(trace,1,0,emulator);
     }
 
     void destroy() throws IOException {
@@ -152,7 +163,7 @@ public class TTEncrypt {
         }
 
         if (logging) {
-            emulator.attach(DebuggerType.ANDROID_SERVER_V7); // 附加IDA android_server，可输入c命令取消附加继续运行
+//            emulator.attach(DebuggerType.ANDROID_SERVER_V7); // 附加IDA android_server，可输入c命令取消附加继续运行
         }
         byte[] data = new byte[16];
         ByteArray array = TTEncryptUtils.callStaticJniMethodObject(emulator, "ttEncrypt([BI)[B", new ByteArray(vm, data), data.length); // 执行Jni方法

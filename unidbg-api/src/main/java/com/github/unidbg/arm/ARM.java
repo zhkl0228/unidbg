@@ -870,7 +870,7 @@ public class ARM {
         }
     }
 
-    static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
+    public static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
         return assembleDetail(emulator, ins, address, thumb, false);
     }
 
