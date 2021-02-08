@@ -7,8 +7,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include "mman.h"
+#include <errno.h>
+#else
 #include <sys/mman.h>
 #include <sys/errno.h>
+#endif
 
 #include "dynarmic.h"
 #include "arm_dynarmic_cp15.h"
