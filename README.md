@@ -1,8 +1,8 @@
 # unidbg
 
-Allows you to emulate an Android ARM32 and/or ARM64 native library, and an experimental  iOS ARM32 emulation.<br>
+Allows you to emulate an Android native library, and an experimental iOS emulation.<br>
 
-This is an educational project to learn more about the ELF file format and ARM assembly.<br>
+This is an educational project to learn more about the ELF/MachO file format and ARM assembly.<br>
 
 Use it at your own risk !
 
@@ -37,13 +37,13 @@ Simple tests under src/test directory
 - Support JavaVM, JNIEnv.
 - Emulation of syscalls instruction.
 - Support ARM32 and ARM64.
-- Inline hook, thanks to [HookZz](https://github.com/jmpews/Dobby).
+- Inline hook, thanks to [Dobby](https://github.com/jmpews/Dobby).
 - Android import hook, thanks to [xHook](https://github.com/iqiyi/xHook).
 - iOS [fishhook](https://github.com/facebook/fishhook) and substrate and [whale](https://github.com/asLody/whale) hook.
-- Support simple console debugger, gdb stub, experimental IDA android debugger server, instruction trace, memory read/write trace.
+- [unicorn](https://github.com/zhkl0228/unicorn) backend support simple console debugger, gdb stub, instruction trace, memory read/write trace.
 - Support iOS objc and swift runtime.
-- Support [dynarmic](https://github.com/MerryMage/dynarmic) backend.
-- Support Apple M1 hypervisor backend.
+- Support [dynarmic](https://github.com/MerryMage/dynarmic) fast backend.
+- Support Apple M1 hypervisor, the fastest ARM64 backend.
 
 ## Thanks
 - [unicorn](https://github.com/zhkl0228/unicorn)
@@ -60,3 +60,4 @@ Simple tests under src/test directory
 - [kaitai_struct](https://github.com/kaitai-io/kaitai_struct)
 - [fishhook](https://github.com/facebook/fishhook)
 - [runtime_class-dump](https://github.com/Tyilo/runtime_class-dump)
+- [mman-win32](https://github.com/mcgarrah/mman-win32)
