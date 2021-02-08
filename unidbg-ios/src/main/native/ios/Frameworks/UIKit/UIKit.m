@@ -228,6 +228,10 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
     return [NSArray array];
 }
 
+- (void)beginIgnoringInteractionEvents {
+  self.ignoringInteractionEvents = true;
+}
+
 @end
 
 @implementation UIDevice
