@@ -5,7 +5,7 @@ import java.io.FileFilter;
 
 public class UnidbgFileFilter implements FileFilter {
 
-    public static final String UNIDBG_PREFIX = ".unidbg";
+    public static final String UNIDBG_PREFIX = "__ignore.unidbg";
 
     @Override
     public boolean accept(File pathname) {

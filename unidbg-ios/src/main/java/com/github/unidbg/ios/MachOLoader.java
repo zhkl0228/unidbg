@@ -328,7 +328,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         boolean finalSegment = false;
         Set<String> rpathSet = new LinkedHashSet<>(2);
         byte[] uuid = null;
-        String dylibPath = libraryFile.getPath();
+        String dylibPath = FilenameUtils.normalize(libraryFile.getPath(), true);
 
         for (MachO.LoadCommand command : machO.loadCommands()) {
             if (command == null) {

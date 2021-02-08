@@ -129,30 +129,29 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
 
     @Override
     protected byte[] getMmapData(int offset, int length) throws IOException {
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "r")) {
-            randomAccessFile.seek(offset);
-            int remaining = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
-            ByteArrayOutputStream baos = remaining <= 0 ? new ByteArrayOutputStream() : new ByteArrayOutputStream(Math.min(length, remaining));
-            byte[] buf = new byte[1024];
-            do {
-                int count = length - baos.size();
-                if (count == 0) {
-                    break;
-                }
+        RandomAccessFile randomAccessFile = checkOpenFile();
+        randomAccessFile.seek(offset);
+        int remaining = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
+        ByteArrayOutputStream baos = remaining <= 0 ? new ByteArrayOutputStream() : new ByteArrayOutputStream(Math.min(length, remaining));
+        byte[] buf = new byte[1024];
+        do {
+            int count = length - baos.size();
+            if (count == 0) {
+                break;
+            }
 
-                if (count > buf.length) {
-                    count = buf.length;
-                }
+            if (count > buf.length) {
+                count = buf.length;
+            }
 
-                int read = randomAccessFile.read(buf, 0, count);
-                if (read == -1) {
-                    break;
-                }
+            int read = randomAccessFile.read(buf, 0, count);
+            if (read == -1) {
+                break;
+            }
 
-                baos.write(buf, 0, read);
-            } while (true);
-            return baos.toByteArray();
-        }
+            baos.write(buf, 0, read);
+        } while (true);
+        return baos.toByteArray();
     }
 
     @Override

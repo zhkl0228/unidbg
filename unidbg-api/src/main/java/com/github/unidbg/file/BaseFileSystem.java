@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<T> {
 
@@ -162,8 +163,13 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             throw new IllegalStateException(e);
         }
 
-        if (!oldFile.renameTo(newFile)) {
-            throw new IllegalStateException("rename failed: old=" + oldFile + ", new=" + newFile);
+        try {
+            if(newFile.exists() && !newFile.delete()){
+                throw new IllegalStateException("rename failed: old=" + oldFile + ", new=" + newFile);
+            }
+            Files.move(oldFile.toPath(), newFile.toPath());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
         return 0;
     }

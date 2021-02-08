@@ -11,7 +11,6 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.*;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.spi.SyscallHandler;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -22,6 +21,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -72,7 +72,7 @@ public abstract class IpaLoader {
     public static final String PAYLOAD_PREFIX = "Payload";
 
     private String generateExecutableBundlePath() {
-        UUID uuid = UUID.nameUUIDFromBytes(DigestUtils.md5(appDir + "_Application"));
+        UUID uuid = UUID.nameUUIDFromBytes((appDir + "_Application").getBytes(StandardCharsets.UTF_8));
         return appDir.replace(PAYLOAD_PREFIX, APP_DIR + uuid.toString().toUpperCase()) + executable;
     }
 
@@ -175,7 +175,7 @@ public abstract class IpaLoader {
             list.add("OBJC_PRINT_IVAR_SETUP=YES"); // log processing of non-fragile ivars
             list.add("OBJC_PRINT_VTABLE_SETUP=YES"); // log processing of class vtables
         }
-        UUID uuid = UUID.nameUUIDFromBytes(DigestUtils.md5(appDir + "_Documents"));
+        UUID uuid = UUID.nameUUIDFromBytes((appDir + "_Documents").getBytes(StandardCharsets.UTF_8));
         String homeDir = "/var/mobile/Containers/Data/Application/" + uuid.toString().toUpperCase();
         list.add("CFFIXED_USER_HOME=" + homeDir);
         FileUtils.forceMkdir(new File(rootDir, homeDir));
