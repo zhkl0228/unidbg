@@ -70,6 +70,7 @@ typedef enum UIViewAutoresizing : NSUInteger {
 - (id)initWithFrame:(CGRect)rect;
 - (void)setAccessibilityViewIsModal:(BOOL)flag;
 - (void)setOverrideUserInterfaceStyle:(UIUserInterfaceStyle)style;
+- (CGPoint)convertPoint:(CGPoint)point fromView:(UIView *)view;
 @end
 
 @interface UIViewController : UIResponder
