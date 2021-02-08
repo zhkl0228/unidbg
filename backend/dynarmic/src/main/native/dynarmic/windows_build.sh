@@ -1,3 +1,5 @@
+# build script for windows msys2
+
 JAVA_INC="$JAVA_HOME"/include
 JAVA_PLATFORM_INC="$(dirname "$(find "$JAVA_INC" -name jni_md.h)")"
 

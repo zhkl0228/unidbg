@@ -2,7 +2,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <stdio.h>
 
-static CFStringRef path = CFSTR("Documents/.unidbg_keychain.plist");
+static CFStringRef path = CFSTR("Documents/__ignore.unidbg_keychain.plist");
 static CFMutableDictionaryRef plist = NULL;
 
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
