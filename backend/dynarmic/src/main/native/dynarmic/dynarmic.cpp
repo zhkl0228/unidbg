@@ -4,7 +4,6 @@
 #include <exception>
 #include <iostream>
 
-#include <execinfo.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -20,16 +19,6 @@ static jmethodID handleInterpreterFallback = NULL;
 static jmethodID handleExceptionRaised = NULL;
 static jmethodID handleMemoryReadFailed = NULL;
 static jmethodID handleMemoryWriteFailed = NULL;
-
-static inline void print_stack() {
-    const int asize = 100;
-    void *array[asize];
-    size_t size = backtrace(array, asize);
-
-    // print out all the frames to stderr
-    std::cerr << "stack trace: " << std::endl;
-    backtrace_symbols_fd(array, size, STDERR_FILENO);
-}
 
 static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     u64 idx = vaddr >> DYN_PAGE_BITS;
@@ -115,8 +104,6 @@ public:
 //            printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x, value=0x%x\n", __FILE__, __func__, __LINE__, vaddr, dest[0]);
             return dest[0];
         } else {
-            print_stack();
-
             printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
             JNIEnv *env;
             cachedJVM->AttachCurrentThread((void **)&env, NULL);
