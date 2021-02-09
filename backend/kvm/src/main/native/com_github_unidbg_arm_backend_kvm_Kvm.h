@@ -17,6 +17,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getMaxSlots
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    getPageSize
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getPageSize
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    nativeInitialize
  * Signature: (Z)J
  */

@@ -29,6 +29,17 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getMaxSlots
   return gMaxSlots;
 }
 
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    getPageSize
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getPageSize
+  (JNIEnv *env, jclass clazz) {
+  long sz = sysconf(_SC_PAGESIZE);
+  return (jint) sz;
+}
+
 typedef struct kvm {
   bool is64Bit;
   khash_t(memory) *memory;
