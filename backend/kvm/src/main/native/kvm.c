@@ -18,6 +18,16 @@ static int gKvmFd = 0;
 static int gRunSize = 0;
 static int gMaxSlots = 0;
 
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    getMaxSlots
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getMaxSlots
+  (JNIEnv *env, jclass clazz) {
+  return gMaxSlots;
+}
+
 typedef struct kvm {
   bool is64Bit;
   khash_t(memory) *memory;
@@ -66,7 +76,7 @@ static void init() {
 
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
   int address_space = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
-  int gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
+  gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
 
   int fd = ioctl(kvm, KVM_CREATE_VM, 0UL);
   if (fd == -1) {
