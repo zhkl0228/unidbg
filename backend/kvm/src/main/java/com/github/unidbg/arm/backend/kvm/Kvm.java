@@ -9,6 +9,7 @@ public class Kvm implements Closeable {
 
     private static final Log log = LogFactory.getLog(Kvm.class);
 
+    public static native int getMaxSlots();
     private static native long nativeInitialize(boolean is64Bit);
     private static native void nativeDestroy(long handle);
 

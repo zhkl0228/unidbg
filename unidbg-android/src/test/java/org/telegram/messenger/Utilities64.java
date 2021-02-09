@@ -5,7 +5,6 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
-import com.github.unidbg.arm.backend.KvmFactory;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
@@ -33,7 +32,6 @@ public class Utilities64 extends TestCase {
                 .for64Bit()
                 .setProcessName("org.telegram.messenger")
                 .addBackendFactory(new HypervisorFactory(true))
-                .addBackendFactory(new KvmFactory(false))
                 .addBackendFactory(new DynarmicFactory(true))
                 .build();
     }

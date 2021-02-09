@@ -18,5 +18,11 @@
             <artifactId>unidbg-api</artifactId>
             <version>0.9.3-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.zhkl0228</groupId>
+            <artifactId>unidbg-android</artifactId>
+            <version>0.9.3-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

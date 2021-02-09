@@ -16,6 +16,7 @@
 
 static int gKvmFd = 0;
 static int gRunSize = 0;
+static int gMaxSlots = 0;
 
 typedef struct kvm {
   bool is64Bit;
@@ -65,7 +66,7 @@ static void init() {
 
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
   int address_space = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
-  int nr_slots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
+  int gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
 
   int fd = ioctl(kvm, KVM_CREATE_VM, 0UL);
   if (fd == -1) {
@@ -76,7 +77,7 @@ static void init() {
   close(kvm);
   gKvmFd = fd;
 
-  printf("initVM fd=%d, gRunSize=0x%x, address_space=0x%x, nr_slots=0x%x\n", fd, gRunSize, address_space, nr_slots);
+  printf("initVM fd=%d, gRunSize=0x%x, address_space=0x%x, gMaxSlots=0x%x\n", fd, gRunSize, address_space, gMaxSlots);
 }
 
 __attribute__((destructor))
