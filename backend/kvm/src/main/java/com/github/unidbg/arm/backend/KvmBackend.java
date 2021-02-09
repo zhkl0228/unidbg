@@ -13,19 +13,26 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     private static final Log log = LogFactory.getLog(KvmBackend.class);
 
     protected final Kvm kvm;
+    private final int pageSize;
 
     protected KvmBackend(Emulator<?> emulator, Kvm kvm) throws BackendException {
         super(emulator);
         this.kvm = kvm;
+        this.pageSize = Kvm.getPageSize();
         int maxSlots = Kvm.getMaxSlots();
         if (log.isDebugEnabled()) {
-            log.debug("init kvm backend kvm=" + kvm + ", maxSlots=0x" + Integer.toHexString(maxSlots));
+            log.debug("init kvm backend kvm=" + kvm + ", maxSlots=0x" + Integer.toHexString(maxSlots) + ", pageSize=0x" + Integer.toHexString(pageSize));
         }
         try {
             this.kvm.setKvmCallback(this);
         } catch (KvmException e) {
             throw new BackendException(e);
         }
+    }
+
+    @Override
+    public int getPageSize() {
+        return pageSize;
     }
 
     @Override
