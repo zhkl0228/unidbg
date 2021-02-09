@@ -19,12 +19,14 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     private static final Log log = LogFactory.getLog(HypervisorBackend.class);
 
     protected final Hypervisor hypervisor;
+    private final int pageSize;
 
     protected static final long REG_VBAR_EL1 = 0xf0000000L;
 
     protected HypervisorBackend(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator);
         this.hypervisor = hypervisor;
+        this.pageSize = Hypervisor.getPageSize();
         try {
             this.hypervisor.setHypervisorCallback(this);
         } catch (HypervisorException e) {
@@ -235,6 +237,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     @Override
     public int getPageSize() {
-        return 0x4000;
+        return pageSize;
     }
 }

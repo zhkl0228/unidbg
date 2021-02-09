@@ -9,6 +9,8 @@ public class Hypervisor implements Closeable {
 
     private static final Log log = LogFactory.getLog(Hypervisor.class);
 
+    public static native int getPageSize();
+
     private static native int setHypervisorCallback(long handle, HypervisorCallback callback);
 
     private static native long nativeInitialize(boolean is64Bit);

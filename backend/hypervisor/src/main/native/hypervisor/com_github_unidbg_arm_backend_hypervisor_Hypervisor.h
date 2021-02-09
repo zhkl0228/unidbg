@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getPageSize
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getPageSize
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    setHypervisorCallback
  * Signature: (JLcom/github/unidbg/arm/backend/hypervisor/HypervisorCallback;)I
  */
