@@ -31,6 +31,21 @@ public class KvmBackend64 extends KvmBackend {
         try {
             switch (regId) {
                 case Arm64Const.UC_ARM64_REG_CPACR_EL1:
+                    return 0L;
+                default:
+                    throw new KvmException("regId=" + regId);
+            }
+        } catch (KvmException e) {
+            throw new BackendException(e);
+        }
+    }
+
+    @Override
+    public void reg_write(int regId, Number value) throws BackendException {
+        try {
+            switch (regId) {
+                case Arm64Const.UC_ARM64_REG_CPACR_EL1:
+                    break;
                 default:
                     throw new KvmException("regId=" + regId);
             }
@@ -46,11 +61,6 @@ public class KvmBackend64 extends KvmBackend {
 
     @Override
     public void reg_write_vector(int regId, byte[] vector) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void reg_write(int regId, Number value) throws BackendException {
         throw new UnsupportedOperationException();
     }
 
