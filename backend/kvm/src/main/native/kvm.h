@@ -124,7 +124,7 @@ typedef enum {
 
 #define HV_SUCCESS 0
 typedef int hv_return_t;
-typedef t_kvm_cpu hv_vcpu_t;
+typedef struct kvm_cpu *hv_vcpu_t;
 
 typedef __uint128_t hv_simd_fp_uchar16_t;
 
