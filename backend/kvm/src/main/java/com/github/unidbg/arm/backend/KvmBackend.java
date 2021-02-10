@@ -72,4 +72,9 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     public final void destroy() throws BackendException {
         IOUtils.closeQuietly(kvm);
     }
+
+    @Override
+    public void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException {
+    }
+
 }
