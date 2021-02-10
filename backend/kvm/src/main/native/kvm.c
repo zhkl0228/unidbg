@@ -159,7 +159,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
   for (; k < kh_end(memory); k++) {
     if(kh_exist(memory, k)) {
       t_memory_page page = kh_value(memory, k);
-//      HYP_ASSERT_SUCCESS(hv_vm_unmap(page->ipa, KVM_PAGE_SIZE));
       int ret = munmap(page->addr, KVM_PAGE_SIZE);
       if(ret != 0) {
         fprintf(stderr, "munmap failed[%s->%s:%d]: addr=%p, ret=%d\n", __FILE__, __func__, __LINE__, page->addr, ret);
@@ -193,7 +192,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
   char *start_addr = (char *) mmap(NULL, memory_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if(start_addr == MAP_FAILED) {
     fprintf(stderr, "mmap failed[%s->%s:%d]: start_addr=%p\n", __FILE__, __func__, __LINE__, start_addr);
-    return -1L;
+    abort();
+    return 0L;
   }
 
   struct kvm_userspace_memory_region region = {
@@ -205,7 +205,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
   };
   if (ioctl(gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
     fprintf(stderr, "set_user_memory_region failed start_addr=%p, guest_phys_addr=0x%lx\n", start_addr, guest_phys_addr);
-    return -1L;
+    abort();
+    return 0L;
   }
 
   int ret;
@@ -214,7 +215,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     uint64_t idx = vaddr >> PAGE_BITS;
     if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
       fprintf(stderr, "set_user_memory_region failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-      return -1L;
+      abort();
+      return 0L;
     }
 
     void *addr = &start_addr[vaddr - guest_phys_addr];
@@ -228,7 +230,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     if(page == NULL) {
       fprintf(stderr, "calloc page failed: size=%lu\n", sizeof(struct memory_page));
       abort();
-      return -1L;
+      return 0L;
     }
     page->addr = addr;
     kh_value(memory, k) = page;

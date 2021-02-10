@@ -36,7 +36,11 @@ public class Kvm implements Closeable {
     }
 
     public long set_user_memory_region(int slot, long guest_phys_addr, long memory_size) {
-        return set_user_memory_region(nativeHandle, slot, guest_phys_addr, memory_size);
+        long userspace_addr = set_user_memory_region(nativeHandle, slot, guest_phys_addr, memory_size);
+        if (userspace_addr == 0) {
+            throw new KvmException("set_user_memory_region failed: slot=" + slot + ", guest_phys_addr=0x" + Long.toHexString(guest_phys_addr) + ", memory_size=0x" + Long.toHexString(memory_size));
+        }
+        return userspace_addr;
     }
 
     @Override
