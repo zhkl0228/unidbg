@@ -126,7 +126,7 @@ typedef enum {
 typedef int hv_return_t;
 typedef struct kvm_cpu *hv_vcpu_t;
 
-typedef uint8_t __attribute__((ext_vector_type(16))) hv_simd_fp_uchar16_t;
+typedef __uint128_t hv_simd_fp_uchar16_t;
 
 #define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
 
