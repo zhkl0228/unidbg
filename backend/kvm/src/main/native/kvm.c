@@ -72,14 +72,14 @@ static void init() {
     return;
   }
 
-  int ret = ioctl(kvm, KVM_GET_API_VERSION, NULL);
-  if(ret != 12) {
-    fprintf(stderr, "kvm version not supported: %d\n", ret);
+  int api_ver = ioctl(kvm, KVM_GET_API_VERSION, NULL);
+  if(api_ver != KVM_API_VERSION) {
+    fprintf(stderr, "Got KVM api version %d, expected %d\n", api_ver, KVM_API_VERSION);
     abort();
     return;
   }
 
-  ret = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_USER_MEMORY);
+  int ret = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_USER_MEMORY);
   if (!ret) {
     fprintf(stderr, "kvm user memory capability unavailable\n");
     abort();
@@ -87,8 +87,8 @@ static void init() {
   }
 
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
-  int address_space = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
   gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
+  int address_space = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
 
   int fd = ioctl(kvm, KVM_CREATE_VM, 0UL);
   if (fd == -1) {
@@ -99,7 +99,7 @@ static void init() {
   close(kvm);
   gKvmFd = fd;
 
-  printf("initVM fd=%d, gRunSize=0x%x, address_space=0x%x, gMaxSlots=0x%x\n", fd, gRunSize, address_space, gMaxSlots);
+  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, address_space=0x%x\n", fd, gRunSize, gMaxSlots, address_space);
 }
 
 __attribute__((destructor))
