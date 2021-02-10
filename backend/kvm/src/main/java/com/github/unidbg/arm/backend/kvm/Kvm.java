@@ -14,6 +14,8 @@ public class Kvm implements Closeable {
     private static native long nativeInitialize(boolean is64Bit);
     private static native void nativeDestroy(long handle);
 
+    private static native long set_user_memory_region(long handle, int slot, long guest_phys_addr, long memory_size);
+
     private final long nativeHandle;
 
     private static Kvm singleInstance;
@@ -31,6 +33,10 @@ public class Kvm implements Closeable {
         if (log.isDebugEnabled()) {
             log.debug("setKvmCallback callback" + callback);
         }
+    }
+
+    public long set_user_memory_region(int slot, long guest_phys_addr, long memory_size) {
+        return set_user_memory_region(nativeHandle, slot, guest_phys_addr, memory_size);
     }
 
     @Override
