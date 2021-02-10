@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <assert.h>
 #include <pthread.h>
 #include <sys/mman.h>
@@ -153,6 +154,17 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
 
     return cpu;
   }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getPageSize
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getPageSize
+  (JNIEnv *env, jclass clazz) {
+  long sz = sysconf(_SC_PAGESIZE);
+  return (jint) sz;
 }
 
 /*
