@@ -1236,6 +1236,29 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _SetStaticIntField = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                int value = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticIntField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticIntField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    }
+                    dvmField.setStaticIntField(value);
+                }
+                return 0;
+            }
+        });
+
         Pointer _SetStaticLongField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1822,6 +1845,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x490, _GetStaticBooleanField);
         impl.setPointer(0x4B0, _GetStaticIntField);
         impl.setPointer(0x4B8, _GetStaticLongField);
+        impl.setPointer(0x4f8, _SetStaticIntField);
         impl.setPointer(0x500, _SetStaticLongField);
         impl.setPointer(0x520, _GetStringLength);
         impl.setPointer(0x528, _GetStringChars);

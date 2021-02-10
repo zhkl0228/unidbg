@@ -25,6 +25,7 @@ public class DvmField extends Hashable {
         return fieldName;
     }
 
+    @SuppressWarnings("unused")
     public String getFieldType() {
         return fieldType;
     }
@@ -55,57 +56,62 @@ public class DvmField extends Hashable {
 
     int getIntField(DvmObject<?> dvmObject) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).getIntField(dvmClass.vm, dvmObject, this);
+        return checkJni(vm, dvmClass).getIntField(vm, dvmObject, this);
     }
 
     long getLongField(DvmObject<?> dvmObject) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).getLongField(dvmClass.vm, dvmObject, this);
+        return checkJni(vm, dvmClass).getLongField(vm, dvmObject, this);
     }
 
     float getFloatField(DvmObject<?> dvmObject) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).getFloatField(dvmClass.vm, dvmObject, this);
+        return checkJni(vm, dvmClass).getFloatField(vm, dvmObject, this);
     }
 
     void setObjectField(DvmObject<?> dvmObject, DvmObject<?> value) {
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).setObjectField(dvmClass.vm, dvmObject, this, value);
+        checkJni(vm, dvmClass).setObjectField(vm, dvmObject, this, value);
     }
 
     int getBooleanField(DvmObject<?> dvmObject) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).getBooleanField(dvmClass.vm, dvmObject, this) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).getBooleanField(vm, dvmObject, this) ? VM.JNI_TRUE : VM.JNI_FALSE;
     }
 
     void setIntField(DvmObject<?> dvmObject, int value) {
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).setIntField(dvmClass.vm, dvmObject, this, value);
+        checkJni(vm, dvmClass).setIntField(vm, dvmObject, this, value);
     }
     
     void setLongField(DvmObject<?> dvmObject, long value) {
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).setLongField(dvmClass.vm, dvmObject, this, value);
+        checkJni(vm, dvmClass).setLongField(vm, dvmObject, this, value);
     }
 
     void setBooleanField(DvmObject<?> dvmObject, boolean value) {
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).setBooleanField(dvmClass.vm, dvmObject, this, value);
+        checkJni(vm, dvmClass).setBooleanField(vm, dvmObject, this, value);
     }
     
     void setDoubleField(DvmObject<?> dvmObject, double value) {
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).setDoubleField(dvmClass.vm, dvmObject, this, value);
+        checkJni(vm, dvmClass).setDoubleField(vm, dvmObject, this, value);
+    }
+
+    void setStaticIntField(int value) {
+        BaseVM vm = dvmClass.vm;
+        checkJni(vm, dvmClass).setStaticIntField(vm, dvmClass, this, value);
     }
 
     void setStaticLongField(long value) {
-        BaseVM vm = this.dvmClass.vm;
-        checkJni(vm, dvmClass).setStaticLongField(this.dvmClass.vm, dvmClass, this, value);
+        BaseVM vm = dvmClass.vm;
+        checkJni(vm, dvmClass).setStaticLongField(vm, dvmClass, this, value);
     }
 
     long getStaticLongField() {
-        BaseVM vm = this.dvmClass.vm;
-        return checkJni(vm, dvmClass).getStaticLongField(this.dvmClass.vm, dvmClass, this);
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).getStaticLongField(vm, dvmClass, this);
     }
 
     public Field filed;

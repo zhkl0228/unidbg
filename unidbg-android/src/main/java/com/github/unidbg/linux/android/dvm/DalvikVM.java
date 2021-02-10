@@ -1428,6 +1428,29 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _SetStaticIntField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnidbgPointer clazz = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                int value = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R3).intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticIntField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    dvmField.setStaticIntField(value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticIntField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                }
+                return 0;
+            }
+        });
+
         Pointer _SetStaticLongField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2086,6 +2109,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x248, _GetStaticBooleanField);
         impl.setPointer(0x258, _GetStaticIntField);
         impl.setPointer(0x25c, _GetStaticLongField);
+        impl.setPointer(0x27c, _SetStaticIntField);
         impl.setPointer(0x280, _SetStaticLongField);
         impl.setPointer(0x290, _GetStringLength);
         impl.setPointer(0x294, _GetStringChars);

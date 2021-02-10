@@ -378,6 +378,16 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public void setStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, int value) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
+    public void setStaticIntField(BaseVM vm, DvmClass dvmClass, String signature, int value) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {
         throw new UnsupportedOperationException(dvmField.getSignature());
     }

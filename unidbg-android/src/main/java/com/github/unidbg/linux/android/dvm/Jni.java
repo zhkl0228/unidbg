@@ -115,6 +115,9 @@ public interface Jni {
     void setObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, DvmObject<?> value);
     void setObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature, DvmObject<?> value);
 
+    void setStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, int value);
+    void setStaticIntField(BaseVM vm, DvmClass dvmClass, String signature, int value);
+
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value);
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value);
 
