@@ -11,6 +11,72 @@
 
 #include "kvm.h"
 
+hv_return_t hv_vcpu_get_reg(hv_vcpu_t vcpu, hv_reg_t reg, uint64_t *value) {
+    struct kvm_one_reg reg_req = {
+        .id = reg,
+        .addr = (uint64_t)value,
+    };
+    if (ioctl(vcpu->fd, KVM_GET_ONE_REG, &reg_req) != 0) {
+        return -1;
+    }
+    return HV_SUCCESS;
+}
+
+hv_return_t hv_vcpu_set_reg(hv_vcpu_t vcpu, hv_reg_t reg, uint64_t value) {
+    struct kvm_one_reg reg_req = {
+        .id = reg,
+        .addr = (uint64_t)&value,
+    };
+    if (ioctl(vcpu->fd, KVM_SET_ONE_REG, &reg_req) != 0) {
+        return -1;
+    }
+    return HV_SUCCESS;
+}
+
+hv_return_t hv_vcpu_get_sys_reg(hv_vcpu_t vcpu, hv_sys_reg_t reg, uint64_t *value) {
+    struct kvm_one_reg reg_req = {
+        .id = reg,
+        .addr = (uint64_t)value,
+    };
+    if (ioctl(vcpu->fd, KVM_GET_ONE_REG, &reg_req) != 0) {
+        return -1;
+    }
+    return HV_SUCCESS;
+}
+
+hv_return_t hv_vcpu_set_sys_reg(hv_vcpu_t vcpu, hv_sys_reg_t reg, uint64_t value) {
+    struct kvm_one_reg reg_req = {
+        .id = reg,
+        .addr = (uint64_t)&value,
+    };
+    if (ioctl(vcpu->fd, KVM_SET_ONE_REG, &reg_req) != 0) {
+        return -1;
+    }
+    return HV_SUCCESS;
+}
+
+hv_return_t hv_vcpu_get_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_simd_fp_uchar16_t *value) {
+    struct kvm_one_reg reg_req = {
+        .id = reg,
+        .addr = (uint64_t)value,
+    };
+    if (ioctl(vcpu->fd, KVM_GET_ONE_REG, &reg_req) != 0) {
+        return -1;
+    }
+    return HV_SUCCESS;
+}
+
+hv_return_t hv_vcpu_set_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_simd_fp_uchar16_t value) {
+    struct kvm_one_reg reg_req = {
+        .id = reg,
+        .addr = (uint64_t)&value,
+    };
+    if (ioctl(vcpu->fd, KVM_SET_ONE_REG, &reg_req) != 0) {
+        return -1;
+    }
+    return HV_SUCCESS;
+}
+
 static int gKvmFd = 0;
 static int gRunSize = 0;
 static int gMaxSlots = 0;
