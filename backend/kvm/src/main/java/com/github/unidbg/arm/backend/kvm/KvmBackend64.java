@@ -2,6 +2,10 @@ package com.github.unidbg.arm.backend.kvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.*;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
 
@@ -24,7 +28,15 @@ public class KvmBackend64 extends KvmBackend {
 
     @Override
     public Number reg_read(int regId) throws BackendException {
-        throw new UnsupportedOperationException();
+        try {
+            switch (regId) {
+                case Arm64Const.UC_ARM64_REG_CPACR_EL1:
+                default:
+                    throw new KvmException("regId=" + regId);
+            }
+        } catch (KvmException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
@@ -103,23 +115,11 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public void context_restore(long context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void context_save(long context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long context_alloc() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb) {
-        throw new UnsupportedOperationException();
+        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+            KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
+            return encoded.getMachineCode();
+        }
     }
 
 }

@@ -28,7 +28,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
                 return i;
             }
         }
-        throw new IllegalStateException("Allocate slot failed: slotIndex=" + slotIndex + ", maxSlots=" + slots.length);
+        throw new BackendException("Allocate slot failed: slotIndex=" + slotIndex + ", maxSlots=" + slots.length);
     }
 
     protected KvmBackend(Emulator<?> emulator, Kvm kvm) throws BackendException {
@@ -75,6 +75,21 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     @Override
     public void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException {
+    }
+
+    @Override
+    public void context_restore(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void context_save(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long context_alloc() {
+        throw new UnsupportedOperationException();
     }
 
 }
