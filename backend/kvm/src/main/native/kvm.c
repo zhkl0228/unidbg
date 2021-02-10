@@ -11,6 +11,11 @@
 
 #include "kvm.h"
 
+typedef struct kvm_cpu {
+  int fd;
+  struct kvm_run *run;
+} *t_kvm_cpu;
+
 hv_return_t hv_vcpu_get_reg(hv_vcpu_t vcpu, hv_reg_t reg, uint64_t *value) {
     struct kvm_one_reg reg_req = {
         .id = reg,
@@ -111,11 +116,6 @@ typedef struct kvm {
   jobject callback;
   bool stop_request;
 } *t_kvm;
-
-typedef struct kvm_cpu {
-  int fd;
-  struct kvm_run *run;
-} *t_kvm_cpu;
 
 static void destroy_kvm_cpu(void *data) {
   printf("destroy_kvm_cpu data=%p\n", data);
