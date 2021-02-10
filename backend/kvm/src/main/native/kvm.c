@@ -179,3 +179,61 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
   }
   free(kvm);
 }
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    set_user_memory_region
+ * Signature: (JIJJ)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1memory_1region
+  (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size) {
+  t_kvm kvm = (t_kvm) handle;
+  khash_t(memory) *memory = kvm->memory;
+
+  char *start_addr = (char *) mmap(NULL, memory_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if(start_addr == MAP_FAILED) {
+    fprintf(stderr, "mmap failed[%s->%s:%d]: start_addr=%p\n", __FILE__, __func__, __LINE__, start_addr);
+    return -1L;
+  }
+
+  struct kvm_userspace_memory_region region = {
+    .slot = slot,
+    .flags = 0,
+    .guest_phys_addr = guest_phys_addr,
+    .memory_size = memory_size,
+    .userspace_addr = (uint64_t)start_addr,
+  };
+  if (ioctl(gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
+    fprintf(stderr, "set_user_memory_region failed start_addr=%p, guest_phys_addr=0x%lx\n", start_addr, guest_phys_addr);
+    return -1L;
+  }
+
+  int ret;
+  uint64_t vaddr = guest_phys_addr;
+  for(; vaddr < guest_phys_addr + memory_size; vaddr += KVM_PAGE_SIZE) {
+    uint64_t idx = vaddr >> PAGE_BITS;
+    if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
+      fprintf(stderr, "set_user_memory_region failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return -1L;
+    }
+
+    void *addr = &start_addr[vaddr - guest_phys_addr];
+    if(kvm->page_table && idx < kvm->num_page_table_entries) {
+      kvm->page_table[idx] = addr;
+    } else {
+      fprintf(stderr, "guest_phys_addr warning[%s->%s:%d]: addr=%p, page_table=%p, idx=%llu, num_page_table_entries=%zu\n", __FILE__, __func__, __LINE__, (void*)addr, kvm->page_table, idx, kvm->num_page_table_entries);
+    }
+    khiter_t k = kh_put(memory, memory, vaddr, &ret);
+    t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
+    if(page == NULL) {
+      fprintf(stderr, "calloc page failed: size=%lu\n", sizeof(struct memory_page));
+      abort();
+      return -1L;
+    }
+    page->addr = addr;
+    kh_value(memory, k) = page;
+  }
+
+  return (jlong) start_addr;
+}
+
