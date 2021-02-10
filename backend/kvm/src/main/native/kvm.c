@@ -99,7 +99,7 @@ static void init() {
   gKvmFd = fd;
 
   printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, address_space=0x%x\n", fd, gRunSize, gMaxSlots, address_space);
-  printf("initVM HV_REG_X0=0x%x, HV_REG_X1=0x%x, HV_REG_PC=0x%x\n", HV_REG_X0, HV_REG_X1, HV_REG_PC);
+  printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx\n", HV_REG_X0, HV_REG_X1, HV_REG_PC);
 }
 
 __attribute__((destructor))
