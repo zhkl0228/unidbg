@@ -585,3 +585,18 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1write
   HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, reg, value));
   return 0;
 }
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_read
+ * Signature: (JI)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
+  (JNIEnv *env, jclass clazz, jlong handle, jint index) {
+  t_kvm kvm = (t_kvm) handle;
+  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  uint64_t value = 0;
+  hv_reg_t reg = gprs[index];
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, reg, &value));
+  return value;
+}
