@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "kvm.h"
 
@@ -602,11 +603,31 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
   return value;
 }
 
+static struct kvm_run *current = NULL;
+
+static void sig_handler(int sig) {
+  if(current) {
+    current->immediate_exit = 1;
+  }
+}
+
 static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
   kvm->stop_request = false;
+
+  current = cpu->run;
+  struct sigaction sigIntHandler;
+  sigIntHandler.sa_handler = sig_handler;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, NULL);
+
   while(true) {
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
-      fprintf(stderr, "KVM_RUN failed.\n");
+      uint64_t cpsr = 0;
+      hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr)
+      uint64_t pc = 0;
+      hv_vcpu_get_reg(cpu, HV_REG_PC, &pc)
+      fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
       return -1;
     }
 

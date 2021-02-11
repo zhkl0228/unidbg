@@ -37,9 +37,9 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         while (buffer.hasRemaining()) {
             if (buffer.position() == 0x400) {
-                buffer.putInt(0xb90003e0); // str w0, [sp]
+                buffer.putInt(0x390003e0); // strb w0, [sp]
             } else {
-                buffer.putInt(0xb90003e1); // str w1, [sp]
+                buffer.putInt(0x390003e1); // strb w1, [sp]
             }
             if (buffer.hasRemaining()) {
                 buffer.putInt(0xd69f03e0); // eret
