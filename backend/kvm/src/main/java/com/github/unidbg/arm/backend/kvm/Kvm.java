@@ -17,6 +17,7 @@ public class Kvm implements Closeable {
     private static native long set_user_memory_region(long handle, int slot, long guest_phys_addr, long memory_size);
 
     private static native long reg_read_cpacr_el1(long handle);
+    private static native int reg_set_cpacr_el1(long handle, long value);
 
     private final long nativeHandle;
 
@@ -51,6 +52,16 @@ public class Kvm implements Closeable {
             log.debug("reg_read_cpacr_el1=0x" + Long.toHexString(cpacr));
         }
         return cpacr;
+    }
+
+    public void reg_set_cpacr_el1(long value) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_set_cpacr_el1 value=0x" + Long.toHexString(value));
+        }
+        int ret = reg_set_cpacr_el1(nativeHandle, value);
+        if (ret != 0) {
+            throw new KvmException("ret=" + ret);
+        }
     }
 
     @Override

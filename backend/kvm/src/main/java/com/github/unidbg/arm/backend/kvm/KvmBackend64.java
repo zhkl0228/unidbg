@@ -45,6 +45,8 @@ public class KvmBackend64 extends KvmBackend {
         try {
             switch (regId) {
                 case Arm64Const.UC_ARM64_REG_CPACR_EL1:
+                    kvm.reg_set_cpacr_el1(value.longValue());
+                    break;
                 default:
                     throw new KvmException("regId=" + regId);
             }
