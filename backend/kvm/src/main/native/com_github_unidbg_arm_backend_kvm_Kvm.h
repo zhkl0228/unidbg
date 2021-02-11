@@ -71,6 +71,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1cpac
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1sp64
   (JNIEnv *, jclass, jlong, jlong);
 
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    mem_write
+ * Signature: (JJ[B)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1write
+  (JNIEnv *, jclass, jlong, jlong, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif
