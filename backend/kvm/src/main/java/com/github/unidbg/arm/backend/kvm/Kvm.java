@@ -19,6 +19,8 @@ public class Kvm implements Closeable {
     private static native long reg_read_cpacr_el1(long handle);
     private static native int reg_set_cpacr_el1(long handle, long value);
 
+    private static native int reg_set_sp64(long handle, long value);
+
     private final long nativeHandle;
 
     private static Kvm singleInstance;
@@ -59,6 +61,16 @@ public class Kvm implements Closeable {
             log.debug("reg_set_cpacr_el1 value=0x" + Long.toHexString(value));
         }
         int ret = reg_set_cpacr_el1(nativeHandle, value);
+        if (ret != 0) {
+            throw new KvmException("ret=" + ret);
+        }
+    }
+
+    public void reg_set_sp64(long value) {
+        if (log.isDebugEnabled()) {
+            log.debug("reg_set_sp64 value=0x" + Long.toHexString(value));
+        }
+        int ret = reg_set_sp64(nativeHandle, value);
         if (ret != 0) {
             throw new KvmException("ret=" + ret);
         }
