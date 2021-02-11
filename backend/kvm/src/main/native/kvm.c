@@ -19,13 +19,13 @@ typedef struct kvm_cpu {
 static int check_one_reg(uint64_t reg, int ret) {
   switch(ret) {
     case ENOENT:
-      fprintf("no such register: reg=0x%llx\n", reg);
+      fprintf(stderr, "no such register: reg=0x%llx\n", reg);
       break;
     case EINVAL:
-      fprintf("invalid register ID, or no such register: reg=0x%llx\n", reg);
+      fprintf(stderr, "invalid register ID, or no such register: reg=0x%llx\n", reg);
       break;
     case EPERM:
-      fprintf("(arm64) register access not allowed before vcpu finalization: reg=0x%llx\n", reg);
+      fprintf(stderr, "(arm64) register access not allowed before vcpu finalization: reg=0x%llx\n", reg);
       break;
   }
   return ret;
