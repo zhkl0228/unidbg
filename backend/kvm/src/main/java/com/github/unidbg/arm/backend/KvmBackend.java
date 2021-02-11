@@ -64,6 +64,15 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     }
 
     @Override
+    public void mem_write(long address, byte[] bytes) throws BackendException {
+        try {
+            kvm.mem_write(address, bytes);
+        } catch (KvmException e) {
+            throw new BackendException(e);
+        }
+    }
+
+    @Override
     public int getPageSize() {
         return pageSize;
     }

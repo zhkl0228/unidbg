@@ -21,6 +21,8 @@ public class Kvm implements Closeable {
 
     private static native int reg_set_sp64(long handle, long value);
 
+    private static native int mem_write(long handle, long address, byte[] bytes);
+
     private final long nativeHandle;
 
     private static Kvm singleInstance;
@@ -71,6 +73,17 @@ public class Kvm implements Closeable {
             log.debug("reg_set_sp64 value=0x" + Long.toHexString(value));
         }
         int ret = reg_set_sp64(nativeHandle, value);
+        if (ret != 0) {
+            throw new KvmException("ret=" + ret);
+        }
+    }
+
+    public void mem_write(long address, byte[] bytes) {
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        int ret = mem_write(nativeHandle, address, bytes);
+        if (log.isDebugEnabled()) {
+            log.debug("mem_write address=0x" + Long.toHexString(address) + ", size=" + bytes.length + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
         if (ret != 0) {
             throw new KvmException("ret=" + ret);
         }
