@@ -27,6 +27,7 @@ public class Kvm implements Closeable {
     private static native byte[] mem_read(long handle, long address, int size);
 
     private static native int reg_write(long handle, int index, long value);
+    private static native long reg_read(long handle, int index);
 
     private final long nativeHandle;
 
@@ -135,6 +136,16 @@ public class Kvm implements Closeable {
         if (ret != 0) {
             throw new KvmException("ret=" + ret);
         }
+    }
+
+    public long reg_read64(int index) {
+        if (index < 0 || index > 30) {
+            throw new IllegalArgumentException("index=" + index);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("reg_read64 index=" + index);
+        }
+        return reg_read(nativeHandle, index);
     }
 
     @Override
