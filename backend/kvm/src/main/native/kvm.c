@@ -126,35 +126,39 @@ static t_kvm_cpu get_kvm_cpu(JNIEnv *env, t_kvm kvm) {
     int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
     if (fd == -1) {
       fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
-      return -1;
+      abort();
+      return NULL;
     }
     struct kvm_vcpu_init vcpu_init;
     if (ioctl(gKvmFd, KVM_ARM_PREFERRED_TARGET, &vcpu_init) == -1) {
       fprintf(stderr, "KVM_ARM_PREFERRED_TARGET failed.\n");
-      return -1;
+      abort();
+      return NULL;
     }
     // ask for psci 0.2
     vcpu_init.features[0] |= 1ul << KVM_ARM_VCPU_PSCI_0_2;
     if (ioctl(fd, KVM_ARM_VCPU_INIT, &vcpu_init) == -1) {
       fprintf(stderr, "KVM_ARM_VCPU_INIT failed.\n");
-      return -1;
+      abort();
+      return NULL;
     }
     struct kvm_run *run = mmap(NULL, gRunSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
     if (run == MAP_FAILED) {
       fprintf(stderr, "init kvm_run failed.\n");
-      return -1;
+      abort();
+      return NULL;
     }
     cpu->fd = fd;
     cpu->run = run;
 
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ID_AA64MMFR0_EL1, 0x5));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ID_AA64MMFR2_EL1, 0x10000));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR0_EL1, 0x5));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR2_EL1, 0x10000));
     assert(pthread_setspecific(kvm->cpu_key, cpu) == 0);
 
     if(kvm->is64Bit) {
