@@ -160,7 +160,7 @@ static t_kvm_cpu get_kvm_cpu(JNIEnv *env, t_kvm kvm) {
     // ask for psci 0.2
     vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PSCI_0_2;
     if(gHasPmuV3) {
-      init.features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
+      vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
     }
     if (ioctl(fd, KVM_ARM_VCPU_INIT, &vcpu_init) == -1) {
       fprintf(stderr, "KVM_ARM_VCPU_INIT failed.\n");
