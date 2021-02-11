@@ -17,6 +17,9 @@ typedef struct kvm_cpu {
 } *t_kvm_cpu;
 
 static int check_one_reg(uint64_t reg, int ret) {
+  if(ret == 0) {
+    return 0;
+  }
   switch(errno) {
     case ENOENT:
       fprintf(stderr, "no such register: reg=0x%llx\n", reg);
@@ -26,8 +29,6 @@ static int check_one_reg(uint64_t reg, int ret) {
       break;
     case EPERM:
       fprintf(stderr, "(arm64) register access not allowed before vcpu finalization: reg=0x%llx\n", reg);
-      break;
-    case 0:
       break;
     default:
       fprintf(stderr, "unknown error: reg=0x%llx, errno=%d\n", reg, errno);
