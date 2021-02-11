@@ -250,7 +250,7 @@ static void init() {
   close(kvm);
   gKvmFd = fd;
 
-  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, address_space=0x%x, has32Bit=%d\n", fd, gRunSize, gMaxSlots, address_space, has32Bit);
+  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, address_space=0x%x, has32Bit=%d, gHasPmuV3=%d\n", fd, gRunSize, gMaxSlots, address_space, has32Bit, gHasPmuV3);
   printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx\n", HV_REG_X0, HV_REG_X1, HV_REG_PC);
 }
 
