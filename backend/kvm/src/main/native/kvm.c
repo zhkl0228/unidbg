@@ -623,11 +623,13 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
   sigaction(SIGQUIT, &sigIntHandler, NULL);
 
   while(true) {
-    printf("before run\n");
+    uint64_t cpsr = 0;
+    hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
+    uint64_t pc = 0;
+    hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
+    printf("before run cpsr=0x%llx, pc=0x%llx\n", cpsr, pc);
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
-      uint64_t cpsr = 0;
       hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
-      uint64_t pc = 0;
       hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
       fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
       return -1;
