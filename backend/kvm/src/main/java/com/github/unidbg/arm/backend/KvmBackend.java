@@ -92,6 +92,30 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         }
     }
 
+    protected long until;
+
+    @Override
+    public final synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
+        if (log.isDebugEnabled()) {
+            log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
+        }
+        this.until = until + 4;
+        try {
+            kvm.emu_start(begin);
+        } catch (KvmException e) {
+            throw new BackendException(e);
+        }
+    }
+
+    @Override
+    public final void emu_stop() throws BackendException {
+        try {
+            kvm.emu_stop();
+        } catch (KvmException e) {
+            throw new BackendException(e);
+        }
+    }
+
     @Override
     public int getPageSize() {
         return pageSize;

@@ -29,6 +29,9 @@ public class Kvm implements Closeable {
     private static native int reg_write(long handle, int index, long value);
     private static native long reg_read(long handle, int index);
 
+    private static native int emu_start(long handle, long pc);
+    private static native int emu_stop(long handle);
+
     private final long nativeHandle;
 
     private static Kvm singleInstance;
@@ -146,6 +149,24 @@ public class Kvm implements Closeable {
             log.debug("reg_read64 index=" + index);
         }
         return reg_read(nativeHandle, index);
+    }
+
+    public void emu_start(long begin) {
+        int ret = emu_start(nativeHandle, begin);
+        if (ret != 0) {
+            throw new KvmException("ret=" + ret);
+        }
+    }
+
+    public void emu_stop() {
+        if (log.isDebugEnabled()) {
+            log.debug("emu_stop");
+        }
+
+        int ret = emu_stop(nativeHandle);
+        if (ret != 0) {
+            throw new KvmException("ret=" + ret);
+        }
     }
 
     @Override

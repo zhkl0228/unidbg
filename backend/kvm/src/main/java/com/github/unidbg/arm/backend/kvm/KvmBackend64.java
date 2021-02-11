@@ -173,16 +173,6 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public void emu_start(long begin, long until, long timeout, long count) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void emu_stop() throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb) {
         try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
             KeystoneEncoded encoded = keystone.assemble("brk #" + svcNumber);
