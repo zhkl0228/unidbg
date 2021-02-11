@@ -523,3 +523,51 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1rea
   }
   return bytes;
 }
+
+static hv_reg_t gprs[] = {
+  HV_REG_X0,
+  HV_REG_X1,
+  HV_REG_X2,
+  HV_REG_X3,
+  HV_REG_X4,
+  HV_REG_X5,
+  HV_REG_X6,
+  HV_REG_X7,
+  HV_REG_X8,
+  HV_REG_X9,
+  HV_REG_X10,
+  HV_REG_X11,
+  HV_REG_X12,
+  HV_REG_X13,
+  HV_REG_X14,
+  HV_REG_X15,
+  HV_REG_X16,
+  HV_REG_X17,
+  HV_REG_X18,
+  HV_REG_X19,
+  HV_REG_X20,
+  HV_REG_X21,
+  HV_REG_X22,
+  HV_REG_X23,
+  HV_REG_X24,
+  HV_REG_X25,
+  HV_REG_X26,
+  HV_REG_X27,
+  HV_REG_X28,
+  HV_REG_X29,
+  HV_REG_X30,
+};
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_write
+ * Signature: (JIJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1write
+  (JNIEnv *env, jclass clazz, jlong handle, jint index, jlong value) {
+  t_kvm kvm = (t_kvm) handle;
+  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  hv_reg_t reg = gprs[index];
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, reg, value));
+  return 0;
+}
