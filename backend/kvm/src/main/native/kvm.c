@@ -634,7 +634,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
   t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
 
   if(kvm->is64Bit) {
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3c0));
+    int cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
+    printf("emu_start cpsr=0x%x\n", cpsr);
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, cpsr));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc));
   } else {
     bool thumb = pc & 1;
