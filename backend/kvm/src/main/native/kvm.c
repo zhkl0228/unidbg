@@ -606,9 +606,9 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
 static struct kvm_run *current = NULL;
 
 static void sig_handler(int sig) {
-  printf("sig_handler sig=%d\n", sig);
+  printf("sig_handler sig=%d, current=%p\n", sig, current);
   if(current) {
-    current->immediate_exit = 1;
+//    current->immediate_exit = 1;
   }
 }
 
