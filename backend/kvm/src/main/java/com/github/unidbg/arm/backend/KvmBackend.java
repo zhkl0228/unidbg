@@ -4,10 +4,14 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.kvm.Kvm;
 import com.github.unidbg.arm.backend.kvm.KvmCallback;
 import com.github.unidbg.arm.backend.kvm.KvmException;
+import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import unicorn.UnicornConst;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -15,12 +19,32 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     private static final Log log = LogFactory.getLog(KvmBackend.class);
 
+    protected static final long REG_VBAR_EL1 = 0xf0000000L;
+
     protected final Kvm kvm;
     private final int pageSize;
 
     private int slotIndex;
     private final UserMemoryRegion[] slots;
     protected final Map<Long, UserMemoryRegion> memoryRegionMap; // key is guest_phys_addr
+
+    @Override
+    public void onInitialize() {
+        super.onInitialize();
+
+        mem_map(REG_VBAR_EL1, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        while (buffer.hasRemaining()) {
+            buffer.putInt(0xb90003e0); // str w0, [sp]
+            if (buffer.hasRemaining()) {
+                buffer.putInt(0xd69f03e0); // eret
+            }
+        }
+        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
+        assert ptr != null;
+        ptr.write(buffer.array());
+    }
 
     private int allocateSlot() {
         for (int i = slotIndex; i < slots.length; i++) {
