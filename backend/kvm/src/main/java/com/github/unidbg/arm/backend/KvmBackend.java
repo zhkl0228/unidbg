@@ -72,6 +72,15 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         }
     }
 
+    @Override
+    public final byte[] mem_read(long address, long size) throws BackendException {
+        try {
+            return kvm.mem_read(address, (int) size);
+        } catch (KvmException e) {
+            throw new BackendException(e);
+        }
+    }
+
     protected InterruptHookNotifier interruptHookNotifier;
 
     @Override

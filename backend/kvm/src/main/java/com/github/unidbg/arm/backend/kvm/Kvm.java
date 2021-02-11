@@ -23,6 +23,7 @@ public class Kvm implements Closeable {
     private static native int reg_set_tpidr_el0(long handle, long value);
 
     private static native int mem_write(long handle, long address, byte[] bytes);
+    private static native byte[] mem_read(long handle, long address, int size);
 
     private final long nativeHandle;
 
@@ -88,6 +89,18 @@ public class Kvm implements Closeable {
         if (ret != 0) {
             throw new KvmException("ret=" + ret);
         }
+    }
+
+    public byte[] mem_read(long address, int size) {
+        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        byte[] ret = mem_read(nativeHandle, address, size);
+        if (log.isDebugEnabled()) {
+            log.debug("mem_read address=0x" + Long.toHexString(address) + ", size=" + size + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
+        if (ret == null) {
+            throw new KvmException();
+        }
+        return ret;
     }
 
     public void reg_set_tpidr_el0(long value) {
