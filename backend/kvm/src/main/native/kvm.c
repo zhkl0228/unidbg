@@ -17,7 +17,7 @@ typedef struct kvm_cpu {
 } *t_kvm_cpu;
 
 static int check_one_reg(uint64_t reg, int ret) {
-  switch(ret) {
+  switch(errno) {
     case ENOENT:
       fprintf(stderr, "no such register: reg=0x%llx\n", reg);
       break;
@@ -30,7 +30,7 @@ static int check_one_reg(uint64_t reg, int ret) {
     case 0:
       break;
     default:
-      fprintf(stderr, "unknown error: reg=0x%llx, ret=%d\n", reg, ret);
+      fprintf(stderr, "unknown error: reg=0x%llx, errno=%d\n", reg, errno);
       break;
   }
   return ret;
