@@ -600,3 +600,63 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
   HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, reg, &value));
   return value;
 }
+
+static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
+  kvm->stop_request = false;
+  while(true) {
+    if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
+      fprintf(stderr, "KVM_RUN failed.\n");
+      return -1;
+    }
+
+    switch(cpu->run->exit_reason) {
+      default:
+        fprintf(stderr, "Unexpected VM exit reason: %d\n", cpu->run->exit_reason);
+        abort();
+        break;
+    }
+
+    if(kvm->stop_request) {
+      break;
+    }
+  }
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    emu_start
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
+  (JNIEnv *env, jclass clazz, jlong handle, jlong pc) {
+  t_kvm kvm = (t_kvm) handle;
+  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+
+  if(kvm->is64Bit) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3c0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc));
+  } else {
+    bool thumb = pc & 1;
+    if(thumb) {
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3f0));
+    } else {
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3e0));
+    }
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3c0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, (uint32_t) (pc & ~1)));
+  }
+  return cpu_loop(env, kvm, cpu);
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    emu_stop
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1stop
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_kvm kvm = (t_kvm) handle;
+  kvm->stop_request = true;
+  return 0;
+}
