@@ -95,6 +95,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1write
 JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1read
   (JNIEnv *, jclass, jlong, jlong, jint);
 
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_write
+ * Signature: (JIJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1write
+  (JNIEnv *, jclass, jlong, jint, jlong);
+
 #ifdef __cplusplus
 }
 #endif
