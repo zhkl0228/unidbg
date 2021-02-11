@@ -161,7 +161,7 @@ public class KvmBackend64 extends KvmBackend {
 
     @Override
     public Unicorn.UnHook debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
