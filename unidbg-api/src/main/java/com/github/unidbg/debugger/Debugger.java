@@ -1,5 +1,6 @@
 package com.github.unidbg.debugger;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DebugHook;
 
@@ -25,5 +26,7 @@ public interface Debugger extends Breaker, DebugHook, Closeable {
     <T> T run(Callable<T> callable) throws Exception;
 
     boolean isDebugging();
+
+    void disassembleBlock(Emulator<?> emulator, long address, boolean thumb);
 
 }
