@@ -391,3 +391,16 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1cp
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_CPACR_EL1, &cpacr));
   return cpacr;
 }
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_set_cpacr_el1
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1cpacr_1el1
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_kvm kvm = (t_kvm) handle;
+  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CPACR_EL1, value));
+  return 0;
+}
