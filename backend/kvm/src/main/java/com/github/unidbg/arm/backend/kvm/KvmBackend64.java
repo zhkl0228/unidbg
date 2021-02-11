@@ -74,11 +74,6 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public void mem_write(long address, byte[] bytes) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void mem_protect(long address, long size, int perms) throws BackendException {
         throw new UnsupportedOperationException();
     }
