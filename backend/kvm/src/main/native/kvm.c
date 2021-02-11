@@ -106,6 +106,7 @@ hv_return_t hv_vcpu_set_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_sim
 static int gKvmFd = 0;
 static int gRunSize = 0;
 static int gMaxSlots = 0;
+static bool gHasPmuV3;
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
@@ -157,7 +158,10 @@ static t_kvm_cpu get_kvm_cpu(JNIEnv *env, t_kvm kvm) {
       return NULL;
     }
     // ask for psci 0.2
-    vcpu_init.features[0] |= 1ul << KVM_ARM_VCPU_PSCI_0_2;
+    vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PSCI_0_2;
+    if(gHasPmuV3) {
+      init.features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
+    }
     if (ioctl(fd, KVM_ARM_VCPU_INIT, &vcpu_init) == -1) {
       fprintf(stderr, "KVM_ARM_VCPU_INIT failed.\n");
       abort();
@@ -224,9 +228,18 @@ static void init() {
     return;
   }
 
+  ret = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PSCI_0_2);
+  if (!ret) {
+    fprintf(stderr, "KVM_CAP_ARM_PSCI_0_2 unavailable\n");
+    abort();
+    return;
+  }
+
+  gHasPmuV3 = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PMU_V3) > 0;
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
   gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
   int address_space = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
+  int has32Bit = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_EL1_32BIT);
 
   int fd = ioctl(kvm, KVM_CREATE_VM, 0UL);
   if (fd == -1) {
@@ -237,7 +250,7 @@ static void init() {
   close(kvm);
   gKvmFd = fd;
 
-  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, address_space=0x%x\n", fd, gRunSize, gMaxSlots, address_space);
+  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, address_space=0x%x, has32Bit=%d\n", fd, gRunSize, gMaxSlots, address_space, has32Bit);
   printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx\n", HV_REG_X0, HV_REG_X1, HV_REG_PC);
 }
 
