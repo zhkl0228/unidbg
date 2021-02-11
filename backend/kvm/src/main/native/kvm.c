@@ -494,3 +494,32 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1write
   (*env)->ReleaseByteArrayElements(env, bytes, data, JNI_ABORT);
   return 0;
 }
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    mem_read
+ * Signature: (JJI)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1read
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jint size) {
+  t_kvm kvm = (t_kvm) handle;
+  khash_t(memory) *memory = kvm->memory;
+  jbyteArray bytes = (*env)->NewByteArray(env, size);
+  uint64_t dest = 0;
+  uint64_t vaddr_end = address + size;
+  uint64_t vaddr = address & ~KVM_PAGE_MASK;
+  for(; vaddr < vaddr_end; vaddr += KVM_PAGE_SIZE) {
+    uint64_t start = vaddr < address ? address - vaddr : 0;
+    uint64_t end = vaddr + KVM_PAGE_SIZE <= vaddr_end ? KVM_PAGE_SIZE : (vaddr_end - vaddr);
+    uint64_t len = end - start;
+    char *addr = get_memory_page(memory, vaddr, kvm->num_page_table_entries, kvm->page_table);
+    if(addr == NULL) {
+      fprintf(stderr, "mem_read failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return NULL;
+    }
+    jbyte *src = (jbyte *)&addr[start];
+    (*env)->SetByteArrayRegion(env, bytes, dest, len, src);
+    dest += len;
+  }
+  return bytes;
+}
