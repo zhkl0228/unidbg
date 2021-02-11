@@ -608,7 +608,7 @@ static struct kvm_run *current = NULL;
 static void sig_handler(int sig) {
   printf("sig_handler sig=%d, current=%p\n", sig, current);
   if(current) {
-//    current->immediate_exit = 1;
+    current->immediate_exit = 1;
   }
 }
 
@@ -620,7 +620,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
   sigIntHandler.sa_handler = sig_handler;
   sigemptyset(&sigIntHandler.sa_mask);
   sigIntHandler.sa_flags = 0;
-  sigaction(SIGINT, &sigIntHandler, NULL);
+  sigaction(SIGUSR1, &sigIntHandler, NULL);
 
   while(true) {
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
