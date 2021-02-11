@@ -72,6 +72,17 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         }
     }
 
+    protected InterruptHookNotifier interruptHookNotifier;
+
+    @Override
+    public final void hook_add_new(InterruptHook callback, Object user_data) throws BackendException {
+        if (interruptHookNotifier != null) {
+            throw new IllegalStateException();
+        } else {
+            interruptHookNotifier = new InterruptHookNotifier(callback, user_data);
+        }
+    }
+
     @Override
     public int getPageSize() {
         return pageSize;

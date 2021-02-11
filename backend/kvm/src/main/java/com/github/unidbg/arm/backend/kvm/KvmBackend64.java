@@ -107,11 +107,6 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public void hook_add_new(InterruptHook callback, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Unicorn.UnHook hook_add_new(BlockHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }
