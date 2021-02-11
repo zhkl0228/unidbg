@@ -622,10 +622,10 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
   sigIntHandler.sa_flags = 0;
   sigaction(SIGQUIT, &sigIntHandler, NULL);
 
+  uint64_t pc = 0;
   while(true) {
     uint64_t cpsr = 0;
     hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
-    uint64_t pc = 0;
     hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
     printf("before run cpsr=0x%llx, pc=0x%llx\n", cpsr, pc);
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
@@ -635,9 +635,10 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
       return -1;
     }
 
+    hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
     switch(cpu->run->exit_reason) {
       default:
-        fprintf(stderr, "Unexpected VM exit reason: %d\n", cpu->run->exit_reason);
+        fprintf(stderr, "Unexpected VM exit reason: %d, pc=0x%llx\n", cpu->run->exit_reason, pc);
         abort();
         break;
     }
