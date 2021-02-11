@@ -620,7 +620,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
   sigIntHandler.sa_handler = sig_handler;
   sigemptyset(&sigIntHandler.sa_mask);
   sigIntHandler.sa_flags = 0;
-  sigaction(SIGUSR1, &sigIntHandler, NULL);
+  sigaction(SIGQUIT, &sigIntHandler, NULL);
 
   while(true) {
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
