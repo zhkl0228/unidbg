@@ -139,6 +139,25 @@ typedef struct kvm {
   bool stop_request;
 } *t_kvm;
 
+static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
+    uint64_t idx = vaddr >> PAGE_BITS;
+    if(page_table && idx < num_page_table_entries) {
+      return (char *)page_table[idx];
+    }
+    uint64_t base = vaddr & ~KVM_PAGE_MASK;
+    khiter_t k = kh_get(memory, memory, base);
+    if(k == kh_end(memory)) {
+      return NULL;
+    }
+    t_memory_page page = kh_value(memory, k);
+    return (char *)page->addr;
+}
+
+static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
+    char *page = get_memory_page(memory, vaddr, num_page_table_entries, page_table);
+    return page ? &page[vaddr & HVF_PAGE_MASK] : NULL;
+}
+
 static t_kvm_cpu get_kvm_cpu(JNIEnv *env, t_kvm kvm) {
   t_kvm_cpu cpu = (t_kvm_cpu) pthread_getspecific(kvm->cpu_key);
   if(cpu) {
@@ -428,5 +447,36 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1sp64
   t_kvm kvm = (t_kvm) handle;
   t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SP_EL0, value));
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    mem_write
+ * Signature: (JJ[B)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1write
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address, jbyteArray bytes) {
+  jsize size = env->GetArrayLength(bytes);
+  jbyte *data = env->GetByteArrayElements(bytes, NULL);
+  t_kvm kvm = (t_kvm) handle;
+  khash_t(memory) *memory = kvm->memory;
+  char *src = (char *)data;
+  uint64_t vaddr_end = address + size;
+  for(uint64_t vaddr = address & ~KVM_PAGE_MASK; vaddr < vaddr_end; vaddr += KVM_PAGE_SIZE) {
+    uint64_t start = vaddr < address ? address - vaddr : 0;
+    uint64_t end = vaddr + KVM_PAGE_SIZE <= vaddr_end ? KVM_PAGE_SIZE : (vaddr_end - vaddr);
+    uint64_t len = end - start;
+    char *addr = get_memory_page(memory, vaddr, kvm->num_page_table_entries, kvm->page_table);
+    if(addr == NULL) {
+      fprintf(stderr, "mem_write failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 1;
+    }
+    char *dest = &addr[start];
+//    printf("mem_write address=%p, vaddr=%p, start=%ld, len=%ld, addr=%p, dest=%p\n", (void*)address, (void*)vaddr, start, len, addr, dest);
+    memcpy(dest, src, len);
+    src += len;
+  }
+  env->ReleaseByteArrayElements(bytes, data, JNI_ABORT);
   return 0;
 }
