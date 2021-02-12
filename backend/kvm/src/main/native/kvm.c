@@ -291,7 +291,7 @@ static void destroy() {
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_setKvmCallback
   (JNIEnv *env, jclass clazz, jlong handle, jobject callback) {
   t_kvm kvm = (t_kvm) handle;
-  kvm->callback = env->NewGlobalRef(callback);
+  kvm->callback = (*env)->NewGlobalRef(env, callback);
   return 0;
 }
 
