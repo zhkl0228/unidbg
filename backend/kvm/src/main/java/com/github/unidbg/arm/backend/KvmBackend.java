@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.kvm.Kvm;
 import com.github.unidbg.arm.backend.kvm.KvmCallback;
 import com.github.unidbg.arm.backend.kvm.KvmException;
@@ -107,6 +108,17 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         } catch (KvmException e) {
             throw new BackendException(e);
         }
+    }
+
+    protected final void callSVC(long pc, int swi) {
+        if (log.isDebugEnabled()) {
+            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until) + ", swi=" + swi);
+        }
+        if (pc == until) {
+            emu_stop();
+            return;
+        }
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_SWI, swi);
     }
 
     protected InterruptHookNotifier interruptHookNotifier;

@@ -25,7 +25,16 @@ public class KvmBackend64 extends KvmBackend {
         if (log.isDebugEnabled()) {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec));
         }
-        throw new IllegalStateException();
+        switch (ec) {
+            case EC_AA64_SVC: {
+                int swi = (int) (esr & 0xffff);
+                callSVC(elr, swi);
+                return true;
+            }
+            case EC_DATAABORT:
+            default:
+                throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
+        }
     }
 
     @Override
