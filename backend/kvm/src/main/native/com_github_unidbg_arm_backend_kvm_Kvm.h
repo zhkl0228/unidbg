@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    setKvmCallback
+ * Signature: (JLcom/github/unidbg/arm/backend/kvm/KvmCallback;)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_setKvmCallback
+  (JNIEnv *, jclass, jlong, jobject);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    getMaxSlots
  * Signature: ()I
  */
