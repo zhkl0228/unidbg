@@ -664,7 +664,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
     }
     hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
     int *code = (int *) pc;
-    printf("after run pc=0x%llx, code=0x%x\n", pc, *code);
+    printf("after run pc=%p\n", code);
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
     switch(cpu->run->exit_reason) {
