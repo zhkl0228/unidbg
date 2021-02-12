@@ -89,6 +89,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1tpid
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_read_pc64
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1pc64
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    mem_write
  * Signature: (JJ[B)I
  */
