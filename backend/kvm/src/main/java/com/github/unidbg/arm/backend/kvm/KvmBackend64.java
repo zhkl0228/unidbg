@@ -29,7 +29,7 @@ public class KvmBackend64 extends KvmBackend {
             if (elr > 0) {
                 emulator.attach().disassembleBlock(emulator, elr - 4, false);
             }
-            if (pc > 0) {
+            if (pc > 0 && pc != elr) {
                 emulator.attach().disassembleBlock(emulator, pc - 4, false);
             }
         }

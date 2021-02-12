@@ -662,9 +662,8 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
       fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
       return -1;
     }
-    hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
 
-    HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_PC, &pc));
     switch(cpu->run->exit_reason) {
       case KVM_EXIT_MMIO:
         if(cpu->run->mmio.phys_addr == MMIO_TRAP_ADDRESS || cpu->run->mmio.is_write || cpu->run->mmio.len == 1) {
