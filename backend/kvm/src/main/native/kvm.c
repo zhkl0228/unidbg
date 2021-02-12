@@ -663,8 +663,6 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
       return -1;
     }
     hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
-    int *code = (int *) pc;
-    printf("after run pc=%p\n", code);
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
     switch(cpu->run->exit_reason) {
@@ -678,7 +676,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
           HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &elr));
           uint64_t cpsr = 0;
           HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SPSR_EL1, &cpsr));
-          jboolean handled = (*env)->CallBooleanMethod(env, kvm->callback, handleException, esr, far, elr, cpsr);
+          jboolean handled = (*env)->CallBooleanMethod(env, kvm->callback, handleException, esr, far, elr, cpsr, pc);
           if ((*env)->ExceptionCheck(env)) {
             fprintf(stderr, "handle_exception cpsr=0x%llx\n", cpsr);
             return -1;
@@ -750,7 +748,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   if ((*env)->ExceptionCheck(env)) {
     return JNI_ERR;
   }
-  handleException = (*env)->GetMethodID(env, cKvmCallback, "handleException", "(JJJJ)Z");
+  handleException = (*env)->GetMethodID(env, cKvmCallback, "handleException", "(JJJJJ)Z");
 
   return JNI_VERSION_1_6;
 }

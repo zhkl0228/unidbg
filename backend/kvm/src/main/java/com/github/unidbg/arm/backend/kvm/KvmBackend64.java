@@ -20,13 +20,18 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public boolean handleException(long esr, long far, long elr, long spsr) {
+    public boolean handleException(long esr, long far, long elr, long spsr, long pc) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec));
+            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", pc=0x" + Long.toHexString(pc));
         }
-        if (log.isDebugEnabled() && elr > 0) {
-            emulator.attach().disassembleBlock(emulator, elr - 4, false);
+        if (log.isDebugEnabled()) {
+            if (elr > 0) {
+                emulator.attach().disassembleBlock(emulator, elr - 4, false);
+            }
+            if (pc > 0) {
+                emulator.attach().disassembleBlock(emulator, pc - 4, false);
+            }
         }
         switch (ec) {
             case EC_AA64_SVC: {
