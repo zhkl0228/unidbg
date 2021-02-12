@@ -285,6 +285,18 @@ static void destroy() {
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    setKvmCallback
+ * Signature: (JLcom/github/unidbg/arm/backend/kvm/KvmCallback;)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_setKvmCallback
+  (JNIEnv *env, jclass clazz, jlong handle, jobject callback) {
+  t_kvm kvm = (t_kvm) handle;
+  kvm->callback = env->NewGlobalRef(callback);
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    nativeInitialize
  * Signature: (Z)J
  */
