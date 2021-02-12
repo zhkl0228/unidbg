@@ -654,7 +654,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
     switch(cpu->run->exit_reason) {
       case KVM_EXIT_MMIO:
-        if(run->mmio.phys_addr == MMIO_TRAP_ADDRESS || run->mmio.is_write || run->mmio.len == 1) {
+        if(cpu->run->mmio.phys_addr == MMIO_TRAP_ADDRESS || cpu->run->mmio.is_write || cpu->run->mmio.len == 1) {
           break;
         }
       default:
@@ -715,14 +715,14 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   setvbuf(stderr, NULL, _IONBF, 0);
 
   JNIEnv *env;
-  if (JNI_OK != vm->GetEnv((void **)&env, JNI_VERSION_1_6)) {
+  if (JNI_OK != (*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_6)) {
     return JNI_ERR;
   }
-  jclass cKvmCallback = env->FindClass("com/github/unidbg/arm/backend/kvm/KvmCallback");
-  if (env->ExceptionCheck()) {
+  jclass cKvmCallback = (*env)->FindClass(env, "com/github/unidbg/arm/backend/kvm/KvmCallback");
+  if ((*env)->ExceptionCheck(env)) {
     return JNI_ERR;
   }
-  handleException = env->GetMethodID(cKvmCallback, "handleException", "(JJJJ)Z");
+  handleException = (*env)->GetMethodID(env, cKvmCallback, "handleException", "(JJJJ)Z");
 
   return JNI_VERSION_1_6;
 }
