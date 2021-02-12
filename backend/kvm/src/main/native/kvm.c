@@ -197,11 +197,11 @@ static t_kvm_cpu get_kvm_cpu(JNIEnv *env, t_kvm kvm) {
     cpu->run = run;
 
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
-//    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
-//    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
-//    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
-//    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
-//    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SP_EL1, MMIO_TRAP_ADDRESS));
 //    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR0_EL1, 0x5));
 //    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR2_EL1, 0x10000));
@@ -649,7 +649,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
       return -1;
     }
 
-    hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
     switch(cpu->run->exit_reason) {
       default:
         fprintf(stderr, "Unexpected VM exit reason: %d, pc=0x%llx\n", cpu->run->exit_reason, pc);
