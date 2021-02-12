@@ -9,6 +9,8 @@ public class Kvm implements Closeable {
 
     private static final Log log = LogFactory.getLog(Kvm.class);
 
+    private static native int setKvmCallback(long handle, KvmCallback callback);
+
     public static native int getMaxSlots();
     public static native int getPageSize();
     private static native long nativeInitialize(boolean is64Bit);
@@ -49,6 +51,11 @@ public class Kvm implements Closeable {
     public void setKvmCallback(KvmCallback callback) {
         if (log.isDebugEnabled()) {
             log.debug("setKvmCallback callback" + callback);
+        }
+
+        int ret = setKvmCallback(nativeHandle, callback);
+        if (ret != 0) {
+            throw new KvmException("ret=" + ret);
         }
     }
 

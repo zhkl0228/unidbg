@@ -140,6 +140,8 @@ typedef struct kvm {
   bool stop_request;
 } *t_kvm;
 
+static jmethodID handleException = NULL;
+
 static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
     uint64_t idx = vaddr >> PAGE_BITS;
     if(page_table && idx < num_page_table_entries) {
@@ -651,6 +653,10 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
     switch(cpu->run->exit_reason) {
+      case KVM_EXIT_MMIO:
+        if(run->mmio.phys_addr == MMIO_TRAP_ADDRESS || run->mmio.is_write || run->mmio.len == 1) {
+          break;
+        }
       default:
         fprintf(stderr, "Unexpected VM exit reason: %d, pc=0x%llx\n", cpu->run->exit_reason, pc);
         abort();
@@ -707,6 +713,16 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1stop
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
+
+  JNIEnv *env;
+  if (JNI_OK != vm->GetEnv((void **)&env, JNI_VERSION_1_6)) {
+    return JNI_ERR;
+  }
+  jclass cKvmCallback = env->FindClass("com/github/unidbg/arm/backend/kvm/KvmCallback");
+  if (env->ExceptionCheck()) {
+    return JNI_ERR;
+  }
+  handleException = env->GetMethodID(cKvmCallback, "handleException", "(JJJJ)Z");
 
   return JNI_VERSION_1_6;
 }

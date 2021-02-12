@@ -16,6 +16,11 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
+    public boolean handleException(long esr, long far, long elr, long spsr) {
+        throw new IllegalStateException();
+    }
+
+    @Override
     public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
         emulator.attach().disassembleBlock(emulator, begin, false);
 
