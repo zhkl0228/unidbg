@@ -667,6 +667,19 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
     switch(cpu->run->exit_reason) {
       case KVM_EXIT_MMIO:
         if(cpu->run->mmio.phys_addr == MMIO_TRAP_ADDRESS || cpu->run->mmio.is_write || cpu->run->mmio.len == 1) {
+          uint64_t esr = 0;
+          HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ESR_EL1, &esr));
+          uint64_t far = 0;
+          HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_FAR_EL1, &far));
+          uint64_t elr;
+          HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &elr));
+          uint64_t cpsr = 0;
+          HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SPSR_EL1, &cpsr));
+          jboolean handled = env->CallBooleanMethod(kvm->callback, handleException, esr, far, elr, cpsr);
+          if (env->ExceptionCheck()) {
+            fprintf(stderr, "handle_exception cpsr=0x%llx\n", cpsr);
+            return -1;
+          }
           break;
         }
       default:

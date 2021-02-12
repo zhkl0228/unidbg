@@ -6,10 +6,14 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
 
 public class KvmBackend64 extends KvmBackend {
+
+    private static final Log log = LogFactory.getLog(KvmBackend64.class);
 
     public KvmBackend64(Emulator<?> emulator, Kvm kvm) throws BackendException {
         super(emulator, kvm);
@@ -17,6 +21,10 @@ public class KvmBackend64 extends KvmBackend {
 
     @Override
     public boolean handleException(long esr, long far, long elr, long spsr) {
+        int ec = (int) ((esr >> 26) & 0x3f);
+        if (log.isDebugEnabled()) {
+            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec));
+        }
         throw new IllegalStateException();
     }
 
