@@ -71,6 +71,8 @@ public class KvmBackend64 extends KvmBackend {
                     return kvm.reg_read_cpacr_el1();
                 case Arm64Const.UC_ARM64_REG_SP:
                     return kvm.reg_read_sp64();
+                case Arm64Const.UC_ARM64_REG_PC:
+                    return kvm.reg_read_pc64();
                 default:
                     throw new KvmException("regId=" + regId);
             }
