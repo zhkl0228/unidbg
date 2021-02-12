@@ -662,6 +662,8 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
       fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
       return -1;
     }
+    hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
+    printf("after run pc=0x%llx\n", pc);
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
     switch(cpu->run->exit_reason) {
