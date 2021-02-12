@@ -25,6 +25,9 @@ public class KvmBackend64 extends KvmBackend {
         if (log.isDebugEnabled()) {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec));
         }
+        if (log.isDebugEnabled() && elr > 0) {
+            emulator.attach().disassembleBlock(emulator, elr - 4, false);
+        }
         switch (ec) {
             case EC_AA64_SVC: {
                 int swi = (int) (esr & 0xffff);
