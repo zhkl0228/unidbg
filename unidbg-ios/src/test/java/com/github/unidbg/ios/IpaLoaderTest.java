@@ -33,11 +33,21 @@ public class IpaLoaderTest implements EmulatorConfigurator {
         final Module module = loader.getExecutable();
         emulator.attach().run(new Callable<Void>() {
             @Override
-            public Void call() {
+            public Void call() throws Exception {
                 long start = System.currentTimeMillis();
-                IClassDumper classDumper = ClassDumper.getInstance(emulator);
+                final IClassDumper classDumper = ClassDumper.getInstance(emulator);
                 String objcClass = classDumper.dumpClass("AppDelegate");
-                System.out.println(objcClass);
+                System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass);
+
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String objcClass = classDumper.dumpClass("NSDate");
+                        System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass);
+                    }
+                });
+                thread.start();
+                thread.join();
 
                 Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");
                 Pointer pointer = UnidbgPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
