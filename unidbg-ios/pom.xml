@@ -5,28 +5,28 @@
     <parent>
         <groupId>com.github.zhkl0228</groupId>
         <artifactId>unidbg-parent</artifactId>
-        <version>0.9.3</version>
+        <version>0.9.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>unidbg-ios</artifactId>
-    <version>0.9.3</version>
+    <version>0.9.4-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-api</artifactId>
-            <version>0.9.3</version>
+            <version>0.9.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-dynarmic</artifactId>
-            <version>0.9.3</version>
+            <version>0.9.4-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-hypervisor</artifactId>
-            <version>0.9.3</version>
+            <version>0.9.4-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
