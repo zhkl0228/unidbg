@@ -45,13 +45,6 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
-        emulator.attach().disassembleBlock(emulator, begin, false);
-
-        super.emu_start(begin, until, timeout, count);
-    }
-
-    @Override
     public void switchUserMode() {
     }
 
