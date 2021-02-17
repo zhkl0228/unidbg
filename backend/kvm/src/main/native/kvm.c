@@ -714,7 +714,11 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
           }
         }
       default:
-        fprintf(stderr, "Unexpected VM exit reason: %d, pc=0x%llx\n", cpu->run->exit_reason, pc);
+        uint64_t elr;
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &elr));
+        uint64_t far = 0;
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_FAR_EL1, &far));
+        fprintf(stderr, "Unexpected VM exit reason: %d, pc=0x%llx, elr=0x%llx, far=0x%llx\n", cpu->run->exit_reason, pc, elr, far);
         return 2;
     }
 
