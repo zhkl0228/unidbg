@@ -103,18 +103,27 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     @Override
     public final void mem_write(long address, byte[] bytes) throws BackendException {
         try {
+            if (address < 0x40a3aaac && address + bytes.length >= 0x40a3aaac + 4) {
+                long addr = 0x40a3aaac;
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putInt((int) (addr - address), 0xd4011101);
+            }
+            if (address < 0x40a3aa98 && address + bytes.length >= 0x40a3aa98 + 4) {
+                long addr = 0x40a3aa98;
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putInt((int) (addr - address), 0xd4011101);
+            }
+
             kvm.mem_write(address, bytes);
 
             if (address < 0x40a3aaac && address + bytes.length >= 0x40a3aaac + 4) {
                 long addr = 0x40a3aaac;
-//                emulator.attach().addBreakPoint(addr);
-                UnidbgPointer.pointer(emulator, addr).setInt(0, 0xd4011101);
                 emulator.attach().disassembleBlock(emulator, addr, false);
             }
             if (address < 0x40a3aa98 && address + bytes.length >= 0x40a3aa98 + 4) {
                 long addr = 0x40a3aa98;
-//                emulator.attach().addBreakPoint(addr);
-                UnidbgPointer.pointer(emulator, addr).setInt(0, 0xd4011101);
                 emulator.attach().disassembleBlock(emulator, addr, false);
             }
         } catch (KvmException e) {
