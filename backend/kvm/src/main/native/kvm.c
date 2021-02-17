@@ -373,7 +373,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1memory_1region
   (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr, jlong vaddr_off) {
-  printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off);
 
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
@@ -384,6 +383,8 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
     fprintf(stderr, "munmap failed: userspace_addr=0x%llx, memory_size=0x%llx\n", userspace_addr, memory_size);
     return 1;
   }
+
+  printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off, start_addr);
 
   struct kvm_userspace_memory_region region = {
     .slot = slot,
@@ -398,7 +399,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
   }
 
   uint64_t vaddr = guest_phys_addr + vaddr_off;
-  for(; vaddr < guest_phys_addr + memory_size; vaddr += KVM_PAGE_SIZE) {
+  for(; vaddr < guest_phys_addr + vaddr_off + memory_size; vaddr += KVM_PAGE_SIZE) {
     uint64_t idx = vaddr >> PAGE_BITS;
     khiter_t k = kh_get(memory, memory, vaddr);
     if(k == kh_end(memory)) {
@@ -423,8 +424,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1memory_1region
   (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr) {
-  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx\n", slot, guest_phys_addr, memory_size, userspace_addr);
-
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
 
@@ -437,6 +436,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
       return 0L;
     }
   }
+
+  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
 
   struct kvm_userspace_memory_region region = {
     .slot = slot,
