@@ -147,7 +147,9 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
         }
-        emulator.attach().addBreakPoint(begin);
+        if (begin == 0x40a3aa98) {
+            emulator.attach().addBreakPoint(begin);
+        }
 
         this.until = until + 4;
         try {
