@@ -123,7 +123,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
                 slots[newRegion.slot] = newRegion;
                 return;
             }
-            if (address > region.guest_phys_addr && address + size == region.memory_size) {
+            if (address > region.guest_phys_addr && address + size == region.guest_phys_addr + region.memory_size) {
                 long off = address - region.guest_phys_addr;
                 kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, size, region.userspace_addr, off);
                 memoryRegionMap.remove(region.guest_phys_addr);
