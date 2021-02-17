@@ -175,11 +175,6 @@ public class KvmBackend64 extends KvmBackend {
     }
 
     @Override
-    public void mem_protect(long address, long size, int perms) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Unicorn.UnHook hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }

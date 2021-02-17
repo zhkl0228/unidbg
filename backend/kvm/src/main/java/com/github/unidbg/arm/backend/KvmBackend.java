@@ -139,6 +139,10 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     }
 
     @Override
+    public final void mem_protect(long address, long size, int perms) throws BackendException {
+    }
+
+    @Override
     public final void mem_write(long address, byte[] bytes) throws BackendException {
         try {
             kvm.mem_write(address, bytes);
