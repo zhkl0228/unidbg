@@ -395,7 +395,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     abort();
     return 0L;
   }
-  printf("set_user_memory_region slot=0x%x, guest_phys_addr=0x%llx, memory_size=0x%llx, userspace_addr=%p\n", slot, guest_phys_addr, memory_size, start_addr);
+//  printf("set_user_memory_region slot=0x%x, guest_phys_addr=0x%llx, memory_size=0x%llx, userspace_addr=%p\n", slot, guest_phys_addr, memory_size, start_addr);
 
   int ret;
   uint64_t vaddr = guest_phys_addr;
@@ -745,7 +745,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
     int cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
     printf("emu_start cpsr=0x%x, pc=0x%lx\n", cpsr, pc);
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, cpsr));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc - 4));
   } else {
     bool thumb = pc & 1;
     if(thumb) {
