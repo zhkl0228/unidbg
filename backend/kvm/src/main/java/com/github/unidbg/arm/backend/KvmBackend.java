@@ -107,16 +107,16 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
                 long addr = 0x40a3aaac;
                 ByteBuffer buffer = ByteBuffer.wrap(bytes);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
-                buffer.putInt((int) (addr - address), 0x10000002); // adr x2, #0
-                buffer.putInt((int) (addr - address) + 4, 0xf9400041); // ldr x1, [x2]
+                buffer.putInt((int) (addr - address), 0x10000003); // adr x3, #0
+                buffer.putInt((int) (addr - address) + 4, 0xf9400061); // ldr x1, [x3]
                 buffer.putInt((int) (addr - address) + 8, 0xd400aaa1); // svc #0x555
             }
             if (address < 0x40a3aa98 && address + bytes.length >= 0x40a3aa98 + 4) {
                 long addr = 0x40a3aa98;
                 ByteBuffer buffer = ByteBuffer.wrap(bytes);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
-                buffer.putInt((int) (addr - address), 0x10000002); // adr x2, #0
-                buffer.putInt((int) (addr - address) + 4, 0xf9400041); // ldr x1, [x2]
+                buffer.putInt((int) (addr - address), 0x10000003); // adr x3, #0
+                buffer.putInt((int) (addr - address) + 4, 0xf9400061); // ldr x1, [x3]
                 buffer.putInt((int) (addr - address) + 8, 0xd400aaa1); // svc #0x555
             }
 
