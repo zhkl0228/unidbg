@@ -384,7 +384,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
     return 1;
   }
 
-  printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off, start_addr);
+//  printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off, start_addr);
 
   struct kvm_userspace_memory_region region = {
     .slot = slot,
@@ -437,7 +437,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     }
   }
 
-  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
+//  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
 
   struct kvm_userspace_memory_region region = {
     .slot = slot,
@@ -713,25 +713,13 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
   uint64_t pc = 0;
   uint64_t lr = 0;
   uint64_t sp = 0;
+  uint64_t cpsr = 0;
   while(true) {
-    uint64_t cpsr = 0;
-    hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
-    hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
-    hv_vcpu_get_reg(cpu, HV_REG_LR, &lr);
-    hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SP_EL0, &sp);
-//    printf("before run cpsr=0x%llx, pc=0x%llx, lr=0x%llx, sp=0x%llx\n", cpsr, pc, lr, sp);
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
       hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
       hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
       fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
       return -1;
-    }
-    {
-      hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
-      hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
-      hv_vcpu_get_reg(cpu, HV_REG_LR, &lr);
-      hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SP_EL0, &sp);
-//      printf("after run cpsr=0x%llx, pc=0x%llx, lr=0x%llx, sp=0x%llx\n", cpsr, pc, lr, sp);
     }
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_PC, &pc));
