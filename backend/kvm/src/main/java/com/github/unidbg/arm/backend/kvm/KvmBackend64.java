@@ -57,8 +57,6 @@ public class KvmBackend64 extends KvmBackend {
         emulator.attach().disassembleBlock(emulator, begin, false);
 
         super.emu_start(begin, until, timeout, count);
-
-        emulator.attach().disassembleBlock(emulator, begin, false);
     }
 
     @Override

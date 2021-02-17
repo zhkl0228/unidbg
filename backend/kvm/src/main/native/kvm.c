@@ -256,6 +256,13 @@ static void init() {
     return;
   }
 
+  ret = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_IMMEDIATE_EXIT);
+  if (!ret) {
+    fprintf(stderr, "KVM_CAP_IMMEDIATE_EXIT unavailable\n");
+    abort();
+    return;
+  }
+
   gHasPmuV3 = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PMU_V3) > 0;
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
   gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
@@ -646,8 +653,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
 }
 
 static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
-  cpu->run->immediate_exit = 0;
-
   uint64_t pc = 0;
   uint64_t lr = 0;
   uint64_t sp = 0;
