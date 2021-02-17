@@ -372,11 +372,11 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
  * Signature: (JIJJJ)I
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1memory_1region
-  (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr) {
+  (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr, jlong vaddr_off) {
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
 
-  char *start_addr = (char *) userspace_addr;
+  char *start_addr = (char *) (userspace_addr + vaddr_off);
   int ret = munmap(start_addr, memory_size);
   if(ret != 0) {
     fprintf(stderr, "munmap failed: userspace_addr=0x%llx, memory_size=0x%llx\n", userspace_addr, memory_size);
@@ -395,7 +395,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
     return 2;
   }
 
-  uint64_t vaddr = guest_phys_addr;
+  uint64_t vaddr = guest_phys_addr + vaddr_off;
   for(; vaddr < guest_phys_addr + memory_size; vaddr += KVM_PAGE_SIZE) {
     uint64_t idx = vaddr >> PAGE_BITS;
     khiter_t k = kh_get(memory, memory, vaddr);
