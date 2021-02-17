@@ -104,6 +104,17 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     public final void mem_write(long address, byte[] bytes) throws BackendException {
         try {
             kvm.mem_write(address, bytes);
+
+            if (address >= 0x40a3aaac && address + bytes.length >= 0x40a3aaac + 4) {
+                long addr = 0x40a3aaac;
+                emulator.attach().addBreakPoint(addr);
+                emulator.attach().disassembleBlock(emulator, addr, false);
+            }
+            if (address >= 0x40a3aa98 && address + bytes.length >= 0x40a3aa98 + 4) {
+                long addr = 0x40a3aa98;
+                emulator.attach().addBreakPoint(addr);
+                emulator.attach().disassembleBlock(emulator, addr, false);
+            }
         } catch (KvmException e) {
             throw new BackendException(e);
         }
@@ -146,17 +157,6 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
-        }
-
-        if (begin == 0x40a3aaac) {
-            long addr = 0x40a3aaac;
-            emulator.attach().addBreakPoint(addr);
-            emulator.attach().disassembleBlock(emulator, addr, false);
-        }
-        if (begin == 0x40a3aa98) {
-            long addr = 0x40a3aa98;
-            emulator.attach().addBreakPoint(addr);
-            emulator.attach().disassembleBlock(emulator, addr, false);
         }
 
         this.until = until + 4;
