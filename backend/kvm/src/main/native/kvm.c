@@ -652,12 +652,14 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
 
   uint64_t pc = 0;
   uint64_t lr = 0;
+  uint64_t sp = 0;
   while(true) {
     uint64_t cpsr = 0;
     hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
     hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
     hv_vcpu_get_reg(cpu, HV_REG_LR, &lr);
-    printf("before run cpsr=0x%llx, pc=0x%llx, lr=0x%llx\n", cpsr, pc, lr);
+    hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SP_EL0, &sp)
+    printf("before run cpsr=0x%llx, pc=0x%llx, lr=0x%llx, sp=0x%llx\n", cpsr, pc, lr, sp);
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
       hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
       hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
@@ -668,7 +670,8 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
       hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
       hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
       hv_vcpu_get_reg(cpu, HV_REG_LR, &lr);
-      printf("after run cpsr=0x%llx, pc=0x%llx, lr=0x%llx\n", cpsr, pc, lr);
+      hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SP_EL0, &sp)
+      printf("after run cpsr=0x%llx, pc=0x%llx, lr=0x%llx, sp=0x%llx\n", cpsr, pc, lr, sp);
     }
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_PC, &pc));
