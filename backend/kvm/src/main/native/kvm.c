@@ -710,7 +710,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
     }
 
     if(kvm->stop_request) {
-      cpu->offset = -4;
+      cpu->offset = 4;
       break;
     }
   }
@@ -731,7 +731,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
     int cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
     printf("emu_start cpsr=0x%x, pc=0x%lx\n", cpsr, pc);
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, cpsr));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc + cpu->offset));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc - cpu->offset));
   } else {
     bool thumb = pc & 1;
     if(thumb) {
