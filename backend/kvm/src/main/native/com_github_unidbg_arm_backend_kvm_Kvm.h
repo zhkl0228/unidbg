@@ -50,10 +50,10 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    set_user_memory_region
- * Signature: (JIJJ)J
+ * Signature: (JIJJJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1memory_1region
-  (JNIEnv *, jclass, jlong, jint, jlong, jlong);
+  (JNIEnv *, jclass, jlong, jint, jlong, jlong, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
