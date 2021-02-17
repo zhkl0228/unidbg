@@ -49,6 +49,16 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
         assert ptr != null;
         ptr.write(buffer.array());
+
+        mem_map(0, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        buffer = ByteBuffer.allocate(getPageSize());
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        while (buffer.hasRemaining()) {
+            buffer.putInt(0xd4011101); // svc #0x888
+        }
+        ptr = UnidbgPointer.pointer(emulator, 0x0);
+        assert ptr != null;
+        mem_write(0, buffer.array());
     }
 
     private int allocateSlot() {
