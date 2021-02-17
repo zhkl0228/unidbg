@@ -368,6 +368,54 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    remove_user_memory_region
+ * Signature: (JIJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1memory_1region
+  (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr) {
+  t_kvm kvm = (t_kvm) handle;
+  khash_t(memory) *memory = kvm->memory;
+
+  char *start_addr = (char *) userspace_addr;
+  int ret = munmap(start_addr, memory_size);
+  if(ret != 0) {
+    fprintf(stderr, "munmap failed: userspace_addr=0x%llx, memory_size=0x%llx\n", userspace_addr, memory_size);
+    return 1;
+  }
+
+  struct kvm_userspace_memory_region region = {
+    .slot = slot,
+    .flags = 0,
+    .guest_phys_addr = guest_phys_addr,
+    .memory_size = 0,
+    .userspace_addr = userspace_addr,
+  };
+  if (ioctl(gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
+    fprintf(stderr, "set_user_memory_region failed userspace_addr=0x%llx, guest_phys_addr=0x%lx\n", userspace_addr, guest_phys_addr);
+    return 2;
+  }
+
+  uint64_t vaddr = guest_phys_addr;
+  for(; vaddr < guest_phys_addr + memory_size; vaddr += KVM_PAGE_SIZE) {
+    uint64_t idx = vaddr >> PAGE_BITS;
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+    if(kvm->page_table && idx < kvm->num_page_table_entries) {
+      kvm->page_table[idx] = NULL;
+    }
+    t_memory_page page = kh_value(memory, k);
+    free(page);
+    kh_del(memory, memory, k);
+  }
+
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    set_user_memory_region
  * Signature: (JIJJ)J
  */
