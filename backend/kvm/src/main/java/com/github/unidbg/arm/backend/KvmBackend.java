@@ -84,12 +84,12 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     @Override
     public final void mem_map(long address, long size, int perms) throws BackendException {
         int slot = allocateSlot();
-        long userspace_addr = kvm.set_user_memory_region(slot, address, size);
+        long userspace_addr = kvm.set_user_memory_region(slot, address, size, 0L);
         if (log.isDebugEnabled()) {
             log.debug("mem_map slot=" + slot + ", address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", userspace_addr=0x" + Long.toHexString(userspace_addr));
         }
         UserMemoryRegion region = new UserMemoryRegion(slot, address, size, userspace_addr);
-        memoryRegionMap.put(address, region);
+        memoryRegionMap.put(region.guest_phys_addr, region);
         slots[slot++] = region;
         slotIndex = slot;
     }
@@ -111,6 +111,16 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
                 slotIndex = region.slot;
                 slots[slotIndex] = null;
                 memoryRegionMap.remove(region.guest_phys_addr);
+                return;
+            }
+            if (address == region.guest_phys_addr && size < region.memory_size) {
+                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, size, region.userspace_addr);
+                memoryRegionMap.remove(region.guest_phys_addr);
+
+                long userspace_addr = kvm.set_user_memory_region(region.slot, region.guest_phys_addr + size, region.memory_size - size, region.userspace_addr + size);
+                UserMemoryRegion newRegion = new UserMemoryRegion(region.slot, region.guest_phys_addr + size, region.memory_size - size, userspace_addr);
+                memoryRegionMap.put(newRegion.guest_phys_addr, newRegion);
+                slots[newRegion.slot] = newRegion;
                 return;
             }
         }
