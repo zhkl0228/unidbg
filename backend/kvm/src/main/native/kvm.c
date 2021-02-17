@@ -458,7 +458,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     uint64_t idx = vaddr >> PAGE_BITS;
     if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
       fprintf(stderr, "set_user_memory_region failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-      abort();
       return 0L;
     }
 
