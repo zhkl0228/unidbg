@@ -17,6 +17,7 @@ public class Kvm implements Closeable {
     private static native void nativeDestroy(long handle);
 
     private static native long set_user_memory_region(long handle, int slot, long guest_phys_addr, long memory_size);
+    private static native int remove_user_memory_region(long handle, int slot, long guest_phys_addr, long memory_size, long userspace_addr);
 
     private static native long reg_read_cpacr_el1(long handle);
     private static native int reg_set_cpacr_el1(long handle, long value);
@@ -66,6 +67,13 @@ public class Kvm implements Closeable {
             throw new KvmException("set_user_memory_region failed: slot=" + slot + ", guest_phys_addr=0x" + Long.toHexString(guest_phys_addr) + ", memory_size=0x" + Long.toHexString(memory_size));
         }
         return userspace_addr;
+    }
+
+    public void remove_user_memory_region(int slot, long guest_phys_addr, long memory_size, long userspace_addr) {
+        int ret = remove_user_memory_region(nativeHandle, slot, guest_phys_addr, memory_size, userspace_addr);
+        if (ret != 0) {
+            throw new KvmException("remove_user_memory_region failed: slot=" + slot + ", guest_phys_addr=0x" + Long.toHexString(guest_phys_addr) + ", memory_size=0x" + Long.toHexString(memory_size) + ", userspace_addr=0x" + Long.toHexString(userspace_addr));
+        }
     }
 
     public long reg_read_cpacr_el1() {

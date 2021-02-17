@@ -104,6 +104,16 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
                 list.add(region);
             }
         }
+        if (list.size() == 1) {
+            UserMemoryRegion region = list.get(0);
+            if (address == region.guest_phys_addr && size == region.memory_size) {
+                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size, region.userspace_addr);
+                slotIndex = region.slot;
+                slots[slotIndex] = null;
+                memoryRegionMap.remove(region.guest_phys_addr);
+                return;
+            }
+        }
         throw new UnsupportedOperationException("address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", list=" + list);
     }
 
