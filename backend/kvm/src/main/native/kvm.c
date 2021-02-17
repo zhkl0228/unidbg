@@ -395,6 +395,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     abort();
     return 0L;
   }
+  printf("set_user_memory_region slot=0x%x, guest_phys_addr=0x%llx, memory_size=0x%llx, userspace_addr=%p\n", slot, guest_phys_addr, memory_size, start_addr);
 
   int ret;
   uint64_t vaddr = guest_phys_addr;
@@ -407,6 +408,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     }
 
     void *addr = &start_addr[vaddr - guest_phys_addr];
+    printf("set_user_memory_region vaddr=0x%llx addr=%p\n", vaddr, addr);
     if(kvm->page_table && idx < kvm->num_page_table_entries) {
       kvm->page_table[idx] = addr;
     } else {
