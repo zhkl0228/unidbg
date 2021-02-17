@@ -373,6 +373,8 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1memory_1region
   (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr, jlong vaddr_off) {
+  printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off);
+
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
 
@@ -421,6 +423,8 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1memory_1region
   (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr) {
+  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx\n", slot, guest_phys_addr, memory_size, userspace_addr);
+
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
 

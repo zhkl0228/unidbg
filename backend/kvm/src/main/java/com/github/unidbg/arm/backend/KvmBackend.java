@@ -83,6 +83,8 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     @Override
     public final void mem_map(long address, long size, int perms) throws BackendException {
+        System.out.println("mem_map address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
+
         int slot = allocateSlot();
         long userspace_addr = kvm.set_user_memory_region(slot, address, size, 0L);
         if (log.isDebugEnabled()) {
@@ -96,6 +98,8 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     @Override
     public final void mem_unmap(long address, long size) throws BackendException {
+        System.out.println("mem_unmap address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
+
         List<UserMemoryRegion> list = new ArrayList<>();
         for (UserMemoryRegion region : memoryRegionMap.values()) {
             long min = Math.max(address, region.guest_phys_addr);
