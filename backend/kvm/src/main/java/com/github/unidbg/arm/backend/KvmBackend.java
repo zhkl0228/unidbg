@@ -13,6 +13,8 @@ import unicorn.UnicornConst;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -94,7 +96,15 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     @Override
     public final void mem_unmap(long address, long size) throws BackendException {
-        throw new UnsupportedOperationException("address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
+        List<UserMemoryRegion> list = new ArrayList<>();
+        for (UserMemoryRegion region : memoryRegionMap.values()) {
+            long min = Math.max(address, region.guest_phys_addr);
+            long max = Math.min(address + size, region.guest_phys_addr + region.memory_size);
+            if (min < max) {
+                list.add(region);
+            }
+        }
+        throw new UnsupportedOperationException("address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", list=" + list);
     }
 
     @Override

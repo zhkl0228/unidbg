@@ -15,4 +15,14 @@ final class UserMemoryRegion {
         this.userspace_addr = userspace_addr;
     }
 
+    @Override
+    public String toString() {
+        return "UserMemoryRegion{" +
+                "slot=" + slot +
+                ", guest_phys_addr=0x" + Long.toHexString(guest_phys_addr) +
+                ", memory_size=0x" + Long.toHexString(memory_size) +
+                ", userspace_addr=0x" + Long.toHexString(userspace_addr) +
+                '}';
+    }
+
 }
