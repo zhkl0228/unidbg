@@ -58,10 +58,10 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    remove_user_memory_region
- * Signature: (JIJJJ)I
+ * Signature: (JIJJJJ)I
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1memory_1region
-  (JNIEnv *, jclass, jlong, jint, jlong, jlong, jlong);
+  (JNIEnv *, jclass, jlong, jint, jlong, jlong, jlong, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
