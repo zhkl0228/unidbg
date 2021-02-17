@@ -496,6 +496,20 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1pc
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_read_nzcv
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1nzcv
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_kvm kvm = (t_kvm) handle;
+  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  uint64_t cpsr = 0;
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr));
+  return cpsr;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    reg_set_tpidr_el0
  * Signature: (JJ)I
  */
