@@ -153,6 +153,11 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
             emulator.attach().addBreakPoint(addr);
             emulator.attach().disassembleBlock(emulator, addr, false);
         }
+        if (begin == 0x40a3aa98) {
+            long addr = 0x40a3aa98;
+            emulator.attach().addBreakPoint(addr);
+            emulator.attach().disassembleBlock(emulator, addr, false);
+        }
 
         this.until = until + 4;
         try {
