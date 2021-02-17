@@ -103,34 +103,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     @Override
     public final void mem_write(long address, byte[] bytes) throws BackendException {
         try {
-            if (address < 0x40a3aaac && address + bytes.length >= 0x40a3aaac + 4) {
-                long addr = 0x40a3aaac;
-                ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                buffer.putInt((int) (addr - address), 0x10000003); // adr x3, #0
-                buffer.putInt((int) (addr - address) + 4, 0xb9400061); // ldr w1, [x3]
-                buffer.putInt((int) (addr - address) + 8, 0xd400aaa1); // svc #0x555
-            }
-            if (address < 0x40a3aa98 && address + bytes.length >= 0x40a3aa98 + 4) {
-                long addr = 0x40a3aa98;
-                ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                buffer.putInt((int) (addr - address), 0xb9400060); // ldr w0, [x3]
-                buffer.putInt((int) (addr - address) + 4, 0x10000003); // adr x3, #0
-                buffer.putInt((int) (addr - address) + 8, 0xb9400061); // ldr w1, [x3]
-                buffer.putInt((int) (addr - address) + 12, 0xd400aaa1); // svc #0x555
-            }
-
             kvm.mem_write(address, bytes);
-
-            if (address < 0x40a3aaac && address + bytes.length >= 0x40a3aaac + 4) {
-                long addr = 0x40a3aaac;
-                emulator.attach().disassembleBlock(emulator, addr, false);
-            }
-            if (address < 0x40a3aa98 && address + bytes.length >= 0x40a3aa98 + 4) {
-                long addr = 0x40a3aa98;
-                emulator.attach().disassembleBlock(emulator, addr - 4, false);
-            }
         } catch (KvmException e) {
             throw new BackendException(e);
         }
@@ -174,6 +147,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
         }
+        emulator.attach().addBreakPoint(begin);
 
         this.until = until + 4;
         try {
