@@ -662,6 +662,13 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
       fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
       return -1;
     }
+    {
+      hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
+      hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
+      uint64_t lr = 0;
+      hv_vcpu_get_reg(cpu, HV_REG_LR, &lr);
+      printf("after run cpsr=0x%llx, pc=0x%llx, lr=0x%llx\n", cpsr, pc, lr);
+    }
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_PC, &pc));
     switch(cpu->run->exit_reason) {
