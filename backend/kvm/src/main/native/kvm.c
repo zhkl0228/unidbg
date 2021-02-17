@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <signal.h>
 
 #include "kvm.h"
 
@@ -137,7 +136,6 @@ typedef struct kvm {
   void **page_table;
   pthread_key_t cpu_key;
   jobject callback;
-  bool stop_request;
 } *t_kvm;
 
 static jmethodID handleException = NULL;
@@ -647,24 +645,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
   return value;
 }
 
-static struct kvm_run *current = NULL;
-
-static void sig_handler(int sig) {
-  printf("sig_handler sig=%d, current=%p\n", sig, current);
-  if(current) {
-    current->immediate_exit = 1;
-  }
-}
-
 static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
-  kvm->stop_request = false;
-
-  current = cpu->run;
-  struct sigaction sigIntHandler;
-  sigIntHandler.sa_handler = sig_handler;
-  sigemptyset(&sigIntHandler.sa_mask);
-  sigIntHandler.sa_flags = 0;
-  sigaction(SIGQUIT, &sigIntHandler, NULL);
+  cpu->run->immediate_exit = 0;
 
   uint64_t pc = 0;
   uint64_t lr = 0;
@@ -723,10 +705,6 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
         return 2;
       }
     }
-
-    if(kvm->stop_request) {
-      break;
-    }
   }
   return 0;
 }
@@ -767,7 +745,8 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1stop
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
-  kvm->stop_request = true;
+  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  cpu->run->immediate_exit = 1;
   return 0;
 }
 
