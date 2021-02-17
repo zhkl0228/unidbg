@@ -420,15 +420,18 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
  * Signature: (JIJJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1memory_1region
-  (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size) {
+  (JNIEnv *env, jclass clazz, jlong handle, jint slot, jlong guest_phys_addr, jlong memory_size, jlong userspace_addr) {
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
 
-  char *start_addr = (char *) mmap(NULL, memory_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if(start_addr == MAP_FAILED) {
-    fprintf(stderr, "mmap failed[%s->%s:%d]: start_addr=%p\n", __FILE__, __func__, __LINE__, start_addr);
-    abort();
-    return 0L;
+  char *start_addr = (char *) userspace_addr;
+  if(start_addr == NULL) {
+    start_addr = (char *) mmap(NULL, memory_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(start_addr == MAP_FAILED) {
+      fprintf(stderr, "mmap failed[%s->%s:%d]: start_addr=%p\n", __FILE__, __func__, __LINE__, start_addr);
+      abort();
+      return 0L;
+    }
   }
 
   struct kvm_userspace_memory_region region = {
@@ -444,6 +447,10 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     return 0L;
   }
 //  printf("set_user_memory_region slot=0x%x, guest_phys_addr=0x%llx, memory_size=0x%llx, userspace_addr=%p\n", slot, guest_phys_addr, memory_size, start_addr);
+
+  if(userspace_addr > 0) {
+    return userspace_addr;
+  }
 
   int ret;
   uint64_t vaddr = guest_phys_addr;
