@@ -692,13 +692,13 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_PC, &pc));
     switch(cpu->run->exit_reason) {
-      case KVM_EXIT_MMIO:
+      case KVM_EXIT_MMIO: {
         if(cpu->run->mmio.phys_addr == MMIO_TRAP_ADDRESS || cpu->run->mmio.is_write || cpu->run->mmio.len == 1) {
           uint64_t esr = 0;
           HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ESR_EL1, &esr));
           uint64_t far = 0;
           HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_FAR_EL1, &far));
-          uint64_t elr;
+          uint64_t elr = 0;
           HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &elr));
           uint64_t cpsr = 0;
           HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SPSR_EL1, &cpsr));
@@ -713,13 +713,15 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
             return 1;
           }
         }
-      default:
-        uint64_t elr;
+      }
+      default: {
+        uint64_t elr = 0;
         HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &elr));
         uint64_t far = 0;
         HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_FAR_EL1, &far));
         fprintf(stderr, "Unexpected VM exit reason: %d, pc=0x%llx, elr=0x%llx, far=0x%llx\n", cpu->run->exit_reason, pc, elr, far);
         return 2;
+      }
     }
 
     if(kvm->stop_request) {
