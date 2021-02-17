@@ -25,6 +25,7 @@ public class Kvm implements Closeable {
     private static native long reg_read_sp64(long handle);
     private static native int reg_set_tpidr_el0(long handle, long value);
     private static native long reg_read_pc64(long handle);
+    private static native long reg_read_nzcv(long handle);
 
     private static native int mem_write(long handle, long address, byte[] bytes);
     private static native byte[] mem_read(long handle, long address, int size);
@@ -109,6 +110,14 @@ public class Kvm implements Closeable {
             log.debug("reg_read_pc64=0x" + Long.toHexString(pc));
         }
         return pc;
+    }
+
+    public long reg_read_nzcv() {
+        long nzcv = reg_read_nzcv(nativeHandle);
+        if (log.isDebugEnabled()) {
+            log.debug("reg_read_nzcv=0x" + Long.toHexString(nzcv));
+        }
+        return nzcv;
     }
 
     public void mem_write(long address, byte[] bytes) {

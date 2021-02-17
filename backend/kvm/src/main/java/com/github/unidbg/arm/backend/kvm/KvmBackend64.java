@@ -108,6 +108,8 @@ public class KvmBackend64 extends KvmBackend {
                     return kvm.reg_read64(29);
                 case Arm64Const.UC_ARM64_REG_LR:
                     return kvm.reg_read64(30);
+                case Arm64Const.UC_ARM64_REG_NZCV:
+                    return kvm.reg_read_nzcv();
                 default:
                     throw new KvmException("regId=" + regId);
             }
