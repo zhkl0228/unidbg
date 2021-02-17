@@ -107,18 +107,29 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         if (list.size() == 1) {
             UserMemoryRegion region = list.get(0);
             if (address == region.guest_phys_addr && size == region.memory_size) {
-                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size, region.userspace_addr);
+                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size, region.userspace_addr, 0x0);
                 slotIndex = region.slot;
                 slots[slotIndex] = null;
                 memoryRegionMap.remove(region.guest_phys_addr);
                 return;
             }
             if (address == region.guest_phys_addr && size < region.memory_size) {
-                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, size, region.userspace_addr);
+                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, size, region.userspace_addr, 0x0);
                 memoryRegionMap.remove(region.guest_phys_addr);
 
                 long userspace_addr = kvm.set_user_memory_region(region.slot, region.guest_phys_addr + size, region.memory_size - size, region.userspace_addr + size);
                 UserMemoryRegion newRegion = new UserMemoryRegion(region.slot, region.guest_phys_addr + size, region.memory_size - size, userspace_addr);
+                memoryRegionMap.put(newRegion.guest_phys_addr, newRegion);
+                slots[newRegion.slot] = newRegion;
+                return;
+            }
+            if (address > region.guest_phys_addr && address + size == region.memory_size) {
+                long off = address - region.guest_phys_addr;
+                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, size, region.userspace_addr, off);
+                memoryRegionMap.remove(region.guest_phys_addr);
+
+                long userspace_addr = kvm.set_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size - size, region.userspace_addr);
+                UserMemoryRegion newRegion = new UserMemoryRegion(region.slot, region.guest_phys_addr, region.memory_size - size, userspace_addr);
                 memoryRegionMap.put(newRegion.guest_phys_addr, newRegion);
                 slots[newRegion.slot] = newRegion;
                 return;
