@@ -49,23 +49,6 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
         assert ptr != null;
         ptr.write(buffer.array());
-
-        mem_map(0, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
-        buffer = ByteBuffer.allocate(getPageSize());
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        while (buffer.hasRemaining()) {
-            buffer.putInt(0xd4211100); // brk #0x888
-        }
-        mem_write(0, buffer.array());
-    }
-
-    private int allocateSlot() {
-        for (int i = slotIndex; i < slots.length; i++) {
-            if (slots[i] == null) {
-                return i;
-            }
-        }
-        throw new BackendException("Allocate slot failed: slotIndex=" + slotIndex + ", maxSlots=" + slots.length);
     }
 
     protected KvmBackend(Emulator<?> emulator, Kvm kvm) throws BackendException {
@@ -87,6 +70,15 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         }
     }
 
+    private int allocateSlot() {
+        for (int i = slotIndex; i < slots.length; i++) {
+            if (slots[i] == null) {
+                return i;
+            }
+        }
+        throw new BackendException("Allocate slot failed: slotIndex=" + slotIndex + ", maxSlots=" + slots.length);
+    }
+
     @Override
     public final void mem_map(long address, long size, int perms) throws BackendException {
         int slot = allocateSlot();
@@ -98,6 +90,11 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         memoryRegionMap.put(address, region);
         slots[slot++] = region;
         slotIndex = slot;
+    }
+
+    @Override
+    public final void mem_unmap(long address, long size) throws BackendException {
+        throw new UnsupportedOperationException("address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
     }
 
     @Override
