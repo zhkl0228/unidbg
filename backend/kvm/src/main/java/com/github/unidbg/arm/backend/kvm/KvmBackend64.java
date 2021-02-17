@@ -26,7 +26,7 @@ public class KvmBackend64 extends KvmBackend {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", pc=0x" + Long.toHexString(pc));
         }
         if (log.isDebugEnabled()) {
-            if (elr > 0) {
+            if (elr > 0x1000) {
                 emulator.attach().disassembleBlock(emulator, elr - 4, false);
             }
             if (pc > 0 && pc != elr) {
