@@ -14,6 +14,7 @@
 typedef struct kvm_cpu {
   int fd;
   struct kvm_run *run;
+  uint32_t offset;
 } *t_kvm_cpu;
 
 static int check_one_reg(uint64_t reg, int ret) {
@@ -136,6 +137,7 @@ typedef struct kvm {
   void **page_table;
   pthread_key_t cpu_key;
   jobject callback;
+  bool stop_request;
 } *t_kvm;
 
 static jmethodID handleException = NULL;
@@ -256,13 +258,6 @@ static void init() {
     return;
   }
 
-  ret = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_IMMEDIATE_EXIT);
-  if (!ret) {
-    fprintf(stderr, "KVM_CAP_IMMEDIATE_EXIT unavailable\n");
-    abort();
-    return;
-  }
-
   gHasPmuV3 = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PMU_V3) > 0;
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
   gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
@@ -279,7 +274,7 @@ static void init() {
   gKvmFd = fd;
 
   printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, hasMultiAddressSpace=%d, has32Bit=%d, gHasPmuV3=%d\n", fd, gRunSize, gMaxSlots, hasMultiAddressSpace, has32Bit, gHasPmuV3);
-  printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx\n", HV_REG_X0, HV_REG_X1, HV_REG_PC);
+  printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx, gKvmFd=%d\n", HV_REG_X0, HV_REG_X1, HV_REG_PC, gKvmFd);
 }
 
 __attribute__((destructor))
@@ -653,6 +648,9 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
 }
 
 static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
+  kvm->stop_request = false;
+  cpu->offset = 0;
+
   uint64_t pc = 0;
   uint64_t lr = 0;
   uint64_t sp = 0;
@@ -710,6 +708,11 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
         return 2;
       }
     }
+
+    if(kvm->stop_request) {
+      cpu->offset = -4;
+      break;
+    }
   }
   return 0;
 }
@@ -728,7 +731,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
     int cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
     printf("emu_start cpsr=0x%x, pc=0x%lx\n", cpsr, pc);
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, cpsr));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc + cpu->offset));
   } else {
     bool thumb = pc & 1;
     if(thumb) {
@@ -750,8 +753,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1stop
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
-  cpu->run->immediate_exit = 1;
+  kvm->stop_request = true;
   return 0;
 }
 
