@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend.kvm;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.*;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -37,6 +38,11 @@ public class KvmBackend64 extends KvmBackend {
             case EC_AA64_SVC: {
                 int swi = (int) (esr & 0xffff);
                 callSVC(elr, swi);
+                return true;
+            }
+            case EC_AA64_BKPT: {
+                int swi = (int) (esr & 0xffff);
+                interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, swi);
                 return true;
             }
             case EC_DATAABORT:
