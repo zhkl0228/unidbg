@@ -680,12 +680,15 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
             fprintf(stderr, "handle_exception cpsr=0x%llx\n", cpsr);
             return -1;
           }
-          break;
+          if(handled == JNI_TRUE) {
+            break;
+          } else {
+            return 1;
+          }
         }
       default:
         fprintf(stderr, "Unexpected VM exit reason: %d, pc=0x%llx\n", cpu->run->exit_reason, pc);
-        abort();
-        break;
+        return 2;
     }
 
     if(kvm->stop_request) {

@@ -40,6 +40,7 @@ public class KvmBackend64 extends KvmBackend {
                 return true;
             }
             case EC_DATAABORT:
+            case EC_INSNABORT:
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
