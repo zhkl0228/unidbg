@@ -426,6 +426,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
 
 //  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
 
+  if(guest_phys_addr <= MMIO_TRAP_ADDRESS && guest_phys_addr + memory_size > MMIO_TRAP_ADDRESS) {
+    fprintf(stderr, "set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
+    abort();
+  }
+
   struct kvm_userspace_memory_region region = {
     .slot = slot,
     .flags = 0,
