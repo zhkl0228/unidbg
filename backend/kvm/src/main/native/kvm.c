@@ -160,7 +160,7 @@ static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t n
     return page ? &page[vaddr & KVM_PAGE_MASK] : NULL;
 }
 
-static t_kvm_cpu create_kvm_cpu() {
+static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
   int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
   if (fd == -1) {
     fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
@@ -189,7 +189,7 @@ static t_kvm_cpu create_kvm_cpu() {
     abort();
     return NULL;
   }
-  cpu = (t_kvm_cpu) calloc(1, sizeof(struct kvm_cpu));
+  t_kvm_cpu cpu = (t_kvm_cpu) calloc(1, sizeof(struct kvm_cpu));
   cpu->fd = fd;
   cpu->run = run;
 
@@ -312,7 +312,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitial
     abort();
     return 0;
   }
-  kvm->cpu = create_kvm_cpu();
+  kvm->cpu = create_kvm_cpu(kvm);
   return (jlong) kvm;
 }
 
