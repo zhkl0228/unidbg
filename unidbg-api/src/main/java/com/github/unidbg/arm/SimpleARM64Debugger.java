@@ -31,8 +31,10 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         long nextAddress = 0;
 
         try {
-            System.out.println("debugger break at: 0x" + Long.toHexString(address));
-            emulator.showRegs();
+            if (address != -1) {
+                System.out.println("debugger break at: 0x" + Long.toHexString(address));
+                emulator.showRegs();
+            }
             if (address > 0) {
                 nextAddress = disassemble(emulator, address, size, false);
             }

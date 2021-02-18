@@ -14,12 +14,11 @@ import com.github.unidbg.ios.ipa.IpaLoader64;
 import com.github.unidbg.ios.ipa.LoadedIpa;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.concurrent.Callable;
 
-public class IpaLoaderTest extends TestCase implements EmulatorConfigurator {
+public class IpaLoaderTest implements EmulatorConfigurator {
 
     public void testLoader() throws Exception {
         long start = System.currentTimeMillis();
@@ -50,10 +49,6 @@ public class IpaLoaderTest extends TestCase implements EmulatorConfigurator {
                 return null;
             }
         });
-    }
-
-    public void test() throws Exception {
-        main(null);
     }
 
     public static void main(String[] args) throws Exception {

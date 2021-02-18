@@ -213,7 +213,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         try {
             debugging = true;
-            loop(emulator, 0, 0, callable);
+            loop(emulator, -1, 0, callable);
         } finally {
             debugging = false;
         }
