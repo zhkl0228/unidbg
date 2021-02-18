@@ -354,6 +354,16 @@ public class Dyld64 extends Dyld {
                 }
             }
         });
+
+        _abort = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                System.err.println("abort");
+                emulator.attach().debug();
+                emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_LR, AbstractARM64Emulator.LR);
+                return 0;
+            }
+        }).peer;
     }
 
     private final Pointer __dyld_image_count;
@@ -723,24 +733,13 @@ public class Dyld64 extends Dyld {
         }
     }
 
-    private long _abort;
+    private final long _abort;
     private long _asl_open;
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
         if ("libsystem_c.dylib".equals(libraryName)) {
             if ("_abort".equals(symbolName)) {
-                if (_abort == 0) {
-                    _abort = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            System.err.println("abort");
-                            emulator.attach().debug();
-                            emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_LR, AbstractARM64Emulator.LR);
-                            return 0;
-                        }
-                    }).peer;
-                }
                 return _abort;
             }
         } else if ("libsystem_asl.dylib".equals(libraryName)) {
