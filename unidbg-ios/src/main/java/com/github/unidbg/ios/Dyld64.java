@@ -48,13 +48,22 @@ public class Dyld64 extends Dyld {
                 return 0;
             }
         });
+        __dyld_get_image_slide = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnidbgPointer mh = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                long slide = mh == null ? 0 : computeSlide(emulator, mh.peer);
+                log.debug("__dyld_get_image_slide mh=" + mh + ", slide=0x" + Long.toHexString(slide));
+                return slide;
+            }
+        });
     }
 
     private Pointer __dyld_image_count;
     private Pointer __dyld_get_image_name;
     private Pointer __dyld_get_image_header;
     private Pointer __dyld_get_image_vmaddr_slide;
-    private Pointer __dyld_get_image_slide;
+    private final Pointer __dyld_get_image_slide;
     private Pointer __dyld_register_func_for_add_image;
     private Pointer __dyld_register_func_for_remove_image;
     private final Pointer __dyld_register_thread_helpers;
@@ -158,17 +167,6 @@ public class Dyld64 extends Dyld {
                 address.setPointer(0, __dyld_get_image_header);
                 return 1;
             case "__dyld_get_image_slide":
-                if (__dyld_get_image_slide == null) {
-                    __dyld_get_image_slide = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            UnidbgPointer mh = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            long slide = mh == null ? 0 : computeSlide(emulator, mh.peer);
-                            log.debug("__dyld_get_image_slide mh=" + mh + ", slide=0x" + Long.toHexString(slide));
-                            return slide;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_get_image_slide);
                 return 1;
             case "__dyld_get_image_vmaddr_slide":
