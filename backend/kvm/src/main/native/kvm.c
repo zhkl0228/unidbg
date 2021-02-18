@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <pthread.h>
 #include <sys/mman.h>
 #include <sys/errno.h>
 
@@ -135,7 +134,7 @@ typedef struct kvm {
   khash_t(memory) *memory;
   size_t num_page_table_entries;
   void **page_table;
-  pthread_key_t cpu_key;
+  t_kvm_cpu cpu;
   jobject callback;
   bool stop_request;
 } *t_kvm;
@@ -161,71 +160,55 @@ static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t n
     return page ? &page[vaddr & KVM_PAGE_MASK] : NULL;
 }
 
-static t_kvm_cpu get_kvm_cpu(JNIEnv *env, t_kvm kvm) {
-  t_kvm_cpu cpu = (t_kvm_cpu) pthread_getspecific(kvm->cpu_key);
-  if(cpu) {
+static t_kvm_cpu create_kvm_cpu() {
+  int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
+  if (fd == -1) {
+    fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
+    abort();
+    return NULL;
+  }
+  struct kvm_vcpu_init vcpu_init;
+  if (ioctl(gKvmFd, KVM_ARM_PREFERRED_TARGET, &vcpu_init) == -1) {
+    fprintf(stderr, "KVM_ARM_PREFERRED_TARGET failed.\n");
+    abort();
+    return NULL;
+  }
+  // ask for psci 0.2
+  vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PSCI_0_2;
+  if(gHasPmuV3) {
+    vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
+  }
+  if (ioctl(fd, KVM_ARM_VCPU_INIT, &vcpu_init) == -1) {
+    fprintf(stderr, "KVM_ARM_VCPU_INIT failed.\n");
+    abort();
+    return NULL;
+  }
+  struct kvm_run *run = mmap(NULL, gRunSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  if (run == MAP_FAILED) {
+    fprintf(stderr, "init kvm_run failed.\n");
+    abort();
+    return NULL;
+  }
+  cpu = (t_kvm_cpu) calloc(1, sizeof(struct kvm_cpu));
+  cpu->fd = fd;
+  cpu->run = run;
+
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SP_EL1, MMIO_TRAP_ADDRESS));
+
+  if(kvm->is64Bit) {
+//      vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC); // set stage 1 as normal memory
     return cpu;
   } else {
-    cpu = (t_kvm_cpu) calloc(1, sizeof(struct kvm_cpu));
-    int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
-    if (fd == -1) {
-      fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
-      abort();
-      return NULL;
-    }
-    struct kvm_vcpu_init vcpu_init;
-    if (ioctl(gKvmFd, KVM_ARM_PREFERRED_TARGET, &vcpu_init) == -1) {
-      fprintf(stderr, "KVM_ARM_PREFERRED_TARGET failed.\n");
-      abort();
-      return NULL;
-    }
-    // ask for psci 0.2
-    vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PSCI_0_2;
-    if(gHasPmuV3) {
-      vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
-    }
-    if (ioctl(fd, KVM_ARM_VCPU_INIT, &vcpu_init) == -1) {
-      fprintf(stderr, "KVM_ARM_VCPU_INIT failed.\n");
-      abort();
-      return NULL;
-    }
-    struct kvm_run *run = mmap(NULL, gRunSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    if (run == MAP_FAILED) {
-      fprintf(stderr, "init kvm_run failed.\n");
-      abort();
-      return NULL;
-    }
-    cpu->fd = fd;
-    cpu->run = run;
-
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SP_EL1, MMIO_TRAP_ADDRESS));
-//    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR0_EL1, 0x5));
-//    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR2_EL1, 0x10000));
-    assert(pthread_setspecific(kvm->cpu_key, cpu) == 0);
-
-    if(kvm->is64Bit) {
-//      vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC); // set stage 1 as normal memory
-      return cpu;
-    } else {
-      abort();
-    }
-
-    return cpu;
+    abort();
   }
-}
 
-static void destroy_kvm_cpu(void *data) {
-  printf("destroy_kvm_cpu data=%p\n", data);
-  t_kvm_cpu cpu = (t_kvm_cpu) data;
-  munmap(cpu->run, gRunSize);
-  close(cpu->fd);
-  free(cpu);
+  return cpu;
 }
 
 __attribute__((constructor))
@@ -264,7 +247,7 @@ static void init() {
   int hasMultiAddressSpace = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
   int has32Bit = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_EL1_32BIT);
 
-  int fd = ioctl(kvm, KVM_CREATE_VM, 0UL);
+  int fd = ioctl(kvm, KVM_CREATE_VM, KVM_VM_TYPE_ARM_IPA_SIZE(0));
   if (fd == -1) {
     fprintf(stderr, "createVM failed\n");
     abort();
@@ -329,7 +312,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitial
     abort();
     return 0;
   }
-  assert(pthread_key_create(&kvm->cpu_key, destroy_kvm_cpu) == 0);
+  kvm->cpu = create_kvm_cpu();
   return (jlong) kvm;
 }
 
@@ -341,6 +324,10 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitial
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
+  munmap(kvm->cpu->run, gRunSize);
+  close(kvm->cpu->fd);
+  free(kvm->cpu);
+
   khash_t(memory) *memory = kvm->memory;
   khiter_t k = kh_begin(memory);
   for (; k < kh_end(memory); k++) {
@@ -495,7 +482,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1cpacr_1el1
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   uint64_t cpacr = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_CPACR_EL1, &cpacr));
   return cpacr;
@@ -509,7 +496,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1cp
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1cpacr_1el1
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CPACR_EL1, value));
   return 0;
 }
@@ -522,7 +509,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1cpac
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1sp64
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SP_EL0, value));
   return 0;
 }
@@ -535,7 +522,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1sp64
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1sp64
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   uint64_t sp = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SP_EL0, &sp));
   return sp;
@@ -549,7 +536,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1sp
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1pc64
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   uint64_t pc = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_ELR_EL1, &pc));
   return pc;
@@ -563,7 +550,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1pc
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1nzcv
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   uint64_t cpsr = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr));
   return cpsr;
@@ -577,7 +564,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1nz
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1tpidr_1el0
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_TPIDR_EL0, value));
   return 0;
 }
@@ -685,7 +672,7 @@ static hv_reg_t gprs[] = {
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1write
   (JNIEnv *env, jclass clazz, jlong handle, jint index, jlong value) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   hv_reg_t reg = gprs[index];
   HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, reg, value));
   return 0;
@@ -699,7 +686,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1write
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
   (JNIEnv *env, jclass clazz, jlong handle, jint index) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
   uint64_t value = 0;
   hv_reg_t reg = gprs[index];
   HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, reg, &value));
@@ -772,7 +759,7 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
   (JNIEnv *env, jclass clazz, jlong handle, jlong pc) {
   t_kvm kvm = (t_kvm) handle;
-  t_kvm_cpu cpu = get_kvm_cpu(env, kvm);
+  t_kvm_cpu cpu = kvm->cpu;
 
   if(kvm->is64Bit) {
     int cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
