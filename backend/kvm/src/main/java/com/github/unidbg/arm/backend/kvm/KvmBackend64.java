@@ -183,6 +183,38 @@ public class KvmBackend64 extends KvmBackend {
                 case Arm64Const.UC_ARM64_REG_X27:
                 case Arm64Const.UC_ARM64_REG_X28:
                     return kvm.reg_read64(regId - Arm64Const.UC_ARM64_REG_X0);
+                case Arm64Const.UC_ARM64_REG_W0:
+                case Arm64Const.UC_ARM64_REG_W1:
+                case Arm64Const.UC_ARM64_REG_W2:
+                case Arm64Const.UC_ARM64_REG_W3:
+                case Arm64Const.UC_ARM64_REG_W4:
+                case Arm64Const.UC_ARM64_REG_W5:
+                case Arm64Const.UC_ARM64_REG_W6:
+                case Arm64Const.UC_ARM64_REG_W7:
+                case Arm64Const.UC_ARM64_REG_W8:
+                case Arm64Const.UC_ARM64_REG_W9:
+                case Arm64Const.UC_ARM64_REG_W10:
+                case Arm64Const.UC_ARM64_REG_W11:
+                case Arm64Const.UC_ARM64_REG_W12:
+                case Arm64Const.UC_ARM64_REG_W13:
+                case Arm64Const.UC_ARM64_REG_W14:
+                case Arm64Const.UC_ARM64_REG_W15:
+                case Arm64Const.UC_ARM64_REG_W16:
+                case Arm64Const.UC_ARM64_REG_W17:
+                case Arm64Const.UC_ARM64_REG_W18:
+                case Arm64Const.UC_ARM64_REG_W19:
+                case Arm64Const.UC_ARM64_REG_W20:
+                case Arm64Const.UC_ARM64_REG_W21:
+                case Arm64Const.UC_ARM64_REG_W22:
+                case Arm64Const.UC_ARM64_REG_W23:
+                case Arm64Const.UC_ARM64_REG_W24:
+                case Arm64Const.UC_ARM64_REG_W25:
+                case Arm64Const.UC_ARM64_REG_W26:
+                case Arm64Const.UC_ARM64_REG_W27:
+                case Arm64Const.UC_ARM64_REG_W28:
+                case Arm64Const.UC_ARM64_REG_W29:
+                case Arm64Const.UC_ARM64_REG_W30:
+                    return (int) (kvm.reg_read64(regId - Arm64Const.UC_ARM64_REG_W0) & 0xffffffffL);
                 case Arm64Const.UC_ARM64_REG_CPACR_EL1:
                     return kvm.reg_read_cpacr_el1();
                 case Arm64Const.UC_ARM64_REG_SP:
@@ -237,6 +269,39 @@ public class KvmBackend64 extends KvmBackend {
                 case Arm64Const.UC_ARM64_REG_X27:
                 case Arm64Const.UC_ARM64_REG_X28:
                     kvm.reg_write64(regId - Arm64Const.UC_ARM64_REG_X0, value.longValue());
+                    break;
+                case Arm64Const.UC_ARM64_REG_W0:
+                case Arm64Const.UC_ARM64_REG_W1:
+                case Arm64Const.UC_ARM64_REG_W2:
+                case Arm64Const.UC_ARM64_REG_W3:
+                case Arm64Const.UC_ARM64_REG_W4:
+                case Arm64Const.UC_ARM64_REG_W5:
+                case Arm64Const.UC_ARM64_REG_W6:
+                case Arm64Const.UC_ARM64_REG_W7:
+                case Arm64Const.UC_ARM64_REG_W8:
+                case Arm64Const.UC_ARM64_REG_W9:
+                case Arm64Const.UC_ARM64_REG_W10:
+                case Arm64Const.UC_ARM64_REG_W11:
+                case Arm64Const.UC_ARM64_REG_W12:
+                case Arm64Const.UC_ARM64_REG_W13:
+                case Arm64Const.UC_ARM64_REG_W14:
+                case Arm64Const.UC_ARM64_REG_W15:
+                case Arm64Const.UC_ARM64_REG_W16:
+                case Arm64Const.UC_ARM64_REG_W17:
+                case Arm64Const.UC_ARM64_REG_W18:
+                case Arm64Const.UC_ARM64_REG_W19:
+                case Arm64Const.UC_ARM64_REG_W20:
+                case Arm64Const.UC_ARM64_REG_W21:
+                case Arm64Const.UC_ARM64_REG_W22:
+                case Arm64Const.UC_ARM64_REG_W23:
+                case Arm64Const.UC_ARM64_REG_W24:
+                case Arm64Const.UC_ARM64_REG_W25:
+                case Arm64Const.UC_ARM64_REG_W26:
+                case Arm64Const.UC_ARM64_REG_W27:
+                case Arm64Const.UC_ARM64_REG_W28:
+                case Arm64Const.UC_ARM64_REG_W29:
+                case Arm64Const.UC_ARM64_REG_W30:
+                    kvm.reg_write64(regId - Arm64Const.UC_ARM64_REG_W0, value.longValue());
                     break;
                 case Arm64Const.UC_ARM64_REG_CPACR_EL1:
                     kvm.reg_set_cpacr_el1(value.longValue());
