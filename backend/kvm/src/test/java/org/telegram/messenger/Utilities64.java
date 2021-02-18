@@ -77,7 +77,16 @@ public class Utilities64 extends TestCase {
     }
 
     public static void main(String[] args) throws Exception {
-        Utilities64 test = new Utilities64();
+        final Utilities64 test = new Utilities64();
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                test.pbkdf2();
+            }
+        });
+        thread.start();
+        thread.join();
 
         test.aesCbcEncryptionByteArray();
         test.aesCtrDecryptionByteArray();
@@ -119,7 +128,7 @@ public class Utilities64 extends TestCase {
             cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
                     vm.addLocalObject(new ByteArray(vm, salt)),
                     vm.addLocalObject(dst), 100000);
-            Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
+            Inspector.inspect(dst.getValue(), "[" + Thread.currentThread().getName() + "]pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
         }
     }
 
