@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
@@ -17,8 +16,6 @@ import com.github.unidbg.ios.ipa.LoadedIpa;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import junit.framework.TestCase;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.util.concurrent.Callable;
@@ -26,7 +23,6 @@ import java.util.concurrent.Callable;
 public class IpaLoaderTest extends TestCase implements EmulatorConfigurator {
 
     public void testLoader() throws Exception {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         long start = System.currentTimeMillis();
         File ipa = new File("unidbg-ios/src/test/resources/app/TelegramMessenger-5.11.ipa");
         if (!ipa.canRead()) {
