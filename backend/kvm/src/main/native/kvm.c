@@ -571,6 +571,19 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1tpid
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_set_tpidrro_el0
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1tpidrro_1el0
+  (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
+  t_kvm kvm = (t_kvm) handle;
+  t_kvm_cpu cpu = kvm->cpu;
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_TPIDRRO_EL0, value));
+  return 0;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    mem_write
  * Signature: (JJ[B)I
  */
