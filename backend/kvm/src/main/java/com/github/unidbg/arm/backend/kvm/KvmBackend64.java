@@ -171,6 +171,9 @@ public class KvmBackend64 extends KvmBackend {
                 case Arm64Const.UC_ARM64_REG_TPIDRRO_EL0:
                     kvm.reg_set_tpidrro_el0(value.longValue());
                     break;
+                case Arm64Const.UC_ARM64_REG_NZCV:
+                    kvm.reg_set_nzcv(value.longValue());
+                    break;
                 default:
                     throw new KvmException("regId=" + regId);
             }
