@@ -16,6 +16,9 @@ public class KvmBackend64 extends KvmBackend {
 
     private static final Log log = LogFactory.getLog(KvmBackend64.class);
 
+    private static final long DARWIN_KERNEL_BASE = 0xffffff80001f0000L;
+    private static final long _COMM_PAGE64_BASE_ADDRESS = DARWIN_KERNEL_BASE + 0xc000 /* In TTBR0 */;
+
     public KvmBackend64(Emulator<?> emulator, Kvm kvm) throws BackendException {
         super(emulator, kvm);
     }
@@ -42,6 +45,15 @@ public class KvmBackend64 extends KvmBackend {
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
+    }
+
+    @Override
+    public void mem_map(long address, long size, int perms) throws BackendException {
+        if (address == DARWIN_KERNEL_BASE) {
+            throw new BackendException();
+        }
+
+        super.mem_map(address, size, perms);
     }
 
     @Override

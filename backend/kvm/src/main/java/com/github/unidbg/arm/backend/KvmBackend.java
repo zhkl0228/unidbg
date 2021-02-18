@@ -82,7 +82,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     }
 
     @Override
-    public final void mem_map(long address, long size, int perms) throws BackendException {
+    public void mem_map(long address, long size, int perms) throws BackendException {
 //        System.out.println("mem_map address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
 
         int slot = allocateSlot();
