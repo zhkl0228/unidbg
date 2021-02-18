@@ -21,7 +21,7 @@ public abstract class Arm64Svc implements Svc {
     @Override
     public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         if (log.isDebugEnabled()) {
-            log.debug(new Exception(getClass() + "->onRegister svcNumber=0x" + Integer.toHexString(svcNumber)));
+            log.debug("onRegister: " + getClass(), new Exception("svcNumber=0x" + Integer.toHexString(svcNumber)));
         }
 
         return register(svcMemory, svcNumber);
