@@ -33,7 +33,7 @@ public class Dyld64 extends Dyld {
 
     private final MachOLoader loader;
 
-    Dyld64(MachOLoader loader, SvcMemory svcMemory) {
+    Dyld64(final MachOLoader loader, final SvcMemory svcMemory) {
         super(svcMemory);
         this.loader = loader;
 
@@ -57,21 +57,318 @@ public class Dyld64 extends Dyld {
                 return slide;
             }
         });
+
+        /*
+         * _dyld_register_func_for_remove_image registers the specified function to be
+         * called when an image is removed (a bundle or a dynamic shared library) from
+         * the program.
+         */
+        __dyld_register_func_for_remove_image = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                Pointer callback = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_register_func_for_remove_image callback=" + callback);
+                }
+                return 0;
+            }
+        });
+        __dyld_image_count = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                return loader.getLoadedModulesNoVirtual().size();
+            }
+        });
+        __dyld_get_image_name = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                int image_index = emulator.getContext().getIntArg(0);
+                Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
+                if (image_index < 0 || image_index >= modules.length) {
+                    return 0;
+                }
+                MachOModule module = (MachOModule) modules[image_index];
+                return module.createPathMemory(svcMemory).peer;
+            }
+        });
+        __dyld_get_image_header = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                int image_index = emulator.getContext().getIntArg(0);
+                Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
+                if (image_index < 0 || image_index >= modules.length) {
+                    return 0;
+                }
+                MachOModule module = (MachOModule) modules[image_index];
+                return module.machHeader;
+            }
+        });
+        __dyld_get_image_vmaddr_slide = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                int image_index = emulator.getContext().getIntArg(0);
+                Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
+                if (image_index < 0 || image_index >= modules.length) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("__dyld_get_image_vmaddr_slide index=" + image_index);
+                    }
+                    return 0;
+                }
+                MachOModule module = (MachOModule) modules[image_index];
+                long slide = computeSlide(emulator, module.machHeader);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_get_image_vmaddr_slide index=" + image_index + ", slide=0x" + Long.toHexString(slide) + ", module=" + module.name);
+                }
+                return slide;
+            }
+        });
+
+        /*
+         * _dyld_register_func_for_add_image registers the specified function to be
+         * called when a new image is added (a bundle or a dynamic shared library) to
+         * the program.  When this function is first registered it is called for once
+         * for each image that is currently part of the program.
+         */
+        __dyld_register_func_for_add_image = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+                    KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                            "sub sp, sp, #0x10",
+                            "stp x29, x30, [sp]",
+                            "svc #0x" + Integer.toHexString(svcNumber),
+
+                            "ldr x7, [sp]",
+                            "add sp, sp, #0x8", // manipulated stack in __dyld_register_func_for_add_image
+                            "cmp x7, #0",
+                            "b.eq #0x38",
+                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "bic lr, lr, #0x1",
+
+                            "ldr x0, [sp]",
+                            "add sp, sp, #0x8",
+                            "ldr x1, [sp]",
+                            "add sp, sp, #0x8",
+                            "br x7", // call (headerType *mh, unsigned long	vmaddr_slide)
+
+                            "ldr x0, [sp]", // with return address
+                            "add sp, sp, #0x8",
+
+                            "ldp x29, x30, [sp]",
+                            "add sp, sp, #0x10",
+                            "ret"));
+                    byte[] code = encoded.getMachineCode();
+                    UnidbgPointer pointer = svcMemory.allocate(code.length, "__dyld_register_func_for_add_image");
+                    pointer.write(0, code, 0, code.length);
+                    return pointer;
+                }
+            }
+
+            @Override
+            public long handle(Emulator<?> emulator) {
+                EditableArm64RegisterContext context = emulator.getContext();
+
+                UnidbgPointer callback = context.getPointerArg(0);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_register_func_for_add_image callback=" + callback);
+                }
+
+                Pointer pointer = context.getStackPointer();
+                try {
+                    pointer = pointer.share(-8); // return value
+                    pointer.setLong(0, 0);
+
+                    pointer = pointer.share(-8); // NULL-terminated
+                    pointer.setLong(0, 0);
+
+                    if (callback != null && !loader.addImageCallbacks.contains(callback)) {
+                        loader.addImageCallbacks.add(callback);
+
+                        for (Module md : loader.getLoadedModulesNoVirtual()) {
+                            Log log = LogFactory.getLog("com.github.unidbg.ios." + md.name);
+                            MachOModule mm = (MachOModule) md;
+                            if (mm.executable) {
+                                continue;
+                            }
+
+                            // (headerType *mh, unsigned long	vmaddr_slide)
+                            pointer = pointer.share(-8);
+                            pointer.setLong(0, mm.machHeader);
+                            pointer = pointer.share(-8);
+                            pointer.setLong(0, computeSlide(emulator, mm.machHeader));
+
+                            String msg = "[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader);
+                            if (log.isDebugEnabled()) {
+                                log.debug(msg);
+                            } else if (Dyld64.log.isDebugEnabled()) {
+                                Dyld64.log.debug(msg);
+                            }
+                            pointer = pointer.share(-8); // callback
+                            pointer.setPointer(0, callback);
+                        }
+                    }
+
+                    return 0;
+                } finally {
+                    context.setStackPointer(pointer);
+                }
+            }
+        });
+        __dyld_dyld_register_image_state_change_handler = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+                    KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                            "sub sp, sp, #0x10",
+                            "stp x29, x30, [sp]",
+                            "svc #0x" + Integer.toHexString(svcNumber),
+
+                            "ldr x7, [sp]",
+                            "add sp, sp, #0x8", // manipulated stack in dyld_image_state_change_handler
+                            "cmp x7, #0",
+                            "b.eq #0x40",
+                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "bic lr, lr, #0x1",
+
+                            "ldr x0, [sp]",
+                            "add sp, sp, #0x8",
+                            "ldr x1, [sp]",
+                            "add sp, sp, #0x8",
+                            "ldr x2, [sp]",
+                            "add sp, sp, #0x8",
+                            "br x7", // call (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
+
+                            "ldr x0, [sp]", // with return address
+                            "add sp, sp, #0x8",
+
+                            "ldp x29, x30, [sp]",
+                            "add sp, sp, #0x10",
+                            "ret"));
+                    byte[] code = encoded.getMachineCode();
+                    UnidbgPointer pointer = svcMemory.allocate(code.length, "dyld_image_state_change_handler");
+                    pointer.write(0, code, 0, code.length);
+                    return pointer;
+                }
+            }
+            @Override
+            public long handle(Emulator<?> emulator) {
+                EditableArm64RegisterContext context = emulator.getContext();
+                int state = context.getIntArg(0);
+                int batch = context.getIntArg(1);
+                UnidbgPointer handler = context.getPointerArg(2);
+                UnidbgStructure[] imageInfos;
+                if (batch == 1) {
+                    imageInfos = registerImageStateBatchChangeHandler(loader, state, handler, emulator);
+                } else {
+                    imageInfos = registerImageStateSingleChangeHandler(loader, state, handler, emulator);
+                }
+
+                Pointer pointer = context.getStackPointer();
+                try {
+                    pointer = pointer.share(-8); // return value
+                    pointer.setLong(0, 0);
+
+                    pointer = pointer.share(-8); // NULL-terminated
+                    pointer.setLong(0, 0);
+
+                    if (handler != null && imageInfos != null) {
+                        // (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
+                        pointer = pointer.share(-8);
+                        pointer.setPointer(0, imageInfos.length == 0 ? null : imageInfos[0].getPointer());
+                        pointer = pointer.share(-8);
+                        pointer.setLong(0, imageInfos.length);
+                        pointer = pointer.share(-8);
+                        pointer.setLong(0, state);
+
+                        if (log.isDebugEnabled()) {
+                            log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length + ", batch=" + batch);
+                        }
+                        pointer = pointer.share(-8); // handler
+                        pointer.setPointer(0, handler);
+                    }
+
+                    return 0;
+                } finally {
+                    context.setStackPointer(pointer);
+                }
+            }
+        });
+        __dyld_image_path_containing_address = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnidbgPointer address = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                MachOModule module = (MachOModule) loader.findModuleByAddress(address.peer);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_image_path_containing_address address=" + address + ", module=" + module);
+                }
+                if (module != null) {
+                    return module.createPathMemory(svcMemory).peer;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        __dyld__NSGetExecutablePath = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                Pointer buf = context.getPointerArg(0);
+                int bufSize = context.getIntArg(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld__NSGetExecutablePath buf=" + buf + ", bufSize=" + bufSize);
+                }
+                buf.setString(0, emulator.getProcessName());
+                return 0;
+            }
+        });
+        __dyld_fast_stub_entry = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer imageLoaderCache = context.getPointerArg(0);
+                long lazyBindingInfoOffset = context.getLongArg(1);
+                MachOModule mm = (MachOModule) emulator.getMemory().findModuleByAddress(imageLoaderCache.peer);
+                long result = mm.doBindFastLazySymbol(emulator, (int) lazyBindingInfoOffset);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset) + ", result=0x" + Long.toHexString(result));
+                }
+                return result;
+            }
+        });
+        __dyld_find_unwind_sections = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer addr = context.getPointerArg(0);
+                Pointer info = context.getPointerArg(1);
+                MachOModule module = (MachOModule) emulator.getMemory().findModuleByAddress(addr.peer);
+                if (module == null) {
+                    log.info("__dyld_find_unwind_sections addr=" + addr + ", info=" + info);
+                    return 0;
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("__dyld_find_unwind_sections addr=" + addr + ", info=" + info);
+                    }
+                    module.getUnwindInfo(new DyldUnwindSections(info));
+                    return 1;
+                }
+            }
+        });
     }
 
-    private Pointer __dyld_image_count;
-    private Pointer __dyld_get_image_name;
-    private Pointer __dyld_get_image_header;
-    private Pointer __dyld_get_image_vmaddr_slide;
+    private final Pointer __dyld_image_count;
+    private final Pointer __dyld_get_image_name;
+    private final Pointer __dyld_get_image_header;
+    private final Pointer __dyld_get_image_vmaddr_slide;
     private final Pointer __dyld_get_image_slide;
-    private Pointer __dyld_register_func_for_add_image;
-    private Pointer __dyld_register_func_for_remove_image;
+    private final Pointer __dyld_register_func_for_add_image;
+    private final Pointer __dyld_register_func_for_remove_image;
     private final Pointer __dyld_register_thread_helpers;
-    private Pointer __dyld_dyld_register_image_state_change_handler;
-    private Pointer __dyld_image_path_containing_address;
-    private Pointer __dyld__NSGetExecutablePath;
-    private Pointer __dyld_fast_stub_entry;
-    private Pointer __dyld_find_unwind_sections;
+    private final Pointer __dyld_dyld_register_image_state_change_handler;
+    private final Pointer __dyld_image_path_containing_address;
+    private final Pointer __dyld__NSGetExecutablePath;
+    private final Pointer __dyld_fast_stub_entry;
+    private final Pointer __dyld_find_unwind_sections;
 
     @Override
     final int _stub_binding_helper() {
@@ -96,112 +393,24 @@ public class Dyld64 extends Dyld {
         final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
             case "__dyld_fast_stub_entry": // fastBindLazySymbol
-                if (__dyld_fast_stub_entry == null) {
-                    __dyld_fast_stub_entry = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            UnidbgPointer imageLoaderCache = context.getPointerArg(0);
-                            long lazyBindingInfoOffset = context.getLongArg(1);
-                            MachOModule mm = (MachOModule) emulator.getMemory().findModuleByAddress(imageLoaderCache.peer);
-                            long result = mm.doBindFastLazySymbol(emulator, (int) lazyBindingInfoOffset);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset) + ", result=0x" + Long.toHexString(result));
-                            }
-                            return result;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_fast_stub_entry);
                 return 1;
             case "__dyld__NSGetExecutablePath":
-                if (__dyld__NSGetExecutablePath == null) {
-                    __dyld__NSGetExecutablePath = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            Pointer buf = context.getPointerArg(0);
-                            int bufSize = context.getIntArg(1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld__NSGetExecutablePath buf=" + buf + ", bufSize=" + bufSize);
-                            }
-                            buf.setString(0, emulator.getProcessName());
-                            return 0;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld__NSGetExecutablePath);
                 return 1;
             case "__dyld_get_image_name":
-                if (__dyld_get_image_name == null) {
-                    __dyld_get_image_name = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            int image_index = emulator.getContext().getIntArg(0);
-                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
-                            if (image_index < 0 || image_index >= modules.length) {
-                                return 0;
-                            }
-                            MachOModule module = (MachOModule) modules[image_index];
-                            return module.createPathMemory(svcMemory).peer;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_get_image_name);
                 return 1;
             case "__dyld_get_image_header":
-                if (__dyld_get_image_header == null) {
-                    __dyld_get_image_header = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            int image_index = emulator.getContext().getIntArg(0);
-                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
-                            if (image_index < 0 || image_index >= modules.length) {
-                                return 0;
-                            }
-                            MachOModule module = (MachOModule) modules[image_index];
-                            return module.machHeader;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_get_image_header);
                 return 1;
             case "__dyld_get_image_slide":
                 address.setPointer(0, __dyld_get_image_slide);
                 return 1;
             case "__dyld_get_image_vmaddr_slide":
-                if (__dyld_get_image_vmaddr_slide == null) {
-                    __dyld_get_image_vmaddr_slide = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            int image_index = emulator.getContext().getIntArg(0);
-                            Module[] modules = loader.getLoadedModulesNoVirtual().toArray(new Module[0]);
-                            if (image_index < 0 || image_index >= modules.length) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("__dyld_get_image_vmaddr_slide index=" + image_index);
-                                }
-                                return 0;
-                            }
-                            MachOModule module = (MachOModule) modules[image_index];
-                            long slide = computeSlide(emulator, module.machHeader);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_get_image_vmaddr_slide index=" + image_index + ", slide=0x" + Long.toHexString(slide) + ", module=" + module.name);
-                            }
-                            return slide;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_get_image_vmaddr_slide);
                 return 1;
             case "__dyld_image_count":
-                if (__dyld_image_count == null) {
-                    __dyld_image_count = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            return loader.getLoadedModulesNoVirtual().size();
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_image_count);
                 return 1;
             case "__dyld_dlopen_preflight":
@@ -414,247 +623,18 @@ public class Dyld64 extends Dyld {
                 address.setPointer(0, __dyld_register_thread_helpers);
                 return 1;
             case "__dyld_image_path_containing_address":
-                if (__dyld_image_path_containing_address == null) {
-                    __dyld_image_path_containing_address = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            UnidbgPointer address = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            MachOModule module = (MachOModule) loader.findModuleByAddress(address.peer);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_image_path_containing_address address=" + address + ", module=" + module);
-                            }
-                            if (module != null) {
-                                return module.createPathMemory(svcMemory).peer;
-                            } else {
-                                return 0;
-                            }
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_image_path_containing_address);
                 return 1;
             case "__dyld_register_func_for_remove_image":
-                /*
-                 * _dyld_register_func_for_remove_image registers the specified function to be
-                 * called when an image is removed (a bundle or a dynamic shared library) from
-                 * the program.
-                 */
-                if (__dyld_register_func_for_remove_image == null) {
-                    __dyld_register_func_for_remove_image = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            Pointer callback = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_register_func_for_remove_image callback=" + callback);
-                            }
-                            return 0;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_register_func_for_remove_image);
                 return 1;
             case "__dyld_find_unwind_sections":
-                if (__dyld_find_unwind_sections == null) {
-                    __dyld_find_unwind_sections = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            UnidbgPointer addr = context.getPointerArg(0);
-                            Pointer info = context.getPointerArg(1);
-                            MachOModule module = (MachOModule) emulator.getMemory().findModuleByAddress(addr.peer);
-                            if (module == null) {
-                                log.info("__dyld_find_unwind_sections addr=" + addr + ", info=" + info);
-                                return 0;
-                            } else {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("__dyld_find_unwind_sections addr=" + addr + ", info=" + info);
-                                }
-                                module.getUnwindInfo(new DyldUnwindSections(info));
-                                return 1;
-                            }
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_find_unwind_sections);
                 return 1;
             case "__dyld_register_func_for_add_image":
-                /*
-                 * _dyld_register_func_for_add_image registers the specified function to be
-                 * called when a new image is added (a bundle or a dynamic shared library) to
-                 * the program.  When this function is first registered it is called for once
-                 * for each image that is currently part of the program.
-                 */
-                if (__dyld_register_func_for_add_image == null) {
-                    __dyld_register_func_for_add_image = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                                        "sub sp, sp, #0x10",
-                                        "stp x29, x30, [sp]",
-                                        "svc #0x" + Integer.toHexString(svcNumber),
-
-                                        "ldr x7, [sp]",
-                                        "add sp, sp, #0x8", // manipulated stack in __dyld_register_func_for_add_image
-                                        "cmp x7, #0",
-                                        "b.eq #0x38",
-                                        "adr lr, #-0xf", // jump to ldr x7, [sp]
-                                        "bic lr, lr, #0x1",
-
-                                        "ldr x0, [sp]",
-                                        "add sp, sp, #0x8",
-                                        "ldr x1, [sp]",
-                                        "add sp, sp, #0x8",
-                                        "br x7", // call (headerType *mh, unsigned long	vmaddr_slide)
-
-                                        "ldr x0, [sp]", // with return address
-                                        "add sp, sp, #0x8",
-
-                                        "ldp x29, x30, [sp]",
-                                        "add sp, sp, #0x10",
-                                        "ret"));
-                                byte[] code = encoded.getMachineCode();
-                                UnidbgPointer pointer = svcMemory.allocate(code.length, "__dyld_register_func_for_add_image");
-                                pointer.write(0, code, 0, code.length);
-                                return pointer;
-                            }
-                        }
-
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            EditableArm64RegisterContext context = emulator.getContext();
-
-                            UnidbgPointer callback = context.getPointerArg(0);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_register_func_for_add_image callback=" + callback);
-                            }
-
-                            Pointer pointer = context.getStackPointer();
-                            try {
-                                pointer = pointer.share(-8); // return value
-                                pointer.setLong(0, 0);
-
-                                pointer = pointer.share(-8); // NULL-terminated
-                                pointer.setLong(0, 0);
-
-                                if (callback != null && !loader.addImageCallbacks.contains(callback)) {
-                                    loader.addImageCallbacks.add(callback);
-
-                                    for (Module md : loader.getLoadedModulesNoVirtual()) {
-                                        Log log = LogFactory.getLog("com.github.unidbg.ios." + md.name);
-                                        MachOModule mm = (MachOModule) md;
-                                        if (mm.executable) {
-                                            continue;
-                                        }
-
-                                        // (headerType *mh, unsigned long	vmaddr_slide)
-                                        pointer = pointer.share(-8);
-                                        pointer.setLong(0, mm.machHeader);
-                                        pointer = pointer.share(-8);
-                                        pointer.setLong(0, computeSlide(emulator, mm.machHeader));
-
-                                        String msg = "[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader);
-                                        if (log.isDebugEnabled()) {
-                                            log.debug(msg);
-                                        } else if (Dyld64.log.isDebugEnabled()) {
-                                            Dyld64.log.debug(msg);
-                                        }
-                                        pointer = pointer.share(-8); // callback
-                                        pointer.setPointer(0, callback);
-                                    }
-                                }
-
-                                return 0;
-                            } finally {
-                                context.setStackPointer(pointer);
-                            }
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_register_func_for_add_image);
                 return 1;
             case "__dyld_dyld_register_image_state_change_handler":
-                if (__dyld_dyld_register_image_state_change_handler == null) {
-                    __dyld_dyld_register_image_state_change_handler = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                                        "sub sp, sp, #0x10",
-                                        "stp x29, x30, [sp]",
-                                        "svc #0x" + Integer.toHexString(svcNumber),
-
-                                        "ldr x7, [sp]",
-                                        "add sp, sp, #0x8", // manipulated stack in dyld_image_state_change_handler
-                                        "cmp x7, #0",
-                                        "b.eq #0x40",
-                                        "adr lr, #-0xf", // jump to ldr x7, [sp]
-                                        "bic lr, lr, #0x1",
-
-                                        "ldr x0, [sp]",
-                                        "add sp, sp, #0x8",
-                                        "ldr x1, [sp]",
-                                        "add sp, sp, #0x8",
-                                        "ldr x2, [sp]",
-                                        "add sp, sp, #0x8",
-                                        "br x7", // call (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
-
-                                        "ldr x0, [sp]", // with return address
-                                        "add sp, sp, #0x8",
-
-                                        "ldp x29, x30, [sp]",
-                                        "add sp, sp, #0x10",
-                                        "ret"));
-                                byte[] code = encoded.getMachineCode();
-                                UnidbgPointer pointer = svcMemory.allocate(code.length, "dyld_image_state_change_handler");
-                                pointer.write(0, code, 0, code.length);
-                                return pointer;
-                            }
-                        }
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            EditableArm64RegisterContext context = emulator.getContext();
-                            int state = context.getIntArg(0);
-                            int batch = context.getIntArg(1);
-                            UnidbgPointer handler = context.getPointerArg(2);
-                            UnidbgStructure[] imageInfos;
-                            if (batch == 1) {
-                                imageInfos = registerImageStateBatchChangeHandler(loader, state, handler, emulator);
-                            } else {
-                                imageInfos = registerImageStateSingleChangeHandler(loader, state, handler, emulator);
-                            }
-
-                            Pointer pointer = context.getStackPointer();
-                            try {
-                                pointer = pointer.share(-8); // return value
-                                pointer.setLong(0, 0);
-
-                                pointer = pointer.share(-8); // NULL-terminated
-                                pointer.setLong(0, 0);
-
-                                if (handler != null && imageInfos != null) {
-                                    // (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
-                                    pointer = pointer.share(-8);
-                                    pointer.setPointer(0, imageInfos.length == 0 ? null : imageInfos[0].getPointer());
-                                    pointer = pointer.share(-8);
-                                    pointer.setLong(0, imageInfos.length);
-                                    pointer = pointer.share(-8);
-                                    pointer.setLong(0, state);
-
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length + ", batch=" + batch);
-                                    }
-                                    pointer = pointer.share(-8); // handler
-                                    pointer.setPointer(0, handler);
-                                }
-
-                                return 0;
-                            } finally {
-                                context.setStackPointer(pointer);
-                            }
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_dyld_register_image_state_change_handler);
                 return 1;
             default:
