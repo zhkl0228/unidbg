@@ -6,6 +6,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.arm.backend.KvmFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
@@ -15,13 +16,14 @@ import com.github.unidbg.ios.ipa.IpaLoader64;
 import com.github.unidbg.ios.ipa.LoadedIpa;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
+import junit.framework.TestCase;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.util.concurrent.Callable;
 
-public class IpaLoaderTest implements EmulatorConfigurator {
+public class IpaLoaderTest extends TestCase implements EmulatorConfigurator {
 
     public void testLoader() throws Exception {
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
@@ -29,6 +31,7 @@ public class IpaLoaderTest implements EmulatorConfigurator {
         IpaLoader ipaLoader = new IpaLoader64(new File("unidbg-ios/src/test/resources/app/TelegramMessenger-5.11.ipa"),
                 new File("target/rootfs/ipa"));
         ipaLoader.addBackendFactory(new HypervisorFactory(true));
+        ipaLoader.addBackendFactory(new KvmFactory(true));
         ipaLoader.addBackendFactory(new DynarmicFactory(true));
         LoadedIpa loader = ipaLoader.load(this);
         final Emulator<?> emulator = loader.getEmulator();
@@ -50,6 +53,10 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                 return null;
             }
         });
+    }
+
+    public void test() throws Exception {
+        main(null);
     }
 
     public static void main(String[] args) throws Exception {
