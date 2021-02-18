@@ -1,8 +1,13 @@
 package com.github.unidbg.arm.backend.kvm;
 
+import capstone.Arm64;
+import capstone.Capstone;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.*;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -23,6 +28,68 @@ public class KvmBackend64 extends KvmBackend {
         super(emulator, kvm);
     }
 
+    private Capstone capstoneInst;
+
+    private synchronized Capstone createCapstone() {
+        if (capstoneInst == null) {
+            this.capstoneInst = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+            this.capstoneInst.setDetail(Capstone.CS_OPT_ON);
+        }
+        return capstoneInst;
+    }
+
+    private boolean handleCommRead(long vaddr, long elr) {
+        Pointer pointer = UnidbgPointer.pointer(emulator, vaddr);
+        assert pointer != null;
+        Pointer pc = UnidbgPointer.pointer(emulator, elr);
+        assert pc != null;
+        byte[] code = pc.getByteArray(0, 4);
+        Capstone.CsInsn insn = createCapstone().disasm(code, elr, 1)[0];
+        if (log.isDebugEnabled()) {
+            log.debug("handleCommRead vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn.mnemonic + " " + insn.opStr);
+        }
+        Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
+        if (opInfo.updateFlags || opInfo.writeback || !insn.mnemonic.startsWith("ldr") || vaddr < _COMM_PAGE64_BASE_ADDRESS) {
+            throw new UnsupportedOperationException();
+        }
+        int offset = (int) (vaddr - _COMM_PAGE64_BASE_ADDRESS);
+        switch (offset) {
+            case 0x38: // uint64_t max memory size */
+            case 0x40:
+            case 0x58: {
+                Arm64.Operand operand = opInfo.op[0];
+                Arm64.OpValue value = operand.value;
+                reg_write(value.reg, 0x0L);
+                kvm.reg_set_elr_el1(elr + 4);
+                return true;
+            }
+            case 0x48:
+            case 0x4c:
+            case 0x50:
+            case 0x60:
+            case 0x64:
+            case 0x90: {
+                Arm64.Operand operand = opInfo.op[0];
+                Arm64.OpValue value = operand.value;
+                reg_write(value.reg, 0x0);
+                kvm.reg_set_elr_el1(elr + 4);
+                return true;
+            }
+            case 0x22: // uint8_t number of configured CPUs
+            case 0x34: // uint8_t number of active CPUs (hw.activecpu)
+            case 0x35: // uint8_t number of physical CPUs (hw.physicalcpu_max)
+            case 0x36: { // uint8_t number of logical CPUs (hw.logicalcpu_max)
+                Arm64.Operand operand = opInfo.op[0];
+                Arm64.OpValue value = operand.value;
+                reg_write(value.reg, 1);
+                kvm.reg_set_elr_el1(elr + 4);
+                return true;
+            }
+            default:
+                throw new UnsupportedOperationException("vaddr=0x" + Long.toHexString(vaddr));
+        }
+    }
+
     @Override
     public boolean handleException(long esr, long far, long elr, long spsr, long pc) {
         int ec = (int) ((esr >> 26) & 0x3f);
@@ -40,7 +107,22 @@ public class KvmBackend64 extends KvmBackend {
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, swi);
                 return true;
             }
-            case EC_DATAABORT:
+            case EC_DATAABORT: {
+                boolean isv = (esr & ARM_EL_ISV) != 0;
+                boolean isWrite = ((esr >> 6) & 1) != 0;
+                boolean s1ptw = ((esr >> 7) & 1) != 0;
+                int sas = (int) ((esr >> 22) & 3);
+                int len = 1 << sas;
+                int srt = (int) ((esr >> 16) & 0x1f);
+                int dfsc = (int) (esr & 0x3f);
+                if (log.isDebugEnabled()) {
+                    log.debug("handle EC_DATAABORT isv=" + isv + ", isWrite=" + isWrite + ", s1ptw=" + s1ptw + ", len=" + len + ", srt=" + srt + ", dfsc=0x" + Integer.toHexString(dfsc) + ", vaddr=0x" + Long.toHexString(far));
+                }
+                if (dfsc == 0x00 && emulator.getFamily() == Family.iOS) {
+                    return handleCommRead(far, elr);
+                }
+                throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
+            }
             case EC_INSNABORT:
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
