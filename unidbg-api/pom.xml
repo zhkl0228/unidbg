@@ -15,17 +15,17 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unicorn</artifactId>
-            <version>1.0.10</version>
+            <version>1.0.12</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>capstone</artifactId>
-            <version>3.0.10</version>
+            <version>3.0.11</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>keystone</artifactId>
-            <version>0.9.3</version>
+            <version>0.9.5</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
