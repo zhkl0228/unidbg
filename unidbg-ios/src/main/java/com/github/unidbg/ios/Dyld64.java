@@ -36,6 +36,18 @@ public class Dyld64 extends Dyld {
     Dyld64(MachOLoader loader, SvcMemory svcMemory) {
         super(svcMemory);
         this.loader = loader;
+
+        __dyld_register_thread_helpers = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                // the table passed to dyld containing thread helpers
+                Pointer helpers = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                if (log.isDebugEnabled()) {
+                    log.debug("registerThreadHelpers helpers=" + helpers + ", version=" + helpers.getLong(0));
+                }
+                return 0;
+            }
+        });
     }
 
     private Pointer __dyld_image_count;
@@ -45,7 +57,7 @@ public class Dyld64 extends Dyld {
     private Pointer __dyld_get_image_slide;
     private Pointer __dyld_register_func_for_add_image;
     private Pointer __dyld_register_func_for_remove_image;
-    private Pointer __dyld_register_thread_helpers;
+    private final Pointer __dyld_register_thread_helpers;
     private Pointer __dyld_dyld_register_image_state_change_handler;
     private Pointer __dyld_image_path_containing_address;
     private Pointer __dyld__NSGetExecutablePath;
@@ -401,19 +413,6 @@ public class Dyld64 extends Dyld {
                 address.setPointer(0, __dyld_dlsym);
                 return 1;
             case "__dyld_register_thread_helpers":
-                if (__dyld_register_thread_helpers == null) {
-                    __dyld_register_thread_helpers = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            // the table passed to dyld containing thread helpers
-                            Pointer helpers = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            if (log.isDebugEnabled()) {
-                                log.debug("registerThreadHelpers helpers=" + helpers + ", version=" + helpers.getLong(0));
-                            }
-                            return 0;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_register_thread_helpers);
                 return 1;
             case "__dyld_image_path_containing_address":
