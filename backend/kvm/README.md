@@ -1,6 +1,6 @@
 # Kvm backend
 
-Allows you to emulate Android and iOS native library on Raspberry Pi 4B.<br>
+Allows you to emulate Android native library on Raspberry Pi 4B.<br>
 
 Tested on [CentOS-7-aarch64](https://mirrors.bfsu.edu.cn/centos-altarch/7.9.2009/isos/aarch64/images/CentOS-Userland-7-aarch64-RaspberryPI-Minimal-4-2009-sda.raw.xz) with Raspberry Pi 4B.<br>
 

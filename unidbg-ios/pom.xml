@@ -30,12 +30,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.zhkl0228</groupId>
-            <artifactId>unidbg-kvm</artifactId>
-            <version>0.9.3-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.kaitai</groupId>
             <artifactId>kaitai-struct-runtime</artifactId>
             <version>0.8</version>
