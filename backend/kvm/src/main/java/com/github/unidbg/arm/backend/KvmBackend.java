@@ -217,7 +217,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     }
 
     @Override
-    public final void destroy() throws BackendException {
+    public void destroy() throws BackendException {
         IOUtils.closeQuietly(kvm);
     }
 

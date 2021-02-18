@@ -372,4 +372,13 @@ public class KvmBackend64 extends KvmBackend {
         }
     }
 
+    @Override
+    public synchronized void destroy() throws BackendException {
+        super.destroy();
+
+        if (capstoneInst != null) {
+            capstoneInst.close();
+            capstoneInst = null;
+        }
+    }
 }
