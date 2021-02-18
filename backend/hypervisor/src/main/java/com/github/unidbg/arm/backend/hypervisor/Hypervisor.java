@@ -258,11 +258,11 @@ public class Hypervisor implements Closeable {
     }
 
     public long reg_read_cpacr_el1() {
-        long nzcv = reg_read_cpacr_el1(nativeHandle);
+        long cpacr = reg_read_cpacr_el1(nativeHandle);
         if (log.isDebugEnabled()) {
-            log.debug("reg_read_cpacr_el1=0x" + Long.toHexString(nzcv));
+            log.debug("reg_read_cpacr_el1=0x" + Long.toHexString(cpacr));
         }
-        return nzcv;
+        return cpacr;
     }
 
     public void emu_start(long begin) {

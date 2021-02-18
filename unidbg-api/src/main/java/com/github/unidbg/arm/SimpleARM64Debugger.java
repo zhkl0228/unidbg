@@ -29,14 +29,17 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     protected final void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception {
         Backend backend = emulator.getBackend();
         long nextAddress = 0;
-        if (address > 0) {
-            System.out.println("debugger break at: 0x" + Long.toHexString(address));
-            try {
+
+        try {
+            if (address != -1) {
+                System.out.println("debugger break at: 0x" + Long.toHexString(address));
                 emulator.showRegs();
-                nextAddress = disassemble(emulator, address, size, false);
-            } catch (BackendException e) {
-                e.printStackTrace();
             }
+            if (address > 0) {
+                nextAddress = disassemble(emulator, address, size, false);
+            }
+        } catch (BackendException e) {
+            e.printStackTrace();
         }
 
         Scanner scanner = new Scanner(System.in);

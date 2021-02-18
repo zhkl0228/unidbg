@@ -22,8 +22,11 @@ public class IpaLoaderTest implements EmulatorConfigurator {
 
     public void testLoader() throws Exception {
         long start = System.currentTimeMillis();
-        IpaLoader ipaLoader = new IpaLoader64(new File("unidbg-ios/src/test/resources/app/TelegramMessenger-5.11.ipa"),
-                new File("target/rootfs/ipa"));
+        File ipa = new File("unidbg-ios/src/test/resources/app/TelegramMessenger-5.11.ipa");
+        if (!ipa.canRead()) {
+            ipa = new File("src/test/resources/app/TelegramMessenger-5.11.ipa");
+        }
+        IpaLoader ipaLoader = new IpaLoader64(ipa, new File("target/rootfs/ipa"));
         ipaLoader.addBackendFactory(new HypervisorFactory(true));
         ipaLoader.addBackendFactory(new DynarmicFactory(true));
         LoadedIpa loader = ipaLoader.load(this);

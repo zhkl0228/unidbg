@@ -213,7 +213,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         try {
             debugging = true;
-            loop(emulator, 0, 0, callable);
+            loop(emulator, -1, 0, callable);
         } finally {
             debugging = false;
         }
@@ -647,7 +647,8 @@ public abstract class AbstractARMDebugger implements Debugger {
         return next;
     }
 
-    final void disassembleBlock(Emulator<?> emulator, long address, boolean thumb) {
+    @Override
+    public final void disassembleBlock(Emulator<?> emulator, long address, boolean thumb) {
         StringBuilder sb = new StringBuilder();
         long nextAddr = address;
         UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);

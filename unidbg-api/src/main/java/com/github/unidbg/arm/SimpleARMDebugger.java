@@ -30,14 +30,17 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         Backend backend = emulator.getBackend();
         boolean thumb = ARM.isThumb(backend);
         long nextAddress = 0;
-        if (address > 0) {
-            System.out.println("debugger break at: 0x" + Long.toHexString(address));
-            try {
+
+        try {
+            if (address != -1) {
+                System.out.println("debugger break at: 0x" + Long.toHexString(address));
                 emulator.showRegs();
-                nextAddress = disassemble(emulator, address, size, thumb);
-            } catch (BackendException e) {
-                e.printStackTrace();
             }
+            if (address > 0) {
+                nextAddress = disassemble(emulator, address, size, thumb);
+            }
+        } catch (BackendException e) {
+            e.printStackTrace();
         }
 
         Scanner scanner = new Scanner(System.in);

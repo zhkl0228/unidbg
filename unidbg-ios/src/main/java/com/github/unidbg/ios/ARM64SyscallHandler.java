@@ -72,7 +72,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
 
         if (intno == ARMEmulator.EXCP_BKPT) { // brk
-            createBreaker(emulator).brk(pc, (pc.getInt(0) >> 5) & 0xffff);
+            createBreaker(emulator).brk(pc, pc == null ? swi : (pc.getInt(0) >> 5) & 0xffff);
             return;
         }
 

@@ -234,6 +234,10 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
 
     @Override
     protected final void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception {
+        if (address <= 0) {
+            return;
+        }
+
         semaphore = new Semaphore(0);
 
         onHitBreakPoint(emulator, address);
