@@ -63,7 +63,16 @@ public class Utilities64 extends TestCase {
         System.out.println("destroy");
     }
 
-    public void test() {
+    public void test() throws Exception {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                pbkdf2();
+            }
+        });
+        thread.start();
+        thread.join();
+
         this.aesCbcEncryptionByteArray();
         this.aesCtrDecryptionByteArray();
         this.pbkdf2();
@@ -78,15 +87,6 @@ public class Utilities64 extends TestCase {
 
     public static void main(String[] args) throws Exception {
         final Utilities64 test = new Utilities64();
-
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                test.pbkdf2();
-            }
-        });
-        thread.start();
-        thread.join();
 
         test.aesCbcEncryptionByteArray();
         test.aesCtrDecryptionByteArray();
