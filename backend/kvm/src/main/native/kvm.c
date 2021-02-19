@@ -836,7 +836,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc - cpu->offset));
   } else {
     bool thumb = pc & 1;
-    uint32_t cpsr = PSR_AA32_E_BIT | PSR_AA32_A_BIT | PSR_AA32_I_BIT | PSR_AA32_F_BIT | PSR_AA32_MODE_USR;
+    uint32_t cpsr = PSR_AA32_A_BIT | PSR_AA32_I_BIT | PSR_AA32_F_BIT | PSR_AA32_MODE_USR;
     if(thumb) {
       cpsr |= PSR_AA32_T_BIT;
     }

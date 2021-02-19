@@ -70,7 +70,7 @@ public class KvmBackend32 extends KvmBackend {
 
     @Override
     public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
-        emulator.attach().addBreakPoint(0x4081c695);
+        emulator.attach().addBreakPoint(0x4081c697);
         byte[] data = mem_read(0xbffff78cL, 16);
         Inspector.inspect(data, "emu_start");
 
