@@ -107,7 +107,7 @@ static int gKvmFd = 0;
 static int gRunSize = 0;
 static int gMaxSlots = 0;
 static bool gHasPmuV3;
-static boolean has32Bit;
+static bool has32Bit;
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
