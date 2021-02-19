@@ -4,7 +4,6 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.*;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.utils.Inspector;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -21,6 +20,9 @@ import java.nio.ByteOrder;
 public class KvmBackend32 extends KvmBackend {
 
     private static final Log log = LogFactory.getLog(KvmBackend32.class);
+
+    private static final int EC_AA32_SVC = 0x11;
+    private static final int EC_AA32_BKPT = 0x38;
 
     public KvmBackend32(Emulator<?> emulator, Kvm kvm) throws BackendException {
         super(emulator, kvm);
@@ -56,6 +58,11 @@ public class KvmBackend32 extends KvmBackend {
         }
 
         switch (ec) {
+            case EC_AA32_SVC: {
+                int swi = (int) (esr & 0xffff);
+                callSVC(elr, swi);
+                return true;
+            }
             case EC_AA32_BKPT: {
                 int swi = (int) (esr & 0xffff);
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, swi);
@@ -66,15 +73,6 @@ public class KvmBackend32 extends KvmBackend {
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
-    }
-
-    @Override
-    public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
-        emulator.attach().addBreakPoint(0x4081c697);
-        byte[] data = mem_read(0xbffff78cL, 16);
-        Inspector.inspect(data, "emu_start");
-
-        super.emu_start(begin, until, timeout, count);
     }
 
     @Override

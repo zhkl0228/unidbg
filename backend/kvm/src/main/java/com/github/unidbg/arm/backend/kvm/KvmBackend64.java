@@ -25,6 +25,9 @@ public class KvmBackend64 extends KvmBackend {
 
     private static final Log log = LogFactory.getLog(KvmBackend64.class);
 
+    private static final int EC_AA64_SVC = 0x15;
+    private static final int EC_AA64_BKPT = 0x3c;
+
     private static final long DARWIN_KERNEL_BASE = 0xffffff80001f0000L;
     private static final long _COMM_PAGE64_BASE_ADDRESS = DARWIN_KERNEL_BASE + 0xc000 /* In TTBR0 */;
 
