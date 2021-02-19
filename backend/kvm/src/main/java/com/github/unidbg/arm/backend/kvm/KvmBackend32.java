@@ -91,9 +91,9 @@ public class KvmBackend32 extends KvmBackend {
                 case ArmConst.UC_ARM_REG_SP:
                     return (int) (kvm.reg_read64(13) & 0xffffffffL);
                 case ArmConst.UC_ARM_REG_LR:
-                    return kvm.reg_read64(14);
+                    return (int) (kvm.reg_read64(14) & 0xffffffffL);
                 case ArmConst.UC_ARM_REG_PC:
-                    return kvm.reg_read_pc64();
+                    return (int) (kvm.reg_read_pc64() & 0xffffffffL);
                 case ArmConst.UC_ARM_REG_CPSR:
                     return kvm.reg_read_nzcv();
                 default:
@@ -112,6 +112,15 @@ public class KvmBackend32 extends KvmBackend {
                 case ArmConst.UC_ARM_REG_R1:
                 case ArmConst.UC_ARM_REG_R2:
                 case ArmConst.UC_ARM_REG_R3:
+                case ArmConst.UC_ARM_REG_R4:
+                case ArmConst.UC_ARM_REG_R5:
+                case ArmConst.UC_ARM_REG_R6:
+                case ArmConst.UC_ARM_REG_R7:
+                case ArmConst.UC_ARM_REG_R8:
+                case ArmConst.UC_ARM_REG_R9:
+                case ArmConst.UC_ARM_REG_R10:
+                case ArmConst.UC_ARM_REG_R11:
+                case ArmConst.UC_ARM_REG_R12:
                     kvm.reg_write64(regId - ArmConst.UC_ARM_REG_R0, value.longValue() & 0xffffffffL);
                     break;
                 case ArmConst.UC_ARM_REG_SP:
@@ -124,7 +133,7 @@ public class KvmBackend32 extends KvmBackend {
                     kvm.reg_set_fpexc(value.longValue() & 0xffffffffL);
                     break;
                 case ArmConst.UC_ARM_REG_C13_C0_3:
-                    kvm.reg_set_tpidrro_el0(value.longValue());
+                    kvm.reg_set_tpidrro_el0(value.longValue() & 0xffffffffL);
                     break;
                 default:
                     throw new KvmException("regId=" + regId);
