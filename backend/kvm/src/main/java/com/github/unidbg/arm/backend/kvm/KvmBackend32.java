@@ -89,7 +89,7 @@ public class KvmBackend32 extends KvmBackend {
                 case ArmConst.UC_ARM_REG_R12:
                     return (int) (kvm.reg_read64(regId - ArmConst.UC_ARM_REG_R0) & 0xffffffffL);
                 case ArmConst.UC_ARM_REG_SP:
-                    return kvm.reg_read_sp64() & 0xffffffffL;
+                    return (int) (kvm.reg_read64(13) & 0xffffffffL);
                 case ArmConst.UC_ARM_REG_LR:
                     return kvm.reg_read64(14);
                 case ArmConst.UC_ARM_REG_PC:
@@ -115,7 +115,7 @@ public class KvmBackend32 extends KvmBackend {
                     kvm.reg_write64(regId - ArmConst.UC_ARM_REG_R0, value.longValue() & 0xffffffffL);
                     break;
                 case ArmConst.UC_ARM_REG_SP:
-                    kvm.reg_set_sp64(value.longValue() & 0xffffffffL);
+                    kvm.reg_write64(13, value.longValue() & 0xffffffffL);
                     break;
                 case ArmConst.UC_ARM_REG_LR:
                     kvm.reg_write64(14, value.longValue() & 0xffffffffL);
