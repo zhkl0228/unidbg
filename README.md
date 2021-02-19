@@ -44,6 +44,7 @@ Simple tests under src/test directory
 - Support iOS objc and swift runtime.
 - Support [dynarmic](https://github.com/MerryMage/dynarmic) fast backend.
 - Support Apple M1 hypervisor, the fastest ARM64 backend.
+- Support Linux KVM backend with Raspberry Pi B4.
 
 ## Thanks
 - [unicorn](https://github.com/zhkl0228/unicorn)

@@ -205,10 +205,14 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
 //      vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC); // set stage 1 as normal memory
     return cpu;
   } else {
-    abort();
+    if(has32Bit) {
+      return cpu;
+    } else {
+      fprintf(stderr, "KVM_CAP_ARM_EL1_32BIT unavailable\n");
+      abort();
+      return NULL;
+    }
   }
-
-  return cpu;
 }
 
 __attribute__((constructor))
@@ -818,13 +822,12 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc - cpu->offset));
   } else {
     bool thumb = pc & 1;
+    uint32_t cpsr = PSR_AA32_E_BIT | PSR_AA32_A_BIT | PSR_AA32_I_BIT | PSR_AA32_F_BIT | PSR_AA32_MODE_USR;
     if(thumb) {
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3f0));
-    } else {
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3e0));
+      cpsr |= PSR_AA32_T_BIT;
     }
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, 0x3c0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, (uint32_t) (pc & ~1)));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, cpsr));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, (uint32_t) (pc & ~1) - cpu->offset));
   }
   return cpu_loop(env, kvm, cpu);
 }
