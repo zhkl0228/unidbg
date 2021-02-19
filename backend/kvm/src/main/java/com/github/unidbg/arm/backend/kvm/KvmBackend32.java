@@ -2,6 +2,7 @@ package com.github.unidbg.arm.backend.kvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.*;
+import com.github.unidbg.pointer.UnidbgPointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -17,6 +18,16 @@ public class KvmBackend32 extends KvmBackend {
 
     public KvmBackend32(Emulator<?> emulator, Kvm kvm) throws BackendException {
         super(emulator, kvm);
+    }
+
+    @Override
+    public void onInitialize() {
+        super.onInitialize();
+
+        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
+        assert ptr != null;
+        ptr.setInt(0, 0xee0d0f70); // mcr p15, 0, r0, c13, c0, 3
+        ptr.setInt(4, 0xef000000); // svc #0
     }
 
     @Override
@@ -91,6 +102,8 @@ public class KvmBackend32 extends KvmBackend {
                     kvm.reg_set_fpexc(value.longValue() & 0xffffffffL);
                     break;
                 case ArmConst.UC_ARM_REG_C13_C0_3:
+                    kvm.reg_write64(0, value.longValue() & 0xffffffffL);
+                    emu_start(REG_VBAR_EL1, REG_VBAR_EL1 + 4, 0, 0);
                     break;
                 default:
                     throw new KvmException("regId=" + regId);
