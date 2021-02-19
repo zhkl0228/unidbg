@@ -90,6 +90,8 @@ public class KvmBackend32 extends KvmBackend {
                 case ArmConst.UC_ARM_REG_FPEXC:
                     kvm.reg_set_fpexc(value.longValue() & 0xffffffffL);
                     break;
+                case ArmConst.UC_ARM_REG_C13_C0_3:
+                    break;
                 default:
                     throw new KvmException("regId=" + regId);
             }
