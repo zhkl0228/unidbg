@@ -575,7 +575,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read_1nz
   t_kvm kvm = (t_kvm) handle;
   t_kvm_cpu cpu = kvm->cpu;
   uint64_t cpsr = 0;
-  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SPSR_EL1, &cpsr));
   return cpsr;
 }
 
