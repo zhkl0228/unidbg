@@ -71,3 +71,10 @@ enum arm_exception_class {
 static inline uint32_t syn_get_ec(uint32_t syn) {
   return syn >> ARM_EL_EC_SHIFT;
 }
+
+#define PSR_MODE_EL0t	0x00000000
+
+#define PSR_F_BIT	0x00000040
+#define PSR_I_BIT	0x00000080
+#define PSR_A_BIT	0x00000100
+#define PSR_D_BIT	0x00000200

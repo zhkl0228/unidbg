@@ -2,7 +2,6 @@ package com.github.unidbg.arm.backend.kvm;
 
 public interface KvmCallback {
 
-    int EC_INSNABORT = 0x20;
     int EC_DATAABORT = 0x24;
 
     int ARM_EL_ISV_SHIFT = 24;

@@ -21,6 +21,7 @@ typedef struct hypervisor {
 } *t_hypervisor;
 
 static jmethodID handleException = NULL;
+static jmethodID handleBreakPoint = NULL;
 
 static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
     uint64_t idx = vaddr >> PAGE_BITS;
@@ -151,13 +152,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
     if(hypervisor->is64Bit) {
       vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC); // set stage 1 as normal memory
     } else {
-      vcpu->HV_SYS_REG_HCR_EL2 = 0x1000LL;
-
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c4));
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_PC, REG_VBAR_EL1));
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, REG_VBAR_EL1+4));
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, 0x1c0));
-      assert(cpu_loop(env, hypervisor, cpu) == 0);
+      abort();
     }
 
     return cpu;
@@ -186,17 +181,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
 
   if(hypervisor->is64Bit) {
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c0));
+    uint32_t cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, cpsr));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_PC, pc));
   } else {
-    bool thumb = pc & 1;
-    if(thumb) {
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3f0));
-    } else {
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3e0));
-    }
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, 0x3c0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_PC, (uint32_t) (pc & ~1)));
+    abort();
   }
   return cpu_loop(env, hypervisor, cpu);
 }
@@ -719,6 +708,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_ERR;
   }
   handleException = env->GetMethodID(cHypervisorCallback, "handleException", "(JJJJ)Z");
+  handleBreakPoint = env->GetMethodID(cHypervisorCallback, "handleBreakPoint", "(I)V");
 
   return JNI_VERSION_1_6;
 }

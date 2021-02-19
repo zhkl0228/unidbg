@@ -10,4 +10,6 @@ public interface HypervisorCallback {
 
     boolean handleException(long esr, long far, long elr, long spsr);
 
+    void handleBreakPoint(int bkpt);
+
 }

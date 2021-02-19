@@ -132,8 +132,8 @@ public class KvmBackend64 extends KvmBackend {
                 return true;
             }
             case EC_AA64_BKPT: {
-                int swi = (int) (esr & 0xffff);
-                interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, swi);
+                int bkpt = (int) (esr & 0xffff);
+                interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, bkpt);
                 return true;
             }
             case EC_DATAABORT: {
@@ -152,7 +152,6 @@ public class KvmBackend64 extends KvmBackend {
                 }
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }
-            case EC_INSNABORT:
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
