@@ -2,6 +2,7 @@ package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.kvm.Kvm;
+import com.github.unidbg.arm.backend.kvm.KvmBackend32;
 import com.github.unidbg.arm.backend.kvm.KvmBackend64;
 import org.scijava.nativelib.NativeLibraryUtil;
 
@@ -28,7 +29,7 @@ public class KvmFactory extends BackendFactory {
         if (is64Bit) {
             return new KvmBackend64(emulator, kvm);
         } else {
-            throw new UnsupportedOperationException();
+            return new KvmBackend32(emulator, kvm);
         }
     }
 

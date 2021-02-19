@@ -88,6 +88,7 @@ typedef enum {
     HV_SYS_REG_TPIDRRO_EL0 = ARM64_SYS_REG(3, 3, 13, 0, 3),
     HV_SYS_REG_CNTV_CTL_EL0 = ARM64_SYS_REG(3, 3, 14, 3, 1),
     HV_SYS_REG_CNTV_CVAL_EL0 = ARM64_SYS_REG(3, 3, 14, 3, 2),
+    HV_SYS_REG_FPEXC32_EL2 = ARM64_SYS_REG(3, 4, 5, 3, 0),
 } hv_sys_reg_t;
 
 typedef enum {
