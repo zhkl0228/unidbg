@@ -81,6 +81,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1cpac
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    reg_set_fpexc
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1set_1fpexc
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    reg_set_sp64
  * Signature: (JJ)I
  */
