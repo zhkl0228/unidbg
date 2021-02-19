@@ -16,6 +16,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.Unicorn;
+import unicorn.UnicornConst;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class KvmBackend64 extends KvmBackend {
 
@@ -26,6 +30,28 @@ public class KvmBackend64 extends KvmBackend {
 
     public KvmBackend64(Emulator<?> emulator, Kvm kvm) throws BackendException {
         super(emulator, kvm);
+    }
+
+    @Override
+    public void onInitialize() {
+        super.onInitialize();
+
+        mem_map(REG_VBAR_EL1, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        while (buffer.hasRemaining()) {
+            if (buffer.position() == 0x400) {
+                buffer.putInt(0x390003e0); // strb w0, [sp]
+            } else {
+                buffer.putInt(0x390003e1); // strb w1, [sp]
+            }
+            if (buffer.hasRemaining()) {
+                buffer.putInt(0xd69f03e0); // eret
+            }
+        }
+        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
+        assert ptr != null;
+        ptr.write(buffer.array());
     }
 
     private Capstone capstoneInst;

@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend.kvm;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.backend.*;
 import com.github.unidbg.pointer.UnidbgPointer;
 import keystone.Keystone;
@@ -11,6 +12,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
+import unicorn.UnicornConst;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class KvmBackend32 extends KvmBackend {
 
@@ -20,14 +25,33 @@ public class KvmBackend32 extends KvmBackend {
         super(emulator, kvm);
     }
 
+    private static final long SET_REG_C13_C0_3 = REG_VBAR_EL1 + 0x800;
+
     @Override
     public void onInitialize() {
         super.onInitialize();
 
+        mem_map(REG_VBAR_EL1, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        while (buffer.hasRemaining()) {
+            if (buffer.position() == 0x600) {
+                buffer.putInt(0x390003e0); // strb w0, [sp]
+            } else {
+                buffer.putInt(0x390003e1); // strb w1, [sp]
+            }
+            if (buffer.hasRemaining()) {
+                buffer.putInt(0xd69f03e0); // eret
+            }
+        }
         UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
         assert ptr != null;
+        ptr.write(buffer.array());
+
+        ptr = UnidbgPointer.pointer(emulator, SET_REG_C13_C0_3);
+        assert ptr != null;
         ptr.setInt(0, 0xee0d0f70); // mcr p15, 0, r0, c13, c0, 3
-        ptr.setInt(4, 0xef000000); // svc #0
+        ptr.setInt(4, ArmSvc.assembleSvc(0)); // svc #0
     }
 
     @Override
@@ -103,7 +127,7 @@ public class KvmBackend32 extends KvmBackend {
                     break;
                 case ArmConst.UC_ARM_REG_C13_C0_3:
                     kvm.reg_write64(0, value.longValue() & 0xffffffffL);
-                    emu_start(REG_VBAR_EL1, REG_VBAR_EL1 + 4, 0, 0);
+                    emu_start(SET_REG_C13_C0_3, SET_REG_C13_C0_3 + 4, 0, 0);
                     break;
                 default:
                     throw new KvmException("regId=" + regId);

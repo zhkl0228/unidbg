@@ -5,14 +5,10 @@ import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.kvm.Kvm;
 import com.github.unidbg.arm.backend.kvm.KvmCallback;
 import com.github.unidbg.arm.backend.kvm.KvmException;
-import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.UnicornConst;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,28 +26,6 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     private int slotIndex;
     private final UserMemoryRegion[] slots;
     protected final Map<Long, UserMemoryRegion> memoryRegionMap; // key is guest_phys_addr
-
-    @Override
-    public void onInitialize() {
-        super.onInitialize();
-
-        mem_map(REG_VBAR_EL1, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
-        ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        while (buffer.hasRemaining()) {
-            if (buffer.position() == 0x400) {
-                buffer.putInt(0x390003e0); // strb w0, [sp]
-            } else {
-                buffer.putInt(0x390003e1); // strb w1, [sp]
-            }
-            if (buffer.hasRemaining()) {
-                buffer.putInt(0xd69f03e0); // eret
-            }
-        }
-        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
-        assert ptr != null;
-        ptr.write(buffer.array());
-    }
 
     protected KvmBackend(Emulator<?> emulator, Kvm kvm) throws BackendException {
         super(emulator);
