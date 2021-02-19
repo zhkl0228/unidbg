@@ -44,14 +44,6 @@ public class KvmBackend32 extends KvmBackend {
         UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
         assert ptr != null;
         ptr.write(buffer.array());
-
-        mem_map(0, getPageSize(), 0);
-        buffer = ByteBuffer.allocate(getPageSize());
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        while (buffer.hasRemaining()) {
-            buffer.putInt(0xe1200070); // bkpt #0
-        }
-        mem_write(0, buffer.array());
     }
 
     @Override
@@ -67,6 +59,13 @@ public class KvmBackend32 extends KvmBackend {
             default:
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
+    }
+
+    @Override
+    public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
+        emulator.attach().addBreakPoint(0x4082097d);
+
+        super.emu_start(begin, until, timeout, count);
     }
 
     @Override
