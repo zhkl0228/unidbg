@@ -1,7 +1,6 @@
 package com.github.unidbg.arm.backend.kvm;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.backend.*;
 import com.github.unidbg.pointer.UnidbgPointer;
 import keystone.Keystone;
@@ -25,8 +24,6 @@ public class KvmBackend32 extends KvmBackend {
         super(emulator, kvm);
     }
 
-    private static final long SET_REG_C13_C0_3 = REG_VBAR_EL1 + 0x800;
-
     @Override
     public void onInitialize() {
         super.onInitialize();
@@ -47,11 +44,6 @@ public class KvmBackend32 extends KvmBackend {
         UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
         assert ptr != null;
         ptr.write(buffer.array());
-
-        ptr = UnidbgPointer.pointer(emulator, SET_REG_C13_C0_3);
-        assert ptr != null;
-        ptr.setInt(0, 0xee0d0f70); // mcr p15, 0, r0, c13, c0, 3
-        ptr.setInt(4, ArmSvc.assembleSvc(0)); // svc #0
     }
 
     @Override
@@ -60,7 +52,13 @@ public class KvmBackend32 extends KvmBackend {
         if (log.isDebugEnabled()) {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", pc=0x" + Long.toHexString(pc));
         }
-        throw new UnsupportedOperationException();
+
+        switch (ec) {
+            case EC_DATAABORT:
+            case EC_INSNABORT:
+            default:
+                throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
+        }
     }
 
     @Override
@@ -126,8 +124,7 @@ public class KvmBackend32 extends KvmBackend {
                     kvm.reg_set_fpexc(value.longValue() & 0xffffffffL);
                     break;
                 case ArmConst.UC_ARM_REG_C13_C0_3:
-                    kvm.reg_write64(0, value.longValue() & 0xffffffffL);
-                    emu_start(SET_REG_C13_C0_3, SET_REG_C13_C0_3 + 4, 0, 0);
+                    kvm.reg_set_tpidrro_el0(value.longValue());
                     break;
                 default:
                     throw new KvmException("regId=" + regId);
