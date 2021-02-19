@@ -57,11 +57,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         Emulator<AndroidFileIO> emulator = (Emulator<AndroidFileIO>) user;
         UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
         final int bkpt;
-        if (ARM.isThumb(backend)) {
-            bkpt = pc.getShort(0) & 0xff;
+        if (pc == null) {
+            bkpt = swi;
         } else {
-            int instruction = pc.getInt(0);
-            bkpt = (instruction & 0xf) | ((instruction >> 8) & 0xfff) << 4;
+            if (ARM.isThumb(backend)) {
+                bkpt = pc.getShort(0) & 0xff;
+            } else {
+                int instruction = pc.getInt(0);
+                bkpt = (instruction & 0xf) | ((instruction >> 8) & 0xfff) << 4;
+            }
         }
 
         if (intno == ARMEmulator.EXCP_BKPT) { // bkpt

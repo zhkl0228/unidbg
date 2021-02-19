@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend.kvm;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.*;
 import com.github.unidbg.pointer.UnidbgPointer;
 import keystone.Keystone;
@@ -54,6 +55,11 @@ public class KvmBackend32 extends KvmBackend {
         }
 
         switch (ec) {
+            case EC_AA32_BKPT: {
+                int swi = (int) (esr & 0xffff);
+                interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, swi);
+                return true;
+            }
             case EC_DATAABORT:
             case EC_INSNABORT:
             default:
