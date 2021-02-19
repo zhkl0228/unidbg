@@ -81,6 +81,9 @@ public class KvmBackend32 extends KvmBackend {
 
     @Override
     public void enableVFP() {
+        int value = reg_read(ArmConst.UC_ARM_REG_C1_C0_2).intValue();
+        value |= (0xf << 20);
+        reg_write(ArmConst.UC_ARM_REG_C1_C0_2, value);
         reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
     }
 
@@ -110,6 +113,8 @@ public class KvmBackend32 extends KvmBackend {
                     return (int) (kvm.reg_read_pc64() & 0xffffffffL);
                 case ArmConst.UC_ARM_REG_CPSR:
                     return kvm.reg_read_nzcv();
+                case ArmConst.UC_ARM_REG_C1_C0_2:
+                    return kvm.reg_read_cpacr_el1();
                 default:
                     throw new KvmException("regId=" + regId);
             }
@@ -148,6 +153,9 @@ public class KvmBackend32 extends KvmBackend {
                     break;
                 case ArmConst.UC_ARM_REG_C13_C0_3:
                     kvm.reg_set_tpidrro_el0(value.longValue() & 0xffffffffL);
+                    break;
+                case ArmConst.UC_ARM_REG_C1_C0_2:
+                    kvm.reg_set_cpacr_el1(value.longValue());
                     break;
                 default:
                     throw new KvmException("regId=" + regId);
