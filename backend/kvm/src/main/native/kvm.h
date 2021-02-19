@@ -139,3 +139,11 @@ hv_return_t hv_vcpu_get_sys_reg(hv_vcpu_t vcpu, hv_sys_reg_t reg, uint64_t *valu
 hv_return_t hv_vcpu_set_sys_reg(hv_vcpu_t vcpu, hv_sys_reg_t reg, uint64_t value);
 hv_return_t hv_vcpu_get_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_simd_fp_uchar16_t *value);
 hv_return_t hv_vcpu_set_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_simd_fp_uchar16_t value);
+
+/* SPSR_ELx bits for exceptions taken from AArch32 */
+#define PSR_AA32_MODE_USR       0x00000010
+#define PSR_AA32_T_BIT          0x00000020
+#define PSR_AA32_F_BIT          0x00000040
+#define PSR_AA32_I_BIT          0x00000080
+#define PSR_AA32_A_BIT          0x00000100
+#define PSR_AA32_E_BIT          0x00000200

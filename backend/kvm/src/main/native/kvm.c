@@ -107,6 +107,7 @@ static int gKvmFd = 0;
 static int gRunSize = 0;
 static int gMaxSlots = 0;
 static bool gHasPmuV3;
+static boolean has32Bit;
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
@@ -249,7 +250,7 @@ static void init() {
   gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
   gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
   int hasMultiAddressSpace = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
-  int has32Bit = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_EL1_32BIT);
+  has32Bit = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_EL1_32BIT) > 0;
 
   int fd = ioctl(kvm, KVM_CREATE_VM, KVM_VM_TYPE_ARM_IPA_SIZE(0));
   if (fd == -1) {
