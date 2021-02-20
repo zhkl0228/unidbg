@@ -74,7 +74,7 @@ public class ClassDump64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         System.out.println(objcClass);
 
         assertTrue(oClassDump.getMeta().isMetaClass());
-        System.out.println("className=" + oClassDump.getName() + ", metaClassName=" + oClassDump.getMeta().getName());
+        System.out.println("[" + emulator.getBackend() + "]className=" + oClassDump.getName() + ", metaClassName=" + oClassDump.getMeta().getName());
 
         ObjcObject str = oClassDump.callObjc("my_dump_class:", "NSTimeZone");
         System.out.println(str.getDescription());
