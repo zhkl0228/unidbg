@@ -9,8 +9,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -57,6 +55,13 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     @Override
     public void mem_map(long address, long size, int perms) throws BackendException {
+        if ((address & (pageSize - 1)) != 0) {
+            throw new IllegalArgumentException("mem_map address=0x" + Long.toHexString(address));
+        }
+        if ((size & (pageSize - 1)) != 0) {
+            throw new IllegalArgumentException("mem_map size=0x" + Long.toHexString(size));
+        }
+
 //        System.out.println("mem_map address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
 
         int slot = allocateSlot();
@@ -70,44 +75,95 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         slotIndex = slot;
     }
 
+    private void mem_unmap_page(long address, UserMemoryRegion region) {
+        if (pageSize == region.memory_size) { // page size region
+            if (address != region.guest_phys_addr) {
+                throw new IllegalStateException("address=0x" + Long.toHexString(address) + ", guest_phys_addr=0x" + Long.toHexString(region.guest_phys_addr));
+            }
+
+            kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size, region.userspace_addr, 0x0);
+            slotIndex = region.slot;
+            slots[slotIndex] = null;
+            memoryRegionMap.remove(region.guest_phys_addr);
+            return;
+        }
+        if (address == region.guest_phys_addr && pageSize < region.memory_size) { // region first page
+            kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, pageSize, region.userspace_addr, 0x0);
+            memoryRegionMap.remove(region.guest_phys_addr);
+
+            long userspace_addr = kvm.set_user_memory_region(region.slot, region.guest_phys_addr + pageSize, region.memory_size - pageSize, region.userspace_addr + pageSize);
+            UserMemoryRegion newRegion = new UserMemoryRegion(region.slot, region.guest_phys_addr + pageSize, region.memory_size - pageSize, userspace_addr);
+            memoryRegionMap.put(newRegion.guest_phys_addr, newRegion);
+            slots[newRegion.slot] = newRegion;
+            return;
+        }
+        if (address > region.guest_phys_addr && address + pageSize == region.guest_phys_addr + region.memory_size) { // region last page
+            long off = address - region.guest_phys_addr;
+            kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, pageSize, region.userspace_addr, off);
+            memoryRegionMap.remove(region.guest_phys_addr);
+
+            long userspace_addr = kvm.set_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size - pageSize, region.userspace_addr);
+            UserMemoryRegion newRegion = new UserMemoryRegion(region.slot, region.guest_phys_addr, region.memory_size - pageSize, userspace_addr);
+            memoryRegionMap.put(newRegion.guest_phys_addr, newRegion);
+            slots[newRegion.slot] = newRegion;
+            return;
+        }
+
+        // region middle page
+        if (address > region.guest_phys_addr && address + pageSize < region.guest_phys_addr + region.memory_size) { // split region
+            kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, 0, region.userspace_addr, 0);
+            memoryRegionMap.remove(region.guest_phys_addr);
+
+            long first_memory_size = address - region.guest_phys_addr;
+            long second_memory_size = region.memory_size - first_memory_size;
+            long first_guest_phys_addr = region.guest_phys_addr;
+
+            long first_userspace_addr = kvm.set_user_memory_region(region.slot, first_guest_phys_addr, first_memory_size, region.userspace_addr);
+
+            UserMemoryRegion first = new UserMemoryRegion(region.slot, first_guest_phys_addr, first_memory_size, first_userspace_addr);
+            memoryRegionMap.put(first.guest_phys_addr, first);
+            slots[first.slot] = first;
+
+            int slot = allocateSlot();
+            long second_userspace_addr = kvm.set_user_memory_region(slot, address, second_memory_size, first_userspace_addr + first_memory_size);
+            UserMemoryRegion second = new UserMemoryRegion(slot, address, second_memory_size, second_userspace_addr);
+            memoryRegionMap.put(second.guest_phys_addr, second);
+            slots[slot++] = second;
+            slotIndex = slot;
+
+            mem_unmap(address, pageSize);
+            return;
+        }
+
+        throw new UnsupportedOperationException("address=0x" + Long.toHexString(address));
+    }
+
     @Override
     public final void mem_unmap(long address, long size) throws BackendException {
+        if ((address & (pageSize - 1)) != 0) {
+            throw new IllegalArgumentException("mem_unmap address=0x" + Long.toHexString(address));
+        }
+        if ((size & (pageSize - 1)) != 0) {
+            throw new IllegalArgumentException("mem_unmap size=0x" + Long.toHexString(size));
+        }
+
 //        System.out.println("mem_unmap address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
 
-        List<UserMemoryRegion> list = new ArrayList<>();
-        for (UserMemoryRegion region : memoryRegionMap.values()) {
-            long min = Math.max(address, region.guest_phys_addr);
-            long max = Math.min(address + size, region.guest_phys_addr + region.memory_size);
-            if (min < max) {
-                list.add(region);
+        for (long i = address; i < address + size; i += pageSize) {
+            UserMemoryRegion userMemoryRegion = null;
+            for (UserMemoryRegion region : memoryRegionMap.values()) {
+                long min = Math.max(i, region.guest_phys_addr);
+                long max = Math.min(i + pageSize, region.guest_phys_addr + region.memory_size);
+                if (min < max) {
+                    userMemoryRegion = region;
+                    break;
+                }
             }
-        }
-        for (UserMemoryRegion region : list) {
-            if (address == region.guest_phys_addr && size == region.memory_size) {
-                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size, region.userspace_addr, 0x0);
-                slotIndex = region.slot;
-                slots[slotIndex] = null;
-                memoryRegionMap.remove(region.guest_phys_addr);
-            } else if (address == region.guest_phys_addr && size < region.memory_size) {
-                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, size, region.userspace_addr, 0x0);
-                memoryRegionMap.remove(region.guest_phys_addr);
-
-                long userspace_addr = kvm.set_user_memory_region(region.slot, region.guest_phys_addr + size, region.memory_size - size, region.userspace_addr + size);
-                UserMemoryRegion newRegion = new UserMemoryRegion(region.slot, region.guest_phys_addr + size, region.memory_size - size, userspace_addr);
-                memoryRegionMap.put(newRegion.guest_phys_addr, newRegion);
-                slots[newRegion.slot] = newRegion;
-            } else if (address > region.guest_phys_addr && address + size == region.guest_phys_addr + region.memory_size) {
-                long off = address - region.guest_phys_addr;
-                kvm.remove_user_memory_region(region.slot, region.guest_phys_addr, size, region.userspace_addr, off);
-                memoryRegionMap.remove(region.guest_phys_addr);
-
-                long userspace_addr = kvm.set_user_memory_region(region.slot, region.guest_phys_addr, region.memory_size - size, region.userspace_addr);
-                UserMemoryRegion newRegion = new UserMemoryRegion(region.slot, region.guest_phys_addr, region.memory_size - size, userspace_addr);
-                memoryRegionMap.put(newRegion.guest_phys_addr, newRegion);
-                slots[newRegion.slot] = newRegion;
-            } else {
-                throw new UnsupportedOperationException("address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", list=" + list);
+            if (userMemoryRegion == null) {
+                throw new IllegalStateException("find userMemoryRegion failed: i=0x" + Long.toHexString(i));
             }
+
+            mem_unmap_page(i, userMemoryRegion);
         }
     }
 

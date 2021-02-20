@@ -369,11 +369,13 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
 
-  char *start_addr = (char *) (userspace_addr + vaddr_off);
-  int ret = munmap(start_addr, memory_size);
-  if(ret != 0) {
-    fprintf(stderr, "munmap failed: userspace_addr=0x%llx, memory_size=0x%llx\n", userspace_addr, memory_size);
-    return 1;
+  if(memory_size > 0) {
+    char *start_addr = (char *) (userspace_addr + vaddr_off);
+    int ret = munmap(start_addr, memory_size);
+    if(ret != 0) {
+      fprintf(stderr, "munmap failed: userspace_addr=0x%llx, memory_size=0x%llx\n", userspace_addr, memory_size);
+      return 1;
+    }
   }
 
 //  printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off, start_addr);
