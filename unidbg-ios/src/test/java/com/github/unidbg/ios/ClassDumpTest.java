@@ -32,7 +32,7 @@ public class ClassDumpTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         return DarwinEmulatorBuilder.for32Bit()
                 .setRootDir(new File("target/rootfs/classdump"))
                 .addBackendFactory(new HypervisorFactory(true))
-                .addBackendFactory(new KvmFactory(false))
+                .addBackendFactory(new KvmFactory(true))
                 .build();
     }
 

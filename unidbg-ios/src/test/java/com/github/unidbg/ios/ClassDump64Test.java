@@ -6,6 +6,7 @@ import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.arm.backend.KvmFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -33,6 +34,7 @@ public class ClassDump64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         builder.setRootDir(new File("target/rootfs/classdump"));
         builder.addBackendFactory(new HypervisorFactory(true));
         builder.addBackendFactory(new DynarmicFactory(true));
+        builder.addBackendFactory(new KvmFactory(true));
         return builder.build();
     }
 
