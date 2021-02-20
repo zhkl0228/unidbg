@@ -32,10 +32,7 @@ public class ClassDumpTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
                 .build();
     }
 
-    public void testIgnore() {
-    }
-
-    private void processClassDump() {
+    public void testClassDump() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setObjcRuntime(true);
         IClassDumper classDumper = ClassDumper.getInstance(emulator);
@@ -82,7 +79,7 @@ public class ClassDumpTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
     public static void main(String[] args) throws Exception {
         ClassDumpTest test = new ClassDumpTest();
         test.setUp();
-        test.processClassDump();
+        test.testClassDump();
         test.tearDown();
     }
 
