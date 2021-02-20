@@ -706,7 +706,10 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    public final void brk(Pointer pc, int svcNumber) {
+    public final void brk(UnidbgPointer pc, int svcNumber) {
+        if (pc != null) {
+            removeBreakPoint(pc.peer);
+        }
         debug();
     }
 

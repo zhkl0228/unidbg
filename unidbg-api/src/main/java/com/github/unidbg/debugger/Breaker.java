@@ -1,11 +1,11 @@
 package com.github.unidbg.debugger;
 
-import com.sun.jna.Pointer;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 public interface Breaker {
 
     void debug();
 
-    void brk(Pointer pc, int svcNumber);
+    void brk(UnidbgPointer pc, int svcNumber);
 
 }

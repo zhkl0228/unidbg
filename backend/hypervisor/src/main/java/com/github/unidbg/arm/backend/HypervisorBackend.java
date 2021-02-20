@@ -55,11 +55,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
-    public void handleBreakPoint(int bkpt) {
-        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, bkpt);
-    }
-
-    @Override
     public byte[] reg_read_vector(int regId) throws BackendException {
         try {
             if (regId >= Arm64Const.UC_ARM64_REG_Q0 && regId <= Arm64Const.UC_ARM64_REG_Q31) {

@@ -4,6 +4,7 @@ import capstone.Arm64;
 import capstone.Capstone;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.HypervisorBackend;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -56,6 +57,11 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case EC_AA64_SVC: {
                 int swi = (int) (esr & 0xffff);
                 callSVC(elr, swi);
+                return true;
+            }
+            case EC_AA64_BKPT: {
+                int bkpt = (int) (esr & 0xffff);
+                interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, bkpt);
                 return true;
             }
             case EC_DATAABORT: {

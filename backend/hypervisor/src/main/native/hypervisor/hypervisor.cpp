@@ -21,7 +21,6 @@ typedef struct hypervisor {
 } *t_hypervisor;
 
 static jmethodID handleException = NULL;
-static jmethodID handleBreakPoint = NULL;
 
 static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
     uint64_t idx = vaddr >> PAGE_BITS;
@@ -142,7 +141,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ID_AA64MMFR0_EL1, 0x5));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ID_AA64MMFR2_EL1, 0x10000));
     // Trap debug access (BRK)
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_trap_debug_exceptions(cpu->vcpu, true));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_trap_debug_exceptions(cpu->vcpu, false));
     assert(pthread_setspecific(hypervisor->cpu_key, cpu) == 0);
 
     t_vcpus vcpu = lookupVcpu(cpu->vcpu);
@@ -708,7 +707,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_ERR;
   }
   handleException = env->GetMethodID(cHypervisorCallback, "handleException", "(JJJJ)Z");
-  handleBreakPoint = env->GetMethodID(cHypervisorCallback, "handleBreakPoint", "(I)V");
 
   return JNI_VERSION_1_6;
 }
