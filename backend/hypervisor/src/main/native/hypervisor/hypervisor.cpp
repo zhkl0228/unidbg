@@ -512,13 +512,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   t_hypervisor hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
-  uint64_t cpsr = 0;
-  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
-  uint64_t mask = 0xf0000000ULL;
-  cpsr &= ~mask;
-  value &= mask;
-  cpsr |= value;
-  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, cpsr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, value));
   return 0;
 }
 
