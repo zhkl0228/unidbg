@@ -4,6 +4,7 @@ import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.KvmFactory;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
@@ -31,6 +32,7 @@ public class Utilities32 extends TestCase {
                 .for32Bit()
                 .setProcessName("org.telegram.messenger")
                 .addBackendFactory(new DynarmicFactory(true))
+                .addBackendFactory(new KvmFactory(true))
                 .build();
     }
 
@@ -107,7 +109,7 @@ public class Utilities32 extends TestCase {
                 vm.addLocalObject(new ByteArray(vm, key)),
                 vm.addLocalObject(new ByteArray(vm, iv)),
                 0, data.length(), 0);
-        Inspector.inspect(data.getValue(), "aesCtrDecryptionByteArray offset=" + (System.currentTimeMillis() - start) + "ms");
+        Inspector.inspect(data.getValue(), "[" + emulator.getBackend() + "]aesCtrDecryptionByteArray offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
     private void pbkdf2() {
