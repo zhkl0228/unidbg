@@ -31,11 +31,8 @@ public class Dyld64 extends Dyld {
 
     private static final Log log = LogFactory.getLog(Dyld64.class);
 
-    private final MachOLoader loader;
-
     Dyld64(final MachOLoader loader, final SvcMemory svcMemory) {
         super(svcMemory);
-        this.loader = loader;
 
         __dyld_register_thread_helpers = svcMemory.registerSvc(new Arm64Svc() {
             @Override
@@ -355,15 +352,174 @@ public class Dyld64 extends Dyld {
             }
         });
 
-        _abort = svcMemory.registerSvc(new Arm64Svc() {
+        __dyld_dlopen = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
+                    KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                            "sub sp, sp, #0x10",
+                            "stp x29, x30, [sp]",
+                            "svc #0x" + Integer.toHexString(svcNumber),
+
+                            "ldr x7, [sp]",
+                            "add sp, sp, #0x8", // manipulated stack in dlopen
+                            "cmp x7, #0",
+                            "b.eq #0x28",
+                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "bic lr, lr, #0x1",
+                            "br x7", // call init array
+
+                            "ldr x0, [sp]", // with return address
+                            "add sp, sp, #0x8",
+
+                            "ldp x29, x30, [sp]",
+                            "add sp, sp, #0x10",
+                            "ret"));
+                    byte[] code = encoded.getMachineCode();
+                    UnidbgPointer pointer = svcMemory.allocate(code.length, "__dyld_dlopen");
+                    pointer.write(0, code, 0, code.length);
+                    return pointer;
+                }
+            }
             @Override
             public long handle(Emulator<?> emulator) {
-                System.err.println("abort");
-                emulator.attach().debug();
-                emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_LR, AbstractARM64Emulator.LR);
-                return 0;
+                RegisterContext context = emulator.getContext();
+                Pointer path = context.getPointerArg(0);
+                int mode = context.getIntArg(1);
+                String str = path == null ? null : path.getString(0);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_dlopen path=" + str + ", mode=0x" + Integer.toHexString(mode));
+                }
+                return dlopen(emulator, str, mode);
+            }
+        });
+
+        _os_trace_redirect_func = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                Pointer msg = emulator.getContext().getPointerArg(0);
+//                                            Inspector.inspect(msg.getByteArray(0, 16), "_os_trace_redirect_func msg=" + msg);
+                System.err.println("_os_trace_redirect_func msg=" + msg.getString(0));
+                return 1;
             }
         }).peer;
+
+        sandbox_check = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext ctx = emulator.getContext();
+                int pid = ctx.getIntArg(0);
+                Pointer operation = ctx.getPointerArg(1);
+                int type = ctx.getIntArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("sandbox_check pid=" + pid + ", operation=" + (operation == null ? null : operation.getString(0)) + ", type=" + type);
+                }
+                return 1;
+            }
+        }).peer;
+
+        __availability_version_check = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext ctx = emulator.getContext();
+                int count = ctx.getIntArg(0);
+                Pointer versions = ctx.getPointerArg(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("_availability_version_check count=" + count + ", versions=" + versions);
+                }
+                return 1;
+            }
+        }).peer;
+
+        _dispatch_after = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                System.out.println("dispatch_after block=" + context.getPointerArg(2));
+                return context.getLongArg(0);
+            }
+        }).peer;
+
+        _dispatch_async = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                System.out.println("dispatch_async block=" + context.getPointerArg(1));
+                return context.getLongArg(0);
+            }
+        }).peer;
+
+        __dyld_dlsym = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                long handle = context.getLongArg(0);
+                Pointer symbol = context.getPointerArg(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
+                }
+
+                String symbolName = symbol.getString(0);
+                if ((int) handle == MachO.RTLD_MAIN_ONLY && "_os_trace_redirect_func".equals(symbolName)) {
+                    return _os_trace_redirect_func;
+                }
+                if ("sandbox_check".equals(symbolName)) {
+                    return sandbox_check;
+                }
+                if ("_availability_version_check".equals(symbolName)) {
+                    return __availability_version_check;
+                }
+                if ("dispatch_after".equals(symbolName)) {
+                    return _dispatch_after;
+                }
+                if ("dispatch_async".equals(symbolName)) {
+                    return _dispatch_async;
+                }
+
+                return dlsym(emulator, handle, "_" + symbolName);
+            }
+        });
+        __dyld_dladdr = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                long addr = context.getLongArg(0);
+                Pointer info = context.getPointerArg(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
+                }
+                MachOModule module = (MachOModule) loader.findModuleByAddress(addr);
+                if (module == null) {
+                    return 0;
+                }
+
+                Symbol symbol = module.findNearestSymbolByAddress(addr);
+
+                DlInfo dlInfo = new DlInfo(info);
+                dlInfo.dli_fname = module.createPathMemory(svcMemory);
+                dlInfo.dli_fbase = UnidbgPointer.pointer(emulator, module.machHeader);
+                if (symbol != null) {
+                    dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
+                    dlInfo.dli_saddr = UnidbgPointer.pointer(emulator, symbol.getAddress());
+                }
+                dlInfo.pack();
+                return 1;
+            }
+        });
+        __dyld_dlopen_preflight = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                Pointer path = context.getPointerArg(0);
+                String pathname = path.getString(0);
+                MachOLoader loader = (MachOLoader) emulator.getMemory();
+                boolean canLoad = loader.dlopen_preflight(pathname);
+                if (log.isDebugEnabled()) {
+                    log.debug("dlopen_preflight path=" + pathname + ", canLoad=" + canLoad);
+                }
+                return canLoad ? 1 : 0;
+            }
+        });
     }
 
     private final Pointer __dyld_image_count;
@@ -386,21 +542,20 @@ public class Dyld64 extends Dyld {
         return 0;
     }
 
-    private Pointer __dyld_dlopen;
-    private Pointer __dyld_dlsym;
-    private Pointer __dyld_dladdr;
-    private Pointer __dyld_dlopen_preflight;
-    private long _os_trace_redirect_func;
-    private long sandbox_check;
-    private long __availability_version_check;
-    private long _dispatch_after, _dispatch_async;
+    private final Pointer __dyld_dlopen;
+    private final Pointer __dyld_dlsym;
+    private final Pointer __dyld_dladdr;
+    private final Pointer __dyld_dlopen_preflight;
+    private final long _os_trace_redirect_func;
+    private final long sandbox_check;
+    private final long __availability_version_check;
+    private final long _dispatch_after, _dispatch_async;
 
     @Override
     final int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address) {
         if (log.isDebugEnabled()) {
             log.debug("_dyld_func_lookup name=" + name);
         }
-        final SvcMemory svcMemory = emulator.getSvcMemory();
         switch (name) {
             case "__dyld_fast_stub_entry": // fastBindLazySymbol
                 address.setPointer(0, __dyld_fast_stub_entry);
@@ -424,209 +579,15 @@ public class Dyld64 extends Dyld {
                 address.setPointer(0, __dyld_image_count);
                 return 1;
             case "__dyld_dlopen_preflight":
-                if (__dyld_dlopen_preflight == null) {
-                    __dyld_dlopen_preflight = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            Pointer path = context.getPointerArg(0);
-                            String pathname = path.getString(0);
-                            MachOLoader loader = (MachOLoader) emulator.getMemory();
-                            boolean canLoad = loader.dlopen_preflight(pathname);
-                            if (log.isDebugEnabled()) {
-                                log.debug("dlopen_preflight path=" + pathname + ", canLoad=" + canLoad);
-                            }
-                            return canLoad ? 1 : 0;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_dlopen_preflight);
                 return 1;
             case "__dyld_dlopen":
-                if (__dyld_dlopen == null) {
-                    __dyld_dlopen = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
-                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                                        "sub sp, sp, #0x10",
-                                        "stp x29, x30, [sp]",
-                                        "svc #0x" + Integer.toHexString(svcNumber),
-
-                                        "ldr x7, [sp]",
-                                        "add sp, sp, #0x8", // manipulated stack in dlopen
-                                        "cmp x7, #0",
-                                        "b.eq #0x28",
-                                        "adr lr, #-0xf", // jump to ldr x7, [sp]
-                                        "bic lr, lr, #0x1",
-                                        "br x7", // call init array
-
-                                        "ldr x0, [sp]", // with return address
-                                        "add sp, sp, #0x8",
-
-                                        "ldp x29, x30, [sp]",
-                                        "add sp, sp, #0x10",
-                                        "ret"));
-                                byte[] code = encoded.getMachineCode();
-                                UnidbgPointer pointer = svcMemory.allocate(code.length, "__dyld_dlopen");
-                                pointer.write(0, code, 0, code.length);
-                                return pointer;
-                            }
-                        }
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            Pointer path = context.getPointerArg(0);
-                            int mode = context.getIntArg(1);
-                            String str = path == null ? null : path.getString(0);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_dlopen path=" + str + ", mode=0x" + Integer.toHexString(mode));
-                            }
-                            return dlopen(emulator, str, mode);
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_dlopen);
                 return 1;
             case "__dyld_dladdr":
-                if (__dyld_dladdr == null) {
-                    __dyld_dladdr = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            long addr = context.getLongArg(0);
-                            Pointer info = context.getPointerArg(1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
-                            }
-                            MachOModule module = (MachOModule) loader.findModuleByAddress(addr);
-                            if (module == null) {
-                                return 0;
-                            }
-
-                            Symbol symbol = module.findNearestSymbolByAddress(addr);
-
-                            DlInfo dlInfo = new DlInfo(info);
-                            dlInfo.dli_fname = module.createPathMemory(svcMemory);
-                            dlInfo.dli_fbase = UnidbgPointer.pointer(emulator, module.machHeader);
-                            if (symbol != null) {
-                                dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
-                                dlInfo.dli_saddr = UnidbgPointer.pointer(emulator, symbol.getAddress());
-                            }
-                            dlInfo.pack();
-                            return 1;
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_dladdr);
                 return 1;
             case "__dyld_dlsym":
-                if (__dyld_dlsym == null) {
-                    __dyld_dlsym = svcMemory.registerSvc(new Arm64Svc() {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            long handle = context.getLongArg(0);
-                            Pointer symbol = context.getPointerArg(1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("__dyld_dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
-                            }
-
-                            String symbolName = symbol.getString(0);
-                            if ((int) handle == MachO.RTLD_MAIN_ONLY && "_os_trace_redirect_func".equals(symbolName)) {
-                                if (_os_trace_redirect_func == 0) {
-                                    _os_trace_redirect_func = svcMemory.registerSvc(new Arm64Svc() {
-                                        @Override
-                                        public long handle(Emulator<?> emulator) {
-                                            Pointer msg = emulator.getContext().getPointerArg(0);
-//                                            Inspector.inspect(msg.getByteArray(0, 16), "_os_trace_redirect_func msg=" + msg);
-                                            System.err.println("_os_trace_redirect_func msg=" + msg.getString(0));
-                                            return 1;
-                                        }
-                                    }).peer;
-                                }
-                                return _os_trace_redirect_func;
-                            }
-                            if ("sandbox_check".equals(symbolName)) {
-                                if (sandbox_check == 0) {
-                                    sandbox_check = svcMemory.registerSvc(new Arm64Svc() {
-                                        @Override
-                                        public long handle(Emulator<?> emulator) {
-                                            RegisterContext ctx = emulator.getContext();
-                                            int pid = ctx.getIntArg(0);
-                                            Pointer operation = ctx.getPointerArg(1);
-                                            int type = ctx.getIntArg(2);
-                                            if (log.isDebugEnabled()) {
-                                                log.debug("sandbox_check pid=" + pid + ", operation=" + (operation == null ? null : operation.getString(0)) + ", type=" + type);
-                                            }
-                                            return 1;
-                                        }
-                                    }).peer;
-                                }
-                                return sandbox_check;
-                            }
-                            if ("_availability_version_check".equals(symbolName)) {
-                                if (__availability_version_check == 0) {
-                                    __availability_version_check = svcMemory.registerSvc(new Arm64Svc() {
-                                        @Override
-                                        public long handle(Emulator<?> emulator) {
-                                            RegisterContext ctx = emulator.getContext();
-                                            int count = ctx.getIntArg(0);
-                                            Pointer versions = ctx.getPointerArg(1);
-                                            if (log.isDebugEnabled()) {
-                                                log.debug("_availability_version_check count=" + count + ", versions=" + versions);
-                                            }
-                                            return 1;
-                                        }
-                                    }).peer;
-                                }
-                                return __availability_version_check;
-                            }
-                            if ("dispatch_after".equals(symbolName)) {
-                                if (_dispatch_after == 0) {
-                                    _dispatch_after = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
-                                        @Override
-                                        public long handle(Emulator<?> emulator) {
-                                            RegisterContext context = emulator.getContext();
-                                            System.out.println("dispatch_after block=" + context.getPointerArg(2));
-                                            return context.getLongArg(0);
-                                        }
-                                    } : new ArmSvc() {
-                                        @Override
-                                        public long handle(Emulator<?> emulator) {
-                                            RegisterContext context = emulator.getContext();
-                                            System.out.println("dispatch_after block=" + context.getPointerArg(2));
-                                            return context.getIntArg(0);
-                                        }
-                                    }).peer;
-                                }
-                                return _dispatch_after;
-                            }
-                            if ("dispatch_async".equals(symbolName)) {
-                                if (_dispatch_async == 0) {
-                                    _dispatch_async = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
-                                        @Override
-                                        public long handle(Emulator<?> emulator) {
-                                            RegisterContext context = emulator.getContext();
-                                            System.out.println("dispatch_async block=" + context.getPointerArg(1));
-                                            return context.getLongArg(0);
-                                        }
-                                    } : new ArmSvc() {
-                                        @Override
-                                        public long handle(Emulator<?> emulator) {
-                                            RegisterContext context = emulator.getContext();
-                                            System.out.println("dispatch_async block=" + context.getPointerArg(1));
-                                            return context.getIntArg(0);
-                                        }
-                                    }).peer;
-                                }
-                                return _dispatch_async;
-                            }
-
-                            return dlsym(emulator, handle, "_" + symbolName);
-                        }
-                    });
-                }
                 address.setPointer(0, __dyld_dlsym);
                 return 1;
             case "__dyld_register_thread_helpers":
@@ -733,13 +694,24 @@ public class Dyld64 extends Dyld {
         }
     }
 
-    private final long _abort;
+    private long _abort;
     private long _asl_open;
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
         if ("libsystem_c.dylib".equals(libraryName)) {
             if ("_abort".equals(symbolName)) {
+                if (_abort == 0) {
+                    _abort = svcMemory.registerSvc(new Arm64Svc() {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            System.err.println("abort");
+                            emulator.attach().debug();
+                            emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_LR, AbstractARM64Emulator.LR);
+                            return 0;
+                        }
+                    }).peer;
+                }
                 return _abort;
             }
         } else if ("libsystem_asl.dylib".equals(libraryName)) {
