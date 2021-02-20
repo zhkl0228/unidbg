@@ -1,6 +1,7 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.dynarmic.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -27,10 +28,11 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
 
     @Override
     public void handleExceptionRaised(long pc, int exception) {
+        if (exception == EXCEPTION_BREAKPOINT) {
+            interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, 0);
+            return;
+        }
         try {
-            if (exception == EXCEPTION_BREAKPOINT) {
-                removeBreakPoint(pc);
-            }
             emulator.attach().debug();
         } catch (Exception e) {
             e.printStackTrace();

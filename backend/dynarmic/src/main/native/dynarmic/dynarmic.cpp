@@ -218,13 +218,17 @@ public:
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
-        cpu->Regs()[15] = pc;
-        printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        bool isBkpt = exception == Dynarmic::A32::Exception::Breakpoint;
+        if(!isBkpt) {
+            printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        }
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
         env->CallVoidMethod(callback, handleExceptionRaised, pc, exception);
         cachedJVM->DetachCurrentThread();
-        abort();
+        if(!isBkpt) {
+            abort();
+        }
     }
 
     void CallSVC(u32 swi) override {
@@ -434,10 +438,12 @@ public:
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
+        bool isBrk = false;
         switch (exception) {
             case Dynarmic::A64::Exception::Yield:
                 return;
             case Dynarmic::A64::Exception::Breakpoint: // brk
+                isBrk = true;
             case Dynarmic::A64::Exception::WaitForInterrupt:
             case Dynarmic::A64::Exception::WaitForEvent:
             case Dynarmic::A64::Exception::SendEvent:
@@ -446,12 +452,16 @@ public:
                 break;
         }
         cpu->SetPC(pc);
-        printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        if(!isBrk) {
+            printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+        }
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
         env->CallVoidMethod(callback, handleExceptionRaised, pc, exception);
         cachedJVM->DetachCurrentThread();
-        abort();
+        if(!isBrk) {
+            abort();
+        }
     }
 
     void CallSVC(u32 swi) override {
