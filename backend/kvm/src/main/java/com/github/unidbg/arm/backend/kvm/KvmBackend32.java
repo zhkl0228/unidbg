@@ -155,6 +155,9 @@ public class KvmBackend32 extends KvmBackend {
                 case ArmConst.UC_ARM_REG_C1_C0_2:
                     kvm.reg_set_cpacr_el1(value.longValue());
                     break;
+                case ArmConst.UC_ARM_REG_CPSR:
+                    kvm.reg_set_nzcv(value.longValue() & 0xffffffffL);
+                    break;
                 default:
                     throw new KvmException("regId=" + regId);
             }
