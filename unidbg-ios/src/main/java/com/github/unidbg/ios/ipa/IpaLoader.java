@@ -23,10 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -51,7 +48,7 @@ public abstract class IpaLoader {
     private final String bundleVersion;
     private final String bundleIdentifier;
 
-    private final String executableBundlePath;
+    protected final String executableBundlePath;
 
     IpaLoader(File ipa, File rootDir) {
         this.ipa = ipa;
@@ -127,17 +124,26 @@ public abstract class IpaLoader {
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
     }
 
-    private final List<BackendFactory> backendFactories = new ArrayList<>(5);
+    protected final List<BackendFactory> backendFactories = new ArrayList<>(5);
 
     public void addBackendFactory(BackendFactory backendFactory) {
         this.backendFactories.add(backendFactory);
     }
 
+    protected Emulator<DarwinFileIO> createEmulator(File rootDir, boolean is64Bit) throws IOException {
+        if (is64Bit) {
+            return new DarwinARM64Emulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir)) {
+            };
+        } else {
+            return new DarwinARMEmulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir)) {
+            };
+        }
+    }
+
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
-        Emulator<DarwinFileIO> emulator = new DarwinARMEmulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir)) {
-        };
+        Emulator<DarwinFileIO> emulator = createEmulator(rootDir, false);
         emulator.getSyscallHandler().setVerbose(log.isDebugEnabled());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);
@@ -151,8 +157,7 @@ public abstract class IpaLoader {
     LoadedIpa load64(EmulatorConfigurator configurator, String... loads) throws IOException {
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
-        Emulator<DarwinFileIO> emulator = new DarwinARM64Emulator(executableBundlePath, rootDir, backendFactories, getEnvs(rootDir)) {
-        };
+        Emulator<DarwinFileIO> emulator = createEmulator(rootDir, true);
         emulator.getSyscallHandler().setVerbose(log.isDebugEnabled());
         if (configurator != null) {
             configurator.configure(emulator, executableBundlePath, rootDir, bundleIdentifier);
@@ -169,8 +174,8 @@ public abstract class IpaLoader {
         if (log.isDebugEnabled()) {
             list.add("OBJC_HELP=YES"); // describe available environment variables
 //            list.add("OBJC_PRINT_OPTIONS=YES"); // list which options are set
-//            list.add("OBJC_PRINT_INITIALIZE_METHODS=YES"); // log calls to class +initialize methods
             list.add("OBJC_PRINT_CLASS_SETUP=YES"); // log progress of class and category setup
+//            list.add("OBJC_PRINT_INITIALIZE_METHODS=YES"); // log calls to class +initialize methods
             list.add("OBJC_PRINT_PROTOCOL_SETUP=YES"); // log progress of protocol setup
             list.add("OBJC_PRINT_IVAR_SETUP=YES"); // log processing of non-fragile ivars
             list.add("OBJC_PRINT_VTABLE_SETUP=YES"); // log processing of class vtables
