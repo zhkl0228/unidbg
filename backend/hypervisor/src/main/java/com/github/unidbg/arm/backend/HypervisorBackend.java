@@ -130,7 +130,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
-    public Unicorn.UnHook hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
+    public void hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }
 
@@ -139,12 +139,12 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
-    public Unicorn.UnHook hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException {
+    public void hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Unicorn.UnHook hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException {
+    public void hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }
 

@@ -13,6 +13,7 @@ import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.listener.TraceReadListener;
+import com.github.unidbg.listener.TraceSystemMemoryWriteListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
@@ -88,10 +89,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         this.backend = BackendFactory.createBackend(this, is64Bit, backendFactories);
         this.processName = processName == null ? "unidbg" : processName;
         this.registerContext = createRegisterContext(backend);
-
-        this.readHook = new TraceMemoryHook(true);
-        this.writeHook = new TraceMemoryHook(false);
-        this.codeHook = new AssemblyCodeDumper(this);
 
         String name = ManagementFactory.getRuntimeMXBean().getName();
         String pid = name.split("@")[0];
@@ -217,105 +214,101 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         return pid;
     }
 
-    private boolean traceMemoryRead, traceMemoryWrite;
-    private long traceMemoryReadBegin, traceMemoryReadEnd;
-    private TraceReadListener traceReadListener;
-    private long traceMemoryWriteBegin, traceMemoryWriteEnd;
-    private TraceWriteListener traceWriteListener;
-    protected boolean traceInstruction;
-    private long traceInstructionBegin, traceInstructionEnd;
-    private TraceCodeListener traceCodeListener;
-
     @Override
-    public final Emulator<T> traceRead(long begin, long end) {
-        traceMemoryRead = true;
-        traceMemoryReadBegin = begin;
-        traceMemoryReadEnd = end;
-        return this;
+    public final TraceHook traceRead(long begin, long end) {
+        return traceRead(begin, end, null);
     }
 
     @Override
-    public Emulator<T> traceRead(long begin, long end, TraceReadListener listener) {
-        this.traceReadListener = listener;
-        return traceRead(begin, end);
+    public TraceHook traceRead(long begin, long end, TraceReadListener listener) {
+        TraceMemoryHook hook = new TraceMemoryHook(true);
+        if (listener != null) {
+            hook.traceReadListener = listener;
+        }
+        backend.hook_add_new((ReadHook) hook, begin, end, this);
+        return hook;
     }
 
     @Override
-    public final Emulator<T> traceWrite(long begin, long end) {
-        traceMemoryWrite = true;
-        traceSystemMemoryWrite = true;
-        traceMemoryWriteBegin = begin;
-        traceMemoryWriteEnd = end;
-        return this;
+    public final TraceHook traceWrite(long begin, long end) {
+        return traceWrite(begin, end, null);
     }
 
+    private long traceSystemMemoryWriteBegin;
+    private long traceSystemMemoryWriteEnd;
     private boolean traceSystemMemoryWrite;
+    private TraceSystemMemoryWriteListener traceSystemMemoryWriteListener;
+
+    @Override
+    public void setTraceSystemMemoryWrite(long begin, long end, TraceSystemMemoryWriteListener listener) {
+        traceSystemMemoryWrite = true;
+        traceSystemMemoryWriteBegin = begin;
+        traceSystemMemoryWriteEnd = end;
+        traceSystemMemoryWriteListener = listener;
+    }
 
     @Override
     public void onSystemWrite(long addr, byte[] data) {
         if (!traceSystemMemoryWrite) {
             return;
         }
-        long max = Math.max(addr, traceMemoryWriteBegin);
-        long min = Math.min(addr + data.length, traceMemoryWriteEnd);
+        long max = Math.max(addr, traceSystemMemoryWriteBegin);
+        long min = Math.min(addr + data.length, traceSystemMemoryWriteEnd);
         if (max < min) {
             byte[] buf = new byte[(int) (min - max)];
             System.arraycopy(data, (int) (max - addr), buf, 0, buf.length);
-            StringWriter writer = new StringWriter();
-            writer.write("### System Memory WRITE at 0x" + Long.toHexString(max));
-            new Exception().printStackTrace(new PrintWriter(writer));
-            Inspector.inspect(buf, writer.toString());
+            if (traceSystemMemoryWriteListener != null) {
+                traceSystemMemoryWriteListener.onWrite(this, addr, buf);
+            } else {
+                StringWriter writer = new StringWriter();
+                writer.write("### System Memory WRITE at 0x" + Long.toHexString(max));
+                new Exception().printStackTrace(new PrintWriter(writer));
+                Inspector.inspect(buf, writer.toString());
+            }
         }
     }
 
     @Override
-    public Emulator<T> traceWrite(long begin, long end, TraceWriteListener listener) {
-        this.traceWriteListener = listener;
-        return traceWrite(begin, end);
+    public TraceHook traceWrite(long begin, long end, TraceWriteListener listener) {
+        TraceMemoryHook hook = new TraceMemoryHook(false);
+        if (listener != null) {
+            hook.traceWriteListener = listener;
+        }
+        backend.hook_add_new((ReadHook) hook, begin, end, this);
+        return hook;
     }
 
     @Override
-    public final Emulator<T> traceRead() {
+    public final TraceHook traceRead() {
         return traceRead(1, 0);
     }
 
     @Override
-    public final Emulator<T> traceWrite() {
+    public final TraceHook traceWrite() {
         return traceWrite(1, 0);
     }
 
     @Override
-    public final void traceCode() {
-        traceCode(1, 0);
+    public final TraceHook traceCode() {
+        return traceCode(1, 0);
     }
 
     @Override
-    public final void traceCode(long begin, long end) {
-        traceInstruction = true;
-        traceInstructionBegin = begin;
-        traceInstructionEnd = end;
+    public final TraceHook traceCode(long begin, long end) {
+        return traceCode(begin, end, null);
     }
 
     @Override
-    public void traceCode(long begin, long end, TraceCodeListener listener) {
-        this.traceCodeListener = listener;
-        traceCode(begin, end);
+    public TraceHook traceCode(long begin, long end, TraceCodeListener listener) {
+        AssemblyCodeDumper hook = new AssemblyCodeDumper(this);
+        hook.initialize(begin, end, listener);
+        backend.hook_add_new(hook, begin, end, this);
+        return hook;
     }
-
-    private final TraceMemoryHook readHook;
-    private final TraceMemoryHook writeHook;
-    private final AssemblyCodeDumper codeHook;
 
     @Override
     public void setTimeout(long timeout) {
         this.timeout = timeout;
-    }
-
-    private File traceOutFile;
-
-    @Override
-    public void redirectTrace(File outFile) {
-        this.traceOutFile = outFile;
     }
 
     private boolean running;
@@ -339,42 +332,10 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
         final Pointer pointer = UnidbgPointer.pointer(this, begin);
         long start = 0;
-        PrintStream redirect = null;
         Thread exitHook = null;
         try {
             setContextEmulator(this);
 
-            if (traceOutFile != null) {
-                try {
-                    redirect = new PrintStream(new FileOutputStream(traceOutFile, true), false);
-                } catch (FileNotFoundException e) {
-                    log.warn("Set trace out file failed", e);
-                }
-            }
-
-            if (entry) {
-                if (traceMemoryRead) {
-                    traceMemoryRead = false;
-                    readHook.redirect = redirect;
-                    readHook.traceReadListener = traceReadListener;
-                    traceReadListener = null;
-                    backend.hook_add_new((ReadHook) readHook, traceMemoryReadBegin, traceMemoryReadEnd, this);
-                }
-                if (traceMemoryWrite) {
-                    traceMemoryWrite = false;
-                    writeHook.redirect = redirect;
-                    writeHook.traceWriteListener = traceWriteListener;
-                    traceWriteListener = null;
-                    backend.hook_add_new((WriteHook) writeHook, traceMemoryWriteBegin, traceMemoryWriteEnd, this);
-                }
-            }
-            if (traceInstruction) {
-                traceInstruction = false;
-                codeHook.initialize(traceInstructionBegin, traceInstructionEnd, traceCodeListener);
-                traceCodeListener = null;
-                codeHook.redirect = redirect;
-                backend.hook_add_new(codeHook, traceInstructionBegin, traceInstructionEnd, this);
-            }
             if (log.isDebugEnabled()) {
                 log.debug("emulate " + pointer + " started sp=" + getStackPointer());
             }
@@ -418,7 +379,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             if (exitHook != null) {
                 Runtime.getRuntime().removeShutdownHook(exitHook);
             }
-            traceSystemMemoryWrite = false;
             running = false;
 
             if (log.isDebugEnabled()) {

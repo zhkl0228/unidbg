@@ -8,6 +8,7 @@ import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.listener.TraceReadListener;
+import com.github.unidbg.listener.TraceSystemMemoryWriteListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
@@ -36,30 +37,28 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     /**
      * trace memory read
      */
-    Emulator<T> traceRead();
-    Emulator<T> traceRead(long begin, long end);
-    Emulator<T> traceRead(long begin, long end, TraceReadListener listener);
+    TraceHook traceRead();
+    TraceHook traceRead(long begin, long end);
+    TraceHook traceRead(long begin, long end, TraceReadListener listener);
 
     /**
      * trace memory write
      */
-    Emulator<T> traceWrite();
-    Emulator<T> traceWrite(long begin, long end);
-    Emulator<T> traceWrite(long begin, long end, TraceWriteListener listener);
+    TraceHook traceWrite();
+    TraceHook traceWrite(long begin, long end);
+    TraceHook traceWrite(long begin, long end, TraceWriteListener listener);
+
+    void setTraceSystemMemoryWrite(long begin, long end, TraceSystemMemoryWriteListener listener);
 
     /**
      * trace instruction
      * note: low performance
      */
-    void traceCode();
-    void traceCode(long begin, long end);
-    void traceCode(long begin, long end, TraceCodeListener listener);
+    TraceHook traceCode();
+    TraceHook traceCode(long begin, long end);
+    TraceHook traceCode(long begin, long end, TraceCodeListener listener);
 
-    /**
-     * redirect trace out
-     */
-    void redirectTrace(File outFile);
-
+    @Deprecated
     void runAsm(String...asm);
 
     Number[] eFunc(long begin, Number... arguments);
