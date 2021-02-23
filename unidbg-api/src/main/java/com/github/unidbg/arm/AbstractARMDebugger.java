@@ -489,14 +489,19 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (begin >= end) {
                     System.out.printf("Set trace all memory read success.%n");
                 } else {
-                    File traceFile = new File(String.format("target/traceRead_0x%x-0x%x.txt", begin, end));
-                    if (!traceFile.exists() && !traceFile.createNewFile()) {
-                        throw new IllegalStateException("createNewFile: " + traceFile);
+                    boolean needTraceFile = end - begin > 0x1000;
+                    if (needTraceFile) {
+                        File traceFile = new File(String.format("target/traceRead_0x%x-0x%x.txt", begin, end));
+                        if (!traceFile.exists() && !traceFile.createNewFile()) {
+                            throw new IllegalStateException("createNewFile: " + traceFile);
+                        }
+                        traceReadRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                        traceReadRedirectStream.printf("Start traceRead: 0x%x-0x%x%n", begin, end);
+                        memoryHook.setRedirect(traceReadRedirectStream);
+                        System.out.printf("Set trace 0x%x->0x%x memory read success with trace file: %s.%n", begin, end, traceFile);
+                    } else {
+                        System.out.printf("Set trace 0x%x->0x%x memory read success.%n", begin, end);
                     }
-                    traceReadRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
-                    traceReadRedirectStream.printf("Start traceRead: 0x%x-0x%x%n", begin, end);
-                    memoryHook.setRedirect(traceReadRedirectStream);
-                    System.out.printf("Set trace 0x%x->0x%x memory read success with trace file: %s.%n", begin, end, traceFile);
                 }
             } else {
                 begin = 1;
@@ -517,14 +522,19 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (begin >= end) {
                     System.out.printf("Set trace all memory write success.%n");
                 } else {
-                    File traceFile = new File(String.format("target/traceWrite_0x%x-0x%x.txt", begin, end));
-                    if (!traceFile.exists() && !traceFile.createNewFile()) {
-                        throw new IllegalStateException("createNewFile: " + traceFile);
+                    boolean needTraceFile = end - begin > 0x1000;
+                    if (needTraceFile) {
+                        File traceFile = new File(String.format("target/traceWrite_0x%x-0x%x.txt", begin, end));
+                        if (!traceFile.exists() && !traceFile.createNewFile()) {
+                            throw new IllegalStateException("createNewFile: " + traceFile);
+                        }
+                        traceWriteRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                        traceWriteRedirectStream.printf("Start traceWrite: 0x%x-0x%x%n", begin, end);
+                        memoryHook.setRedirect(traceWriteRedirectStream);
+                        System.out.printf("Set trace 0x%x->0x%x memory write success with trace file: %s.%n", begin, end, traceFile);
+                    } else {
+                        System.out.printf("Set trace 0x%x->0x%x memory write success.%n", begin, end);
                     }
-                    traceWriteRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
-                    traceWriteRedirectStream.printf("Start traceWrite: 0x%x-0x%x%n", begin, end);
-                    memoryHook.setRedirect(traceWriteRedirectStream);
-                    System.out.printf("Set trace 0x%x->0x%x memory write success with trace file: %s.%n", begin, end, traceFile);
                 }
             } else {
                 begin = 1;

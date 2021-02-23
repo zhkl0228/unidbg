@@ -66,4 +66,33 @@ public class DarwinFileSystem extends BaseFileSystem<DarwinFileIO> implements Fi
         return (oflags & O_EXCL) != 0;
     }
 
+    @Override
+    public void rmdir(String path) {
+        File dir = new File(rootDir, path);
+        if (dir.exists()) {
+            FileUtils.deleteQuietly(BaseDarwinFileIO.createAttrFile(dir));
+        }
+
+        super.rmdir(path);
+    }
+
+    @Override
+    public void unlink(String path) {
+        File file = new File(rootDir, path);
+        if (file.exists()) {
+            FileUtils.deleteQuietly(BaseDarwinFileIO.createAttrFile(file));
+        }
+
+        super.unlink(path);
+    }
+
+    @Override
+    public int rename(String oldPath, String newPath) {
+        File oldFile = new File(rootDir, oldPath);
+        if (oldFile.exists()) {
+            FileUtils.deleteQuietly(BaseDarwinFileIO.createAttrFile(oldFile));
+        }
+
+        return super.rename(oldPath, newPath);
+    }
 }

@@ -129,7 +129,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     protected abstract boolean hasExcl(int oflags);
 
     @Override
-    public final void unlink(String path) {
+    public void unlink(String path) {
         File file = new File(rootDir, path);
         FileUtils.deleteQuietly(file);
         if (log.isDebugEnabled()) {
@@ -163,6 +163,10 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             FileUtils.forceMkdir(newFile.getParentFile());
 
             Files.move(oldFile.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            if (emulator.getSyscallHandler().isVerbose()) {
+                System.out.printf("rename '%s' to '%s'%n", oldPath, newPath);
+            }
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

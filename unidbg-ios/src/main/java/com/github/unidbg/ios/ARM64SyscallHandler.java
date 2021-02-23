@@ -1730,6 +1730,22 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int size = context.getIntArg(3);
         int position = context.getIntArg(4);
         int options = context.getIntArg(5);
+        DarwinFileIO io = fdMap.get(fd);
+        if (position != 0 || (options & XATTR_CREATE) != 0 || (options & XATTR_REPLACE) != 0) {
+            log.info("fsetxattr fd=" + fd + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));
+            return -1;
+        }
+        if (io != null) {
+            int ret = io.setxattr(name.getString(0), value.getByteArray(0, size));
+            if (ret == -1) {
+                log.info("fsetxattr fd=" + fd + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("fsetxattr fd=" + fd + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));
+                }
+            }
+            return ret;
+        }
         log.info("fsetxattr fd=" + fd + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));
         return 0;
     }

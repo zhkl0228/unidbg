@@ -233,6 +233,11 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     }
 
     @Override
+    public int setxattr(String name, byte[] data) {
+        return setxattr(file, name, data);
+    }
+
+    @Override
     public int chown(int uid, int gid) {
         return chown(file, uid, gid);
     }

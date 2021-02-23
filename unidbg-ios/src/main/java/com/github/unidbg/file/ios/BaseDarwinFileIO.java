@@ -3,6 +3,7 @@ package com.github.unidbg.file.ios;
 import com.alibaba.fastjson.JSON;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileIO;
+import com.github.unidbg.file.UnidbgFileFilter;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.struct.attr.*;
 import com.github.unidbg.ios.struct.kernel.StatFS;
@@ -26,6 +27,20 @@ import java.util.List;
 public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileIO {
 
     private static final Log log = LogFactory.getLog(BaseDarwinFileIO.class);
+
+    public static File createAttrFile(File dest) {
+        if (!dest.exists()) {
+            throw new IllegalStateException("dest=" + dest);
+        }
+
+        File file;
+        if (dest.isDirectory()) {
+            file = new File(dest, UnidbgFileFilter.UNIDBG_PREFIX + ".json");
+        } else {
+            file = new File(dest.getParentFile(), UnidbgFileFilter.UNIDBG_PREFIX + "_" + dest.getName() + ".json");
+        }
+        return file;
+    }
 
     public BaseDarwinFileIO(int oflags) {
         super(oflags);

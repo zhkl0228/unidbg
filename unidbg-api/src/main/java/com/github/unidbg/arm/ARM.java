@@ -1050,7 +1050,23 @@ public class ARM {
         sb.append(" [0x").append(Long.toHexString(addr)).append(']');
         try {
             if (is64Bit) {
-                long value = pointer.getLong(0);
+                long value;
+                switch (bytesRead) {
+                    case 1:
+                        value = pointer.getByte(0) & 0xff;
+                        break;
+                    case 2:
+                        value = pointer.getShort(0) & 0xffff;
+                        break;
+                    case 4:
+                        value = pointer.getInt(0);
+                        break;
+                    case 8:
+                        value = pointer.getLong(0);
+                        break;
+                    default:
+                        throw new IllegalStateException("bytesRead=" + bytesRead);
+                }
                 sb.append(" => 0x").append(Long.toHexString(value));
                 if (value < 0) {
                     sb.append(" (-0x").append(Long.toHexString(-value)).append(')');
