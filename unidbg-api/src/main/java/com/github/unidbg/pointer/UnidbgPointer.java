@@ -104,28 +104,28 @@ public class UnidbgPointer extends Pointer {
     @Override
     public void read(long offset, int[] buf, int index, int length) {
         for (int i = index; i < length; i++) {
-            buf[i] = getInt((i - index) * 4 + offset);
+            buf[i] = getInt((i - index) * 4L + offset);
         }
     }
 
     @Override
     public void read(long offset, long[] buf, int index, int length) {
         for (int i = index; i < length; i++) {
-            buf[i] = getLong((i - index) * 8 + offset);
+            buf[i] = getLong((i - index) * 8L + offset);
         }
     }
 
     @Override
     public void read(long offset, float[] buf, int index, int length) {
     	 for (int i = index; i < length; i++) {
-             buf[i] = getFloat((i - index) * 4 + offset);
+             buf[i] = getFloat((i - index) * 4L + offset);
          }
     }
 
     @Override
     public void read(long offset, double[] buf, int index, int length) {
     	  for (int i = index; i < length; i++) {
-              buf[i] = getDouble((i - index) * 8 + offset);
+              buf[i] = getDouble((i - index) * 8L + offset);
           }
     }
 
@@ -167,7 +167,7 @@ public class UnidbgPointer extends Pointer {
     @Override
     public void write(long offset, short[] buf, int index, int length) {
         for (int i = index; i < length; i++) {
-            setShort((i - index) * 2 + offset, buf[i]);
+            setShort((i - index) * 2L + offset, buf[i]);
         }
     }
 
@@ -179,28 +179,28 @@ public class UnidbgPointer extends Pointer {
     @Override
     public void write(long offset, int[] buf, int index, int length) {
         for (int i = index; i < length; i++) {
-            setInt((i - index) * 4 + offset, buf[i]);
+            setInt((i - index) * 4L + offset, buf[i]);
         }
     }
 
     @Override
     public void write(long offset, long[] buf, int index, int length) {
         for (int i = index; i < length; i++) {
-            setLong((i - index) * 8 + offset, buf[i]);
+            setLong((i - index) * 8L + offset, buf[i]);
         }
     }
 
     @Override
     public void write(long offset, float[] buf, int index, int length) {
         for (int i = index; i < length; i++) {
-            setFloat((i - index) * 4 + offset, buf[i]);
+            setFloat((i - index) * 4L + offset, buf[i]);
         }
     }
 
     @Override
     public void write(long offset, double[] buf, int index, int length) {
         for (int i = index; i < length; i++) {
-            setDouble((i - index) * 8 + offset, buf[i]);
+            setDouble((i - index) * 8L + offset, buf[i]);
         }
     }
 

@@ -29,6 +29,4 @@ public interface Debugger extends Breaker, DebugHook, Closeable {
 
     void disassembleBlock(Emulator<?> emulator, long address, boolean thumb);
 
-    void detach();
-
 }

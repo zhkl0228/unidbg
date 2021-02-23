@@ -5,6 +5,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.listener.TraceCodeListener;
+import unicorn.Unicorn;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -35,11 +36,26 @@ public class AssemblyCodeDumper implements CodeHook {
         this.listener = listener;
     }
 
+    private Unicorn.UnHook unHook;
+
+    @Override
+    public void onAttach(Unicorn.UnHook unHook) {
+        this.unHook = unHook;
+    }
+
+    @Override
+    public void detach() {
+        if (unHook != null) {
+            unHook.unhook();
+            unHook = null;
+        }
+    }
+
     private boolean canTrace(long address) {
         return traceInstruction && (traceBegin > traceEnd || (address >= traceBegin && address <= traceEnd));
     }
 
-    PrintStream redirect;
+    private PrintStream redirect;
 
     public void setRedirect(PrintStream redirect) {
         this.redirect = redirect;

@@ -9,6 +9,7 @@ import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.codec.binary.Hex;
+import unicorn.Unicorn;
 
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
@@ -27,9 +28,24 @@ public class TraceMemoryHook implements ReadHook, WriteHook {
         this.read = read;
     }
 
-    PrintStream redirect;
+    private PrintStream redirect;
     TraceReadListener traceReadListener;
     TraceWriteListener traceWriteListener;
+
+    private Unicorn.UnHook unHook;
+
+    @Override
+    public void onAttach(Unicorn.UnHook unHook) {
+        this.unHook = unHook;
+    }
+
+    @Override
+    public void detach() {
+        if (unHook != null) {
+            unHook.unhook();
+            unHook = null;
+        }
+    }
 
     public void setRedirect(PrintStream redirect) {
         this.redirect = redirect;

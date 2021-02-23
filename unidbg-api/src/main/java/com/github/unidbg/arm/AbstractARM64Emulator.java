@@ -252,7 +252,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         long spBackup = memory.getStackPoint();
         try {
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
-            emulate(begin, until, traceInstruction ? 0 : timeout, true);
+            emulate(begin, until, timeout, true);
         } finally {
             memory.setStackPoint(spBackup);
         }
