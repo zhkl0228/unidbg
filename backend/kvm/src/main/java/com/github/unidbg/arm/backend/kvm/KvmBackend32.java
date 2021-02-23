@@ -182,18 +182,7 @@ public class KvmBackend32 extends KvmBackend {
     }
 
     @Override
-    public Unicorn.UnHook debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
-        return null;
-    }
-
-    @Override
-    public void hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
+    public void debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
     }
 
     @Override

@@ -35,11 +35,11 @@ public interface Backend {
 
     Unicorn.UnHook hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException;
 
-    Unicorn.UnHook debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException;
+    void debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException;
 
-    void hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException;
+    Unicorn.UnHook hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException;
 
-    void hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException;
+    Unicorn.UnHook hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException;
 
     void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException;
 

@@ -1,8 +1,6 @@
 package com.github.unidbg.arm;
 
-import capstone.Arm;
-import capstone.Arm_const;
-import capstone.Capstone;
+import capstone.*;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
@@ -900,7 +898,7 @@ public class ARM {
                 UnidbgPointer index = UnidbgPointer.register(emulator, mem.index);
                 int index_value = index == null ? 0 : (int) index.peer;
                 if (shift.type == Arm_const.ARM_OP_IMM) {
-                    addr = base_value + (index_value << shift.value);
+                    addr = base_value + ((long) index_value << shift.value);
                 } else if (shift.type == Arm_const.ARM_OP_INVALID) {
                     addr = base_value + index_value;
                 }
@@ -952,6 +950,54 @@ public class ARM {
         }
     }
 
+    private static void appendMemoryDetails64(Emulator<?> emulator, Capstone.CsInsn ins, Arm64.OpInfo opInfo, StringBuilder sb) {
+        Memory memory = emulator.getMemory();
+        Arm64.MemType mem;
+        long addr = -1;
+        int bytesRead = 8;
+
+        // str w9, [sp, #0xab] based capstone.setDetail(Capstone.CS_OPT_ON);
+        if (opInfo.op.length == 2 &&
+                opInfo.op[0].type == Arm64_const.ARM64_OP_REG &&
+                opInfo.op[1].type == Arm64_const.ARM64_OP_MEM) {
+            if (opInfo.op[0].value.reg >= Arm64_const.ARM64_REG_W0 && opInfo.op[0].value.reg <= Arm64_const.ARM64_REG_W30) {
+                bytesRead = 4;
+            }
+            mem = opInfo.op[1].value.mem;
+
+            if (mem.index == 0) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+                long base_value = base == null ? 0L : base.peer;
+                addr = base_value + mem.disp;
+            }
+        }
+
+        // ldrb r0, [r1], #1
+        if (opInfo.op.length == 3 &&
+                opInfo.op[0].type == Arm64_const.ARM64_OP_REG &&
+                opInfo.op[1].type == Arm64_const.ARM64_OP_MEM &&
+                opInfo.op[2].type == Arm64_const.ARM64_OP_IMM) {
+            if (opInfo.op[0].value.reg >= Arm64_const.ARM64_REG_W0 && opInfo.op[0].value.reg <= Arm64_const.ARM64_REG_W30) {
+                bytesRead = 4;
+            }
+            mem = opInfo.op[1].value.mem;
+            if (mem.index == 0) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+                addr = base == null ? 0L : base.peer;
+                addr += mem.disp;
+            }
+        }
+        if (addr != -1) {
+            if (ins.mnemonic.startsWith("ldrb") || ins.mnemonic.startsWith("strb")) {
+                bytesRead = 1;
+            }
+            if (ins.mnemonic.startsWith("ldrh") || ins.mnemonic.startsWith("strh")) {
+                bytesRead = 2;
+            }
+            appendAddrValue(sb, addr, memory, emulator.is64Bit(), bytesRead);
+        }
+    }
+
     public static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb, boolean current) {
         Memory memory = emulator.getMemory();
         char space = current ? '*' : ' ';
@@ -981,11 +1027,18 @@ public class ARM {
         sb.append(String.format("0x%08x:" + space + "%s %s", ins.address, ins.mnemonic, ins.opStr));
 
         Arm.OpInfo opInfo = null;
+        Arm64.OpInfo opInfo64 = null;
         if (ins.operands instanceof Arm.OpInfo) {
             opInfo = (Arm.OpInfo) ins.operands;
         }
+        if (ins.operands instanceof Arm64.OpInfo) {
+            opInfo64 = (Arm64.OpInfo) ins.operands;
+        }
         if (current && (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) && opInfo != null) {
             appendMemoryDetails32(emulator, ins, opInfo, thumb, sb);
+        }
+        if (current && (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) && opInfo64 != null) {
+            appendMemoryDetails64(emulator, ins, opInfo64, sb);
         }
 
         return sb.toString();

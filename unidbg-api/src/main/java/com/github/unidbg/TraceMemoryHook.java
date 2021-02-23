@@ -19,17 +19,21 @@ import java.nio.ByteOrder;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-class TraceMemoryHook implements ReadHook, WriteHook {
+public class TraceMemoryHook implements ReadHook, WriteHook {
 
     private final boolean read;
 
-    TraceMemoryHook(boolean read) {
+    public TraceMemoryHook(boolean read) {
         this.read = read;
     }
 
     PrintStream redirect;
     TraceReadListener traceReadListener;
     TraceWriteListener traceWriteListener;
+
+    public void setRedirect(PrintStream redirect) {
+        this.redirect = redirect;
+    }
 
     @Override
     public void hook(Backend backend, long address, int size, Object user) {
@@ -42,6 +46,8 @@ class TraceMemoryHook implements ReadHook, WriteHook {
             String value;
             if (data.length == 4) {
                 value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
+            } else if (data.length == 8) {
+                value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getLong());
             } else {
                 value = Hex.encodeHexString(data);
             }

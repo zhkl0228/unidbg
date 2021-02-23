@@ -57,7 +57,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
 
     private final SvcMemory svcMemory;
 
-    ARM32SyscallHandler(SvcMemory svcMemory) {
+    protected ARM32SyscallHandler(SvcMemory svcMemory) {
         super();
 
         this.svcMemory = svcMemory;
@@ -2368,14 +2368,14 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return sigprocmask(emulator, how, set, oldset);
     }
 
-    private int gettimeofday(Emulator<?> emulator) {
+    protected int gettimeofday(Emulator<?> emulator) {
         EditableArm32RegisterContext context = emulator.getContext();
         long currentTimeMillis = System.currentTimeMillis();
         long tv_sec = currentTimeMillis / 1000;
         long tv_usec = (currentTimeMillis % 1000) * 1000;
         context.setR1((int) tv_usec);
         if (log.isDebugEnabled()) {
-            log.debug("gettimeofday");
+            log.debug("gettimeofday tv_sec=" + tv_sec + ", tv_usec=" + tv_usec);
         }
         return (int) tv_sec;
     }
@@ -2387,8 +2387,8 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         int iovcnt = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             for (int i = 0; i < iovcnt; i++) {
-                Pointer iov_base = iov.getPointer(i * 8);
-                int iov_len = iov.getInt(i * 8 + 4);
+                Pointer iov_base = iov.getPointer(i * 8L);
+                int iov_len = iov.getInt(i * 8L + 4);
                 byte[] data = iov_base.getByteArray(0, iov_len);
                 Inspector.inspect(data, "writev fd=" + fd + ", iov=" + iov + ", iov_base=" + iov_base);
             }

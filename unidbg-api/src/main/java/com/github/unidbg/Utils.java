@@ -60,7 +60,7 @@ public class Utils {
         } while((b & 0x80) != 0);
 
         if (shift < size && ((b & 0x40) != 0)) {
-            value |= -(1 << shift);
+            value |= -(1L << shift);
         }
 
         return value;
@@ -144,6 +144,14 @@ public class Utils {
 
     public static File getClassLocation(Class<?> clazz) {
         return new File(clazz.getProtectionDomain().getCodeSource().getLocation().getPath());
+    }
+
+    public static long parseNumber(String str) {
+        if (str.startsWith("0x")) {
+            return Long.parseLong(str.substring(2).trim(), 16);
+        } else {
+            return Long.parseLong(str);
+        }
     }
 
 }

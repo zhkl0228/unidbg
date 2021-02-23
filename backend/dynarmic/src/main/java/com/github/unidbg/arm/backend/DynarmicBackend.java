@@ -164,16 +164,17 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
     }
 
     @Override
-    public Unicorn.UnHook debugger_add(DebugHook callback, long begin, long end, Object user_data) {
-        return null;
+    public void debugger_add(DebugHook callback, long begin, long end, Object user_data) {
     }
 
     @Override
-    public void hook_add_new(ReadHook callback, long begin, long end, Object user_data) {
+    public Unicorn.UnHook hook_add_new(ReadHook callback, long begin, long end, Object user_data) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public void hook_add_new(WriteHook callback, long begin, long end, Object user_data) {
+    public Unicorn.UnHook hook_add_new(WriteHook callback, long begin, long end, Object user_data) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

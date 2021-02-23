@@ -3,6 +3,7 @@ package com.github.unidbg.arm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
+import com.github.unidbg.Utils;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.debugger.Debugger;
@@ -77,13 +78,8 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     try {
                         if (tokens.length >= 2) {
                             command = tokens[0];
-                            int radix = 10;
                             String str = tokens[1];
-                            if (str.startsWith("0x")) {
-                                str = str.substring(2);
-                                radix = 16;
-                            }
-                            length = Integer.parseInt(str, radix);
+                            length = (int) Utils.parseNumber(str);
                         }
                     } catch(NumberFormatException ignored) {}
                     StringType stringType = null;
@@ -161,13 +157,8 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     int value;
                     try {
                         command = tokens[0];
-                        int radix = 10;
                         String str = tokens[1];
-                        if (str.startsWith("0x")) {
-                            str = str.substring(2);
-                            radix = 16;
-                        }
-                        value = (int) Long.parseLong(str, radix);
+                        value = (int) Utils.parseNumber(str);
                     } catch(NumberFormatException e) {
                         e.printStackTrace();
                         continue;
@@ -298,6 +289,8 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("where: show java stack trace");
         System.out.println();
         System.out.println("trace [begin end]: Set trace instructions");
+        System.out.println("traceRead [begin end]: Set trace memory read");
+        System.out.println("traceWrite [begin end]: Set trace memory write");
         System.out.println("vm: view loaded modules");
         System.out.println("vbs: view breakpoints");
         System.out.println("d|dis: show disassemble");

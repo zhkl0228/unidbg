@@ -314,9 +314,10 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (resolveResult != null) {
             result = resolveResult;
         }
-        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
+        int errno = result != null ? result.errno : UnixEmulator.ENOENT;
+        emulator.getMemory().setErrno(errno);
         if (verbose) {
-            System.out.printf("File opened failed '%s' from %s%n", pathname, emulator.getContext().getLRPointer());
+            System.out.printf("File opened '%s' errno is %d from %s%n", pathname, errno, emulator.getContext().getLRPointer());
         }
         return -1;
     }

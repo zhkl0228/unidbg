@@ -59,7 +59,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
     private final SvcMemory svcMemory;
 
-    ARM64SyscallHandler(SvcMemory svcMemory) {
+    protected ARM64SyscallHandler(SvcMemory svcMemory) {
         super();
 
         this.svcMemory = svcMemory;
@@ -2707,14 +2707,15 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return ret;
     }
 
-    private long gettimeofday(Emulator<?> emulator) {
+    protected long gettimeofday(Emulator<?> emulator) {
         EditableArm64RegisterContext context = emulator.getContext();
         long currentTimeMillis = System.currentTimeMillis();
+        long nanoTime = System.nanoTime();
         long tv_sec = currentTimeMillis / 1000;
-        long tv_usec = (currentTimeMillis % 1000) * 1000;
+        long tv_usec = (currentTimeMillis % 1000) * 1000 + nanoTime % 1000;
         context.setXLong(1, tv_usec);
         if (log.isDebugEnabled()) {
-            log.debug("gettimeofday");
+            log.debug("gettimeofday tv_sec=" + tv_sec + ", tv_usec=" + tv_usec);
         }
         return tv_sec;
     }

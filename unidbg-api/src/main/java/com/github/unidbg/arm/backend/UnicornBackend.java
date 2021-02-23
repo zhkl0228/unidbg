@@ -209,9 +209,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     }
 
     @Override
-    public Unicorn.UnHook debugger_add(final DebugHook callback, long begin, long end, Object user_data) throws BackendException {
+    public void debugger_add(final DebugHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            return unicorn.debugger_add(new unicorn.DebugHook() {
+            Unicorn.UnHook unHook = unicorn.debugger_add(new unicorn.DebugHook() {
                 @Override
                 public void onBreak(Unicorn u, long address, int size, Object user) {
                     callback.onBreak(UnicornBackend.this, address, size, user);
@@ -222,15 +222,16 @@ public class UnicornBackend extends AbstractBackend implements Backend {
                     callback.hook(UnicornBackend.this, address, size, user);
                 }
             }, begin, end, user_data);
+            callback.onAttach(unHook);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
     }
 
     @Override
-    public void hook_add_new(final ReadHook callback, long begin, long end, Object user_data) throws BackendException {
+    public Unicorn.UnHook hook_add_new(final ReadHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            unicorn.hook_add_new(new unicorn.ReadHook() {
+            return unicorn.hook_add_new(new unicorn.ReadHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
                     callback.hook(UnicornBackend.this, address, size, user);
@@ -242,9 +243,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     }
 
     @Override
-    public void hook_add_new(final WriteHook callback, long begin, long end, Object user_data) throws BackendException {
+    public Unicorn.UnHook hook_add_new(final WriteHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            unicorn.hook_add_new(new unicorn.WriteHook() {
+            return unicorn.hook_add_new(new unicorn.WriteHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, long value, Object user) {
                     callback.hook(UnicornBackend.this, address, size, value, user);
