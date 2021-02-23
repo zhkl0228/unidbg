@@ -9,8 +9,8 @@ import com.sun.jna.Pointer;
 
 public class ByteArrayFileIO extends BaseDarwinFileIO {
 
-    private final byte[] bytes;
-    private final String path;
+    protected final byte[] bytes;
+    protected final String path;
 
     public ByteArrayFileIO(int oflags, String path, byte[] bytes) {
         super(oflags);

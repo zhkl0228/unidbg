@@ -16,8 +16,8 @@ public class ByteArrayFileIO extends BaseAndroidFileIO {
 
     private static final Log log = LogFactory.getLog(ByteArrayFileIO.class);
 
-    private final byte[] bytes;
-    private final String path;
+    protected final byte[] bytes;
+    protected final String path;
 
     public ByteArrayFileIO(int oflags, String path, byte[] bytes) {
         super(oflags);

@@ -1,6 +1,7 @@
 package com.github.unidbg.file.ios;
 
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.unix.struct.TimeSpec;
 import com.sun.jna.Pointer;
 
 public abstract class StatStructure extends UnidbgStructure {
@@ -33,6 +34,19 @@ public abstract class StatStructure extends UnidbgStructure {
         this.st_blocks = count;
     }
 
-    public abstract void setLastModification(long lastModified);
+    public final void setLastModification(long lastModified) {
+        setSt_atimespec(lastModified);
+        setSt_mtimespec(lastModified);
+        setSt_ctimespec(lastModified);
+        setSt_birthtimespec(lastModified);
+    }
+
+    public abstract void setSt_atimespec(long lastModified);
+
+    public abstract void setSt_mtimespec(long lastModified);
+
+    public abstract void setSt_ctimespec(long lastModified);
+
+    public abstract void setSt_birthtimespec(long lastModified);
 
 }

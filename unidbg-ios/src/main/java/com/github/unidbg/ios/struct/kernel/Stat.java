@@ -22,11 +22,27 @@ public final class Stat extends StatStructure {
     public TimeSpec st_birthtimespec; /* time of file creation(birth) */
 
     @Override
-    public void setLastModification(long lastModified) {
-        for (TimeSpec spec : Arrays.asList(st_atimespec, st_mtimespec, st_ctimespec, st_birthtimespec)) {
-            spec.tv_sec = (int) (lastModified / 1000L);
-            spec.tv_nsec = (int) ((lastModified % 1000) * 1000000L);
-        }
+    public void setSt_atimespec(long lastModified) {
+        st_atimespec.tv_sec = (int) (lastModified / 1000L);
+        st_atimespec.tv_nsec = (int) ((lastModified % 1000) * 1000000L);
+    }
+
+    @Override
+    public void setSt_mtimespec(long lastModified) {
+        st_mtimespec.tv_sec = (int) (lastModified / 1000L);
+        st_mtimespec.tv_nsec = (int) ((lastModified % 1000) * 1000000L);
+    }
+
+    @Override
+    public void setSt_ctimespec(long lastModified) {
+        st_ctimespec.tv_sec = (int) (lastModified / 1000L);
+        st_ctimespec.tv_nsec = (int) ((lastModified % 1000) * 1000000L);
+    }
+
+    @Override
+    public void setSt_birthtimespec(long lastModified) {
+        st_birthtimespec.tv_sec = (int) (lastModified / 1000L);
+        st_birthtimespec.tv_nsec = (int) ((lastModified % 1000) * 1000000L);
     }
 
     @Override

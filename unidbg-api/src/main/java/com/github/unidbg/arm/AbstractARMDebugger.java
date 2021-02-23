@@ -33,6 +33,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
@@ -496,7 +497,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                             throw new IllegalStateException("createNewFile: " + traceFile);
                         }
                         traceReadRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
-                        traceReadRedirectStream.printf("Start traceRead: 0x%x-0x%x%n", begin, end);
+                        traceReadRedirectStream.printf("[%s]Start traceRead: 0x%x-0x%x%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), begin, end);
                         memoryHook.setRedirect(traceReadRedirectStream);
                         System.out.printf("Set trace 0x%x->0x%x memory read success with trace file: %s.%n", begin, end, traceFile);
                     } else {
@@ -529,7 +530,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                             throw new IllegalStateException("createNewFile: " + traceFile);
                         }
                         traceWriteRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
-                        traceWriteRedirectStream.printf("Start traceWrite: 0x%x-0x%x%n", begin, end);
+                        traceWriteRedirectStream.printf("[%s]Start traceWrite: 0x%x-0x%x%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), begin, end);
                         memoryHook.setRedirect(traceWriteRedirectStream);
                         System.out.printf("Set trace 0x%x->0x%x memory write success with trace file: %s.%n", begin, end, traceFile);
                     } else {
@@ -589,6 +590,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
                 begin = module == null ? 1 : module.base;
                 end = module == null ? 0 : (module.base + module.size);
+                traceHookRedirectStream.printf("[%s]Start trace %s", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), module == null ? "all" : module);
                 System.out.println("Set trace " + (module == null ? "all" : module) + " instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
             }
             codeHook.initialize(begin, end, null);
