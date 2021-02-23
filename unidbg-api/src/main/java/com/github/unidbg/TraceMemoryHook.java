@@ -20,7 +20,7 @@ import java.nio.ByteOrder;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public class TraceMemoryHook implements ReadHook, WriteHook {
+public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
 
     private final boolean read;
 
@@ -47,6 +47,12 @@ public class TraceMemoryHook implements ReadHook, WriteHook {
         }
     }
 
+    @Override
+    public void stopTrace() {
+        detach();
+    }
+
+    @Override
     public void setRedirect(PrintStream redirect) {
         this.redirect = redirect;
     }

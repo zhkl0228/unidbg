@@ -37,16 +37,16 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     /**
      * trace memory read
      */
-    TraceMemoryHook traceRead();
-    TraceMemoryHook traceRead(long begin, long end);
-    TraceMemoryHook traceRead(long begin, long end, TraceReadListener listener);
+    TraceHook traceRead();
+    TraceHook traceRead(long begin, long end);
+    TraceHook traceRead(long begin, long end, TraceReadListener listener);
 
     /**
      * trace memory write
      */
-    TraceMemoryHook traceWrite();
-    TraceMemoryHook traceWrite(long begin, long end);
-    TraceMemoryHook traceWrite(long begin, long end, TraceWriteListener listener);
+    TraceHook traceWrite();
+    TraceHook traceWrite(long begin, long end);
+    TraceHook traceWrite(long begin, long end, TraceWriteListener listener);
 
     void setTraceSystemMemoryWrite(long begin, long end, TraceSystemMemoryWriteListener listener);
 
@@ -54,9 +54,9 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
      * trace instruction
      * note: low performance
      */
-    AssemblyCodeDumper traceCode();
-    AssemblyCodeDumper traceCode(long begin, long end);
-    AssemblyCodeDumper traceCode(long begin, long end, TraceCodeListener listener);
+    TraceHook traceCode();
+    TraceHook traceCode(long begin, long end);
+    TraceHook traceCode(long begin, long end, TraceCodeListener listener);
 
     @Deprecated
     void runAsm(String...asm);

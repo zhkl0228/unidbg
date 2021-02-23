@@ -15,7 +15,7 @@ import java.util.Arrays;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public class AssemblyCodeDumper implements CodeHook {
+public class AssemblyCodeDumper implements CodeHook, TraceHook {
 
     private final Emulator<?> emulator;
 
@@ -51,12 +51,18 @@ public class AssemblyCodeDumper implements CodeHook {
         }
     }
 
+    @Override
+    public void stopTrace() {
+        detach();
+    }
+
     private boolean canTrace(long address) {
         return traceInstruction && (traceBegin > traceEnd || (address >= traceBegin && address <= traceEnd));
     }
 
     private PrintStream redirect;
 
+    @Override
     public void setRedirect(PrintStream redirect) {
         this.redirect = redirect;
     }

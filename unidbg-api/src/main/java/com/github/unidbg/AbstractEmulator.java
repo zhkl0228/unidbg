@@ -215,12 +215,12 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     }
 
     @Override
-    public final TraceMemoryHook traceRead(long begin, long end) {
+    public final TraceHook traceRead(long begin, long end) {
         return traceRead(begin, end, null);
     }
 
     @Override
-    public TraceMemoryHook traceRead(long begin, long end, TraceReadListener listener) {
+    public TraceHook traceRead(long begin, long end, TraceReadListener listener) {
         TraceMemoryHook hook = new TraceMemoryHook(true);
         if (listener != null) {
             hook.traceReadListener = listener;
@@ -230,7 +230,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     }
 
     @Override
-    public final TraceMemoryHook traceWrite(long begin, long end) {
+    public final TraceHook traceWrite(long begin, long end) {
         return traceWrite(begin, end, null);
     }
 
@@ -269,7 +269,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     }
 
     @Override
-    public TraceMemoryHook traceWrite(long begin, long end, TraceWriteListener listener) {
+    public TraceHook traceWrite(long begin, long end, TraceWriteListener listener) {
         TraceMemoryHook hook = new TraceMemoryHook(false);
         if (listener != null) {
             hook.traceWriteListener = listener;
@@ -279,27 +279,27 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     }
 
     @Override
-    public final TraceMemoryHook traceRead() {
+    public final TraceHook traceRead() {
         return traceRead(1, 0);
     }
 
     @Override
-    public final TraceMemoryHook traceWrite() {
+    public final TraceHook traceWrite() {
         return traceWrite(1, 0);
     }
 
     @Override
-    public final AssemblyCodeDumper traceCode() {
+    public final TraceHook traceCode() {
         return traceCode(1, 0);
     }
 
     @Override
-    public final AssemblyCodeDumper traceCode(long begin, long end) {
+    public final TraceHook traceCode(long begin, long end) {
         return traceCode(begin, end, null);
     }
 
     @Override
-    public AssemblyCodeDumper traceCode(long begin, long end, TraceCodeListener listener) {
+    public TraceHook traceCode(long begin, long end, TraceCodeListener listener) {
         AssemblyCodeDumper hook = new AssemblyCodeDumper(this);
         hook.initialize(begin, end, listener);
         backend.hook_add_new(hook, begin, end, this);
