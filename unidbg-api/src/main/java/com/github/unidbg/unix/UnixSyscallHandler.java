@@ -289,7 +289,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, resolveResult.io);
             if (verbose) {
-                System.out.printf("File opened '%s' from %s%n", resolveResult.io, emulator.getContext().getLRPointer());
+                System.out.printf("File opened '%s' with oflags=0x%x from %s%n", resolveResult.io, oflags, emulator.getContext().getLRPointer());
             }
             if (fileListener != null) {
                 fileListener.onOpenSuccess(emulator, pathname, resolveResult.io);
@@ -302,7 +302,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             emulator.getMemory().setErrno(0);
             this.fdMap.put(minFd, driverIO);
             if (verbose) {
-                System.out.printf("File opened '%s' from %s%n", driverIO, emulator.getContext().getLRPointer());
+                System.out.printf("File opened '%s' with oflags=0x%x from %s%n", driverIO, oflags, emulator.getContext().getLRPointer());
             }
             if (fileListener != null) {
                 fileListener.onOpenSuccess(emulator, pathname, driverIO);
@@ -317,7 +317,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         int errno = result != null ? result.errno : UnixEmulator.ENOENT;
         emulator.getMemory().setErrno(errno);
         if (verbose) {
-            System.out.printf("File opened '%s' errno is %d from %s%n", pathname, errno, emulator.getContext().getLRPointer());
+            System.out.printf("File opened '%s' with oflags=0x%x errno is %d from %s%n", pathname, oflags, errno, emulator.getContext().getLRPointer());
         }
         return -1;
     }

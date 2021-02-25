@@ -25,6 +25,25 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
 
     final long bootTime = System.currentTimeMillis();
 
+    /**
+     * sysctl hw.machine
+     */
+    protected String getHwMachine() {
+        return "iPhone6,2";
+    }
+
+    /**
+     * sysctl hw.ncpu
+     */
+    protected int getHwNcpu() {
+        return 2;
+    }
+
+    /**
+     * sysctl kern.boottime
+     */
+    protected abstract void fillKernelBootTime(Pointer buffer);
+
     protected final void exit(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int status = context.getIntArg(0);

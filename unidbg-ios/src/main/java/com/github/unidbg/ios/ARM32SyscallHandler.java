@@ -1412,13 +1412,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                             bufferSize.setInt(0, UnidbgStructure.calculateSize(TimeVal32.class));
                         }
                         if (buffer != null) {
-                            long currentTimeMillis = bootTime;
-                            long tv_sec = currentTimeMillis / 1000;
-                            long tv_usec = (currentTimeMillis % 1000) * 1000 + (bootTime / 7 % 1000);
-                            TimeVal32 timeVal = new TimeVal32(buffer);
-                            timeVal.tv_sec = (int) tv_sec;
-                            timeVal.tv_usec = (int) tv_usec;
-                            timeVal.pack();
+                            fillKernelBootTime(buffer);
                         }
                         return 0;
                     default:
@@ -1468,7 +1462,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                         return 0;
                     case HW_MACHINE:
                         log.debug(msg);
-                        String machine = "iPhone6,2";
+                        String machine = getHwMachine();
                         if (bufferSize != null) {
                             bufferSize.setInt(0, machine.length() + 1);
                         }
@@ -1492,7 +1486,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                             bufferSize.setInt(0, 4);
                         }
                         if (buffer != null) {
-                            buffer.setInt(0, 2); // 2 cpus
+                            buffer.setInt(0, getHwNcpu()); // 2 cpus
                         }
                         return 0;
                     case HW_MEMSIZE:
@@ -1585,6 +1579,17 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             emulator.getMemory().munmap(address, (int) size);
         }
         return 0;
+    }
+
+    @Override
+    protected void fillKernelBootTime(Pointer buffer) {
+        long currentTimeMillis = bootTime;
+        long tv_sec = currentTimeMillis / 1000;
+        long tv_usec = (currentTimeMillis % 1000) * 1000 + (bootTime / 7 % 1000);
+        TimeVal32 timeVal = new TimeVal32(buffer);
+        timeVal.tv_sec = (int) tv_sec;
+        timeVal.tv_usec = (int) tv_usec;
+        timeVal.pack();
     }
 
     private int _kernelrpc_mach_vm_map_trap(Emulator<?> emulator) {

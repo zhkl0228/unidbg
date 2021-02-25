@@ -33,10 +33,10 @@ public class LoadedIpa {
         this.callFinishLaunchingWithOptions = callFinishLaunchingWithOptions;
     }
 
-    private String systemName;
-    private String systemVersion;
-    private String model;
-    private String name;
+    private String systemName; // iPhone OS
+    private String systemVersion; // 8.3
+    private String model; // iPhone
+    private String name; // My iPhone
     private String identifierForVendor;
     private String advertisingIdentifier;
     private String carrierName;

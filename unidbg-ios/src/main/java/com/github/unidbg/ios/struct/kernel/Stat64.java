@@ -20,27 +20,27 @@ public class Stat64 extends StatStructure {
     public TimeSpec64 st_birthtimespec; /* time of file creation(birth) */
 
     @Override
-    public void setSt_atimespec(long lastModified) {
-        st_atimespec.tv_sec = lastModified / 1000L;
-        st_atimespec.tv_nsec = (lastModified % 1000) * 1000000L;
+    public void setSt_atimespec(long tv_sec, long tv_nsec) {
+        st_atimespec.tv_sec = tv_sec;
+        st_atimespec.tv_nsec = tv_nsec;
     }
 
     @Override
-    public void setSt_mtimespec(long lastModified) {
-        st_mtimespec.tv_sec = lastModified / 1000L;
-        st_mtimespec.tv_nsec = (lastModified % 1000) * 1000000L;
+    public void setSt_mtimespec(long tv_sec, long tv_nsec) {
+        st_mtimespec.tv_sec = tv_sec;
+        st_mtimespec.tv_nsec = tv_nsec;
     }
 
     @Override
-    public void setSt_ctimespec(long lastModified) {
-        st_ctimespec.tv_sec = lastModified / 1000L;
-        st_ctimespec.tv_nsec = (lastModified % 1000) * 1000000L;
+    public void setSt_ctimespec(long tv_sec, long tv_nsec) {
+        st_ctimespec.tv_sec = tv_sec;
+        st_ctimespec.tv_nsec = tv_nsec;
     }
 
     @Override
-    public void setSt_birthtimespec(long lastModified) {
-        st_birthtimespec.tv_sec = lastModified / 1000L;
-        st_birthtimespec.tv_nsec = (lastModified % 1000) * 1000000L;
+    public void setSt_birthtimespec(long tv_sec, long tv_nsec) {
+        st_birthtimespec.tv_sec = tv_sec;
+        st_birthtimespec.tv_nsec = tv_nsec;
     }
 
     @Override

@@ -35,18 +35,20 @@ public abstract class StatStructure extends UnidbgStructure {
     }
 
     public final void setLastModification(long lastModified) {
-        setSt_atimespec(lastModified);
-        setSt_mtimespec(lastModified);
-        setSt_ctimespec(lastModified);
-        setSt_birthtimespec(lastModified);
+        long tv_sec = lastModified / 1000L;
+        long tv_nsec = (lastModified % 1000) * 1000000L;
+        setSt_atimespec(tv_sec, tv_nsec);
+        setSt_mtimespec(tv_sec, tv_nsec);
+        setSt_ctimespec(tv_sec, tv_nsec);
+        setSt_birthtimespec(tv_sec, tv_nsec);
     }
 
-    public abstract void setSt_atimespec(long lastModified);
+    public abstract void setSt_atimespec(long tv_sec, long tv_nsec);
 
-    public abstract void setSt_mtimespec(long lastModified);
+    public abstract void setSt_mtimespec(long tv_sec, long tv_nsec);
 
-    public abstract void setSt_ctimespec(long lastModified);
+    public abstract void setSt_ctimespec(long tv_sec, long tv_nsec);
 
-    public abstract void setSt_birthtimespec(long lastModified);
+    public abstract void setSt_birthtimespec(long tv_sec, long tv_nsec);
 
 }

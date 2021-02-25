@@ -1424,13 +1424,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                             bufferSize.setLong(0, UnidbgStructure.calculateSize(TimeVal64.class));
                         }
                         if (buffer != null) {
-                            long currentTimeMillis = bootTime;
-                            long tv_sec = currentTimeMillis / 1000;
-                            long tv_usec = (currentTimeMillis % 1000) * 1000 + (bootTime / 7 % 1000);
-                            TimeVal64 timeVal = new TimeVal64(buffer);
-                            timeVal.tv_sec = tv_sec;
-                            timeVal.tv_usec = tv_usec;
-                            timeVal.pack();
+                            fillKernelBootTime(buffer);
                         }
                         return 0;
                     default:
@@ -1447,7 +1441,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 switch (action) {
                     case HW_MACHINE:
                         log.debug(msg);
-                        String machine = "iPhone6,2";
+                        String machine = getHwMachine();
                         if (bufferSize != null) {
                             bufferSize.setLong(0, machine.length() + 1);
                         }
@@ -1471,7 +1465,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                             bufferSize.setLong(0, 4);
                         }
                         if (buffer != null) {
-                            buffer.setInt(0, 2); // 2 cpus
+                            buffer.setInt(0, getHwNcpu()); // 2 cpus
                         }
                         return 0;
                     case HW_PAGESIZE:
@@ -1577,6 +1571,17 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 break;
         }
         return 1;
+    }
+
+    @Override
+    protected void fillKernelBootTime(Pointer buffer) {
+        long currentTimeMillis = bootTime;
+        long tv_sec = currentTimeMillis / 1000;
+        long tv_usec = (currentTimeMillis % 1000) * 1000 + (bootTime / 7 % 1000);
+        TimeVal64 timeVal = new TimeVal64(buffer);
+        timeVal.tv_sec = tv_sec;
+        timeVal.tv_usec = tv_usec;
+        timeVal.pack();
     }
 
     private long open_dprotected_np(Emulator<DarwinFileIO> emulator) {
