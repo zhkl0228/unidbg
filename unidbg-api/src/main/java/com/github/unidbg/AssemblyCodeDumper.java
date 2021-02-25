@@ -5,6 +5,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.listener.TraceCodeListener;
+import org.apache.commons.io.IOUtils;
 import unicorn.Unicorn;
 
 import java.io.PrintStream;
@@ -54,6 +55,8 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
     @Override
     public void stopTrace() {
         detach();
+        IOUtils.closeQuietly(redirect);
+        redirect = null;
     }
 
     private boolean canTrace(long address) {

@@ -31,11 +31,10 @@ abstract class FastBackend extends AbstractBackend {
         }
         @Override
         public void setTemporary(boolean temporary) {
-            throw new UnsupportedOperationException();
         }
         @Override
         public boolean isTemporary() {
-            return false;
+            return true;
         }
         @Override
         public BreakPointCallback getCallback() {

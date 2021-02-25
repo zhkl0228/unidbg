@@ -50,6 +50,10 @@ public class TaskDyldInfo extends UnidbgStructure {
             infoArrayBlock = loader.malloc(emulator.getPageAlign(), true);
         }
 
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.printf("task_info TASK_DYLD_INFO called with %d modules from %s%n", modules.size(), emulator.getContext().getLRPointer());
+        }
+
         if (emulator.is64Bit()) {
             allocateAllImage64(emulator, svcMemory, modules);
         } else {
