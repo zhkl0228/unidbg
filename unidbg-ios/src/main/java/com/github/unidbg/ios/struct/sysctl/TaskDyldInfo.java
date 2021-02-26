@@ -31,7 +31,7 @@ public class TaskDyldInfo extends UnidbgStructure {
 
     private static MemoryBlock infoArrayBlock;
     private static Pointer dyldVersion;
-    private static UnidbgPointer dyldAllImageInfosAddress;
+    private static MemoryBlock dyldAllImageInfosAddressBlock;
 
     public void allocateAllImage(Emulator<?> emulator) {
         SvcMemory svcMemory = emulator.getSvcMemory();
@@ -49,6 +49,13 @@ public class TaskDyldInfo extends UnidbgStructure {
         if (infoArrayBlock == null) {
             infoArrayBlock = loader.malloc(emulator.getPageAlign(), true);
         }
+        if (dyldAllImageInfosAddressBlock == null) {
+            dyldAllImageInfosAddressBlock = loader.malloc(emulator.getPageAlign(), true);
+        }
+
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.printf("task_info TASK_DYLD_INFO called with %d modules from %s%n", modules.size(), emulator.getContext().getLRPointer());
+        }
 
         if (emulator.is64Bit()) {
             allocateAllImage64(emulator, svcMemory, modules);
@@ -59,13 +66,10 @@ public class TaskDyldInfo extends UnidbgStructure {
 
     private void allocateAllImage64(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos64.class);
-        if (dyldAllImageInfosAddress == null) {
-            dyldAllImageInfosAddress = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos64");
-        }
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_64;
         this.all_image_info_size = all_image_info_size;
-        UnidbgPointer all_image_info_addr = dyldAllImageInfosAddress;
+        UnidbgPointer all_image_info_addr = dyldAllImageInfosAddressBlock.getPointer();
         this.all_image_info_addr = all_image_info_addr.peer;
 
         int size = UnidbgStructure.calculateSize(DyldImageInfo64.class);
@@ -97,13 +101,10 @@ public class TaskDyldInfo extends UnidbgStructure {
 
     private void allocateAllImage32(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos32.class);
-        if (dyldAllImageInfosAddress == null) {
-            dyldAllImageInfosAddress = svcMemory.allocate(all_image_info_size, "DyldAllImageInfos64");
-        }
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_32;
         this.all_image_info_size = all_image_info_size;
-        UnidbgPointer all_image_info_addr = dyldAllImageInfosAddress;
+        UnidbgPointer all_image_info_addr = dyldAllImageInfosAddressBlock.getPointer();
         this.all_image_info_addr = all_image_info_addr.peer;
 
         int size = UnidbgStructure.calculateSize(DyldImageInfo32.class);

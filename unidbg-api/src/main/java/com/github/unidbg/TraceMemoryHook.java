@@ -9,6 +9,7 @@ import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 import unicorn.Unicorn;
 
 import java.io.PrintStream;
@@ -50,6 +51,8 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
     @Override
     public void stopTrace() {
         detach();
+        IOUtils.closeQuietly(redirect);
+        redirect = null;
     }
 
     @Override

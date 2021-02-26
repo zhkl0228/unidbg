@@ -410,7 +410,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     String dylibName = dylibCommand.name();
                     if (dylibPath.startsWith(IpaLoader.APP_DIR)) {
                         dylibPath = dylibPath.replace("@executable_path/", "");
-                    } else if (dylibName.contains("/")) {
+                    } else if (dylibName.startsWith("/")) {
                         dylibPath = dylibName;
                     }
                     int index = dylibPath.indexOf('/'); // unidbg build frameworks
