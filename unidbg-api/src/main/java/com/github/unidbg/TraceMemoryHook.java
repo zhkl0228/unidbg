@@ -74,7 +74,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
             } else if (data.length == 8) {
                 value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getLong());
             } else {
-                value = Hex.encodeHexString(data);
+                value = "0x" + Hex.encodeHexString(data);
             }
             Emulator<?> emulator = (Emulator<?>) user;
             if (traceReadListener == null || traceReadListener.onRead(emulator, address, data, value)) {

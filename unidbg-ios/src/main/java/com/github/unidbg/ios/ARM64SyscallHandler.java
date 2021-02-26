@@ -557,7 +557,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Pointer pathname = context.getPointerArg(0);
         int mode = context.getIntArg(1);
         String path = pathname.getString(0);
-        if (emulator.getFileSystem().mkdir(path)) {
+        if (emulator.getFileSystem().mkdir(path, mode)) {
             if (log.isDebugEnabled()) {
                 log.debug("mkdir pathname=" + path + ", mode=" + mode);
             }
@@ -882,6 +882,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
         DarwinFileIO io = fdMap.get(fd);
         if (io != null) {
+            if (verbose) {
+                System.out.printf("File fstatfs '%s' from %s%n", io, emulator.getContext().getLRPointer());
+            }
             return io.fstatfs(new StatFS(buf));
         }
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
@@ -1001,6 +1004,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
         if (log.isDebugEnabled()) {
             log.debug("fstat file=" + file + ", stat=" + stat);
+        }
+        if (verbose) {
+            System.out.printf("File fstat '%s' from %s%n", file, emulator.getContext().getLRPointer());
         }
         return file.fstat(emulator, new Stat64(stat));
     }
@@ -1328,6 +1334,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     if (log.isDebugEnabled()) {
                         createBreaker(emulator).debug();
                     }
+                    log.info("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub);
                     return -1;
                 }
                 log.info("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1);

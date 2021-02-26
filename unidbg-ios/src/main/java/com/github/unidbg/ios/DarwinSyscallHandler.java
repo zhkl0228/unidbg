@@ -100,21 +100,21 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
         if (log.isDebugEnabled()) {
             log.debug("access pathname=" + path + ", mode=" + mode);
         }
-        return faccessat(emulator, path);
+        return faccessat(emulator, path, mode);
     }
 
-    protected final int faccessat(Emulator<DarwinFileIO> emulator, String pathname) {
+    protected final int faccessat(Emulator<DarwinFileIO> emulator, String pathname, int mode) {
         FileResult<?> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (result != null && result.isSuccess()) {
             if (verbose) {
-                System.out.printf("File access '%s' from %s%n", pathname, emulator.getContext().getLRPointer());
+                System.out.printf("File access '%s' with mode=0x%x from %s%n", pathname, mode, emulator.getContext().getLRPointer());
             }
             return 0;
         }
 
         emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.ENOENT);
         if (verbose) {
-            System.out.printf("File access failed '%s' from %s%n", pathname, emulator.getContext().getLRPointer());
+            System.out.printf("File access failed '%s' with mode=0x%x from %s%n", pathname, mode, emulator.getContext().getLRPointer());
         }
         return -1;
     }

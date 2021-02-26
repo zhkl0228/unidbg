@@ -16,7 +16,7 @@ public interface FileSystem<T extends NewFileIO> {
     /**
      * @return <code>true</code>表示创建成功
      */
-    boolean mkdir(String path);
+    boolean mkdir(String path, int mode);
 
     void rmdir(String path);
 

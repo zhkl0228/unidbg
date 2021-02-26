@@ -51,6 +51,6 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/system/lib/" + getName();
+        return "/vendor/lib/" + getName();
     }
 }

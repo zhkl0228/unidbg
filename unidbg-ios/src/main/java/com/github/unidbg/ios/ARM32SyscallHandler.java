@@ -2491,7 +2491,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         Pointer pathname = context.getPointerArg(0);
         int mode = context.getIntArg(1);
         String path = pathname.getString(0);
-        if (emulator.getFileSystem().mkdir(path)) {
+        if (emulator.getFileSystem().mkdir(path, mode)) {
             if (log.isDebugEnabled()) {
                 log.debug("mkdir pathname=" + path + ", mode=" + mode);
             }

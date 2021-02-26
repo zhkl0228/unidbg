@@ -99,10 +99,10 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
     }
 
     @Override
-    public boolean mkdir(String path) {
+    public boolean mkdir(String path, int mode) {
         File dir = new File(rootDir, path);
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.printf("mkdir '%s'%n", path);
+            System.out.printf("mkdir '%s' with mode 0x%x from %s%n", path, mode, emulator.getContext().getLRPointer());
         }
 
         if (dir.exists()) {
@@ -118,7 +118,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         FileUtils.deleteQuietly(dir);
 
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.printf("rmdir '%s'%n", path);
+            System.out.printf("rmdir '%s' from %s%n", path, emulator.getContext().getLRPointer());
         }
     }
 
@@ -136,7 +136,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             log.debug("unlink path=" + path + ", file=" + file);
         }
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.printf("unlink '%s'%n", path);
+            System.out.printf("unlink '%s' from %s%n", path, emulator.getContext().getLRPointer());
         }
     }
 
@@ -165,7 +165,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
             Files.move(oldFile.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             if (emulator.getSyscallHandler().isVerbose()) {
-                System.out.printf("rename '%s' to '%s'%n", oldPath, newPath);
+                System.out.printf("rename '%s' to '%s' from %s%n", oldPath, newPath, emulator.getContext().getLRPointer());
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);
