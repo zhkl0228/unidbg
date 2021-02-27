@@ -532,6 +532,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("_mach_port_insert_member task=" + task + ", name=" + name + ", pset=" + pset);
         }
+        if (verbose) {
+            System.out.printf("mach_port_insert_member %d with pset=0x%x from %s%n", name, pset, emulator.getContext().getLRPointer());
+        }
         return 0;
     }
 
@@ -687,6 +690,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             log.debug("_kernelrpc_mach_port_allocate_trap task=" + task + ", right=" + right + ", name=" + name);
         }
         name.setInt(0, STATIC_PORT);
+        if (verbose) {
+            System.out.printf("mach_port_allocate %d with right=0x%x from %s%n", STATIC_PORT, right, emulator.getContext().getLRPointer());
+        }
         return 0;
     }
 
@@ -1045,6 +1051,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_port_mod_refs_trap task=" + task + ", name=" + name + ", right=" + right + ", delta=" + delta);
         }
+        if (verbose) {
+            System.out.printf("mach_port_mod_refs %d with right=0x%x from %s%n", name, right, emulator.getContext().getLRPointer());
+        }
         return 0;
     }
 
@@ -1056,6 +1065,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int polyPoly = context.getIntArg(3);
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_port_insert_right_trap task=" + task + ", name=" + name + ", poly=" + poly + ", polyPoly=" + polyPoly);
+        }
+        if (verbose) {
+            System.out.printf("mach_port_insert_right %d with poly=0x%x from %s%n", name, poly, emulator.getContext().getLRPointer());
         }
         return 0;
     }
@@ -1072,6 +1084,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             log.debug("_kernelrpc_mach_port_construct_trap task=" + task + ", options=" + options + ", context=0x" + Long.toHexString(ctx) + ", name=" + name + ", portOptions=" + portOptions);
         }
         name.setInt(0, 0x88);
+        if (verbose) {
+            System.out.printf("mach_port_construct %d from %s%n", 0x88, emulator.getContext().getLRPointer());
+        }
         return 0;
     }
 
@@ -1868,6 +1883,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_port_deallocate_trap task=" + task + ", name=" + name);
         }
+        if (verbose) {
+            System.out.printf("mach_port_deallocate %d from %s%n", name, emulator.getContext().getLRPointer());
+        }
         return 0;
     }
 
@@ -1941,6 +1959,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     reply.pack();
                     if (log.isDebugEnabled()) {
                         log.debug("task_get_special_port reply=" + reply);
+                    }
+                    if (verbose) {
+                        System.out.printf("task_get_special_port %d from %s%n", BOOTSTRAP_PORT, emulator.getContext().getLRPointer());
                     }
 
                     return MACH_MSG_SUCCESS;
@@ -2243,6 +2264,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
                 if (log.isDebugEnabled()) {
                     log.debug("mach_ports_lookup reply=" + reply);
+                }
+                if (verbose) {
+                    System.out.printf("mach_ports_lookup from %s%n", emulator.getContext().getLRPointer());
                 }
                 return MACH_MSG_SUCCESS;
             }
