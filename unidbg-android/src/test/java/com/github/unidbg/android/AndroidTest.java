@@ -1,13 +1,21 @@
 package com.github.unidbg.android;
 
-import com.github.unidbg.*;
+import com.github.unidbg.AndroidEmulator;
+import com.github.unidbg.Emulator;
+import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARMEmulator;
 import com.github.unidbg.linux.android.AndroidResolver;
-import com.github.unidbg.linux.android.dvm.*;
+import com.github.unidbg.linux.android.dvm.AbstractJni;
+import com.github.unidbg.linux.android.dvm.BaseVM;
+import com.github.unidbg.linux.android.dvm.DalvikModule;
+import com.github.unidbg.linux.android.dvm.DvmClass;
+import com.github.unidbg.linux.android.dvm.VM;
+import com.github.unidbg.linux.android.dvm.VarArg;
 import com.github.unidbg.linux.struct.Dirent;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;

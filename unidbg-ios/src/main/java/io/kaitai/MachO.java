@@ -3,13 +3,14 @@
 package io.kaitai;
 
 import io.kaitai.struct.ByteBufferKaitaiStream;
-import io.kaitai.struct.KaitaiStruct;
 import io.kaitai.struct.KaitaiStream;
+import io.kaitai.struct.KaitaiStruct;
+
 import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MachO extends KaitaiStruct {
     public static MachO fromFile(String fileName) throws IOException {

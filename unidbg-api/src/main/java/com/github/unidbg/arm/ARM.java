@@ -1,6 +1,10 @@
 package com.github.unidbg.arm;
 
-import capstone.*;
+import capstone.Arm;
+import capstone.Arm64;
+import capstone.Arm64_const;
+import capstone.Arm_const;
+import capstone.Capstone;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;

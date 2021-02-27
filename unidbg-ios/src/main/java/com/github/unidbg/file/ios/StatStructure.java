@@ -1,7 +1,6 @@
 package com.github.unidbg.file.ios;
 
 import com.github.unidbg.pointer.UnidbgStructure;
-import com.github.unidbg.unix.struct.TimeSpec;
 import com.sun.jna.Pointer;
 
 public abstract class StatStructure extends UnidbgStructure {

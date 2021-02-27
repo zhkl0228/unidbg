@@ -1,9 +1,18 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
-import com.github.unidbg.linux.android.dvm.*;
+import com.github.unidbg.linux.android.dvm.DvmField;
+import com.github.unidbg.linux.android.dvm.DvmMethod;
+import com.github.unidbg.linux.android.dvm.DvmObject;
+import com.github.unidbg.linux.android.dvm.Shorty;
+import com.github.unidbg.linux.android.dvm.VM;
+import com.github.unidbg.linux.android.dvm.VaList;
+import com.github.unidbg.linux.android.dvm.VarArg;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

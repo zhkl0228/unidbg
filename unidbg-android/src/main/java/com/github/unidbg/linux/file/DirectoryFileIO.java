@@ -12,7 +12,11 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 public class DirectoryFileIO extends BaseAndroidFileIO {
 

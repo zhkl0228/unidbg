@@ -1,6 +1,6 @@
 package net.fornwall.jelf;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**

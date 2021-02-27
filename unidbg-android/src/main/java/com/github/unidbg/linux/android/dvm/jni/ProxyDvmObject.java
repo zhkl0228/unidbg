@@ -4,7 +4,12 @@ import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.StringObject;
 import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.linux.android.dvm.array.*;
+import com.github.unidbg.linux.android.dvm.array.ArrayObject;
+import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.linux.android.dvm.array.DoubleArray;
+import com.github.unidbg.linux.android.dvm.array.FloatArray;
+import com.github.unidbg.linux.android.dvm.array.IntArray;
+import com.github.unidbg.linux.android.dvm.array.ShortArray;
 
 public class ProxyDvmObject extends DvmObject<Object> {
 
