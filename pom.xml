@@ -69,7 +69,7 @@
                 <version>2.10.3</version>
                 <configuration>
                     <additionalparam>-Xdoclint:none</additionalparam>
-                    <source>8</source>
+                    <source>1.7</source>
                 </configuration>
                 <executions>
                     <execution>
