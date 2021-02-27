@@ -34,6 +34,9 @@ public class TcpSocket extends SocketIO implements FileIO {
     private TcpSocket(Emulator<?> emulator, Socket socket) {
         this.emulator = emulator;
         this.socket = socket;
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.printf("Tcp opened '%s' from %s%n", this, emulator.getContext().getLRPointer());
+        }
     }
 
     private OutputStream outputStream;
@@ -92,6 +95,9 @@ public class TcpSocket extends SocketIO implements FileIO {
             serverSocket = new ServerSocket();
             IOUtils.closeQuietly(socket);
             serverSocket.bind(socket.getLocalSocketAddress(), backlog);
+            if (emulator.getSyscallHandler().isVerbose()) {
+                System.out.printf("Tcp listen '%s' from %s%n", this, emulator.getContext().getLRPointer());
+            }
             return 0;
         } catch (IOException e) {
             log.debug("listen failed", e);
@@ -115,6 +121,9 @@ public class TcpSocket extends SocketIO implements FileIO {
                 Inspector.inspect(data, "address=" + address);
             }
             socket.bind(address);
+            if (emulator.getSyscallHandler().isVerbose()) {
+                System.out.printf("Tcp bind '%s' from %s%n", this, emulator.getContext().getLRPointer());
+            }
             return 0;
         } catch (IOException e) {
             log.debug("bind ipv4 failed", e);
@@ -141,6 +150,9 @@ public class TcpSocket extends SocketIO implements FileIO {
             socket.connect(address);
             outputStream = socket.getOutputStream();
             inputStream = socket.getInputStream();
+            if (emulator.getSyscallHandler().isVerbose()) {
+                System.out.printf("Tcp connected '%s' from %s%n", this, emulator.getContext().getLRPointer());
+            }
             return 0;
         } catch (IOException e) {
             log.debug("connect ipv4 failed", e);
@@ -167,6 +179,9 @@ public class TcpSocket extends SocketIO implements FileIO {
             socket.connect(address);
             outputStream = socket.getOutputStream();
             inputStream = socket.getInputStream();
+            if (emulator.getSyscallHandler().isVerbose()) {
+                System.out.printf("Tcp connected '%s' from %s%n", this, emulator.getContext().getLRPointer());
+            }
             return 0;
         } catch (IOException e) {
             log.debug("connect ipv6 failed", e);
