@@ -1,7 +1,14 @@
 package com.github.unidbg.linux.android.dvm;
 
+import com.github.unidbg.linux.android.dvm.api.ApplicationInfo;
+import com.github.unidbg.linux.android.dvm.api.AssetManager;
+import com.github.unidbg.linux.android.dvm.api.Binder;
+import com.github.unidbg.linux.android.dvm.api.Bundle;
 import com.github.unidbg.linux.android.dvm.api.ClassLoader;
-import com.github.unidbg.linux.android.dvm.api.*;
+import com.github.unidbg.linux.android.dvm.api.PackageInfo;
+import com.github.unidbg.linux.android.dvm.api.ServiceManager;
+import com.github.unidbg.linux.android.dvm.api.Signature;
+import com.github.unidbg.linux.android.dvm.api.SystemService;
 import com.github.unidbg.linux.android.dvm.array.ArrayObject;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmBoolean;
@@ -10,14 +17,24 @@ import com.github.unidbg.linux.android.dvm.wrapper.DvmLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractJni implements Jni {
 

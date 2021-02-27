@@ -1,7 +1,6 @@
 package com.github.unidbg.linux.android.dvm.array;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;

@@ -15,7 +15,11 @@ import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.Arrays;
 
 public class TcpSocket extends SocketIO implements FileIO {
@@ -34,6 +38,9 @@ public class TcpSocket extends SocketIO implements FileIO {
     private TcpSocket(Emulator<?> emulator, Socket socket) {
         this.emulator = emulator;
         this.socket = socket;
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.printf("Tcp opened '%s' from %s%n", this, emulator.getContext().getLRPointer());
+        }
     }
 
     private OutputStream outputStream;

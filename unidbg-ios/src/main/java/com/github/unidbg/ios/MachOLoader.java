@@ -1,7 +1,18 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.*;
-import com.github.unidbg.arm.*;
+import com.github.unidbg.Alignment;
+import com.github.unidbg.Emulator;
+import com.github.unidbg.LibraryResolver;
+import com.github.unidbg.Module;
+import com.github.unidbg.Svc;
+import com.github.unidbg.Symbol;
+import com.github.unidbg.Utils;
+import com.github.unidbg.arm.ARM;
+import com.github.unidbg.arm.Arm64Hook;
+import com.github.unidbg.arm.Arm64Svc;
+import com.github.unidbg.arm.ArmHook;
+import com.github.unidbg.arm.ArmSvc;
+import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
@@ -17,7 +28,12 @@ import com.github.unidbg.ios.struct.kernel.Pthread64;
 import com.github.unidbg.ios.struct.kernel.VmRemapRequest;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo32;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo64;
-import com.github.unidbg.memory.*;
+import com.github.unidbg.memory.MemRegion;
+import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.MemoryAllocBlock;
+import com.github.unidbg.memory.MemoryBlock;
+import com.github.unidbg.memory.MemoryBlockImpl;
+import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.AbstractLoader;
@@ -44,7 +60,16 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory, Loader, com.github.unidbg.ios.MachO {
 

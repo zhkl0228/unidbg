@@ -30,6 +30,14 @@ public class UdpSocket extends SocketIO implements FileIO {
         } catch (SocketException e) {
             throw new IllegalStateException(e);
         }
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.printf("Udp opened '%s' from %s%n", this, emulator.getContext().getLRPointer());
+        }
+    }
+
+    @Override
+    public String toString() {
+        return datagramSocket.toString();
     }
 
     @Override

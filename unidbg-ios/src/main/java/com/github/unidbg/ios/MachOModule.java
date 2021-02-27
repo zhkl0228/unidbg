@@ -1,6 +1,10 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.*;
+import com.github.unidbg.Alignment;
+import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
+import com.github.unidbg.Symbol;
+import com.github.unidbg.Utils;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
@@ -21,7 +25,15 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 

@@ -2,7 +2,9 @@ package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARMEmulator;
-import com.github.unidbg.arm.backend.hypervisor.*;
+import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
+import com.github.unidbg.arm.backend.hypervisor.HypervisorCallback;
+import com.github.unidbg.arm.backend.hypervisor.HypervisorException;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;

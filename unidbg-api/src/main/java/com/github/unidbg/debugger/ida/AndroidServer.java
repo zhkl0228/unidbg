@@ -23,7 +23,12 @@ import unicorn.ArmConst;
 import unicorn.UnicornConst;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class AndroidServer extends AbstractDebugServer implements ModuleListener {

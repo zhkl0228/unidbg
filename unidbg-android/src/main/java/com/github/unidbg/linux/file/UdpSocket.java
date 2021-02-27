@@ -15,7 +15,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.BufferOverflowException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +41,14 @@ public class UdpSocket extends SocketIO implements FileIO {
         } catch (SocketException e) {
             throw new IllegalStateException(e);
         }
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.printf("Udp opened '%s' from %s%n", this, emulator.getContext().getLRPointer());
+        }
+    }
+
+    @Override
+    public String toString() {
+        return datagramSocket.toString();
     }
 
     @Override
