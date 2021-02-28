@@ -305,14 +305,15 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     }
 
     @Override
-    public Unicorn.UnHook hook_add_new(final BlockHook callback, long begin, long end, Object user_data) throws BackendException {
+    public void hook_add_new(final BlockHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            return unicorn.hook_add_new(new unicorn.BlockHook() {
+            Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.BlockHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, user);
+                    callback.hookBlock(UnicornBackend.this, address, size, user);
                 }
             }, begin, end, user_data);
+            callback.onAttach(unHook);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }

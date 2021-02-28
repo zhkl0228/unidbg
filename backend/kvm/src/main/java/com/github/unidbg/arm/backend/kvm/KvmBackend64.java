@@ -6,7 +6,6 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
-import com.github.unidbg.arm.backend.BlockHook;
 import com.github.unidbg.arm.backend.DebugHook;
 import com.github.unidbg.arm.backend.KvmBackend;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -18,7 +17,6 @@ import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
-import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.nio.ByteBuffer;
@@ -372,11 +370,6 @@ public class KvmBackend64 extends KvmBackend {
 
     @Override
     public void debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
-    }
-
-    @Override
-    public Unicorn.UnHook hook_add_new(BlockHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
     }
 
     @Override

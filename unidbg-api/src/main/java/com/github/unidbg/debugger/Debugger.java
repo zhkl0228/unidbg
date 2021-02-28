@@ -2,12 +2,13 @@ package com.github.unidbg.debugger;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.BlockHook;
 import com.github.unidbg.arm.backend.DebugHook;
 
 import java.io.Closeable;
 import java.util.concurrent.Callable;
 
-public interface Debugger extends Breaker, DebugHook, Closeable {
+public interface Debugger extends Breaker, DebugHook, BlockHook, Closeable {
 
     BreakPoint addBreakPoint(Module module, String symbol);
     BreakPoint addBreakPoint(Module module, String symbol, BreakPointCallback callback);

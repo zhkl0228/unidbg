@@ -1,7 +1,7 @@
 package com.github.unidbg.arm.backend;
 
-public interface BlockHook {
+public interface BlockHook extends Detachable {
 
-    void hook(Backend backend, long address, int size, Object user);
+    void hookBlock(Backend backend, long address, int size, Object user);
 
 }

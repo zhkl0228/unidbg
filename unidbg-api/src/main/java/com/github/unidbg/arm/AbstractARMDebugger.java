@@ -9,6 +9,7 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.TraceMemoryHook;
 import com.github.unidbg.Utils;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BlockHook;
 import com.github.unidbg.arm.backend.ReadHook;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.debugger.BreakPoint;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,18 +70,18 @@ public abstract class AbstractARMDebugger implements Debugger {
         this.emulator = emulator;
     }
 
-    private Unicorn.UnHook unHook;
+    private final List<Unicorn.UnHook> unHookList = new ArrayList<>();
 
     @Override
     public void onAttach(Unicorn.UnHook unHook) {
-        this.unHook = unHook;
+        unHookList.add(unHook);
     }
 
     @Override
     public void detach() {
-        if (unHook != null) {
-            unHook.unhook();
-            unHook = null;
+        for (Iterator<Unicorn.UnHook> iterator = unHookList.iterator(); iterator.hasNext(); ) {
+            iterator.next().unhook();
+            iterator.remove();
         }
     }
 
@@ -202,6 +204,17 @@ public abstract class AbstractARMDebugger implements Debugger {
     @Override
     public boolean isDebugging() {
         return debugging;
+    }
+
+    private boolean blockHooked;
+    private boolean breakNextBlock;
+
+    @Override
+    public void hookBlock(Backend backend, long address, int size, Object user) {
+        if (breakNextBlock) {
+            onBreak(backend, address, size, user);
+            breakNextBlock = false;
+        }
     }
 
     @Override
@@ -681,6 +694,14 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         if ("s".equals(line) || "si".equals(line)) {
             setSingleStep(1);
+            return true;
+        }
+        if ("nb".equals(line)) {
+            if (!blockHooked) {
+                blockHooked = true;
+                emulator.getBackend().hook_add_new((BlockHook) this, 1, 0, emulator);
+            }
+            breakNextBlock = true;
             return true;
         }
         if (line.startsWith("s")) {

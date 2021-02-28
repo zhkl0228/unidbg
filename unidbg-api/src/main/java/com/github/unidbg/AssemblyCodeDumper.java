@@ -41,6 +41,9 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
 
     @Override
     public void onAttach(Unicorn.UnHook unHook) {
+        if (this.unHook != null) {
+            throw new IllegalStateException();
+        }
         this.unHook = unHook;
     }
 

@@ -37,6 +37,9 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
 
     @Override
     public void onAttach(Unicorn.UnHook unHook) {
+        if (this.unHook != null) {
+            throw new IllegalStateException();
+        }
         this.unHook = unHook;
     }
 

@@ -9,7 +9,6 @@ import com.github.unidbg.arm.backend.dynarmic.EventMemHookNotifier;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.Unicorn;
 
 public abstract class DynarmicBackend extends FastBackend implements Backend, DynarmicCallback {
 
@@ -181,7 +180,7 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
     }
 
     @Override
-    public Unicorn.UnHook hook_add_new(BlockHook callback, long begin, long end, Object user_data) {
+    public void hook_add_new(BlockHook callback, long begin, long end, Object user_data) {
         throw new UnsupportedOperationException();
     }
 

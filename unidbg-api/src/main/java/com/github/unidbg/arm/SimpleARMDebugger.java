@@ -268,6 +268,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("shr hex: search readable heap");
         System.out.println("shx hex: search executable heap");
         System.out.println();
+        System.out.println("nb: break at next block");
         System.out.println("s|si: step into");
         System.out.println("s[decimal]: execute specified amount instruction");
         System.out.println("s(blx): execute util BLX mnemonic, low performance");

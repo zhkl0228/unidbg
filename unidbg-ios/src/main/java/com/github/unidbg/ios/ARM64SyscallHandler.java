@@ -160,6 +160,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             }
 
             if (log.isDebugEnabled()) {
+                log.debug("handle syscall NR=" + NR);
                 ARM.showRegs64(emulator, null);
             }
             Cpsr.getArm64(backend).setCarry(false);
