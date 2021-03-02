@@ -6,6 +6,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebugServer;
 import com.github.unidbg.debugger.Debugger;
@@ -286,7 +287,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         if (listener != null) {
             hook.traceWriteListener = listener;
         }
-        backend.hook_add_new((ReadHook) hook, begin, end, this);
+        backend.hook_add_new((WriteHook) hook, begin, end, this);
         return hook;
     }
 
