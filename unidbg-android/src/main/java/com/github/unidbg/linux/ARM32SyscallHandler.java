@@ -1891,9 +1891,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 throw new BackendException();
             }
 
-            log.warn(msg);
-            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            int fd = open(emulator, pathname, oflags);
+            if (fd == -1) {
+                emulator.getMemory().setErrno(UnixEmulator.ENOENT);
+                log.info(msg);
+            }
+            return fd;
         }
     }
 
