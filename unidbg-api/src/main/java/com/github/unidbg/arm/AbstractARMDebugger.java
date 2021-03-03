@@ -611,6 +611,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                                 throw new IllegalStateException("createNewFile: " + outFile);
                             }
                             traceHookRedirectStream = new PrintStream(new FileOutputStream(outFile), true);
+                            traceHookRedirectStream.printf("[%s]Start trace %s", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), module == null ? "all" : module);
                             traceHook.setRedirect(traceHookRedirectStream);
                             traceFile = outFile;
                         } catch (IOException e) {
@@ -621,7 +622,6 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
                 begin = module == null ? 1 : module.base;
                 end = module == null ? 0 : (module.base + module.size);
-                traceHookRedirectStream.printf("[%s]Start trace %s", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), module == null ? "all" : module);
                 System.out.println("Set trace " + (module == null ? "all" : module) + " instructions success" + (traceFile == null ? "." : (" with trace file: " + traceFile)));
             }
             traceHook.initialize(begin, end, null);
