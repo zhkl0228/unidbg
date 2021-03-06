@@ -1113,8 +1113,23 @@ public class ARM {
 
         int[] regArgs = ARM.getRegArgs(emulator);
         List<Number> argList = new ArrayList<>(arguments.length * 2);
+        int regVector = Arm64Const.UC_ARM64_REG_Q0;
         for (Number arg : arguments) {
             if (emulator.is64Bit()) {
+                if (arg instanceof Float) {
+                    ByteBuffer buffer = ByteBuffer.allocate(16);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putFloat((Float) arg);
+                    emulator.getBackend().reg_write_vector(regVector++, buffer.array());
+                    continue;
+                }
+                if (arg instanceof Double) {
+                    ByteBuffer buffer = ByteBuffer.allocate(16);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putDouble((Double) arg);
+                    emulator.getBackend().reg_write_vector(regVector++, buffer.array());
+                    continue;
+                }
                 argList.add(arg);
                 continue;
             }
