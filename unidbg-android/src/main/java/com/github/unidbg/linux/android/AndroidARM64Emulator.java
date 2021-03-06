@@ -64,7 +64,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
 
     @Override
     protected boolean isPaddingArgument() {
-        return true;
+        return false;
     }
 
     private VM vm;

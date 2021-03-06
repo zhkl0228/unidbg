@@ -1113,7 +1113,6 @@ public class ARM {
 
         int[] regArgs = ARM.getRegArgs(emulator);
         List<Number> argList = new ArrayList<>(arguments.length * 2);
-        int index = 0;
         for (Number arg : arguments) {
             if (emulator.is64Bit()) {
                 argList.add(arg);
@@ -1121,11 +1120,10 @@ public class ARM {
             }
             if (arg instanceof Long) {
                 if (log.isDebugEnabled()) {
-                    log.debug("initLongArgs index=" + index + ", length=" + regArgs.length, new Exception("initArgs long=" + arg));
+                    log.debug("initLongArgs size=" + argList.size() + ", length=" + regArgs.length, new Exception("initArgs long=" + arg));
                 }
-                if (padding && index == regArgs.length - 1) {
+                if (padding && argList.size() % 2 != 0) {
                     argList.add(0);
-                    index++;
                 }
                 ByteBuffer buffer = ByteBuffer.allocate(8);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -1135,14 +1133,12 @@ public class ARM {
                 int v2 = buffer.getInt();
                 argList.add(v1);
                 argList.add(v2);
-                index += 2;
             } else if (arg instanceof Double) {
                 if (log.isDebugEnabled()) {
-                    log.debug("initDoubleArgs index=" + index + ", length=" + regArgs.length, new Exception("initArgs double=" + arg));
+                    log.debug("initDoubleArgs size=" + argList.size() + ", length=" + regArgs.length, new Exception("initArgs double=" + arg));
                 }
-                if (padding && index == regArgs.length - 1) {
+                if (padding && argList.size() % 2 != 0) {
                     argList.add(0);
-                    index++;
                 }
                 ByteBuffer buffer = ByteBuffer.allocate(8);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -1150,20 +1146,17 @@ public class ARM {
                 buffer.flip();
                 argList.add(buffer.getInt());
                 argList.add(buffer.getInt());
-                index += 2;
             } else if (arg instanceof Float) {
                 if (log.isDebugEnabled()) {
-                    log.debug("initFloatArgs index=" + index + ", length=" + regArgs.length, new Exception("initArgs float=" + arg));
+                    log.debug("initFloatArgs size=" + argList.size() + ", length=" + regArgs.length, new Exception("initArgs float=" + arg));
                 }
                 ByteBuffer buffer = ByteBuffer.allocate(4);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 buffer.putFloat((Float) arg);
                 buffer.flip();
                 argList.add(buffer.getInt());
-                index++;
             } else {
                 argList.add(arg);
-                index++;
             }
         }
         final Arguments args = new Arguments(memory, argList.toArray(new Number[0]));
