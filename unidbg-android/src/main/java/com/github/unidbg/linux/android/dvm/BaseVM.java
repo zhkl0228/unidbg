@@ -155,6 +155,15 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         }
     }
 
+    final void checkVersion(int version) {
+        if (version != JNI_VERSION_1_1 &&
+                version != JNI_VERSION_1_2 &&
+                version != JNI_VERSION_1_4 &&
+                version != JNI_VERSION_1_6) {
+            throw new IllegalStateException("Illegal JNI version: 0x" + Integer.toHexString(version));
+        }
+    }
+
     private class ApkLibraryFile implements LibraryFile {
         private final Apk apk;
         private final String soName;

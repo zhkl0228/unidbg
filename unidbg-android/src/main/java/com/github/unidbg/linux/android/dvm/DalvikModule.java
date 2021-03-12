@@ -25,11 +25,21 @@ public class DalvikModule {
     public void callJNI_OnLoad(Emulator<?> emulator) {
         Symbol onLoad = module.findSymbolByName("JNI_OnLoad", false);
         if (onLoad != null) {
-            long start = System.currentTimeMillis();
-            log.debug("Call [" + module.name + "]JNI_OnLoad: 0x" + Long.toHexString(onLoad.getAddress()));
-            onLoad.call(emulator, vm.getJavaVM(), null);
-            log.debug("Call [" + module.name + "]JNI_OnLoad finished, offset=" + (System.currentTimeMillis() - start) + "ms");
-            vm.deleteLocalRefs();
+            try {
+                long start = System.currentTimeMillis();
+                if (log.isDebugEnabled()) {
+                    log.debug("Call [" + module.name + "]JNI_OnLoad: 0x" + Long.toHexString(onLoad.getAddress()));
+                }
+                Number ret = onLoad.call(emulator, vm.getJavaVM(), null)[0];
+                int version = ret.intValue();
+                if (log.isDebugEnabled()) {
+                    log.debug("Call [" + module.name + "]JNI_OnLoad finished: version=0x" + Integer.toHexString(version) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+                }
+
+                vm.checkVersion(version);
+            } finally {
+                vm.deleteLocalRefs();
+            }
         }
     }
 

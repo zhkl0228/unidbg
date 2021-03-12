@@ -321,13 +321,14 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetMethodID = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer methodName = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                Pointer argsPointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                Pointer methodName = context.getPointerArg(2);
+                Pointer argsPointer = context.getPointerArg(3);
                 String name = methodName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetMethodID class=" + clazz + ", methodName=" + name + ", args=" + args);
+                    log.debug("GetMethodID class=" + clazz + ", methodName=" + name + ", args=" + args + ", LR=" + context.getLRPointer());
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (dvmClass == null) {
@@ -881,13 +882,14 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStaticMethodID = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer methodName = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                Pointer argsPointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                Pointer methodName = context.getPointerArg(2);
+                Pointer argsPointer = context.getPointerArg(3);
                 String name = methodName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticMethodID class=" + clazz + ", methodName=" + name + ", args=" + args);
+                    log.debug("GetStaticMethodID class=" + clazz + ", methodName=" + name + ", args=" + args + ", LR=" + context.getLRPointer());
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (dvmClass == null) {
