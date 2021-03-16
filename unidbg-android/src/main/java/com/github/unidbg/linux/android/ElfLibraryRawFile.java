@@ -15,7 +15,7 @@ public class ElfLibraryRawFile implements LibraryFile {
     public ElfLibraryRawFile(String name, ByteBuffer buffer) {
         this.raw = buffer;
         if (name == null || name.isEmpty()) {
-            name = String.format("%x.so", this.hashCode());
+            name = String.format("%x.so", buffer.hashCode());
         }
         this.name = name;
     }
