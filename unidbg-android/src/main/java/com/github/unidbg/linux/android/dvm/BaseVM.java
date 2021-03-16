@@ -3,6 +3,7 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.ElfLibraryFile;
+import com.github.unidbg.linux.android.ElfLibraryRawFile;
 import com.github.unidbg.linux.android.dvm.api.Signature;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
 import com.github.unidbg.linux.android.dvm.apk.ApkFactory;
@@ -221,6 +222,15 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         }
 
         Module module = emulator.getMemory().load(libraryFile, forceCallInit);
+        return new DalvikModule(this, module);
+    }
+
+    @Override
+    public final DalvikModule loadLibrary(String libname, byte[] raw, boolean forceCallInit) {
+        if (raw == null || raw.length == 0){
+            throw new UnsupportedOperationException();
+        }
+        Module module = emulator.getMemory().load(new ElfLibraryRawFile(libname, raw), forceCallInit);
         return new DalvikModule(this, module);
     }
 
