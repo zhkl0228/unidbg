@@ -12,7 +12,7 @@ public class ElfLibraryRawFile implements LibraryFile {
     private final ByteBuffer raw;
     private final String name;
 
-    public ElfLibraryRawFile(String name, ByteBuffer buffer){
+    public ElfLibraryRawFile(String name, ByteBuffer buffer) {
         this.raw = buffer;
         if (name == null || name.isEmpty()) {
             name = String.format("%x.so", this.hashCode());
@@ -20,7 +20,7 @@ public class ElfLibraryRawFile implements LibraryFile {
         this.name = name;
     }
 
-    public ElfLibraryRawFile(String name, byte[] binary){
+    public ElfLibraryRawFile(String name, byte[] binary) {
         this(name, ByteBuffer.wrap(binary));
     }
 
