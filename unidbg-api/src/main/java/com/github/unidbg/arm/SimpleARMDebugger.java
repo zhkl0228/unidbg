@@ -6,6 +6,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Utils;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
+import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -18,7 +19,6 @@ import org.apache.commons.codec.binary.Hex;
 import unicorn.ArmConst;
 
 import java.util.Scanner;
-import java.util.concurrent.Callable;
 
 class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
 
@@ -27,7 +27,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    protected final void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception {
+    protected final void loop(Emulator<?> emulator, long address, int size, DebugRunnable<?> runnable) throws Exception {
         Backend backend = emulator.getBackend();
         boolean thumb = ARM.isThumb(backend);
         long nextAddress = 0;
@@ -52,10 +52,11 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     showHelp();
                     continue;
                 }
-                if ("run".equals(line) && callable != null) {
+                if (line.startsWith("run") && runnable != null) {
                     try {
                         callbackRunning = true;
-                        callable.call();
+                        String[] args = line.substring(3).trim().split("\\s+");
+                        runnable.runWithArgs(args);
                     } finally {
                         callbackRunning = false;
                     }
@@ -246,7 +247,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
                     System.out.println("Add breakpoint: 0x" + Long.toHexString(addr) + (module == null ? "" : (" in " + module.name + " [0x" + Long.toHexString(addr - module.base) + "]")));
                     continue;
                 }
-                if(handleCommon(backend, line, address, size, nextAddress, callable)) {
+                if(handleCommon(backend, line, address, size, nextAddress, runnable)) {
                     break;
                 }
             } catch (RuntimeException | DecoderException e) {

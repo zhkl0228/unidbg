@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 
 public abstract class AbstractDebugServer extends AbstractARMDebugger implements DebugServer {
@@ -233,7 +232,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     private Semaphore semaphore;
 
     @Override
-    protected final void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception {
+    protected final void loop(Emulator<?> emulator, long address, int size, DebugRunnable<?> runnable) throws Exception {
         if (address <= 0) {
             return;
         }
@@ -245,7 +244,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
     }
 
     @Override
-    public <T> T run(Callable<T> callable) {
+    public <T> T run(DebugRunnable<T> runnable) {
         throw new UnsupportedOperationException();
     }
 

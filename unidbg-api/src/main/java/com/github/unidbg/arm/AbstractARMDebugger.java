@@ -15,6 +15,7 @@ import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.debugger.DebugListener;
+import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
@@ -264,25 +265,25 @@ public abstract class AbstractARMDebugger implements Debugger {
 
     private String breakMnemonic;
 
-    protected abstract void loop(Emulator<?> emulator, long address, int size, Callable<?> callable) throws Exception;
+    protected abstract void loop(Emulator<?> emulator, long address, int size, DebugRunnable<?> runnable) throws Exception;
 
     protected boolean callbackRunning;
 
     @Override
-    public <T> T run(Callable<T> callable) throws Exception {
-        if (callable == null) {
+    public <T> T run(DebugRunnable<T> runnable) throws Exception {
+        if (runnable == null) {
             throw new NullPointerException();
         }
         T ret;
         try {
             callbackRunning = true;
-            ret = callable.call();
+            ret = runnable.runWithArgs(null);
         } finally {
             callbackRunning = false;
         }
         try {
             debugging = true;
-            loop(emulator, -1, 0, callable);
+            loop(emulator, -1, 0, runnable);
         } finally {
             debugging = false;
         }
@@ -424,11 +425,11 @@ public abstract class AbstractARMDebugger implements Debugger {
     private TraceMemoryHook traceWrite;
     private PrintStream traceWriteRedirectStream;
 
-    final boolean handleCommon(Backend backend, String line, long address, int size, long nextAddress, Callable<?> callable) throws Exception {
+    final boolean handleCommon(Backend backend, String line, long address, int size, long nextAddress, DebugRunnable<?> runnable) throws Exception {
         if ("exit".equals(line) || "quit".equals(line)) { // continue
             return true;
         }
-        if (callable == null || callbackRunning) {
+        if (runnable == null || callbackRunning) {
             if ("c".equals(line)) { // continue
                 return true;
             }
@@ -436,7 +437,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             if ("c".equals(line)) {
                 try {
                     callbackRunning = true;
-                    callable.call();
+                    runnable.runWithArgs(null);
                     return false;
                 } finally {
                     callbackRunning = false;

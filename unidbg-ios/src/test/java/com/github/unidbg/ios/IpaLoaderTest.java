@@ -5,6 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.classdump.ClassDumper;
 import com.github.unidbg.ios.classdump.IClassDumper;
@@ -16,7 +17,6 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 import java.io.File;
-import java.util.concurrent.Callable;
 
 public class IpaLoaderTest implements EmulatorConfigurator {
 
@@ -34,9 +34,9 @@ public class IpaLoaderTest implements EmulatorConfigurator {
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
         loader.callEntry();
         final Module module = loader.getExecutable();
-        emulator.attach().run(new Callable<Void>() {
+        emulator.attach().run(new DebugRunnable<Void>() {
             @Override
-            public Void call() throws Exception {
+            public Void runWithArgs(String[] args) throws Exception {
                 long start = System.currentTimeMillis();
                 final IClassDumper classDumper = ClassDumper.getInstance(emulator);
                 String objcClass = classDumper.dumpClass("AppDelegate");
