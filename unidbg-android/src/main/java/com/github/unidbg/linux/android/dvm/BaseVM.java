@@ -227,8 +227,8 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
     @Override
     public final DalvikModule loadLibrary(String libname, byte[] raw, boolean forceCallInit) {
-        if (raw == null || raw.length == 0){
-            throw new UnsupportedOperationException();
+        if (raw == null || raw.length == 0) {
+            throw new IllegalArgumentException();
         }
         Module module = emulator.getMemory().load(new ElfLibraryRawFile(libname, raw), forceCallInit);
         return new DalvikModule(this, module);

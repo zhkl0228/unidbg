@@ -25,7 +25,7 @@ public interface Loader {
     Module load(LibraryFile libraryFile, boolean forceCallInit);
 
     Module findModuleByAddress(long address);
-    Module findModule(String soName);
+    Module findModule(String name);
 
     Module dlopen(String filename);
     Module dlopen(String filename, boolean calInit);

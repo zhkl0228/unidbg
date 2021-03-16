@@ -361,9 +361,9 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     }
 
     @Override
-    public final Module findModule(String soName) {
+    public final Module findModule(String name) {
         for (Module module : getLoadedModules()) {
-            if (module.name.equals(soName)) {
+            if (module.name.equals(name)) {
                 return module;
             }
         }
