@@ -274,7 +274,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 traceSystemMemoryWriteListener.onWrite(this, addr, buf);
             } else {
                 StringWriter writer = new StringWriter();
-                writer.write("### System Memory WRITE at 0x" + Long.toHexString(max));
+                writer.write("### System Memory WRITE at 0x" + Long.toHexString(max) + "\n");
                 new Exception().printStackTrace(new PrintWriter(writer));
                 Inspector.inspect(buf, writer.toString());
             }

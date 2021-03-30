@@ -7,6 +7,7 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.struct.DispatchSourceType;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import keystone.Keystone;
@@ -32,7 +33,7 @@ class SymbolResolver implements HookListener {
     }
 
     @Override
-    public long hook(SvcMemory svcMemory, String libraryName, String symbolName, long old) {
+    public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, long old) {
         /*if (symbolName.contains("tlv_bootstrap")) {
             System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
         }*/
@@ -119,14 +120,19 @@ class SymbolResolver implements HookListener {
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
                         UnidbgPointer self = context.getPointerArg(0);
-                        return self.peer + emulator.getPointerSize();
+                        UnidbgPointer var = self.getPointer(8);
+                        if (var == null) {
+                            long size = self.getLong(16);
+                            MemoryBlock block = emulator.getMemory().malloc((int) size, true);
+                            var = block.getPointer();
+                            self.setPointer(8, var);
+                        }
+                        return var.peer;
                     }
                 } : new ArmSvc() {
                     @Override
                     public long handle(Emulator<?> emulator) {
-                        RegisterContext context = emulator.getContext();
-                        UnidbgPointer self = context.getPointerArg(0);
-                        return self.peer + emulator.getPointerSize();
+                        throw new UnsupportedOperationException();
                     }
                 });
             }

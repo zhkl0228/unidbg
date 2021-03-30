@@ -38,6 +38,7 @@ public interface DarwinSyscall {
     int KERN_HOSTNAME = 10; /* string: hostname */
     int KERN_PROC = 14; /* struct: process entries */
     int KERN_BOOTTIME =		21;	/* struct: time kernel was booted */
+    int KERN_MAXFILESPERPROC = 29; /* int: max open files per proc */
     int KERN_USRSTACK32 = 35; /* int: address of USRSTACK */
     int KERN_PROCARGS2 = 49;
     int KERN_USRSTACK64 = 59;/* LP64 user stack query */

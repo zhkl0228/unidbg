@@ -355,6 +355,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 194:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getrlimit(emulator));
                     return;
+                case 195:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, setrlimit(emulator));
+                    return;
                 case 197:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mmap(emulator));
                     return;
@@ -1076,6 +1079,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private static final int RLIMIT_NOFILE = 8;		/* number of open files */
     private static final int RLIMIT_POSIX_FLAG = 0x1000;	/* Set bit for strict POSIX */
 
+    private long rlim_cur = 128;
+    private long rlim_max = 256;
+
     private int getrlimit(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int resource = context.getIntArg(0);
@@ -1084,13 +1090,37 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int type = resource & (RLIMIT_POSIX_FLAG - 1);
         String msg = "getrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp + ", posix=" + posix + ", type=" + type;
         if (type == RLIMIT_NOFILE) {
+            RLimit rLimit = new RLimit(rlp);
+            rLimit.rlim_cur = rlim_cur;
+            rLimit.rlim_max = rlim_max;
+            rLimit.pack();
             if (log.isDebugEnabled()) {
+                msg += (", rLimit=" + rLimit);
                 log.debug(msg);
             }
+            return 0;
+        } else {
+            log.info(msg);
+        }
+        return 1;
+    }
+
+    private int setrlimit(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int resource = context.getIntArg(0);
+        Pointer rlp = context.getPointerArg(1);
+        boolean posix = (resource & RLIMIT_POSIX_FLAG) != 0;
+        int type = resource & (RLIMIT_POSIX_FLAG - 1);
+        String msg = "setrlimit resource=0x" + Integer.toHexString(resource) + ", rlp=" + rlp + ", posix=" + posix + ", type=" + type;
+        if (type == RLIMIT_NOFILE) {
             RLimit rLimit = new RLimit(rlp);
-            rLimit.rlim_cur = 128;
-            rLimit.rlim_max = 256;
-            rLimit.pack();
+            rLimit.unpack();
+            rlim_cur = rLimit.rlim_cur;
+            rlim_max = rLimit.rlim_max;
+            if (log.isDebugEnabled()) {
+                msg += (", rLimit=" + rLimit);
+                log.debug(msg);
+            }
             return 0;
         } else {
             log.info(msg);
@@ -1503,6 +1533,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         }
                         if (buffer != null) {
                             fillKernelBootTime(buffer);
+                        }
+                        return 0;
+                    case KERN_MAXFILESPERPROC:
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 256);
                         }
                         return 0;
                     default:
