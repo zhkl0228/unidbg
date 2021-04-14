@@ -356,7 +356,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmClass == null) {
                     throw new BackendException();
                 } else {
-                    return dvmClass.getMethodID(name, args);
+                    int hash = dvmClass.getMethodID(name, args);
+                    if (verbose && hash != 0) {
+                        System.out.printf("JNIEnv->GetMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                    return hash;
                 }
             }
         });
@@ -1015,7 +1019,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmClass == null) {
                     throw new BackendException();
                 } else {
-                    return dvmClass.getStaticMethodID(name, args);
+                    int hash = dvmClass.getStaticMethodID(name, args);
+                    if (verbose && hash != 0) {
+                        System.out.printf("JNIEnv->GetStaticMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                    return hash;
                 }
             }
         });

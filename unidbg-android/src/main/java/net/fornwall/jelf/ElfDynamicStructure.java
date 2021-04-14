@@ -109,6 +109,7 @@ public class ElfDynamicStructure {
 	private static final int DT_VERDEFNUM = 0x6ffffffd; /* Number of version definitions */
 	private static final int DT_VERNEEDED = 0x6ffffffe;
 	private static final int DT_VERNEEDNUM = 0x6fffffff;
+	private static final int DT_AUXILIARY = 0x7ffffffd;
 
 	private static final int DT_ANDROID_REL = 0x6000000f;
 	private static final int DT_ANDROID_RELSZ = 0x60000010;
@@ -247,6 +248,7 @@ public class ElfDynamicStructure {
 			case DT_VERDEFNUM:
 			case DT_VERNEEDED:
 			case DT_VERNEEDNUM:
+			case DT_AUXILIARY:
 				break;
 			default:
 				boolean androidTag = (d_tag & 0x60000000) != 0;
