@@ -298,7 +298,7 @@ class SimpleARMDebugger extends AbstractARMDebugger implements Debugger {
         System.out.println("d|dis: show disassemble");
         System.out.println("d(0x): show disassemble at specify address");
         System.out.println("stop: stop emulation");
-        System.out.println("run: run test");
+        System.out.println("run [arg]: run test");
 
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning()) {
             System.out.println("dump [class name]: dump objc class");

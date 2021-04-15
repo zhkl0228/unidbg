@@ -1,0 +1,25 @@
+syntax = "proto2";
+option java_package = "com.github.unidbg.android.pb";
+option java_multiple_files = true;
+
+message unknown {}
+
+message jkn {
+    required string text = 1;
+    required bool c = 2;
+    required bool d = 3;
+    required bool e = 4;
+    required bool f = 5;
+}
+
+message jkq {
+    optional string translation = 1;
+}
+
+message jkl {
+    required string from = 1;
+    required string to = 2;
+    required string d = 3;
+    required string dictPath = 4;
+    required string dictDir = 6;
+}
