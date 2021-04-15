@@ -2,7 +2,6 @@ package com.google.translate;
 
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
-import com.github.unidbg.android.thread.Utils;
 import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
@@ -19,10 +18,16 @@ import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.virtualmodule.android.AndroidModule;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.apache.commons.codec.binary.Hex;
 
 import java.io.File;
 
 public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFileIO> {
+
+    private static final String model_path = "/data/user/files";
+
+    private static final String zh = "zh-Hans"; //中文
+    private static final String en = "en"; //英文
 
     private final AndroidEmulator emulator;
     private final VM vm;
@@ -62,7 +67,7 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
 
 
         //加载模型
-        byte[] jkl = createJkl(Utils.zh, Utils.en);
+        byte[] jkl = createJkl(zh, en);
         int load = cNativeLangMan.callStaticJniMethodInt(emulator, "loadDictionaryNative([B)I", new ByteArray(vm, jkl));
 
         System.out.println("loadDictionaryNative: " + load);
@@ -99,9 +104,9 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
     private void doTrans(String zh) {
         long startTime = System.currentTimeMillis();
         byte[] doTrans = createJkn(zh);
-        System.out.println("doTrans " + Utils.bytesToHexString(doTrans));
+        System.out.println("doTrans " + Hex.encodeHexString(doTrans));
         ByteArray dvmObject = cNativeLangMan.callStaticJniMethodObject(emulator, "doTranslateNative([B)[B", new ByteArray(vm, doTrans));
-        System.out.println("doTranslateNative: " + Utils.bytesToHexString(dvmObject.getValue()));
+        System.out.println("doTranslateNative: " + Hex.encodeHexString(dvmObject.getValue()));
         System.out.println("计算用时： "+(System.currentTimeMillis()-startTime)+"ms");
         trans(zh, dvmObject);
     }
@@ -245,8 +250,8 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
     }
 
     private byte[] createJkl(String from, String to) {
-        String tmp = from.equals(Utils.en) ? to : from;
-        if (tmp.equals(Utils.zh)) {
+        String tmp = from.equals(en) ? to : from;
+        if (tmp.equals(zh)) {
             tmp = "zh";
         }
 
@@ -254,8 +259,8 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
         jkl.setFrom(from);
         jkl.setTo(to);
         jkl.setD("25");
-        jkl.setDictPath(Utils.model_path + "/dict.en_" + tmp + "_25");
-        jkl.setDictDir(Utils.model_path);
+        jkl.setDictPath(model_path + "/dict.en_" + tmp + "_25");
+        jkl.setDictDir(model_path);
         return jkl.build().toByteArray();
     }
 
