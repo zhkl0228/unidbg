@@ -2110,6 +2110,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x94, _CallBooleanMethod);
         impl.setPointer(0x98, _CallBooleanMethodV);
         impl.setPointer(0x9c, _CallBooleanMethodA);
+        impl.setPointer(0xa4, _CallByteMethodV);
         impl.setPointer(0xc4, _CallIntMethod);
         impl.setPointer(0xc8, _CallIntMethodV);
         impl.setPointer(0xd0, _CallLongMethod);
