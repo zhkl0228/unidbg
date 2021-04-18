@@ -401,6 +401,16 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public byte callByteMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        return callByteMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
+    public byte callByteMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
         return callIntMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
