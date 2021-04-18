@@ -456,7 +456,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private int mlock(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer addr = context.getPointerArg(0);
-        int len = context.getInt(1);
+        int len = context.getIntArg(1);
         if (log.isDebugEnabled()) {
             log.debug("mlock addr=" + addr + ", len=" + len);
         }
