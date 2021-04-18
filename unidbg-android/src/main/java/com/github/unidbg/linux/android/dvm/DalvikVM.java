@@ -536,6 +536,31 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallShortMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnidbgPointer object = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                UnidbgPointer va_list = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallShortMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
+                    short ret = dvmMethod.callShortMethodV(dvmObject, vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallShortMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                    return ret;
+                }
+            }
+        });
+
         Pointer _CallIntMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2111,6 +2136,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x98, _CallBooleanMethodV);
         impl.setPointer(0x9c, _CallBooleanMethodA);
         impl.setPointer(0xa4, _CallByteMethodV);
+        impl.setPointer(0xbc, _CallShortMethodV);
         impl.setPointer(0xc4, _CallIntMethod);
         impl.setPointer(0xc8, _CallIntMethodV);
         impl.setPointer(0xd0, _CallLongMethod);

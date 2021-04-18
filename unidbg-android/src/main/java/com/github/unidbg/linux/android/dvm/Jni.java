@@ -61,6 +61,9 @@ public interface Jni {
     byte callByteMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
     byte callByteMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
+    short callShortMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
+    short callShortMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
+
     int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
     int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
 
