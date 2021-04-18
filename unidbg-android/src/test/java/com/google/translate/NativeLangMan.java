@@ -2,6 +2,7 @@ package com.google.translate;
 
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
@@ -34,7 +35,11 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
     private final DvmClass cNativeLangMan;
 
     private AndroidEmulator createARMEmulator() {
-        return AndroidEmulatorBuilder.for32Bit().setProcessName("com.google.translate").build();
+        return AndroidEmulatorBuilder
+                .for32Bit()
+                .addBackendFactory(new DynarmicFactory(true))
+                .setProcessName("com.google.translate")
+                .build();
     }
 
     public NativeLangMan(){
