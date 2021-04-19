@@ -3,6 +3,7 @@ package com.google.translate;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.KvmFactory;
 import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.IOResolver;
@@ -37,6 +38,7 @@ public class NativeLangMan extends TestCase implements IOResolver<AndroidFileIO>
     private AndroidEmulator createARMEmulator() {
         return AndroidEmulatorBuilder
                 .for32Bit()
+                .addBackendFactory(new KvmFactory(true))
                 .addBackendFactory(new DynarmicFactory(true))
                 .setProcessName("com.google.translate")
                 .build();
@@ -63,10 +65,9 @@ public class NativeLangMan extends TestCase implements IOResolver<AndroidFileIO>
 
         //检查cpu
         boolean ret = cWordLensSystem.callStaticJniMethodBoolean(emulator, "CheckCPUHasNeonNative()Z");
-        System.out.println("CheckCPUHasNeonNative: " + ret);
+        System.out.println("CheckCPUHasNeonNative: " + ret + ", backend=" + emulator.getBackend());
 
         //卸载模型
-//        NativeLangMan.callStaticJniMethod(emulator,"unloadDictionaryNative()I");
         int unload = cNativeLangMan.callStaticJniMethodInt(emulator, "unloadDictionaryNative()I");
         System.out.println("unloadDictionaryNative: " + unload);
 
@@ -85,12 +86,31 @@ public class NativeLangMan extends TestCase implements IOResolver<AndroidFileIO>
         //输入文字
         doTrans("你吃了吗");
         doTrans("你今天去哪里旅行？");
+
+        try {
+            System.out.println("执行命令 \"run 中文\" 翻译，例如：run 今天天气怎样？");
+
+            emulator.attach().run(new DebugRunnable<Void>() {
+                @Override
+                public Void runWithArgs(String[] args) {
+                    if (args != null && args.length > 0) {
+                        String text = args[0].trim();
+                        if (text.length() > 0) {
+                            doTrans(text);
+                        }
+                    }
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private void doTrans(String zh) {
-        long startTime = System.currentTimeMillis();
         byte[] doTrans = createJkn(zh);
         System.out.println("doTrans " + Hex.encodeHexString(doTrans));
+        long startTime = System.currentTimeMillis();
         ByteArray dvmObject = cNativeLangMan.callStaticJniMethodObject(emulator, "doTranslateNative([B)[B", new ByteArray(vm, doTrans));
         System.out.println("doTranslateNative: " + Hex.encodeHexString(dvmObject.getValue()));
         System.out.println("计算用时： "+(System.currentTimeMillis()-startTime)+"ms");
@@ -254,32 +274,12 @@ public class NativeLangMan extends TestCase implements IOResolver<AndroidFileIO>
     }
 
     public void testTranslate() {
-        main(null);
+        doTrans("你吃了吗");
+        doTrans("你今天去哪里旅行？");
     }
 
     public static void main(String[] args) {
         final NativeLangMan translate = new NativeLangMan();
         translate.transTest();
-
-        if (args != null) {
-            try {
-                System.out.println("执行命令 \"run 中文\" 翻译，例如：run 今天天气怎样？");
-
-                translate.emulator.attach().run(new DebugRunnable<Void>() {
-                    @Override
-                    public Void runWithArgs(String[] args) {
-                        if (args != null && args.length > 0) {
-                            String text = args[0].trim();
-                            if (text.length() > 0) {
-                                translate.doTrans(text);
-                            }
-                        }
-                        return null;
-                    }
-                });
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        }
     }
 }
