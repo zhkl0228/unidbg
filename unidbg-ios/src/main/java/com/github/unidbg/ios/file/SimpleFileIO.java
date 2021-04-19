@@ -56,6 +56,9 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
         if (file.isDirectory()) {
             throw new IllegalArgumentException("file is directory: " + file);
         }
+        if (!file.exists()) {
+            throw new IllegalArgumentException("file not exists: " + file);
+        }
     }
 
     @Override

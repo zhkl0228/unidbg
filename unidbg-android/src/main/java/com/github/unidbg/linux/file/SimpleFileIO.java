@@ -58,6 +58,9 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
         if (file.isDirectory()) {
             throw new IllegalArgumentException("file is directory: " + file);
         }
+        if (!file.exists()) {
+            throw new IllegalArgumentException("file not exists: " + file);
+        }
     }
 
     void onFileOpened(RandomAccessFile randomAccessFile) throws IOException {

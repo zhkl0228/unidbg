@@ -9,7 +9,6 @@ import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
-import com.github.unidbg.linux.android.dvm.AbstractJni;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.VM;
@@ -19,11 +18,12 @@ import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.virtualmodule.android.AndroidModule;
 import com.google.protobuf.InvalidProtocolBufferException;
+import junit.framework.TestCase;
 import org.apache.commons.codec.binary.Hex;
 
 import java.io.File;
 
-public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFileIO> {
+public class NativeLangMan extends TestCase implements IOResolver<AndroidFileIO> {
 
     private static final String model_path = "/data/user/files";
 
@@ -49,12 +49,12 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
         final Memory memory = emulator.getMemory(); // 模拟器的内存操作接口
         memory.setLibraryResolver(new AndroidResolver(23));// 设置系统类库解析
         vm = emulator.createDalvikVM(null); // 创建Android虚拟机
-        vm.setJni(this);
         vm.setVerbose(true);// 设置是否打印Jni调用细节
         new AndroidModule(emulator, vm).register(memory);
 
         // 自行修改文件路径,loadLibrary是java加载so的方法
-        DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtranslate.so"), true);
+        File file = new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtranslate.so");
+        DalvikModule dm = vm.loadLibrary(file.exists() ? file : new File("src/test/resources/example_binaries/armeabi-v7a/libtranslate.so"), true);
         dm.callJNI_OnLoad(emulator);// 手动执行JNI_OnLoad函数
 
         cNativeLangMan = vm.resolveClass("com/google/android/libraries/wordlens/NativeLangMan");
@@ -81,29 +81,10 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
         }
     }
 
-    private void test(){
+    private void transTest(){
         //输入文字
         doTrans("你吃了吗");
         doTrans("你今天去哪里旅行？");
-
-        try {
-            System.out.println("执行命令 \"run 中文\" 翻译，例如：run 今天天气怎样？");
-
-            emulator.attach().run(new DebugRunnable<Void>() {
-                @Override
-                public Void runWithArgs(String[] args) {
-                    if (args != null && args.length > 0) {
-                        String text = args[0].trim();
-                        if (text.length() > 0) {
-                            doTrans(text);
-                        }
-                    }
-                    return null;
-                }
-            });
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     private void doTrans(String zh) {
@@ -179,13 +160,16 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
         }
 
         if ("/data/user/files/dict.en_zh_25/merged_dict_en_zh_25_both.bin".equals(pathname)) {
-            return FileResult.<AndroidFileIO>success(new SimpleFileIO(oflags, new File("unidbg-android/src/test/resources/merged_dict_en_zh_25_both.bin"), pathname));
+            File file = new File("unidbg-android/src/test/resources/merged_dict_en_zh_25_both.bin");
+            return FileResult.<AndroidFileIO>success(new SimpleFileIO(oflags, file.exists() ? file : new File("src/test/resources/merged_dict_en_zh_25_both.bin"), pathname));
         }
         if ("/data/user/files/dict.en_zh_25/merged_dict_en_zh_25_from_zh.bin".equals(pathname)) {
-            return FileResult.<AndroidFileIO>success(new SimpleFileIO(oflags, new File("unidbg-android/src/test/resources/merged_dict_en_zh_25_from_zh.bin"), pathname));
+            File file = new File("unidbg-android/src/test/resources/merged_dict_en_zh_25_from_zh.bin");
+            return FileResult.<AndroidFileIO>success(new SimpleFileIO(oflags, file.exists() ? file : new File("src/test/resources/merged_dict_en_zh_25_from_zh.bin"), pathname));
         }
         if ("/data/user/files/dict.en_zh_25/merged_dict_en_zh_25_update.bin".equals(pathname)) {
-            return FileResult.<AndroidFileIO>success(new SimpleFileIO(oflags, new File("unidbg-android/src/test/resources/merged_dict_en_zh_25_update.bin"), pathname));
+            File file = new File("unidbg-android/src/test/resources/merged_dict_en_zh_25_update.bin");
+            return FileResult.<AndroidFileIO>success(new SimpleFileIO(oflags, file.exists() ? file : new File("src/test/resources/merged_dict_en_zh_25_update.bin"), pathname));
         }
         if ("/proc/cpuinfo".equals(pathname)) {
             return FileResult.<AndroidFileIO>success(new ByteArrayFileIO(oflags, pathname, ("Processor\t: AArch64 Processor rev 1 (aarch64)\n" +
@@ -269,8 +253,33 @@ public class NativeLangMan extends AbstractJni implements IOResolver<AndroidFile
         return jkl.build().toByteArray();
     }
 
+    public void testTranslate() {
+        main(null);
+    }
+
     public static void main(String[] args) {
-        NativeLangMan translate = new NativeLangMan();
-        translate.test();
+        final NativeLangMan translate = new NativeLangMan();
+        translate.transTest();
+
+        if (args != null) {
+            try {
+                System.out.println("执行命令 \"run 中文\" 翻译，例如：run 今天天气怎样？");
+
+                translate.emulator.attach().run(new DebugRunnable<Void>() {
+                    @Override
+                    public Void runWithArgs(String[] args) {
+                        if (args != null && args.length > 0) {
+                            String text = args[0].trim();
+                            if (text.length() > 0) {
+                                translate.doTrans(text);
+                            }
+                        }
+                        return null;
+                    }
+                });
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
     }
 }
