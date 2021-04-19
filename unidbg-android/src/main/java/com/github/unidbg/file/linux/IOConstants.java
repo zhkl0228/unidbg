@@ -11,5 +11,6 @@ public interface IOConstants {
     int O_NONBLOCK = 0x800;
     int O_DIRECTORY = 0x10000;
     int O_NOFOLLOW = 0x20000;
+    int O_CLOEXEC = 0x80000;
 
 }

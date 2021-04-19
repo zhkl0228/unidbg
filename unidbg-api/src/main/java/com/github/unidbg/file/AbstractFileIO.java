@@ -142,7 +142,7 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int write(byte[] data) {
-        throw new UnsupportedOperationException(getClass().getName());
+        throw new UnsupportedOperationException(Inspector.inspectString(data, getClass().getName()));
     }
 
     @Override

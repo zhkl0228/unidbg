@@ -1,10 +1,13 @@
 package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.file.DirectoryFileIO;
+import com.github.unidbg.linux.file.EventFD;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
@@ -22,6 +25,31 @@ import java.util.Map;
 abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> implements SyscallHandler<AndroidFileIO> {
 
     private static final Log log = LogFactory.getLog(AndroidSyscallHandler.class);
+
+    private static final int EFD_SEMAPHORE = 1;
+    private static final int EFD_NONBLOCK = IOConstants.O_NONBLOCK;
+    private static final int EFD_CLOEXEC = IOConstants.O_CLOEXEC;
+
+    final int eventfd2(Emulator<?> emulator) {
+        RegisterContext ctx = emulator.getContext();
+        int initval = ctx.getIntArg(0);
+        int flags = ctx.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("eventfd2 initval=" + initval + ", flags=0x" + Integer.toHexString(flags));
+        }
+        if ((flags & EFD_CLOEXEC) != 0) {
+            throw new UnsupportedOperationException("eventfd2 flags=0x" + Integer.toHexString(flags));
+        }
+        boolean nonblock = (flags & EFD_NONBLOCK) != 0;
+        boolean semaphore = (flags & EFD_SEMAPHORE) != 0;
+        AndroidFileIO fileIO = new EventFD(initval, semaphore, nonblock);
+        int minFd = this.getMinFd();
+        this.fdMap.put(minFd, fileIO);
+        if (verbose) {
+            System.out.printf("eventfd(%d) with flags=0x%x from %s%n", initval, flags, emulator.getContext().getLRPointer());
+        }
+        return minFd;
+    }
 
     @Override
     protected FileResult<AndroidFileIO> createFdDir(int oflags, String pathname) {

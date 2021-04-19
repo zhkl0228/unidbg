@@ -418,6 +418,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 348:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, utimensat(backend, emulator));
                     return;
+                case 356:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, eventfd2(emulator));
+                    return;
                 case 358:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, dup3(emulator));
                     return;
