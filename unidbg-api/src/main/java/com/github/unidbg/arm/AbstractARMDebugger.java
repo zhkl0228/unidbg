@@ -744,14 +744,25 @@ public abstract class AbstractARMDebugger implements Debugger {
             if (sizeBytes >= 2) {
                 Capstone.CsInsn[] insns = emulator.disassemble(address & ~1, sizeBytes, Short.MAX_VALUE);
                 StringBuilder sb = new StringBuilder();
+                if (emulator.is32Bit()) {
+                    sb.append("    \"").append("push {r7, lr}").append("\\n").append('"').append("\n\n");
+                } else {
+                    sb.append("    \"").append("sub sp, sp, #0x10").append("\\n").append('"').append('\n');
+                    sb.append("    \"").append("stp x29, x30, [sp]").append("\\n").append('"').append("\n\n");
+                }
                 for (Capstone.CsInsn insn : insns) {
                     String asm = "    \"" + insn.mnemonic + " " + insn.opStr + "\\n\"";
                     sb.append(String.format("%-50s", asm));
                     sb.append(" // offset 0x").append(Long.toHexString(insn.address - (address & ~1)));
                     sb.append("\n");
                 }
-                if (sb.length() > 0) {
-                    sb.deleteCharAt(sb.length() - 1);
+                sb.append('\n');
+                if (emulator.is32Bit()) {
+                    sb.append("    \"").append("pop {r7, pc}").append("\\n").append('"');
+                } else {
+                    sb.append("    \"").append("ldp x29, x30, [sp]").append("\\n").append('"').append('\n');
+                    sb.append("    \"").append("add sp, sp, #0x10").append("\\n").append('"');
+                    sb.append("    \"").append("ret").append("\\n").append('"');
                 }
                 String template = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream("/cc.c")), StandardCharsets.UTF_8);
                 System.err.println(template.replace("$(REPLACE_ASM)", sb.toString()));
