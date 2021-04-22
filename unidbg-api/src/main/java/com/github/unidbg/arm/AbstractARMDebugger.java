@@ -41,6 +41,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -764,8 +765,10 @@ public abstract class AbstractARMDebugger implements Debugger {
                     sb.append("    \"").append("add sp, sp, #0x10").append("\\n").append('"').append('\n');
                     sb.append("    \"").append("ret").append("\\n").append('"');
                 }
-                String template = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream("/cc.c")), StandardCharsets.UTF_8);
-                System.err.println(template.replace("$(REPLACE_ASM)", sb.toString()));
+                try(InputStream inputStream = Objects.requireNonNull(getClass().getResourceAsStream("/cc.c"))) {
+                    String template = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+                    System.err.println(template.replace("$(REPLACE_ASM)", sb.toString()));
+                }
             } else {
                 System.err.println("Usage: cc (size)");
             }
