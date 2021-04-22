@@ -45,6 +45,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +56,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -324,7 +324,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
 
                 if (foundTerminated) {
-                    Inspector.inspect(baos.toByteArray(), baos.size() >= 1024 ? (label + ", hex=" + Hex.encodeHexString(baos.toByteArray())) : label);
+                    Inspector.inspect(baos.toByteArray(), baos.size() >= 1024 ? (label + ", hex=" + Hex.encodeHexString(baos.toByteArray())) : (label + ", str=" + new String(baos.toByteArray(), StandardCharsets.UTF_8)));
                 } else {
                     Inspector.inspect(pointer.getByteArray(0, _length), label + ", find NULL-terminated failed");
                 }
@@ -332,7 +332,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 StdString string = StdString.createStdString(emulator, pointer);
                 long size = string.getDataSize();
                 byte[] data = string.getData();
-                Inspector.inspect(data, size >= 1024 ? (label + ", hex=" + Hex.encodeHexString(data)) : label);
+                Inspector.inspect(data, size >= 1024 ? (label + ", hex=" + Hex.encodeHexString(data) + ", std=" + new String(data, StandardCharsets.UTF_8)) : label);
             } else {
                 throw new UnsupportedOperationException("stringType=" + stringType);
             }
