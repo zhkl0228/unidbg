@@ -56,6 +56,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -731,14 +732,36 @@ public abstract class AbstractARMDebugger implements Debugger {
                 assert pointer != null;
                 pointer.write(0, code, 0, code.length);
                 disassemble(emulator, originalAddress, size, isThumb);
-                return true;
+                return false;
             } catch (AssembleFailedKeystoneException e) {
                 System.err.println("Assemble failed: " + assembly);
                 return false;
             }
         }
+        Module module = emulator.getMemory().findModuleByAddress(address);
+        if (module != null && line.startsWith("cc")) {
+            int sizeBytes = (int) Utils.parseNumber(line.substring(2).trim()) & ~1;
+            if (sizeBytes >= 2) {
+                Capstone.CsInsn[] insns = emulator.disassemble(address & ~1, sizeBytes, Short.MAX_VALUE);
+                StringBuilder sb = new StringBuilder();
+                for (Capstone.CsInsn insn : insns) {
+                    String asm = "    \"" + insn.mnemonic + " " + insn.opStr + "\\n\"";
+                    sb.append(String.format("%-50s", asm));
+                    sb.append(" // offset 0x").append(Long.toHexString(insn.address - (address & ~1)));
+                    sb.append("\n");
+                }
+                if (sb.length() > 0) {
+                    sb.deleteCharAt(sb.length() - 1);
+                }
+                String template = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream("/cc.c")), StandardCharsets.UTF_8);
+                System.err.println(template.replace("$(REPLACE_ASM)", sb.toString()));
+            } else {
+                System.err.println("Usage: cc (size)");
+            }
+            return false;
+        }
 
-        showHelp();
+        showHelp(address);
         return false;
     }
 
@@ -748,7 +771,7 @@ public abstract class AbstractARMDebugger implements Debugger {
     protected void dumpClass(String className) {
     }
 
-    void showHelp() {}
+    void showHelp(long address) {}
 
     /**
      * @return next address

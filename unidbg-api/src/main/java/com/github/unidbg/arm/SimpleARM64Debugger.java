@@ -49,7 +49,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         while ((line = scanner.nextLine()) != null) {
             try {
                 if ("help".equals(line)) {
-                    showHelp();
+                    showHelp(address);
                     continue;
                 }
                 if (line.startsWith("run") && runnable != null) {
@@ -256,7 +256,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     }
 
     @Override
-    final void showHelp() {
+    final void showHelp(long address) {
         System.out.println("c: continue");
         System.out.println("n: step over");
         if (emulator.isRunning()) {
@@ -302,6 +302,11 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning()) {
             System.out.println("dump [class name]: dump objc class");
             System.out.println("search [keywords]: search objc classes");
+        }
+
+        Module module = emulator.getMemory().findModuleByAddress(address);
+        if (module != null) {
+            System.out.printf("cc (size): convert asm from 0x%x - 0x%x + size bytes to c function%n", address, address);
         }
     }
 
