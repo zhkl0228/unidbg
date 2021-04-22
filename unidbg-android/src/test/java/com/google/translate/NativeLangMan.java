@@ -73,7 +73,7 @@ public class NativeLangMan extends TestCase implements IOResolver<AndroidFileIO>
 
 
         //加载模型
-        byte[] jkl = createJkl(zh, en);
+        byte[] jkl = createJkl();
         int load = cNativeLangMan.callStaticJniMethodInt(emulator, "loadDictionaryNative([B)I", new ByteArray(vm, jkl));
 
         System.out.println("loadDictionaryNative: " + load);
@@ -249,28 +249,25 @@ public class NativeLangMan extends TestCase implements IOResolver<AndroidFileIO>
 
 
     private byte[] createJkn(String text) {
-        com.github.unidbg.android.pb.jkn.Builder jkn = com.github.unidbg.android.pb.jkn.newBuilder();
-        jkn.setText(text);
-        jkn.setC(false);
-        jkn.setD(true);
-        jkn.setE(true);
-        jkn.setF(false);
-        return jkn.build().toByteArray();
+        com.github.unidbg.android.pb.jkn.Builder builder = com.github.unidbg.android.pb.jkn.newBuilder();
+        builder.setText(text);
+        builder.setC(false);
+        builder.setD(true);
+        builder.setE(true);
+        builder.setF(false);
+        return builder.build().toByteArray();
     }
 
-    private byte[] createJkl(String from, String to) {
-        String tmp = from.equals(en) ? to : from;
-        if (tmp.equals(zh)) {
-            tmp = "zh";
-        }
+    private byte[] createJkl() {
+        String tmp = "zh";
 
-        com.github.unidbg.android.pb.jkl.Builder jkl = com.github.unidbg.android.pb.jkl.newBuilder();
-        jkl.setFrom(from);
-        jkl.setTo(to);
-        jkl.setD("25");
-        jkl.setDictPath(model_path + "/dict.en_" + tmp + "_25");
-        jkl.setDictDir(model_path);
-        return jkl.build().toByteArray();
+        com.github.unidbg.android.pb.jkl.Builder builder = com.github.unidbg.android.pb.jkl.newBuilder();
+        builder.setFrom(NativeLangMan.zh);
+        builder.setTo(NativeLangMan.en);
+        builder.setD("25");
+        builder.setDictPath(model_path + "/dict.en_" + tmp + "_25");
+        builder.setDictDir(model_path);
+        return builder.build().toByteArray();
     }
 
     public void testTranslate() {
