@@ -761,7 +761,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     sb.append("    \"").append("pop {r7, pc}").append("\\n").append('"');
                 } else {
                     sb.append("    \"").append("ldp x29, x30, [sp]").append("\\n").append('"').append('\n');
-                    sb.append("    \"").append("add sp, sp, #0x10").append("\\n").append('"');
+                    sb.append("    \"").append("add sp, sp, #0x10").append("\\n").append('"').append('\n');
                     sb.append("    \"").append("ret").append("\\n").append('"');
                 }
                 String template = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream("/cc.c")), StandardCharsets.UTF_8);
