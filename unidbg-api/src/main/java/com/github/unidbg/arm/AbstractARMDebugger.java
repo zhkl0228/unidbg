@@ -522,7 +522,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                 begin = Utils.parseNumber(matcher.group(1));
                 end = Utils.parseNumber(matcher.group(2));
                 if (begin >= end) {
-                    System.out.printf("Set trace all memory read success.%n");
+                    File traceFile = new File("target/traceRead.txt");
+                    if (!traceFile.exists() && !traceFile.createNewFile()) {
+                        throw new IllegalStateException("createNewFile: " + traceFile);
+                    }
+                    traceReadRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                    traceReadRedirectStream.printf("[%s]Start traceRead", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+                    traceRead.setRedirect(traceReadRedirectStream);
+                    System.out.printf("Set trace all memory read success with trace file: %s.%n", traceFile);
                 } else {
                     boolean needTraceFile = end - begin > 0x1000;
                     if (needTraceFile) {
@@ -541,7 +548,15 @@ public abstract class AbstractARMDebugger implements Debugger {
             } else {
                 begin = 1;
                 end = 0;
-                System.out.println("Set trace all memory read success");
+
+                File traceFile = new File("target/traceRead.txt");
+                if (!traceFile.exists() && !traceFile.createNewFile()) {
+                    throw new IllegalStateException("createNewFile: " + traceFile);
+                }
+                traceReadRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                traceReadRedirectStream.printf("[%s]Start traceRead", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+                traceRead.setRedirect(traceReadRedirectStream);
+                System.out.printf("Set trace all memory read success with trace file: %s.%n", traceFile);
             }
             emulator.getBackend().hook_add_new((ReadHook) traceRead, begin, end, emulator);
             return false;
@@ -555,7 +570,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                 begin = Utils.parseNumber(matcher.group(1));
                 end = Utils.parseNumber(matcher.group(2));
                 if (begin >= end) {
-                    System.out.printf("Set trace all memory write success.%n");
+                    File traceFile = new File("target/traceWrite.txt");
+                    if (!traceFile.exists() && !traceFile.createNewFile()) {
+                        throw new IllegalStateException("createNewFile: " + traceFile);
+                    }
+                    traceWriteRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                    traceWriteRedirectStream.printf("[%s]Start traceWrite", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+                    traceWrite.setRedirect(traceWriteRedirectStream);
+                    System.out.printf("Set trace all memory write success with trace file: %s.%n", traceFile);
                 } else {
                     boolean needTraceFile = end - begin > 0x1000;
                     if (needTraceFile) {
@@ -574,7 +596,15 @@ public abstract class AbstractARMDebugger implements Debugger {
             } else {
                 begin = 1;
                 end = 0;
-                System.out.println("Set trace all memory write success");
+
+                File traceFile = new File("target/traceWrite.txt");
+                if (!traceFile.exists() && !traceFile.createNewFile()) {
+                    throw new IllegalStateException("createNewFile: " + traceFile);
+                }
+                traceWriteRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                traceWriteRedirectStream.printf("[%s]Start traceWrite", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+                traceWrite.setRedirect(traceWriteRedirectStream);
+                System.out.printf("Set trace all memory write success with trace file: %s.%n", traceFile);
             }
             emulator.getBackend().hook_add_new((WriteHook) traceWrite, begin, end, emulator);
             return false;
