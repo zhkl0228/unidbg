@@ -751,16 +751,28 @@ public abstract class AbstractARMDebugger implements Debugger {
                     sb.append("    \"").append("sub sp, sp, #0x10").append("\\n").append('"').append('\n');
                     sb.append("    \"").append("stp x29, x30, [sp]").append("\\n").append('"').append("\n\n");
                 }
+                String lastRegWrite = null;
                 for (Capstone.CsInsn insn : insns) {
+                    Capstone.CsRegsAccess regsAccess = insn.regsAccess();
+                    if (regsAccess != null && regsAccess.regsWrite != null && regsAccess.regsWrite.length == 1) {
+                        lastRegWrite = insn.regName(regsAccess.regsWrite[0]);
+                    }
                     String asm = "    \"" + insn.mnemonic + " " + insn.opStr + "\\n\"";
                     sb.append(String.format("%-50s", asm));
                     sb.append(" // offset 0x").append(Long.toHexString(insn.address - (address & ~1)));
                     sb.append("\n");
                 }
                 sb.append('\n');
+
                 if (emulator.is32Bit()) {
+                    if (lastRegWrite != null && !"r0".equals(lastRegWrite)) {
+                        sb.append("    \"").append("mov r0, ").append(lastRegWrite).append("\\n").append('"').append('\n');
+                    }
                     sb.append("    \"").append("pop {r7, pc}").append("\\n").append('"');
                 } else {
+                    if (lastRegWrite != null && !"x0".equals(lastRegWrite) && !"w0".equals(lastRegWrite)) {
+                        sb.append("    \"").append("mov x0, ").append(lastRegWrite).append("\\n").append('"').append('\n');
+                    }
                     sb.append("    \"").append("ldp x29, x30, [sp]").append("\\n").append('"').append('\n');
                     sb.append("    \"").append("add sp, sp, #0x10").append("\\n").append('"').append('\n');
                     sb.append("    \"").append("ret").append("\\n").append('"');
