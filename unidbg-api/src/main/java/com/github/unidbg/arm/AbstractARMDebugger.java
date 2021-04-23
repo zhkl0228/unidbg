@@ -771,7 +771,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     sb.append("    \"").append("pop {r7, pc}").append("\\n").append('"');
                 } else {
                     if (lastRegWrite != null && !"x0".equals(lastRegWrite) && !"w0".equals(lastRegWrite)) {
-                        sb.append("    \"").append("mov x0, ").append(lastRegWrite).append("\\n").append('"').append('\n');
+                        sb.append("    \"").append("mov ").append(lastRegWrite.startsWith("x") ? "x0" : "w0").append(", ").append(lastRegWrite).append("\\n").append('"').append('\n');
                     }
                     sb.append("    \"").append("ldp x29, x30, [sp]").append("\\n").append('"').append('\n');
                     sb.append("    \"").append("add sp, sp, #0x10").append("\\n").append('"').append('\n');
@@ -782,7 +782,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     System.err.println(template.replace("$(REPLACE_ASM)", sb.toString()));
                 }
             } else {
-                System.err.println("Usage: cc (size)");
+                System.err.println("Usage: cc (size bytes)");
             }
             return false;
         }
