@@ -1,10 +1,10 @@
 package com.github.unidbg.debugger;
 
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.AbstractARMDebugger;
 import com.github.unidbg.utils.Inspector;
 import keystone.Keystone;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -119,9 +119,9 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
             }
         }
 
-        IOUtils.closeQuietly(serverSocketChannel);
+        com.alibaba.fastjson.util.IOUtils.close(serverSocketChannel);
         serverSocketChannel = null;
-        IOUtils.closeQuietly(selector);
+        com.alibaba.fastjson.util.IOUtils.close(selector);
         selector = null;
         closeSocketChannel();
         resumeRun();
@@ -203,7 +203,7 @@ public abstract class AbstractDebugServer extends AbstractARMDebugger implements
         }
         SelectionKey key = socketChannel.keyFor(selector);
         if (key != null) key.cancel();
-        IOUtils.closeQuietly(socketChannel);
+        IOUtils.close(socketChannel);
         socketChannel = null;
         if (!serverShutdown) {
             enableNewConnections(true);

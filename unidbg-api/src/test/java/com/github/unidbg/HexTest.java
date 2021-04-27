@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 public class HexTest extends TestCase {
 
@@ -20,10 +21,10 @@ public class HexTest extends TestCase {
         File testFile = new File("target/streamTest.txt");
         new PrintStream(testFile).println(123);
         new PrintStream(testFile).println("abc");
-        assertEquals("abc\n", FileUtils.readFileToString(testFile));
+        assertEquals("abc\n", FileUtils.readFileToString(testFile, StandardCharsets.UTF_8));
 
         new PrintStream(new FileOutputStream(testFile, true), false).println(123);
-        assertEquals("abc\n123\n", FileUtils.readFileToString(testFile));
+        assertEquals("abc\n123\n", FileUtils.readFileToString(testFile, StandardCharsets.UTF_8));
     }
 
 }

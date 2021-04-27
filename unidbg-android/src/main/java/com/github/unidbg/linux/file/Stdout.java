@@ -1,8 +1,8 @@
 package com.github.unidbg.linux.file;
 
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.StdoutCallback;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -35,7 +35,7 @@ public class Stdout extends SimpleFileIO {
     public void close() {
         super.close();
 
-        IOUtils.closeQuietly(output);
+        IOUtils.close(output);
     }
 
     private RandomAccessFile output;

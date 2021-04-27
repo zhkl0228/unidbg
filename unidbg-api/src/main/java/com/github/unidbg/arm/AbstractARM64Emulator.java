@@ -198,7 +198,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             sb.append('\n');
             address += ins.size;
         }
-        out.print(sb.toString());
+        out.print(sb);
     }
 
     @Override
@@ -248,6 +248,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
+    @Deprecated
     public void eBlock(long begin, long until) {
         long spBackup = memory.getStackPoint();
         try {

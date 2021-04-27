@@ -205,7 +205,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
             sb.append('\n');
             address += ins.size;
         }
-        out.print(sb.toString());
+        out.print(sb);
     }
 
     @Override
@@ -245,6 +245,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
+    @Deprecated
     public void eBlock(long begin, long until) {
         long spBackup = memory.getStackPoint();
         try {

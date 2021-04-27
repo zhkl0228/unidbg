@@ -173,7 +173,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     traceHook = null;
                 }
                 if (traceHookRedirectStream != null) {
-                    IOUtils.closeQuietly(traceHookRedirectStream);
+                    com.alibaba.fastjson.util.IOUtils.close(traceHookRedirectStream);
                     traceHookRedirectStream = null;
                 }
                 if (traceRead != null) {
@@ -181,7 +181,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     traceRead = null;
                 }
                 if (traceReadRedirectStream != null) {
-                    IOUtils.closeQuietly(traceReadRedirectStream);
+                    com.alibaba.fastjson.util.IOUtils.close(traceReadRedirectStream);
                     traceReadRedirectStream = null;
                 }
                 if (traceWrite != null) {
@@ -189,7 +189,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     traceWrite = null;
                 }
                 if (traceWriteRedirectStream != null) {
-                    IOUtils.closeQuietly(traceWriteRedirectStream);
+                    com.alibaba.fastjson.util.IOUtils.close(traceWriteRedirectStream);
                     traceWriteRedirectStream = null;
                 }
                 debugging = true;

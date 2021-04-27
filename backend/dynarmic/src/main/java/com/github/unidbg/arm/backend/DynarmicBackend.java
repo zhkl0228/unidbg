@@ -1,12 +1,12 @@
 package com.github.unidbg.arm.backend;
 
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.dynarmic.Dynarmic;
 import com.github.unidbg.arm.backend.dynarmic.DynarmicCallback;
 import com.github.unidbg.arm.backend.dynarmic.DynarmicException;
 import com.github.unidbg.arm.backend.dynarmic.EventMemHookNotifier;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -90,7 +90,7 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
 
     @Override
     public void destroy() {
-        IOUtils.closeQuietly(dynarmic);
+        IOUtils.close(dynarmic);
     }
 
     @Override

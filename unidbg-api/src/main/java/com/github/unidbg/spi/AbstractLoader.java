@@ -16,7 +16,6 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -26,6 +25,7 @@ import java.io.DataOutput;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -312,10 +312,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     }
 
     protected final void dump(Pointer pointer, long size, File outFile) throws IOException {
-        FileOutputStream outputStream = null;
-        try {
-            outputStream = new FileOutputStream(outFile);
-
+        try (OutputStream outputStream = new FileOutputStream(outFile)) {
             int dump = 0;
             while (dump < size) {
                 long read = size - dump;
@@ -326,8 +323,6 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
                 outputStream.write(data);
                 dump += read;
             }
-        } finally {
-            IOUtils.closeQuietly(outputStream);
         }
     }
 

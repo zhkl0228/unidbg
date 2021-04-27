@@ -1,12 +1,12 @@
 package com.github.unidbg.arm.backend;
 
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorCallback;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorException;
 import com.github.unidbg.pointer.UnidbgPointer;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -206,7 +206,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     @Override
     public void destroy() throws BackendException {
-        IOUtils.closeQuietly(hypervisor);
+        IOUtils.close(hypervisor);
     }
 
     @Override
