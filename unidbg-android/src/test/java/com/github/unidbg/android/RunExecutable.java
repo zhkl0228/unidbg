@@ -19,10 +19,11 @@ import java.io.IOException;
 class RunExecutable {
 
     static void run(File executable, ModuleListener listener, String[] preloads, String...args) throws IOException {
-        try (Emulator<?> emulator = AndroidEmulatorBuilder.for32Bit()
+        final Emulator<?> emulator = AndroidEmulatorBuilder.for32Bit()
                 .setProcessName(executable.getName())
                 .setRootDir(new File("target/rootfs"))
-                .build()) {
+                .build();
+        try {
             long start = System.currentTimeMillis();
             Memory memory = emulator.getMemory();
             memory.setLibraryResolver(new AndroidResolver(23));
@@ -62,6 +63,8 @@ class RunExecutable {
 //             emulator.traceCode();
 //             emulator.attach().addBreakPoint(libc.base + 0x00038F20);
             System.out.println("exit code: " + module.callEntry(emulator, args) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        } finally {
+            IOUtils.closeQuietly(emulator);
         }
     }
 

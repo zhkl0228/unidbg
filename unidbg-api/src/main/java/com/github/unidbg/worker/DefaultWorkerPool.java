@@ -1,6 +1,6 @@
 package com.github.unidbg.worker;
 
-import com.alibaba.fastjson.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -57,7 +57,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     private static void closeWorkers(BlockingQueue<Worker> queue) {
         Worker worker;
         while ((worker = queue.poll()) != null) {
-            com.alibaba.fastjson.util.IOUtils.close(worker);
+            IOUtils.closeQuietly(worker);
         }
     }
 
@@ -86,7 +86,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     @Override
     public void release(Worker worker) {
         if (stopped) {
-            IOUtils.close(worker);
+            IOUtils.closeQuietly(worker);
         } else {
             releaseQueue.offer(worker);
         }

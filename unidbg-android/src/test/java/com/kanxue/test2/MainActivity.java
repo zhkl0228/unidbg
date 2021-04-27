@@ -38,7 +38,7 @@ public class MainActivity {
         memory.setLibraryResolver(resolver);
 
         vm = emulator.createDalvikVM(null);
-        vm.setVerbose(false);
+        vm.setVerbose(true);
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libnative-lib.so"), false);
         dm.callJNI_OnLoad(emulator);
     }

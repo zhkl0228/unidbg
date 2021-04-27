@@ -1,6 +1,5 @@
 package com.github.unidbg.ios.file;
 
-import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
@@ -9,6 +8,7 @@ import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -48,10 +48,10 @@ public class TcpSocket extends SocketIO implements FileIO {
 
     @Override
     public void close() {
-        com.alibaba.fastjson.util.IOUtils.close(outputStream);
-        com.alibaba.fastjson.util.IOUtils.close(inputStream);
-        com.alibaba.fastjson.util.IOUtils.close(socket);
-        com.alibaba.fastjson.util.IOUtils.close(serverSocket);
+        IOUtils.closeQuietly(outputStream);
+        IOUtils.closeQuietly(inputStream);
+        IOUtils.closeQuietly(socket);
+        IOUtils.closeQuietly(serverSocket);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class TcpSocket extends SocketIO implements FileIO {
     public int listen(int backlog) {
         try {
             serverSocket = new ServerSocket();
-            com.alibaba.fastjson.util.IOUtils.close(socket);
+            IOUtils.closeQuietly(socket);
             serverSocket.bind(socket.getLocalSocketAddress(), backlog);
             if (emulator.getSyscallHandler().isVerbose()) {
                 System.out.printf("Tcp listen '%s' from %s%n", this, emulator.getContext().getLRPointer());
@@ -236,12 +236,12 @@ public class TcpSocket extends SocketIO implements FileIO {
         switch (how) {
             case SHUT_RD:
             case SHUT_WR:
-                com.alibaba.fastjson.util.IOUtils.close(outputStream);
+                IOUtils.closeQuietly(outputStream);
                 outputStream = null;
                 return 0;
             case SHUT_RDWR:
-                com.alibaba.fastjson.util.IOUtils.close(outputStream);
-                IOUtils.close(inputStream);
+                IOUtils.closeQuietly(outputStream);
+                IOUtils.closeQuietly(inputStream);
                 outputStream = null;
                 inputStream = null;
                 return 0;

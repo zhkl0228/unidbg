@@ -1,6 +1,5 @@
 package com.github.unidbg;
 
-import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.ReadHook;
@@ -10,6 +9,7 @@ import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 import unicorn.Unicorn;
 
 import java.io.PrintStream;
@@ -54,7 +54,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
     @Override
     public void stopTrace() {
         detach();
-        IOUtils.close(redirect);
+        IOUtils.closeQuietly(redirect);
         redirect = null;
     }
 

@@ -5,6 +5,7 @@ import com.github.unidbg.linux.android.dvm.api.Signature;
 import net.dongliu.apk.parser.bean.ApkMeta;
 import net.dongliu.apk.parser.bean.ApkSigner;
 import net.dongliu.apk.parser.bean.CertificateMeta;
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +29,15 @@ class ApkFile implements Apk {
             return apkMeta.getVersionCode();
         }
 
-        try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
+        net.dongliu.apk.parser.ApkFile apkFile = null;
+        try {
+            apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile);
             apkMeta = apkFile.getApkMeta();
             return apkMeta.getVersionCode();
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
         }
     }
 
@@ -42,29 +47,41 @@ class ApkFile implements Apk {
             return apkMeta.getVersionName();
         }
 
-        try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
+        net.dongliu.apk.parser.ApkFile apkFile = null;
+        try {
+            apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile);
             apkMeta = apkFile.getApkMeta();
             return apkMeta.getVersionName();
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
         }
     }
 
     @Override
     public String getManifestXml() {
-        try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
+        net.dongliu.apk.parser.ApkFile apkFile = null;
+        try {
+            apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile);
             return apkFile.getManifestXml();
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
         }
     }
 
     @Override
     public byte[] openAsset(String fileName) {
-        try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
+        net.dongliu.apk.parser.ApkFile apkFile = null;
+        try {
+            apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile);
             return apkFile.getFileData("assets/" + fileName);
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
         }
     }
 
@@ -76,7 +93,9 @@ class ApkFile implements Apk {
             return signatures;
         }
 
-        try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
+        net.dongliu.apk.parser.ApkFile apkFile = null;
+        try {
+            apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile);
             List<Signature> signatures = new ArrayList<>(10);
             for (ApkSigner signer : apkFile.getApkSingers()) {
                 for (CertificateMeta meta : signer.getCertificateMetas()) {
@@ -87,6 +106,8 @@ class ApkFile implements Apk {
             return this.signatures;
         } catch (IOException | CertificateException e) {
             throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
         }
     }
 
@@ -96,11 +117,15 @@ class ApkFile implements Apk {
             return apkMeta.getPackageName();
         }
 
-        try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
+        net.dongliu.apk.parser.ApkFile apkFile = null;
+        try {
+            apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile);
             apkMeta = apkFile.getApkMeta();
             return apkMeta.getPackageName();
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
         }
     }
 
@@ -111,10 +136,14 @@ class ApkFile implements Apk {
 
     @Override
     public byte[] getFileData(String path) {
-        try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
+        net.dongliu.apk.parser.ApkFile apkFile = null;
+        try {
+            apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile);
             return apkFile.getFileData(path);
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } finally {
+            IOUtils.closeQuietly(apkFile);
         }
     }
 }

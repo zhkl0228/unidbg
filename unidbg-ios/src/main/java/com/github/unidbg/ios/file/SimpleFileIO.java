@@ -1,6 +1,5 @@
 package com.github.unidbg.ios.file;
 
-import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Utils;
 import com.github.unidbg.arm.backend.Backend;
@@ -12,6 +11,7 @@ import com.github.unidbg.unix.IO;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -63,7 +63,7 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
 
     @Override
     public void close() {
-        IOUtils.close(_randomAccessFile);
+        IOUtils.closeQuietly(_randomAccessFile);
 
         if (debugStream != null) {
             try {

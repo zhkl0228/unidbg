@@ -2,6 +2,7 @@ package com.github.unidbg;
 
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -80,8 +81,12 @@ public class Utils {
     }
 
     public static ByteBuffer mapBuffer(File file) throws IOException {
-        try (FileInputStream inputStream = new FileInputStream(file); FileChannel channel = inputStream.getChannel()) {
+        FileChannel channel = null;
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            channel = inputStream.getChannel();
             return channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+        } finally {
+            IOUtils.closeQuietly(channel);
         }
     }
 

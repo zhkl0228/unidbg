@@ -243,7 +243,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             }
             attr.flags = flags;
             File file = createAttrFile(dest);
-            FileUtils.writeStringToFile(file, JSON.toJSONString(attr), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(file, JSON.toJSONString(attr));
             return 0;
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -258,7 +258,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             }
             attr.mode = mode;
             File file = createAttrFile(dest);
-            FileUtils.writeStringToFile(file, JSON.toJSONString(attr), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(file, JSON.toJSONString(attr));
             return 0;
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -274,7 +274,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             attr.uid = uid;
             attr.gid = gid;
             File file = createAttrFile(dest);
-            FileUtils.writeStringToFile(file, JSON.toJSONString(attr), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(file, JSON.toJSONString(attr));
             return 0;
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -284,7 +284,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
     protected final DarwinFileAttr loadAttr(File dest) throws IOException {
         File file = createAttrFile(dest);
         if (file.exists()) {
-            return JSON.parseObject(FileUtils.readFileToString(file, StandardCharsets.UTF_8), DarwinFileAttr.class);
+            return JSON.parseObject(FileUtils.readFileToString(file), DarwinFileAttr.class);
         } else {
             return null;
         }
@@ -346,7 +346,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             }
             attr.xattr.put(name, data);
             File file = createAttrFile(dest);
-            FileUtils.writeStringToFile(file, JSON.toJSONString(attr), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(file, JSON.toJSONString(attr));
             return 0;
         } catch (IOException e) {
             throw new IllegalStateException(e);

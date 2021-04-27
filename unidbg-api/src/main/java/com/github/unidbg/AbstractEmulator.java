@@ -1,6 +1,5 @@
 package com.github.unidbg;
 
-import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.arm.ARMSvcMemory;
 import com.github.unidbg.arm.Arguments;
 import com.github.unidbg.arm.backend.Backend;
@@ -31,6 +30,7 @@ import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -165,7 +165,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     protected abstract UnixSyscallHandler<T> createSyscallHandler(SvcMemory svcMemory);
 
     @Override
-    @Deprecated
     public void runAsm(String... asm) {
         byte[] shellCode = assemble(Arrays.asList(asm));
 
@@ -412,7 +411,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         }
 
         try {
-            IOUtils.close(debugger);
+            IOUtils.closeQuietly(debugger);
 
             closeInternal();
 

@@ -1,11 +1,11 @@
 package com.github.unidbg.arm.backend;
 
-import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.kvm.Kvm;
 import com.github.unidbg.arm.backend.kvm.KvmCallback;
 import com.github.unidbg.arm.backend.kvm.KvmException;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -243,7 +243,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     @Override
     public void destroy() throws BackendException {
-        IOUtils.close(kvm);
+        IOUtils.closeQuietly(kvm);
     }
 
     @Override

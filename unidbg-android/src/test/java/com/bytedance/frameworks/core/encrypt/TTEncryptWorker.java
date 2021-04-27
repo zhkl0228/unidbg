@@ -1,11 +1,11 @@
 package com.bytedance.frameworks.core.encrypt;
 
-import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.worker.Worker;
 import com.github.unidbg.worker.WorkerFactory;
 import com.github.unidbg.worker.WorkerPool;
 import com.github.unidbg.worker.WorkerPoolFactory;
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -47,7 +47,7 @@ public class TTEncryptWorker implements Worker {
         }
         executorService.shutdown();
         executorService.awaitTermination(10, TimeUnit.MINUTES);
-        IOUtils.close(pool);
+        IOUtils.closeQuietly(pool);
     }
 
     private final TTEncrypt ttEncrypt;

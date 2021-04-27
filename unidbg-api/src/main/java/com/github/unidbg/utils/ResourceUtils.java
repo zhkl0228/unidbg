@@ -21,23 +21,22 @@ public class ResourceUtils {
         URL url = clazz.getResource(resource);
         if (url != null) {
             if (isFile(url)) {
-                File file = new File(new File(FileUtils.getTempDirectory(), "unidbg"), path);
-                File dir = file.getParentFile();
-                if (dir.exists() && dir.isFile()) {
-                    FileUtils.deleteQuietly(dir);
-                }
-                try {
+                OutputStream outputStream = null;
+                try (InputStream inputStream = url.openStream()) {
+                    File file = new File(new File(FileUtils.getTempDirectory(), "unidbg"), path);
+                    File dir = file.getParentFile();
+                    if (dir.exists() && dir.isFile()) {
+                        FileUtils.deleteQuietly(dir);
+                    }
                     FileUtils.forceMkdir(dir);
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
 
-                try (InputStream inputStream = url.openStream();
-                     OutputStream outputStream = new FileOutputStream(file)) {
+                    outputStream = new FileOutputStream(file);
                     IOUtils.copy(inputStream, outputStream);
                     return file;
                 } catch (IOException e) {
                     throw new IllegalStateException(e);
+                } finally {
+                    IOUtils.closeQuietly(outputStream);
                 }
             } else { // is directory
                 try {
@@ -80,10 +79,13 @@ public class ResourceUtils {
                         String sub = entryName.substring(foundName.length());
                         int check = sub.indexOf('/');
                         if (check == -1 && !jarEntry.isDirectory()) { // sub file
-                            File out = new File(dir, sub);
-                            try (InputStream inputStream = jarFile.getInputStream(jarEntry);
-                                 OutputStream outputStream = new FileOutputStream(out)) {
+                            OutputStream outputStream = null;
+                            try (InputStream inputStream = jarFile.getInputStream(jarEntry)) {
+                                File out = new File(dir, sub);
+                                outputStream = new FileOutputStream(out);
                                 IOUtils.copy(inputStream, outputStream);
+                            } finally {
+                                IOUtils.closeQuietly(outputStream);
                             }
                         } else if (check != -1 && check + 1 == sub.length() && jarEntry.isDirectory()) {
                             File subDir = new File(dir, sub.substring(0, check));
