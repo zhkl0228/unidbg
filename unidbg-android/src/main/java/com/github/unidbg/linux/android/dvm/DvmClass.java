@@ -236,7 +236,13 @@ public class DvmClass extends DvmObject<Class<?>> {
         UnidbgPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index != -1) {
-            String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_') + "_" + method.substring(0, index);
+            String symbolName = "";
+            if (method.startsWith("Java_")) {
+                symbolName = method.substring(0, index);
+            } else {
+                symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_') + "_" + method.substring(0, index);
+            }
+//            String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_') + "_" + method.substring(0, index);
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
                 if (symbol != null) {
