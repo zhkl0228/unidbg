@@ -20,16 +20,8 @@ public abstract class Symbol {
 
     public abstract boolean isUndef();
 
-    private UnidbgPointer namePointer;
-
     public final UnidbgPointer createNameMemory(SvcMemory svcMemory) {
-        if (namePointer == null) {
-            byte[] name = getName().getBytes();
-            namePointer = svcMemory.allocate(name.length + 1, "Symbol." + getName());
-            namePointer.write(0, name, 0, name.length);
-            namePointer.setByte(name.length, (byte) 0);
-        }
-        return namePointer;
+        return svcMemory.allocateSymbolName(name);
     }
 
     public Pointer createPointer(Emulator<?> emulator) {

@@ -489,18 +489,53 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     @Override
     public Symbol findNearestSymbolByAddress(long addr) {
-        long abs = Long.MAX_VALUE;
-        Symbol nearestSymbol = null;
-        for (Symbol symbol : symbolMap.values()) {
-            if (symbol.getAddress() <= addr) {
-                long off = addr - symbol.getAddress();
-                if (off < abs) {
-                    abs = off;
-                    nearestSymbol = symbol;
+        long targetAddress = addr - base;
+        if (targetAddress <= 0) {
+            return null;
+        }
+
+        List<MachO.SymtabCommand.Nlist> symbols = symtabCommand.symbols();
+        MachO.SymtabCommand.Nlist bestSymbol = null;
+
+        // first walk all global symbols
+        for (long i = dysymtabCommand.iExtDefSym(); i < dysymtabCommand.iExtDefSym() + dysymtabCommand.nExtDefSym(); i++) {
+            MachO.SymtabCommand.Nlist nlist = symbols.get((int) i);
+            if ((nlist.type() & N_TYPE) == N_SECT) {
+                if ( bestSymbol == null ) {
+                    if ( nlist.value() <= targetAddress ) {
+                        bestSymbol = nlist;
+                    }
+                } else if ( (nlist.value() <= targetAddress) && (bestSymbol.value() < nlist.value()) ) {
+                    bestSymbol = nlist;
                 }
             }
         }
-        return nearestSymbol;
+
+        // next walk all local symbols
+        for (long i = dysymtabCommand.iLocalSym(); i < dysymtabCommand.iLocalSym() + dysymtabCommand.nLocalSym(); i++) {
+            MachO.SymtabCommand.Nlist nlist = symbols.get((int) i);
+            if ((nlist.type() & N_TYPE) == N_SECT && ((nlist.type() & N_STAB) == 0)) {
+                if ( bestSymbol == null ) {
+                    if ( nlist.value() <= targetAddress ) {
+                        bestSymbol = nlist;
+                    }
+                } else if ( (nlist.value() <= targetAddress) && (bestSymbol.value() < nlist.value()) ) {
+                    bestSymbol = nlist;
+                }
+            }
+        }
+
+        if (bestSymbol != null) {
+            buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
+            buffer.position((int) symtabCommand.strOff());
+            ByteBuffer strBuffer = buffer.slice();
+            strBuffer.position((int) bestSymbol.un());
+            ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(strBuffer);
+            String symbolName = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
+            return new MachOSymbol(this, bestSymbol, symbolName);
+        }
+
+        return null;
     }
 
     @Override

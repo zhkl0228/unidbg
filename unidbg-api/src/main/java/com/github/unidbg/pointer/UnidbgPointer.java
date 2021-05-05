@@ -434,7 +434,7 @@ public class UnidbgPointer extends Pointer {
         UnidbgPointer pointer = new UnidbgPointer(emulator, peer + offset, pointerSize);
         if (size > 0) {
             if (offset > size) {
-                throw new InvalidMemoryAccessException("offset=" + offset + ", size=" + size);
+                throw new InvalidMemoryAccessException("offset=" + offset + ", size=" + size + ", peer=0x" + Long.toHexString(peer));
             }
 
             long newSize = size - offset;

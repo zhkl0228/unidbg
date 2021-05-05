@@ -7,6 +7,8 @@ public interface SvcMemory extends StackMemory {
 
     UnidbgPointer allocate(int size, String label);
 
+    UnidbgPointer allocateSymbolName(String name);
+
     UnidbgPointer registerSvc(Svc svc);
 
     Svc getSvc(int svcNumber);

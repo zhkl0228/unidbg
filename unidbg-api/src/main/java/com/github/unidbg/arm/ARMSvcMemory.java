@@ -87,6 +87,21 @@ public class ARMSvcMemory implements SvcMemory {
         return pointer;
     }
 
+    private final Map<String, UnidbgPointer> symbolMap = new HashMap<>();
+
+    @Override
+    public UnidbgPointer allocateSymbolName(String name) {
+        UnidbgPointer ptr = symbolMap.get(name);
+        if (ptr == null) {
+            byte[] nameBytes = name.getBytes();
+            int size = nameBytes.length + 1;
+            ptr = allocate(size, "Symbol." + name);
+            ptr.write(0, Arrays.copyOf(nameBytes, size), 0, size);
+            symbolMap.put(name, ptr);
+        }
+        return ptr;
+    }
+
     private int thumbSvcNumber = 0;
     private int armSvcNumber = 0xff;
 

@@ -8,10 +8,13 @@ import capstone.Capstone;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.zhkl0228.demumble.DemanglerFactory;
+import com.github.zhkl0228.demumble.GccDemangler;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -148,7 +151,16 @@ public class ARM {
                     builder.append(String.format(Locale.US, " LR=%s", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
                     break;
                 case ArmConst.UC_ARM_REG_PC:
-                    builder.append(String.format(Locale.US, " PC=%s", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC)));
+                    UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
+                    builder.append(String.format(Locale.US, " PC=%s", pc));
+                    Module module = emulator.getMemory().findModuleByAddress(pc.peer);
+                    if (module != null) {
+                        Symbol symbol = module.findNearestSymbolByAddress(pc.peer);
+                        if (symbol != null) {
+                            GccDemangler demangler = DemanglerFactory.createDemangler();
+                            builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(pc.peer - symbol.getAddress())).append(')');
+                        }
+                    }
                     break;
                 case ArmConst.UC_ARM_REG_Q0:
                     byte[] data = backend.reg_read_vector(reg);
@@ -249,7 +261,7 @@ public class ARM {
                     break;
             }
         }
-        System.out.println(builder.toString());
+        System.out.println(builder);
     }
 
     public static void showRegs64(Emulator<?> emulator, int[] regs) {
@@ -450,7 +462,16 @@ public class ARM {
                     builder.append(String.format(Locale.US, "\nLR=%s", UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
                     break;
                 case Arm64Const.UC_ARM64_REG_PC:
-                    builder.append(String.format(Locale.US, "\nPC=%s", UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC)));
+                    UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
+                    builder.append(String.format(Locale.US, "\nPC=%s", pc));
+                    Module module = emulator.getMemory().findModuleByAddress(pc.peer);
+                    if (module != null) {
+                        Symbol symbol = module.findNearestSymbolByAddress(pc.peer);
+                        if (symbol != null) {
+                            GccDemangler demangler = DemanglerFactory.createDemangler();
+                            builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(pc.peer - symbol.getAddress())).append(')');
+                        }
+                    }
                     break;
                 case Arm64Const.UC_ARM64_REG_Q0:
                     byte[] data = backend.reg_read_vector(reg);
@@ -648,7 +669,7 @@ public class ARM {
                     break;
             }
         }
-        System.out.println(builder.toString());
+        System.out.println(builder);
     }
 
     private static BigInteger newBigInteger(byte[] data) {
