@@ -62,7 +62,9 @@ public abstract class Unwinder {
         } else {
             sb.append(String.format(getBaseFormat(), 0));
             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(ip.peer)));
-            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - 0xfffe0000L));
+            if (ip.peer >= 0xfffe0000L) {
+                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - 0xfffe0000L));
+            }
         }
         System.out.println(sb);
     }

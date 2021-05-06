@@ -141,6 +141,9 @@ public class LinuxModule extends Module {
     @Override
     public Symbol findNearestSymbolByAddress(long addr) {
         try {
+            if (dynsym == null) {
+                return null;
+            }
             ElfSymbol elfSymbol = dynsym.getELFSymbolByAddr(addr - base);
             if (elfSymbol != null && !elfSymbol.isUndef()) {
                 return new LinuxSymbol(this, elfSymbol);
