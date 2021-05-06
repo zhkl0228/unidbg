@@ -2416,6 +2416,12 @@ public class MachO extends KaitaiStruct {
                     this.data = new PointerList(_io__raw_data, this, _root);
                     break;
                 }
+                case "__objc_catlist": {
+                    this._raw_data = io.readBytes(size());
+                    KaitaiStream _io__raw_data = new ByteBufferKaitaiStream(_raw_data);
+                    this.data = new PointerList(_io__raw_data, this, _root);
+                    break;
+                }
                 case "__objc_imageinfo": {
                     this._raw_data = io.readBytes(size());
                     KaitaiStream _io__raw_data = new ByteBufferKaitaiStream(_raw_data);

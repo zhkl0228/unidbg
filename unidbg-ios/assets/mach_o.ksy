@@ -517,6 +517,7 @@ types:
                 "'__la_symbol_ptr'":  pointer_list
                 "'__cfstring'":       cf_string_list
                 "'__objc_classlist'": pointer_list
+                "'__objc_catlist'":   pointer_list
                 "'__objc_nlclslist'": pointer_list
                 "'__objc_protolist'": pointer_list
                 "'__objc_imageinfo'": pointer_list

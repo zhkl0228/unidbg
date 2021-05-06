@@ -4,14 +4,14 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 
-class ExportSymbol extends Symbol implements MachO {
+public class ExportSymbol extends Symbol implements MachO {
 
     private final long address;
     private final MachOModule module;
     private final long other;
     private final int flags;
 
-    ExportSymbol(String name, long address, Module module, long other, int flags) {
+    public ExportSymbol(String name, long address, Module module, long other, int flags) {
         super(name);
         this.address = address;
         this.module = (MachOModule) module;

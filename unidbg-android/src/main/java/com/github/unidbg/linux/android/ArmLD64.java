@@ -117,7 +117,7 @@ public class ArmLD64 extends Dlfcn {
                                 return 0;
                             }
 
-                            Symbol symbol = module.findNearestSymbolByAddress(addr);
+                            Symbol symbol = module.findNearestSymbolByAddress(addr, true);
 
                             DlInfo dlInfo = new DlInfo(info);
                             dlInfo.dli_fname = module.createPathMemory(svcMemory);

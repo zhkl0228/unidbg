@@ -528,6 +528,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         List<String> ordinalList = new ArrayList<>();
         Section fEHFrameSection = null;
         Section fUnwindInfoSection = null;
+        Map<String, MachO.SegmentCommand64.Section64> objcSections = new HashMap<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT: {
@@ -579,6 +580,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         }
                         if (isTextSeg && "__unwind_info".equals(sectName)) {
                             fUnwindInfoSection = new Section(section.addr(), section.size());
+                            continue;
+                        }
+                        if (sectName.startsWith("__objc_")) {
+                            objcSections.put(sectName, section);
                             continue;
                         }
 
@@ -715,7 +720,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
                 dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
-                fEHFrameSection, fUnwindInfoSection);
+                fEHFrameSection, fUnwindInfoSection, objcSections);
         processRebase(log, module);
         if (isExecutable) {
             setExecuteModule(module);
@@ -1558,9 +1563,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     @Override
     public Symbol dlsym(long handle, String symbolName) {
-        for (Module module : modules.values()) {
-            MachOModule mm = (MachOModule) module;
-            if (mm.machHeader == handle) {
+        for (MachOModule module : modules.values()) {
+            if (module.machHeader == handle) {
                 return module.findSymbolByName(symbolName, false);
             }
         }

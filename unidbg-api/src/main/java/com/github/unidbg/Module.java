@@ -58,7 +58,7 @@ public abstract class Module {
 
     public abstract Symbol findSymbolByName(String name, boolean withDependencies);
 
-    public abstract Symbol findNearestSymbolByAddress(long addr);
+    public abstract Symbol findNearestSymbolByAddress(long addr, boolean fast);
 
     protected final Symbol findDependencySymbolByName(String name) {
         for (Module module : neededLibraries.values()) {

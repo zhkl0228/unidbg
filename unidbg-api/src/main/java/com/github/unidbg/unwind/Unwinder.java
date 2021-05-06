@@ -56,7 +56,7 @@ public abstract class Unwinder {
             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
             sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - module.base));
 
-            Symbol symbol = module.findNearestSymbolByAddress(ip.peer);
+            Symbol symbol = module.findNearestSymbolByAddress(ip.peer, false);
             if (symbol != null && ip.peer - symbol.getAddress() <= SYMBOL_SIZE) {
                 GccDemangler demangler = DemanglerFactory.createDemangler();
                 sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(ip.peer - symbol.getAddress()));
