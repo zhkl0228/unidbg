@@ -21,7 +21,7 @@ public class ElfSymbolStructure implements SymbolLocator {
     /** Returns the symbol at the specified index. The ELF symbol at index 0 is the undefined symbol. */
     @Override
     public ElfSymbol getELFSymbol(int index) throws IOException {
-        return new ElfSymbol(parser, offset + index * entrySize, -1).setStringTable(stringTable.getValue());
+        return new ElfSymbol(parser, offset + (long) index * entrySize, -1).setStringTable(stringTable.getValue());
     }
 
     @Override
@@ -29,14 +29,7 @@ public class ElfSymbolStructure implements SymbolLocator {
         if (hashTable == null) {
             throw new UnsupportedOperationException("hashTable is null");
         }
-        HashTable hashTable = this.hashTable.getValue();
-        for (int i = 0; i < hashTable.getNumBuckets(); i++) {
-            ElfSymbol symbol = getELFSymbol(i);
-            if (addr >= symbol.value && addr < symbol.value + symbol.size) {
-                return symbol;
-            }
-        }
-        return null;
+        return this.hashTable.getValue().findSymbolByAddress(this, addr);
     }
 
     @Override

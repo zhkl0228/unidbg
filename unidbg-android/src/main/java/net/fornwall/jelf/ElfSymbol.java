@@ -97,22 +97,21 @@ public final class ElfSymbol {
 
 		switch (getType()) {
 		case STT_NOTYPE:
-			break;
 		case STT_OBJECT:
-			break;
 		case STT_FUNC:
-			break;
 		case STT_SECTION:
-			break;
 		case STT_FILE:
-			break;
 		case STT_LOPROC:
-			break;
 		case STT_HIPROC:
-			break;
 		default:
 			break;
 		}
+	}
+
+	final boolean matches(long soaddr) {
+		return section_header_ndx != SHN_UNDEF &&
+				soaddr >= value &&
+						soaddr < value + size;
 	}
 
 	private ElfStringTable stringTable;

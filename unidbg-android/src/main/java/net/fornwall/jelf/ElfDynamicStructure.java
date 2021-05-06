@@ -301,7 +301,7 @@ public class ElfDynamicStructure {
             rel = MemoizedObject.uncheckedArray(num_entries);
             final long fileOffset = parser.virtualMemoryAddrToFileOffset(relOffset);
             for (int i = 0; i < num_entries; i++) {
-                final long relocationOffset = fileOffset + (i * relEntrySize);
+                final long relocationOffset = fileOffset + ((long) i * relEntrySize);
                 rel[i] = new MemoizedObject<ElfRelocation>() {
                     @Override
                     public ElfRelocation computeValue() throws IOException {
@@ -316,7 +316,7 @@ public class ElfDynamicStructure {
             pltRel = MemoizedObject.uncheckedArray(num_entries);
             final long fileOffset = parser.virtualMemoryAddrToFileOffset(pltRelOffset);
             for (int i = 0; i < num_entries; i++) {
-                final long relocationOffset = fileOffset + (i * relEntrySize);
+                final long relocationOffset = fileOffset + ((long) i * relEntrySize);
                 pltRel[i] = new MemoizedObject<ElfRelocation>() {
                     @Override
                     public ElfRelocation computeValue() throws IOException {

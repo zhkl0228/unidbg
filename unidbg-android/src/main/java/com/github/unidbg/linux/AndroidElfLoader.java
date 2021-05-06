@@ -34,6 +34,7 @@ import net.fornwall.jelf.ElfDynamicStructure;
 import net.fornwall.jelf.ElfException;
 import net.fornwall.jelf.ElfFile;
 import net.fornwall.jelf.ElfRelocation;
+import net.fornwall.jelf.ElfSection;
 import net.fornwall.jelf.ElfSegment;
 import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.GnuEhFrameHeader;
@@ -585,8 +586,12 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         if (dynsym == null) {
             throw new IllegalStateException("dynsym is null");
         }
+        ElfSection symbolTableSection = null;
+        try {
+            symbolTableSection = elfFile.getSymbolTableSection();
+        } catch(Throwable ignored) {}
         LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
-                armExIdx, ehFrameHeader);
+                armExIdx, ehFrameHeader, symbolTableSection);
         if ("libc.so".equals(soName)) { // libc
             ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
             if (__thread_entry != null) {

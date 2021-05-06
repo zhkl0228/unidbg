@@ -35,11 +35,11 @@ class ElfGnuHashTable implements HashTable {
             buckets[i] = parser.readInt();
         }
 
-        final long chain_base = offset + 16 + gnu_maskwords_ * (parser.elfFile.objectSize == ElfFile.CLASS_32 ? 4 : 8) + nbucket * 4 - symndx * 4;
+        final long chain_base = offset + 16 + (long) gnu_maskwords_ * (parser.elfFile.objectSize == ElfFile.CLASS_32 ? 4 : 8) + nbucket * 4L - symndx * 4L;
         chains = new HashChain() {
             @Override
             public int chain(int index) {
-                parser.seek(chain_base + index * 4);
+                parser.seek(chain_base + index * 4L);
                 return parser.readInt();
             }
         };
@@ -81,6 +81,26 @@ class ElfGnuHashTable implements HashTable {
                 return symbol;
             }
         } while ((chains.chain(n++) & 1) == 0);
+
+        return null;
+    }
+
+    @Override
+    public ElfSymbol findSymbolByAddress(ElfSymbolStructure symbolStructure, long soaddr) throws IOException {
+        for (int i = 0; i < nbucket; i++) {
+            int n = buckets[i];
+
+            if (n == 0) {
+                continue;
+            }
+
+            do {
+                ElfSymbol symbol = symbolStructure.getELFSymbol(n);
+                if (symbol.matches(soaddr)) {
+                    return symbol;
+                }
+            } while ((chains.chain(n++) & 1) == 0);
+        }
 
         return null;
     }

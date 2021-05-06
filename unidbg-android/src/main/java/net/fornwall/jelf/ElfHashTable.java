@@ -75,6 +75,20 @@ class ElfHashTable implements HashTable {
 	}
 
 	@Override
+	public ElfSymbol findSymbolByAddress(ElfSymbolStructure symbolStructure, long soaddr) throws IOException {
+		// Search the library's symbol table for any defined symbol which
+		// contains this address.
+		for (int i = 0; i < chains.length; i++) {
+			ElfSymbol symbol = symbolStructure.getELFSymbol(i);
+			if (symbol.matches(soaddr)) {
+				return symbol;
+			}
+		}
+
+		return null;
+	}
+
+	@Override
 	public int getNumBuckets() {
 		return num_buckets;
 	}

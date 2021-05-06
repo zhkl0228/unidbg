@@ -13,6 +13,7 @@ import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ArmExIdx;
+import net.fornwall.jelf.ElfSection;
 import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.GnuEhFrameHeader;
 import net.fornwall.jelf.MemoizedObject;
@@ -56,7 +57,7 @@ public class LinuxModule extends Module {
 
         LinuxModule module = new LinuxModule(base, size, name, null,
                 Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
-                Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(), null, null) {
+                Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(), null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);
@@ -86,10 +87,12 @@ public class LinuxModule extends Module {
     public final List<InitFunction> initFunctionList;
     public final MemoizedObject<ArmExIdx> armExIdx;
     public final MemoizedObject<GnuEhFrameHeader> ehFrameHeader;
+    private final ElfSection symbolTableSection;
 
     LinuxModule(long base, long size, String name, SymbolLocator dynsym,
                 List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
-                MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader) {
+                MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader,
+                ElfSection symbolTableSection) {
         super(name, base, size, neededLibraries, regions);
 
         this.dynsym = dynsym;
@@ -97,6 +100,7 @@ public class LinuxModule extends Module {
         this.initFunctionList = initFunctionList;
         this.armExIdx = armExIdx;
         this.ehFrameHeader = ehFrameHeader;
+        this.symbolTableSection = symbolTableSection;
     }
 
     void callInitFunction(Emulator<?> emulator, boolean mustCallInit) throws IOException {
@@ -141,11 +145,15 @@ public class LinuxModule extends Module {
     @Override
     public Symbol findNearestSymbolByAddress(long addr) {
         try {
-            if (dynsym == null) {
+            long soaddr = addr - base;
+            if (soaddr <= 0) {
                 return null;
             }
-            ElfSymbol elfSymbol = dynsym.getELFSymbolByAddr(addr - base);
-            if (elfSymbol != null && !elfSymbol.isUndef()) {
+            ElfSymbol elfSymbol = dynsym == null ? null : dynsym.getELFSymbolByAddr(soaddr);
+            if (symbolTableSection != null && elfSymbol == null) {
+                elfSymbol = symbolTableSection.getELFSymbolByAddr(soaddr);
+            }
+            if (elfSymbol != null) {
                 return new LinuxSymbol(this, elfSymbol);
             } else {
                 return null;
