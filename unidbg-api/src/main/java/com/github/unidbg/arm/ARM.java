@@ -13,6 +13,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.unwind.Unwinder;
 import com.github.zhkl0228.demumble.DemanglerFactory;
 import com.github.zhkl0228.demumble.GccDemangler;
 import com.sun.jna.Pointer;
@@ -156,7 +157,7 @@ public class ARM {
                     Module module = emulator.getMemory().findModuleByAddress(pc.peer);
                     if (module != null) {
                         Symbol symbol = module.findNearestSymbolByAddress(pc.peer);
-                        if (symbol != null) {
+                        if (symbol != null && pc.peer - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
                             GccDemangler demangler = DemanglerFactory.createDemangler();
                             builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(pc.peer - symbol.getAddress())).append(')');
                         }
@@ -467,7 +468,7 @@ public class ARM {
                     Module module = emulator.getMemory().findModuleByAddress(pc.peer);
                     if (module != null) {
                         Symbol symbol = module.findNearestSymbolByAddress(pc.peer);
-                        if (symbol != null) {
+                        if (symbol != null && pc.peer - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
                             GccDemangler demangler = DemanglerFactory.createDemangler();
                             builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(pc.peer - symbol.getAddress())).append(')');
                         }

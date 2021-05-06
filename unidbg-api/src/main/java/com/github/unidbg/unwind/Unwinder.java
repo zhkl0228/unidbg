@@ -11,6 +11,8 @@ import com.github.zhkl0228.demumble.GccDemangler;
 
 public abstract class Unwinder {
 
+    public static final int SYMBOL_SIZE = 0x1000;
+
     protected final Emulator<?> emulator;
 
     protected Unwinder(Emulator<?> emulator) {
@@ -38,7 +40,7 @@ public abstract class Unwinder {
             }
 
             hasTrace = true;
-            showFrame(maxLengthSoName, memory, frame.ip);
+            printFrameElement(maxLengthSoName, memory, frame.ip);
         }
 
         if (!hasTrace) {
@@ -46,7 +48,7 @@ public abstract class Unwinder {
         }
     }
 
-    private void showFrame(String maxLengthSoName, Memory memory, UnidbgPointer ip) {
+    private void printFrameElement(String maxLengthSoName, Memory memory, UnidbgPointer ip) {
         Module module = AbstractARMDebugger.findModuleByAddress(emulator, ip.peer);
         StringBuilder sb = new StringBuilder();
         if (module != null) {
@@ -55,7 +57,7 @@ public abstract class Unwinder {
             sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - module.base));
 
             Symbol symbol = module.findNearestSymbolByAddress(ip.peer);
-            if (symbol != null) {
+            if (symbol != null && ip.peer - symbol.getAddress() <= SYMBOL_SIZE) {
                 GccDemangler demangler = DemanglerFactory.createDemangler();
                 sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(ip.peer - symbol.getAddress()));
             }

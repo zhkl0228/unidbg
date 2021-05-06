@@ -490,7 +490,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     @Override
     public Symbol findNearestSymbolByAddress(long addr) {
         long targetAddress = addr - base;
-        if (targetAddress <= 0) {
+        if (targetAddress == 0) {
+            return new ExportSymbol("__dso_handle", addr, this, 0, 0);
+        }
+        if (targetAddress < 0) {
             return null;
         }
 
@@ -532,7 +535,16 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             strBuffer.position((int) bestSymbol.un());
             ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(strBuffer);
             String symbolName = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
-            return new MachOSymbol(this, bestSymbol, symbolName);
+            // strip off leading underscore
+            if (symbolName.startsWith("_")) {
+                symbolName = symbolName.substring(1);
+            }
+            Symbol symbol = new MachOSymbol(this, bestSymbol, symbolName);
+            // never return the mach_header symbol
+            if ((symbol.getAddress() & ~1) == base) {
+                return null;
+            }
+            return symbol;
         }
 
         return null;
