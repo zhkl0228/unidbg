@@ -560,8 +560,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         if (!fast && objectiveCProcessor != null) {
             if (executable) {
                 long entry = machHeader + entryPoint;
-                if (symbol == null ||
-                        (addr >= entry && entry > symbol.getAddress())) {
+                if (addr >= entry && (symbol == null || entry > symbol.getAddress())) {
                     symbol = new ExportSymbol("start", entry, this, 0, com.github.unidbg.ios.MachO.EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
                 }
             }
