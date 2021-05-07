@@ -378,7 +378,7 @@ public class Dyld32 extends Dyld {
                     return 0;
                 }
 
-                Symbol symbol = module.findNearestSymbolByAddress(addr, true);
+                Symbol symbol = module.findClosestSymbolByAddress(addr, true);
 
                 DlInfo dlInfo = new DlInfo(info);
                 dlInfo.dli_fname = module.createPathMemory(svcMemory);

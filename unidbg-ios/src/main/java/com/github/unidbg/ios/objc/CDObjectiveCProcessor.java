@@ -3,7 +3,6 @@ package com.github.unidbg.ios.objc;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.ios.ExportSymbol;
 import com.github.unidbg.ios.MachOModule;
-import io.kaitai.MachO;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -21,7 +20,7 @@ public abstract class CDObjectiveCProcessor {
         this.buffer = buffer;
     }
 
-    public Symbol findObjcSymbol(MachO.SymtabCommand.Nlist bestSymbol, long targetAddress, MachOModule module) {
+    public Symbol findObjcSymbol(Symbol bestSymbol, long targetAddress, MachOModule module) {
         String className = null;
         Objc2Method objc2Method = null;
         boolean isClassMethod = false;
@@ -83,11 +82,11 @@ public abstract class CDObjectiveCProcessor {
         }
         if (bestSymbol != null &&
                 objc2Method != null &&
-                (objc2Method.imp <= targetAddress) && (bestSymbol.value() < objc2Method.imp)) {
+                (objc2Method.imp <= targetAddress) && (bestSymbol.getAddress() < module.base + objc2Method.imp)) {
             bestSymbol = null;
         }
         if (bestSymbol != null) {
-            return null;
+            return bestSymbol;
         }
         if (objc2Method != null) {
             String symbolName = String.valueOf(isClassMethod ? '+' : '-') +

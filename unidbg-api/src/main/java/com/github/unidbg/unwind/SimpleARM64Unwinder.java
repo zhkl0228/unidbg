@@ -30,11 +30,16 @@ public class SimpleARM64Unwinder extends Unwinder {
         }
     }
 
+    private Frame initFrame(Emulator<?> emulator) {
+        UnidbgPointer ip = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
+        UnidbgPointer fp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_FP);
+        return createFrame(ip, fp);
+    }
+
     @Override
     protected Frame unw_step(Emulator<?> emulator, Frame frame) {
         if (frame == null) {
-            UnidbgPointer fp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_FP);
-            frame = new Frame(null, fp);
+            return initFrame(emulator);
         }
 
         if (frame.fp == null) {

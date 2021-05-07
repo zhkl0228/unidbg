@@ -495,7 +495,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     private CDObjectiveCProcessor objectiveCProcessor;
 
     @Override
-    public Symbol findNearestSymbolByAddress(long addr, boolean fast) {
+    public Symbol findClosestSymbolByAddress(long addr, boolean fast) {
         long targetAddress = addr - base;
         if (targetAddress == 0) {
             return new ExportSymbol("__dso_handle", addr, this, 0, EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
@@ -535,16 +535,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             }
         }
 
-        if (!fast && objectiveCProcessor == null && objcSections != null && !objcSections.isEmpty()) {
-            objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections);
-        }
-        if (!fast && objectiveCProcessor != null) {
-            Symbol symbol = objectiveCProcessor.findObjcSymbol(bestSymbol, targetAddress, this);
-            if (symbol != null) {
-                return symbol;
-            }
-        }
-
+        Symbol symbol = null;
         if (bestSymbol != null) {
             buffer.limit((int) (symtabCommand.strOff() + symtabCommand.strSize()));
             buffer.position((int) symtabCommand.strOff());
@@ -556,15 +547,29 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             if (symbolName.startsWith("_")) {
                 symbolName = symbolName.substring(1);
             }
-            Symbol symbol = new MachOSymbol(this, bestSymbol, symbolName);
+            symbol = new MachOSymbol(this, bestSymbol, symbolName);
             // never return the mach_header symbol
             if ((symbol.getAddress() & ~1) == base) {
                 return null;
             }
-            return symbol;
         }
 
-        return null;
+        if (!fast && objectiveCProcessor == null && objcSections != null && !objcSections.isEmpty()) {
+            objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections);
+        }
+        if (!fast && objectiveCProcessor != null) {
+            if (executable) {
+                long entry = machHeader + entryPoint;
+                if (symbol == null ||
+                        (addr >= entry && entry > symbol.getAddress())) {
+                    symbol = new ExportSymbol("start", entry, this, 0, com.github.unidbg.ios.MachO.EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
+                }
+            }
+
+            symbol = objectiveCProcessor.findObjcSymbol(symbol, targetAddress, this);
+        }
+
+        return symbol;
     }
 
     @Override

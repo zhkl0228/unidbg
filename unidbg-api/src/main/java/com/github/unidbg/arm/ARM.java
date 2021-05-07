@@ -156,7 +156,7 @@ public class ARM {
                     builder.append(String.format(Locale.US, " PC=%s", pc));
                     Module module = emulator.getMemory().findModuleByAddress(pc.peer);
                     if (module != null) {
-                        Symbol symbol = module.findNearestSymbolByAddress(pc.peer, false);
+                        Symbol symbol = module.findClosestSymbolByAddress(pc.peer, false);
                         if (symbol != null && pc.peer - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
                             GccDemangler demangler = DemanglerFactory.createDemangler();
                             builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(pc.peer - symbol.getAddress())).append(')');
@@ -467,7 +467,7 @@ public class ARM {
                     builder.append(String.format(Locale.US, "\nPC=%s", pc));
                     Module module = emulator.getMemory().findModuleByAddress(pc.peer);
                     if (module != null) {
-                        Symbol symbol = module.findNearestSymbolByAddress(pc.peer, false);
+                        Symbol symbol = module.findClosestSymbolByAddress(pc.peer, false);
                         if (symbol != null && pc.peer - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
                             GccDemangler demangler = DemanglerFactory.createDemangler();
                             builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(pc.peer - symbol.getAddress())).append(')');

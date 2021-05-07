@@ -143,7 +143,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public Symbol findNearestSymbolByAddress(long addr, boolean fast) {
+    public Symbol findClosestSymbolByAddress(long addr, boolean fast) {
         try {
             long soaddr = addr - base;
             if (soaddr <= 0) {

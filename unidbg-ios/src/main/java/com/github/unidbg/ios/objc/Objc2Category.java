@@ -25,7 +25,9 @@ final class Objc2Category {
         List<Objc2Method> instanceMethodList = Objc2Method.loadMethods(buffer, instanceMethods);
         List<Objc2Method> classMethodList = Objc2Method.loadMethods(buffer, classMethods);
         Objc2Class objc2Class = Objc2Class.read(classMap, buffer, clazz);
-        return new Objc2Category(objc2Class, categoryName, instanceMethodList, classMethodList);
+        String cName = (objc2Class == null ? "??" : objc2Class.name) +
+                ' ' + '(' + categoryName + ')';
+        return new Objc2Category(objc2Class, cName, instanceMethodList, classMethodList);
     }
 
     final Objc2Class objc2Class;
