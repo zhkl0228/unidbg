@@ -3,7 +3,6 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
-import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -29,28 +28,28 @@ class VaList32 extends VaList {
                     case 'S':
                     case 'Z': {
                         buffer.putInt(pointer.getInt(0));
-                        pointer = (UnidbgPointer) pointer.share(4);
+                        pointer = pointer.share(4, 0);
                         break;
                     }
                     case 'D': {
-                        Pointer ptr = UnidbgPointer.pointer(emulator, (pointer.toUIntPeer() + 7) & 0xfffffff8L);
+                        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, (pointer.toUIntPeer() + 7) & 0xfffffff8L);
                         assert ptr != null;
                         buffer.putDouble(ptr.getDouble(0));
-                        pointer = (UnidbgPointer) ptr.share(8);
+                        pointer = ptr.share(8, 0);
                         break;
                     }
                     case 'F': {
-                        Pointer ptr = UnidbgPointer.pointer(emulator, (pointer.toUIntPeer() + 7) & 0xfffffff8L);
+                        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, (pointer.toUIntPeer() + 7) & 0xfffffff8L);
                         assert ptr != null;
                         buffer.putFloat((float) ptr.getDouble(0));
-                        pointer = (UnidbgPointer) ptr.share(8);
+                        pointer = ptr.share(8, 0);
                         break;
                     }
                     case 'J': {
-                        Pointer ptr = UnidbgPointer.pointer(emulator, (pointer.toUIntPeer() + 7) & 0xfffffff8L);
+                        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, (pointer.toUIntPeer() + 7) & 0xfffffff8L);
                         assert ptr != null;
                         buffer.putLong(ptr.getLong(0));
-                        pointer = (UnidbgPointer) ptr.share(8);
+                        pointer = ptr.share(8, 0);
                         break;
                     }
                     default:

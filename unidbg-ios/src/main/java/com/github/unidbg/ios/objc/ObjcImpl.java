@@ -17,6 +17,7 @@ class ObjcImpl extends ObjC {
     private final Symbol _objc_getClass;
     private final Symbol _objc_lookUpClass;
     private final Symbol _sel_registerName;
+    private final Symbol _class_getMethodImplementation;
 
     public ObjcImpl(Emulator<?> emulator) {
         this.emulator = emulator;
@@ -48,6 +49,11 @@ class ObjcImpl extends ObjC {
         _sel_registerName = module.findSymbolByName("_sel_registerName", false);
         if (_sel_registerName == null) {
             throw new IllegalStateException("_sel_registerName is null");
+        }
+
+        _class_getMethodImplementation = module.findSymbolByName("_class_getMethodImplementation", false);
+        if (_class_getMethodImplementation == null) {
+            throw new IllegalStateException("_class_getMethodImplementation is null");
         }
     }
 
@@ -82,6 +88,17 @@ class ObjcImpl extends ObjC {
     public Pointer registerName(String selectorName) {
         Number number = _sel_registerName.call(emulator, selectorName)[0];
         Pointer pointer = UnidbgPointer.pointer(emulator, number);
+        if (pointer == null) {
+            throw new IllegalStateException(selectorName);
+        }
+        return pointer;
+    }
+
+    @Override
+    public UnidbgPointer getMethodImplementation(ObjcClass objcClass, String selectorName) {
+        Pointer selector = registerName(selectorName);
+        Number number = _class_getMethodImplementation.call(emulator, objcClass, selector)[0];
+        UnidbgPointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalStateException(selectorName);
         }

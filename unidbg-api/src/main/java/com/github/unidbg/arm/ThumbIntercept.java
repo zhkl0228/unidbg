@@ -97,15 +97,15 @@ class ThumbIntercept extends ThumbSvc {
     private void evalBL(Backend backend, boolean x, Emulator<?> emulator) {
         Pointer sp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
-            Pointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
-            backend.reg_write(ArmConst.UC_ARM_REG_LR, ((UnidbgPointer) pc.share(2)).peer | 1L); // thumb
+            UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
+            backend.reg_write(ArmConst.UC_ARM_REG_LR, pc.share(2, 0).peer | 1L); // thumb
             sp = sp.share(-4);
 
             Arm.OpInfo opInfo = (Arm.OpInfo) this.insn.operands;
             int off = opInfo.op[0].value.imm;
-            pc = pc.share(off).share(-2);
+            pc = pc.share(off, 0).share(-2, 0);
             if (!x) {
-                pc = pc.share(1); // thumb
+                pc = pc.share(1, 0); // thumb
             }
             sp.setPointer(0, pc);
         } finally {
