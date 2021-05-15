@@ -1091,10 +1091,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new BackendException();
                 } else {
+                    DvmObject<?> obj = dvmMethod.callStaticObjectMethod(ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticObjectMethod(%s, %s%s) was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticObjectMethod(%s, %s%s) => %s was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, obj, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return addObject(dvmMethod.callStaticObjectMethod(ArmVarArg.create(emulator, DalvikVM.this)), false);
+                    return addObject(obj, false);
                 }
             }
         });
