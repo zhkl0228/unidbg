@@ -13,6 +13,8 @@
 #include <iostream>
 #include <exception>
 
+#include <sched.h>
+
 #include "test.h"
 
 static int sdk_int = 0;
@@ -135,6 +137,55 @@ static void test_float() {
 static void test_jni_float() {
 }
 
+static void test_sched() {
+    int cpus = 0;
+    int  i = 0;
+    cpu_set_t mask;
+    cpu_set_t get;
+    int pid = gettid();
+
+    cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    printf("cpus: %d, pid: %d\n", cpus, pid);
+
+    CPU_ZERO(&get);
+    if (sched_getaffinity(pid, sizeof(get), &get) != 0) {
+        printf("Get CPU affinity failure, ERROR: %s\n", strerror(errno));
+    } else {
+        for(int i = 0; i < cpus; i++) {
+            if(CPU_ISSET(i, &get)) {
+                printf("Running processor : %d\n", i);
+            }
+        }
+        char buf[1024];
+        hex(buf, &get, sizeof(get));
+        printf("Get CPU affinity success: buf=%s\n", buf);
+    }
+
+    CPU_ZERO(&mask);
+    CPU_SET(cpus - 1, &mask);
+    if (sched_setaffinity(pid, sizeof(mask), &mask) != 0) {
+        printf("Set CPU affinity failure, ERROR: %s\n", strerror(errno));
+    } else {
+        char buf[1024];
+        hex(buf, &mask, sizeof(mask));
+        printf("Set CPU affinity success: buf=%s\n", buf);
+    }
+
+    CPU_ZERO(&get);
+    if (sched_getaffinity(pid, sizeof(get), &get) != 0) {
+        printf("Get CPU affinity failure, ERROR: %s\n", strerror(errno));
+    } else {
+        for(int i = 0; i < cpus; i++) {
+            if(CPU_ISSET(i, &get)) {
+                printf("Running processor : %d\n", i);
+            }
+        }
+        char buf[1024];
+        hex(buf, &get, sizeof(get));
+        printf("Get CPU affinity success: buf=%s\n", buf);
+    }
+}
+
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -148,6 +199,7 @@ int main() {
   }
   test_backtrace();
   test_statfs();
+  test_sched();
   test_float();
   test_jni_float();
   char sdk[PROP_VALUE_MAX];

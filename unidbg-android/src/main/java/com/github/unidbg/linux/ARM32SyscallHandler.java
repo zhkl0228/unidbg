@@ -331,6 +331,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 240:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, futex(emulator));
                     return;
+                case 241:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_setaffinity(emulator));
+                    return;
+                case 242:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_getaffinity(emulator));
+                    return;
                 case 248:
                     exit_group(emulator);
                     return;

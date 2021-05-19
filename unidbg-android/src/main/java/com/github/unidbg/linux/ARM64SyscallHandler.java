@@ -173,6 +173,12 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 101:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, nanosleep(emulator));
                     return;
+                case 122:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, sched_setaffinity(emulator));
+                    return;
+                case 123:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, sched_getaffinity(emulator));
+                    return;
                 case 167:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, prctl(backend, emulator));
                     return;

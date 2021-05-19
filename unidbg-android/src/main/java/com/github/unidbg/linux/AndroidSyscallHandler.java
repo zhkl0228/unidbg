@@ -1,7 +1,6 @@
 package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.AndroidFileIO;
@@ -14,6 +13,7 @@ import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,6 +25,38 @@ import java.util.Map;
 abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> implements SyscallHandler<AndroidFileIO> {
 
     private static final Log log = LogFactory.getLog(AndroidSyscallHandler.class);
+
+    private byte[] sched_cpu_mask;
+
+    final long sched_setaffinity(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int cpusetsize = context.getIntArg(1);
+        Pointer mask = context.getPointerArg(2);
+        if (mask != null) {
+            sched_cpu_mask = mask.getByteArray(0, cpusetsize);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(sched_cpu_mask, "sched_setaffinity pid=" + pid + ", cpusetsize=" + cpusetsize + ", mask=" + mask));
+        }
+        return 0;
+    }
+
+    final long sched_getaffinity(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int cpusetsize = context.getIntArg(1);
+        Pointer mask = context.getPointerArg(2);
+        int ret = 0;
+        if (mask != null && sched_cpu_mask != null) {
+            mask.write(0, sched_cpu_mask, 0, cpusetsize);
+            ret = cpusetsize;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(sched_cpu_mask, "sched_getaffinity pid=" + pid + ", cpusetsize=" + cpusetsize + ", mask=" + mask));
+        }
+        return ret;
+    }
 
     private static final int EFD_SEMAPHORE = 1;
     private static final int EFD_NONBLOCK = IOConstants.O_NONBLOCK;
