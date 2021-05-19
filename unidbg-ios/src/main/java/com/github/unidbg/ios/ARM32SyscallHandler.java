@@ -1262,11 +1262,11 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         long timeInMillis = System.currentTimeMillis();
         long start = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
         int length = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int ret = emulator.getMemory().munmap(start, length);
+        emulator.getMemory().munmap(start, length);
         if (log.isDebugEnabled()) {
-            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", ret=" + ret + ", offset=" + (System.currentTimeMillis() - timeInMillis));
+            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", offset=" + (System.currentTimeMillis() - timeInMillis));
         }
-        return ret;
+        return 0;
     }
 
     private int sysctl(Emulator<?> emulator) {

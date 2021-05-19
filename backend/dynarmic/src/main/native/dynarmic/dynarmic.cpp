@@ -195,8 +195,7 @@ public:
     }
 
     bool MemoryWriteExclusive8(u32 vaddr, u8 value, u8 expected) override {
-        fprintf(stderr, "MemoryWriteExclusive8[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
-        abort();
+        MemoryWrite8(vaddr, value);
         return true;
     }
     bool MemoryWriteExclusive16(u32 vaddr, u16 value, u16 expected) override {

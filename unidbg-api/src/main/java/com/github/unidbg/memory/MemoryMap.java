@@ -28,7 +28,7 @@ public class MemoryMap implements Serializable {
     public String toString() {
         return "MemoryMap{" +
                 "base=0x" + Long.toHexString(base) +
-                ", size=" + size +
+                ", size=0x" + Long.toHexString(size) +
                 ", prot=" + prot +
                 '}';
     }

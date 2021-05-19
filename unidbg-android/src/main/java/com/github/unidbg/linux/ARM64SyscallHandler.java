@@ -24,6 +24,7 @@ import com.github.unidbg.linux.file.SocketIO;
 import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
 import com.github.unidbg.linux.struct.Stat64;
+import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.IO;
@@ -207,6 +208,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 215:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, munmap(backend, emulator));
                     return;
+                case 216:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mremap(emulator));
+                    return;
                 case 61:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getdents64(emulator));
                     return;
@@ -384,6 +388,10 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         threadMap.put(threadId, new LinuxThread(child_stack, fn, arg));
         lastThread = threadId;
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
         return threadId;
     }
 
@@ -947,11 +955,44 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         long timeInMillis = System.currentTimeMillis();
         long start = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
         int length = backend.reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
-        int ret = emulator.getMemory().munmap(start, length);
+        emulator.getMemory().munmap(start, length);
         if (log.isDebugEnabled()) {
-            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", ret=" + ret + ", offset=" + (System.currentTimeMillis() - timeInMillis));
+            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", offset=" + (System.currentTimeMillis() - timeInMillis));
         }
-        return ret;
+        return 0;
+    }
+
+    private long mremap(Emulator<?> emulator) {
+        Arm64RegisterContext context = emulator.getContext();
+        UnidbgPointer old_address = context.getXPointer(0);
+        int old_size = context.getXInt(1);
+        int new_size = context.getXInt(2);
+        int flags = context.getXInt(3);
+        UnidbgPointer new_address = context.getXPointer(4);
+        if (log.isDebugEnabled()) {
+            log.debug("mremap old_address=" + old_address + ", old_size=" + old_size + ", new_size=" + new_size + ", flags=" + flags + ", new_address=" + new_address);
+        }
+        if (old_size == 0) {
+            throw new BackendException("old_size is zero");
+        }
+        boolean fixed = (flags & MREMAP_FIXED) != 0;
+        if ((flags & MREMAP_MAYMOVE) == 0) {
+            throw new BackendException("flags=" + flags);
+        }
+
+        Memory memory = emulator.getMemory();
+        byte[] data = old_address.getByteArray(0, old_size);
+        int prot = memory.munmap(old_address.toUIntPeer(), old_size);
+        final long address;
+        if (fixed) {
+            address = memory.mmap2(new_address.toUIntPeer(), new_size, prot, AndroidElfLoader.MAP_ANONYMOUS | AndroidElfLoader.MAP_FIXED, 0, 0);
+        } else {
+            address = memory.mmap2(0, new_size, prot, AndroidElfLoader.MAP_ANONYMOUS, 0, 0);
+        }
+        UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
+        assert pointer != null;
+        pointer.write(0, data, 0, data.length);
+        return pointer.toUIntPeer();
     }
 
     private static final int PR_SET_NAME = 15;
@@ -1161,11 +1202,11 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         int mode = context.getIntArg(3);
         String pathname = pathname_p.getString(0);
         if (log.isDebugEnabled()) {
-            log.debug("faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.debug("faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=0x" + Integer.toHexString(mode));
         }
         int ret = faccessat(emulator, pathname);
         if (ret == -1) {
-            log.info("faccessat failed dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode));
+            log.info("faccessat failed dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=0x" + Integer.toHexString(mode));
         }
         return ret;
     }
@@ -1221,7 +1262,6 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
-                emulator.getMemory().setErrno(UnixEmulator.ENOENT);
                 log.info(msg);
             }
             return fd;

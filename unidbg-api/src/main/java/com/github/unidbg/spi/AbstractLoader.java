@@ -147,7 +147,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
             if (log.isDebugEnabled()) {
                 log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(segment.base) + ", size=" + (start - segment.base));
             }
-            return 0;
+            return segment.prot;
         }
 
         if(removed.size != aligned) {
@@ -159,10 +159,13 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
                 long size = aligned - removed.size;
                 while (size != 0) {
                     MemoryMap remove = memoryMap.remove(address);
+                    if (removed.prot != remove.prot) {
+                        throw new IllegalStateException();
+                    }
                     address += remove.size;
                     size -= remove.size;
                 }
-                return 0;
+                return removed.prot;
             }
 
             if (memoryMap.put(start + aligned, new MemoryMap(start + aligned, removed.size - aligned, removed.prot)) != null) {
@@ -171,7 +174,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
             if (log.isDebugEnabled()) {
                 log.debug("munmap removed=0x" + Long.toHexString(removed.size) + ", aligned=0x" + Long.toHexString(aligned) + ", base=0x" + Long.toHexString(start + aligned) + ", size=" + (removed.size - aligned));
             }
-            return 0;
+            return removed.prot;
         }
 
         if (log.isDebugEnabled()) {
@@ -180,7 +183,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         if (memoryMap.isEmpty()) {
             setMMapBaseAddress(MMAP_BASE);
         }
-        return 0;
+        return removed.prot;
     }
 
     @Override

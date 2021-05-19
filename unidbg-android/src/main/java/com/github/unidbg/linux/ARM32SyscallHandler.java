@@ -26,7 +26,6 @@ import com.github.unidbg.linux.file.UdpSocket;
 import com.github.unidbg.linux.struct.Stat32;
 import com.github.unidbg.linux.struct.SysInfo32;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.IO;
@@ -585,39 +584,37 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return 0;
     }
 
-    private static final int MREMAP_MAYMOVE = 1;
-
     private int mremap(Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         UnidbgPointer old_address = context.getR0Pointer();
         int old_size = context.getR1Int();
         int new_size = context.getR2Int();
         int flags = context.getR3Int();
-        Pointer new_address = context.getR4Pointer();
+        UnidbgPointer new_address = context.getR4Pointer();
         if (log.isDebugEnabled()) {
             log.debug("mremap old_address=" + old_address + ", old_size=" + old_size + ", new_size=" + new_size + ", flags=" + flags + ", new_address=" + new_address);
         }
         if (old_size == 0) {
             throw new BackendException("old_size is zero");
         }
+        boolean fixed = (flags & MREMAP_FIXED) != 0;
         if ((flags & MREMAP_MAYMOVE) == 0) {
             throw new BackendException("flags=" + flags);
         }
 
         Memory memory = emulator.getMemory();
-        for (MemoryMap map : memory.getMemoryMap()) {
-            if (map.base == old_address.toUIntPeer() && map.size == old_size) {
-                byte[] data = new byte[old_size];
-                old_address.read(0, data, 0, data.length);
-                memory.munmap(map.base, (int) map.size);
-                long address = emulator.getMemory().mmap2(0, new_size, map.prot, AndroidElfLoader.MAP_ANONYMOUS, 0, 0);
-                UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
-                assert pointer != null;
-                pointer.write(0, data, 0, data.length);
-                return (int) pointer.toUIntPeer();
-            }
+        byte[] data = old_address.getByteArray(0, old_size);
+        int prot = memory.munmap(old_address.toUIntPeer(), old_size);
+        final long address;
+        if (fixed) {
+            address = memory.mmap2(new_address.toUIntPeer(), new_size, prot, AndroidElfLoader.MAP_ANONYMOUS | AndroidElfLoader.MAP_FIXED, 0, 0);
+        } else {
+            address = memory.mmap2(0, new_size, prot, AndroidElfLoader.MAP_ANONYMOUS, 0, 0);
         }
-        throw new BackendException();
+        UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
+        assert pointer != null;
+        pointer.write(0, data, 0, data.length);
+        return (int) pointer.toUIntPeer();
     }
 
     protected int ptrace(Emulator<?> emulator) {
@@ -832,6 +829,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         threadMap.put(threadId, new LinuxThread(child_stack, fn, arg));
         lastThread = threadId;
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
         return threadId;
     }
 
@@ -1619,11 +1620,11 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         long timeInMillis = System.currentTimeMillis();
         long start = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
         int length = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int ret = emulator.getMemory().munmap(start, length);
+        emulator.getMemory().munmap(start, length);
         if (log.isDebugEnabled()) {
-            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", ret=" + ret + ", offset=" + (System.currentTimeMillis() - timeInMillis) + ", from=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+            log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", offset=" + (System.currentTimeMillis() - timeInMillis) + ", from=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
         }
-        return ret;
+        return 0;
     }
 
     private static final int PR_GET_DUMPABLE = 3;
@@ -1843,7 +1844,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         int oflags = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
         int mode = backend.reg_read(ArmConst.UC_ARM_REG_R3).intValue();
         String pathname = pathname_p.getString(0);
-        String msg = "faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
+        String msg = "faccessat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=0x" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
             log.debug(msg);
         }
@@ -1909,7 +1910,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
-                emulator.getMemory().setErrno(UnixEmulator.ENOENT);
                 log.info(msg);
             }
             return fd;
@@ -1920,7 +1920,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
-                emulator.getMemory().setErrno(UnixEmulator.ENOENT);
                 log.info(msg);
             }
             return fd;

@@ -26,6 +26,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
 
     private static final Log log = LogFactory.getLog(AndroidSyscallHandler.class);
 
+    static final int MREMAP_MAYMOVE = 1;
+    static final int MREMAP_FIXED = 2;
+
     private byte[] sched_cpu_mask;
 
     final long sched_setaffinity(Emulator<AndroidFileIO> emulator) {

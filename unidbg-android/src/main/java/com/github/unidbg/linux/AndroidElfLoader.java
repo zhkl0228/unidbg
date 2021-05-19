@@ -690,7 +690,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         return (int) this.brk;
     }
 
-    private static final int MAP_FIXED = 0x10;
+    public static final int MAP_FIXED = 0x10;
     public static final int MAP_ANONYMOUS = 0x20;
 
     @Override
@@ -703,23 +703,12 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 log.debug("mmap2 MAP_FIXED start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=" + prot);
             }
 
-            MemoryMap mapped = null;
-            for (MemoryMap map : memoryMap.values()) {
-                if (start >= map.base && start + aligned <= map.base + map.size) {
-                    mapped = map;
-                }
+            munmap(start, length);
+            backend.mem_map(start, aligned, prot);
+            if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
+                log.warn("mmap2 replace exists memory map: start=" + Long.toHexString(start));
             }
-
-            if (mapped != null) {
-                munmap(start, aligned);
-                backend.mem_map(start, aligned, prot);
-                if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
-                    log.warn("mmap2 replace exists memory map: start=" + Long.toHexString(start));
-                }
-                return start;
-            } else {
-                throw new IllegalStateException("mmap2 MAP_FIXED not found mapped memory: start=0x" + Long.toHexString(start));
-            }
+            return start;
         }
         if (isAnonymous) {
             long addr = allocateMapAddress(0, aligned);
