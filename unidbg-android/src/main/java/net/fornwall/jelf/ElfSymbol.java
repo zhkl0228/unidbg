@@ -109,6 +109,7 @@ public final class ElfSymbol {
 	}
 
 	final boolean matches(long soaddr) {
+		long value = this.value & ~1L;
 		return section_header_ndx != SHN_UNDEF &&
 				soaddr >= value &&
 						soaddr < value + size;

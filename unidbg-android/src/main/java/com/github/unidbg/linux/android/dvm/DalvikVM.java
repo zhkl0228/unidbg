@@ -1161,10 +1161,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new BackendException();
                 } else {
+                    int ret = dvmMethod.CallStaticBooleanMethod(ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticBooleanMethod(%s, %s%s) was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticBooleanMethod(%s, %s%s => %s) was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, ret == VM.JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return dvmMethod.CallStaticBooleanMethod(ArmVarArg.create(emulator, DalvikVM.this));
+                    return ret;
                 }
             }
         });
@@ -1206,10 +1207,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new BackendException();
                 } else {
+                    int ret = dvmMethod.callStaticIntMethod(ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticIntMethod(%s, %s%s) was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticIntMethod(%s, %s%s => %s) was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return dvmMethod.callStaticIntMethod(ArmVarArg.create(emulator, DalvikVM.this));
+                    return ret;
                 }
             }
         });

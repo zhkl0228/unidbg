@@ -146,7 +146,7 @@ public class ARM {
                 case ArmConst.UC_ARM_REG_SP:
                     number = backend.reg_read(reg);
                     value = number.intValue();
-                    builder.append(String.format(Locale.US, " SP=0x%x", value));
+                    builder.append(String.format(Locale.US, "\n>>> SP=0x%x", value));
                     break;
                 case ArmConst.UC_ARM_REG_LR:
                     builder.append(String.format(Locale.US, " LR=%s", UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR)));
@@ -156,10 +156,11 @@ public class ARM {
                     builder.append(String.format(Locale.US, " PC=%s", pc));
                     Module module = emulator.getMemory().findModuleByAddress(pc.peer);
                     if (module != null) {
-                        Symbol symbol = module.findClosestSymbolByAddress(pc.peer, false);
-                        if (symbol != null && pc.peer - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
+                        long peer = pc.peer & ~1L;
+                        Symbol symbol = module.findClosestSymbolByAddress(peer, false);
+                        if (symbol != null && peer - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
                             GccDemangler demangler = DemanglerFactory.createDemangler();
-                            builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(pc.peer - symbol.getAddress())).append(')');
+                            builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(peer - (symbol.getAddress() & ~1L))).append(')');
                         }
                     }
                     break;
