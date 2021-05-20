@@ -28,6 +28,16 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
     private static final Log log = LogFactory.getLog(BaseVM.class);
 
+    public static boolean valueOf(int value) {
+        if (value == VM.JNI_TRUE) {
+            return true;
+        } else if (value == VM.JNI_FALSE) {
+            return false;
+        } else {
+            throw new IllegalStateException("Invalid boolean value=" + value);
+        }
+    }
+
     final Map<Integer, DvmClass> classMap = new HashMap<>();
 
     Jni jni;

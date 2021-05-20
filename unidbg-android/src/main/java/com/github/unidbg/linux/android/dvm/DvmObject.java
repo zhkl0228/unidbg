@@ -52,7 +52,7 @@ public class DvmObject<T> extends Hashable {
 
     @SuppressWarnings("unused")
     public boolean callJniMethodBoolean(Emulator<?> emulator, String method, Object...args) {
-        return callJniMethodInt(emulator, method, args) == VM.JNI_TRUE;
+        return BaseVM.valueOf(callJniMethodInt(emulator, method, args));
     }
 
     @SuppressWarnings("unused")

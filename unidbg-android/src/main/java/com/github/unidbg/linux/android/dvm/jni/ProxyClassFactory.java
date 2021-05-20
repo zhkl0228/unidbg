@@ -6,7 +6,7 @@ import com.github.unidbg.linux.android.dvm.DvmClassFactory;
 
 public class ProxyClassFactory implements DvmClassFactory {
 
-    private final ProxyClassLoader classLoader;
+    protected final ProxyClassLoader classLoader;
 
     public ProxyClassFactory() {
         this(ProxyClassFactory.class.getClassLoader());
@@ -21,7 +21,7 @@ public class ProxyClassFactory implements DvmClassFactory {
         return this;
     }
 
-    private ProxyDvmObjectVisitor visitor;
+    protected ProxyDvmObjectVisitor visitor;
 
     public DvmClassFactory configObjectVisitor(ProxyDvmObjectVisitor visitor) {
         this.visitor = visitor;

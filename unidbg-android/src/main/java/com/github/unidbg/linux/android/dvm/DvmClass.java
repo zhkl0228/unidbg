@@ -264,7 +264,7 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     @SuppressWarnings("unused")
     public boolean callStaticJniMethodBoolean(Emulator<?> emulator, String method, Object...args) {
-        return callStaticJniMethodInt(emulator, method, args) == VM.JNI_TRUE;
+        return BaseVM.valueOf(callStaticJniMethodInt(emulator, method, args));
     }
 
     @SuppressWarnings("unused")

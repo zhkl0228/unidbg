@@ -1,10 +1,10 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
+import com.github.unidbg.linux.android.dvm.BaseVM;
 import com.github.unidbg.linux.android.dvm.DvmField;
 import com.github.unidbg.linux.android.dvm.DvmMethod;
 import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.Shorty;
-import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VaList;
 import com.github.unidbg.linux.android.dvm.VarArg;
 
@@ -46,13 +46,18 @@ class ProxyUtils {
                     break;
                 case 'Z':
                     classes.add(boolean.class);
-                    args.add(varArg.getInt(offset) == VM.JNI_TRUE);
+                    int value = varArg.getInt(offset);
+                    args.add(BaseVM.valueOf(value));
                     offset++;
                     break;
-                /*case 'F':
-                    args.add(varArg.getFloat(offset));
-                    offset++;
-                    break;*/
+                case 'F':
+                    if (offset % 2 == 0) { // 参数对齐，float 占 8 字节，目前只支持 32 位
+                        offset++;
+                    }
+                    classes.add(float.class);
+                    args.add((float) varArg.getDouble(offset));
+                    offset += 2;
+                    break;
                 case 'L':
                     DvmObject<?> dvmObject = varArg.getObject(offset);
                     if (dvmObject == null) {
@@ -106,7 +111,7 @@ class ProxyUtils {
                     break;
                 case 'Z':
                     classes.add(boolean.class);
-                    args.add(vaList.getInt(offset) == VM.JNI_TRUE);
+                    args.add(BaseVM.valueOf(vaList.getInt(offset)));
                     offset += 4;
                     break;
                 case 'F':

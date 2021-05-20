@@ -452,11 +452,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new BackendException();
                 } else {
-                    int ret = dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
+                    boolean ret = dvmMethod.callBooleanMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallBooleanMethod(%s, %s%s => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret == VM.JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallBooleanMethod(%s, %s%s => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return ret;
+                    return ret ? JNI_TRUE : JNI_FALSE;
                 }
             }
         });
@@ -477,11 +477,11 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
-                    int ret = dvmMethod.callBooleanMethodV(dvmObject, vaList);
+                    boolean ret = dvmMethod.callBooleanMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return ret;
+                    return ret ? JNI_TRUE : JNI_FALSE;
                 }
             }
         });
@@ -502,11 +502,11 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     VaList vaList = new JValueList(DalvikVM.this, jvalue, dvmMethod);
-                    int ret = dvmMethod.callBooleanMethodA(dvmObject, vaList);
+                    boolean ret = dvmMethod.callBooleanMethodA(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return ret;
+                    return ret ? JNI_TRUE : JNI_FALSE;
                 }
             }
         });
@@ -1188,11 +1188,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new BackendException();
                 } else {
-                    int ret = dvmMethod.CallStaticBooleanMethod(ArmVarArg.create(emulator, DalvikVM.this));
+                    boolean ret = dvmMethod.CallStaticBooleanMethod(ArmVarArg.create(emulator, DalvikVM.this));
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticBooleanMethod(%s, %s%s => %s) was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, ret == VM.JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticBooleanMethod(%s, %s%s => %s) was called from %s%n", dvmClass, dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return ret;
+                    return ret ? JNI_TRUE : JNI_FALSE;
                 }
             }
         });
@@ -1212,11 +1212,11 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
-                    int ret = dvmMethod.callStaticBooleanMethodV(vaList);
+                    boolean ret = dvmMethod.callStaticBooleanMethodV(vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret == JNI_TRUE, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
                     }
-                    return ret;
+                    return ret ? JNI_TRUE : JNI_FALSE;
                 }
             }
         });

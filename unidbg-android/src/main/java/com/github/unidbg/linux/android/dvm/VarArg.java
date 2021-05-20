@@ -12,4 +12,9 @@ public interface VarArg {
      */
     int getInt(int index);
 
+    /**
+     * @param index 0 based
+     */
+    double getDouble(int index);
+
 }

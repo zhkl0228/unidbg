@@ -42,7 +42,7 @@ public class DvmMethod extends Hashable {
         return args;
     }
 
-    final String getSignature() {
+    public final String getSignature() {
         return dvmClass.getClassName() + "->" + methodName + args;
     }
 
@@ -105,19 +105,19 @@ public class DvmMethod extends Hashable {
         return checkJni(vm, dvmClass).callIntMethodV(vm, dvmObject, this, vaList);
     }
 
-    int callBooleanMethod(DvmObject<?>  dvmObject, VarArg varArg) {
+    boolean callBooleanMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callBooleanMethod(vm, dvmObject, this, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callBooleanMethod(vm, dvmObject, this, varArg);
     }
 
-    int callBooleanMethodV(DvmObject<?>  dvmObject, VaList vaList) {
+    boolean callBooleanMethodV(DvmObject<?>  dvmObject, VaList vaList) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callBooleanMethodV(vm, dvmObject, this, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callBooleanMethodV(vm, dvmObject, this, vaList);
     }
 
-    int callBooleanMethodA(DvmObject<?>  dvmObject, VaList vaList) {
+    boolean callBooleanMethodA(DvmObject<?>  dvmObject, VaList vaList) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callBooleanMethodV(vm, dvmObject, this, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callBooleanMethodV(vm, dvmObject, this, vaList);
     }
 
     int callIntMethod(DvmObject<?>  dvmObject, VarArg varArg) {
@@ -155,14 +155,14 @@ public class DvmMethod extends Hashable {
         return checkJni(vm, dvmClass).callStaticLongMethodV(vm, dvmClass, this, vaList);
     }
 
-    int CallStaticBooleanMethod(VarArg varArg) {
+    boolean CallStaticBooleanMethod(VarArg varArg) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticBooleanMethod(vm, dvmClass, this, varArg) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callStaticBooleanMethod(vm, dvmClass, this, varArg);
     }
 
-    int callStaticBooleanMethodV(VaList vaList) {
+    boolean callStaticBooleanMethodV(VaList vaList) {
         BaseVM vm = dvmClass.vm;
-        return checkJni(vm, dvmClass).callStaticBooleanMethodV(vm, dvmClass, this, vaList) ? VM.JNI_TRUE : VM.JNI_FALSE;
+        return checkJni(vm, dvmClass).callStaticBooleanMethodV(vm, dvmClass, this, vaList);
     }
 
     float callStaticFloatMethod(VarArg varArg) {

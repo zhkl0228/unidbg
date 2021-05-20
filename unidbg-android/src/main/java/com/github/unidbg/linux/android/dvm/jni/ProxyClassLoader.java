@@ -1,6 +1,6 @@
 package com.github.unidbg.linux.android.dvm.jni;
 
-class ProxyClassLoader {
+public class ProxyClassLoader {
 
     private final ClassLoader classLoader;
 

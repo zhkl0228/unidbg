@@ -72,7 +72,7 @@ public abstract class VaList {
                     break;
                 case 'Z':
                     format.add("%s");
-                    args.add(getInt(offset) == VM.JNI_TRUE);
+                    args.add(BaseVM.valueOf(getInt(offset)));
                     offset += 4;
                     break;
                 case 'F':
