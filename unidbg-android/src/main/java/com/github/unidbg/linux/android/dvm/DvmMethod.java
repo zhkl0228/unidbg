@@ -125,6 +125,11 @@ public class DvmMethod extends Hashable {
         return checkJni(vm, dvmClass).callIntMethod(vm, dvmObject, this, varArg);
     }
 
+    double callDoubleMethod(DvmObject<?>  dvmObject, VarArg varArg) {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).callDoubleMethod(vm, dvmObject, this, varArg);
+    }
+
     void callVoidMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         BaseVM vm = dvmClass.vm;
         checkJni(vm, dvmClass).callVoidMethod(vm, dvmObject, this, varArg);

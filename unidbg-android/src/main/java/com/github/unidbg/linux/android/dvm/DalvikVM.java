@@ -688,6 +688,33 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallDoubleMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                UnidbgPointer object = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallDoubleMethod object=" + object + ", jmethodID=" + jmethodID);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    double ret = dvmMethod.callDoubleMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM.this));
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallDoubleMethod(%s, %s%s => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    }
+                    ByteBuffer buffer = ByteBuffer.allocate(4);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putFloat((float) ret);
+                    buffer.flip();
+                    return (buffer.getInt() & 0xffffffffL);
+                }
+            }
+        });
+
         Pointer _CallVoidMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2145,6 +2172,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0xd0, _CallLongMethod);
         impl.setPointer(0xd4, _CallLongMethodV);
         impl.setPointer(0xe0, _CallFloatMethodV);
+        impl.setPointer(0xe8, _CallDoubleMethod);
         impl.setPointer(0xf4, _CallVoidMethod);
         impl.setPointer(0xf8, _CallVoidMethodV);
         impl.setPointer(0xfc, _CallVoidMethodA);

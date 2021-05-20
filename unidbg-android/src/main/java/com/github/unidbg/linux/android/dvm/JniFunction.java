@@ -188,6 +188,16 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public double callDoubleMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
+    public double callDoubleMethod(BaseVM vm, DvmObject<?> dvmObject, String signature, VarArg varArg) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public byte callByteMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
         throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
