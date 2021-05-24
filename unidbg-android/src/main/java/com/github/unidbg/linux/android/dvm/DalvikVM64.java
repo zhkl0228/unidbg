@@ -568,6 +568,34 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallDoubleMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallDoubleMethod object=" + object + ", jmethodID=" + jmethodID);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    double ret = dvmMethod.callDoubleMethod(dvmObject, ArmVarArg.create(emulator, DalvikVM64.this));
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallDoubleMethod(%s, %s%s => %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.args, ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    }
+                    ByteBuffer buffer = ByteBuffer.allocate(16);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putDouble(ret);
+                    emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
+                    return context.getLongArg(0);
+                }
+            }
+        });
+
         Pointer _CallVoidMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1831,6 +1859,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x190, _CallIntMethodV);
         impl.setPointer(0x1a8, _CallLongMethodV);
         impl.setPointer(0x1c0, _CallFloatMethodV);
+        impl.setPointer(0x1d0, _CallDoubleMethod);
         impl.setPointer(0x1e8, _CallVoidMethod);
         impl.setPointer(0x1f0, _CallVoidMethodV);
         impl.setPointer(0x2f0, _GetFieldID);

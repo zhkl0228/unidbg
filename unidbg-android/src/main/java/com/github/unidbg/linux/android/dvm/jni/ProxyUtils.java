@@ -7,6 +7,8 @@ import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.Shorty;
 import com.github.unidbg.linux.android.dvm.VaList;
 import com.github.unidbg.linux.android.dvm.VarArg;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -18,6 +20,8 @@ import java.util.Arrays;
 import java.util.List;
 
 class ProxyUtils {
+
+    private static final Log log = LogFactory.getLog(ProxyUtils.class);
 
     private static void parseMethodArgs(DvmMethod dvmMethod, List<Class<?>> classes, List<Object> args, VarArg varArg, ClassLoader classLoader) {
         Shorty[] shorties = dvmMethod.decodeArgsShorty();
@@ -51,12 +55,18 @@ class ProxyUtils {
                     offset++;
                     break;
                 case 'F':
-                    if (offset % 2 == 0) { // 参数对齐，float 占 8 字节，目前只支持 32 位
-                        offset++;
+                    if (varArg.is64Bit()) {
+                        log.warn("Unsupported float arg");
+                        classes.add(float.class);
+                        args.add(0F);
+                    } else {
+                        if (offset % 2 == 0) { // 参数对齐，float 占 8 字节，目前只支持 32 位
+                            offset++;
+                        }
+                        classes.add(float.class);
+                        args.add((float) varArg.getDouble(offset));
+                        offset += 2;
                     }
-                    classes.add(float.class);
-                    args.add((float) varArg.getDouble(offset));
-                    offset += 2;
                     break;
                 case 'L':
                     DvmObject<?> dvmObject = varArg.getObject(offset);

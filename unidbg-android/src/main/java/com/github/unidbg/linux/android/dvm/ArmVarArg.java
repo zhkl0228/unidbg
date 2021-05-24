@@ -58,4 +58,8 @@ public class ArmVarArg implements VarArg {
         return emulator.getContext().getPointerArg(REG_OFFSET + index);
     }
 
+    @Override
+    public boolean is64Bit() {
+        return emulator.is64Bit();
+    }
 }

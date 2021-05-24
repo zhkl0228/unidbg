@@ -17,4 +17,6 @@ public interface VarArg {
      */
     double getDouble(int index);
 
+    boolean is64Bit();
+
 }
