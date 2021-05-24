@@ -94,6 +94,10 @@ public:
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 2);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }

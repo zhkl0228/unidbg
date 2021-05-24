@@ -56,6 +56,9 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
             public boolean hook(Backend backend, long address, int size, long value, Object user) {
                 RegisterContext context = getContext();
                 log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value) + ", PC=" + context.getPCPointer() + ", LR=" + context.getLRPointer());
+                if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                    attach().debug();
+                }
                 return false;
             }
         }, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED | UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED | UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, null);
