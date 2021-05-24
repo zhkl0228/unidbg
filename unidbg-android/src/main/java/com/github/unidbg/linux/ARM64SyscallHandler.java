@@ -396,7 +396,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
     }
 
     protected long fork(Emulator<?> emulator) {
-        log.debug("fork");
+        log.info("fork");
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
     }
