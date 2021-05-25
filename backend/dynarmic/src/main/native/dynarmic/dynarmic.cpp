@@ -1029,6 +1029,29 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
 
 /*
  * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    reg_read_vector
+ * Signature: (JI)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_1read_1vector
+  (JNIEnv *env, jclass clazz, jlong handle, jint index) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
+    if(jit) {
+      Dynarmic::Vector array = jit->GetVector(index);
+      jbyteArray bytes = env->NewByteArray(16);
+      jbyte *src = (jbyte *)&array;
+      env->SetByteArrayRegion(bytes, 0, 16, src);
+      return bytes;
+    } else {
+      return NULL;
+    }
+  }
+  return NULL;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
  * Method:    reg_set_tpidrro_el0
  * Signature: (JJ)I
  */

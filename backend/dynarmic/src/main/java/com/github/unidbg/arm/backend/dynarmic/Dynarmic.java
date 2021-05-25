@@ -29,6 +29,7 @@ public class Dynarmic implements Closeable {
     private static native int reg_set_tpidr_el0(long handle, long value);
     private static native int reg_set_tpidrro_el0(long handle, long value);
     private static native int reg_set_vector(long handle, int index, byte[] vector);
+    private static native byte[] reg_read_vector(long handle, int index);
 
     private static native int reg_write(long handle, int index, long value);
     private static native long reg_read(long handle, int index);
@@ -176,6 +177,14 @@ public class Dynarmic implements Closeable {
         if (ret != 0) {
             throw new DynarmicException("ret=" + ret);
         }
+    }
+
+    public byte[] reg_read_vector(int index) {
+        byte[] ret = reg_read_vector(nativeHandle, index);
+        if (ret == null) {
+            throw new DynarmicException("ret is null");
+        }
+        return ret;
     }
 
     public void reg_write32(int index, long value) {

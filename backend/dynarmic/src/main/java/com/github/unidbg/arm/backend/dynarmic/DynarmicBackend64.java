@@ -154,7 +154,15 @@ public class DynarmicBackend64 extends DynarmicBackend {
 
     @Override
     public byte[] reg_read_vector(int regId) throws BackendException {
-        return null;
+        try {
+            if (regId >= Arm64Const.UC_ARM64_REG_Q0 && regId <= Arm64Const.UC_ARM64_REG_Q31) {
+                return dynarmic.reg_read_vector(regId - Arm64Const.UC_ARM64_REG_Q0);
+            } else {
+                throw new UnsupportedOperationException("regId=" + regId);
+            }
+        } catch (DynarmicException e) {
+            throw new BackendException(e);
+        }
     }
 
     @Override
