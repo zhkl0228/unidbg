@@ -21,10 +21,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   if ((*env)->ExceptionCheck(env)) {
     return JNI_ERR;
   }
-  jmethodID testStaticFloat = (*env)->GetStaticMethodID(env, cAndroidTest, "testStaticFloat", "()F");
+  jmethodID testStaticFloat = (*env)->GetStaticMethodID(env, cAndroidTest, "testStaticFloat", "(FD)F");
   jfieldID testBoolean = (*env)->GetStaticFieldID(env, cAndroidTest, "staticBooleanField", "Z");
 
-  jfloat floatValue = (*env)->CallStaticFloatMethod(env, cAndroidTest, testStaticFloat);
+  jfloat floatValue = (*env)->CallStaticFloatMethod(env, cAndroidTest, testStaticFloat, 0.00123456789012345F, 0.00456789123456D);
   jboolean booleanValue = (*env)->GetStaticBooleanField(env, cAndroidTest, testBoolean);
 
   char buf[10240];

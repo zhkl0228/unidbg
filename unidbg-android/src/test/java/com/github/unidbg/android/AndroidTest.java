@@ -78,7 +78,10 @@ public class AndroidTest extends AbstractJni {
 
     @Override
     public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        if ("com/github/unidbg/android/AndroidTest->testStaticFloat()F".equals(signature)) {
+        if ("com/github/unidbg/android/AndroidTest->testStaticFloat(FD)F".equals(signature)) {
+            float f1 = varArg.getFloatArg(0);
+            double d2 = varArg.getDoubleArg(1);
+            System.out.printf("callStaticFloatMethod f1=%s, d2=%s%n", f1, d2);
             return 0.0023942017F;
         }
 

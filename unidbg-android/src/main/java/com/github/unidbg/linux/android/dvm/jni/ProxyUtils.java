@@ -7,8 +7,6 @@ import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.Shorty;
 import com.github.unidbg.linux.android.dvm.VaList;
 import com.github.unidbg.linux.android.dvm.VarArg;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -21,116 +19,38 @@ import java.util.List;
 
 class ProxyUtils {
 
-    private static final Log log = LogFactory.getLog(ProxyUtils.class);
-
     private static void parseMethodArgs(DvmMethod dvmMethod, List<Class<?>> classes, List<Object> args, VarArg varArg, ClassLoader classLoader) {
         Shorty[] shorties = dvmMethod.decodeArgsShorty();
-        int offset = 0;
-        for (Shorty shorty : shorties) {
+        for (int i = 0; i < shorties.length; i++) {
+            Shorty shorty = shorties[i];
             switch (shorty.getType()) {
                 case 'B':
                     classes.add(byte.class);
-                    args.add((byte) varArg.getInt(offset));
-                    offset++;
+                    args.add((byte) varArg.getIntArg(i));
                     break;
                 case 'C':
                     classes.add(char.class);
-                    args.add((char) varArg.getInt(offset));
-                    offset++;
+                    args.add((char) varArg.getIntArg(i));
                     break;
                 case 'I':
                     classes.add(int.class);
-                    args.add(varArg.getInt(offset));
-                    offset++;
+                    args.add(varArg.getIntArg(i));
                     break;
                 case 'S':
                     classes.add(short.class);
-                    args.add((short) varArg.getInt(offset));
-                    offset++;
+                    args.add((short) varArg.getIntArg(i));
                     break;
                 case 'Z':
                     classes.add(boolean.class);
-                    int value = varArg.getInt(offset);
+                    int value = varArg.getIntArg(i);
                     args.add(BaseVM.valueOf(value));
-                    offset++;
-                    break;
-                case 'F':
-                    if (varArg.is64Bit()) {
-                        log.warn("Unsupported float arg");
-                        classes.add(float.class);
-                        args.add(0F);
-                    } else {
-                        if (offset % 2 == 0) { // 参数对齐，float 占 8 字节，目前只支持 32 位
-                            offset++;
-                        }
-                        classes.add(float.class);
-                        args.add((float) varArg.getDouble(offset));
-                        offset += 2;
-                    }
-                    break;
-                case 'L':
-                    DvmObject<?> dvmObject = varArg.getObject(offset);
-                    if (dvmObject == null) {
-                        classes.add(shorty.decodeType(classLoader));
-                        args.add(null);
-                    } else {
-                        Object obj = unpack(dvmObject);
-                        classes.add(obj.getClass());
-                        args.add(obj);
-                    }
-                    offset++;
-                    break;
-                /*case 'D':
-                    args.add(varArg.getDouble(offset));
-                    offset++;
-                    break;*/
-                /*case 'J':
-                    args.add(varArg.getLong(offset));
-                    offset++;
-                    break;*/
-                default:
-                    throw new IllegalStateException("c=" + shorty.getType());
-            }
-        }
-    }
-
-    private static void parseMethodArgs(DvmMethod dvmMethod, List<Class<?>> classes, List<Object> args, VaList vaList, ClassLoader classLoader) {
-        Shorty[] shorties = dvmMethod.decodeArgsShorty();
-        int offset = 0;
-        for (Shorty shorty : shorties) {
-            switch (shorty.getType()) {
-                case 'B':
-                    classes.add(byte.class);
-                    args.add((byte) vaList.getInt(offset));
-                    offset += 4;
-                    break;
-                case 'C':
-                    classes.add(char.class);
-                    args.add((char) vaList.getInt(offset));
-                    offset += 4;
-                    break;
-                case 'I':
-                    classes.add(int.class);
-                    args.add(vaList.getInt(offset));
-                    offset += 4;
-                    break;
-                case 'S':
-                    classes.add(short.class);
-                    args.add((short) vaList.getInt(offset));
-                    offset += 4;
-                    break;
-                case 'Z':
-                    classes.add(boolean.class);
-                    args.add(BaseVM.valueOf(vaList.getInt(offset)));
-                    offset += 4;
                     break;
                 case 'F':
                     classes.add(float.class);
-                    args.add(vaList.getFloat(offset));
-                    offset += 4;
+                    args.add(varArg.getFloatArg(i));
                     break;
                 case 'L':
-                    DvmObject<?> dvmObject = vaList.getObject(offset);
+                    DvmObject<?> dvmObject = varArg.getObjectArg(i);
                     if (dvmObject == null) {
                         classes.add(shorty.decodeType(classLoader));
                         args.add(null);
@@ -139,17 +59,14 @@ class ProxyUtils {
                         classes.add(obj.getClass());
                         args.add(obj);
                     }
-                    offset += 4;
                     break;
                 case 'D':
                     classes.add(double.class);
-                    args.add(vaList.getDouble(offset));
-                    offset += 8;
+                    args.add(varArg.getDoubleArg(i));
                     break;
                 case 'J':
                     classes.add(long.class);
-                    args.add(vaList.getLong(offset));
-                    offset += 8;
+                    args.add(varArg.getLongArg(i));
                     break;
                 default:
                     throw new IllegalStateException("c=" + shorty.getType());

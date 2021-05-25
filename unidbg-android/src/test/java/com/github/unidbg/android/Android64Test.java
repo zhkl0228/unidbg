@@ -4,7 +4,7 @@ import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.backend.BackendFactory;
+import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM64SyscallHandler;
@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
 
 public class Android64Test extends AbstractJni {
 
@@ -53,7 +53,7 @@ public class Android64Test extends AbstractJni {
         final File executable = new File("unidbg-android/src/test/native/android/libs/arm64-v8a/test");
         emulator = new AndroidARM64Emulator(executable.getName(),
                 new File("target/rootfs"),
-                Collections.<BackendFactory>singleton(new HypervisorFactory(true))) {
+                Arrays.asList(new HypervisorFactory(true), new DynarmicFactory(true))) {
             @Override
             protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
                 return new MyARMSyscallHandler(svcMemory);
@@ -81,7 +81,7 @@ public class Android64Test extends AbstractJni {
 
     @Override
     public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        if ("com/github/unidbg/android/AndroidTest->testStaticFloat()F".equals(signature)) {
+        if ("com/github/unidbg/android/AndroidTest->testStaticFloat(FD)F".equals(signature)) {
             return 0.0023942017F;
         }
 
