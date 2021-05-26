@@ -460,9 +460,19 @@ public class ARM {
                     value = number.longValue();
                     builder.append(String.format(Locale.US, "\nSP=0x%x", value));
                     break;
-                case Arm64Const.UC_ARM64_REG_LR:
-                    builder.append(String.format(Locale.US, "\nLR=%s", UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR)));
+                case Arm64Const.UC_ARM64_REG_LR: {
+                    UnidbgPointer lr = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR);
+                    builder.append(String.format(Locale.US, "\nLR=%s", lr));
+                    Module module = lr == null ? null : emulator.getMemory().findModuleByAddress(lr.peer);
+                    if (module != null) {
+                        Symbol symbol = module.findClosestSymbolByAddress(lr.peer, false);
+                        if (symbol != null && lr.peer - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
+                            GccDemangler demangler = DemanglerFactory.createDemangler();
+                            builder.append(" (").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(lr.peer - symbol.getAddress())).append(')');
+                        }
+                    }
                     break;
+                }
                 case Arm64Const.UC_ARM64_REG_PC:
                     UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
                     builder.append(String.format(Locale.US, "\nPC=%s", pc));
