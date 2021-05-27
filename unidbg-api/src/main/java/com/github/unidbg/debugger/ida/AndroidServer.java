@@ -354,12 +354,12 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
                     context.getR5Int(), context.getR6Int(),
                     context.getR7Int(), context.getR8Int(),
                     context.getR9Int(), context.getR10Int(),
-                    context.getInt(ArmConst.UC_ARM_REG_FP),
-                    context.getInt(ArmConst.UC_ARM_REG_IP),
-                    context.getInt(ArmConst.UC_ARM_REG_SP),
-                    context.getInt(ArmConst.UC_ARM_REG_LR),
-                    context.getInt(ArmConst.UC_ARM_REG_PC),
-                    context.getInt(ArmConst.UC_ARM_REG_CPSR))) {
+                    context.getIntByReg(ArmConst.UC_ARM_REG_FP),
+                    context.getIntByReg(ArmConst.UC_ARM_REG_IP),
+                    context.getIntByReg(ArmConst.UC_ARM_REG_SP),
+                    context.getIntByReg(ArmConst.UC_ARM_REG_LR),
+                    context.getIntByReg(ArmConst.UC_ARM_REG_PC),
+                    context.getIntByReg(ArmConst.UC_ARM_REG_CPSR))) {
                 newBuf.put(Utils.pack_dd(0x1));
                 newBuf.put(Utils.pack_dq((value & 0xffffffffL) + 1));
             }
@@ -371,13 +371,13 @@ public class AndroidServer extends AbstractDebugServer implements ModuleListener
             for (int i = 0; i < 29; i++) {
                 int regId = Arm64Const.UC_ARM64_REG_X0 + i;
                 newBuf.put(Utils.pack_dd(0x1));
-                newBuf.put(Utils.pack_dq(context.getLong(regId) + 1));
+                newBuf.put(Utils.pack_dq(context.getLongByReg(regId) + 1));
             }
-            for (long value : Arrays.asList(context.getLong(Arm64Const.UC_ARM64_REG_X29),
-                    context.getLong(Arm64Const.UC_ARM64_REG_X30),
-                    context.getLong(Arm64Const.UC_ARM64_REG_SP),
-                    context.getLong(Arm64Const.UC_ARM64_REG_PC),
-                    context.getLong(Arm64Const.UC_ARM64_REG_NZCV))) {
+            for (long value : Arrays.asList(context.getLongByReg(Arm64Const.UC_ARM64_REG_X29),
+                    context.getLongByReg(Arm64Const.UC_ARM64_REG_X30),
+                    context.getLongByReg(Arm64Const.UC_ARM64_REG_SP),
+                    context.getLongByReg(Arm64Const.UC_ARM64_REG_PC),
+                    context.getLongByReg(Arm64Const.UC_ARM64_REG_NZCV))) {
                 newBuf.put(Utils.pack_dd(0x1));
                 newBuf.put(Utils.pack_dq(value + 1));
             }

@@ -34,12 +34,12 @@ public abstract class HookZzRegisterContext extends AbstractRegisterContext impl
     }
 
     @Override
-    public int getInt(int regId) {
+    public int getIntByReg(int regId) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long getLong(int regId) {
+    public long getLongByReg(int regId) {
         throw new UnsupportedOperationException();
     }
 }

@@ -30,7 +30,7 @@ public interface RegisterContext {
      */
     UnidbgPointer getStackPointer();
 
-    int getInt(int regId);
-    long getLong(int regId);
+    int getIntByReg(int regId);
+    long getLongByReg(int regId);
 
 }

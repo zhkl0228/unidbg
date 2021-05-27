@@ -291,12 +291,12 @@ class Arm32HookContext extends HookContext implements EditableArm32RegisterConte
     }
 
     @Override
-    public int getInt(int regId) {
-        return registerContext.getInt(regId);
+    public int getIntByReg(int regId) {
+        return registerContext.getIntByReg(regId);
     }
 
     @Override
-    public long getLong(int regId) {
-        return registerContext.getLong(regId);
+    public long getLongByReg(int regId) {
+        return registerContext.getLongByReg(regId);
     }
 }

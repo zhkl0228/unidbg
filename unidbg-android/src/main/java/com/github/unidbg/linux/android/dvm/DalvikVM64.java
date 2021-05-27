@@ -2,10 +2,8 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.Arm64Svc;
-import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
-import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
 import com.github.unidbg.linux.android.dvm.array.ArrayObject;
@@ -43,17 +41,17 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _FindClass = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Arm64RegisterContext context = emulator.getContext();
-                Pointer env = context.getXPointer(0);
-                Pointer className = context.getXPointer(1);
+                RegisterContext context = emulator.getContext();
+                Pointer env = context.getPointerArg(0);
+                Pointer className = context.getPointerArg(1);
                 String name = className.getString(0);
 
                 boolean notFound = notFoundClassSet.contains(name);
                 if (verbose) {
                     if (notFound) {
-                        System.out.printf("JNIEnv->FindNoClass(%s) was called from %s%n", name, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->FindNoClass(%s) was called from %s%n", name, context.getLRPointer());
                     } else {
-                        System.out.printf("JNIEnv->FindClass(%s) was called from %s%n", name, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->FindClass(%s) was called from %s%n", name, context.getLRPointer());
                     }
                 }
 
@@ -92,7 +90,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     if (verbose) {
-                        System.out.printf("JNIEnv->ToReflectedMethod(%s, \"%s\", %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.isStatic ? "is static" : "not static", UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->ToReflectedMethod(%s, \"%s\", %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.isStatic ? "is static" : "not static", context.getLRPointer());
                     }
 
                     return addLocalObject(dvmMethod.toReflectedMethod());
@@ -103,7 +101,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _Throw = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getObjectType());
                 throwable = dvmObject;
@@ -135,7 +134,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _PushLocalFrame = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                int capacity = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
+                RegisterContext context = emulator.getContext();
+                int capacity = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("PushLocalFrame capacity=" + capacity);
                 }
@@ -146,7 +146,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _PopLocalFrame = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer jresult = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer jresult = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("PopLocalFrame jresult=" + jresult);
                 }
@@ -157,7 +158,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewGlobalRef = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 if (object == null) {
                     return 0;
                 }
@@ -173,7 +175,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _DeleteGlobalRef = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteGlobalRef object=" + object);
                 }
@@ -188,7 +191,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _DeleteLocalRef = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteLocalRef object=" + object);
                 }
@@ -203,8 +207,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _IsSameObject = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer ref1 = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer ref2 = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer ref1 = context.getPointerArg(1);
+                UnidbgPointer ref2 = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("IsSameObject ref1=" + ref1 + ", ref2=" + ref2);
                 }
@@ -215,13 +220,14 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewLocalRef = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("NewLocalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->NewLocalRef(%s) was called from %s%n", dvmObject, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->NewLocalRef(%s) was called from %s%n", dvmObject, context.getLRPointer());
                 }
                 return object.toIntPeer();
             }
@@ -230,7 +236,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _EnsureLocalCapacity = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                int capacity = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
+                RegisterContext context = emulator.getContext();
+                int capacity = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("EnsureLocalCapacity capacity=" + capacity);
                 }
@@ -241,12 +248,13 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewObject = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewObject clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("NewObject clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", lr=" + context.getLRPointer());
                 }
                 if (dvmMethod == null) {
                     throw new BackendException();
@@ -254,7 +262,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     DvmObject<?> obj = dvmMethod.newObject(varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->NewObject(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->NewObject(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
                 }
@@ -264,13 +272,14 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewObjectV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewObjectV clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("NewObjectV clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + context.getLRPointer());
                 }
                 if (dvmMethod == null) {
                     throw new BackendException();
@@ -278,7 +287,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.newObjectV(vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->NewObjectV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->NewObjectV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
                 }
@@ -288,7 +297,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetObjectClass = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("GetObjectClass object=" + object + ", dvmObject=" + dvmObject);
@@ -305,8 +315,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _IsInstanceOf = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer clazz = context.getPointerArg(2);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (log.isDebugEnabled()) {
@@ -338,7 +349,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     int hash = dvmClass.getMethodID(name, args);
                     if (verbose && hash != 0) {
-                        System.out.printf("JNIEnv->GetMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, context.getLRPointer());
                     }
                     return hash;
                 }
@@ -348,8 +359,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallObjectMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallObjectMethod object=" + object + ", jmethodID=" + jmethodID);
                 }
@@ -362,7 +374,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     DvmObject<?> ret = dvmMethod.callObjectMethod(dvmObject, varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallObjectMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallObjectMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return addObject(ret, false);
                 }
@@ -372,11 +384,12 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallObjectMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallObjectMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("CallObjectMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + context.getLRPointer());
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -387,7 +400,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callObjectMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallObjectMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallObjectMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addObject(obj, false);
                 }
@@ -397,8 +410,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallBooleanMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallBooleanMethod object=" + object + ", jmethodID=" + jmethodID);
                 }
@@ -411,7 +425,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     boolean ret = dvmMethod.callBooleanMethod(dvmObject, varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallBooleanMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallBooleanMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
                 }
@@ -421,9 +435,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallBooleanMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallBooleanMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
@@ -436,7 +451,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     boolean ret = dvmMethod.callBooleanMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
                 }
@@ -446,9 +461,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallBooleanMethodA = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer jvalue = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallBooleanMethodA object=" + object + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
                 }
@@ -461,7 +477,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     boolean ret = dvmMethod.callBooleanMethodA(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
                 }
@@ -471,8 +487,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallIntMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallIntMethod object=" + object + ", jmethodID=" + jmethodID);
                 }
@@ -485,7 +502,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     int ret = dvmMethod.callIntMethod(dvmObject, varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallIntMethod(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallIntMethod(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -495,9 +512,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallIntMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallIntMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
@@ -510,7 +528,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     int ret = dvmMethod.callIntMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallIntMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallIntMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -520,7 +538,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallLongMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                EditableArm64RegisterContext context = emulator.getContext();
+                RegisterContext context = emulator.getContext();
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
@@ -536,7 +554,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     long ret = dvmMethod.callLongMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallLongMethodV(%s, %s(%s) => 0x%xL) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallLongMethodV(%s, %s(%s) => 0x%xL) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -562,7 +580,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     float ret = dvmMethod.callFloatMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallFloatMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallFloatMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -591,7 +609,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     double ret = dvmMethod.callDoubleMethod(dvmObject, varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallDoubleMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallDoubleMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -605,8 +623,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallVoidMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallVoidMethod object=" + object + ", jmethodID=" + jmethodID);
                 }
@@ -619,7 +638,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     dvmMethod.callVoidMethod(dvmObject, varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallVoidMethod(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallVoidMethod(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), context.getLRPointer());
                     }
                     return 0;
                 }
@@ -629,9 +648,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallVoidMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallVoidMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
@@ -644,7 +664,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     dvmMethod.callVoidMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
                 }
@@ -654,9 +674,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetFieldID = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer fieldName = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                Pointer argsPointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer fieldName = context.getPointerArg(2);
+                Pointer argsPointer = context.getPointerArg(3);
                 String name = fieldName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
@@ -674,8 +695,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetObjectField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetObjectField object=" + object + ", jfieldID=" + jfieldID);
                 }
@@ -687,7 +709,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     DvmObject<?> obj = dvmField.getObjectField(dvmObject);
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
                 }
@@ -697,8 +719,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetBooleanField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetBooleanField object=" + object + ", jfieldID=" + jfieldID);
                 }
@@ -710,7 +733,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     int ret = dvmField.getBooleanField(dvmObject);
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetBooleanField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, ret == JNI_TRUE, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetBooleanField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, ret == JNI_TRUE, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -720,8 +743,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetIntField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetIntField object=" + object + ", jfieldID=" + jfieldID);
                 }
@@ -733,7 +757,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     int ret = dvmField.getIntField(dvmObject);
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetIntField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetIntField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -743,8 +767,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetLongField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetLongField object=" + object + ", jfieldID=" + jfieldID);
                 }
@@ -756,7 +781,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     long ret = dvmField.getLongField(dvmObject);
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetLongField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetLongField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -780,7 +805,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     float ret = dvmField.getFloatField(dvmObject);
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetFloatField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetFloatField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -794,9 +819,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetObjectField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer value = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                UnidbgPointer value = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("SetObjectField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
@@ -809,7 +835,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     DvmObject<?> obj = getObject(value.toIntPeer());
                     dvmField.setObjectField(dvmObject, obj);
                     if (verbose) {
-                        System.out.printf("JNIEnv->SetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->SetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
                     }
                 }
                 return 0;
@@ -819,9 +845,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetBooleanField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                int value = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                int value = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("SetBooleanField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
@@ -831,10 +858,10 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new BackendException();
                 } else {
-                    boolean flag = value == JNI_TRUE;
+                    boolean flag = BaseVM.valueOf(value);
                     dvmField.setBooleanField(dvmObject, flag);
                     if (verbose) {
-                        System.out.printf("JNIEnv->SetBooleanField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, flag, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->SetBooleanField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, flag, context.getLRPointer());
                     }
                 }
                 return 0;
@@ -844,9 +871,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetIntField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                int value = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                int value = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("SetIntField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
@@ -858,7 +886,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     dvmField.setIntField(dvmObject, value);
                     if (verbose) {
-                        System.out.printf("JNIEnv->SetIntField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, value, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->SetIntField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
                 return 0;
@@ -868,9 +896,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetLongField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                long value = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).longValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                long value = context.getLongArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("SetLongField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
@@ -882,7 +911,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     dvmField.setLongField(dvmObject, value);
                     if (verbose) {
-                        System.out.printf("JNIEnv->SetLongField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, value, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->SetLongField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
                 return 0;
@@ -911,7 +940,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     dvmField.setDoubleField(dvmObject, value);
                     if (verbose) {
-                        System.out.printf("JNIEnv->SetDoubleField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, value, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->SetDoubleField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
                 return 0;
@@ -936,7 +965,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     int hash = dvmClass.getStaticMethodID(name, args);
                     if (verbose && hash != 0) {
-                        System.out.printf("JNIEnv->GetStaticMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetStaticMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, context.getLRPointer());
                     }
                     return hash;
                 }
@@ -946,8 +975,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticObjectMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticObjectMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
@@ -959,7 +989,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callStaticObjectMethod(varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticObjectMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticObjectMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), obj, context.getLRPointer());
                     }
                     return addObject(obj, false);
                 }
@@ -969,9 +999,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticObjectMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticObjectMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
@@ -983,7 +1014,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callStaticObjectMethodV(vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticObjectMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticObjectMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addObject(obj, false);
                 }
@@ -993,8 +1024,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticBooleanMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticBooleanMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
@@ -1006,7 +1038,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     boolean ret = dvmMethod.CallStaticBooleanMethod(varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticBooleanMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticBooleanMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
                 }
@@ -1016,9 +1048,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticBooleanMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticBooleanMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
@@ -1030,7 +1063,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     boolean ret = dvmMethod.callStaticBooleanMethodV(vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
                 }
@@ -1040,8 +1073,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticIntMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticIntMethodV clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
@@ -1053,7 +1087,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     int ret = dvmMethod.callStaticIntMethod(varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticIntMethod(%s, %s(%s) => 0x%x) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticIntMethod(%s, %s(%s) => 0x%x) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -1063,9 +1097,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticIntMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticIntMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
@@ -1077,7 +1112,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     int ret = dvmMethod.callStaticIntMethodV(vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticIntMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticIntMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -1087,11 +1122,12 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticLongMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticLongMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("CallStaticLongMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + context.getLRPointer());
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1101,10 +1137,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     long ret = dvmMethod.callStaticLongMethodV(vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticLongMethodV(%s, %s(%s) => 0x%xL) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticLongMethodV(%s, %s(%s) => 0x%xL) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
-                    emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_X1, (int) (ret >> 32));
-                    return (ret & 0xffffffffL);
+                    return ret;
                 }
             }
         });
@@ -1126,7 +1161,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     float ret = dvmMethod.callStaticFloatMethod(varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticFloatMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticFloatMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -1140,8 +1175,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticVoidMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticVoidMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
                 }
@@ -1153,7 +1189,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     dvmMethod.callStaticVoidMethod(varArg);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticVoidMethod(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticVoidMethod(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), context.getLRPointer());
                     }
                     return 0;
                 }
@@ -1163,9 +1199,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _CallStaticVoidMethodV = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jmethodID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                UnidbgPointer va_list = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("CallStaticVoidMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
                 }
@@ -1177,7 +1214,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     dvmMethod.callStaticVoidMethodV(vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallStaticVoidMethodV(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->CallStaticVoidMethodV(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
                 }
@@ -1187,9 +1224,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStaticFieldID = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer fieldName = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                Pointer argsPointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer fieldName = context.getPointerArg(2);
+                Pointer argsPointer = context.getPointerArg(3);
                 String name = fieldName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
@@ -1207,8 +1245,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStaticObjectField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetStaticObjectField clazz=" + clazz + ", jfieldID=" + jfieldID);
                 }
@@ -1219,7 +1258,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     DvmObject<?> obj = dvmField.getStaticObjectField();
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetStaticObjectField(%s, %s %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, dvmField.fieldType, obj, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetStaticObjectField(%s, %s %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
                 }
@@ -1229,8 +1268,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStaticBooleanField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetStaticBooleanField clazz=" + clazz + ", jfieldID=" + jfieldID);
                 }
@@ -1241,7 +1281,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     boolean ret = dvmField.getStaticBooleanField();
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetStaticBooleanField(%s, %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetStaticBooleanField(%s, %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret ? VM.JNI_TRUE : VM.JNI_FALSE;
                 }
@@ -1251,8 +1291,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStaticIntField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetStaticIntField clazz=" + clazz + ", jfieldID=" + jfieldID);
                 }
@@ -1263,7 +1304,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     int ret = dvmField.getStaticIntField();
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetStaticIntField(%s, %s => 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetStaticIntField(%s, %s => 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -1286,7 +1327,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     long ret = dvmField.getStaticLongField();
                     if (verbose) {
-                        System.out.printf("JNIEnv->GetStaticLongField(%s, %s => 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, ret, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->GetStaticLongField(%s, %s => 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
                 }
@@ -1296,9 +1337,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetStaticIntField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                int value = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                int value = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("SetStaticIntField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
@@ -1308,7 +1350,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException("dvmClass=" + dvmClass);
                 } else {
                     if (verbose) {
-                        System.out.printf("JNIEnv->SetStaticIntField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->SetStaticIntField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
                     }
                     dvmField.setStaticIntField(value);
                 }
@@ -1319,9 +1361,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetStaticLongField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                UnidbgPointer jfieldID = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                long value = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).longValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                long value = context.getLongArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("SetStaticLongField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
@@ -1331,7 +1374,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException("dvmClass=" + dvmClass);
                 } else {
                     if (verbose) {
-                        System.out.printf("JNIEnv->SetStaticLongField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                        System.out.printf("JNIEnv->SetStaticLongField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
                     }
                     dvmField.setStaticLongField(value);
                 }
@@ -1342,13 +1385,15 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStringUTFLength = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                DvmObject<?> string = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                DvmObject<?> string = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringUTFLength string=" + string + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("GetStringUTFLength string=" + string + ", lr=" + context.getLRPointer());
                 }
                 String value = (String) string.getValue();
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetStringUTFLength(%s) was called from %s%n", string, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->GetStringUTFLength(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 byte[] data = value.getBytes(StandardCharsets.UTF_8);
                 return data.length;
@@ -1358,18 +1403,20 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStringUTFChars = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                StringObject string = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                Pointer isCopy = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer isCopy = context.getPointerArg(2);
+                StringObject string = getObject(object.toIntPeer());
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 String value = string.getValue();
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetStringUtfChars(%s) was called from %s%n", string, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->GetStringUtfChars(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
                 UnidbgPointer pointer = string.allocateMemoryBlock(emulator, data.length);
@@ -1381,13 +1428,15 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _ReleaseStringUTFChars = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                StringObject string = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                Pointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer pointer = context.getPointerArg(2);
+                StringObject string = getObject(object.toIntPeer());
                 if (verbose) {
-                    System.out.printf("JNIEnv->ReleaseStringUTFChars(%s) was called from %s%n", string, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0));
+                    System.out.printf("JNIEnv->ReleaseStringUTFChars(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleaseStringUTFChars string=" + string + ", pointer=" + pointer + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("ReleaseStringUTFChars string=" + string + ", pointer=" + pointer + ", lr=" + context.getLRPointer());
                 }
                 string.freeMemoryBlock(pointer);
                 return 0;
@@ -1397,13 +1446,14 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetArrayLength = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer pointer = context.getPointerArg(1);
                 Array<?> array = getObject(pointer.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("GetArrayLength array=" + array);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetArrayLength(%s => %s) was called from %s%n", array, array.length(), UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->GetArrayLength(%s => %s) was called from %s%n", array, array.length(), context.getLRPointer());
                 }
                 return array.length();
             }
@@ -1437,13 +1487,15 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetObjectArrayElement = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                ArrayObject array = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                int index = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int index = context.getIntArg(2);
+                ArrayObject array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("GetObjectArrayElement array=" + array + ", index=" + index);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetObjectArrayElement(%s, %d) was called from %s%n", array, index, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->GetObjectArrayElement(%s, %d) was called from %s%n", array, index, context.getLRPointer());
                 }
                 return addObject(array.getValue()[index], false);
             }
@@ -1452,10 +1504,11 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetObjectArrayElement = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Arm64RegisterContext context = emulator.getContext();
-                ArrayObject array = getObject(context.getXPointer(1).toIntPeer());
-                int index = context.getXInt(2);
-                UnidbgPointer element = context.getXPointer(3);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int index = context.getIntArg(2);
+                UnidbgPointer element = context.getPointerArg(3);
+                ArrayObject array = getObject(object.toIntPeer());
                 DvmObject<?> obj = element == null ? null : getObject(element.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("setObjectArrayElement array=" + array + ", index=" + index + ", obj=" + obj);
@@ -1469,12 +1522,13 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewByteArray = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                int size = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
+                RegisterContext context = emulator.getContext();
+                int size = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("NewByteArray size=" + size);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->NewByteArray(%d) was called from %s%n", size, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->NewByteArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addObject(new ByteArray(DalvikVM64.this, new byte[size]), false);
             }
@@ -1483,12 +1537,13 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewIntArray = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                int size = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
+                RegisterContext context = emulator.getContext();
+                int size = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("NewIntArray size=" + size);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->NewIntArray(%d) was called from %s%n", size, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->NewIntArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addObject(new IntArray(DalvikVM64.this, new int[size]), false);
             }
@@ -1497,12 +1552,13 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewDoubleArray = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                int size = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
+                RegisterContext context = emulator.getContext();
+                int size = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("_NewDoubleArray size=" + size);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->NewDoubleArray(%d) was called from %s%n", size, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->NewDoubleArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addObject(new DoubleArray(DalvikVM64.this, new double[size]), false);
             }
@@ -1511,8 +1567,9 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetByteArrayElements = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer arrayPointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer isCopy = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer arrayPointer = context.getPointerArg(1);
+                Pointer isCopy = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetByteArrayElements arrayPointer=" + arrayPointer + ", isCopy=" + isCopy);
                 }
@@ -1527,8 +1584,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetIntArrayElements = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                IntArray array = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                Pointer isCopy = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                Pointer isCopy = context.getPointerArg(2);
+                IntArray array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("GetIntArrayElements array=" + array + ", isCopy=" + isCopy);
                 }
@@ -1539,9 +1598,11 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStringLength = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                DvmObject<?> string = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                DvmObject<?> string = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringLength string=" + string + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("GetStringLength string=" + string + ", lr=" + context.getLRPointer());
                 }
                 String value = (String) string.getValue();
                 return value.length();
@@ -1551,8 +1612,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetStringChars = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                StringObject string = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                Pointer isCopy = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                Pointer isCopy = context.getPointerArg(2);
+                StringObject string = getObject(object.toIntPeer());
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);
                 }
@@ -1564,7 +1627,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     buffer.putChar(c);
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
                 UnidbgPointer pointer = string.allocateMemoryBlock(emulator, data.length);
@@ -1576,10 +1639,12 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _ReleaseStringChars = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                StringObject string = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                Pointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                Pointer pointer = context.getPointerArg(2);
+                StringObject string = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + context.getLRPointer());
                 }
                 string.freeMemoryBlock(pointer);
                 return 0;
@@ -1589,7 +1654,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewStringUTF = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Pointer bytes = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer bytes = context.getPointerArg(1);
                 if (bytes == null) {
                     return VM.JNI_NULL;
                 }
@@ -1599,7 +1665,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("NewStringUTF bytes=" + bytes + ", string=" + string);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->NewStringUTF(\"%s\") was called from %s%n", string, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->NewStringUTF(\"%s\") was called from %s%n", string, context.getLRPointer());
                 }
                 return addObject(new StringObject(DalvikVM64.this, string), false);
             }
@@ -1608,9 +1674,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _ReleaseByteArrayElements = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer arrayPointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                int mode = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer arrayPointer = context.getPointerArg(1);
+                Pointer pointer = context.getPointerArg(2);
+                int mode = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseByteArrayElements arrayPointer=" + arrayPointer + ", pointer=" + pointer + ", mode=" + mode);
                 }
@@ -1623,9 +1690,11 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _ReleaseIntArrayElements = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                IntArray array = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                Pointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                int mode = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                Pointer pointer = context.getPointerArg(2);
+                int mode = context.getIntArg(3);
+                IntArray array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseIntArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
                 }
@@ -1637,13 +1706,14 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetByteArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Backend backend = emulator.getBackend();
-                ByteArray array = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                int start = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
-                int length = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
-                Pointer buf = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                ByteArray array = getObject(object.toIntPeer());
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetByteArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->GetByteArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOfRange(array.value, start, start + length);
                 if (log.isDebugEnabled()) {
@@ -1658,12 +1728,13 @@ public class DalvikVM64 extends BaseVM implements VM {
             @Override
             public long handle(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();
-                ShortArray array = getObject(context.getPointerArg(1).toIntPeer());
+                UnidbgPointer object = context.getPointerArg(1);
                 int start = context.getIntArg(2);
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
+                ShortArray array = getObject(object.toIntPeer());
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetShortArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->GetShortArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
                 short[] data = Arrays.copyOfRange(array.value, start, start + length);
                 if (log.isDebugEnabled()) {
@@ -1678,12 +1749,13 @@ public class DalvikVM64 extends BaseVM implements VM {
             @Override
             public long handle(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();
-                DoubleArray array = getObject(context.getPointerArg(1).toIntPeer());
+                UnidbgPointer object = context.getPointerArg(1);
                 int start = context.getIntArg(2);
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
+                DoubleArray array = getObject(object.toIntPeer());
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetDoubleArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->GetDoubleArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
                 double[] data = Arrays.copyOfRange(array.value, start, start + length);
                 if (log.isDebugEnabled()) {
@@ -1697,20 +1769,21 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetByteArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Backend backend = emulator.getBackend();
-                ByteArray array = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                int start = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
-                int len = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
-                Pointer buf = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                ByteArray array = getObject(object.toIntPeer());
                 if (verbose) {
-                    System.out.printf("JNIEnv->SetByteArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, len, buf, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->SetByteArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
-                byte[] data = buf.getByteArray(0, len);
+                byte[] data = buf.getByteArray(0, length);
                 if (log.isDebugEnabled()) {
                     if (data.length > 1024) {
-                        Inspector.inspect(Arrays.copyOf(data, 1024), "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                        Inspector.inspect(Arrays.copyOf(data, 1024), "SetByteArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                     } else {
-                        Inspector.inspect(data, "SetByteArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                        Inspector.inspect(data, "SetByteArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                     }
                 }
                 array.setData(start, data);
@@ -1721,14 +1794,15 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetIntArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Backend backend = emulator.getBackend();
-                IntArray array = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                int start = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
-                int len = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
-                Pointer buf = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
-                int[] data = buf.getIntArray(0, len);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                IntArray array = getObject(object.toIntPeer());
+                int[] data = buf.getIntArray(0, length);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                 }
                 array.setData(start, data);
                 return 0;
@@ -1738,14 +1812,15 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetDoubleArrayRegion = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Backend backend = emulator.getBackend();
-                DoubleArray array = getObject(UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1).toIntPeer());
-                int start = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
-                int len = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
-                Pointer buf = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
-                double[] data = buf.getDoubleArray(0, len);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                DoubleArray array = getObject(object.toIntPeer());
+                double[] data = buf.getDoubleArray(0, length);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetDoubleArrayRegion array=" + array + ", start=" + start + ", len=" + len + ", buf=" + buf);
+                    log.debug("SetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                 }
                 array.setData(start, data);
                 return 0;
@@ -1755,15 +1830,16 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _RegisterNatives = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer clazz = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer methods = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                int nMethods = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                Pointer methods = context.getPointerArg(2);
+                int nMethods = context.getIntArg(3);
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("RegisterNatives dvmClass=" + dvmClass + ", methods=" + methods + ", nMethods=" + nMethods);
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.getClassName(), methods, nMethods, UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
+                    System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.getClassName(), methods, nMethods, context.getLRPointer());
                 }
                 for (int i = 0; i < nMethods; i++) {
                     Pointer method = methods.share((long) i * emulator.getPointerSize() * 3);
@@ -1788,7 +1864,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetJavaVM = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer vm = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer vm = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("GetJavaVM vm=" + vm);
                 }
@@ -1800,7 +1877,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewWeakGlobalRef = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 if (object == null) {
                     return 0;
                 }
@@ -1826,7 +1904,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetObjectRefType = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                UnidbgPointer object = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmGlobalObject = globalObjectMap.get(object.toIntPeer());
                 DvmObject<?> dvmLocalObject = localObjectMap.get(object.toIntPeer());
                 if (log.isDebugEnabled()) {
@@ -1941,9 +2020,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         UnidbgPointer _AttachCurrentThread = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Pointer vm = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                Pointer env = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                Pointer args = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2); // JavaVMAttachArgs*
+                RegisterContext context = emulator.getContext();
+                Pointer vm = context.getPointerArg(0);
+                Pointer env = context.getPointerArg(1);
+                Pointer args = context.getPointerArg(2); // JavaVMAttachArgs*
                 if (log.isDebugEnabled()) {
                     log.debug("AttachCurrentThread vm=" + vm + ", env=" + env.getPointer(0) + ", args=" + args);
                 }
@@ -1955,9 +2035,10 @@ public class DalvikVM64 extends BaseVM implements VM {
         UnidbgPointer _GetEnv = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Pointer vm = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                Pointer env = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                int version = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
+                RegisterContext context = emulator.getContext();
+                Pointer vm = context.getPointerArg(0);
+                Pointer env = context.getPointerArg(1);
+                int version = context.getIntArg(2);
                 if (log.isDebugEnabled()) {
                     log.debug("GetEnv vm=" + vm + ", env=" + env.getPointer(0) + ", version=0x" + Integer.toHexString(version));
                 }

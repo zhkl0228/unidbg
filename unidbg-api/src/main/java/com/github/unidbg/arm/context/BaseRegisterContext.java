@@ -24,18 +24,18 @@ public abstract class BaseRegisterContext extends AbstractRegisterContext implem
         }
 
         UnidbgPointer sp = getStackPointer();
-        return sp.getPointer((index - regArgCount) * emulator.getPointerSize());
+        return sp.getPointer((long) (index - regArgCount) * emulator.getPointerSize());
     }
 
     @Override
-    public int getInt(int regId) {
+    public int getIntByReg(int regId) {
         Backend backend = emulator.getBackend();
         Number number = backend.reg_read(regId);
         return number.intValue();
     }
 
     @Override
-    public long getLong(int regId) {
+    public long getLongByReg(int regId) {
         Backend backend = emulator.getBackend();
         Number number = backend.reg_read(regId);
         return number.longValue();
