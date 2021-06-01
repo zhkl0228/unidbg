@@ -62,9 +62,7 @@ public class DvmClass extends DvmObject<Class<?>> {
     }
 
     public DvmObject<?> newObject(Object value) {
-        DvmObject<?> obj = new DvmObject<>(this, value);
-        vm.addObject(obj, false);
-        return obj;
+        return new DvmObject<>(this, value);
     }
 
     DvmObject<?> allocObject() {

@@ -26,6 +26,7 @@ public interface VM {
     int JNIInvalidRefType = 0; // 无效引用
     int JNILocalRefType = 1; // 本地引用
     int JNIGlobalRefType = 2;  //全局引用
+    int JNIWeakGlobalRefType = 3;
 
     Pointer getJavaVM();
 
@@ -52,6 +53,7 @@ public interface VM {
     DalvikModule loadLibrary(File elfFile, boolean forceCallInit);
 
     int addLocalObject(DvmObject<?> object);
+    int addGlobalObject(DvmObject<?> object);
 
     void callJNI_OnLoad(Emulator<?> emulator, Module module);
 

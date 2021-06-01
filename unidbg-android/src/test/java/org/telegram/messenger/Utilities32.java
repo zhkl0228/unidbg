@@ -93,9 +93,9 @@ public class Utilities32 extends TestCase {
         ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
-        cUtilities.callStaticJniMethod(emulator, "aesCbcEncryptionByteArray([B[B[BIIII)V", vm.addLocalObject(data),
-                vm.addLocalObject(new ByteArray(vm, key)),
-                vm.addLocalObject(new ByteArray(vm, iv)),
+        cUtilities.callStaticJniMethod(emulator, "aesCbcEncryptionByteArray([B[B[BIIII)V", data,
+                key,
+                iv,
                 0, data.length(), 0, 0);
         Inspector.inspect(data.getValue(), "aesCbcEncryptionByteArray offset=" + (System.currentTimeMillis() - start) + "ms");
     }
@@ -105,9 +105,9 @@ public class Utilities32 extends TestCase {
         ByteArray data = new ByteArray(vm, new byte[16]);
         byte[] key = new byte[32];
         byte[] iv = new byte[16];
-        cUtilities.callStaticJniMethod(emulator, "aesCtrDecryptionByteArray([B[B[BIII)V", vm.addLocalObject(data),
-                vm.addLocalObject(new ByteArray(vm, key)),
-                vm.addLocalObject(new ByteArray(vm, iv)),
+        cUtilities.callStaticJniMethod(emulator, "aesCtrDecryptionByteArray([B[B[BIII)V", data,
+                key,
+                iv,
                 0, data.length(), 0);
         Inspector.inspect(data.getValue(), "[" + emulator.getBackend() + "]aesCtrDecryptionByteArray offset=" + (System.currentTimeMillis() - start) + "ms");
     }
@@ -118,9 +118,9 @@ public class Utilities32 extends TestCase {
         ByteArray dst = new ByteArray(vm, new byte[64]);
         for (int i = 0; i < 3; i++) {
             long start = System.currentTimeMillis();
-            cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", vm.addLocalObject(new ByteArray(vm, password)),
-                    vm.addLocalObject(new ByteArray(vm, salt)),
-                    vm.addLocalObject(dst), 100000);
+            cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", password,
+                    salt,
+                    dst, 100000);
             Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
         }
     }

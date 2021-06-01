@@ -76,8 +76,17 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         this.apk = apkFile == null ? null : ApkFactory.createApk(apkFile);
     }
 
-    final Map<Integer, DvmObject<?>> globalObjectMap = new HashMap<>();
-    final Map<Integer, DvmObject<?>> localObjectMap = new HashMap<>();
+    final static class ObjRef {
+        final DvmObject<?> obj;
+        final boolean weak;
+        ObjRef(DvmObject<?> obj, boolean weak) {
+            this.obj = obj;
+            this.weak = weak;
+        }
+    }
+
+    final Map<Integer, ObjRef> globalObjectMap = new HashMap<>();
+    final Map<Integer, ObjRef> localObjectMap = new HashMap<>();
 
     private DvmClassFactory dvmClassFactory;
 
@@ -103,7 +112,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
                 dvmClass = this.createClass(this, className, superClass, interfaceClasses);
             }
             classMap.put(hash, dvmClass);
-            addObject(dvmClass, true);
+            addGlobalObject(dvmClass);
         }
         return dvmClass;
     }
@@ -113,21 +122,17 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         return new DvmClass(vm, className, superClass, interfaceClasses);
     }
 
-    final int addObject(DvmObject<?> object, boolean global) {
-        if (object == null) {
-            return 0;
-        } else {
-            int hash = object.hashCode();
-            if (log.isDebugEnabled()) {
-                log.debug("addObject hash=0x" + Long.toHexString(hash));
-            }
-            if (global) {
-                globalObjectMap.put(hash, object);
-            } else {
-                localObjectMap.put(hash, object);
-            }
-            return hash;
+    final int addObject(DvmObject<?> object, boolean global, boolean weak) {
+        int hash = object.hashCode();
+        if (log.isDebugEnabled()) {
+            log.debug("addObject hash=0x" + Long.toHexString(hash) + ", global=" + global);
         }
+        if (global) {
+            globalObjectMap.put(hash, new ObjRef(object, weak));
+        } else {
+            localObjectMap.put(hash, new ObjRef(object, weak));
+        }
+        return hash;
     }
 
     @Override
@@ -136,17 +141,28 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             return JNI_NULL;
         }
 
-        return addObject(object, false);
+        return addObject(object, false, false);
+    }
+
+    @Override
+    public final int addGlobalObject(DvmObject<?> object) {
+        if (object == null) {
+            return JNI_NULL;
+        }
+
+        return addObject(object, true, false);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public final <T extends DvmObject<?>> T getObject(int hash) {
+        ObjRef ref;
         if (localObjectMap.containsKey(hash)) {
-            return (T) localObjectMap.get(hash);
+            ref = localObjectMap.get(hash);
         } else {
-            return (T) globalObjectMap.get(hash);
+            ref = globalObjectMap.get(hash);
         }
+        return (T) ref.obj;
     }
 
     @Override
@@ -155,8 +171,8 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     final void deleteLocalRefs() {
-        for (DvmObject<?> obj : localObjectMap.values()) {
-            obj.onDeleteRef();
+        for (ObjRef ref : localObjectMap.values()) {
+            ref.obj.onDeleteRef();
         }
         localObjectMap.clear();
 
