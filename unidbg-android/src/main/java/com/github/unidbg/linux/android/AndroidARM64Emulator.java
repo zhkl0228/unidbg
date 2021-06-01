@@ -70,12 +70,22 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
     private VM vm;
 
     @Override
+    public VM createDalvikVM() {
+        return createDalvikVM((File) null);
+    }
+
+    @Override
     public final VM createDalvikVM(File apkFile) {
         if (vm != null) {
             throw new IllegalStateException("vm is already created");
         }
         vm = createDalvikVMInternal(apkFile);
         return vm;
+    }
+
+    @Override
+    public VM createDalvikVM(Class<?> callingClass) {
+        return createDalvikVM(new File(callingClass.getProtectionDomain().getCodeSource().getLocation().getPath()));
     }
 
     @Override

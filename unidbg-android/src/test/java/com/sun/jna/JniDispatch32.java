@@ -56,7 +56,7 @@ public class JniDispatch32 {
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
 
-        VM vm = emulator.createDalvikVM(null);
+        VM vm = emulator.createDalvikVM();
         vm.setDvmClassFactory(new ProxyClassFactory());
         vm.setVerbose(true);
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libjnidispatch.so"), false);

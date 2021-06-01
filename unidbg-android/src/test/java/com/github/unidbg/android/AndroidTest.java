@@ -63,7 +63,7 @@ public class AndroidTest extends AbstractJni {
 
         module = emulator.loadLibrary(executable, true);
 
-        VM vm = emulator.createDalvikVM(null);
+        VM vm = emulator.createDalvikVM();
         vm.setVerbose(true);
         vm.setJni(this);
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/native/android/libs/armeabi-v7a/libnative.so"), true);

@@ -48,7 +48,7 @@ public class TTEncrypt {
         final Memory memory = emulator.getMemory(); // 模拟器的内存操作接口
         memory.setLibraryResolver(new AndroidResolver(23)); // 设置系统类库解析
 
-        vm = emulator.createDalvikVM(null); // 创建Android虚拟机
+        vm = emulator.createDalvikVM(); // 创建Android虚拟机
         vm.setVerbose(logging); // 设置是否打印Jni调用细节
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/libttEncrypt.so"), false); // 加载libttEncrypt.so到unicorn虚拟内存，加载成功以后会默认调用init_array等函数
         dm.callJNI_OnLoad(emulator); // 手动执行JNI_OnLoad函数

@@ -66,7 +66,7 @@ public class Android64Test extends AbstractJni {
 //        emulator.traceCode();
         module = emulator.loadLibrary(executable);
 
-        VM vm = emulator.createDalvikVM(null);
+        VM vm = emulator.createDalvikVM();
         vm.setVerbose(true);
         vm.setJni(this);
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/native/android/libs/arm64-v8a/libnative.so"), false);

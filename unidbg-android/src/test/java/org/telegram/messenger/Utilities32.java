@@ -46,7 +46,7 @@ public class Utilities32 extends TestCase {
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(createLibraryResolver());
 
-        vm = emulator.createDalvikVM(null);
+        vm = emulator.createDalvikVM();
         vm.setDvmClassFactory(new ProxyClassFactory());
         Module module = new JniGraphics(emulator, vm).register(memory);
         assert module != null;

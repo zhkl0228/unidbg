@@ -162,7 +162,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         } else {
             ref = globalObjectMap.get(hash);
         }
-        return (T) ref.obj;
+        return ref == null ? null : (T) ref.obj;
     }
 
     @Override

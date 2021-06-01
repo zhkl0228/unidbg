@@ -56,7 +56,7 @@ public class QDReaderJni implements ModuleListener {
         memory.setLibraryResolver(createLibraryResolver());
         memory.addModuleListener(this);
 
-        vm = emulator.createDalvikVM(null);
+        vm = emulator.createDalvikVM();
         vm.setDvmClassFactory(new ProxyClassFactory());
         vm.setVerbose(true);
         DalvikModule dm = vm.loadLibrary(new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libd-lib.so"), false);
