@@ -279,6 +279,11 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         return apk == null ? null : apk.openAsset(fileName);
     }
 
+    @Override
+    public byte[] unzip(String path) {
+        return apk == null ? null : apk.getFileData(path);
+    }
+
     private AssetResolver assetResolver;
 
     @Override

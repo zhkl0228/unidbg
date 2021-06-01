@@ -68,6 +68,12 @@ public interface VM {
      */
     byte[] openAsset(String fileName);
 
+    /**
+     * 设置apkFile以后，可调用该方法获取压缩包内容
+     * @return 可返回null
+     */
+    byte[] unzip(String path);
+
     void setAssetResolver(AssetResolver assetResolver);
 
     /**

@@ -720,10 +720,13 @@ public abstract class AbstractJni implements Jni {
                 }
             }
             case "android/content/Context->getPackageManager()Landroid/content/pm/PackageManager;":
+            case "android/app/Activity->getPackageManager()Landroid/content/pm/PackageManager;":
                 return vm.resolveClass("android/content/pm/PackageManager").newObject(null);
             case "android/content/Context->getApplicationInfo()Landroid/content/pm/ApplicationInfo;":
+            case "android/app/Activity->getApplicationInfo()Landroid/content/pm/ApplicationInfo;":
                 return new ApplicationInfo(vm);
-            case "android/content/Context->getPackageName()Ljava/lang/String;": {
+            case "android/content/Context->getPackageName()Ljava/lang/String;":
+            case "android/app/Activity->getPackageName()Ljava/lang/String;": {
                 String packageName = vm.getPackageName();
                 if (packageName != null) {
                     return new StringObject(vm, packageName);
