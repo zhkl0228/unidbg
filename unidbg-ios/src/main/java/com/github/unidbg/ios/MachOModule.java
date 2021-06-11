@@ -40,6 +40,7 @@ import java.util.Set;
 
 public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
+    final Emulator<?> emulator;
     final MachO machO;
     private final MachO.SymtabCommand symtabCommand;
     final MachO.DysymtabCommand dysymtabCommand;
@@ -108,6 +109,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Map<String, MachO.SegmentCommand64.Section64> objcSections,
                 Segment[] segments) {
         super(name, base, size, neededLibraries, regions);
+        this.emulator = emulator;
         this.machO = machO;
         this.symtabCommand = symtabCommand;
         this.dysymtabCommand = dysymtabCommand;
@@ -359,6 +361,113 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         return map;
     }
 
+    public final String findSymbolNameByAddress(long address) {
+        if (dyldInfoCommand.bindSize() > 0) {
+            ByteBuffer buffer = this.buffer.duplicate();
+            buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
+            buffer.position((int) dyldInfoCommand.bindOff());
+            return findSymbol(buffer.slice(), address);
+        } else {
+            return null;
+        }
+    }
+
+    private String findSymbol(ByteBuffer buffer, long findAddress) {
+        final List<MemRegion> regions = this.getRegions();
+        int segmentIndex;
+        long address = this.base;
+        long segmentEndAddress = address + this.size;
+        String symbolName = null;
+        int count;
+        int skip;
+        boolean done = false;
+        while (!done && buffer.hasRemaining()) {
+            int b = buffer.get() & 0xff;
+            int immediate = b & BIND_IMMEDIATE_MASK;
+            int opcode = b & BIND_OPCODE_MASK;
+            switch (opcode) {
+                case BIND_OPCODE_DONE:
+                    done = true;
+                    break;
+                case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+                    break;
+                case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+                    Utils.readULEB128(buffer);
+                    break;
+                case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+                    // the special ordinals are negative numbers
+                    break;
+                case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    while ((b = buffer.get()) != 0) {
+                        baos.write(b);
+                    }
+                    symbolName = baos.toString();
+                    break;
+                case BIND_OPCODE_SET_TYPE_IMM:
+                    break;
+                case BIND_OPCODE_SET_ADDEND_SLEB:
+                    Utils.readULEB128(buffer);
+                    break;
+                case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+                    segmentIndex = immediate;
+                    if (segmentIndex >= regions.size()) {
+                        throw new IllegalStateException(String.format("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has segment %d which is too large (0..%d)", segmentIndex, regions.size() - 1));
+                    }
+                    MemRegion region = regions.get(segmentIndex);
+                    address = region.begin + Utils.readULEB128(buffer).longValue();
+                    segmentEndAddress = region.end;
+                    break;
+                case BIND_OPCODE_ADD_ADDR_ULEB:
+                    address += Utils.readULEB128(buffer).longValue();
+                    break;
+                case BIND_OPCODE_DO_BIND:
+                    if (address >= segmentEndAddress) {
+                        throw new IllegalStateException();
+                    }
+                    if (address == findAddress) {
+                        return symbolName;
+                    }
+                    address += emulator.getPointerSize();
+                    break;
+                case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+                    if (address >= segmentEndAddress) {
+                        throw new IllegalStateException();
+                    }
+                    if (address == findAddress) {
+                        return symbolName;
+                    }
+                    address += (Utils.readULEB128(buffer).longValue() + emulator.getPointerSize());
+                    break;
+                case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+                    if (address >= segmentEndAddress) {
+                        throw new IllegalStateException();
+                    }
+                    if (address == findAddress) {
+                        return symbolName;
+                    }
+                    address += ((long) immediate *emulator.getPointerSize() + emulator.getPointerSize());
+                    break;
+                case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+                    count = Utils.readULEB128(buffer).intValue();
+                    skip = Utils.readULEB128(buffer).intValue();
+                    for (int i = 0; i < count; i++) {
+                        if (address >= segmentEndAddress) {
+                            throw new IllegalStateException();
+                        }
+                        if (address == findAddress) {
+                            return symbolName;
+                        }
+                        address += (skip + emulator.getPointerSize());
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException(String.format("bad bind opcode 0x%s in bind info", Integer.toHexString(opcode)));
+            }
+        }
+        return null;
+    }
+
     private List<InitFunction> parseRoutines(MachO machO) {
         List<InitFunction> routines = new ArrayList<>();
         for (MachO.LoadCommand command : machO.loadCommands()) {
@@ -581,7 +690,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         try {
             if (!fast && objectiveCProcessor == null && objcSections != null && !objcSections.isEmpty()) {
-                objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this);
+                objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this, emulator);
             }
             if (!fast && objectiveCProcessor != null) {
                 if (executable) {

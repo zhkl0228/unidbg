@@ -1,5 +1,6 @@
 package com.github.unidbg.ios.objc;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.ios.ExportSymbol;
 import com.github.unidbg.ios.MachOModule;
@@ -11,13 +12,15 @@ import java.util.List;
 public abstract class CDObjectiveCProcessor {
 
     final ByteBuffer buffer;
+    final Emulator<?> emulator;
     final List<Objc2Class> classList = new ArrayList<>();
     final List<Objc2Category> categoryList = new ArrayList<>();
 
-    CDObjectiveCProcessor(ByteBuffer buffer) {
+    CDObjectiveCProcessor(ByteBuffer buffer, Emulator<?> emulator) {
         super();
 
         this.buffer = buffer;
+        this.emulator = emulator;
     }
 
     public Symbol findObjcSymbol(Symbol bestSymbol, long targetAddress, MachOModule module) {

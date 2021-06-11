@@ -1,5 +1,6 @@
 package com.github.unidbg.ios.objc;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.ios.MachOModule;
 import io.kaitai.MachO;
 
@@ -12,8 +13,8 @@ public class CDObjectiveC2Processor extends CDObjectiveCProcessor {
     private final MachOModule module;
     private final Map<String, MachO.SegmentCommand64.Section64> objcSections;
 
-    public CDObjectiveC2Processor(ByteBuffer buffer, Map<String, MachO.SegmentCommand64.Section64> objcSections, MachOModule module) {
-        super(buffer);
+    public CDObjectiveC2Processor(ByteBuffer buffer, Map<String, MachO.SegmentCommand64.Section64> objcSections, MachOModule module, Emulator<?> emulator) {
+        super(buffer, emulator);
         this.objcSections = objcSections;
         this.module = module;
 
@@ -46,7 +47,7 @@ public class CDObjectiveC2Processor extends CDObjectiveCProcessor {
         }
         MachO.SegmentCommand64.Section64.PointerList pointerList = (MachO.SegmentCommand64.Section64.PointerList) section.data();
         for (long item : pointerList.items()) {
-            Objc2Category category = Objc2Category.read(classMap, buffer, item, module);
+            Objc2Category category = Objc2Category.read(classMap, buffer, item, module, emulator);
             categoryList.add(category);
         }
     }

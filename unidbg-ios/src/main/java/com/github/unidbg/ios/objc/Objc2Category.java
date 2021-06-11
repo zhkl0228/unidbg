@@ -1,7 +1,10 @@
 package com.github.unidbg.ios.objc;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.ios.MachOModule;
+import com.github.unidbg.ios.struct.objc.ObjcClass;
+import com.github.unidbg.pointer.UnidbgPointer;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -9,7 +12,7 @@ import java.util.Map;
 
 final class Objc2Category {
 
-    static Objc2Category read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item, MachOModule mm) {
+    static Objc2Category read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item, MachOModule mm, Emulator<?> emulator) {
         int pos = mm.virtualMemoryAddressToFileOffset(item);
         buffer.position(pos);
         long name = buffer.getLong();
@@ -27,9 +30,35 @@ final class Objc2Category {
 
         List<Objc2Method> instanceMethodList = Objc2Method.loadMethods(buffer, instanceMethods, mm);
         List<Objc2Method> classMethodList = Objc2Method.loadMethods(buffer, classMethods, mm);
-        Objc2Class objc2Class = Objc2Class.read(classMap, buffer, clazz, mm);
-        String cName = (objc2Class == null ? "??" : objc2Class.name) +
-                ' ' + '(' + categoryName + ')';
+        Objc2Class objc2Class;
+        String ownerClassName;
+        if (clazz == 0) {
+            objc2Class = null;
+            UnidbgPointer ptr = UnidbgPointer.pointer(emulator, mm.base + item + 8);
+            assert ptr != null;
+            UnidbgPointer owner = ptr.getPointer(0);
+            if (owner == null) {
+                String symbolName = mm.findSymbolNameByAddress(mm.base + item + 8);
+                if (symbolName == null) {
+                    ownerClassName = "??";
+                } else if (symbolName.startsWith("_OBJC_CLASS_$_")) {
+                    ownerClassName = symbolName.substring(14);
+                } else {
+                    ownerClassName = symbolName;
+                }
+            } else {
+                ObjcClass objcClass = ObjcClass.create(emulator, owner);
+                ownerClassName = objcClass.getName();
+            }
+        } else {
+            objc2Class = Objc2Class.read(classMap, buffer, clazz, mm);
+            if (objc2Class == null) {
+                ownerClassName = "???";
+            } else {
+                ownerClassName = objc2Class.name;
+            }
+        }
+        String cName = ownerClassName + ' ' + '(' + categoryName + ')';
         return new Objc2Category(objc2Class, cName, instanceMethodList, classMethodList);
     }
 

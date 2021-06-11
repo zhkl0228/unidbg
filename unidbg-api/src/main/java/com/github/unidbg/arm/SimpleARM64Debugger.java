@@ -306,7 +306,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
         Module module = emulator.getMemory().findModuleByAddress(address);
         if (module != null) {
-            System.out.printf("cc (size): convert asm from 0x%x - 0x%x + size bytes to c function%n", address, address);
+            System.out.printf("cc (size): convert asm from (0x%x) to (0x%x + size) bytes to c function%n", address, address);
         }
     }
 
