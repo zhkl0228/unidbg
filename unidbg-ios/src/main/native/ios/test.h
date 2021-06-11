@@ -298,6 +298,17 @@ static void test_sysctl_HW_CPU_FAMILY() {
   printf("test_sysctl_HW_CPU_FAMILY ret=%d, family=%u, size=%zu\n", ret, family, size);
 }
 
+static void test_sysctl_HW_CPU_FREQ() {
+  int mib[2];
+  unsigned int freq = 0;
+  size_t size = sizeof(freq);
+
+  mib[0] = CTL_HW;
+  mib[1] = HW_CPU_FREQ;
+  int ret = sysctl(mib, 2, &freq, &size, NULL, 0);
+  printf("test_sysctl_HW_CPU_FREQ ret=%d, freq=%u, size=%zu\n", ret, freq, size);
+}
+
 static void test_getattrlist() {
   struct attrlist attrlist;
   u_int32_t attrbuf[2];	/* Length field and access modes */
@@ -392,6 +403,7 @@ void do_test() {
   test_getattrlist();
   test_dirent();
   test_sysctl_HW_CPU_FAMILY();
+  test_sysctl_HW_CPU_FREQ();
   test_sysctl_KERN_OSTYPE();
   checkDebugger();
   test_host_statistics();

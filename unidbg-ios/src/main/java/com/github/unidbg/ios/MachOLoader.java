@@ -529,6 +529,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         Section fEHFrameSection = null;
         Section fUnwindInfoSection = null;
         Map<String, MachO.SegmentCommand64.Section64> objcSections = new HashMap<>();
+        List<Segment> segments = new ArrayList<>(10);
         for (MachO.LoadCommand command : machO.loadCommands()) {
             switch (command.type()) {
                 case SEGMENT: {
@@ -539,6 +540,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         break;
                     }
 
+                    segments.add(new Segment(segmentCommand.vmaddr(), segmentCommand.vmsize(), segmentCommand.fileoff(), segmentCommand.filesize()));
                     boolean isTextSeg = "__TEXT".equals(segmentCommand.segname());
                     for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
                         String sectName = section.sectName();
@@ -571,6 +573,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         break;
                     }
 
+                    segments.add(new Segment(segmentCommand64.vmaddr(), segmentCommand64.vmsize(), segmentCommand64.fileoff(), segmentCommand64.filesize()));
                     boolean isTextSeg = "__TEXT".equals(segmentCommand64.segname());
                     for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
                         String sectName = section.sectName();
@@ -720,7 +723,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
                 dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
-                fEHFrameSection, fUnwindInfoSection, objcSections);
+                fEHFrameSection, fUnwindInfoSection, objcSections, segments.toArray(new Segment[0]));
         processRebase(log, module);
         if (isExecutable) {
             setExecuteModule(module);

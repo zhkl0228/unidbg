@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.objc;
 
 import com.github.unidbg.debugger.ida.Utils;
+import com.github.unidbg.ios.MachOModule;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.Map;
 
 final class Objc2Class {
 
-    static Objc2Class read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item) {
+    static Objc2Class read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item, MachOModule mm) {
         if (item == 0) {
             return null;
         }
@@ -17,7 +18,8 @@ final class Objc2Class {
             return classMap.get(item);
         }
 
-        buffer.position((int) item);
+        int pos = mm.virtualMemoryAddressToFileOffset(item);
+        buffer.position(pos);
         long isa = buffer.getLong();
         long superclass = buffer.getLong();
         long cache = buffer.getLong();
@@ -31,7 +33,8 @@ final class Objc2Class {
         if (data == 0) {
             throw new IllegalStateException("Invalid objc2class data");
         }
-        buffer.position((int) data);
+        pos = mm.virtualMemoryAddressToFileOffset(data);
+        buffer.position(pos);
         int flags = buffer.getInt();
         int instanceStart = buffer.getInt();
         int instanceSize = buffer.getInt();
@@ -43,9 +46,10 @@ final class Objc2Class {
         long ivars = buffer.getLong();
         long weakIvarLayout = buffer.getLong();
         long baseProperties = buffer.getLong();
-        buffer.position((int) name);
+        pos = mm.virtualMemoryAddressToFileOffset(name);
+        buffer.position(pos);
         String className = Utils.readCString(buffer);
-        List<Objc2Method> methods = Objc2Method.loadMethods(buffer, baseMethods);
+        List<Objc2Method> methods = Objc2Method.loadMethods(buffer, baseMethods, mm);
         Objc2Class objc2Class = new Objc2Class(isa, superclass, cache, vtable, isSwiftClass, flags, className, methods);
         classMap.put(item, objc2Class);
         return objc2Class;
@@ -78,7 +82,7 @@ final class Objc2Class {
 
     Objc2Class metaClass;
 
-    final void readMetaClass(Map<Long, Objc2Class> classMap, ByteBuffer buffer) {
-        metaClass = read(classMap, buffer, isa);
+    final void readMetaClass(Map<Long, Objc2Class> classMap, ByteBuffer buffer, MachOModule mm) {
+        metaClass = read(classMap, buffer, isa, mm);
     }
 }

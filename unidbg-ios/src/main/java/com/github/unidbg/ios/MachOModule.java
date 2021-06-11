@@ -76,13 +76,36 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         return exportSymbols.get(exportName);
     }
 
+    private final Segment[] segments;
+
+    public final int virtualMemoryAddressToFileOffset(long address) {
+        if (segments == null) {
+            throw new UnsupportedOperationException();
+        }
+        for (Segment ph : segments) {
+            if (address >= ph.virtual_address && address < (ph.virtual_address + ph.mem_size)) {
+                long relativeOffset = address - ph.virtual_address;
+                if (relativeOffset >= ph.file_size)
+                    throw new IllegalStateException("Can not convert virtual memory address " + Long.toHexString(address) + " to file offset -" + " found segment " + ph
+                            + " but address maps to memory outside file range");
+                long ret = ph.offset + relativeOffset;
+                if ((ret >> 33L) != 0) {
+                    throw new IllegalStateException("ret=0x" + Long.toHexString(ret));
+                }
+                return (int) ret;
+            }
+        }
+        throw new IllegalStateException("Cannot find segment for address " + Long.toHexString(address));
+    }
+
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
                 String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnidbgPointer envp, UnidbgPointer apple, UnidbgPointer vars,
                 long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners, List<String> ordinalList,
                 Section fEHFrameSection, Section fUnwindInfoSection,
-                Map<String, MachO.SegmentCommand64.Section64> objcSections) {
+                Map<String, MachO.SegmentCommand64.Section64> objcSections,
+                Segment[] segments) {
         super(name, base, size, neededLibraries, regions);
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -104,6 +127,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.fEHFrameSection = fEHFrameSection;
         this.fUnwindInfoSection = fUnwindInfoSection;
         this.objcSections = objcSections;
+        this.segments = segments;
 
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = machO == null ? Collections.<InitFunction>emptyList() : parseRoutines(machO);
@@ -555,7 +579,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
 
         if (!fast && objectiveCProcessor == null && objcSections != null && !objcSections.isEmpty()) {
-            objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections);
+            objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this);
         }
         if (!fast && objectiveCProcessor != null) {
             if (executable) {
@@ -628,7 +652,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Collections.<String, Module>emptyMap(),
                 Collections.<String, Module>emptyMap(),
                 name, emulator, null, null, null, null, 0L, false, null,
-                Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null, null) {
+                Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);

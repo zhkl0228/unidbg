@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.objc;
 
 import com.github.unidbg.debugger.ida.Utils;
+import com.github.unidbg.ios.MachOModule;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -10,10 +11,10 @@ import java.util.List;
 final class Objc2Method {
 
     private static class Method {
-        private final long name;
-        private final long types;
+        private final int name;
+        private final int types;
         private final long imp;
-        private Method(long name, long types, long imp) {
+        private Method(int name, int types, long imp) {
             this.name = name;
             this.types = types;
             this.imp = imp;
@@ -27,11 +28,12 @@ final class Objc2Method {
         }
     }
 
-    static List<Objc2Method> loadMethods(ByteBuffer buffer, long baseMethods) {
+    static List<Objc2Method> loadMethods(ByteBuffer buffer, long baseMethods, MachOModule mm) {
         if (baseMethods == 0) {
             return Collections.emptyList();
         }
-        buffer.position((int) baseMethods);
+        int pos = mm.virtualMemoryAddressToFileOffset(baseMethods);
+        buffer.position(pos);
         int entsize = buffer.getInt() & ~3;
         int count = buffer.getInt();
         if (entsize != 24) {
@@ -42,7 +44,8 @@ final class Objc2Method {
             long name = buffer.getLong();
             long types = buffer.getLong();
             long imp = buffer.getLong();
-            methods.add(new Method(name, types, imp));
+            Method method = new Method(mm.virtualMemoryAddressToFileOffset(name), mm.virtualMemoryAddressToFileOffset(types), imp);
+            methods.add(method);
         }
         List<Objc2Method> list = new ArrayList<>(count);
         for (Method method : methods) {

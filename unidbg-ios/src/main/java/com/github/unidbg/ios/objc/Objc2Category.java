@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.objc;
 
 import com.github.unidbg.debugger.ida.Utils;
+import com.github.unidbg.ios.MachOModule;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -8,8 +9,9 @@ import java.util.Map;
 
 final class Objc2Category {
 
-    static Objc2Category read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item) {
-        buffer.position((int) item);
+    static Objc2Category read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item, MachOModule mm) {
+        int pos = mm.virtualMemoryAddressToFileOffset(item);
+        buffer.position(pos);
         long name = buffer.getLong();
         long clazz = buffer.getLong();
         long instanceMethods = buffer.getLong();
@@ -19,12 +21,13 @@ final class Objc2Category {
         long v7 = buffer.getLong();
         long v8 = buffer.getLong();
 
-        buffer.position((int) name);
+        pos = mm.virtualMemoryAddressToFileOffset(name);
+        buffer.position(pos);
         String categoryName = Utils.readCString(buffer);
 
-        List<Objc2Method> instanceMethodList = Objc2Method.loadMethods(buffer, instanceMethods);
-        List<Objc2Method> classMethodList = Objc2Method.loadMethods(buffer, classMethods);
-        Objc2Class objc2Class = Objc2Class.read(classMap, buffer, clazz);
+        List<Objc2Method> instanceMethodList = Objc2Method.loadMethods(buffer, instanceMethods, mm);
+        List<Objc2Method> classMethodList = Objc2Method.loadMethods(buffer, classMethods, mm);
+        Objc2Class objc2Class = Objc2Class.read(classMap, buffer, clazz, mm);
         String cName = (objc2Class == null ? "??" : objc2Class.name) +
                 ' ' + '(' + categoryName + ')';
         return new Objc2Category(objc2Class, cName, instanceMethodList, classMethodList);

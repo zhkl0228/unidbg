@@ -1629,6 +1629,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                             buffer.setLong(0, memSize);
                         }
                         return 0;
+                    case HW_CPU_FREQ:
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 1800000000);
+                        }
+                        return 0;
                 }
                 log.info(msg);
                 break;

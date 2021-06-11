@@ -619,7 +619,14 @@ public abstract class AbstractARMDebugger implements Debugger {
                 begin = Utils.parseNumber(matcher.group(1));
                 end = Utils.parseNumber(matcher.group(2));
                 if (begin >= end) {
-                    System.out.printf("Set trace all instructions success.%n");
+                    File traceFile = new File("target/traceCode.txt");
+                    if (!traceFile.exists() && !traceFile.createNewFile()) {
+                        throw new IllegalStateException("createNewFile: " + traceFile);
+                    }
+                    traceHookRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                    traceHookRedirectStream.printf("[%s]Start traceCode", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+                    traceHook.setRedirect(traceHookRedirectStream);
+                    System.out.printf("Set trace all instructions success with trace file: %s.%n", traceFile);
                 } else {
                     System.out.printf("Set trace 0x%x->0x%x instructions success.%n", begin, end);
                 }

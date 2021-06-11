@@ -1,5 +1,6 @@
 package com.github.unidbg.ios.objc;
 
+import com.github.unidbg.ios.MachOModule;
 import io.kaitai.MachO;
 
 import java.nio.ByteBuffer;
@@ -8,11 +9,13 @@ import java.util.Map;
 
 public class CDObjectiveC2Processor extends CDObjectiveCProcessor {
 
+    private final MachOModule module;
     private final Map<String, MachO.SegmentCommand64.Section64> objcSections;
 
-    public CDObjectiveC2Processor(ByteBuffer buffer, Map<String, MachO.SegmentCommand64.Section64> objcSections) {
+    public CDObjectiveC2Processor(ByteBuffer buffer, Map<String, MachO.SegmentCommand64.Section64> objcSections, MachOModule module) {
         super(buffer);
         this.objcSections = objcSections;
+        this.module = module;
 
         load();
     }
@@ -27,9 +30,9 @@ public class CDObjectiveC2Processor extends CDObjectiveCProcessor {
         }
         MachO.SegmentCommand64.Section64.PointerList pointerList = (MachO.SegmentCommand64.Section64.PointerList) section.data();
         for (long item : pointerList.items()) {
-            Objc2Class objc2Class = Objc2Class.read(classMap, buffer, item);
+            Objc2Class objc2Class = Objc2Class.read(classMap, buffer, item, module);
             if (objc2Class != null) {
-                objc2Class.readMetaClass(classMap, buffer);
+                objc2Class.readMetaClass(classMap, buffer, module);
                 classList.add(objc2Class);
             }
         }
@@ -43,7 +46,7 @@ public class CDObjectiveC2Processor extends CDObjectiveCProcessor {
         }
         MachO.SegmentCommand64.Section64.PointerList pointerList = (MachO.SegmentCommand64.Section64.PointerList) section.data();
         for (long item : pointerList.items()) {
-            Objc2Category category = Objc2Category.read(classMap, buffer, item);
+            Objc2Category category = Objc2Category.read(classMap, buffer, item, module);
             categoryList.add(category);
         }
     }

@@ -10,14 +10,19 @@ import com.github.unidbg.ios.struct.DispatchSourceType;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.Arrays;
 
-class SymbolResolver implements HookListener {
+public class SymbolResolver implements HookListener {
+
+    private static final Log log = LogFactory.getLog(SymbolResolver.class);
 
     private final Emulator<DarwinFileIO> emulator;
     private UnidbgPointer _os_unfair_lock_lock, _os_unfair_lock_unlock;
@@ -27,16 +32,63 @@ class SymbolResolver implements HookListener {
 
     private UnidbgPointer __dispatch_source_type_memorypressure;
     private UnidbgPointer dispatch_source_type_memorypressure_init;
+    private UnidbgPointer ___chkstk_darwin;
+    private UnidbgPointer _clock_gettime;
 
     public SymbolResolver(Emulator<DarwinFileIO> emulator) {
         this.emulator = emulator;
     }
 
+    private final long nanoTime = System.nanoTime();
+
+    private static final int CLOCK_REALTIME = 0;
+    private static final int CLOCK_MONOTONIC_RAW = 4;
+    private static final int CLOCK_MONOTONIC = 6;
+
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, long old) {
-        /*if (symbolName.contains("tlv_bootstrap")) {
+        /*if (symbolName.contains("chkstk_darwin")) {
             System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
         }*/
+        if ("_clock_gettime".equals(symbolName) && emulator.is64Bit()) {
+            if (_clock_gettime == null) {
+                _clock_gettime = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        int clk_id = context.getIntArg(0);
+                        Pointer tp = context.getPointerArg(1);
+                        long offset = clk_id == CLOCK_REALTIME ? System.currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;
+                        long tv_sec = offset / 1000000000L;
+                        long tv_nsec = offset % 1000000000L;
+                        if (log.isDebugEnabled()) {
+                            log.debug("clock_gettime clk_id=" + clk_id + ", tp=" + tp + ", offset=" + offset + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
+                        }
+                        switch (clk_id) {
+                            case CLOCK_REALTIME:
+                            case CLOCK_MONOTONIC:
+                            case CLOCK_MONOTONIC_RAW:
+                                tp.setLong(0, tv_sec);
+                                tp.setLong(8, tv_nsec);
+                                return 0;
+                        }
+                        throw new UnsupportedOperationException("clk_id=" + clk_id);
+                    }
+                });
+            }
+            return _clock_gettime.peer;
+        }
+        if ("___chkstk_darwin".equals(symbolName) && emulator.is64Bit()) {
+            if (___chkstk_darwin == null) {
+                ___chkstk_darwin = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return emulator.getContext().getLongArg(0);
+                    }
+                });
+            }
+            return ___chkstk_darwin.peer;
+        }
         if ("__dispatch_source_type_memorypressure".equals(symbolName) && emulator.is64Bit()) {
             if (dispatch_source_type_memorypressure_init == null) {
                 dispatch_source_type_memorypressure_init = svcMemory.registerSvc(new Arm64Svc() {
