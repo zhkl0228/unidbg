@@ -636,6 +636,32 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallIntMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer jvalue = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallIntMethodA object=" + object + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new JValueList(DalvikVM.this, jvalue, dvmMethod);
+                    int ret = dvmMethod.callIntMethodA(dvmObject, vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallIntMethodA(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
+                    }
+                    return ret;
+                }
+            }
+        });
+
         Pointer _CallLongMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2284,6 +2310,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0xbc, _CallShortMethodV);
         impl.setPointer(0xc4, _CallIntMethod);
         impl.setPointer(0xc8, _CallIntMethodV);
+        impl.setPointer(0xcc, _CallIntMethodA);
         impl.setPointer(0xd0, _CallLongMethod);
         impl.setPointer(0xd4, _CallLongMethodV);
         impl.setPointer(0xe0, _CallFloatMethodV);
