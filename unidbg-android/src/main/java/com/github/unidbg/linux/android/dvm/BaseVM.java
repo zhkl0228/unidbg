@@ -186,7 +186,8 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         if (version != JNI_VERSION_1_1 &&
                 version != JNI_VERSION_1_2 &&
                 version != JNI_VERSION_1_4 &&
-                version != JNI_VERSION_1_6) {
+                version != JNI_VERSION_1_6 &&
+                version != JNI_VERSION_1_8) {
             throw new IllegalStateException("Illegal JNI version: 0x" + Integer.toHexString(version));
         }
     }
