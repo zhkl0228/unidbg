@@ -12,6 +12,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -68,6 +69,25 @@ public class TcpSocket extends SocketIO implements FileIO {
         }
     }
 
+    @Override
+    public int recvfrom(Backend backend, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {
+        boolean peek = (flags & MSG_PEEK) != 0;
+        if (peek && inputStream.markSupported()) {
+            try {
+                inputStream.mark(len);
+                return read(backend, buf, len);
+            } finally {
+                try {
+                    inputStream.reset();
+                } catch (IOException e) {
+                    log.warn("recvfrom", e);
+                }
+            }
+        }
+
+        return super.recvfrom(backend, buf, len, flags, src_addr, addrlen);
+    }
+
     private byte[] receiveBuf;
 
     @Override
@@ -112,7 +132,7 @@ public class TcpSocket extends SocketIO implements FileIO {
         try {
             Socket socket = serverSocket.accept();
             TcpSocket io = new TcpSocket(emulator, socket);
-            io.inputStream = socket.getInputStream();
+            io.inputStream = new BufferedInputStream(socket.getInputStream());
             io.outputStream = socket.getOutputStream();
             if (addr != null) {
                 io.getpeername(addr, addrlen);
@@ -165,7 +185,7 @@ public class TcpSocket extends SocketIO implements FileIO {
             InetSocketAddress address = new InetSocketAddress(InetAddress.getByAddress(addr.getByteArray(4, 4)), port);
             socket.connect(address);
             outputStream = socket.getOutputStream();
-            inputStream = socket.getInputStream();
+            inputStream = new BufferedInputStream(socket.getInputStream());
             return 0;
         } catch (IOException e) {
             log.debug("connect ipv4 failed", e);
@@ -191,7 +211,7 @@ public class TcpSocket extends SocketIO implements FileIO {
             InetSocketAddress address = new InetSocketAddress(InetAddress.getByAddress(addr.getByteArray(8, 16)), port);
             socket.connect(address);
             outputStream = socket.getOutputStream();
-            inputStream = socket.getInputStream();
+            inputStream = new BufferedInputStream(socket.getInputStream());
             return 0;
         } catch (IOException e) {
             log.debug("connect ipv6 failed", e);

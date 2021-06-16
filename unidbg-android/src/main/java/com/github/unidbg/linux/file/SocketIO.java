@@ -60,6 +60,9 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
     private static final int TCP_NODELAY = 1;
     private static final int TCP_MAXSEG = 2;
 
+    static final int MSG_PEEK = 0x02; /* Peek at incoming messages. */
+    private static final int MSG_NOSIGNAL = 0x4000; /* Do not generate SIGPIPE. */
+
     protected SocketIO() {
         super(IOConstants.O_RDWR);
     }
@@ -241,6 +244,8 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
 
     @Override
     public int sendto(byte[] data, int flags, Pointer dest_addr, int addrlen) {
+        flags &= ~MSG_NOSIGNAL;
+
         if (flags == 0x0 && dest_addr == null && addrlen == 0) {
             return write(data);
         }
