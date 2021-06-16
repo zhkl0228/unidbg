@@ -43,6 +43,7 @@ public interface Loader {
 
     /**
      * 运行线程
+     * @param timeout Duration to emulate the code (in microseconds).
      */
     void runThread(int threadId, long timeout);
 

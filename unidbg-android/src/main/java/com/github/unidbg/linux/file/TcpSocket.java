@@ -218,8 +218,14 @@ public class TcpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    protected void setSocketRecvBuf(int recvBuf) throws SocketException {
-        socket.setReceiveBufferSize(recvBuf);
+    protected void setSendBufferSize(int size) throws SocketException {
+        socket.setSendBufferSize(size);
+
+    }
+
+    @Override
+    protected void setReceiveBufferSize(int size) throws SocketException {
+        socket.setReceiveBufferSize(size);
     }
 
     @Override

@@ -156,7 +156,12 @@ public class UdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    protected void setSocketRecvBuf(int recvBuf) {
+    protected void setSendBufferSize(int size) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    protected void setReceiveBufferSize(int size) {
         throw new AbstractMethodError();
     }
 

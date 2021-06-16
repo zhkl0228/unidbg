@@ -8,6 +8,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 
 public abstract class LocalUdpSocket extends SocketIO implements FileIO {
 
@@ -76,7 +77,12 @@ public abstract class LocalUdpSocket extends SocketIO implements FileIO {
     }
 
     @Override
-    protected void setSocketRecvBuf(int recvBuf) {
+    protected void setSendBufferSize(int size) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    protected void setReceiveBufferSize(int size) {
         throw new AbstractMethodError();
     }
 

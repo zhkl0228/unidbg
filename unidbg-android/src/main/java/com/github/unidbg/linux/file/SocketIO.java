@@ -46,6 +46,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
     private static final int SO_REUSEADDR = 2;
     private static final int SO_ERROR = 4;
     private static final int SO_BROADCAST = 6;
+    private static final int SO_SNDBUF = 7;
     private static final int SO_RCVBUF = 8;
     private static final int SO_KEEPALIVE = 9;
     private static final int SO_RCVTIMEO = 20;
@@ -108,11 +109,17 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
                             }
                             optval.getInt(0); // broadcast_pings
                             return 0;
+                        case SO_SNDBUF:
+                            if (optlen != 4) {
+                                throw new IllegalStateException("optlen=" + optlen);
+                            }
+                            setSendBufferSize(optval.getInt(0));
+                            return 0;
                         case SO_RCVBUF:
                             if (optlen != 4) {
                                 throw new IllegalStateException("optlen=" + optlen);
                             }
-                            setSocketRecvBuf(optval.getInt(0));
+                            setReceiveBufferSize(optval.getInt(0));
                             return 0;
                         case SO_KEEPALIVE:
                             if (optlen != 4) {
@@ -159,7 +166,9 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
 
     protected abstract void setKeepAlive(int keepAlive) throws SocketException;
 
-    protected abstract void setSocketRecvBuf(int recvBuf) throws SocketException;
+    protected abstract void setSendBufferSize(int size) throws SocketException;
+
+    protected abstract void setReceiveBufferSize(int size) throws SocketException;
 
     @Override
     public int getsockname(Pointer addr, Pointer addrlen) {

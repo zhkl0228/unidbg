@@ -11,6 +11,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -130,7 +131,12 @@ public class LocalSocketIO extends SocketIO implements FileIO {
     }
 
     @Override
-    protected void setSocketRecvBuf(int recvBuf) {
+    protected void setSendBufferSize(int size) {
+        throw new AbstractMethodError();
+    }
+
+    @Override
+    protected void setReceiveBufferSize(int size) {
         throw new AbstractMethodError();
     }
 
