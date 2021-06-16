@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class DalvikVM64 extends BaseVM implements VM {
 
@@ -104,7 +105,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getObjectType());
+                log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + (dvmObject != null ? dvmObject.getObjectType() : null));
                 throwable = dvmObject;
                 return 0;
             }
@@ -228,7 +229,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewLocalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
+                    log.debug("NewLocalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + (dvmObject != null ? dvmObject.getObjectType() : null));
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewLocalRef(%s) was called from %s%n", dvmObject, context.getLRPointer());
@@ -1395,7 +1396,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringUTFLength string=" + string + ", lr=" + context.getLRPointer());
                 }
-                String value = (String) string.getValue();
+                String value = (String) Objects.requireNonNull(string).getValue();
                 if (verbose) {
                     System.out.printf("JNIEnv->GetStringUTFLength(%s) was called from %s%n", string, context.getLRPointer());
                 }
@@ -1414,7 +1415,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);
                 }
-                String value = string.getValue();
+                String value = Objects.requireNonNull(string).getValue();
                 if (verbose) {
                     System.out.printf("JNIEnv->GetStringUtfChars(%s) was called from %s%n", string, context.getLRPointer());
                 }
@@ -1442,7 +1443,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseStringUTFChars string=" + string + ", pointer=" + pointer + ", lr=" + context.getLRPointer());
                 }
-                string.freeMemoryBlock(pointer);
+                Objects.requireNonNull(string).freeMemoryBlock(pointer);
                 return 0;
             }
         });
@@ -1452,7 +1453,7 @@ public class DalvikVM64 extends BaseVM implements VM {
             public long handle(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer pointer = context.getPointerArg(1);
-                Array<?> array = getObject(pointer.toIntPeer());
+                Array<?> array = Objects.requireNonNull((Array<?>) getObject(pointer.toIntPeer()));
                 if (log.isDebugEnabled()) {
                     log.debug("GetArrayLength array=" + array);
                 }
@@ -1501,7 +1502,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (verbose) {
                     System.out.printf("JNIEnv->GetObjectArrayElement(%s, %d) was called from %s%n", array, index, context.getLRPointer());
                 }
-                return addLocalObject(array.getValue()[index]);
+                return addLocalObject(Objects.requireNonNull(array).getValue()[index]);
             }
         });
 
@@ -1517,7 +1518,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("setObjectArrayElement array=" + array + ", index=" + index + ", obj=" + obj);
                 }
-                DvmObject<?>[] objs = array.getValue();
+                DvmObject<?>[] objs = Objects.requireNonNull(array).getValue();
                 objs[index] = obj;
                 return 0;
             }
@@ -1581,7 +1582,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 ByteArray array = getObject(arrayPointer.toIntPeer());
-                return array._GetArrayCritical(emulator, isCopy).toIntPeer();
+                return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).toIntPeer();
             }
         });
 
@@ -1595,7 +1596,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetIntArrayElements array=" + array + ", isCopy=" + isCopy);
                 }
-                return array._GetArrayCritical(emulator, isCopy).peer;
+                return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).peer;
             }
         });
 
@@ -1608,7 +1609,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringLength string=" + string + ", lr=" + context.getLRPointer());
                 }
-                String value = (String) string.getValue();
+                String value = (String) Objects.requireNonNull(string).getValue();
                 return value.length();
             }
         });
@@ -1623,7 +1624,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (isCopy != null) {
                     isCopy.setInt(0, JNI_TRUE);
                 }
-                String value = string.getValue();
+                String value = Objects.requireNonNull(string).getValue();
                 byte[] bytes = new byte[value.length() * 2];
                 ByteBuffer buffer = ByteBuffer.wrap(bytes);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -1650,7 +1651,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + context.getLRPointer());
                 }
-                string.freeMemoryBlock(pointer);
+                Objects.requireNonNull(string).freeMemoryBlock(pointer);
                 return 0;
             }
         });
@@ -1686,7 +1687,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("ReleaseByteArrayElements arrayPointer=" + arrayPointer + ", pointer=" + pointer + ", mode=" + mode);
                 }
                 ByteArray array = getObject(arrayPointer.toIntPeer());
-                array._ReleaseArrayCritical(pointer, mode);
+                Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
             }
         });
@@ -1702,7 +1703,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("ReleaseIntArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
                 }
-                array._ReleaseArrayCritical(pointer, mode);
+                Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
             }
         });
@@ -1719,7 +1720,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (verbose) {
                     System.out.printf("JNIEnv->GetByteArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
-                byte[] data = Arrays.copyOfRange(array.value, start, start + length);
+                byte[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
                 if (log.isDebugEnabled()) {
                     Inspector.inspect(data, "GetByteArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                 }
@@ -1740,7 +1741,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (verbose) {
                     System.out.printf("JNIEnv->GetShortArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
-                short[] data = Arrays.copyOfRange(array.value, start, start + length);
+                short[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
                 if (log.isDebugEnabled()) {
                     log.debug("GetShortArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                 }
@@ -1761,7 +1762,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (verbose) {
                     System.out.printf("JNIEnv->GetDoubleArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
-                double[] data = Arrays.copyOfRange(array.value, start, start + length);
+                double[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
                 if (log.isDebugEnabled()) {
                     log.debug("GetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                 }
@@ -1790,7 +1791,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                         Inspector.inspect(data, "SetByteArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                     }
                 }
-                array.setData(start, data);
+                Objects.requireNonNull(array).setData(start, data);
                 return 0;
             }
         });
@@ -1808,7 +1809,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                 }
-                array.setData(start, data);
+                Objects.requireNonNull(array).setData(start, data);
                 return 0;
             }
         });
@@ -1826,7 +1827,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("SetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
                 }
-                array.setData(start, data);
+                Objects.requireNonNull(array).setData(start, data);
                 return 0;
             }
         });
@@ -1886,7 +1887,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (object == null) {
                     return 0;
                 }
-                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmObject<?> dvmObject = Objects.requireNonNull(getObject(object.toIntPeer()));
                 if (log.isDebugEnabled()) {
                     log.debug("NewWeakGlobalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
                 }
