@@ -38,6 +38,7 @@ import unicorn.Arm64Const;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * http://androidxref.com/6.0.0_r5/xref/external/kernel-headers/original/uapi/asm-generic/unistd.h
@@ -568,24 +569,6 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         return -1;
     }
 
-    private int select(int nfds, Pointer checkfds, Pointer clearfds) {
-        int count = 0;
-        for (int i = 0; i < nfds; i++) {
-            int mask = checkfds.getInt(i / 32);
-            if(((mask >> i) & 1) == 1) {
-                count++;
-            }
-        }
-        if (count > 0) {
-            if (clearfds != null) {
-                for (int i = 0; i < nfds; i++) {
-                    clearfds.setInt(i / 32, 0);
-                }
-            }
-        }
-        return count;
-    }
-
     private int getpeername(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int sockfd = context.getIntArg(0);
@@ -689,7 +672,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         Pointer timeout = context.getPointerArg(4);
         int size = (nfds - 1) / 8 + 1;
         if (log.isDebugEnabled()) {
-            log.debug("pselect6 nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout);
+            log.debug("pselect6 nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
             if (readfds != null) {
                 byte[] data = readfds.getByteArray(0, size);
                 Inspector.inspect(data, "readfds");
@@ -704,18 +687,23 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             return -1;
         }
         if (writefds != null) {
-            int count = select(nfds, writefds, readfds);
+            int count = select(nfds, writefds, readfds, false);
             if (count > 0) {
                 return count;
             }
         }
         if (readfds != null) {
-            int count = select(nfds, readfds, writefds);
-            if (count > 0) {
-                return count;
+            int count = select(nfds, readfds, writefds, true);
+            if (count == 0) {
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
+                }
             }
+            return count;
         }
-        throw new AbstractMethodError();
+        throw new AbstractMethodError("pselect6 nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
     }
 
     private int recvfrom(Emulator<?> emulator) {

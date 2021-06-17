@@ -160,4 +160,8 @@ public abstract class AbstractFileIO implements NewFileIO {
         throw new AbstractMethodError(getClass().getName());
     }
 
+    @Override
+    public boolean canRead() {
+        return true;
+    }
 }

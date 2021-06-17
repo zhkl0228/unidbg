@@ -29,6 +29,19 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public DvmObject<?> allocObject(BaseVM vm, DvmClass dvmClass, String signature) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmClass.getName());
+            ProxyCall proxyCall = ProxyUtils.findAllocConstructor(clazz, visitor);
+            Object obj = proxyCall.call(vm, null);
+            return ProxyDvmObject.createObject(vm, obj);
+        } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
+            log.warn("allocObject", e);
+        }
+        return super.allocObject(vm, dvmClass, signature);
+    }
+
+    @Override
     public DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());

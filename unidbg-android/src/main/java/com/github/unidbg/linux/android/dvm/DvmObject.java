@@ -26,6 +26,11 @@ public class DvmObject<T> extends Hashable {
         this.value = value;
     }
 
+    @SuppressWarnings("unchecked")
+    final void setValue(Object obj) {
+        this.value = (T) obj;
+    }
+
     public T getValue() {
         return value;
     }

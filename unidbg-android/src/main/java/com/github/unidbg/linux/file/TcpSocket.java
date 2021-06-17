@@ -111,7 +111,7 @@ public class TcpSocket extends SocketIO implements FileIO {
             byte[] data = Arrays.copyOf(receiveBuf, read);
             buffer.write(0, data, 0, data.length);
             if (logRead && log.isDebugEnabled()) {
-                Inspector.inspect(data, "read");
+                Inspector.inspect(data, "readInternal socket=" + socket);
             }
             return data.length;
         } catch (IOException e) {

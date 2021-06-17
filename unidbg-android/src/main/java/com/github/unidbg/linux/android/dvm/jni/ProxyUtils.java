@@ -198,6 +198,11 @@ class ProxyUtils {
         throw new NoSuchMethodException(clazz.getName() + ".<init>" + Arrays.toString(types));
     }
 
+    public static ProxyCall findAllocConstructor(Class<?> clazz, ProxyDvmObjectVisitor visitor) throws NoSuchMethodException {
+        Constructor<?> constructor = matchConstructorTypes(clazz, new Class<?>[0]);
+        return new ProxyConstructor(visitor, constructor, new Object[0]);
+    }
+
     static ProxyCall findConstructor(Class<?> clazz, DvmMethod dvmMethod, VarArg varArg, ProxyDvmObjectVisitor visitor) throws NoSuchMethodException {
         if (!"<init>".equals(dvmMethod.getMethodName())) {
             throw new IllegalStateException(dvmMethod.getMethodName());
@@ -271,5 +276,4 @@ class ProxyUtils {
             return new ProxyField(visitor, field);
         }
     }
-
 }

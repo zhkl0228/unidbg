@@ -854,6 +854,34 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallNonvirtualVoidMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer clazz = context.getPointerArg(2);
+                UnidbgPointer jmethodID = context.getPointerArg(3);
+                UnidbgPointer va_list = context.getPointerArg(4);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallNonvirtualVoidMethodV object=" + object + ", clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
+                    DvmObject<?> obj = dvmMethod.newObjectV(vaList);
+                    Objects.requireNonNull(dvmObject).setValue(obj.value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallNonvirtualVoidMethodV(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
+                    }
+                    return 0;
+                }
+            }
+        });
+
         Pointer _CallNonVirtualVoidMethodA = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -872,6 +900,8 @@ public class DalvikVM extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     VaList vaList = new JValueList(DalvikVM.this, jvalue, dvmMethod);
+                    DvmObject<?> obj = dvmMethod.newObjectV(vaList);
+                    Objects.requireNonNull(dvmObject).setValue(obj.value);
                     if (verbose) {
                         System.out.printf("JNIEnv->CallNonVirtualVoidMethodA(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
@@ -2321,6 +2351,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0xf4, _CallVoidMethod);
         impl.setPointer(0xf8, _CallVoidMethodV);
         impl.setPointer(0xfc, _CallVoidMethodA);
+        impl.setPointer(0x170, _CallNonvirtualVoidMethodV);
         impl.setPointer(0x174, _CallNonVirtualVoidMethodA);
         impl.setPointer(0x178, _GetFieldID);
         impl.setPointer(0x17c, _GetObjectField);

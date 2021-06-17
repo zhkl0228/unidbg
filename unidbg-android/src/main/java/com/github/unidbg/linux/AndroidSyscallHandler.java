@@ -5,10 +5,10 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
-import com.github.unidbg.linux.file.ByteArrayFileIO;
 import com.github.unidbg.linux.file.DirectoryFileIO;
-import com.github.unidbg.linux.file.DumpFileIO;
 import com.github.unidbg.linux.file.EventFD;
+import com.github.unidbg.linux.file.PipedReadFileIO;
+import com.github.unidbg.linux.file.PipedWriteFileIO;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
@@ -21,6 +21,9 @@ import net.dongliu.apk.parser.utils.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +87,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         int minFd = this.getMinFd();
         this.fdMap.put(minFd, fileIO);
         if (verbose) {
-            System.out.printf("eventfd(%d) with flags=0x%x from %s%n", initval, flags, emulator.getContext().getLRPointer());
+            System.out.printf("eventfd(%d) with flags=0x%x fd=%d from %s%n", initval, flags, minFd, emulator.getContext().getLRPointer());
         }
         return minFd;
     }
@@ -131,23 +134,31 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         }
     }
 
-    final int pipe2(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer pipefd = context.getPointerArg(0);
-        int flags = context.getIntArg(1);
-        int writefd = getMinFd();
-        Pair<AndroidFileIO, AndroidFileIO> pair = getPipePair(emulator, writefd);
-        this.fdMap.put(writefd, pair.getLeft());
-        int readfd = getMinFd();
-        this.fdMap.put(readfd, pair.getRight());
-        pipefd.setInt(0, readfd);
-        pipefd.setInt(4, writefd);
-        log.info("pipe2 pipefd=" + pipefd + ", flags=0x" + flags + ", readfd=" + readfd + ", writefd=" + writefd);
+    protected int pipe2(Emulator<?> emulator) {
+        try {
+            RegisterContext context = emulator.getContext();
+            Pointer pipefd = context.getPointerArg(0);
+            int flags = context.getIntArg(1);
+            int writefd = getMinFd();
+            Pair<AndroidFileIO, AndroidFileIO> pair = getPipePair(emulator, writefd);
+            this.fdMap.put(writefd, pair.getLeft());
+            int readfd = getMinFd();
+            this.fdMap.put(readfd, pair.getRight());
+            pipefd.setInt(0, readfd);
+            pipefd.setInt(4, writefd);
+            log.info("pipe2 pipefd=" + pipefd + ", flags=0x" + flags + ", readfd=" + readfd + ", writefd=" + writefd);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
         return 0;
     }
 
-    protected Pair<AndroidFileIO, AndroidFileIO> getPipePair(Emulator<?> emulator, int writefd) {
-        return new Pair<AndroidFileIO, AndroidFileIO>(new DumpFileIO(writefd), new ByteArrayFileIO(0, "pipe2_read_side", null));
+    protected Pair<AndroidFileIO, AndroidFileIO> getPipePair(Emulator<?> emulator, int writefd) throws IOException {
+        PipedInputStream inputStream = new PipedInputStream();
+        PipedOutputStream outputStream = new PipedOutputStream(inputStream);
+        AndroidFileIO writeIO = new PipedWriteFileIO(outputStream, writefd);
+        AndroidFileIO readIO = new PipedReadFileIO(inputStream, writefd);
+        return new Pair<>(writeIO, readIO);
     }
 
     protected int mkdirat(Emulator<?> emulator) {
@@ -161,6 +172,30 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         }
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
+    }
+
+    final int select(int nfds, Pointer checkfds, Pointer clearfds, boolean checkRead) {
+        int count = 0;
+        for (int i = 0; i < nfds; i++) {
+            int mask = checkfds.getInt(i / 32);
+            if(((mask >> i) & 1) == 1) {
+                AndroidFileIO io = fdMap.get(i);
+                if (!checkRead || io.canRead()) {
+                    count++;
+                } else {
+                    mask &= ~(1 << i);
+                    checkfds.setInt(i / 32, mask);
+                }
+            }
+        }
+        if (count > 0) {
+            if (clearfds != null) {
+                for (int i = 0; i < nfds; i++) {
+                    clearfds.setInt(i / 32, 0);
+                }
+            }
+        }
+        return count;
     }
 
 }
