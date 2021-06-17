@@ -115,7 +115,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             emulator.setTimeout(timeout);
             Thread thread = syscallHandler.threadMap.get(threadId);
             if (thread != null) {
-                thread.runThread(emulator, __thread_entry);
+                thread.runThread(emulator, __thread_entry, timeout);
             } else {
                 throw new IllegalStateException("thread: " + threadId + " not exits");
             }

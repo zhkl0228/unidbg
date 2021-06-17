@@ -248,6 +248,13 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
+    public void eThread(long fn, long arg, long sp) {
+        backend.reg_write(Arm64Const.UC_ARM64_REG_X0, arg);
+        backend.reg_write(Arm64Const.UC_ARM64_REG_SP, sp);
+        emulate(fn, LR, timeout, false);
+    }
+
+    @Override
     @Deprecated
     public void eBlock(long begin, long until) {
         long spBackup = memory.getStackPoint();

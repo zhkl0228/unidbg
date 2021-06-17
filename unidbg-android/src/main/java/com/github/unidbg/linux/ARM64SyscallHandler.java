@@ -339,7 +339,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
     private int pthread_clone(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int flags = context.getIntArg(0);
-        Pointer child_stack = context.getPointerArg(1);
+        UnidbgPointer child_stack = context.getPointerArg(1);
         List<String> list = new ArrayList<>();
         if ((flags & CLONE_VM) != 0) {
             list.add("CLONE_VM");
@@ -394,10 +394,10 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         }
         int threadId = ++this.threadId;
 
-        Pointer fn = child_stack.getPointer(0);
-        child_stack = child_stack.share(8);
-        Pointer arg = child_stack.getPointer(0);
-        child_stack = child_stack.share(8);
+        UnidbgPointer fn = child_stack.getPointer(0);
+        child_stack = child_stack.share(8, 0);
+        UnidbgPointer arg = child_stack.getPointer(0);
+        child_stack = child_stack.share(8, 0);
 
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         threadMap.put(threadId, new LinuxThread(child_stack, fn, arg));

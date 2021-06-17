@@ -111,7 +111,7 @@ public abstract class Module {
         this.entryPoint = entryPoint;
     }
 
-    public  abstract int callEntry(Emulator<?> emulator, String... args);
+    public abstract int callEntry(Emulator<?> emulator, String... args);
 
     private UnidbgPointer pathPointer;
 

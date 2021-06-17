@@ -71,6 +71,8 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
 
     Number eEntry(long begin, long sp);
 
+    void eThread(long fn, long arg, long sp);
+
     /**
      * emulate block
      * @param begin start address
