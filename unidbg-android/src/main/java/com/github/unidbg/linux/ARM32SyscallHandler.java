@@ -702,15 +702,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return -1;
     }
 
-    private int sigaltstack(Emulator<?> emulator) {
-        Pointer ss = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer old_ss = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        if (log.isDebugEnabled()) {
-            log.debug("sigaltstack ss=" + ss + ", old_ss=" + old_ss);
-        }
-        return 0;
-    }
-
     private int set_tls(Backend backend, Emulator<?> emulator) {
         UnidbgPointer tls = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         if (log.isDebugEnabled()) {

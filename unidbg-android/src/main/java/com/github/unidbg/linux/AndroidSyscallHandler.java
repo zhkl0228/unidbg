@@ -198,4 +198,14 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         return count;
     }
 
+    final int sigaltstack(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer ss = context.getPointerArg(0);
+        Pointer old_ss = context.getPointerArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("sigaltstack ss=" + ss + ", old_ss=" + old_ss);
+        }
+        return 0;
+    }
+
 }

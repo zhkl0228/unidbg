@@ -250,6 +250,27 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _AllocObject = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                if (log.isDebugEnabled()) {
+                    log.debug("AllocObject clazz=" + dvmClass + ", lr=" + context.getLRPointer());
+                }
+                if (dvmClass == null) {
+                    throw new BackendException();
+                } else {
+                    DvmObject<?> obj = dvmClass.allocObject();
+                    if (verbose) {
+                        System.out.printf("JNIEnv->AllocObject(%s => %s) was called from %s%n", dvmClass.getClassName(), obj, context.getLRPointer());
+                    }
+                    return addLocalObject(obj);
+                }
+            }
+        });
+
         Pointer _NewObject = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -722,6 +743,34 @@ public class DalvikVM64 extends BaseVM implements VM {
                     dvmMethod.callVoidMethodV(dvmObject, vaList);
                     if (verbose) {
                         System.out.printf("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
+                    }
+                    return 0;
+                }
+            }
+        });
+
+        Pointer _CallNonvirtualVoidMethodV = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer clazz = context.getPointerArg(2);
+                UnidbgPointer jmethodID = context.getPointerArg(3);
+                UnidbgPointer va_list = context.getPointerArg(4);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallNonvirtualVoidMethodV object=" + object + ", clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
+                    DvmObject<?> obj = dvmMethod.newObjectV(vaList);
+                    Objects.requireNonNull(dvmObject).setValue(obj.value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallNonvirtualVoidMethodV(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
                 }
@@ -1997,6 +2046,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0xC0, _IsSameObject);
         impl.setPointer(0xC8, _NewLocalRef);
         impl.setPointer(0xd0, _EnsureLocalCapacity);
+        impl.setPointer(0xd8, _AllocObject);
         impl.setPointer(0xE0, _NewObject);
         impl.setPointer(0xE8, _NewObjectV);
         impl.setPointer(0xF8, _GetObjectClass);
@@ -2016,6 +2066,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x1d0, _CallDoubleMethod);
         impl.setPointer(0x1e8, _CallVoidMethod);
         impl.setPointer(0x1f0, _CallVoidMethodV);
+        impl.setPointer(0x2e0, _CallNonvirtualVoidMethodV);
         impl.setPointer(0x2f0, _GetFieldID);
         impl.setPointer(0x2F8, _GetObjectField);
         impl.setPointer(0x300, _GetBooleanField);

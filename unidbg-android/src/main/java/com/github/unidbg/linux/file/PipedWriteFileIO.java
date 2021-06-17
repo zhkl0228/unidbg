@@ -48,6 +48,6 @@ public class PipedWriteFileIO extends BaseAndroidFileIO implements AndroidFileIO
 
     @Override
     public String toString() {
-        return "pipedWrite: " + writefd;
+        return "PipedWrite: " + writefd;
     }
 }

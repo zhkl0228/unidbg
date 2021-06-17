@@ -66,6 +66,6 @@ public class PipedReadFileIO extends BaseAndroidFileIO implements AndroidFileIO 
 
     @Override
     public String toString() {
-        return "pipedRead: " + writefd;
+        return "PipedRead: " + writefd;
     }
 }
