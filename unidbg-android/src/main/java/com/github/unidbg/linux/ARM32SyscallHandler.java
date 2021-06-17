@@ -18,7 +18,6 @@ import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.ByteArrayFileIO;
 import com.github.unidbg.linux.file.DriverFileIO;
-import com.github.unidbg.linux.file.DumpFileIO;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
 import com.github.unidbg.linux.file.LocalSocketIO;
 import com.github.unidbg.linux.file.SocketIO;
@@ -33,7 +32,6 @@ import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import net.dongliu.apk.parser.utils.Pair;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -399,7 +397,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, openat(backend, emulator));
                     return;
                 case 323:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(emulator));
                     return;
                 case 327:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fstatat64(backend, emulator));
@@ -701,25 +699,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         log.info("pipe readfd=" + readfd + ", writefd=" + writefd);
         emulator.getMemory().setErrno(UnixEmulator.EFAULT);
         return -1;
-    }
-
-    protected Pair<AndroidFileIO, AndroidFileIO> getPipePair(Emulator<?> emulator, int writefd) {
-        return new Pair<AndroidFileIO, AndroidFileIO>(new DumpFileIO(writefd), new ByteArrayFileIO(0, "pipe2_read_side", null));
-    }
-
-    private int pipe2(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer pipefd = context.getPointerArg(0);
-        int flags = context.getIntArg(1);
-        int writefd = getMinFd();
-        Pair<AndroidFileIO, AndroidFileIO> pair = getPipePair(emulator, writefd);
-        this.fdMap.put(writefd, pair.getLeft());
-        int readfd = getMinFd();
-        this.fdMap.put(readfd, pair.getRight());
-        pipefd.setInt(0, readfd);
-        pipefd.setInt(4, writefd);
-        log.info("pipe2 pipefd=" + pipefd + ", flags=0x" + flags + ", readfd=" + readfd + ", writefd=" + writefd);
-        return 0;
     }
 
     private int sigaltstack(Emulator<?> emulator) {
@@ -1269,9 +1248,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     }
 
     private int mkdir(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        Pointer pathname = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int mode = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
+        RegisterContext context = emulator.getContext();
+        Pointer pathname = context.getPointerArg(0);
+        int mode = context.getIntArg(1);
         if (log.isDebugEnabled()) {
             log.debug("mkdir pathname=" + pathname.getString(0) + ", mode=" + mode);
         }
@@ -1900,18 +1879,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             throw new BackendException();
         }
         return stat64(emulator, path, statbuf);
-    }
-
-    private int mkdirat(Backend backend, Emulator<?> emulator) {
-        int dirfd = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer pathname_p = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int mode = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
-        String pathname = pathname_p.getString(0);
-        if (log.isDebugEnabled()) {
-            log.debug("mkdirat dirfd=" + dirfd + ", pathname=" + pathname + ", mode=" + Integer.toHexString(mode));
-        }
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
-        return -1;
     }
 
     private int openat(Backend backend, Emulator<AndroidFileIO> emulator) {

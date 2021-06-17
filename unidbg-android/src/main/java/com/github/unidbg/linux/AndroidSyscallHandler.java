@@ -5,7 +5,9 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
+import com.github.unidbg.linux.file.ByteArrayFileIO;
 import com.github.unidbg.linux.file.DirectoryFileIO;
+import com.github.unidbg.linux.file.DumpFileIO;
 import com.github.unidbg.linux.file.EventFD;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
@@ -15,6 +17,7 @@ import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import net.dongliu.apk.parser.utils.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -126,6 +129,38 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             emulator.getMemory().setErrno(result.errno);
             return -1;
         }
+    }
+
+    final int pipe2(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pipefd = context.getPointerArg(0);
+        int flags = context.getIntArg(1);
+        int writefd = getMinFd();
+        Pair<AndroidFileIO, AndroidFileIO> pair = getPipePair(emulator, writefd);
+        this.fdMap.put(writefd, pair.getLeft());
+        int readfd = getMinFd();
+        this.fdMap.put(readfd, pair.getRight());
+        pipefd.setInt(0, readfd);
+        pipefd.setInt(4, writefd);
+        log.info("pipe2 pipefd=" + pipefd + ", flags=0x" + flags + ", readfd=" + readfd + ", writefd=" + writefd);
+        return 0;
+    }
+
+    protected Pair<AndroidFileIO, AndroidFileIO> getPipePair(Emulator<?> emulator, int writefd) {
+        return new Pair<AndroidFileIO, AndroidFileIO>(new DumpFileIO(writefd), new ByteArrayFileIO(0, "pipe2_read_side", null));
+    }
+
+    protected int mkdirat(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname_p = context.getPointerArg(1);
+        int mode = context.getIntArg(2);
+        String pathname = pathname_p.getString(0);
+        if (log.isDebugEnabled()) {
+            log.debug("mkdirat dirfd=" + dirfd + ", pathname=" + pathname + ", mode=" + Integer.toHexString(mode));
+        }
+        emulator.getMemory().setErrno(UnixEmulator.EACCES);
+        return -1;
     }
 
 }

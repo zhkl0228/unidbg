@@ -489,6 +489,58 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallByteMethodV = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallByteMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
+                    byte ret = dvmMethod.callByteMethodV(dvmObject, vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallByteMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
+                    }
+                    return ret;
+                }
+            }
+        });
+
+        Pointer _CallShortMethodV = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallShortMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
+                    short ret = dvmMethod.callShortMethodV(dvmObject, vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallShortMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
+                    }
+                    return ret;
+                }
+            }
+        });
+
         Pointer _CallIntMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1955,6 +2007,8 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x128, _CallBooleanMethod);
         impl.setPointer(0x130, _CallBooleanMethodV);
         impl.setPointer(0x138, _CallBooleanMethodA);
+        impl.setPointer(0x148, _CallByteMethodV);
+        impl.setPointer(0x178, _CallShortMethodV);
         impl.setPointer(0x188, _CallIntMethod);
         impl.setPointer(0x190, _CallIntMethodV);
         impl.setPointer(0x1a8, _CallLongMethodV);

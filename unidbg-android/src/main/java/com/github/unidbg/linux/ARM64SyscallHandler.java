@@ -102,6 +102,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             }
 
             switch (NR) {
+                case 19:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, eventfd2(emulator));
+                    return;
                 case 64:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, write(emulator));
                     return;
@@ -112,6 +115,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, lseek(emulator));
                     return;
                 case  172: // getpid
+                case  178: // gettid
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, emulator.getPid());
                     return;
                 case 129:
@@ -120,11 +124,17 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 29:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, ioctl(emulator));
                     return;
+                case 34:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mkdirat(emulator));
+                    return;
                 case 56:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, openat(backend, emulator));
                     return;
                 case 57:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, close(backend, emulator));
+                    return;
+                case 59:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, pipe2(emulator));
                     return;
                 case 63:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, read(backend, emulator));
@@ -381,9 +391,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         int threadId = ++this.threadId;
 
         Pointer fn = child_stack.getPointer(0);
-        child_stack = child_stack.share(4);
+        child_stack = child_stack.share(8);
         Pointer arg = child_stack.getPointer(0);
-        child_stack = child_stack.share(4);
+        child_stack = child_stack.share(8);
 
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         threadMap.put(threadId, new LinuxThread(child_stack, fn, arg));
