@@ -72,10 +72,13 @@ public class TcpSocket extends SocketIO implements FileIO {
     @Override
     public int recvfrom(Backend backend, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen) {
         boolean peek = (flags & MSG_PEEK) != 0;
-        if (peek && inputStream.markSupported()) {
+        if (peek &&
+                (flags & ~MSG_PEEK) == 0 &&
+                inputStream.markSupported() &&
+                src_addr == null && addrlen == null) {
             try {
                 inputStream.mark(len);
-                return read(backend, buf, len);
+                return readInternal(buf, len, false);
             } finally {
                 try {
                     inputStream.reset();
@@ -92,6 +95,10 @@ public class TcpSocket extends SocketIO implements FileIO {
 
     @Override
     public int read(Backend backend, Pointer buffer, int count) {
+        return readInternal(buffer, count, true);
+    }
+
+    private int readInternal(Pointer buffer, int count, boolean logRead) {
         try {
             if (receiveBuf == null) {
                 receiveBuf = new byte[socket.getReceiveBufferSize()];
@@ -103,12 +110,12 @@ public class TcpSocket extends SocketIO implements FileIO {
 
             byte[] data = Arrays.copyOf(receiveBuf, read);
             buffer.write(0, data, 0, data.length);
-            if (log.isDebugEnabled()) {
+            if (logRead && log.isDebugEnabled()) {
                 Inspector.inspect(data, "read");
             }
             return data.length;
         } catch (IOException e) {
-            log.debug("read failed", e);
+            log.debug("readInternal", e);
             return -1;
         }
     }

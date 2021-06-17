@@ -106,7 +106,7 @@ public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFile
                             if (handler != null) {
                                 handler.handleLog(type, value, tag, text);
                             } else {
-                                System.err.println(String.format("[%s]%s/%s: %s", type, value, tag, text));
+                                System.err.printf("[%s]%s/%s: %s%n", type, value, tag, text);
                             }
                         }
                     } catch (IOException e) {

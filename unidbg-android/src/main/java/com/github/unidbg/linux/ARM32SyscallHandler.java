@@ -18,6 +18,7 @@ import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.file.ByteArrayFileIO;
 import com.github.unidbg.linux.file.DriverFileIO;
+import com.github.unidbg.linux.file.DumpFileIO;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
 import com.github.unidbg.linux.file.LocalSocketIO;
 import com.github.unidbg.linux.file.SocketIO;
@@ -32,6 +33,7 @@ import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import net.dongliu.apk.parser.utils.Pair;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -429,6 +431,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 358:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, dup3(emulator));
                     return;
+                case 359:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, pipe2(emulator));
+                    return;
                 case 366:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, accept4(emulator));
                     return;
@@ -691,13 +696,30 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
     private int pipe(Emulator<?> emulator) {
         Pointer pipefd = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        if (log.isDebugEnabled()) {
-            int readfd = pipefd.getInt(0);
-            int writefd = pipefd.getInt(4);
-            log.debug("pipe readfd=" + readfd + ", writefd=" + writefd);
-        }
+        int readfd = pipefd.getInt(0);
+        int writefd = pipefd.getInt(4);
+        log.info("pipe readfd=" + readfd + ", writefd=" + writefd);
         emulator.getMemory().setErrno(UnixEmulator.EFAULT);
         return -1;
+    }
+
+    protected Pair<AndroidFileIO, AndroidFileIO> getPipePair(Emulator<?> emulator, int writefd) {
+        return new Pair<AndroidFileIO, AndroidFileIO>(new DumpFileIO(writefd), new ByteArrayFileIO(0, "pipe2_read_side", null));
+    }
+
+    private int pipe2(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer pipefd = context.getPointerArg(0);
+        int flags = context.getIntArg(1);
+        int writefd = getMinFd();
+        Pair<AndroidFileIO, AndroidFileIO> pair = getPipePair(emulator, writefd);
+        this.fdMap.put(writefd, pair.getLeft());
+        int readfd = getMinFd();
+        this.fdMap.put(readfd, pair.getRight());
+        pipefd.setInt(0, readfd);
+        pipefd.setInt(4, writefd);
+        log.info("pipe2 pipefd=" + pipefd + ", flags=0x" + flags + ", readfd=" + readfd + ", writefd=" + writefd);
+        return 0;
     }
 
     private int sigaltstack(Emulator<?> emulator) {
