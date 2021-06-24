@@ -360,6 +360,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         final List<MemRegion> regions = new ArrayList<>(5);
         MemoizedObject<ArmExIdx> armExIdx = null;
         MemoizedObject<GnuEhFrameHeader> ehFrameHeader = null;
+        Alignment lastAlignment = null;
         for (int i = 0; i < elfFile.num_ph; i++) {
             ElfSegment ph = elfFile.getProgramHeader(i);
             switch (ph.type) {
@@ -384,10 +385,25 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                         if (ph.mem_size > overallSize) {
                             Alignment alignment = this.mem_map(begin + overallSize, ph.mem_size - overallSize, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
                             regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
+                            if (lastAlignment != null) {
+                                throw new UnsupportedOperationException();
+                            }
+                            lastAlignment = alignment;
                         }
                     } else {
                         Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
                         regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
+                        if (lastAlignment != null) {
+                            long base = lastAlignment.address + lastAlignment.size;
+                            long off = alignment.address - base;
+                            if (off < 0) {
+                                throw new UnsupportedOperationException();
+                            }
+                            if (off > 0) {
+                                this.mem_map(base, off, UnicornConst.UC_PROT_NONE, libraryFile.getName(), off);
+                            }
+                        }
+                        lastAlignment = alignment;
                     }
 
                     ph.getPtLoadData().writeTo(pointer(begin));

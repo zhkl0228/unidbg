@@ -61,6 +61,9 @@ public class ArmExIdx {
         int entry = 0;
         while (buffer.hasRemaining()) {
             int key = buffer.getInt() << 1 >> 1;
+            if (key == 0) {
+                continue;
+            }
             key += offset;
 
             if (fun >= key) {
@@ -104,7 +107,7 @@ public class ArmExIdx {
             assert pointer != null;
             value = pointer.getInt(0);
             if ((value & ARM_EXIDX_COMPACT) == 0) {
-                long personality = (value << 1 >> 1) + addr;
+                long personality = ((long) value << 1 >> 1) + addr;
                 int data = pointer.getInt(4);
                 int n = (data >> 24) & 0xff;
                 bb = ByteBuffer.allocate((n + 1) * 4);

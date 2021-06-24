@@ -38,7 +38,10 @@ class AndroidARMUnwinder extends SimpleARMUnwinder {
             MemoizedObject<ArmExIdx> armExIdx = module == null ? null : module.armExIdx;
             if (armExIdx != null) {
                 long fun = this.context.ip - module.base;
-                return armExIdx.getValue().arm_exidx_step(emulator, this, module, fun, context);
+                Frame ret = armExIdx.getValue().arm_exidx_step(emulator, this, module, fun, context);
+                if (ret != null) {
+                    return ret;
+                }
             }
         } catch (RuntimeException exception) {
             Log log = LogFactory.getLog(GnuEhFrameHeader.class);

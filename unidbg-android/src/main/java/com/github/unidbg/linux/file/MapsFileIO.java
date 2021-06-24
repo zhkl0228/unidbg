@@ -67,7 +67,7 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
             builder.append(additionContent).append('\n');
         }
         if (log.isDebugEnabled()) {
-            log.debug("\n" + builder.toString());
+            log.debug("\n" + builder);
         }
 
         return builder.toString().getBytes();

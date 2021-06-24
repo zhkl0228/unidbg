@@ -119,6 +119,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 1:
                     int status = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                     System.out.println("exit status=" + status);
+                    if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                        emulator.attach().debug();
+                    }
                     backend.emu_stop();
                     return;
                 case 2:
@@ -1605,6 +1608,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         long timeInMillis = System.currentTimeMillis();
         long start = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
         int length = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
+        if (start % emulator.getPageAlign() != 0) {
+            emulator.getMemory().setErrno(UnixEmulator.EINVAL);
+            return -1;
+        }
         emulator.getMemory().munmap(start, length);
         if (log.isDebugEnabled()) {
             log.debug("munmap start=0x" + Long.toHexString(start) + ", length=" + length + ", offset=" + (System.currentTimeMillis() - timeInMillis) + ", from=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
