@@ -1234,6 +1234,31 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallStaticBooleanMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer jvalue = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallStaticBooleanMethodA clazz=" + clazz + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new JValueList(DalvikVM.this, jvalue, dvmMethod);
+                    boolean ret = dvmMethod.callStaticBooleanMethodV(vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallStaticBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
+                    }
+                    return ret ? VM.JNI_TRUE : VM.JNI_FALSE;
+                }
+            }
+        });
+
         Pointer _CallStaticObjectMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2366,6 +2391,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x1c0, _SetDoubleField);
         impl.setPointer(0x1c4, _GetStaticMethodID);
         impl.setPointer(0x1c8, _CallStaticObjectMethod);
+        impl.setPointer(0x1dc, _CallStaticBooleanMethodA);
         impl.setPointer(0x1cc, _CallStaticObjectMethodV);
         impl.setPointer(0x1d0, _CallStaticObjectMethodA);
         impl.setPointer(0x1d4, _CallStaticBooleanMethod);
