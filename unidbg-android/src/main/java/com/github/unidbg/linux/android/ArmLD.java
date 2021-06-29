@@ -38,6 +38,16 @@ public class ArmLD extends Dlfcn {
                 log.debug("link " + symbolName + ", old=0x" + Long.toHexString(old));
             }
             switch (symbolName) {
+                case "dl_iterate_phdr":
+                    return svcMemory.registerSvc(new ArmSvc() {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            Pointer cb = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
+                            Pointer data = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            log.info("dl_iterate_phdr cb=" + cb + ", data=" + data);
+                            return 0;
+                        }
+                    }).peer;
                 case "dlerror":
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override

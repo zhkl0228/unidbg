@@ -148,9 +148,7 @@ public class ArmLD64 extends Dlfcn {
                         public long handle(Emulator<?> emulator) {
                             Pointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
                             Pointer pcount = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("dl_unwind_find_exidx pc" + pc + ", pcount=" + pcount);
-                            }
+                            log.info("dl_unwind_find_exidx pc" + pc + ", pcount=" + pcount);
                             return 0;
                         }
                     }).peer;
