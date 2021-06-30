@@ -397,7 +397,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                             long base = lastAlignment.address + lastAlignment.size;
                             long off = alignment.address - base;
                             if (off < 0) {
-                                throw new UnsupportedOperationException();
+                                throw new IllegalStateException();
                             }
                             if (off > 0) {
                                 this.mem_map(base, off, UnicornConst.UC_PROT_NONE, libraryFile.getName(), off);

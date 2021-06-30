@@ -58,7 +58,7 @@ public class AndroidTest extends AbstractJni {
         };
         Memory memory = emulator.getMemory();
         emulator.getSyscallHandler().setVerbose(false);
-        LibraryResolver resolver = new AndroidResolver(19);
+        LibraryResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
 
         module = emulator.loadLibrary(executable, true);
