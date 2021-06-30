@@ -62,3 +62,8 @@ Simple tests under src/test directory
 - [fishhook](https://github.com/facebook/fishhook)
 - [runtime_class-dump](https://github.com/Tyilo/runtime_class-dump)
 - [mman-win32](https://github.com/mcgarrah/mman-win32)
+
+### One-time Donation
+We accept donations via the following ways:
+
+![WeChat Pay](assets/wx.jpg)
