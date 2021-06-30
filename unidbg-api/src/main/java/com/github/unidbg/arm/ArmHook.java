@@ -14,6 +14,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public abstract class ArmHook extends ArmSvc {
@@ -32,10 +34,10 @@ public abstract class ArmHook extends ArmSvc {
 
     @Override
     public final UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
-        try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
-            KeystoneEncoded encoded;
-            if (enablePostCall) {
-                encoded = keystone.assemble(Arrays.asList(
+        byte[] code;
+        if (enablePostCall) {
+            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                         "push {r4-r7, lr}",
                         "svc #0x" + Integer.toHexString(svcNumber),
                         "pop {r7}",
@@ -47,19 +49,21 @@ public abstract class ArmHook extends ArmSvc {
                         "mov r4, #0x" + Integer.toHexString(svcNumber),
                         "svc #0",
                         "pop {r4-r7, pc}"));
-            } else {
-                encoded = keystone.assemble(Arrays.asList(
-                        "svc #0x" + Integer.toHexString(svcNumber),
-                        "pop {pc}")); // manipulated stack in handle
+                code = encoded.getMachineCode();
             }
-            byte[] code = encoded.getMachineCode();
-            UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmHook");
-            pointer.write(0, code, 0, code.length);
-            if (log.isDebugEnabled()) {
-                log.debug("ARM hook: pointer=" + pointer);
-            }
-            return pointer;
+        } else {
+            ByteBuffer buffer = ByteBuffer.allocate(8);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.putInt(ArmSvc.assembleSvc(svcNumber)); // svc #0xsvcNumber
+            buffer.putInt(0xe49df004); // pop {pc}: manipulated stack in handle
+            code = buffer.array();
         }
+        UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmHook");
+        pointer.write(0, code, 0, code.length);
+        if (log.isDebugEnabled()) {
+            log.debug("ARM hook: pointer=" + pointer);
+        }
+        return pointer;
     }
 
     @Override
