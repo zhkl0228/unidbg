@@ -2,8 +2,6 @@ package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.ArmHook;
-import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
@@ -64,29 +62,28 @@ public class ModuleSymbol {
             return new ModuleSymbol(soName, WEAK_BASE, symbol, relocationAddr, "0", 0);
         }
 
-        if ("dlsym".equals(symbolName) ||
-                "dlopen".equals(symbolName) ||
-                "dlerror".equals(symbolName) ||
+        if ("dlopen".equals(symbolName) ||
                 "dlclose".equals(symbolName) ||
-                "dl_unwind_find_exidx".equals(symbolName) ||
+                "dlsym".equals(symbolName) ||
+                "dlerror".equals(symbolName) ||
                 "dladdr".equals(symbolName) ||
-                "android_get_application_target_sdk_version".equals(symbolName)) {
+                "android_update_LD_LIBRARY_PATH".equals(symbolName) ||
+                "android_get_LD_LIBRARY_PATH".equals(symbolName) ||
+                "dl_iterate_phdr".equals(symbolName) ||
+                "android_dlopen_ext".equals(symbolName) ||
+                "android_set_application_target_sdk_version".equals(symbolName) ||
+                "android_get_application_target_sdk_version".equals(symbolName) ||
+                "android_init_namespaces".equals(symbolName) ||
+                "android_create_namespace".equals(symbolName) ||
+                "dlvsym".equals(symbolName) ||
+                "android_dlwarning".equals(symbolName) ||
+                "dl_unwind_find_exidx".equals(symbolName)) {
             if (resolveWeak) {
                 for (HookListener listener : listeners) {
                     long hook = listener.hook(svcMemory, "libdl.so", symbolName, offset);
                     if (hook > 0) {
                         return new ModuleSymbol(soName, WEAK_BASE, symbol, relocationAddr, "libdl.so", hook);
                     }
-                }
-
-                if ("android_get_application_target_sdk_version".equals(symbolName)) {
-                    long hook = svcMemory.registerSvc(new ArmHook() {
-                        @Override
-                        protected HookStatus hook(Emulator<?> emulator) {
-                            return HookStatus.LR(emulator, 0);
-                        }
-                    }).peer;
-                    return new ModuleSymbol(soName, WEAK_BASE, symbol, relocationAddr, "libdl.so", hook);
                 }
             }
         }

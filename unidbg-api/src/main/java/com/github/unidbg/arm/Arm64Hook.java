@@ -5,7 +5,6 @@ import com.github.unidbg.Svc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
@@ -76,20 +75,20 @@ public abstract class Arm64Hook extends Arm64Svc {
     @Override
     public final long handle(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
-        Pointer sp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
+        UnidbgPointer sp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
             HookStatus status = hook(emulator);
             if (status.forward || !enablePostCall) {
-                sp = sp.share(-8);
+                sp = sp.share(-8, 0);
                 sp.setLong(0, status.jump);
             } else {
-                sp = sp.share(-8);
+                sp = sp.share(-8, 0);
                 sp.setLong(0, 0);
             }
 
             return status.returnValue;
         } finally {
-            backend.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnidbgPointer) sp).peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_SP, sp.peer);
         }
     }
 

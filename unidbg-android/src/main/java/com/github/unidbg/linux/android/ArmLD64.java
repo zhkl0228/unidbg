@@ -43,8 +43,9 @@ public class ArmLD64 extends Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer cb = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            Pointer data = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                            RegisterContext context = emulator.getContext();
+                            Pointer cb = context.getPointerArg(0);
+                            Pointer data = context.getPointerArg(1);
                             log.info("dl_iterate_phdr cb=" + cb + ", data=" + data);
                             return 0;
                         }
@@ -60,7 +61,8 @@ public class ArmLD64 extends Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            long handle = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
+                            RegisterContext context = emulator.getContext();
+                            long handle = context.getLongArg(0);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlclose handle=0x" + Long.toHexString(handle));
                             }
@@ -94,8 +96,9 @@ public class ArmLD64 extends Dlfcn {
                         }
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer filename = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            int flags = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
+                            RegisterContext context = emulator.getContext();
+                            Pointer filename = context.getPointerArg(0);
+                            int flags = context.getIntArg(1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlopen filename=" + filename.getString(0) + ", flags=" + flags);
                             }
@@ -134,8 +137,9 @@ public class ArmLD64 extends Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            long handle = emulator.getBackend().reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
-                            Pointer symbol = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                            RegisterContext context = emulator.getContext();
+                            long handle = context.getLongArg(0);
+                            Pointer symbol = context.getPointerArg(1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
                             }
@@ -146,8 +150,9 @@ public class ArmLD64 extends Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                            Pointer pcount = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
+                            RegisterContext context = emulator.getContext();
+                            Pointer pc = context.getPointerArg(0);
+                            Pointer pcount = context.getPointerArg(1);
                             log.info("dl_unwind_find_exidx pc" + pc + ", pcount=" + pcount);
                             return 0;
                         }

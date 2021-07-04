@@ -3,8 +3,11 @@ package com.github.unidbg.linux.android;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.ArmSvc;
+import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.LinuxModule;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
@@ -42,8 +45,9 @@ public class ArmLD extends Dlfcn {
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer cb = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            Pointer data = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            RegisterContext context = emulator.getContext();
+                            Pointer cb = context.getPointerArg(0);
+                            Pointer data = context.getPointerArg(1);
                             log.info("dl_iterate_phdr cb=" + cb + ", data=" + data);
                             return 0;
                         }
@@ -59,7 +63,8 @@ public class ArmLD extends Dlfcn {
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            long handle = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
+                            RegisterContext context = emulator.getContext();
+                            int handle = context.getIntArg(0);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlclose handle=0x" + Long.toHexString(handle));
                             }
@@ -86,8 +91,9 @@ public class ArmLD extends Dlfcn {
                         }
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer filename = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            int flags = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R1).intValue();
+                            RegisterContext context = emulator.getContext();
+                            Pointer filename = context.getPointerArg(0);
+                            int flags = context.getIntArg(1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlopen filename=" + filename.getString(0) + ", flags=" + flags);
                             }
@@ -98,8 +104,9 @@ public class ArmLD extends Dlfcn {
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            long addr = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
-                            Pointer info = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            RegisterContext context = emulator.getContext();
+                            int addr = context.getIntArg(0);
+                            Pointer info = context.getPointerArg(1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
                             }
@@ -125,8 +132,9 @@ public class ArmLD extends Dlfcn {
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            long handle = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
-                            Pointer symbol = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            RegisterContext context = emulator.getContext();
+                            int handle = context.getIntArg(0);
+                            Pointer symbol = context.getPointerArg(1);
                             if (log.isDebugEnabled()) {
                                 log.debug("dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
                             }
@@ -137,10 +145,18 @@ public class ArmLD extends Dlfcn {
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            Pointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-                            Pointer pcount = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+                            RegisterContext context = emulator.getContext();
+                            Pointer pc = context.getPointerArg(0);
+                            Pointer pcount = context.getPointerArg(1);
                             log.info("dl_unwind_find_exidx pc" + pc + ", pcount=" + pcount);
                             return 0;
+                        }
+                    }).peer;
+                case "android_get_application_target_sdk_version":
+                    return svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Emulator<?> emulator) {
+                            return HookStatus.LR(emulator, 0);
                         }
                     }).peer;
             }
