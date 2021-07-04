@@ -104,7 +104,7 @@ public class AndroidTest extends AbstractJni {
                 0x89abcdefL, 0.123f);
 
 //        Logger.getLogger("com.github.unidbg.linux.ARM32SyscallHandler").setLevel(Level.DEBUG);
-        System.err.println("exit code: " + module.callEntry(emulator));
+        System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 
 }

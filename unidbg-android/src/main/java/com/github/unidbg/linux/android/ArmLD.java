@@ -2,6 +2,7 @@ package com.github.unidbg.linux.android;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.Svc;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.ArmSvc;
@@ -9,19 +10,31 @@ import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.LinuxModule;
+import com.github.unidbg.linux.struct.dl_phdr_info;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.unix.struct.DlInfo;
 import com.sun.jna.Pointer;
+import keystone.Keystone;
+import keystone.KeystoneArchitecture;
+import keystone.KeystoneEncoded;
+import keystone.KeystoneMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class ArmLD extends Dlfcn {
 
@@ -43,13 +56,107 @@ public class ArmLD extends Dlfcn {
             switch (symbolName) {
                 case "dl_iterate_phdr":
                     return svcMemory.registerSvc(new ArmSvc() {
+                        private MemoryBlock block;
+                        @Override
+                        public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                            try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
+                                KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
+                                        "push {r4-r7, lr}",
+                                        "svc #0x" + Integer.toHexString(svcNumber),
+                                        "pop {r7}",
+                                        "cmp r7, #0",
+                                        "beq 0x34",
+                                        "pop {r0-r2}",
+                                        "blx r7",
+                                        "cmp r0, #0",
+                                        "beq 0x8",
+                                        "pop {r7}",
+                                        "cmp r7, #0",
+                                        "popne {r4-r6}",
+                                        "bne 0x24",
+                                        "mov r7, #0",
+                                        "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                                        "mov r4, #0x" + Integer.toHexString(svcNumber),
+                                        "svc #0",
+                                        "pop {r4-r7, pc}"));
+                                byte[] code = encoded.getMachineCode();
+                                UnidbgPointer pointer = svcMemory.allocate(code.length, "dl_iterate_phdr");
+                                pointer.write(0, code, 0, code.length);
+                                if (log.isDebugEnabled()) {
+                                    log.debug("dl_iterate_phdr: pointer=" + pointer);
+                                }
+                                return pointer;
+                            }
+                        }
                         @Override
                         public long handle(Emulator<?> emulator) {
+                            if (block != null) {
+                                throw new IllegalStateException();
+                            }
+
                             RegisterContext context = emulator.getContext();
-                            Pointer cb = context.getPointerArg(0);
-                            Pointer data = context.getPointerArg(1);
-                            log.info("dl_iterate_phdr cb=" + cb + ", data=" + data);
-                            return 0;
+                            UnidbgPointer cb = context.getPointerArg(0);
+                            UnidbgPointer data = context.getPointerArg(1);
+
+                            Collection<Module> modules = emulator.getMemory().getLoadedModules();
+                            List<LinuxModule> list = new ArrayList<>();
+                            for (Module module : modules) {
+                                LinuxModule lm = (LinuxModule) module;
+                                if (lm.elfFile != null) {
+                                    list.add(lm);
+                                }
+                            }
+                            Collections.reverse(list);
+                            final int size = UnidbgStructure.calculateSize(dl_phdr_info.class);
+                            block = emulator.getMemory().malloc(size * list.size(), true);
+                            UnidbgPointer ptr = block.getPointer();
+                            Backend backend = emulator.getBackend();
+                            UnidbgPointer sp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+                            if (log.isDebugEnabled()) {
+                                log.debug("dl_iterate_phdr cb=" + cb + ", data=" + data + ", size=" + list.size() + ", sp=" + sp);
+                            }
+
+                            try {
+                                sp = sp.share(-4, 0);
+                                sp.setInt(0, 0); // NULL-terminated
+
+                                for (LinuxModule module : list) {
+                                    dl_phdr_info info = new dl_phdr_info(ptr);
+                                    info.dlpi_addr = UnidbgPointer.pointer(emulator, module.base);
+                                    info.dlpi_name = module.createPathMemory(svcMemory);
+                                    info.dlpi_phdr = info.dlpi_addr.share(module.elfFile.ph_offset);
+                                    info.dlpi_phnum = module.elfFile.num_ph;
+                                    info.pack();
+
+                                    sp = sp.share(-4, 0);
+                                    sp.setPointer(0, data); // data
+
+                                    sp = sp.share(-4, 0);
+                                    sp.setInt(0, size); // size
+
+                                    sp = sp.share(-4, 0);
+                                    sp.setPointer(0, ptr); // dl_phdr_info
+
+                                    sp = sp.share(-4, 0);
+                                    sp.setPointer(0, cb); // callback
+
+                                    ptr = ptr.share(size, 0);
+                                }
+
+                                return context.getLongArg(0);
+                            } finally {
+                                backend.reg_write(ArmConst.UC_ARM_REG_SP, sp.peer);
+                            }
+                        }
+                        @Override
+                        public void handleCallback(Emulator<?> emulator) {
+                            super.handleCallback(emulator);
+
+                            if (block == null) {
+                                throw new IllegalStateException();
+                            }
+                            block.free();
+                            block = null;
                         }
                     }).peer;
                 case "dlerror":

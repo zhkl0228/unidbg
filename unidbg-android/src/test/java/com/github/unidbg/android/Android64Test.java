@@ -104,7 +104,7 @@ public class Android64Test extends AbstractJni {
                 0x89abcdefL, 0.123f);
 
 //        emulator.attach().addBreakPoint(null, 0x40080648);
-        System.err.println("exit code: " + module.callEntry(emulator));
+        System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 
 }

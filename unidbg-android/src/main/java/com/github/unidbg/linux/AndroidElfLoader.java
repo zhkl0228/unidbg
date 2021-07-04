@@ -437,7 +437,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         Map<String, Module> neededLibraries = new HashMap<>();
         for (String neededLibrary : dynamicStructure.getNeededLibraries()) {
-            log.debug(soName + " need dependency " + neededLibrary);
+            if (log.isDebugEnabled()) {
+                log.debug(soName + " need dependency " + neededLibrary);
+            }
 
             LinuxModule loaded = modules.get(neededLibrary);
             if (loaded != null) {
@@ -614,7 +616,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             symbolTableSection = elfFile.getSymbolTableSection();
         } catch(Throwable ignored) {}
         LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
-                armExIdx, ehFrameHeader, symbolTableSection);
+                armExIdx, ehFrameHeader, symbolTableSection, elfFile);
         if ("libc.so".equals(soName)) { // libc
             ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
             if (__thread_entry != null) {
