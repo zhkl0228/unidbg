@@ -39,6 +39,13 @@ public class DalvikVM extends BaseVM implements VM {
         final SvcMemory svcMemory = emulator.getSvcMemory();
         _JavaVM = svcMemory.allocate(emulator.getPointerSize(), "_JavaVM");
 
+        Pointer _GetVersion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                return JNI_VERSION_1_6;
+            }
+        });
+
         Pointer _FindClass = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2339,6 +2346,7 @@ public class DalvikVM extends BaseVM implements VM {
         for (int i = 0; i < 0x3a4; i += 4) {
             impl.setInt(i, i);
         }
+        impl.setPointer(0x10, _GetVersion);
         impl.setPointer(0x18, _FindClass);
         impl.setPointer(0x24, _ToReflectedMethod);
         impl.setPointer(0x34, _Throw);
