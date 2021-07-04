@@ -221,6 +221,7 @@ static int dl_iterate_phdr_callback(struct dl_phdr_info *info, size_t size, void
 }
 
 static void test_dl_iterate_phdr() {
+  printf("test_dl_iterate_phdr sizeof(dl_phdr_info)=0x%x, sizeof(Phdr)=0x%x\n", (unsigned int) sizeof(struct dl_phdr_info), (unsigned int) sizeof(ElfW(Phdr)));
   dl_iterate_phdr(dl_iterate_phdr_callback, NULL);
 }
 
