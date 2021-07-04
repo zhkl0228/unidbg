@@ -217,12 +217,12 @@ static int dl_iterate_phdr_callback(struct dl_phdr_info *info, size_t size, void
            printf("[other (%#x)]\n", p_type);
    }
 
-   return 0;
+   return strcmp("test", info->dlpi_name) == 0 ? info->dlpi_phnum : 0;
 }
 
 static void test_dl_iterate_phdr() {
-  printf("test_dl_iterate_phdr sizeof(dl_phdr_info)=0x%x, sizeof(Phdr)=0x%x\n", (unsigned int) sizeof(struct dl_phdr_info), (unsigned int) sizeof(ElfW(Phdr)));
-  dl_iterate_phdr(dl_iterate_phdr_callback, NULL);
+  int ret = dl_iterate_phdr(dl_iterate_phdr_callback, NULL);
+  printf("test_dl_iterate_phdr sizeof(dl_phdr_info)=0x%x, sizeof(Phdr)=0x%x, ret=%d\n", (unsigned int) sizeof(struct dl_phdr_info), (unsigned int) sizeof(ElfW(Phdr)), ret);
 }
 
 int main() {
