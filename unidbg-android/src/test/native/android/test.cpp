@@ -191,8 +191,8 @@ static int dl_iterate_phdr_callback(struct dl_phdr_info *info, size_t size, void
    const char *type;
    int p_type;
 
-   printf("dl_iterate_phdr_callback Name: \"%s\" (%d segments)\n", info->dlpi_name,
-              info->dlpi_phnum);
+   printf("dl_iterate_phdr_callback Name: \"%s\" (%d segments) => %p\n", info->dlpi_name,
+              info->dlpi_phnum, info->dlpi_name);
 
    for (int j = 0; j < info->dlpi_phnum; j++) {
        p_type = info->dlpi_phdr[j].p_type;
@@ -217,7 +217,7 @@ static int dl_iterate_phdr_callback(struct dl_phdr_info *info, size_t size, void
            printf("[other (%#x)]\n", p_type);
    }
 
-   return strcmp("test", info->dlpi_name) == 0 ? info->dlpi_phnum : 0;
+   return strcmp("libnative.so", info->dlpi_name) == 0 ? size : 0;
 }
 
 static void test_dl_iterate_phdr() {

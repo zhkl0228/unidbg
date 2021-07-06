@@ -616,7 +616,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             symbolTableSection = elfFile.getSymbolTableSection();
         } catch(Throwable ignored) {}
         LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
-                armExIdx, ehFrameHeader, symbolTableSection, elfFile);
+                armExIdx, ehFrameHeader, symbolTableSection, elfFile, dynamicStructure);
         if ("libc.so".equals(soName)) { // libc
             ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
             if (__thread_entry != null) {

@@ -24,6 +24,7 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
+import net.fornwall.jelf.ElfDynamicStructure;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
@@ -123,7 +124,13 @@ public class ArmLD extends Dlfcn {
                                 for (LinuxModule module : list) {
                                     dl_phdr_info info = new dl_phdr_info(ptr);
                                     info.dlpi_addr = UnidbgPointer.pointer(emulator, module.base);
-                                    info.dlpi_name = module.createPathMemory(svcMemory);
+                                    assert info.dlpi_addr != null;
+                                    ElfDynamicStructure dynamicStructure = module.dynamicStructure;
+                                    if (dynamicStructure != null && dynamicStructure.soName > 0 && dynamicStructure.dt_strtab_offset > 0) {
+                                        info.dlpi_name = info.dlpi_addr.share(dynamicStructure.dt_strtab_offset + dynamicStructure.soName);
+                                    } else {
+                                        info.dlpi_name = module.createPathMemory(svcMemory);
+                                    }
                                     info.dlpi_phdr = info.dlpi_addr.share(module.elfFile.ph_offset);
                                     info.dlpi_phnum = module.elfFile.num_ph;
                                     info.pack();

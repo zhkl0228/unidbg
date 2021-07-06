@@ -13,6 +13,7 @@ import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ArmExIdx;
+import net.fornwall.jelf.ElfDynamicStructure;
 import net.fornwall.jelf.ElfFile;
 import net.fornwall.jelf.ElfSection;
 import net.fornwall.jelf.ElfSymbol;
@@ -59,7 +60,7 @@ public class LinuxModule extends Module {
         LinuxModule module = new LinuxModule(base, size, name, null,
                 Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
                 Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(),
-                null, null, null, null) {
+                null, null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);
@@ -91,11 +92,12 @@ public class LinuxModule extends Module {
     public final MemoizedObject<GnuEhFrameHeader> ehFrameHeader;
     private final ElfSection symbolTableSection;
     public final ElfFile elfFile;
+    public final ElfDynamicStructure dynamicStructure;
 
     LinuxModule(long base, long size, String name, SymbolLocator dynsym,
                 List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader,
-                ElfSection symbolTableSection, ElfFile elfFile) {
+                ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure) {
         super(name, base, size, neededLibraries, regions);
 
         this.dynsym = dynsym;
@@ -105,6 +107,7 @@ public class LinuxModule extends Module {
         this.ehFrameHeader = ehFrameHeader;
         this.symbolTableSection = symbolTableSection;
         this.elfFile = elfFile;
+        this.dynamicStructure = dynamicStructure;
     }
 
     void callInitFunction(Emulator<?> emulator, boolean mustCallInit) throws IOException {

@@ -123,13 +123,13 @@ public class ElfDynamicStructure {
 	public static final int DF_1_NODELETE = 0x00000008; /* Set RTLD_NODELETE for this object. */
 
 	/** For the {@link #DT_STRTAB}. Mandatory. */
-	private long dt_strtab_offset;
+	public long dt_strtab_offset;
 	/** For the {@link #DT_STRSZ}. Mandatory. */
 	private int dt_strtab_size;
 
 	private MemoizedObject<ElfStringTable> dtStringTable;
 	private final int[] dtNeeded;
-	private final int soName;
+	public final int soName;
 	private final int init;
 	private long initArrayOffset, preInitArrayOffset;
 	private int initArraySize, preInitArraySize;
