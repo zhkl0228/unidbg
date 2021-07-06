@@ -277,7 +277,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, prctl(backend, emulator));
                     return;
                 case 180:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, pread(emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, pread64(emulator));
                     return;
                 case 183:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, getcwd(backend, emulator));
@@ -2044,12 +2044,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return read(emulator, fd, buffer, count);
     }
 
-    private int pread(Emulator<?> emulator) {
+    private int pread64(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int fd = context.getIntArg(0);
         Pointer buffer = context.getPointerArg(1);
         int count = context.getIntArg(2);
-        int offset = context.getIntArg(3);
+        long offset = context.getIntByReg(ArmConst.UC_ARM_REG_R4) | ((long) context.getIntByReg(ArmConst.UC_ARM_REG_R5) << 32L);
         return pread(emulator, fd, buffer, count, offset);
     }
 

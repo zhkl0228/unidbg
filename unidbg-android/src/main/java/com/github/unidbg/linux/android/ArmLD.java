@@ -290,7 +290,7 @@ public class ArmLD extends Dlfcn {
                 pointer.setInt(0, 0);
 
                 if (!"libnetd_client.so".equals(filename)) {
-                    log.info("dlopen failed: " + filename);
+                    log.info("dlopen failed: " + filename + ", LR=" + emulator.getContext().getLRPointer());
                 } else if(log.isDebugEnabled()) {
                     log.debug("dlopen failed: " + filename);
                 }

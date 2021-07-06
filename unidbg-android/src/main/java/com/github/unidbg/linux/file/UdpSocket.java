@@ -196,8 +196,17 @@ public class UdpSocket extends SocketIO implements FileIO {
         private final String ifName;
         private final Inet4Address ipv4;
         public NetworkIF(String ifName, Inet4Address ipv4) {
-            this.ifName = ifName;
+            this.ifName = getIfName(ifName);
             this.ipv4 = ipv4;
+        }
+        private String getIfName(String ifName) {
+            if ("lo0".equals(ifName)) {
+                return "lo";
+            }
+            if ("en0".equals(ifName)) {
+                return "wlan0";
+            }
+            return ifName;
         }
         @Override
         public String toString() {
@@ -223,7 +232,7 @@ public class UdpSocket extends SocketIO implements FileIO {
             log.debug("Return host network ifs: " + list);
         }
         if (emulator.getSyscallHandler().isVerbose()) {
-            System.out.println("Return host network ifs: " + list);
+            System.out.println("Return host network ifs: " + list + " from " + emulator.getContext().getLRPointer());
         }
         return list;
     }

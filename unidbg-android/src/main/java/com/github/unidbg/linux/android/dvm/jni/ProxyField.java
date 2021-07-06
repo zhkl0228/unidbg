@@ -40,6 +40,13 @@ class ProxyField {
         return field.getBoolean(thisObj);
     }
 
+    final byte getByte(Object thisObj) throws IllegalAccessException {
+        if (visitor != null) {
+            visitor.onProxyVisit(field, thisObj, null);
+        }
+        return field.getByte(thisObj);
+    }
+
     final int getInt(Object thisObj) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);

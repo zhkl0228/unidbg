@@ -88,6 +88,9 @@ public interface Jni {
     boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
     boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature);
 
+    byte getStaticByteField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
+    byte getStaticByteField(BaseVM vm, DvmClass dvmClass, String signature);
+
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
     int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature);
 

@@ -16,7 +16,6 @@ import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -196,51 +195,14 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         }
     }
 
-    private class ApkLibraryFile implements LibraryFile {
-        private final Apk apk;
-        private final String soName;
-        private final byte[] soData;
-        private final String packageName;
-        private final String appDir;
-        ApkLibraryFile(Apk apk, String soName, byte[] soData, String packageName) {
-            this.apk = apk;
-            this.soName = soName;
-            this.soData = soData;
-            this.packageName = packageName;
-            this.appDir = packageName == null ? "" : ('/' + packageName + "-1");
-        }
-        @Override
-        public String getName() {
-            return soName;
-        }
-        @Override
-        public String getMapRegionName() {
-            return "/data/app-lib" + appDir + '/' + soName;
-        }
-        @Override
-        public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
-            byte[] libData = loadLibraryData(apk, soName);
-            return libData == null ? null : new ApkLibraryFile(this.apk, soName, libData, packageName);
-        }
-        @Override
-        public ByteBuffer mapBuffer() {
-            return ByteBuffer.wrap(soData);
-        }
-        @Override
-        public String getPath() {
-            return "/data/app-lib" + appDir;
-        }
-    }
-
     abstract byte[] loadLibraryData(Apk apk, String soName);
 
     @Override
-    public final DalvikModule loadLibrary(String libname, boolean forceCallInit) {
+    public LibraryFile findLibrary(String soName) {
         if (apk == null) {
             throw new UnsupportedOperationException();
         }
 
-        String soName = "lib" + libname + ".so";
         ApkLibraryFile libraryFile = findLibrary(apk, soName);
         if (libraryFile == null) {
             File split = new File(apk.getParentFile(), emulator.is64Bit() ? "config.arm64_v8a.apk" : "config.armeabi_v7a.apk");
@@ -248,10 +210,13 @@ public abstract class BaseVM implements VM, DvmClassFactory {
                 libraryFile = findLibrary(ApkFactory.createApk(split), soName);
             }
         }
-        if (libraryFile == null) {
-            throw new IllegalStateException("load library failed: " + libname);
-        }
+        return libraryFile;
+    }
 
+    @Override
+    public final DalvikModule loadLibrary(String libname, boolean forceCallInit) {
+        String soName = "lib" + libname + ".so";
+        LibraryFile libraryFile = findLibrary(soName);
         Module module = emulator.getMemory().load(libraryFile, forceCallInit);
         return new DalvikModule(this, module);
     }
@@ -271,7 +236,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             return null;
         }
 
-        return new ApkLibraryFile(apk, soName, libData, apk.getPackageName());
+        return new ApkLibraryFile(this, apk, soName, libData, apk.getPackageName());
     }
 
     Signature[] getSignatures() {

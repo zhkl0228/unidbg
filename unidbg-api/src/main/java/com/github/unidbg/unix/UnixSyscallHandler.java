@@ -269,7 +269,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return read;
     }
 
-    protected final int pread(Emulator<?> emulator, int fd, Pointer buffer, int count, int offset) {
+    protected final int pread(Emulator<?> emulator, int fd, Pointer buffer, int count, long offset) {
         if (log.isDebugEnabled()) {
             log.debug("pread fd=" + fd + ", buffer=" + buffer + ", count=" + count + ", offset=" + offset + ", from=" + emulator.getContext().getLRPointer());
         }
@@ -281,7 +281,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         }
         int read = file.pread(emulator.getBackend(), buffer, count, offset);
         if (verbose) {
-            System.out.printf("PRead %d bytes %d offset from '%s'%n", read, offset, file);
+            System.out.printf("PRead %d bytes with offset %d from '%s'%n", read, offset, file);
         }
         return read;
     }

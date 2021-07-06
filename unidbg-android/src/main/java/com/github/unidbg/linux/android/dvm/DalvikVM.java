@@ -382,7 +382,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     int hash = dvmClass.getMethodID(name, args);
                     if (verbose && hash != 0) {
-                        System.out.printf("JNIEnv->GetMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, context.getLRPointer());
+                        System.out.printf("JNIEnv->GetMethodID(%s.%s%s) => 0x%x was called from %s%n", dvmClass.getClassName(), name, args, hash & 0xffffffffL, context.getLRPointer());
                     }
                     return hash;
                 }
@@ -1210,7 +1210,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     int hash = dvmClass.getStaticMethodID(name, args);
                     if (verbose && hash != 0) {
-                        System.out.printf("JNIEnv->GetStaticMethodID(%s.%s%s) was called from %s%n", dvmClass.getClassName(), name, args, context.getLRPointer());
+                        System.out.printf("JNIEnv->GetStaticMethodID(%s.%s%s) => 0x%x was called from %s%n", dvmClass.getClassName(), name, args, hash & 0xffffffffL, context.getLRPointer());
                     }
                     return hash;
                 }
@@ -1630,6 +1630,29 @@ public class DalvikVM extends BaseVM implements VM {
                         System.out.printf("JNIEnv->GetStaticBooleanField(%s, %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret ? VM.JNI_TRUE : VM.JNI_FALSE;
+                }
+            }
+        });
+
+        Pointer _GetStaticByteField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetStaticByteField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException();
+                } else {
+                    byte ret = dvmField.getStaticByteField();
+                    if (verbose) {
+                        System.out.printf("JNIEnv->GetStaticByteField(%s, %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
+                    }
+                    return ret;
                 }
             }
         });
@@ -2415,6 +2438,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x240, _GetStaticFieldID);
         impl.setPointer(0x244, _GetStaticObjectField);
         impl.setPointer(0x248, _GetStaticBooleanField);
+        impl.setPointer(0x24c, _GetStaticByteField);
         impl.setPointer(0x258, _GetStaticIntField);
         impl.setPointer(0x25c, _GetStaticLongField);
         impl.setPointer(0x27c, _SetStaticIntField);

@@ -38,10 +38,10 @@ public class ByteArrayFileIO extends BaseAndroidFileIO {
     }
 
     @Override
-    public int pread(Backend backend, Pointer buffer, int count, int offset) {
+    public int pread(Backend backend, Pointer buffer, int count, long offset) {
         int pos = this.pos;
         try {
-            this.pos = offset;
+            this.pos = (int) offset;
             return read(backend, buffer, count);
         } finally {
             this.pos = pos;

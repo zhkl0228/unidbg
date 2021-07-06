@@ -3,6 +3,7 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.dvm.apk.AssetResolver;
+import com.github.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
 
 import java.io.File;
@@ -52,6 +53,8 @@ public interface VM {
     DalvikModule loadLibrary(String libname, boolean forceCallInit);
     DalvikModule loadLibrary(String libname, byte[] raw, boolean forceCallInit);
     DalvikModule loadLibrary(File elfFile, boolean forceCallInit);
+
+    LibraryFile findLibrary(String soName);
 
     int addLocalObject(DvmObject<?> object);
     int addGlobalObject(DvmObject<?> object);
