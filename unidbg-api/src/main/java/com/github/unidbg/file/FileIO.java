@@ -18,6 +18,8 @@ public interface FileIO {
 
     int read(Backend backend, Pointer buffer, int count);
 
+    int pread(Backend backend, Pointer buffer, int count, int offset);
+
     int fcntl(Emulator<?> emulator, int cmd, long arg);
 
     int ioctl(Emulator<?> emulator, long request, long argp);

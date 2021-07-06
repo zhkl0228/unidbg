@@ -151,6 +151,11 @@ public abstract class AbstractFileIO implements NewFileIO {
     }
 
     @Override
+    public int pread(Backend backend, Pointer buffer, int count, int offset) {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    @Override
     public FileIO dup2() {
         throw new AbstractMethodError(getClass().getName());
     }
