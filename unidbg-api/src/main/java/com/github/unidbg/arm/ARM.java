@@ -8,14 +8,10 @@ import capstone.Capstone;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.unwind.Unwinder;
-import com.github.zhkl0228.demumble.DemanglerFactory;
-import com.github.zhkl0228.demumble.GccDemangler;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1062,31 +1058,35 @@ public class ARM {
         sb.append(" [0x").append(Long.toHexString(addr)).append(']');
         try {
             if (is64Bit) {
-                long value;
-                switch (bytesRead) {
-                    case 1:
-                        value = pointer.getByte(0) & 0xff;
-                        break;
-                    case 2:
-                        value = pointer.getShort(0) & 0xffff;
-                        break;
-                    case 4:
-                        value = pointer.getInt(0);
-                        break;
-                    case 8:
-                        value = pointer.getLong(0);
-                        break;
-                    default:
-                        throw new IllegalStateException("bytesRead=" + bytesRead);
-                }
-                sb.append(" => 0x").append(Long.toHexString(value));
-                if (value < 0) {
-                    sb.append(" (-0x").append(Long.toHexString(-value)).append(')');
-                } else if((value & 0x7fffffff00000000L) == 0) {
-                    int iv = (int) value;
-                    if (iv < 0) {
-                        sb.append(" (-0x").append(Integer.toHexString(-iv)).append(')');
+                if (pointer != null) {
+                    long value;
+                    switch (bytesRead) {
+                        case 1:
+                            value = pointer.getByte(0) & 0xff;
+                            break;
+                        case 2:
+                            value = pointer.getShort(0) & 0xffff;
+                            break;
+                        case 4:
+                            value = pointer.getInt(0);
+                            break;
+                        case 8:
+                            value = pointer.getLong(0);
+                            break;
+                        default:
+                            throw new IllegalStateException("bytesRead=" + bytesRead);
                     }
+                    sb.append(" => 0x").append(Long.toHexString(value));
+                    if (value < 0) {
+                        sb.append(" (-0x").append(Long.toHexString(-value)).append(')');
+                    } else if((value & 0x7fffffff00000000L) == 0) {
+                        int iv = (int) value;
+                        if (iv < 0) {
+                            sb.append(" (-0x").append(Integer.toHexString(-iv)).append(')');
+                        }
+                    }
+                } else {
+                    sb.append(" => null");
                 }
             } else {
                 int value;

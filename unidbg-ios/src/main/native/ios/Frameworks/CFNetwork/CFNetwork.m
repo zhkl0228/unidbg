@@ -2,6 +2,19 @@
 #import <stdio.h>
 #import <CoreFoundation/CoreFoundation.h>
 
+void _CFURLProtocolRegisterFoundationBridge(void *impl, Boolean preferCFURLProtocol) {
+  uintptr_t lr = 1;
+  __asm__(
+    "mov %[LR], lr\n"
+    :[LR]"=r"(lr)
+  );
+  if(is_debug()) {
+    char buf[512];
+    print_lr(buf, lr);
+    fprintf(stderr, "_CFURLProtocolRegisterFoundationBridge impl=%p, preferCFURLProtocol=%d, LR=%s\n", impl, preferCFURLProtocol, buf);
+  }
+}
+
 CFDictionaryRef CFNetworkCopySystemProxySettings() {
   uintptr_t lr = 1;
   __asm__(

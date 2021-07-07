@@ -12,6 +12,14 @@ const NSNotificationName UIApplicationWillTerminateNotification = @"UIApplicatio
 const NSNotificationName UIApplicationDidFinishLaunchingNotification = @"UIApplicationDidFinishLaunchingNotification";
 const NSNotificationName UIApplicationDidChangeStatusBarOrientationNotification = @"UIApplicationDidChangeStatusBarOrientationNotification";
 const NSNotificationName UIApplicationDidChangeStatusBarFrameNotification = @"UIApplicationDidChangeStatusBarFrameNotification";
+const NSNotificationName UIApplicationSignificantTimeChangeNotification = @"UIApplicationSignificantTimeChangeNotification";
+const NSNotificationName UIApplicationWillChangeStatusBarOrientationNotification = @"UIApplicationWillChangeStatusBarOrientationNotification";
+const NSNotificationName UIApplicationWillChangeStatusBarFrameNotification = @"UIApplicationWillChangeStatusBarFrameNotification";
+const NSNotificationName UIApplicationBackgroundRefreshStatusDidChangeNotification = @"UIApplicationBackgroundRefreshStatusDidChangeNotification";
+const NSNotificationName UIApplicationProtectedDataWillBecomeUnavailable = @"UIApplicationProtectedDataWillBecomeUnavailable";
+const NSNotificationName UIApplicationProtectedDataDidBecomeAvailable = @"UIApplicationProtectedDataDidBecomeAvailable";
+const NSNotificationName UIApplicationUserDidTakeScreenshotNotification = @"UIApplicationUserDidTakeScreenshotNotification";
+const NSNotificationName UIAccessibilityVoiceOverStatusChanged = @"UIAccessibilityVoiceOverStatusChanged";
 const NSNotificationName UIKeyboardWillShowNotification = @"UIKeyboardWillShowNotification";
 const NSNotificationName UIKeyboardWillHideNotification = @"UIKeyboardWillHideNotification";
 
@@ -175,3 +183,5 @@ typedef enum UIDeviceBatteryState : NSInteger {
 @interface UIImage : NSObject <UIAccessibilityIdentification>
 @property(nonatomic) CGImageRef CGImage;
 @end
+
+id __NSArray0__;

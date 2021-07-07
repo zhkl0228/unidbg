@@ -1372,6 +1372,12 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, module.ordinalList.size(), symbolName, module.getPath()));
         }
 
+        if ("___NSArray0__".equals(symbolName)) {
+            targetImage = this.modules.get("UIKit");
+            if (targetImage == null) {
+                throw new IllegalStateException();
+            }
+        }
         Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
             symbol = targetImage.getExportByName(symbolName);

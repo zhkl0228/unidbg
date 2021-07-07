@@ -19,3 +19,6 @@ const CFStringRef kSecReturnAttributes = CFSTR("r_Attributes");
 const CFStringRef kSecAttrAccessGroup = CFSTR("agrp");
 const CFStringRef kSecAttrAccessibleAfterFirstUnlock = CFSTR("ck");
 const CFStringRef kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly = CFSTR("cku");
+const CFStringRef kSecAttrGeneric = CFSTR("gena");
+const CFStringRef kSecAttrLabel = CFSTR("labl");
+const CFStringRef kSecAttrDescription = CFSTR("desc");
