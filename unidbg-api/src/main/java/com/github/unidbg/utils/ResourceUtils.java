@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -59,16 +58,11 @@ public class ResourceUtils {
     private static void extractJarResource(URL url, File dir) {
         String protocol = url.getProtocol();
         if ("jar".equals(protocol)) {
-            JarEntry foundEntry = findJarEntry(url);
+            JarURL jarURL = JarURL.create(url);
+            JarEntry foundEntry = jarURL.getJarEntry();
             String foundName = foundEntry.getName();
 
-            String path = url.getPath();
-            int index = path.indexOf("!");
-            if (index == -1) {
-                throw new IllegalStateException(path);
-            }
-            String jarPath = path.substring(5, index);
-            try (JarFile jarFile = new JarFile(URLDecoder.decode(jarPath, "UTF-8"))) {
+            try (JarFile jarFile = new JarFile(jarURL.jar)) {
                 Enumeration<JarEntry> entries = jarFile.entries();
                 while (entries.hasMoreElements()) {
                     JarEntry jarEntry = entries.nextElement();
@@ -107,38 +101,11 @@ public class ResourceUtils {
             }
         }
         if ("jar".equals(protocol)) {
-            JarEntry foundEntry = findJarEntry(url);
+            JarURL jarURL = JarURL.create(url);
+            JarEntry foundEntry = jarURL.getJarEntry();
             return !foundEntry.isDirectory();
         }
         throw new UnsupportedOperationException("protocol=" + protocol + ", url=" + url);
-    }
-
-    private static JarEntry findJarEntry(URL url) {
-        String path = url.getPath();
-        int index = path.indexOf("!");
-        if (index == -1) {
-            throw new IllegalStateException(path);
-        }
-        String jarPath = path.substring(5, index);
-        String name = path.substring(index + 2);
-        JarEntry foundEntry = null;
-        try (JarFile jarFile = new JarFile(URLDecoder.decode(jarPath, "UTF-8"))) {
-            Enumeration<JarEntry> entries = jarFile.entries();
-            while (entries.hasMoreElements()) {
-                JarEntry jarEntry = entries.nextElement();
-                String entryName = jarEntry.getName();
-                if (name.equals(entryName) || (name + "/").equals(entryName)) {
-                    foundEntry = jarEntry;
-                    break;
-                }
-            }
-            if (foundEntry == null) {
-                throw new IllegalStateException("find failed: jarPath=" + jarPath + ", name=" + name);
-            }
-            return foundEntry;
-        } catch (IOException e) {
-            throw new IllegalStateException(url.toString(), e);
-        }
     }
 
 }
