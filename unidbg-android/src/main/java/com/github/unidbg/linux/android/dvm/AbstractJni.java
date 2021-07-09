@@ -800,6 +800,13 @@ public abstract class AbstractJni implements Jni {
                     throw new IllegalStateException(e);
                 }
             }
+            case "android/content/pm/Signature->hashCode()I": {
+                if (dvmObject instanceof Signature) {
+                    Signature sig = (Signature) dvmObject;
+                    return sig.getHashCode();
+                }
+                break;
+            }
         }
 
         throw new UnsupportedOperationException(signature);

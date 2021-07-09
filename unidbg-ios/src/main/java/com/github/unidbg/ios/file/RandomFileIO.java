@@ -15,9 +15,7 @@ public class RandomFileIO extends DriverFileIO {
     public int read(Backend backend, Pointer buffer, int count) {
         int total = 0;
         byte[] buf = new byte[Math.min(0x1000, count)];
-        for (int i = 0; i < buf.length; i++) {
-            buf[i] = (byte) i;
-        }
+        randBytes(buf);
         Pointer pointer = buffer;
         while (total < count) {
             int read = Math.min(buf.length, count - total);
@@ -27,4 +25,11 @@ public class RandomFileIO extends DriverFileIO {
         }
         return total;
     }
+
+    protected void randBytes(byte[] buf) {
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = (byte) i;
+        }
+    }
+
 }

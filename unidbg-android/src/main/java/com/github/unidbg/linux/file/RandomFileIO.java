@@ -8,7 +8,7 @@ import com.sun.jna.Pointer;
 
 public class RandomFileIO extends DriverFileIO {
 
-    RandomFileIO(Emulator<?> emulator, String path) {
+    public RandomFileIO(Emulator<?> emulator, String path) {
         super(emulator, IOConstants.O_RDONLY, path);
     }
 
@@ -16,9 +16,7 @@ public class RandomFileIO extends DriverFileIO {
     public int read(Backend backend, Pointer buffer, int count) {
         int total = 0;
         byte[] buf = new byte[Math.min(0x1000, count)];
-        for (int i = 0; i < buf.length; i++) {
-            buf[i] = (byte) i;
-        }
+        randBytes(buf);
         Pointer pointer = buffer;
         while (total < count) {
             int read = Math.min(buf.length, count - total);
@@ -27,6 +25,12 @@ public class RandomFileIO extends DriverFileIO {
             pointer = pointer.share(read);
         }
         return total;
+    }
+
+    protected void randBytes(byte[] buf) {
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = (byte) i;
+        }
     }
 
     @Override
