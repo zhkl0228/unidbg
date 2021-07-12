@@ -5,6 +5,8 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.ios.IOConstants;
 import com.sun.jna.Pointer;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class RandomFileIO extends DriverFileIO {
 
     public RandomFileIO(Emulator<?> emulator, String path) {
@@ -26,10 +28,8 @@ public class RandomFileIO extends DriverFileIO {
         return total;
     }
 
-    protected void randBytes(byte[] buf) {
-        for (int i = 0; i < buf.length; i++) {
-            buf[i] = (byte) i;
-        }
+    protected void randBytes(byte[] bytes) {
+        ThreadLocalRandom.current().nextBytes(bytes);
     }
 
 }

@@ -15,11 +15,13 @@ public class URLibraryFile implements LibraryFile {
     private final URL url;
     private final String name;
     private final int sdk;
+    private final boolean is64Bit;
 
-    public URLibraryFile(URL url, String name, int sdk) {
+    public URLibraryFile(URL url, String name, int sdk, boolean is64Bit) {
         this.url = url;
         this.name = name;
         this.sdk = sdk;
+        this.is64Bit = is64Bit;
     }
 
     @Override
@@ -51,6 +53,6 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/vendor/lib/" + getName();
+        return "/vendor/" + (is64Bit ? "lib64/" : "lib/") + name;
     }
 }

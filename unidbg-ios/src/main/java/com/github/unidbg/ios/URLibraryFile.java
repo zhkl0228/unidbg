@@ -33,7 +33,7 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        return path;
+        return getPath();
     }
 
     @Override

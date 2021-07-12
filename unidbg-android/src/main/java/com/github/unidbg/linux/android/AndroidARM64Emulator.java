@@ -59,7 +59,7 @@ public class AndroidARM64Emulator extends AbstractARM64Emulator<AndroidFileIO> i
 
     @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, -1);
+        return new URLibraryFile(url, libName, -1, true);
     }
 
     @Override

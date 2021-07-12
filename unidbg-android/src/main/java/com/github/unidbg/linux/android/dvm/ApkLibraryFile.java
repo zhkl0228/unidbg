@@ -14,14 +14,16 @@ class ApkLibraryFile implements LibraryFile {
     private final byte[] soData;
     private final String packageName;
     private final String appDir;
+    private final boolean is64Bit;
 
-    ApkLibraryFile(BaseVM baseVM, Apk apk, String soName, byte[] soData, String packageName) {
+    ApkLibraryFile(BaseVM baseVM, Apk apk, String soName, byte[] soData, String packageName, boolean is64Bit) {
         this.baseVM = baseVM;
         this.apk = apk;
         this.soName = soName;
         this.soData = soData;
         this.packageName = packageName;
         this.appDir = packageName == null ? "" : ('/' + packageName + "-1");
+        this.is64Bit = is64Bit;
     }
 
     @Override
@@ -31,13 +33,13 @@ class ApkLibraryFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        return "/data/app-lib" + appDir + '/' + soName;
+        return getPath();
     }
 
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
         byte[] libData = baseVM.loadLibraryData(apk, soName);
-        return libData == null ? null : new ApkLibraryFile(baseVM, this.apk, soName, libData, packageName);
+        return libData == null ? null : new ApkLibraryFile(baseVM, this.apk, soName, libData, packageName, is64Bit);
     }
 
     @Override
@@ -47,6 +49,6 @@ class ApkLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/data/app-lib" + appDir;
+        return "/data/app" + appDir + "/lib/" + (is64Bit ? "arm64/" : "arm/") + soName;
     }
 }

@@ -9,14 +9,16 @@ public class ElfLibraryRawFile implements LibraryFile {
 
     private final ByteBuffer raw;
     private final String name;
+    private final boolean is64Bit;
 
-    public ElfLibraryRawFile(String name, ByteBuffer buffer) {
+    public ElfLibraryRawFile(String name, ByteBuffer buffer, boolean is64Bit) {
         this.raw = buffer;
         this.name = name == null || name.isEmpty() ? String.format("%x.so", buffer.hashCode()) : name;
+        this.is64Bit = is64Bit;
     }
 
-    public ElfLibraryRawFile(String name, byte[] binary) {
-        this(name, ByteBuffer.wrap(binary));
+    public ElfLibraryRawFile(String name, byte[] binary, boolean is64Bit) {
+        this(name, ByteBuffer.wrap(binary), is64Bit);
     }
 
     @Override
@@ -26,7 +28,7 @@ public class ElfLibraryRawFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        return "/system/lib/" + this.getName();
+        return getPath();
     }
 
     @Override
@@ -41,6 +43,6 @@ public class ElfLibraryRawFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return null;
+        return "/system/" + (is64Bit ? "lib64/" : "lib/") + name;
     }
 }

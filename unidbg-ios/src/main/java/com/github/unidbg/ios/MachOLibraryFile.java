@@ -23,7 +23,7 @@ public class MachOLibraryFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        return "/vendor/lib/" + getName();
+        return getPath();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class MachOLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/vendor/lib";
+        return "/vendor/lib/" + file.getName();
     }
 
 }

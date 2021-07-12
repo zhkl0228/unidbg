@@ -11,9 +11,11 @@ import java.nio.ByteBuffer;
 public class ElfLibraryFile implements LibraryFile {
 
     private final File elfFile;
+    private final boolean is64Bit;
 
-    public ElfLibraryFile(File elfFile) {
+    public ElfLibraryFile(File elfFile, boolean is64Bit) {
         this.elfFile = elfFile;
+        this.is64Bit = is64Bit;
     }
 
     @Override
@@ -23,18 +25,13 @@ public class ElfLibraryFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        String name = getName();
-        if (name.endsWith(".so")) {
-            return "/system/lib/" + name;
-        } else {
-            return "/system/bin/" + name;
-        }
+        return getPath();
     }
 
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String soName) {
         File file = new File(elfFile.getParentFile(), soName);
-        return file.canRead() ? new ElfLibraryFile(file) : null;
+        return file.canRead() ? new ElfLibraryFile(file, is64Bit) : null;
     }
 
     @Override
@@ -44,7 +41,12 @@ public class ElfLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/system/lib";
+        String name = getName();
+        if (name.endsWith(".so")) {
+            return "/system/" + (is64Bit ? "lib64/" : "lib/") + name;
+        } else {
+            return "/system/bin/" + name;
+        }
     }
 
 }

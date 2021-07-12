@@ -96,7 +96,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     @Override
     protected LibraryFile createLibraryFile(File file) {
-        return new ElfLibraryFile(file);
+        return new ElfLibraryFile(file, emulator.is64Bit());
     }
 
     @Override

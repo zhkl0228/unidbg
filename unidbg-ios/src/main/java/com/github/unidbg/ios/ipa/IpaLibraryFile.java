@@ -44,7 +44,7 @@ public class IpaLibraryFile implements LibraryFile {
 
     @Override
     public String getMapRegionName() {
-        return executable;
+        return getPath();
     }
 
     @Override

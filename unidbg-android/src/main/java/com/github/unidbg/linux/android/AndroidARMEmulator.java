@@ -98,7 +98,7 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
 
     @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, libName, -1);
+        return new URLibraryFile(url, libName, -1, false);
     }
 
     @Override

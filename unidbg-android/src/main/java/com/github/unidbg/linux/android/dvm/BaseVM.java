@@ -226,7 +226,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         if (raw == null || raw.length == 0) {
             throw new IllegalArgumentException();
         }
-        Module module = emulator.getMemory().load(new ElfLibraryRawFile(libname, raw), forceCallInit);
+        Module module = emulator.getMemory().load(new ElfLibraryRawFile(libname, raw, emulator.is64Bit()), forceCallInit);
         return new DalvikModule(this, module);
     }
 
@@ -236,7 +236,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             return null;
         }
 
-        return new ApkLibraryFile(this, apk, soName, libData, apk.getPackageName());
+        return new ApkLibraryFile(this, apk, soName, libData, apk.getPackageName(), emulator.is64Bit());
     }
 
     Signature[] getSignatures() {
@@ -289,7 +289,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
     @Override
     public final DalvikModule loadLibrary(File elfFile, boolean forceCallInit) {
-        Module module = emulator.getMemory().load(new ElfLibraryFile(elfFile), forceCallInit);
+        Module module = emulator.getMemory().load(new ElfLibraryFile(elfFile, emulator.is64Bit()), forceCallInit);
         return new DalvikModule(this, module);
     }
 
