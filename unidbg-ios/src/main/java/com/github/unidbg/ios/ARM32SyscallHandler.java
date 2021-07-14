@@ -405,7 +405,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fstatfs64(emulator));
                     return;
                 case 347:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, getfsstat64(emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, getfsstat64(emulator, 0));
                     return;
                 case 357:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, getaudit_addr(emulator));

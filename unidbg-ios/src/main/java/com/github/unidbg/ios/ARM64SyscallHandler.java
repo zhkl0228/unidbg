@@ -440,7 +440,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fstatfs64(emulator));
                     return;
                 case 347:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getfsstat64(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getfsstat64(emulator, 0));
                     return;
                 case 357:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getaudit_addr(emulator));
@@ -691,6 +691,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 return true;
             case 338:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, stat64(emulator, 1));
+                return true;
+            case 347:
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getfsstat64(emulator, 1));
                 return true;
         }
         return false;

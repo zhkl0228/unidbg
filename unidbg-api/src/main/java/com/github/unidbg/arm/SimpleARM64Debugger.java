@@ -55,8 +55,13 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
                 if (line.startsWith("run") && runnable != null) {
                     try {
                         callbackRunning = true;
-                        String[] args = line.substring(3).trim().split("\\s+");
-                        runnable.runWithArgs(args);
+                        String arg = line.substring(3).trim();
+                        if (arg.length() > 0) {
+                            String[] args = arg.split("\\s+");
+                            runnable.runWithArgs(args);
+                        } else {
+                            runnable.runWithArgs(null);
+                        }
                     } finally {
                         callbackRunning = false;
                     }
