@@ -2294,6 +2294,61 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetStringRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+
+                StringObject string = getObject(object.toIntPeer());
+                String value = Objects.requireNonNull(string).getValue();
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetStringRegion(%s) was called from %s%n", string, context.getLRPointer());
+                }
+                byte[] bytes = new byte[value.length() * 2];
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                for (char c : value.toCharArray()) {
+                    buffer.putChar(c);
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("GetStringRegion string=" + string + ", value=" + value + ", start=" + start +
+                            ", length=" + length + ", buf" + buf +", lr=" + context.getLRPointer());
+                }
+                byte[] data = Arrays.copyOfRange(bytes, start, start+length+1);
+                buf.write(0, data, 0, data.length);
+                return JNI_OK;
+            }
+        });
+
+        Pointer _GetStringUTFRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+
+                StringObject string = getObject(object.toIntPeer());
+                String value = Objects.requireNonNull(string).getValue();
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetStringUTFRegion(%s) was called from %s%n", string, context.getLRPointer());
+                }
+                byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetStringUTFRegion string=" + string + ", value=" + value + ", start=" + start +
+                            ", length=" + length + ", buf" + buf +", lr=" + context.getLRPointer());
+                }
+                byte[] data = Arrays.copyOfRange(bytes, start, start+length+1);
+                buf.write(0, data, 0, data.length);
+                return JNI_OK;
+            }
+        });
+
         Pointer _GetPrimitiveArrayCritical = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2481,6 +2536,8 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x364, _MonitorEnter);
         impl.setPointer(0x368, _MonitorExit);
         impl.setPointer(0x36c, _GetJavaVM);
+        impl.setPointer(0x370, _GetStringRegion);
+        impl.setPointer(0x374, _GetStringUTFRegion);
         impl.setPointer(0x378, _GetPrimitiveArrayCritical);
         impl.setPointer(0x37c, _ReleasePrimitiveArrayCritical);
         impl.setPointer(0x388, _NewWeakGlobalRef);
