@@ -438,8 +438,11 @@ public class Dyld64 extends Dyld {
             @Override
             public long handle(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();
-                System.out.println("dispatch_after block=" + context.getPointerArg(2));
-                return context.getLongArg(0);
+                long when = context.getLongArg(0);
+                Pointer queue = context.getPointerArg(1);
+                Pointer block = context.getPointerArg(2);
+                System.out.println("dispatch_after when=" + when + ", queue=" + queue + ", block=" + block);
+                return 0;
             }
         }).peer;
 
@@ -447,8 +450,10 @@ public class Dyld64 extends Dyld {
             @Override
             public long handle(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();
-                System.out.println("dispatch_async block=" + context.getPointerArg(1));
-                return context.getLongArg(0);
+                Pointer queue = context.getPointerArg(0);
+                Pointer block = context.getPointerArg(1);
+                System.out.println("dispatch_async queue=" + queue + ", block=" + block);
+                return 0;
             }
         }).peer;
 

@@ -1585,7 +1585,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
             }
         }
-        log.warn("dlsym failed: handle=" + handle + ", symbolName=" + symbolName);
+        log.info("dlsym failed: handle=" + handle + ", symbolName=" + symbolName);
         return null;
     }
 
