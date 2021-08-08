@@ -105,6 +105,36 @@ public class DalvikVM extends BaseVM implements VM {
                 }
             }
         }) ;
+        
+        Pointer _GetSuperclass = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                Arm32RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetSuperClass(%s) was called from %s%n", dvmClass,
+                            UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                }
+                if(dvmClass.getClassName().equals("java/lang/Object")){
+                    log.debug("JNIEnv->GetSuperClass was called, class = " + dvmClass.getClassName() + " According to Java Native Interface Specification, " +
+                            "If clazz specifies the class Object, returns NULL.");
+                    throw new BackendException();
+                }
+                DvmClass superClass = dvmClass.getSuperclass();
+                if (superClass == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("JNIEnv->GetSuperClass was called, class = " + dvmClass.getClassName() + ", superClass get failed.");
+                    }
+                    throw new BackendException();
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("JNIEnv->GetSuperClass was called, class = " + dvmClass.getClassName() + ", superClass = " + superClass.getClassName());
+                    }
+                    return superClass.hashCode();
+                }
+            }
+        });
 
         Pointer _Throw = svcMemory.registerSvc(new ArmSvc() {
             @Override
@@ -2435,6 +2465,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x10, _GetVersion);
         impl.setPointer(0x18, _FindClass);
         impl.setPointer(0x24, _ToReflectedMethod);
+        impl.setPointer(0x28, _GetSuperclass);
         impl.setPointer(0x34, _Throw);
         impl.setPointer(0x3c, _ExceptionOccurred);
         impl.setPointer(0x44, _ExceptionClear);
