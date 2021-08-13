@@ -438,6 +438,16 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, double value) {
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    }
+
+    @Override
+    public void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, String signature, double value) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public long getStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
         throw new UnsupportedOperationException(dvmField.getSignature());
     }

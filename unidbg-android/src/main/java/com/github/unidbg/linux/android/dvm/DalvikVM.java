@@ -1790,6 +1790,31 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _SetStaticDoubleField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                UnidbgPointer sp = context.getStackPointer();
+                double value = sp.getDouble(0);
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticDoubleField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    dvmField.setStaticDoubleField(value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticDoubleField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
+                    }
+                }
+                return 0;
+            }
+        });
+
         Pointer _GetStringUTFLength = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2536,6 +2561,7 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x25c, _GetStaticLongField);
         impl.setPointer(0x27c, _SetStaticIntField);
         impl.setPointer(0x280, _SetStaticLongField);
+        impl.setPointer(0x288, _SetStaticDoubleField);
         impl.setPointer(0x290, _GetStringLength);
         impl.setPointer(0x294, _GetStringChars);
         impl.setPointer(0x298, _ReleaseStringChars);

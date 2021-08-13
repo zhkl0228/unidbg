@@ -133,6 +133,9 @@ public interface Jni {
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value);
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value);
 
+    void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, double value);
+    void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, String signature, double value);
+
     long getStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField);
     long getStaticLongField(BaseVM vm, DvmClass dvmClass, String signature);
 

@@ -114,6 +114,11 @@ public class DvmField extends Hashable {
         checkJni(vm, dvmClass).setStaticLongField(vm, dvmClass, this, value);
     }
 
+    void setStaticDoubleField(double value) {
+        BaseVM vm = dvmClass.vm;
+        checkJni(vm, dvmClass).setStaticDoubleField(vm, dvmClass, this, value);
+    }
+
     long getStaticLongField() {
         BaseVM vm = dvmClass.vm;
         return checkJni(vm, dvmClass).getStaticLongField(vm, dvmClass, this);
