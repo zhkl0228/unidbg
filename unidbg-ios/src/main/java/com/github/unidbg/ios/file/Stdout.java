@@ -51,8 +51,10 @@ public class Stdout extends SimpleFileIO {
             if (debugStream != null) {
                 debugStream.write(data);
             }
-            out.write(data);
-            out.flush();
+            if (log.isWarnEnabled()) {
+                out.write(data);
+                out.flush();
+            }
             if (callback != null) {
                 callback.notifyOut(data, err);
             }

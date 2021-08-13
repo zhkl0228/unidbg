@@ -16,11 +16,14 @@ import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VarArg;
+import com.github.unidbg.linux.file.Stdout;
 import com.github.unidbg.linux.struct.Dirent;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -103,7 +106,7 @@ public class AndroidTest extends AbstractJni {
                 0x789a, 0.12345D, true, 0x123, 0.456f, 0.789123D, (byte) 0x7f,
                 0x89abcdefL, 0.123f);
 
-//        Logger.getLogger("com.github.unidbg.linux.ARM32SyscallHandler").setLevel(Level.DEBUG);
+        Logger.getLogger(Stdout.class).setLevel(Level.ERROR);
         System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 

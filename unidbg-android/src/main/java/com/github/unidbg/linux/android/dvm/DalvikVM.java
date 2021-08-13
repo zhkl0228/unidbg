@@ -109,14 +109,13 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _GetSuperclass = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                Arm32RegisterContext context = emulator.getContext();
+                RegisterContext context = emulator.getContext();
                 UnidbgPointer clazz = context.getPointerArg(1);
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetSuperClass(%s) was called from %s%n", dvmClass,
-                            UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
+                    System.out.printf("JNIEnv->GetSuperClass(%s) was called from %s%n", dvmClass, context.getLRPointer());
                 }
-                if(dvmClass.getClassName().equals("java/lang/Object")){
+                if (dvmClass.getClassName().equals("java/lang/Object")) {
                     log.debug("JNIEnv->GetSuperClass was called, class = " + dvmClass.getClassName() + " According to Java Native Interface Specification, " +
                             "If clazz specifies the class Object, returns NULL.");
                     throw new BackendException();

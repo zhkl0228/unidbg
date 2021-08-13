@@ -5,34 +5,34 @@
     <parent>
         <groupId>com.github.zhkl0228</groupId>
         <artifactId>unidbg-parent</artifactId>
-        <version>0.9.4</version>
+        <version>0.9.5-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>unidbg-android</artifactId>
-    <version>0.9.4</version>
+    <version>0.9.5-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-api</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-dynarmic</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.5-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-hypervisor</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.5-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-kvm</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.5-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -65,6 +65,6 @@ Simple tests under src/test directory
 - [mman-win32](https://github.com/mcgarrah/mman-win32)
 
 ### One-time Donation
-We accept donations via the following ways:
+We accept donations via WeChatPay:
 
-![WeChat Pay](assets/wx.jpg)
+![WeChat Pay](assets/wx.png)
