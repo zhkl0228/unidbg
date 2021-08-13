@@ -774,8 +774,12 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
-                    DvmObject<?> obj = dvmMethod.newObjectV(vaList);
-                    Objects.requireNonNull(dvmObject).setValue(obj.value);
+                    if (dvmMethod.isConstructor()) {
+                        DvmObject<?> obj = dvmMethod.newObjectV(vaList);
+                        Objects.requireNonNull(dvmObject).setValue(obj.value);
+                    } else {
+                        dvmMethod.callVoidMethodV(dvmObject, vaList);
+                    }
                     if (verbose) {
                         System.out.printf("JNIEnv->CallNonvirtualVoidMethodV(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }

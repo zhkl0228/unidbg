@@ -26,6 +26,10 @@ public class DvmMethod extends Hashable {
         this.isStatic = isStatic;
     }
 
+    public boolean isConstructor() {
+        return "<init>".equals(methodName);
+    }
+
     public DvmClass getDvmClass() {
         return dvmClass;
     }
