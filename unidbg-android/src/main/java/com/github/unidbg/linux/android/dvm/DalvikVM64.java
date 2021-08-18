@@ -1293,6 +1293,34 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallStaticDoubleMethod = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallStaticDoubleMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
+                    double ret = dvmMethod.callStaticDoubleMethod(varArg);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallStaticDoubleMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
+                    }
+                    ByteBuffer buffer = ByteBuffer.allocate(16);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putDouble(ret);
+                    emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
+                    return context.getLongArg(0);
+                }
+            }
+        });
+
         Pointer _CallStaticVoidMethod = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2107,6 +2135,7 @@ public class DalvikVM64 extends BaseVM implements VM {
         impl.setPointer(0x410, _CallStaticIntMethodV);
         impl.setPointer(0x428, _CallStaticLongMethodV);
         impl.setPointer(0x438, _CallStaticFloatMethod);
+        impl.setPointer(0x450, _CallStaticDoubleMethod);
         impl.setPointer(0x468, _CallStaticVoidMethod);
         impl.setPointer(0x470, _CallStaticVoidMethodV);
         impl.setPointer(0x480, _GetStaticFieldID);

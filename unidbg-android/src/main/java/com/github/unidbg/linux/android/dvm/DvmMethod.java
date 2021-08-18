@@ -179,6 +179,11 @@ public class DvmMethod extends Hashable {
         return checkJni(vm, dvmClass).callStaticFloatMethod(vm, dvmClass, this, varArg);
     }
 
+    double callStaticDoubleMethod(VarArg varArg) {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).callStaticDoubleMethod(vm, dvmClass, this, varArg);
+    }
+
     void callStaticVoidMethod(VarArg varArg) {
         BaseVM vm = dvmClass.vm;
         checkJni(vm, dvmClass).callStaticVoidMethod(vm, dvmClass, this, varArg);

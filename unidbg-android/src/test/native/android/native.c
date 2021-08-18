@@ -22,14 +22,16 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_ERR;
   }
   jmethodID testStaticFloat = (*env)->GetStaticMethodID(env, cAndroidTest, "testStaticFloat", "(FD)F");
+  jmethodID testStaticDouble = (*env)->GetStaticMethodID(env, cAndroidTest, "testStaticDouble", "(FD)D");
   jfieldID testBoolean = (*env)->GetStaticFieldID(env, cAndroidTest, "staticBooleanField", "Z");
 
   jfloat floatValue = (*env)->CallStaticFloatMethod(env, cAndroidTest, testStaticFloat, 0.00123456789012345F, 0.00456789123456D);
+  jdouble doubleValue = (*env)->CallStaticDoubleMethod(env, cAndroidTest, testStaticDouble, 0.00123456789012345F, 0.00456789123456D);
   jboolean booleanValue = (*env)->GetStaticBooleanField(env, cAndroidTest, testBoolean);
 
   char buf[10240];
-  snprintf(buf, 10240, "%ff", floatValue);
-  printf("JNI_OnLoad floatValue=%s, booleanValue=%d, sizeof(jfloat)=%zu\n", buf, booleanValue, sizeof(jfloat));
+  snprintf(buf, 10240, "%fF", floatValue);
+  printf("JNI_OnLoad floatValue=%s, doubleValue=%fD, booleanValue=%d, sizeof(jfloat)=%zu, sizeof(jdouble)=%zu\n", buf, doubleValue, booleanValue, sizeof(jfloat), sizeof(jdouble));
 
   return JNI_VERSION_1_6;
 }

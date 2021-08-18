@@ -89,6 +89,14 @@ public class Android64Test extends AbstractJni {
     }
 
     @Override
+    public double callStaticDoubleMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        if ("com/github/unidbg/android/AndroidTest->testStaticDouble(FD)D".equals(signature)) {
+            return 0.0023942017D;
+        }
+        return super.callStaticDoubleMethod(vm, dvmClass, signature, varArg);
+    }
+
+    @Override
     public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature) {
         if ("com/github/unidbg/android/AndroidTest->staticBooleanField:Z".equals(signature)) {
             return true;

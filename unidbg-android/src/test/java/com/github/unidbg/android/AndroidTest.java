@@ -92,6 +92,14 @@ public class AndroidTest extends AbstractJni {
     }
 
     @Override
+    public double callStaticDoubleMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        if ("com/github/unidbg/android/AndroidTest->testStaticDouble(FD)D".equals(signature)) {
+            return 0.0023942017D;
+        }
+        return super.callStaticDoubleMethod(vm, dvmClass, signature, varArg);
+    }
+
+    @Override
     public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature) {
         if ("com/github/unidbg/android/AndroidTest->staticBooleanField:Z".equals(signature)) {
             return true;
@@ -106,7 +114,7 @@ public class AndroidTest extends AbstractJni {
                 0x789a, 0.12345D, true, 0x123, 0.456f, 0.789123D, (byte) 0x7f,
                 0x89abcdefL, 0.123f);
 
-        Logger.getLogger(Stdout.class).setLevel(Level.ERROR);
+        Logger.getLogger(Stdout.class).setLevel(Level.WARN);
         System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 

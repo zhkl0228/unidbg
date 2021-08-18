@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
 
 public class Utils {
 
@@ -147,6 +149,35 @@ public class Utils {
         } else {
             return Long.parseLong(str);
         }
+    }
+
+    public static String decodeDouble(byte[] data) {
+        double[] ds = bytes2Doubles(data);
+        return ds == null ? "" : String.format("(%s)", ds[0]);
+    }
+
+    private static double[] bytes2Doubles(byte[] data) {
+        for (int i = 0; i < 8; i++) {
+            if (data[i] != 0) {
+                return null;
+            }
+        }
+        byte[] copy = Arrays.copyOfRange(data, 8, data.length);
+        boolean isDouble = false;
+        for (int i = 0; i < 4; i++) {
+            if (copy[i] != 0) {
+                isDouble = true;
+                break;
+            }
+        }
+        if (!isDouble) {
+            copy = Arrays.copyOfRange(copy, 4, copy.length);
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(copy.length);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.put(copy);
+        buffer.flip();
+        return new double[] { isDouble ? buffer.getDouble() : buffer.getFloat() };
     }
 
 }

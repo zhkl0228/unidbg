@@ -5,6 +5,9 @@ public interface Jni {
     float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
     float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 
+    double callStaticDoubleMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
+    double callStaticDoubleMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
+
     void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg);
     void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg);
 

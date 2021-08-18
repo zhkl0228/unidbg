@@ -360,7 +360,7 @@ public class KvmBackend64 extends KvmBackend {
 
     @Override
     public byte[] reg_read_vector(int regId) throws BackendException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override

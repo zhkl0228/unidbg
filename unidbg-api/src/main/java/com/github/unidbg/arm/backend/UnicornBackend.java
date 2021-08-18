@@ -59,7 +59,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
                 }
                 return unicorn.reg_read(regId, 16);
             } else {
-                throw new UnsupportedOperationException();
+                if (regId < ArmConst.UC_ARM_REG_D0 || regId > ArmConst.UC_ARM_REG_D15) {
+                    throw new UnsupportedOperationException("regId=" + regId);
+                }
+                return unicorn.reg_read(regId, 16);
             }
         } catch (UnicornException e) {
             throw new BackendException(e);
@@ -79,7 +82,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
                 }
                 unicorn.reg_write(regId, vector);
             } else {
-                throw new UnsupportedOperationException();
+                if (regId < ArmConst.UC_ARM_REG_D0 || regId > ArmConst.UC_ARM_REG_D15) {
+                    throw new UnsupportedOperationException("regId=" + regId);
+                }
+                unicorn.reg_write(regId, vector);
             }
         } catch (UnicornException e) {
             throw new BackendException(e);
