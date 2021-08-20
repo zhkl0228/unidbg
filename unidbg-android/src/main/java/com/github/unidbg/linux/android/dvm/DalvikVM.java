@@ -12,6 +12,7 @@ import com.github.unidbg.linux.android.dvm.array.DoubleArray;
 import com.github.unidbg.linux.android.dvm.array.FloatArray;
 import com.github.unidbg.linux.android.dvm.array.IntArray;
 import com.github.unidbg.linux.android.dvm.array.PrimitiveArray;
+import com.github.unidbg.linux.android.dvm.array.ShortArray;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
@@ -46,6 +47,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _DefineClass = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _FindClass = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -77,6 +85,20 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _FromReflectedMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _FromReflectedField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _ToReflectedMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -104,7 +126,7 @@ public class DalvikVM extends BaseVM implements VM {
                     return addLocalObject(dvmMethod.toReflectedMethod());
                 }
             }
-        }) ;
+        });
         
         Pointer _GetSuperclass = svcMemory.registerSvc(new ArmSvc() {
             @Override
@@ -135,6 +157,20 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _IsAssignableFrom = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _ToReflectedField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _Throw = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -144,6 +180,13 @@ public class DalvikVM extends BaseVM implements VM {
                 log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + (dvmObject != null ? dvmObject.getObjectType() : null));
                 throwable = dvmObject;
                 return 0;
+            }
+        });
+
+        Pointer _ThrowNew = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -157,6 +200,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _ExceptionDescribe = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _ExceptionClear = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -165,6 +215,13 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 throwable = null;
                 return 0;
+            }
+        });
+
+        Pointer _FatalError = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -353,6 +410,13 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                     return addLocalObject(obj);
                 }
+            }
+        });
+
+        Pointer _NewObjectA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -572,6 +636,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallByteMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _CallByteMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -598,6 +669,41 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallByteMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallCharMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallCharMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallCharMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallShortMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _CallShortMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -621,6 +727,13 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                     return ret;
                 }
+            }
+        });
+
+        Pointer _CallShortMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -754,6 +867,20 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallLongMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallFloatMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _CallFloatMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -784,6 +911,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallFloatMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _CallDoubleMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -810,6 +944,20 @@ public class DalvikVM extends BaseVM implements VM {
                     buffer.flip();
                     return (buffer.getInt() & 0xffffffffL);
                 }
+            }
+        });
+
+        Pointer _CallDoubleMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallDoubleMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -890,6 +1038,41 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallNonvirtualObjectMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualObjectMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualObjectMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualBooleanMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualBooleanMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _CallNonvirtualBooleanMethodA = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -917,6 +1100,160 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
                 }
+            }
+        });
+
+        Pointer _CallNonvirtualByteMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualByteMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualByteMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualCharMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualCharMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualCharMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualShortMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualShortMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualShortMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualIntMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualIntMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualIntMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualLongMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualLongMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualLongMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualFloatMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualFloatMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualFloatMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualDoubleMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualDoubleMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualDoubleMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallNonvirtualVoidMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -1057,6 +1394,27 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetByteField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetCharField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetShortField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _GetIntField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1134,6 +1492,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetDoubleField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _SetObjectField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1186,6 +1551,27 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _SetByteField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetCharField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetShortField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _SetIntField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1234,6 +1620,13 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                 }
                 return 0;
+            }
+        });
+
+        Pointer _SetFloatField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
         
@@ -1436,6 +1829,69 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallStaticByteMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticByteMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticByteMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticCharMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticCharMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticCharMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticShortMethod = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticShortMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticShortMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _CallStaticIntMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1482,6 +1938,13 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                     return ret;
                 }
+            }
+        });
+
+        Pointer _CallStaticIntMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -1536,6 +1999,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _CallStaticLongMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _CallStaticFloatMethod = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1561,6 +2031,20 @@ public class DalvikVM extends BaseVM implements VM {
                     buffer.flip();
                     return (buffer.getInt() & 0xffffffffL);
                 }
+            }
+        });
+
+        Pointer _CallStaticFloatMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticFloatMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -1592,6 +2076,20 @@ public class DalvikVM extends BaseVM implements VM {
                     context.setR1(i2);
                     return i1;
                 }
+            }
+        });
+
+        Pointer _CallStaticDoubleMethodV = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _CallStaticDoubleMethodA = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -1763,6 +2261,20 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetStaticCharField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetStaticShortField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _GetStaticIntField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -1807,6 +2319,55 @@ public class DalvikVM extends BaseVM implements VM {
                     context.setR1((int) (ret >> 32));
                     return ret;
                 }
+            }
+        });
+
+        Pointer _GetStaticFloatField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetStaticDoubleField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetStaticObjectField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetStaticBooleanField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetStaticByteField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetStaticCharField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetStaticShortField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -1856,6 +2417,13 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                 }
                 return 0;
+            }
+        });
+
+        Pointer _SetStaticFloatField = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2021,6 +2589,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _NewLongArray = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _NewFloatArray = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2036,6 +2611,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetLongArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _GetFloatArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2044,6 +2626,20 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer isCopy = context.getPointerArg(2);
                 FloatArray array = getObject(object.toIntPeer());
                 return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).toIntPeer();
+            }
+        });
+
+        Pointer _GetDoubleArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _NewBooleanArray = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
         
@@ -2059,6 +2655,20 @@ public class DalvikVM extends BaseVM implements VM {
                     System.out.printf("JNIEnv->NewByteArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addLocalObject(new ByteArray(DalvikVM.this, new byte[size]));
+            }
+        });
+
+        Pointer _NewCharArray = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _NewShortArray = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2092,6 +2702,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetBooleanArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _GetByteArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2106,6 +2723,20 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetCharArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetShortArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _GetIntArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2117,6 +2748,13 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetIntArrayElements array=" + array + ", isCopy=" + isCopy);
                 }
                 return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).toIntPeer();
+            }
+        });
+
+        Pointer _NewString = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2196,6 +2834,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _ReleaseBooleanArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _ReleaseByteArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2209,6 +2854,20 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
+            }
+        });
+
+        Pointer _ReleaseCharArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _ReleaseShortArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2228,6 +2887,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _ReleaseLongArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _ReleaseFloatArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2241,6 +2907,20 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
+            }
+        });
+
+        Pointer _ReleaseDoubleArrayElements = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetBooleanArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2262,6 +2942,83 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 buf.write(0, data, 0, data.length);
                 return 0;
+            }
+        });
+
+        Pointer _GetCharArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetShortArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                ShortArray array = getObject(object.toIntPeer());
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetShortArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
+                short[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetShortArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                }
+                buf.write(0, data, 0, data.length);
+                return 0;
+            }
+        });
+
+        Pointer _GetIntArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetLongArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetFloatArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetDoubleArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                DoubleArray array = getObject(object.toIntPeer());
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetDoubleArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
+                double[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                }
+                buf.write(0, data, 0, data.length);
+                return 0;
+            }
+        });
+
+        Pointer _SetBooleanArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2289,6 +3046,20 @@ public class DalvikVM extends BaseVM implements VM {
                 return 0;
             }
         });
+
+        Pointer _SetCharArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _SetShortArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
         
         Pointer _SetIntArrayRegion = svcMemory.registerSvc(new ArmSvc() {
             @Override
@@ -2305,6 +3076,13 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 Objects.requireNonNull(array).setData(start, data);
                 return 0;
+            }
+        });
+
+        Pointer _SetLongArrayRegion = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2375,6 +3153,13 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                 }
                 return JNI_OK;
+            }
+        });
+
+        Pointer _UnregisterNatives = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2502,6 +3287,20 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _GetStringCritical = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _ReleaseStringCritical = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _NewWeakGlobalRef = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2518,6 +3317,13 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
+        Pointer _DeleteWeakGlobalRef = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         Pointer _ExceptionCheck = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -2525,6 +3331,27 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("ExceptionCheck throwable=" + throwable);
                 }
                 return throwable == null ? JNI_FALSE : JNI_TRUE;
+            }
+        });
+
+        Pointer _NewDirectByteBuffer = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetDirectBufferAddress = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        Pointer _GetDirectBufferCapacity = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
             }
         });
 
@@ -2551,28 +3378,45 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
-        final UnidbgPointer impl = svcMemory.allocate(0x3a4 + emulator.getPointerSize(), "JNIEnv.impl");
-        for (int i = 0; i < 0x3a4; i += 4) {
+        Pointer _GetModule = svcMemory.registerSvc(new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
+
+        final int last = 0x3a4;
+        final UnidbgPointer impl = svcMemory.allocate(last + 4, "JNIEnv.impl");
+        for (int i = 0; i <= last; i += 4) {
             impl.setInt(i, i);
         }
         impl.setPointer(0x10, _GetVersion);
+        impl.setPointer(0x14, _DefineClass);
         impl.setPointer(0x18, _FindClass);
+        impl.setPointer(0x1c, _FromReflectedMethod);
+        impl.setPointer(0x20, _FromReflectedField);
         impl.setPointer(0x24, _ToReflectedMethod);
         impl.setPointer(0x28, _GetSuperclass);
+        impl.setPointer(0x2c, _IsAssignableFrom);
+        impl.setPointer(0x30, _ToReflectedField);
         impl.setPointer(0x34, _Throw);
+        impl.setPointer(0x38, _ThrowNew);
         impl.setPointer(0x3c, _ExceptionOccurred);
+        impl.setPointer(0x40, _ExceptionDescribe);
         impl.setPointer(0x44, _ExceptionClear);
+        impl.setPointer(0x48, _FatalError);
         impl.setPointer(0x4c, _PushLocalFrame);
         impl.setPointer(0x50, _PopLocalFrame);
         impl.setPointer(0x54, _NewGlobalRef);
         impl.setPointer(0x58, _DeleteGlobalRef);
-        impl.setPointer(0x5C, _DeleteLocalRef);
+        impl.setPointer(0x5c, _DeleteLocalRef);
         impl.setPointer(0x60, _IsSameObject);
         impl.setPointer(0x64, _NewLocalRef);
         impl.setPointer(0x68, _EnsureLocalCapacity);
         impl.setPointer(0x6c, _AllocObject);
         impl.setPointer(0x70, _NewObject);
         impl.setPointer(0x74, _NewObjectV);
+        impl.setPointer(0x78, _NewObjectA);
         impl.setPointer(0x7c, _GetObjectClass);
         impl.setPointer(0x80, _IsInstanceOf);
         impl.setPointer(0x84, _GetMethodID);
@@ -2582,45 +3426,107 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x94, _CallBooleanMethod);
         impl.setPointer(0x98, _CallBooleanMethodV);
         impl.setPointer(0x9c, _CallBooleanMethodA);
+        impl.setPointer(0xa0, _CallByteMethod);
         impl.setPointer(0xa4, _CallByteMethodV);
+        impl.setPointer(0xa8, _CallByteMethodA);
+        impl.setPointer(0xac, _CallCharMethod);
+        impl.setPointer(0xb0, _CallCharMethodV);
+        impl.setPointer(0xb4, _CallCharMethodA);
+        impl.setPointer(0xb8, _CallShortMethod);
         impl.setPointer(0xbc, _CallShortMethodV);
+        impl.setPointer(0xc0, _CallShortMethodA);
         impl.setPointer(0xc4, _CallIntMethod);
         impl.setPointer(0xc8, _CallIntMethodV);
         impl.setPointer(0xcc, _CallIntMethodA);
         impl.setPointer(0xd0, _CallLongMethod);
         impl.setPointer(0xd4, _CallLongMethodV);
+        impl.setPointer(0xd8, _CallLongMethodA);
+        impl.setPointer(0xdc, _CallFloatMethod);
         impl.setPointer(0xe0, _CallFloatMethodV);
+        impl.setPointer(0xe4, _CallFloatMethodA);
         impl.setPointer(0xe8, _CallDoubleMethod);
+        impl.setPointer(0xec, _CallDoubleMethodV);
+        impl.setPointer(0xf0, _CallDoubleMethodA);
         impl.setPointer(0xf4, _CallVoidMethod);
         impl.setPointer(0xf8, _CallVoidMethodV);
         impl.setPointer(0xfc, _CallVoidMethodA);
+        impl.setPointer(0x100, _CallNonvirtualObjectMethod);
+        impl.setPointer(0x104, _CallNonvirtualObjectMethodV);
+        impl.setPointer(0x108, _CallNonvirtualObjectMethodA);
+        impl.setPointer(0x10c, _CallNonvirtualBooleanMethod);
+        impl.setPointer(0x110, _CallNonvirtualBooleanMethodV);
         impl.setPointer(0x114, _CallNonvirtualBooleanMethodA);
+        impl.setPointer(0x118, _CallNonvirtualByteMethod);
+        impl.setPointer(0x11c, _CallNonvirtualByteMethodV);
+        impl.setPointer(0x120, _CallNonvirtualByteMethodA);
+        impl.setPointer(0x124, _CallNonvirtualCharMethod);
+        impl.setPointer(0x128, _CallNonvirtualCharMethodV);
+        impl.setPointer(0x12c, _CallNonvirtualCharMethodA);
+        impl.setPointer(0x130, _CallNonvirtualShortMethod);
+        impl.setPointer(0x134, _CallNonvirtualShortMethodV);
+        impl.setPointer(0x138, _CallNonvirtualShortMethodA);
+        impl.setPointer(0x13c, _CallNonvirtualIntMethod);
+        impl.setPointer(0x140, _CallNonvirtualIntMethodV);
+        impl.setPointer(0x144, _CallNonvirtualIntMethodA);
+        impl.setPointer(0x148, _CallNonvirtualLongMethod);
+        impl.setPointer(0x14c, _CallNonvirtualLongMethodV);
+        impl.setPointer(0x150, _CallNonvirtualLongMethodA);
+        impl.setPointer(0x154, _CallNonvirtualFloatMethod);
+        impl.setPointer(0x158, _CallNonvirtualFloatMethodV);
+        impl.setPointer(0x15c, _CallNonvirtualFloatMethodA);
+        impl.setPointer(0x160, _CallNonvirtualDoubleMethod);
+        impl.setPointer(0x164, _CallNonvirtualDoubleMethodV);
+        impl.setPointer(0x168, _CallNonvirtualDoubleMethodA);
+        impl.setPointer(0x16c, _CallNonvirtualVoidMethod);
         impl.setPointer(0x170, _CallNonvirtualVoidMethodV);
         impl.setPointer(0x174, _CallNonVirtualVoidMethodA);
         impl.setPointer(0x178, _GetFieldID);
         impl.setPointer(0x17c, _GetObjectField);
         impl.setPointer(0x180, _GetBooleanField);
+        impl.setPointer(0x184, _GetByteField);
+        impl.setPointer(0x188, _GetCharField);
+        impl.setPointer(0x18c, _GetShortField);
         impl.setPointer(0x190, _GetIntField);
         impl.setPointer(0x194, _GetLongField);
         impl.setPointer(0x198, _GetFloatField);
+        impl.setPointer(0x19c, _GetDoubleField);
         impl.setPointer(0x1a0, _SetObjectField);
         impl.setPointer(0x1a4, _SetBooleanField);
+        impl.setPointer(0x1a8, _SetByteField);
+        impl.setPointer(0x1ac, _SetCharField);
+        impl.setPointer(0x1b0, _SetShortField);
         impl.setPointer(0x1b4, _SetIntField);
         impl.setPointer(0x1b8, _SetLongField);
+        impl.setPointer(0x1bc, _SetFloatField);
         impl.setPointer(0x1c0, _SetDoubleField);
         impl.setPointer(0x1c4, _GetStaticMethodID);
         impl.setPointer(0x1c8, _CallStaticObjectMethod);
-        impl.setPointer(0x1dc, _CallStaticBooleanMethodA);
         impl.setPointer(0x1cc, _CallStaticObjectMethodV);
         impl.setPointer(0x1d0, _CallStaticObjectMethodA);
         impl.setPointer(0x1d4, _CallStaticBooleanMethod);
         impl.setPointer(0x1d8, _CallStaticBooleanMethodV);
+        impl.setPointer(0x1dc, _CallStaticBooleanMethodA);
+        impl.setPointer(0x1e0, _CallStaticByteMethod);
+        impl.setPointer(0x1e4, _CallStaticByteMethodV);
+        impl.setPointer(0x1e8, _CallStaticByteMethodA);
+        impl.setPointer(0x1ec, _CallStaticCharMethod);
+        impl.setPointer(0x1f0, _CallStaticCharMethodV);
+        impl.setPointer(0x1f4, _CallStaticCharMethodA);
+        impl.setPointer(0x1f8, _CallStaticShortMethod);
+        impl.setPointer(0x1fc, _CallStaticShortMethodV);
+        impl.setPointer(0x200, _CallStaticShortMethodA);
         impl.setPointer(0x204, _CallStaticIntMethod);
         impl.setPointer(0x208, _CallStaticIntMethodV);
+        impl.setPointer(0x20c, _CallStaticIntMethodA);
         impl.setPointer(0x210, _CallStaticLongMethod);
         impl.setPointer(0x214, _CallStaticLongMethodV);
+        impl.setPointer(0x218, _CallStaticLongMethodA);
         impl.setPointer(0x21c, _CallStaticFloatMethod);
+        impl.setPointer(0x220, _CallStaticFloatMethodV);
+        impl.setPointer(0x224, _CallStaticFloatMethodA);
         impl.setPointer(0x228, _CallStaticDoubleMethod);
+        impl.setPointer(0x22c, _CallStaticDoubleMethodV);
+        impl.setPointer(0x230, _CallStaticDoubleMethodA);
         impl.setPointer(0x234, _CallStaticVoidMethod);
         impl.setPointer(0x238, _CallStaticVoidMethodV);
         impl.setPointer(0x23c, _CallStaticVoidMethodA);
@@ -2628,11 +3534,22 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x244, _GetStaticObjectField);
         impl.setPointer(0x248, _GetStaticBooleanField);
         impl.setPointer(0x24c, _GetStaticByteField);
+        impl.setPointer(0x250, _GetStaticCharField);
+        impl.setPointer(0x254, _GetStaticShortField);
         impl.setPointer(0x258, _GetStaticIntField);
         impl.setPointer(0x25c, _GetStaticLongField);
+        impl.setPointer(0x260, _GetStaticFloatField);
+        impl.setPointer(0x264, _GetStaticDoubleField);
+        impl.setPointer(0x268, _SetStaticObjectField);
+        impl.setPointer(0x26c, _SetStaticBooleanField);
+        impl.setPointer(0x270, _SetStaticByteField);
+        impl.setPointer(0x274, _SetStaticCharField);
+        impl.setPointer(0x278, _SetStaticShortField);
         impl.setPointer(0x27c, _SetStaticIntField);
         impl.setPointer(0x280, _SetStaticLongField);
+        impl.setPointer(0x284, _SetStaticFloatField);
         impl.setPointer(0x288, _SetStaticDoubleField);
+        impl.setPointer(0x28c, _NewString);
         impl.setPointer(0x290, _GetStringLength);
         impl.setPointer(0x294, _GetStringChars);
         impl.setPointer(0x298, _ReleaseStringChars);
@@ -2642,24 +3559,50 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x2a8, _ReleaseStringUTFChars);
         impl.setPointer(0x2ac, _GetArrayLength);
         impl.setPointer(0x2b0, _NewObjectArray);
-        impl.setPointer(0x2c0, _NewByteArray);
-        impl.setPointer(0x2cc, _NewIntArray);
-        impl.setPointer(0x2d8, _NewDoubleArray);
-        impl.setPointer(0x2e0, _GetByteArrayElements);
-        impl.setPointer(0x2ec, _GetIntArrayElements);
         impl.setPointer(0x2b4, _GetObjectArrayElement);
         impl.setPointer(0x2b8, _SetObjectArrayElement);
+        impl.setPointer(0x2bc, _NewBooleanArray);
+        impl.setPointer(0x2c0, _NewByteArray);
+        impl.setPointer(0x2c4, _NewCharArray);
+        impl.setPointer(0x2c8, _NewShortArray);
+        impl.setPointer(0x2cc, _NewIntArray);
+        impl.setPointer(0x2d0, _NewLongArray);
         impl.setPointer(0x2d4, _NewFloatArray);
+        impl.setPointer(0x2d8, _NewDoubleArray);
+        impl.setPointer(0x2dc, _GetBooleanArrayElements);
+        impl.setPointer(0x2e0, _GetByteArrayElements);
+        impl.setPointer(0x2e4, _GetCharArrayElements);
+        impl.setPointer(0x2e8, _GetShortArrayElements);
+        impl.setPointer(0x2ec, _GetIntArrayElements);
+        impl.setPointer(0x2f0, _GetLongArrayElements);
         impl.setPointer(0x2f4, _GetFloatArrayElements);
+        impl.setPointer(0x2f8, _GetDoubleArrayElements);
+        impl.setPointer(0x2fc, _ReleaseBooleanArrayElements);
         impl.setPointer(0x300, _ReleaseByteArrayElements);
+        impl.setPointer(0x304, _ReleaseCharArrayElements);
+        impl.setPointer(0x308, _ReleaseShortArrayElements);
         impl.setPointer(0x30c, _ReleaseIntArrayElements);
+        impl.setPointer(0x310, _ReleaseLongArrayElements);
         impl.setPointer(0x314, _ReleaseFloatArrayElements);
+        impl.setPointer(0x318, _ReleaseDoubleArrayElements);
+        impl.setPointer(0x31c, _GetBooleanArrayRegion);
         impl.setPointer(0x320, _GetByteArrayRegion);
+        impl.setPointer(0x324, _GetCharArrayRegion);
+        impl.setPointer(0x328, _GetShortArrayRegion);
+        impl.setPointer(0x32c, _GetIntArrayRegion);
+        impl.setPointer(0x330, _GetLongArrayRegion);
+        impl.setPointer(0x334, _GetFloatArrayRegion);
+        impl.setPointer(0x338, _GetDoubleArrayRegion);
+        impl.setPointer(0x33c, _SetBooleanArrayRegion);
         impl.setPointer(0x340, _SetByteArrayRegion);
+        impl.setPointer(0x344, _SetCharArrayRegion);
+        impl.setPointer(0x348, _SetShortArrayRegion);
         impl.setPointer(0x34c, _SetIntArrayRegion);
+        impl.setPointer(0x350, _SetLongArrayRegion);
         impl.setPointer(0x354, _SetFloatArrayRegion);
         impl.setPointer(0x358, _SetDoubleArrayRegion);
         impl.setPointer(0x35c, _RegisterNatives);
+        impl.setPointer(0x360, _UnregisterNatives);
         impl.setPointer(0x364, _MonitorEnter);
         impl.setPointer(0x368, _MonitorExit);
         impl.setPointer(0x36c, _GetJavaVM);
@@ -2667,9 +3610,16 @@ public class DalvikVM extends BaseVM implements VM {
         impl.setPointer(0x374, _GetStringUTFRegion);
         impl.setPointer(0x378, _GetPrimitiveArrayCritical);
         impl.setPointer(0x37c, _ReleasePrimitiveArrayCritical);
+        impl.setPointer(0x380, _GetStringCritical);
+        impl.setPointer(0x384, _ReleaseStringCritical);
         impl.setPointer(0x388, _NewWeakGlobalRef);
+        impl.setPointer(0x38c, _DeleteWeakGlobalRef);
         impl.setPointer(0x390, _ExceptionCheck);
+        impl.setPointer(0x394, _NewDirectByteBuffer);
+        impl.setPointer(0x398, _GetDirectBufferAddress);
+        impl.setPointer(0x39c, _GetDirectBufferCapacity);
         impl.setPointer(0x3a0, _GetObjectRefType);
+        impl.setPointer(last, _GetModule);
 
         _JNIEnv = svcMemory.allocate(emulator.getPointerSize(), "_JNIEnv");
         _JNIEnv.setPointer(0, impl);
