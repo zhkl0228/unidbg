@@ -580,6 +580,23 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public void setFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, float value) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField, visitor);
+            Object thisObj = dvmObject.getValue();
+            if (thisObj == null) {
+                throw new IllegalStateException("obj is null: " + dvmObject);
+            }
+            field.setFloat(thisObj, value);
+            return;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("setFloatField: " + dvmField, e);
+        }
+        super.setFloatField(vm, dvmObject, dvmField, value);
+    }
+
+    @Override
     public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, double value) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmObject.getObjectType().getName());
@@ -735,6 +752,19 @@ class ProxyJni extends JniFunction {
             log.warn("setStaticLongField", e);
         }
         super.setStaticLongField(vm, dvmClass, dvmField, value);
+    }
+
+    @Override
+    public void setStaticFloatField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, float value) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmClass.getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField, visitor);
+            field.setFloat(null, value);
+            return;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("setStaticFloatField", e);
+        }
+        super.setStaticFloatField(vm, dvmClass, dvmField, value);
     }
 
     @Override

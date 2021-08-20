@@ -1623,7 +1623,29 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetFloatField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                ByteBuffer buffer = ByteBuffer.allocate(16);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.put(emulator.getBackend().reg_read_vector(Arm64Const.UC_ARM64_REG_Q0));
+                buffer.flip();
+                float value = buffer.getFloat();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetFloatField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException();
+                } else {
+                    dvmField.setFloatField(dvmObject, value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetFloatField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
+                    }
+                }
+                return 0;
             }
         });
 
@@ -1633,9 +1655,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
-                ByteBuffer buffer = ByteBuffer.allocate(8);
+                ByteBuffer buffer = ByteBuffer.allocate(16);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
-                buffer.putLong(context.getLongArg(3));
+                buffer.put(emulator.getBackend().reg_read_vector(Arm64Const.UC_ARM64_REG_Q0));
                 buffer.flip();
                 double value = buffer.getDouble();
                 if (log.isDebugEnabled()) {
@@ -2693,7 +2715,28 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetStaticFloatField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                ByteBuffer buffer = ByteBuffer.allocate(16);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.put(emulator.getBackend().reg_read_vector(Arm64Const.UC_ARM64_REG_Q0));
+                buffer.flip();
+                float value = buffer.getFloat();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticFloatField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    dvmField.setStaticFloatField(value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticFloatField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
+                    }
+                }
+                return 0;
             }
         });
 
@@ -2703,9 +2746,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
-                ByteBuffer buffer = ByteBuffer.allocate(8);
+                ByteBuffer buffer = ByteBuffer.allocate(16);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
-                buffer.putLong(context.getLongArg(3));
+                buffer.put(emulator.getBackend().reg_read_vector(Arm64Const.UC_ARM64_REG_Q0));
                 buffer.flip();
                 double value = buffer.getDouble();
                 if (log.isDebugEnabled()) {

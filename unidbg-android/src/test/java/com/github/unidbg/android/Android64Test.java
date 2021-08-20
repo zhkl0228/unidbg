@@ -14,6 +14,7 @@ import com.github.unidbg.linux.android.dvm.AbstractJni;
 import com.github.unidbg.linux.android.dvm.BaseVM;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
+import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VarArg;
 import com.github.unidbg.linux.struct.Stat64;
@@ -80,9 +81,35 @@ public class Android64Test extends AbstractJni {
     }
 
     @Override
+    public DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        if ("com/github/unidbg/android/AndroidTest-><init>()V".equals(signature)) {
+            return dvmClass.newObject(null);
+        }
+        return super.newObject(vm, dvmClass, signature, varArg);
+    }
+
+    @Override
+    public void setFloatField(BaseVM vm, DvmObject<?> dvmObject, String signature, float value) {
+        if ("com/github/unidbg/android/AndroidTest->floatField:F".equals(signature)) {
+            System.out.println("floatField value=" + value);
+            return;
+        }
+        super.setFloatField(vm, dvmObject, signature, value);
+    }
+
+    @Override
+    public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, String signature, double value) {
+        if ("com/github/unidbg/android/AndroidTest->doubleField:D".equals(signature)) {
+            System.out.println("doubleField value=" + value);
+            return;
+        }
+        super.setDoubleField(vm, dvmObject, signature, value);
+    }
+
+    @Override
     public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         if ("com/github/unidbg/android/AndroidTest->testStaticFloat(FD)F".equals(signature)) {
-            return 0.0023942017F;
+            return 0.0033942017F;
         }
 
         return super.callStaticFloatMethod(vm, dvmClass, signature, varArg);
@@ -103,6 +130,26 @@ public class Android64Test extends AbstractJni {
         }
 
         return super.getStaticBooleanField(vm, dvmClass, signature);
+    }
+
+    @Override
+    public void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, String signature, double value) {
+        if ("com/github/unidbg/android/AndroidTest->staticDoubleField:D".equals(signature)) {
+            System.out.println("staticDoubleField value=" + value);
+            return;
+        }
+
+        super.setStaticDoubleField(vm, dvmClass, signature, value);
+    }
+
+    @Override
+    public void setStaticFloatField(BaseVM vm, DvmClass dvmClass, String signature, float value) {
+        if ("com/github/unidbg/android/AndroidTest->staticFloatField:F".equals(signature)) {
+            System.out.println("staticFloatField value=" + value);
+            return;
+        }
+
+        super.setStaticFloatField(vm, dvmClass, signature, value);
     }
 
     private void test() {

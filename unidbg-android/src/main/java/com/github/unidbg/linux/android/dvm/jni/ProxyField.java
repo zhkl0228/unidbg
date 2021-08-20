@@ -61,6 +61,13 @@ class ProxyField {
         field.setInt(thisObj, value);
     }
 
+    final void setFloat(Object thisObj, float value) throws IllegalAccessException {
+        if (visitor != null) {
+            visitor.onProxyVisit(field, thisObj, new Object[] { value });
+        }
+        field.setFloat(thisObj, value);
+    }
+
     final void setDouble(Object thisObj, double value) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, new Object[] { value });

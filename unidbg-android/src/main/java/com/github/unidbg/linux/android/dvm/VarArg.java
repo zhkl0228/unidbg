@@ -83,7 +83,7 @@ public abstract class VarArg {
                     args.add(BaseVM.valueOf(getIntArg(i)));
                     break;
                 case 'F':
-                    format.add("%f");
+                    format.add("%fF");
                     args.add(getFloatArg(i));
                     break;
                 case 'L':
@@ -91,11 +91,11 @@ public abstract class VarArg {
                     args.add(getObjectArg(i));
                     break;
                 case 'D':
-                    format.add("%s");
+                    format.add("%sD");
                     args.add(getDoubleArg(i));
                     break;
                 case 'J':
-                    format.add("0x%x");
+                    format.add("0x%xL");
                     args.add(getLongArg(i));
                     break;
                 default:

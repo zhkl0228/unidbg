@@ -121,6 +121,9 @@ public interface Jni {
     void setIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, int value);
     void setIntField(BaseVM vm, DvmObject<?> dvmObject, String signature, int value);
 
+    void setFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, float value);
+    void setFloatField(BaseVM vm, DvmObject<?> dvmObject, String signature, float value);
+
     void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, double value);
     void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, String signature, double value);
 
@@ -135,6 +138,9 @@ public interface Jni {
 
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value);
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value);
+
+    void setStaticFloatField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, float value);
+    void setStaticFloatField(BaseVM vm, DvmClass dvmClass, String signature, float value);
 
     void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, double value);
     void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, String signature, double value);

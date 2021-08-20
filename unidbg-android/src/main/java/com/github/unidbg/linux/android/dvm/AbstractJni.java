@@ -712,6 +712,16 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public void setFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, float value) {
+        setFloatField(vm, dvmObject, dvmField.getSignature(), value);
+    }
+
+    @Override
+    public void setFloatField(BaseVM vm, DvmObject<?> dvmObject, String signature, float value) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, double value) {
         setDoubleField(vm, dvmObject, dvmField.getSignature(), value);
     }
@@ -869,6 +879,16 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
+    public void setStaticFloatField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, float value) {
+        setStaticFloatField(vm, dvmClass, dvmField.getSignature(), value);
+    }
+
+    @Override
+    public void setStaticFloatField(BaseVM vm, DvmClass dvmClass, String signature, float value) {
         throw new UnsupportedOperationException(signature);
     }
 

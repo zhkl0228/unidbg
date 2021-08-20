@@ -98,6 +98,11 @@ public class DvmField extends Hashable {
         BaseVM vm = dvmClass.vm;
         checkJni(vm, dvmClass).setBooleanField(vm, dvmObject, this, value);
     }
+
+    void setFloatField(DvmObject<?> dvmObject, float value) {
+        BaseVM vm = dvmClass.vm;
+        checkJni(vm, dvmClass).setFloatField(vm, dvmObject, this, value);
+    }
     
     void setDoubleField(DvmObject<?> dvmObject, double value) {
         BaseVM vm = dvmClass.vm;
@@ -112,6 +117,11 @@ public class DvmField extends Hashable {
     void setStaticLongField(long value) {
         BaseVM vm = dvmClass.vm;
         checkJni(vm, dvmClass).setStaticLongField(vm, dvmClass, this, value);
+    }
+
+    void setStaticFloatField(float value) {
+        BaseVM vm = dvmClass.vm;
+        checkJni(vm, dvmClass).setStaticFloatField(vm, dvmClass, this, value);
     }
 
     void setStaticDoubleField(double value) {

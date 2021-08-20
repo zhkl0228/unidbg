@@ -23,11 +23,22 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   }
   jmethodID testStaticFloat = (*env)->GetStaticMethodID(env, cAndroidTest, "testStaticFloat", "(FD)F");
   jmethodID testStaticDouble = (*env)->GetStaticMethodID(env, cAndroidTest, "testStaticDouble", "(FD)D");
-  jfieldID testBoolean = (*env)->GetStaticFieldID(env, cAndroidTest, "staticBooleanField", "Z");
+  jfieldID testStaticBoolean = (*env)->GetStaticFieldID(env, cAndroidTest, "staticBooleanField", "Z");
+  jfieldID testStaticDoubleField = (*env)->GetStaticFieldID(env, cAndroidTest, "staticDoubleField", "D");
+  jfieldID testStaticFloatField = (*env)->GetStaticFieldID(env, cAndroidTest, "staticFloatField", "F");
 
-  jfloat floatValue = (*env)->CallStaticFloatMethod(env, cAndroidTest, testStaticFloat, 0.00123456789012345F, 0.00456789123456D);
-  jdouble doubleValue = (*env)->CallStaticDoubleMethod(env, cAndroidTest, testStaticDouble, 0.00123456789012345F, 0.00456789123456D);
-  jboolean booleanValue = (*env)->GetStaticBooleanField(env, cAndroidTest, testBoolean);
+  jfloat floatValue = (*env)->CallStaticFloatMethod(env, cAndroidTest, testStaticFloat, 0.00123456789012345F, 0.00456789123456);
+  (*env)->SetStaticFloatField(env, cAndroidTest, testStaticFloatField, floatValue + 1.0);
+  jdouble doubleValue = (*env)->CallStaticDoubleMethod(env, cAndroidTest, testStaticDouble, 0.00123456789012345F, 0.00456789123456);
+  (*env)->SetStaticDoubleField(env, cAndroidTest, testStaticDoubleField, doubleValue + 2.0);
+  jboolean booleanValue = (*env)->GetStaticBooleanField(env, cAndroidTest, testStaticBoolean);
+
+  jmethodID constructor = (*env)->GetMethodID(env, cAndroidTest, "<init>", "()V");
+  jobject inst = (*env)->NewObject(env, cAndroidTest, constructor);
+  jfieldID testDouble = (*env)->GetFieldID(env, cAndroidTest, "doubleField", "D");
+  jfieldID testFloat = (*env)->GetFieldID(env, cAndroidTest, "floatField", "F");
+  (*env)->SetFloatField(env, inst, testFloat, floatValue + 3.0);
+  (*env)->SetDoubleField(env, inst, testDouble, doubleValue + 4.0);
 
   char buf[10240];
   snprintf(buf, 10240, "%fF", floatValue);

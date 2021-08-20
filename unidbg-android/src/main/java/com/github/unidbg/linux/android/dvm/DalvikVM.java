@@ -1626,7 +1626,29 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _SetFloatField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                ByteBuffer buffer = ByteBuffer.allocate(4);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putInt(context.getIntArg(3));
+                buffer.flip();
+                float value = buffer.getFloat();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetFloatField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException();
+                } else {
+                    dvmField.setFloatField(dvmObject, value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetFloatField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
+                    }
+                }
+                return 0;
             }
         });
         
@@ -2423,7 +2445,28 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _SetStaticFloatField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                ByteBuffer buffer = ByteBuffer.allocate(4);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putInt(context.getIntArg(3));
+                buffer.flip();
+                float value = buffer.getFloat();
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticFloatField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    dvmField.setStaticFloatField(value);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticFloatField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
+                    }
+                }
+                return 0;
             }
         });
 
