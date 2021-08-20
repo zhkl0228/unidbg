@@ -400,7 +400,10 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                                 throw new IllegalStateException();
                             }
                             if (off > 0) {
-                                this.mem_map(base, off, UnicornConst.UC_PROT_NONE, libraryFile.getName(), off);
+                                backend.mem_map(base, off, UnicornConst.UC_PROT_NONE);
+                                if (memoryMap.put(base, new MemoryMap(base, (int) off, UnicornConst.UC_PROT_NONE)) != null) {
+                                    log.warn("mem_map replace exists memory map base=" + Long.toHexString(base));
+                                }
                             }
                         }
                         lastAlignment = alignment;
