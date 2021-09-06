@@ -582,12 +582,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 }
                 for (int i = 0; i < count; i++) {
                     UnidbgPointer ptr = pointer.share((long) i * emulator.getPointerSize(), 0);
-                    UnidbgPointer func = ptr.getPointer(0);
-                    if (func != null) {
-                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, func.peer));
-                    } else {
-                        initFunctionList.add(new IndirectInitFunction(load_base, soName, ptr));
-                    }
+                    initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ptr));
                 }
             }
         }
@@ -606,12 +601,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 }
                 for (int i = 0; i < count; i++) {
                     UnidbgPointer ptr = pointer.share((long) i * emulator.getPointerSize(), 0);
-                    UnidbgPointer func = ptr.getPointer(0);
-                    if (func != null) {
-                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, func.peer));
-                    } else {
-                        initFunctionList.add(new IndirectInitFunction(load_base, soName, ptr));
-                    }
+                    initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ptr));
                 }
             }
         }

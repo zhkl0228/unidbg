@@ -7,12 +7,20 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class AbsoluteInitFunction extends InitFunction {
+class AbsoluteInitFunction extends InitFunction {
 
     private static final Log log = LogFactory.getLog(AbsoluteInitFunction.class);
 
-    AbsoluteInitFunction(long load_base, String libName, long address) {
-        super(load_base, libName, address);
+    private final UnidbgPointer ptr;
+
+    private static long getFuncAddress(UnidbgPointer ptr) {
+        UnidbgPointer func = ptr.getPointer(0);
+        return func == null ? 0 : func.peer;
+    }
+
+    AbsoluteInitFunction(long load_base, String libName, UnidbgPointer ptr) {
+        super(load_base, libName, getFuncAddress(ptr));
+        this.ptr = ptr;
     }
 
     @Override
@@ -22,12 +30,19 @@ public class AbsoluteInitFunction extends InitFunction {
 
     @Override
     public void call(Emulator<?> emulator) {
-        long address = this.address;
+        long address = getFuncAddress(ptr);
+        if (address == 0) {
+            address = this.address;
+        }
+
         if (!emulator.is64Bit()) {
             address = (int) address;
         }
 
         if (address == 0 || address == -1) {
+            if (log.isDebugEnabled()) {
+                log.debug("[" + libName + "]CallInitFunction: address=0x" + Long.toHexString(address) + ", ptr=" + ptr + ", func=" + ptr.getPointer(0));
+            }
             return;
         }
 
