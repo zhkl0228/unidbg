@@ -308,11 +308,15 @@ public class ArmLD extends Dlfcn {
                         continue;
                     }
                     for (InitFunction initFunction : m.initFunctionList) {
+                        long address = initFunction.getAddress();
+                        if (address == 0) {
+                            continue;
+                        }
                         if (log.isDebugEnabled()) {
-                            log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(initFunction.getAddress()));
+                            log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(address));
                         }
                         pointer = pointer.share(-4); // init array
-                        pointer.setInt(0, (int) initFunction.getAddress());
+                        pointer.setInt(0, (int) address);
                     }
                     m.initFunctionList.clear();
                 }

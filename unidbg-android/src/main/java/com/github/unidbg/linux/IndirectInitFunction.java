@@ -2,27 +2,29 @@ package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.spi.InitFunction;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class AbsoluteInitFunction extends InitFunction {
+public class IndirectInitFunction extends AbsoluteInitFunction {
 
-    private static final Log log = LogFactory.getLog(AbsoluteInitFunction.class);
+    private static final Log log = LogFactory.getLog(IndirectInitFunction.class);
 
-    AbsoluteInitFunction(long load_base, String libName, long address) {
-        super(load_base, libName, address);
-    }
+    private final UnidbgPointer func;
 
-    @Override
-    public long getAddress() {
-        return address;
+    public IndirectInitFunction(long load_base, String libName, UnidbgPointer func) {
+        super(load_base, libName, 0);
+
+        this.func = func;
     }
 
     @Override
     public void call(Emulator<?> emulator) {
-        long address = this.address;
+        UnidbgPointer ptr = func.getPointer(0);
+        if (ptr == null) {
+            return;
+        }
+        long address = ptr.peer;
         if (!emulator.is64Bit()) {
             address = (int) address;
         }
@@ -38,7 +40,7 @@ public class AbsoluteInitFunction extends InitFunction {
         long start = System.currentTimeMillis();
 
         emulator.eInit(address);
-        if (AbsoluteInitFunction.log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             System.err.println("[" + libName + "]CallInitFunction: " + pointer + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
     }

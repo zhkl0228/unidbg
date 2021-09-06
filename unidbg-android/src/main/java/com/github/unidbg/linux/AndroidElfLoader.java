@@ -576,14 +576,17 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             int preInitArraySize = dynamicStructure.getPreInitArraySize();
             int count = preInitArraySize / emulator.getPointerSize();
             if (count > 0) {
-                Pointer pointer = UnidbgPointer.pointer(emulator, load_base + dynamicStructure.getPreInitArrayOffset());
+                UnidbgPointer pointer = UnidbgPointer.pointer(emulator, load_base + dynamicStructure.getPreInitArrayOffset());
                 if (pointer == null) {
                     throw new IllegalStateException("DT_PREINIT_ARRAY is null");
                 }
                 for (int i = 0; i < count; i++) {
-                    Pointer func = pointer.getPointer((long) i * emulator.getPointerSize());
+                    UnidbgPointer ptr = pointer.share((long) i * emulator.getPointerSize(), 0);
+                    UnidbgPointer func = ptr.getPointer(0);
                     if (func != null) {
-                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnidbgPointer) func).peer));
+                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, func.peer));
+                    } else {
+                        initFunctionList.add(new IndirectInitFunction(load_base, soName, ptr));
                     }
                 }
             }
@@ -597,14 +600,17 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             int initArraySize = dynamicStructure.getInitArraySize();
             int count = initArraySize / emulator.getPointerSize();
             if (count > 0) {
-                Pointer pointer = UnidbgPointer.pointer(emulator, load_base + dynamicStructure.getInitArrayOffset());
+                UnidbgPointer pointer = UnidbgPointer.pointer(emulator, load_base + dynamicStructure.getInitArrayOffset());
                 if (pointer == null) {
                     throw new IllegalStateException("DT_INIT_ARRAY is null");
                 }
                 for (int i = 0; i < count; i++) {
-                    Pointer func = pointer.getPointer((long) i * emulator.getPointerSize());
+                    UnidbgPointer ptr = pointer.share((long) i * emulator.getPointerSize(), 0);
+                    UnidbgPointer func = ptr.getPointer(0);
                     if (func != null) {
-                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, ((UnidbgPointer) func).peer));
+                        initFunctionList.add(new AbsoluteInitFunction(load_base, soName, func.peer));
+                    } else {
+                        initFunctionList.add(new IndirectInitFunction(load_base, soName, ptr));
                     }
                 }
             }
