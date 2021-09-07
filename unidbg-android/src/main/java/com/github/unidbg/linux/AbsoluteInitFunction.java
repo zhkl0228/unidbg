@@ -35,7 +35,7 @@ class AbsoluteInitFunction extends InitFunction {
             address = this.address;
         }
 
-        if (!emulator.is64Bit()) {
+        if (emulator.is32Bit()) {
             address = (int) address;
         }
 

@@ -197,6 +197,7 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 - (id)init {
     if(self = [super init]) {
         self.statusBarHidden = YES;
+        self.protectedDataAvailable = YES;
     }
     return self;
 }
