@@ -686,7 +686,26 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _CallCharMethodV = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer va_list = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("CallCharMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
+                    char ret = dvmMethod.callCharMethodV(dvmObject, vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->CallCharMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
+                    }
+                    return ret;
+                }
             }
         });
 
