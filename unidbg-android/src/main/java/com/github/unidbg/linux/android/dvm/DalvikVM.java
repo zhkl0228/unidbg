@@ -702,7 +702,7 @@ public class DalvikVM extends BaseVM implements VM {
                     VaList vaList = new VaList32(emulator, DalvikVM.this, va_list, dvmMethod);
                     char ret = dvmMethod.callCharMethodV(dvmObject, vaList);
                     if (verbose) {
-                        System.out.printf("JNIEnv->CallCharMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
+                        System.out.printf("JNIEnv->CallCharMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
                 }
