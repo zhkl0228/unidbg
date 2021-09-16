@@ -154,4 +154,8 @@ public interface Jni {
     boolean acceptMethod(DvmClass dvmClass, String signature, boolean isStatic);
 
     boolean acceptField(DvmClass dvmClass, String signature, boolean isStatic);
+
+    char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
+    char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
+
 }
