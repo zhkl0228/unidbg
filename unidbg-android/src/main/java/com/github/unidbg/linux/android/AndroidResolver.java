@@ -6,9 +6,12 @@ import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.LogCatFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
+import com.github.unidbg.linux.thread.ThreadJoin19;
+import com.github.unidbg.linux.thread.ThreadJoin23;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -27,6 +30,19 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
     public AndroidResolver(int sdk, String... needed) {
         this.sdk = sdk;
         this.needed = needed == null ? null : Arrays.asList(needed);
+    }
+
+    public void patchThread(Emulator<?> emulator, IHookZz hookZz) {
+        switch (sdk) {
+            case 19:
+                ThreadJoin19.patch(emulator, hookZz);
+                break;
+            case 23:
+                ThreadJoin23.patch(emulator, hookZz);
+                break;
+            default:
+                throw new UnsupportedOperationException();
+        }
     }
 
     public int getSdk() {

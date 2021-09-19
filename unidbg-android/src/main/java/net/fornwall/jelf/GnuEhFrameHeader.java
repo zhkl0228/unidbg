@@ -85,12 +85,12 @@ public class GnuEhFrameHeader {
         int eh_frame_ptr_enc = parser.readUnsignedByte(); off.pos++;
         int fde_count_enc = parser.readUnsignedByte(); off.pos++;
         int table_enc = parser.readUnsignedByte(); off.pos++;
-        long eh_frame_ptr = readEncodedPointer(parser, eh_frame_ptr_enc, off);
-        long fde_count = readEncodedPointer(parser, fde_count_enc, off);
+        long eh_frame_ptr = readEncodedPointer(parser, eh_frame_ptr_enc, off, true);
+        long fde_count = readEncodedPointer(parser, fde_count_enc, off, true);
         entries = new TableEntry[(int) fde_count];
         for (int i = 0; i < fde_count; i++) {
-            long location = readEncodedPointer(parser, table_enc, off);
-            long address = readEncodedPointer(parser, table_enc, off);
+            long location = readEncodedPointer(parser, table_enc, off, true);
+            long address = readEncodedPointer(parser, table_enc, off, true);
             entries[i] = new TableEntry(location, address);
             if (log.isDebugEnabled()) {
                 log.debug("Table entry: eh_frame_ptr=0x" + Long.toHexString(eh_frame_ptr) + ", location=0x" + Long.toHexString(location) + ", address=0x" + Long.toHexString(address) + ", size=" + size);
@@ -140,7 +140,7 @@ public class GnuEhFrameHeader {
         return result;
     }
 
-    private static long readEncodedPointer(ElfDataIn dataIn, int encoding, Off off) {
+    private static long readEncodedPointer(ElfDataIn dataIn, int encoding, Off off, boolean checkIndirect) {
         if (encoding == DW_EH_PE_omit) {
             return 0;
         }
@@ -201,7 +201,9 @@ public class GnuEhFrameHeader {
         /* then apply indirection */
         if ((encoding & DW_EH_PE_indirect) != 0) {
 //            result = *((uintptr_t*)result);
-            throw new IllegalStateException("DW_EH_PE_indirect");
+            if (checkIndirect) {
+                throw new IllegalStateException("DW_EH_PE_indirect: encoding=0x" + Integer.toHexString(encoding));
+            }
         }
 
         return result;
@@ -471,7 +473,7 @@ public class GnuEhFrameHeader {
                         } else {
                             Off off = new Off(0);
                             ElfDataIn dataIn = new ElfBuffer(Arrays.copyOfRange(instructions, i + 1, instructions.length));
-                            long v64 = readEncodedPointer(dataIn, type, off);
+                            long v64 = readEncodedPointer(dataIn, type, off, true);
                             operands[m] = v64;
                             i += off.pos;
                         }
@@ -595,9 +597,9 @@ public class GnuEhFrameHeader {
         long cie_offset = cur_field_offset - cie_pointer;
         CIE cie = dwarf_get_cie(cie_offset);
         parser.seek(off.pos);
-        long pc_start = readEncodedPointer(parser, cie.fde_address_encoding, off);
+        long pc_start = readEncodedPointer(parser, cie.fde_address_encoding, off, true);
         long adjust = off.pos; // PC Range is always an absolute value
-        long pc_range = readEncodedPointer(parser, cie.fde_address_encoding, off) - adjust;
+        long pc_range = readEncodedPointer(parser, cie.fde_address_encoding, off, true) - adjust;
         long pc_end = pc_start + pc_range;
         if (fun >= pc_end) {
             return null;
@@ -668,7 +670,7 @@ public class GnuEhFrameHeader {
             }
         }
         if (baos.size() == 0) {
-            throw new IllegalStateException("Invalie CIE augmentation string");
+            throw new IllegalStateException("Invalid CIE augmentation string");
         }
         String augmentation_string = baos.toString();
 
@@ -688,8 +690,17 @@ public class GnuEhFrameHeader {
                         fde_address_encoding = parser.readUnsignedByte(); off.pos++;
                         break;
                     }
-                    case 'L':
-                    case 'P':
+                    case 'L': {
+                        parser.readUnsignedByte(); off.pos++; // skip LSDA encoding
+                        break;
+                    }
+                    case 'P': {
+                        // get personality routine encoding
+                        int encoding = parser.readUnsignedByte(); off.pos++;
+                        // skip personality routine
+                        readEncodedPointer(parser, encoding, off, false);
+                        break;
+                    }
                     default:
                         throw new UnsupportedOperationException("augmentation_string=" + augmentation_string);
                 }

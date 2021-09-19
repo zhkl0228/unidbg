@@ -210,6 +210,17 @@ public abstract class AbstractJni implements Jni {
     }
 
     @Override
+    public char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        return callCharMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
+    }
+
+    @Override
+    public char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+
+    @Override
     public float callFloatMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
         return callFloatMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
@@ -871,6 +882,13 @@ public abstract class AbstractJni implements Jni {
     public void setStaticIntField(BaseVM vm, DvmClass dvmClass, String signature, int value) {
         throw new UnsupportedOperationException(signature);
     }
+
+    public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, DvmObject<?> value){
+        setStaticObjectField(vm, dvmClass, dvmField.getSignature(), value);
+    };
+    public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature, DvmObject<?> value){
+        throw new UnsupportedOperationException(signature);
+    };
 
     @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {

@@ -926,7 +926,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     }
                     @Override
                     public Symbol findClosestSymbolByAddress(long addr, boolean fast) {
-                        throw new UnsupportedOperationException();
+                        return null;
                     }
                     @Override
                     public int callEntry(Emulator<?> emulator, String... args) {

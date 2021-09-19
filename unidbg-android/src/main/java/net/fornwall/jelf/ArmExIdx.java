@@ -102,6 +102,7 @@ public class ArmExIdx {
             bb.putInt(value);
             instruction = Arrays.copyOfRange(bb.array(), 1, 4);
         } else {
+            value = value << 1 >> 1;
             long addr = value + offset - 4;
             UnidbgPointer pointer = UnidbgPointer.pointer(emulator, module.base + addr);
             assert pointer != null;

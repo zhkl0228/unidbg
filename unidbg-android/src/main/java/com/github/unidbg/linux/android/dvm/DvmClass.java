@@ -236,8 +236,8 @@ public class DvmClass extends DvmObject<Class<?>> {
         if (fnPtr == null && index == -1) {
             index = method.length();
         }
+        String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_') + "_" + method.substring(0, index).replace("_", "_1");
         if (fnPtr == null) {
-            String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_') + "_" + method.substring(0, index);
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
                 if (symbol != null) {
@@ -250,7 +250,7 @@ public class DvmClass extends DvmObject<Class<?>> {
             throw new IllegalArgumentException("find method failed: " + method);
         }
         if (vm.verbose) {
-            System.out.printf("Find native function %s => %s%n", "Java_" + getClassName().replace('/', '_') + "_" + method, fnPtr);
+            System.out.printf("Find native function %s => %s%n", symbolName, fnPtr);
         }
         return fnPtr;
     }

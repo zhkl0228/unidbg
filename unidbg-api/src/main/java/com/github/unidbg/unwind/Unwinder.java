@@ -51,8 +51,9 @@ public abstract class Unwinder {
     private void printFrameElement(String maxLengthSoName, Memory memory, UnidbgPointer ip) {
         Module module = AbstractARMDebugger.findModuleByAddress(emulator, ip.peer);
         StringBuilder sb = new StringBuilder();
+        String format = getBaseFormat();
         if (module != null) {
-            sb.append(String.format(getBaseFormat(), module.base));
+            sb.append(String.format(format, module.base)).append(String.format(format, ip.peer));
             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
             sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - module.base));
 
@@ -62,7 +63,7 @@ public abstract class Unwinder {
                 sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(ip.peer - symbol.getAddress()));
             }
         } else {
-            sb.append(String.format(getBaseFormat(), 0));
+            sb.append(String.format(format, 0)).append(String.format(format, ip.peer));
             sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(ip.peer)));
             if (ip.peer >= 0xfffe0000L) {
                 sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - 0xfffe0000L));

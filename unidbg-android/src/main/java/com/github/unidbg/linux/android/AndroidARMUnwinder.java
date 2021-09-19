@@ -16,6 +16,8 @@ import java.io.IOException;
 
 class AndroidARMUnwinder extends SimpleARMUnwinder {
 
+    private static final Log log = LogFactory.getLog(AndroidARMUnwinder.class);
+
     private final DwarfCursor context;
 
     public AndroidARMUnwinder(Emulator<?> emulator) {
@@ -44,13 +46,7 @@ class AndroidARMUnwinder extends SimpleARMUnwinder {
                 }
             }
         } catch (RuntimeException exception) {
-            Log log = LogFactory.getLog(GnuEhFrameHeader.class);
-            if (!log.isDebugEnabled()) {
-                log = LogFactory.getLog(ArmExIdx.class);
-            }
-            if (log.isDebugEnabled()) {
-                throw exception;
-            }
+            log.warn("unw_step", exception);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

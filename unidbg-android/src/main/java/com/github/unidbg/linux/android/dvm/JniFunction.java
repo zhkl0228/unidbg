@@ -188,6 +188,16 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
+        throw new UnsupportedOperationException(dvmMethod.getSignature());
+    }
+
+    @Override
+    public char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public int callIntMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
         throw new UnsupportedOperationException(dvmMethod.getSignature());
     }
@@ -446,6 +456,14 @@ public abstract class JniFunction implements Jni {
     public void setStaticIntField(BaseVM vm, DvmClass dvmClass, String signature, int value) {
         throw new UnsupportedOperationException(signature);
     }
+
+    public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, DvmObject<?> value){
+        throw new UnsupportedOperationException(dvmField.getSignature());
+    };
+
+    public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature, DvmObject<?> value){
+        throw new UnsupportedOperationException(signature);
+    };
 
     @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {

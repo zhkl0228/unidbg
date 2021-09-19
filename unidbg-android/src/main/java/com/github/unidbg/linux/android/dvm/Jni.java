@@ -136,6 +136,9 @@ public interface Jni {
     void setStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, int value);
     void setStaticIntField(BaseVM vm, DvmClass dvmClass, String signature, int value);
 
+    void setStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, DvmObject<?> value);
+    void setStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature, DvmObject<?> value);
+
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value);
     void setStaticLongField(BaseVM vm, DvmClass dvmClass, String signature, long value);
 
@@ -154,4 +157,8 @@ public interface Jni {
     boolean acceptMethod(DvmClass dvmClass, String signature, boolean isStatic);
 
     boolean acceptField(DvmClass dvmClass, String signature, boolean isStatic);
+
+    char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList);
+    char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList);
+
 }

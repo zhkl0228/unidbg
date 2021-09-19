@@ -109,6 +109,23 @@ public final class Dobby extends BaseHook implements IHookZz {
     }
 
     @Override
+    public void replace(long functionAddress, Pointer callback) {
+        if (callback == null) {
+            throw new NullPointerException();
+        }
+        final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        int ret = dobbyHook.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall)[0].intValue();
+        if (ret != RT_SUCCESS) {
+            throw new IllegalStateException("ret=" + ret);
+        }
+    }
+
+    @Override
+    public void replace(Symbol symbol, Pointer callback) {
+        replace(symbol.getAddress(), callback);
+    }
+
+    @Override
     public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replaceCall = createReplacePointer(callback, originCall, enablePostCall);

@@ -322,11 +322,15 @@ public class ArmLD64 extends Dlfcn {
                         continue;
                     }
                     for (InitFunction initFunction : m.initFunctionList) {
+                        long address = initFunction.getAddress();
+                        if (address == 0) {
+                            continue;
+                        }
                         if (log.isDebugEnabled()) {
-                            log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(initFunction.getAddress()));
+                            log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(address));
                         }
                         pointer = pointer.share(-8); // init array
-                        pointer.setLong(0, initFunction.getAddress());
+                        pointer.setLong(0, address);
                     }
                     m.initFunctionList.clear();
                 }
