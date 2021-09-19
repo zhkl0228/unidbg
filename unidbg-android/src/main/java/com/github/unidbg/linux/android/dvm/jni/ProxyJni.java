@@ -759,6 +759,19 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, DvmObject<?> value){
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmClass.getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField, visitor);
+            field.setObject(null, value);
+            return;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("setStaticObjectField", e);
+        }
+        super.setStaticObjectField(vm, dvmClass, dvmField, value);
+    };
+
+    @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
