@@ -388,6 +388,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGABRT = 6;
     protected static final int SIGBUS = 7; /* BUS error (4.2 BSD).  */
     private static final int SIGFPE = 8; /* Floating-point exception (ANSI).  */
+    private static final int SIGUSR1 = 10;
     private static final int SIGSEGV = 11;
     private static final int SIGUSR2 = 12;
     private static final int SIGPIPE = 13;
@@ -431,6 +432,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGABRT:
             case SIGBUS:
             case SIGFPE:
+            case SIGUSR1:
             case SIGSEGV:
             case SIGUSR2:
             case SIGPIPE:

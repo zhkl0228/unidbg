@@ -4,6 +4,7 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.IHook;
 import com.github.unidbg.hook.ReplaceCallback;
+import com.sun.jna.Pointer;
 
 public interface IHookZz extends IHook {
 
@@ -17,6 +18,9 @@ public interface IHookZz extends IHook {
 
     void replace(long functionAddress, ReplaceCallback callback);
     void replace(Symbol symbol, ReplaceCallback callback);
+
+    void replace(long functionAddress, Pointer callback);
+    void replace(Symbol symbol, Pointer callback);
 
     void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall);
     void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall);
