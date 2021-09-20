@@ -28,6 +28,7 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.IO;
+import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -127,6 +128,12 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 34:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mkdirat(emulator));
+                    return;
+                case 35:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, unlinkat(emulator));
+                    return;
+                case 38:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, renameat(emulator));
                     return;
                 case 56:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, openat(backend, emulator));
@@ -399,9 +406,10 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(8, 0);
 
-        log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
-        threadMap.put(threadId, new LinuxThread(child_stack, fn, arg));
+        Thread thread = new LinuxThread(child_stack, fn, arg);
+        threadMap.put(threadId, thread);
         lastThread = threadId;
+        log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         Log log = LogFactory.getLog(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
@@ -641,7 +649,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             log.debug("nanosleep req=" + req + ", rem=" + rem + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
         }
         try {
-            Thread.sleep(tv_sec * 1000L + tv_nsec / 1000000L);
+            java.lang.Thread.sleep(tv_sec * 1000L + tv_nsec / 1000000L);
         } catch (InterruptedException ignored) {
         }
         return 0;
@@ -1128,7 +1136,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 if (old != val) {
                     throw new IllegalStateException("old=" + old + ", val=" + val);
                 }
-                Thread.yield();
+                java.lang.Thread.yield();
                 Pointer timeout = context.getPointerArg(3);
                 int mytype = val & 0xc000;
                 int shared = val & 0x2000;

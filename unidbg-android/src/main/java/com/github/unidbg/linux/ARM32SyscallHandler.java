@@ -29,6 +29,7 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.IO;
+import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -673,25 +674,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return 0;
     }
 
-    private int renameat(Emulator<?> emulator) {
-        Arm32RegisterContext context = emulator.getContext();
-        int olddirfd = context.getR0Int();
-        Pointer oldpath = context.getR1Pointer();
-        int newdirfd = context.getR2Int();
-        Pointer newpath = context.getR3Pointer();
-        log.info("renameat olddirfd=" + olddirfd + ", oldpath=" + oldpath.getString(0) + ", newdirfd=" + newdirfd + ", newpath=" + newpath.getString(0));
-        return 0;
-    }
-
-    private int unlinkat(Emulator<?> emulator) {
-        Arm32RegisterContext context = emulator.getContext();
-        int dirfd = context.getR0Int();
-        Pointer pathname = context.getR1Pointer();
-        int flags = context.getR2Int();
-        log.info("unlinkat dirfd=" + dirfd + ", pathname=" + pathname.getString(0) + ", flags=" + flags);
-        return 0;
-    }
-
     private int unlink(Emulator<?> emulator) {
         Pointer pathname = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         String path = FilenameUtils.normalize(pathname.getString(0), true);
@@ -825,9 +807,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(4, 0);
 
-        log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
-        threadMap.put(threadId, new LinuxThread(child_stack, fn, arg));
+        Thread thread = new LinuxThread(child_stack, fn, arg);
+        threadMap.put(threadId, thread);
         lastThread = threadId;
+        log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         Log log = LogFactory.getLog(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
@@ -1648,7 +1631,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 return 0;
             }
             case PR_GET_NAME: {
-                String name = Thread.currentThread().getName();
+                String name = java.lang.Thread.currentThread().getName();
                 if (name.length() > 15) {
                     name = name.substring(0, 15);
                 }
@@ -1766,7 +1749,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 if (old != val) {
                     throw new IllegalStateException("old=" + old + ", val=" + val);
                 }
-                Thread.yield();
+                java.lang.Thread.yield();
                 Pointer timeout = context.getPointerArg(3);
                 int mytype = val & 0xc000;
                 int shared = val & 0x2000;

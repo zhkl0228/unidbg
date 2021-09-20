@@ -39,6 +39,12 @@ public class Stat32 extends StatStructure {
     }
 
     @Override
+    public void setSt_ino(long st_ino) {
+        super.setSt_ino(st_ino);
+        __st_ino = (int) st_ino;
+    }
+
+    @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("st_dev", "__pad0", "__st_ino", "st_mode", "st_nlink", "st_uid", "st_gid", "st_rdev", "__pad3",
                 "st_size", "st_blksize", "st_blocks", "st_atim", "st_mtim", "st_ctim", "st_ino");

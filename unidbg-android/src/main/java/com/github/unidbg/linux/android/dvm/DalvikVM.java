@@ -177,7 +177,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                log.warn("Throw object=" + object + ", dvmObject=" + dvmObject + ", class=" + (dvmObject != null ? dvmObject.getObjectType() : null));
+                log.warn("Throw dvmObject=" + dvmObject + ", class=" + (dvmObject != null ? dvmObject.getObjectType() : null));
                 throwable = dvmObject;
                 return 0;
             }
@@ -2644,10 +2644,11 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetObjectArrayElement array=" + array + ", index=" + index);
                 }
+                DvmObject<?> obj = Objects.requireNonNull(array).getValue()[index];
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetObjectArrayElement(%s, %d) was called from %s%n", array, index, context.getLRPointer());
+                    System.out.printf("JNIEnv->GetObjectArrayElement(%s, %d) => %s was called from %s%n", array, index, obj, context.getLRPointer());
                 }
-                return addLocalObject(Objects.requireNonNull(array).getValue()[index]);
+                return addLocalObject(obj);
             }
         });
 

@@ -99,7 +99,7 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int lseek(int offset, int whence) {
-        throw new AbstractMethodError("class=" + getClass() + ", offset=0x" + Long.toHexString(offset) + ", whence=" + whence);
+        throw new AbstractMethodError("class=" + getClass() + ", offset=0x" + Long.toHexString(offset) + ", whence=" + whence + ", path=" + getPath());
     }
 
     @Override

@@ -280,6 +280,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     private final UnidbgPointer environ;
 
+    private static final int RTLD_DEFAULT = -1;
+
     @Override
     public Symbol dlsym(long handle, String symbolName) {
         for (LinuxModule module : modules.values()) {
@@ -292,6 +294,14 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
         if ("environ".equals(symbolName)) {
             return new VirtualSymbol(symbolName, null, environ.toUIntPeer());
+        }
+        if (handle == RTLD_DEFAULT || handle == 0L) {
+            for (Module module : modules.values()) {
+                Symbol symbol = module.findSymbolByName(symbolName, false);
+                if (symbol != null) {
+                    return symbol;
+                }
+            }
         }
         return null;
     }
