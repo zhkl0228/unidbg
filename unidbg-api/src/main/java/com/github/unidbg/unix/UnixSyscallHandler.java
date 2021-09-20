@@ -395,6 +395,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGALRM = 14;
     private static final int SIGTERM = 15;
     protected static final int SIGCHLD = 17;
+    private static final int SIGCONT = 18;
     private static final int SIGTSTP = 20;
     private static final int SIGTTIN = 21;
     private static final int SIGTTOU = 22;
@@ -439,6 +440,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             case SIGALRM:
             case SIGTERM:
             case SIGCHLD:
+            case SIGCONT:
             case SIGTSTP:
             case SIGTTIN:
             case SIGTTOU:

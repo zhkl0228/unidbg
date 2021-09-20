@@ -116,17 +116,21 @@ public class AndroidModule extends VirtualModule<VM> {
         if (log.isDebugEnabled()) {
             log.debug("AAssetManager_open amgr=" + amgr + ", filename=" + filename + ", mode=" + mode + ", LR=" + context.getLRPointer());
         }
+        final int AASSET_MODE_UNKNOWN = 0;
+        final int AASSET_MODE_RANDOM = 1;
         final int AASSET_MODE_STREAMING = 2;
         final int AASSET_MODE_BUFFER = 3;
-        if (mode == AASSET_MODE_STREAMING || AASSET_MODE_BUFFER == mode) {
+        if (mode == AASSET_MODE_STREAMING || AASSET_MODE_BUFFER == mode ||
+                mode == AASSET_MODE_UNKNOWN || mode == AASSET_MODE_RANDOM) {
             byte[] data = vm.openAsset(filename);
-            if (data != null) {
-                Asset asset = new Asset(vm, filename);
-                asset.open(emulator, data);
-                return vm.addLocalObject(asset);
+            if (data == null) {
+                return 0L;
             }
+            Asset asset = new Asset(vm, filename);
+            asset.open(emulator, data);
+            return vm.addLocalObject(asset);
         }
-        throw new BackendException("filename=" + filename + ", mode=" + mode);
+        throw new BackendException("filename=" + filename + ", mode=" + mode + ", LR=" + context.getLRPointer());
     }
 
     private static long close(Emulator<?> emulator, VM vm) {

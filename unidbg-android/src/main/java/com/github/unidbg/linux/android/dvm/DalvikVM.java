@@ -1358,7 +1358,7 @@ public class DalvikVM extends BaseVM implements VM {
                 } else {
                     int hash = dvmClass.getFieldID(name, args);
                     if (verbose && hash != 0) {
-                        System.out.printf("JNIEnv->GetFieldID(%s.%s%s) => 0x%x was called from %s%n", dvmClass.getClassName(), name, args, hash & 0xffffffffL, context.getLRPointer());
+                        System.out.printf("JNIEnv->GetFieldID(%s.%s %s) => 0x%x was called from %s%n", dvmClass.getClassName(), name, args, hash & 0xffffffffL, context.getLRPointer());
                     }
                     return hash;
                 }
