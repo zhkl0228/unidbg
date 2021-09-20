@@ -674,25 +674,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return 0;
     }
 
-    private int renameat(Emulator<?> emulator) {
-        Arm32RegisterContext context = emulator.getContext();
-        int olddirfd = context.getR0Int();
-        Pointer oldpath = context.getR1Pointer();
-        int newdirfd = context.getR2Int();
-        Pointer newpath = context.getR3Pointer();
-        log.info("renameat olddirfd=" + olddirfd + ", oldpath=" + oldpath.getString(0) + ", newdirfd=" + newdirfd + ", newpath=" + newpath.getString(0));
-        return 0;
-    }
-
-    private int unlinkat(Emulator<?> emulator) {
-        Arm32RegisterContext context = emulator.getContext();
-        int dirfd = context.getR0Int();
-        Pointer pathname = context.getR1Pointer();
-        int flags = context.getR2Int();
-        log.info("unlinkat dirfd=" + dirfd + ", pathname=" + pathname.getString(0) + ", flags=" + flags);
-        return 0;
-    }
-
     private int unlink(Emulator<?> emulator) {
         Pointer pathname = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
         String path = FilenameUtils.normalize(pathname.getString(0), true);

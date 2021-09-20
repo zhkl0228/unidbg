@@ -51,4 +51,8 @@ public abstract class StatStructure extends UnidbgStructure {
         setSt_ctim(lastModified, tv_nsec);
     }
 
+    public void setSt_ino(long st_ino) {
+        this.st_ino = st_ino;
+    }
+
 }

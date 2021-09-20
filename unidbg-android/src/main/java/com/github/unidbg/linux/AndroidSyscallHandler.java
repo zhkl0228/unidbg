@@ -1,6 +1,7 @@
 package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.AndroidFileIO;
@@ -204,6 +205,33 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         Pointer old_ss = context.getPointerArg(1);
         if (log.isDebugEnabled()) {
             log.debug("sigaltstack ss=" + ss + ", old_ss=" + old_ss);
+        }
+        return 0;
+    }
+
+    protected int renameat(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int olddirfd = context.getIntArg(0);
+        String oldpath = context.getPointerArg(1).getString(0);
+        int newdirfd = context.getIntArg(2);
+        String newpath = context.getPointerArg(3).getString(0);
+        int ret = emulator.getFileSystem().rename(oldpath, newpath);
+        if (ret != 0) {
+            log.info("renameat olddirfd=" + olddirfd + ", oldpath=" + oldpath + ", newdirfd=" + newdirfd + ", newpath=" + newpath);
+        } else {
+            log.debug("renameat olddirfd=" + olddirfd + ", oldpath=" + oldpath + ", newdirfd=" + newdirfd + ", newpath=" + newpath);
+        }
+        return 0;
+    }
+
+    protected int unlinkat(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname = context.getPointerArg(1);
+        int flags = context.getIntArg(2);
+        emulator.getFileSystem().unlink(pathname.getString(0));
+        if (log.isDebugEnabled()) {
+            log.info("unlinkat dirfd=" + dirfd + ", pathname=" + pathname.getString(0) + ", flags=" + flags);
         }
         return 0;
     }
