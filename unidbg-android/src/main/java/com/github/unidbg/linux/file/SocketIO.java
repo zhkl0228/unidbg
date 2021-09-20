@@ -27,6 +27,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
     public static final short AF_LOCAL = 1; // AF_UNIX
     public static final short AF_INET = 2;
     public static final short AF_INET6 = 10;
+    public static final short AF_NETLINK = 16;
     public static final short AF_ROUTE = 17;		/* Internal Routing Protocol */
     public static final short AF_LINK =		18;		/* Link layer interface */
 

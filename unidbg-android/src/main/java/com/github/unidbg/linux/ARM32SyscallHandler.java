@@ -1521,7 +1521,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 }
                 break;
         }
-        log.warn("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
+        log.info("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
         emulator.getMemory().setErrno(UnixEmulator.EAFNOSUPPORT);
         return -1;
     }

@@ -906,7 +906,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 }
                 break;
         }
-        throw new UnsupportedOperationException("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
+        log.info("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
+        emulator.getMemory().setErrno(UnixEmulator.EAFNOSUPPORT);
+        return -1;
     }
 
     protected int uname(Emulator<?> emulator) {
