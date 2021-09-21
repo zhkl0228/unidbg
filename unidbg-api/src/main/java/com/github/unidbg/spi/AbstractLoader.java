@@ -228,6 +228,11 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         this.callInitFunction = false;
     }
 
+    @Override
+    public void setCallInitFunction(boolean callInit) {
+        this.callInitFunction = callInit;
+    }
+
     protected final List<HookListener> hookListeners = new ArrayList<>();
 
     @Override

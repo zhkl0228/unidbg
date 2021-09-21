@@ -18,6 +18,8 @@ public interface Loader {
 
     void disableCallInitFunction();
 
+    void setCallInitFunction(boolean callInit);
+
     Module load(File elfFile);
     Module load(File elfFile, boolean forceCallInit);
 
