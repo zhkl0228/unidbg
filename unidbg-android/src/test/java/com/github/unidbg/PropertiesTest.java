@@ -1,6 +1,8 @@
 package com.github.unidbg;
 
+import com.github.unidbg.utils.Inspector;
 import junit.framework.TestCase;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -143,6 +145,14 @@ public class PropertiesTest extends TestCase {
             v &= (~15);
             System.out.println("i=" + i + ", v=" + v);
         }
+    }
+
+    public void testHex() throws Exception {
+        byte[] data = Hex.decodeHex("4c0000001400020000000000f53e0000020880fe01000000080001007f000001080002007f000001070003006c6f0000080008008000000014000600ffffffffffffffff0203000002030000580000001400020000000000f53e0000021880001700000008000100c0a81fa808000200c0a81fa808000400c0a81fff0a000300776c616e30000000080008008000000014000600ffffffffffffffff7433b7007433b700".toCharArray());
+        Inspector.inspect(data, "Hex");
+
+        data = Hex.decodeHex("4c0000001400020000000000a73e0000020880fe01000000080001007f000001080002007f000001070003006c6f0000080008008000000014000600ffffffffffffffff0203000002030000580000001400020000000000a73e0000021880001700000008000100c0a81fa808000200c0a81fa808000400c0a81fff0a000300776c616e30000000080008008000000014000600ffffffffffffffff7433b7007433b700".toCharArray());
+        Inspector.inspect(data, "Hex");
     }
 
 }

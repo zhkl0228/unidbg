@@ -1,7 +1,6 @@
 package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.AndroidFileIO;
@@ -147,7 +146,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             this.fdMap.put(readfd, pair.getRight());
             pipefd.setInt(0, readfd);
             pipefd.setInt(4, writefd);
-            log.info("pipe2 pipefd=" + pipefd + ", flags=0x" + flags + ", readfd=" + readfd + ", writefd=" + writefd);
+            if (log.isDebugEnabled()) {
+                log.debug("pipe2 pipefd=" + pipefd + ", flags=0x" + flags + ", readfd=" + readfd + ", writefd=" + writefd);
+            }
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -159,6 +160,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         PipedOutputStream outputStream = new PipedOutputStream(inputStream);
         AndroidFileIO writeIO = new PipedWriteFileIO(outputStream, writefd);
         AndroidFileIO readIO = new PipedReadFileIO(inputStream, writefd);
+        log.info("Return default pipe pair.");
         return new Pair<>(writeIO, readIO);
     }
 
