@@ -53,6 +53,6 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public String getPath() {
-        return "/vendor/" + (is64Bit ? "lib64/" : "lib/") + name;
+        return "/system/" + (is64Bit ? "lib64/" : "lib/") + name;
     }
 }
