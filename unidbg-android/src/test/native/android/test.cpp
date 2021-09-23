@@ -107,7 +107,14 @@ static void test_netlink() {
 
           /* Start displaying the index of the interface */
 
-          printf("Index Of Iface: %d\n",rtmp->ifa_index);
+          int ctl_sock = socket(AF_INET, SOCK_DGRAM, 0);
+          struct ifreq ifr;
+          memset(&ifr, 0, sizeof(ifr));
+          ifr.ifr_ifindex = rtmp->ifa_index;
+          ioctl(ctl_sock, SIOCGIFNAME, &ifr);
+          ioctl(ctl_sock, SIOCGIFFLAGS, &ifr);
+          printf("Index Of Iface: %d, name=%s, flags=0x%x\n", rtmp->ifa_index, ifr.ifr_name, ifr.ifr_flags);
+          close(ctl_sock);
 
           rtattrlen = IFA_PAYLOAD(nlmp);
 

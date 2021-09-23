@@ -76,7 +76,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         setStackPoint(STACK_BASE);
         this.environ = initializeTLS(new String[] {
                 "ANDROID_DATA=/data",
-                "ANDROID_ROOT=/system"
+                "ANDROID_ROOT=/system",
+                "PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin"
         });
         this.setErrno(0);
     }
