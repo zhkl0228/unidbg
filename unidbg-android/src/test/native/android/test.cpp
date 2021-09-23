@@ -8,6 +8,7 @@
 #include <sys/statfs.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <sys/system_properties.h>
 
 #include <linux/if.h>
@@ -23,6 +24,21 @@
 #include "test.h"
 
 static int sdk_int = 0;
+
+static void *start_routine(void *arg) {
+  void *ret = &sdk_int;
+  printf("test_pthread start_routine arg=%p, ret=%p\n", arg, ret);
+  return ret;
+}
+
+static void test_pthread() {
+  pthread_t thread = 0;
+  void *arg = &thread;
+  int ret = pthread_create(&thread, NULL, start_routine, arg);
+  void *value = NULL;
+  int join_ret = pthread_join(thread, &value);
+  printf("test_pthread arg=%p, ret=%d, thread=0x%lx, join_ret=%d, value=%p\n", arg, ret, thread, join_ret, value);
+}
 
 #define INFINITY_LIFE_TIME      0xFFFFFFFFU
 #define NIPQUAD(addr) \
@@ -424,6 +440,7 @@ int main() {
   __system_property_get("ro.build.version.sdk", sdk);
   test_dl_iterate_phdr();
   test_netlink();
+  test_pthread();
   printf("Press any key to exit: cmp=%d\n", strcmp("23", sdk));
   getchar();
   return 0;
