@@ -2,11 +2,11 @@ package com.github.unidbg.android;
 
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.linux.AndroidFileIO;
+import com.github.unidbg.hook.hookzz.Dobby;
 import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -18,6 +18,7 @@ import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VarArg;
 import com.github.unidbg.linux.struct.Stat64;
+import com.github.unidbg.linux.thread.ThreadJoinVisitor;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -61,8 +62,15 @@ public class Android64Test extends AbstractJni {
             }
         };
         Memory memory = emulator.getMemory();
-        LibraryResolver resolver = new AndroidResolver(23);
+        AndroidResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
+        resolver.patchThread(emulator, Dobby.getInstance(emulator), new ThreadJoinVisitor() {
+            @Override
+            public boolean canJoin(Pointer start_routine, int threadId) {
+                System.out.println("canJoin start_routine=" + start_routine + ", threadId=" + threadId);
+                return true;
+            }
+        });
 
 //        emulator.traceCode();
         module = emulator.loadLibrary(executable);
