@@ -1,7 +1,5 @@
 package com.github.unidbg.linux.android.dvm.apk;
 
-import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.linux.android.dvm.api.Signature;
 import net.dongliu.apk.parser.bean.ApkMeta;
 import net.dongliu.apk.parser.bean.ApkSigner;
 import net.dongliu.apk.parser.bean.CertificateMeta;
@@ -68,22 +66,20 @@ class ApkFile implements Apk {
         }
     }
 
-    private Signature[] signatures;
+    private CertificateMeta[] signatures;
 
     @Override
-    public Signature[] getSignatures(VM vm) {
+    public CertificateMeta[] getSignatures() {
         if (signatures != null) {
             return signatures;
         }
 
         try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
-            List<Signature> signatures = new ArrayList<>(10);
+            List<CertificateMeta> signatures = new ArrayList<>(10);
             for (ApkSigner signer : apkFile.getApkSingers()) {
-                for (CertificateMeta meta : signer.getCertificateMetas()) {
-                    signatures.add(new Signature(vm, meta));
-                }
+                signatures.addAll(signer.getCertificateMetas());
             }
-            this.signatures = signatures.toArray(new Signature[0]);
+            this.signatures = signatures.toArray(new CertificateMeta[0]);
             return this.signatures;
         } catch (IOException | CertificateException e) {
             throw new IllegalStateException(e);

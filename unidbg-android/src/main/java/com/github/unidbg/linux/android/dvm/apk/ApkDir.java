@@ -1,7 +1,5 @@
 package com.github.unidbg.linux.android.dvm.apk;
 
-import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.linux.android.dvm.api.Signature;
 import net.dongliu.apk.parser.bean.ApkMeta;
 import net.dongliu.apk.parser.bean.ApkSigner;
 import net.dongliu.apk.parser.bean.CertificateMeta;
@@ -71,13 +69,13 @@ class ApkDir implements Apk {
         }
     }
 
-    private Signature[] signatures;
+    private CertificateMeta[] signatures;
 
     @Override
-    public Signature[] getSignatures(VM vm) {
+    public CertificateMeta[] getSignatures() {
         if (signatures == null) {
             try {
-                parseCertificates(vm);
+                parseCertificates();
             } catch (IOException | CertificateException e) {
                 throw new IllegalStateException(e);
             }
@@ -128,20 +126,18 @@ class ApkDir implements Apk {
         }
     }
 
-    private void parseCertificates(VM vm) throws IOException, CertificateException {
+    private void parseCertificates() throws IOException, CertificateException {
         List<ApkSigner> apkSigners = new ArrayList<>();
         for (CertificateFile file : getAllCertificateData()) {
             CertificateParser parser = CertificateParser.getInstance(file.getData());
             List<CertificateMeta> certificateMetas = parser.parse();
             apkSigners.add(new ApkSigner(file.getPath(), certificateMetas));
         }
-        List<Signature> signatures = new ArrayList<>(apkSigners.size());
+        List<CertificateMeta> signatures = new ArrayList<>(apkSigners.size());
         for (ApkSigner signer : apkSigners) {
-            for (CertificateMeta meta : signer.getCertificateMetas()) {
-                signatures.add(new Signature(vm, meta));
-            }
+            signatures.addAll(signer.getCertificateMetas());
         }
-        this.signatures = signatures.toArray(new Signature[0]);
+        this.signatures = signatures.toArray(new CertificateMeta[0]);
     }
 
     @Override

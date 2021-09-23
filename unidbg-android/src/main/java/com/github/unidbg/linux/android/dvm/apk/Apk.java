@@ -1,7 +1,6 @@
 package com.github.unidbg.linux.android.dvm.apk;
 
-import com.github.unidbg.linux.android.dvm.VM;
-import com.github.unidbg.linux.android.dvm.api.Signature;
+import net.dongliu.apk.parser.bean.CertificateMeta;
 
 import java.io.File;
 
@@ -15,7 +14,7 @@ public interface Apk {
 
     byte[] openAsset(String fileName);
 
-    Signature[] getSignatures(VM vm);
+    CertificateMeta[] getSignatures();
 
     String getPackageName();
 

@@ -5,6 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.dvm.apk.AssetResolver;
 import com.github.unidbg.spi.LibraryFile;
 import com.sun.jna.Pointer;
+import net.dongliu.apk.parser.bean.CertificateMeta;
 
 import java.io.File;
 
@@ -104,4 +105,7 @@ public interface VM {
     void setDvmClassFactory(DvmClassFactory factory);
 
     Emulator<?> getEmulator();
+
+    CertificateMeta[] getSignatures();
+
 }

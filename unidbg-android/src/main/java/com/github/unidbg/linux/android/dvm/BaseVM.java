@@ -4,11 +4,11 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.ElfLibraryFile;
 import com.github.unidbg.linux.android.ElfLibraryRawFile;
-import com.github.unidbg.linux.android.dvm.api.Signature;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
 import com.github.unidbg.linux.android.dvm.apk.ApkFactory;
 import com.github.unidbg.linux.android.dvm.apk.AssetResolver;
 import com.github.unidbg.spi.LibraryFile;
+import net.dongliu.apk.parser.bean.CertificateMeta;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -242,8 +242,9 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         return new ApkLibraryFile(this, apk, soName, libData, apk.getPackageName(), emulator.is64Bit());
     }
 
-    Signature[] getSignatures() {
-        return apk == null ? null : apk.getSignatures(this);
+    @Override
+    public CertificateMeta[] getSignatures() {
+        return apk == null ? null : apk.getSignatures();
     }
 
     @Override

@@ -14,6 +14,7 @@ import com.github.unidbg.linux.android.dvm.array.ByteArray;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmBoolean;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmInteger;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmLong;
+import net.dongliu.apk.parser.bean.CertificateMeta;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -124,8 +125,12 @@ public abstract class AbstractJni implements Jni {
                 dvmObject instanceof PackageInfo) {
             PackageInfo packageInfo = (PackageInfo) dvmObject;
             if (packageInfo.getPackageName().equals(vm.getPackageName())) {
-                Signature[] signatures = vm.getSignatures();
-                if (signatures != null) {
+                CertificateMeta[] metas = vm.getSignatures();
+                if (metas != null) {
+                    Signature[] signatures = new Signature[metas.length];
+                    for (int i = 0; i < metas.length; i++) {
+                        signatures[i] = new Signature(vm, metas[i]);
+                    }
                     return new ArrayObject(signatures);
                 }
             }
@@ -885,10 +890,10 @@ public abstract class AbstractJni implements Jni {
 
     public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, DvmObject<?> value){
         setStaticObjectField(vm, dvmClass, dvmField.getSignature(), value);
-    };
+    }
     public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature, DvmObject<?> value){
         throw new UnsupportedOperationException(signature);
-    };
+    }
 
     @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {
