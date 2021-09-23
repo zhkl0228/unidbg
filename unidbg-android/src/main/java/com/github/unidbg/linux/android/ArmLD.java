@@ -279,14 +279,14 @@ public class ArmLD extends Dlfcn {
     }
 
     private long dlopen(Memory memory, String filename, Emulator<?> emulator) {
-        Pointer pointer = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
+        UnidbgPointer pointer = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
             Module module = memory.dlopen(filename, false);
-            pointer = pointer.share(-4); // return value
+            pointer = pointer.share(-4, 0); // return value
             if (module == null) {
                 pointer.setInt(0, 0);
 
-                pointer = pointer.share(-4); // NULL-terminated
+                pointer = pointer.share(-4, 0); // NULL-terminated
                 pointer.setInt(0, 0);
 
                 if (!"libnetd_client.so".equals(filename)) {
@@ -299,7 +299,7 @@ public class ArmLD extends Dlfcn {
             } else {
                 pointer.setInt(0, (int) module.base);
 
-                pointer = pointer.share(-4); // NULL-terminated
+                pointer = pointer.share(-4, 0); // NULL-terminated
                 pointer.setInt(0, 0);
 
                 for (Module md : memory.getLoadedModules()) {
@@ -315,7 +315,7 @@ public class ArmLD extends Dlfcn {
                         if (log.isDebugEnabled()) {
                             log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(address));
                         }
-                        pointer = pointer.share(-4); // init array
+                        pointer = pointer.share(-4, 0); // init array
                         pointer.setInt(0, (int) address);
                     }
                     m.initFunctionList.clear();
@@ -324,7 +324,7 @@ public class ArmLD extends Dlfcn {
                 return module.base;
             }
         } finally {
-            backend.reg_write(ArmConst.UC_ARM_REG_SP, ((UnidbgPointer) pointer).peer);
+            backend.reg_write(ArmConst.UC_ARM_REG_SP, pointer.peer);
         }
     }
 

@@ -12,6 +12,7 @@ import com.github.unidbg.linux.file.LogCatFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.linux.thread.ThreadJoin19;
 import com.github.unidbg.linux.thread.ThreadJoin23;
+import com.github.unidbg.linux.thread.ThreadJoinVisitor;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -32,13 +33,13 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         this.needed = needed == null ? null : Arrays.asList(needed);
     }
 
-    public void patchThread(Emulator<?> emulator, IHookZz hookZz) {
+    public void patchThread(Emulator<?> emulator, IHookZz hookZz, ThreadJoinVisitor visitor) {
         switch (sdk) {
             case 19:
-                ThreadJoin19.patch(emulator, hookZz);
+                ThreadJoin19.patch(emulator, hookZz, visitor);
                 break;
             case 23:
-                ThreadJoin23.patch(emulator, hookZz);
+                ThreadJoin23.patch(emulator, hookZz, visitor);
                 break;
             default:
                 throw new UnsupportedOperationException();

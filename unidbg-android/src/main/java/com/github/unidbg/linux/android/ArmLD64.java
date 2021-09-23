@@ -23,7 +23,6 @@ import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import net.fornwall.jelf.ElfDynamicStructure;
-import net.fornwall.jelf.ElfFile;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -293,14 +292,14 @@ public class ArmLD64 extends Dlfcn {
     }
 
     private long dlopen(Memory memory, String filename, Emulator<?> emulator) {
-        Pointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
+        UnidbgPointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
             Module module = memory.dlopen(filename, false);
-            pointer = pointer.share(-8); // return value
+            pointer = pointer.share(-8, 0); // return value
             if (module == null) {
                 pointer.setLong(0, 0);
 
-                pointer = pointer.share(-8); // NULL-terminated
+                pointer = pointer.share(-8, 0); // NULL-terminated
                 pointer.setLong(0, 0);
 
                 if (!"libnetd_client.so".equals(filename)) {
@@ -313,7 +312,7 @@ public class ArmLD64 extends Dlfcn {
             } else {
                 pointer.setLong(0, module.base);
 
-                pointer = pointer.share(-8); // NULL-terminated
+                pointer = pointer.share(-8, 0); // NULL-terminated
                 pointer.setLong(0, 0);
 
                 for (Module md : memory.getLoadedModules()) {
@@ -329,7 +328,7 @@ public class ArmLD64 extends Dlfcn {
                         if (log.isDebugEnabled()) {
                             log.debug("[" + m.name + "]PushInitFunction: 0x" + Long.toHexString(address));
                         }
-                        pointer = pointer.share(-8); // init array
+                        pointer = pointer.share(-8, 0); // init array
                         pointer.setLong(0, address);
                     }
                     m.initFunctionList.clear();
@@ -338,7 +337,7 @@ public class ArmLD64 extends Dlfcn {
                 return module.base;
             }
         } finally {
-            backend.reg_write(Arm64Const.UC_ARM64_REG_SP, ((UnidbgPointer) pointer).peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_SP, pointer.peer);
         }
     }
 
