@@ -88,6 +88,7 @@ static void test_netlink() {
   /* Typically the message is stored in buf, so we need to parse the message to *
           * get the required data for our display. */
 
+  next_nlmp:
       for(nlmp = (struct nlmsghdr *)buf; status > sizeof(*nlmp);){
           int len = nlmp->nlmsg_len;
           int req_len = len - sizeof(*nlmp);
@@ -188,6 +189,11 @@ static void test_netlink() {
 
       }
 
+  status = recv(fd, buf, sizeof(buf), 0);
+  printf("test_netlink status=%d\n", status);
+  if(status > 0) {
+    goto next_nlmp;
+  }
   close(fd);
 }
 
