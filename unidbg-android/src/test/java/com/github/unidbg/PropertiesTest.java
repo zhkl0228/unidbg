@@ -1,11 +1,15 @@
 package com.github.unidbg;
 
+import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.utils.Inspector;
 import junit.framework.TestCase;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -150,9 +154,92 @@ public class PropertiesTest extends TestCase {
     public void testHex() throws Exception {
         byte[] data = Hex.decodeHex("4c0000001400020000000000f53e0000020880fe01000000080001007f000001080002007f000001070003006c6f0000080008008000000014000600ffffffffffffffff0203000002030000580000001400020000000000f53e0000021880001700000008000100c0a81fa808000200c0a81fa808000400c0a81fff0a000300776c616e30000000080008008000000014000600ffffffffffffffff7433b7007433b700".toCharArray());
         Inspector.inspect(data, "Hex");
+        decodeNetlinkMsg(data);
 
         data = Hex.decodeHex("4c0000001400020000000000a73e0000020880fe01000000080001007f000001080002007f000001070003006c6f0000080008008000000014000600ffffffffffffffff0203000002030000580000001400020000000000a73e0000021880001700000008000100c0a81fa808000200c0a81fa808000400c0a81fff0a000300776c616e30000000080008008000000014000600ffffffffffffffff7433b7007433b700".toCharArray());
         Inspector.inspect(data, "Hex");
+        decodeNetlinkMsg(data);
+    }
+
+    private void decodeNetlinkMsg(byte[] data) throws UnknownHostException {
+        final int SIZE_OF_NLMSGHDR = 16;
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        while (buffer.remaining() >= SIZE_OF_NLMSGHDR) {
+            int nlmsg_len = buffer.getInt();
+            byte[] tmp = new byte[nlmsg_len - 4];
+            buffer.get(tmp);
+            ByteBuffer bb = ByteBuffer.wrap(tmp);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+
+            short nlmsg_type = bb.getShort();
+            short nlmsg_flags = bb.getShort();
+            int nlmsg_seq = bb.getInt();
+            int nlmsg_pid = bb.getInt();
+
+            byte ifa_family = bb.get();
+            byte ifa_prefixlen = bb.get();  /* The prefix length		*/
+            byte ifa_flags = bb.get();      /* Flags			*/
+            byte ifa_scope = bb.get();      /* Address scope		*/
+            int ifa_index = bb.getInt();    /* Link index			*/
+
+            byte[] remaining = new byte[bb.remaining()];
+            bb.get(remaining);
+            Inspector.inspect(remaining, "nlmsg_type=0x" + Integer.toHexString(nlmsg_type) + ", nlmsg_flags=0x" + Integer.toHexString(nlmsg_flags) +
+                    ", nlmsg_seq=" + nlmsg_seq + ", nlmsg_pid=" + nlmsg_pid +
+                    ", ifa_family=" + ifa_family + ", ifa_prefixlen=" + ifa_prefixlen + ", ifa_flags=0x" + Integer.toHexString(ifa_flags & 0xff) + ", ifa_scope=" + ifa_scope +
+                    ", ifa_index=" + ifa_index);
+
+            final int IFA_ADDRESS = 1;
+            final int IFA_LOCAL = 2;
+            final int IFA_LABEL = 3;
+            final int IFA_BROADCAST = 4;
+            final int IFA_CACHEINFO = 6;
+            final int __IFA_MAX = 8;
+            bb = ByteBuffer.wrap(remaining);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+            while (bb.hasRemaining()) {
+                short rta_len = bb.getShort();
+                short rta_type = bb.getShort();
+                switch (rta_type) {
+                    case IFA_ADDRESS:
+                    case IFA_LOCAL:
+                    case IFA_BROADCAST:
+                        if (rta_len != 8) {
+                            throw new UnsupportedOperationException("rta_len=" + rta_len);
+                        }
+                        byte[] addr = new byte[4];
+                        bb.get(addr);
+                        InetAddress address = Inet4Address.getByAddress(addr);
+                        System.out.println("addr" + rta_type + ": " + address);
+                        break;
+                    case IFA_LABEL:
+                        String label = Utils.readCString(bb);
+                        System.out.println("label: " + label);
+                        break;
+                    case IFA_CACHEINFO: // struct ifa_cacheinfo
+                        int ifa_prefered = bb.getInt();
+                        int ifa_valid = bb.getInt();
+                        int cstamp = bb.getInt(); /* created timestamp, hundredths of seconds */
+                        int tstamp = bb.getInt(); /* updated timestamp, hundredths of seconds */
+                        System.out.println("ifa_prefered=" + ifa_prefered + ", ifa_valid=" + ifa_valid + ", cstamp=" + cstamp + ", tstamp=" + tstamp);
+                        break;
+                    case __IFA_MAX:
+                        if (rta_len != 8) {
+                            throw new UnsupportedOperationException("rta_len=" + rta_len);
+                        }
+                        int ifaMax = bb.getInt();
+                        System.out.println("ifaMax: " + ifaMax);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("rta_type=" + rta_type);
+                }
+                int align = rta_len % 4;
+                for (int i = align; align > 0 && i < 4; i++) {
+                    bb.get();
+                }
+            }
+        }
     }
 
 }

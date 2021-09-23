@@ -20,6 +20,7 @@ import com.github.unidbg.linux.file.ByteArrayFileIO;
 import com.github.unidbg.linux.file.DriverFileIO;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
 import com.github.unidbg.linux.file.LocalSocketIO;
+import com.github.unidbg.linux.file.NetLinkSocket;
 import com.github.unidbg.linux.file.SocketIO;
 import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
@@ -905,6 +906,16 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                         throw new UnsupportedOperationException();
                 }
                 break;
+            case SocketIO.AF_NETLINK:
+                switch (type) {
+                    case SocketIO.SOCK_DGRAM:
+                        fd = getMinFd();
+                        fdMap.put(fd, new NetLinkSocket(emulator));
+                        return fd;
+                    case SocketIO.SOCK_RAW:
+                    default:
+                        throw new UnsupportedOperationException();
+                }
         }
         log.info("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
         emulator.getMemory().setErrno(UnixEmulator.EAFNOSUPPORT);

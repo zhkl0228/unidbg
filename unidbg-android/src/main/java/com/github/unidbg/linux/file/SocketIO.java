@@ -16,8 +16,13 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
 
 public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileIO {
 
@@ -64,8 +69,45 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
     static final int MSG_PEEK = 0x02; /* Peek at incoming messages. */
     private static final int MSG_NOSIGNAL = 0x4000; /* Do not generate SIGPIPE. */
 
+    public static short IFF_UP = 0x1; /* interface is up		*/
+    public static short IFF_BROADCAST = 0x2;		/* broadcast address valid	*/
+    public static short IFF_LOOPBACK = 0x8;		/* is a loopback net		*/
+    public static short IFF_RUNNING = 0x40; /* interface RFC2863 OPER_UP	*/
+    public static short IFF_NOARP = 0x80; /* no ARP protocol		*/
+    public static short IFF_MULTICAST = 0x1000;		/* Supports multicast		*/
+
     protected SocketIO() {
         super(IOConstants.O_RDWR);
+    }
+
+    protected List<NetworkIF> getNetworkIFs(Emulator<?> emulator) throws SocketException {
+        Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
+        List<NetworkIF> list = new ArrayList<>();
+        while (enumeration.hasMoreElements()) {
+            NetworkInterface networkInterface = enumeration.nextElement();
+            Enumeration<InetAddress> addressEnumeration = networkInterface.getInetAddresses();
+            while (addressEnumeration.hasMoreElements()) {
+                InetAddress address = addressEnumeration.nextElement();
+                if (address instanceof Inet4Address) {
+                    Inet4Address broadcast = null;
+                    for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                        if (interfaceAddress.getBroadcast() != null) {
+                            broadcast = (Inet4Address) interfaceAddress.getBroadcast();
+                            break;
+                        }
+                    }
+                    list.add(new NetworkIF(networkInterface.getName(), (Inet4Address) address, broadcast));
+                    break;
+                }
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Return host network ifs: " + list);
+        }
+        if (emulator.getSyscallHandler().isVerbose()) {
+            System.out.println(getClass().getSimpleName() + " return host network ifs: " + list + " from " + emulator.getContext().getLRPointer());
+        }
+        return list;
     }
 
     @Override
