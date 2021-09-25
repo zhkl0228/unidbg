@@ -209,7 +209,7 @@ public class ArmLD extends Dlfcn {
                             Pointer filename = context.getPointerArg(0);
                             int flags = context.getIntArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("dlopen filename=" + filename.getString(0) + ", flags=" + flags);
+                                log.debug("dlopen filename=" + filename.getString(0) + ", flags=" + flags + ", LR=" + context.getLRPointer());
                             }
                             return dlopen(emulator.getMemory(), filename.getString(0), emulator);
                         }
@@ -222,7 +222,7 @@ public class ArmLD extends Dlfcn {
                             int addr = context.getIntArg(0);
                             Pointer info = context.getPointerArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
+                                log.debug("dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info + ", LR=" + context.getLRPointer());
                             }
                             Module module = emulator.getMemory().findModuleByAddress(addr);
                             if (module == null) {
@@ -250,9 +250,9 @@ public class ArmLD extends Dlfcn {
                             int handle = context.getIntArg(0);
                             Pointer symbol = context.getPointerArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
+                                log.debug("dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0) + ", LR=" + context.getLRPointer());
                             }
-                            return dlsym(emulator, (int) (handle & 0xffffffffL), symbol.getString(0));
+                            return dlsym(emulator, (handle & 0xffffffffL), symbol.getString(0));
                         }
                     }).peer;
                 case "dl_unwind_find_exidx":
@@ -302,11 +302,8 @@ public class ArmLD extends Dlfcn {
                 pointer = pointer.share(-4, 0); // NULL-terminated
                 pointer.setInt(0, 0);
 
-                for (Module md : memory.getLoadedModules()) {
-                    LinuxModule m = (LinuxModule) md;
-                    if (!m.getUnresolvedSymbol().isEmpty()) {
-                        continue;
-                    }
+                LinuxModule m = (LinuxModule) module;
+                if (m.getUnresolvedSymbol().isEmpty()) {
                     for (InitFunction initFunction : m.initFunctionList) {
                         long address = initFunction.getAddress();
                         if (address == 0) {

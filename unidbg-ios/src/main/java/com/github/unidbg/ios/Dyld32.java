@@ -358,7 +358,7 @@ public class Dyld32 extends Dyld {
                 }
 
                 String symbolName = symbol.getString(0);
-                if ((int) handle == MachO.RTLD_MAIN_ONLY && "_os_trace_redirect_func".equals(symbolName)) {
+                if ((int) handle == Dyld.RTLD_MAIN_ONLY && "_os_trace_redirect_func".equals(symbolName)) {
                     return _os_trace_redirect_func;
                 }
 

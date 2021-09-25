@@ -296,7 +296,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         if ("environ".equals(symbolName)) {
             return new VirtualSymbol(symbolName, null, environ.toUIntPeer());
         }
-        if (handle == RTLD_DEFAULT || handle == 0L) {
+        if ((int) handle == RTLD_DEFAULT || handle == 0L) {
             for (Module module : modules.values()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
                 if (symbol != null) {

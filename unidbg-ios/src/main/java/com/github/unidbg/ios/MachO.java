@@ -73,9 +73,6 @@ public interface MachO {
     int BIND_TYPE_TEXT_ABSOLUTE32 = 2;
     int BIND_TYPE_TEXT_PCREL32 = 3;
 
-    int RTLD_DEFAULT = -2;
-    int RTLD_MAIN_ONLY = -5;
-
     int _IONBF = 2; /* setvbuf should set unbuffered */
 
     int MAP_FILE = 0x0000; /* map from file (default) */
