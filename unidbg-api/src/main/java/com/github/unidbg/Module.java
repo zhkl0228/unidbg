@@ -5,6 +5,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.spi.InitFunctionListener;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -160,6 +161,18 @@ public abstract class Module {
 
     public boolean isVirtual() {
         return false;
+    }
+
+    /**
+     * 返回-1表示找不到对应文件的偏移
+     * @param offset 内存偏移
+     */
+    public abstract int virtualMemoryAddressToFileOffset(long offset);
+
+    protected InitFunctionListener initFunctionListener;
+
+    public void setInitFunctionListener(InitFunctionListener initFunctionListener) {
+        this.initFunctionListener = initFunctionListener;
     }
 
 }

@@ -153,7 +153,7 @@ public class ElfDynamicStructure {
     private MemoizedObject<ElfRelocation>[] rel, pltRel;
     private MemoizedObject<AndroidRelocation> androidRelocation;
 
-	ElfDynamicStructure(final ElfParser parser, long offset, int size) throws IOException {
+	ElfDynamicStructure(final ElfFile elfFile, final ElfParser parser, long offset, int size) throws IOException {
 		parser.seek(offset);
 		int numEntries = size / (parser.elfFile.objectSize == ElfFile.CLASS_32 ? 8 : 16);
 
@@ -263,7 +263,7 @@ public class ElfDynamicStructure {
 			dtStringTable = new MemoizedObject<ElfStringTable>() {
 				@Override
 				protected ElfStringTable computeValue() throws ElfException, IOException {
-					return new ElfStringTable(parser, parser.virtualMemoryAddrToFileOffset(dt_strtab_offset), dt_strtab_size);
+					return new ElfStringTable(parser, elfFile.virtualMemoryAddrToFileOffset(dt_strtab_offset), dt_strtab_size);
 				}
 			};
 		}
@@ -273,14 +273,14 @@ public class ElfDynamicStructure {
 			hashTable = new MemoizedObject<HashTable>() {
 				@Override
 				protected HashTable computeValue() throws ElfException, IOException {
-					return new ElfHashTable(parser, parser.virtualMemoryAddrToFileOffset(hashOffset), -1);
+					return new ElfHashTable(parser, elfFile.virtualMemoryAddrToFileOffset(hashOffset), -1);
 				}
 			};
 		} else if(gnuHashOffset > 0) {
 			hashTable = new MemoizedObject<HashTable>() {
 				@Override
 				protected HashTable computeValue() throws ElfException, IOException {
-					return new ElfGnuHashTable(parser, parser.virtualMemoryAddrToFileOffset(gnuHashOffset));
+					return new ElfGnuHashTable(parser, elfFile.virtualMemoryAddrToFileOffset(gnuHashOffset));
 				}
 			};
 		} else {
@@ -291,7 +291,7 @@ public class ElfDynamicStructure {
 			symbolStructure = new MemoizedObject<ElfSymbolStructure>() {
 				@Override
 				protected ElfSymbolStructure computeValue() throws ElfException, IOException {
-					return new ElfSymbolStructure(parser, parser.virtualMemoryAddrToFileOffset(symbolOffset), symbolEntrySize, dtStringTable, hashTable);
+					return new ElfSymbolStructure(parser, elfFile.virtualMemoryAddrToFileOffset(symbolOffset), symbolEntrySize, dtStringTable, hashTable);
 				}
 			};
 		}
@@ -299,7 +299,7 @@ public class ElfDynamicStructure {
         if (relOffset > 0) {
             int num_entries = relSize / relEntrySize;
             rel = MemoizedObject.uncheckedArray(num_entries);
-            final long fileOffset = parser.virtualMemoryAddrToFileOffset(relOffset);
+            final long fileOffset = elfFile.virtualMemoryAddrToFileOffset(relOffset);
             for (int i = 0; i < num_entries; i++) {
                 final long relocationOffset = fileOffset + ((long) i * relEntrySize);
                 rel[i] = new MemoizedObject<ElfRelocation>() {
@@ -314,7 +314,7 @@ public class ElfDynamicStructure {
         if (pltRelOffset > 0) {
             int num_entries = pltRelSize / relEntrySize;
             pltRel = MemoizedObject.uncheckedArray(num_entries);
-            final long fileOffset = parser.virtualMemoryAddrToFileOffset(pltRelOffset);
+            final long fileOffset = elfFile.virtualMemoryAddrToFileOffset(pltRelOffset);
             for (int i = 0; i < num_entries; i++) {
                 final long relocationOffset = fileOffset + ((long) i * relEntrySize);
                 pltRel[i] = new MemoizedObject<ElfRelocation>() {
@@ -331,7 +331,7 @@ public class ElfDynamicStructure {
 			androidRelocation = new MemoizedObject<AndroidRelocation>() {
 				@Override
 				protected AndroidRelocation computeValue() throws ElfException, IOException {
-					parser.seek(parser.virtualMemoryAddrToFileOffset(androidRelOffset));
+					parser.seek(elfFile.virtualMemoryAddrToFileOffset(androidRelOffset));
 					byte[] magic = new byte[4];
 					parser.read(magic);
 					if (androidRelSize >= 4 && "APS2".equals(new String(magic))) {
@@ -347,7 +347,7 @@ public class ElfDynamicStructure {
 			androidRelocation = new MemoizedObject<AndroidRelocation>() {
 				@Override
 				protected AndroidRelocation computeValue() throws ElfException, IOException {
-					parser.seek(parser.virtualMemoryAddrToFileOffset(androidRelAOffset));
+					parser.seek(elfFile.virtualMemoryAddrToFileOffset(androidRelAOffset));
 					byte[] magic = new byte[4];
 					parser.read(magic);
 					if (androidRelASize >= 4 && "APS2".equals(new String(magic))) {
@@ -364,7 +364,7 @@ public class ElfDynamicStructure {
 			initArray = new MemoizedObject<ElfInitArray>() {
 				@Override
 				protected ElfInitArray computeValue() throws ElfException, IOException {
-					return new ElfInitArray(parser, parser.virtualMemoryAddrToFileOffset(initArrayOffset), initArraySize);
+					return new ElfInitArray(parser, elfFile.virtualMemoryAddrToFileOffset(initArrayOffset), initArraySize);
 				}
 			};
 		}
@@ -373,7 +373,7 @@ public class ElfDynamicStructure {
 			preInitArray = new MemoizedObject<ElfInitArray>() {
 				@Override
 				protected ElfInitArray computeValue() throws ElfException, IOException {
-					return new ElfInitArray(parser, parser.virtualMemoryAddrToFileOffset(preInitArrayOffset), preInitArraySize);
+					return new ElfInitArray(parser, elfFile.virtualMemoryAddrToFileOffset(preInitArrayOffset), preInitArraySize);
 				}
 			};
 		}

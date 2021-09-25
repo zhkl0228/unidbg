@@ -14,6 +14,7 @@ import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ArmExIdx;
 import net.fornwall.jelf.ElfDynamicStructure;
+import net.fornwall.jelf.ElfException;
 import net.fornwall.jelf.ElfFile;
 import net.fornwall.jelf.ElfSection;
 import net.fornwall.jelf.ElfSymbol;
@@ -110,6 +111,17 @@ public class LinuxModule extends Module {
         this.dynamicStructure = dynamicStructure;
     }
 
+    @Override
+    public int virtualMemoryAddressToFileOffset(long offset) {
+        try {
+            return (int) elfFile.virtualMemoryAddrToFileOffset(offset);
+        } catch (ElfException e) {
+            return -1;
+        } catch (IOException e) {
+            throw new IllegalStateException("virtualMemoryAddressToFileOffset offset=0x" + Long.toHexString(offset));
+        }
+    }
+
     void callInitFunction(Emulator<?> emulator, boolean mustCallInit) throws IOException {
         if (!mustCallInit && !unresolvedSymbol.isEmpty()) {
             for (ModuleSymbol moduleSymbol : unresolvedSymbol) {
@@ -118,9 +130,17 @@ public class LinuxModule extends Module {
             return;
         }
 
+        int index = 0;
         while (!initFunctionList.isEmpty()) {
             InitFunction initFunction = initFunctionList.remove(0);
+            if (initFunctionListener != null) {
+                initFunctionListener.onPreCallInitFunction(this, initFunction.getAddress(), index);
+            }
             initFunction.call(emulator);
+            if (initFunctionListener != null) {
+                initFunctionListener.onPostCallInitFunction(this, initFunction.getAddress(), index);
+            }
+            index++;
         }
     }
 

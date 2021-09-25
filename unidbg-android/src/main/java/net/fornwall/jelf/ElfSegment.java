@@ -80,7 +80,7 @@ public class ElfSegment {
 	private MemoizedObject<ElfDynamicStructure> dynamicStructure;
 	private MemoizedObject<ArmExIdx> arm_exidx;
 
-	ElfSegment(final ElfParser parser, final long offset) {
+	ElfSegment(final ElfFile elfFile, final ElfParser parser, final long offset) {
 		parser.seek(offset);
 		if (parser.elfFile.objectSize == ElfFile.CLASS_32) {
 			// typedef struct {
@@ -150,7 +150,7 @@ public class ElfSegment {
             dynamicStructure = new MemoizedObject<ElfDynamicStructure>() {
                 @Override
                 protected ElfDynamicStructure computeValue() throws ElfException, IOException {
-                    return new ElfDynamicStructure(parser, parser.virtualMemoryAddrToFileOffset(virtual_address), (int) mem_size);
+                    return new ElfDynamicStructure(elfFile, parser, elfFile.virtualMemoryAddrToFileOffset(virtual_address), (int) mem_size);
                 }
             };
             break;
@@ -158,7 +158,7 @@ public class ElfSegment {
 			ehFrameHeader = new MemoizedObject<GnuEhFrameHeader>() {
 				@Override
 				protected GnuEhFrameHeader computeValue() throws ElfException, IOException {
-					return new GnuEhFrameHeader(parser, parser.virtualMemoryAddrToFileOffset(virtual_address), (int) mem_size);
+					return new GnuEhFrameHeader(parser, elfFile.virtualMemoryAddrToFileOffset(virtual_address), (int) mem_size);
 				}
 			};
 			break;
@@ -217,25 +217,25 @@ public class ElfSegment {
 
 		StringBuilder pFlagsString = new StringBuilder();
 		if ((flags & PF_R) != 0) {
-			pFlagsString.append("read");
+			pFlagsString.append("R");
 		}
 		if ((flags & PF_W) != 0) {
 			if (pFlagsString.length() > 0) {
 				pFlagsString.append("|");
 			}
-			pFlagsString.append("write");
+			pFlagsString.append("W");
 		}
 		if ((flags & PF_X) != 0) {
 			if (pFlagsString.length() > 0) {
 				pFlagsString.append("|");
 			}
-			pFlagsString.append("execute");
+			pFlagsString.append("E");
 		}
 		if (pFlagsString.length() == 0) {
 			pFlagsString.append("0x").append(Long.toHexString(flags));
 		}
 
-		return "ElfProgramHeader[p_type=" + typeString + ", p_filesz=" + file_size + ", p_memsz=" + mem_size + ", p_flags=" + pFlagsString + ", p_align="
+		return "ElfProgramHeader[p_type=" + typeString + ", p_filesz=0x" + Long.toHexString(file_size) + ", p_memsz=0x" + Long.toHexString(mem_size) + ", p_flags=" + pFlagsString + ", p_align="
 				+ alignment + ", range=[0x" + Long.toHexString(virtual_address) + "-0x" + Long.toHexString(virtual_address + mem_size) + "]]";
 	}
 

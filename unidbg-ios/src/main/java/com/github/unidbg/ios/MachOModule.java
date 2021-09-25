@@ -80,6 +80,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Segment[] segments;
 
+    @Override
     public final int virtualMemoryAddressToFileOffset(long address) {
         if (segments == null) {
             throw new UnsupportedOperationException();

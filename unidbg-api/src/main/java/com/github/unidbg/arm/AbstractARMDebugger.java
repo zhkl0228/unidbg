@@ -940,6 +940,10 @@ public abstract class AbstractARMDebugger implements Debugger {
                     public void registerSymbol(String symbolName, long address) {
                         throw new UnsupportedOperationException();
                     }
+                    @Override
+                    public int virtualMemoryAddressToFileOffset(long offset) {
+                        throw new UnsupportedOperationException();
+                    }
                 };
             }
         }

@@ -131,7 +131,7 @@ public final class ElfSection implements SymbolLocator {
 	private final ElfFile elfHeader;
 
 	/** Reads the section header information located at offset. */
-	ElfSection(final ElfParser parser, long offset) {
+	ElfSection(final ElfFile elfFile, final ElfParser parser, long offset) {
 		this.elfHeader = parser.elfFile;
 		parser.seek(offset);
 
@@ -181,7 +181,7 @@ public final class ElfSection implements SymbolLocator {
 			dynamicStructure = new MemoizedObject<ElfDynamicStructure>() {
 				@Override
 				protected ElfDynamicStructure computeValue() throws ElfException, IOException {
-					return new ElfDynamicStructure(parser, section_offset, (int) size);
+					return new ElfDynamicStructure(elfFile, parser, section_offset, (int) size);
 				}
 			};
 			break;

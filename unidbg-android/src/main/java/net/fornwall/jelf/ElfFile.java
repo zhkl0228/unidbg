@@ -308,7 +308,7 @@ public final class ElfFile {
 			sectionHeaders[i] = new MemoizedObject<ElfSection>() {
 				@Override
 				public ElfSection computeValue() throws ElfException {
-					return new ElfSection(parser, sectionHeaderOffset);
+					return new ElfSection(ElfFile.this, parser, sectionHeaderOffset);
 				}
 			};
 		}
@@ -319,7 +319,7 @@ public final class ElfFile {
 			programHeaders[i] = new MemoizedObject<ElfSegment>() {
 				@Override
 				public ElfSegment computeValue() {
-					return new ElfSegment(parser, programHeaderOffset);
+					return new ElfSegment(ElfFile.this, parser, programHeaderOffset);
 				}
 			};
 		}
@@ -332,6 +332,24 @@ public final class ElfFile {
 			if (ph.type == ElfSegment.PT_INTERP) return ph.getInterpreter();
 		}
 		return null;
+	}
+
+	/**
+	 * Find the file offset from a virtual address by looking up the {@link ElfSegment} segment containing the
+	 * address and computing the resulting file offset.
+	 */
+	public long virtualMemoryAddrToFileOffset(long address) throws IOException {
+		for (int i = 0; i < this.num_ph; i++) {
+			ElfSegment ph = this.getProgramHeader(i);
+			if (address >= ph.virtual_address && address < (ph.virtual_address + ph.mem_size)) {
+				long relativeOffset = address - ph.virtual_address;
+				if (relativeOffset >= ph.file_size) {
+					throw new ElfException("Can not convert virtual memory address " + Long.toHexString(address) + " to file offset -" + " found segment " + ph + " but address maps to memory outside file range");
+				}
+				return ph.offset + relativeOffset;
+			}
+		}
+		throw new ElfException("Cannot find segment for address 0x" + Long.toHexString(address));
 	}
 
 }
