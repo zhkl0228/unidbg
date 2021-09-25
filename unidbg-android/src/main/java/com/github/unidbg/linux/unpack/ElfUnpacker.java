@@ -15,6 +15,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+/**
+ * <pre>
+ * First before load so:
+ *     memory.addModuleListener();
+ * Then in onLoaded method:
+ *     if ("libxxx.so".equals(module.name)) {
+ *         File outFile = new File(FileUtils.getUserDirectory(), "Desktop/libxxx_patched.so");
+ *         new ElfUnpacker(libxxxFileData, outFile).register(emulator, module);
+ *     }
+ * </pre>
+ */
 public class ElfUnpacker {
 
     private final byte[] elfFile;
