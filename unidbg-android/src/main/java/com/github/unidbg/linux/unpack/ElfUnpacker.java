@@ -16,6 +16,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
+ * Dump 针对 init_array 加密的 so 文件
  * <pre>
  * First before load so:
  *     memory.addModuleListener();
@@ -61,8 +62,7 @@ public class ElfUnpacker {
         });
 
         for (MemRegion region : module.getRegions()) {
-            if ((region.perms & UnicornConst.UC_PROT_WRITE) == 0 && // readonly
-                    (region.perms & UnicornConst.UC_PROT_EXEC) == UnicornConst.UC_PROT_EXEC) { // executable
+            if ((region.perms & UnicornConst.UC_PROT_WRITE) == 0 && (region.perms & UnicornConst.UC_PROT_EXEC) == UnicornConst.UC_PROT_EXEC) { // 只读代码段
                 System.out.println("Begin unpack " + module.name + ": 0x" + Long.toHexString(region.begin) + "-0x" + Long.toHexString(region.end));
                 emulator.getBackend().hook_add_new(new WriteHook() {
                     private Unicorn.UnHook unHook;
@@ -70,7 +70,7 @@ public class ElfUnpacker {
                     public void hook(Backend backend, long address, int size, long value, Object user) {
                         long offset = address - module.base;
                         int fileOffset = module.virtualMemoryAddressToFileOffset(offset);
-                        if (size > 8) {
+                        if (size < 1 || size > 8) {
                             throw new IllegalStateException("size=" + size);
                         }
                         if (fileOffset >= 0) {
