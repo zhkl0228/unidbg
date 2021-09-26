@@ -1534,7 +1534,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new BackendException();
                 } else {
-                    DvmObject<?> obj = getObject(value.toIntPeer());
+                    DvmObject<?> obj = value == null ? null : getObject(value.toIntPeer());
                     dvmField.setObjectField(dvmObject, obj);
                     if (verbose) {
                         System.out.printf("JNIEnv->SetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
@@ -2387,7 +2387,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("SetStaticObjectField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
                 }
-                DvmObject<?> dvmObject = getObject(value.toIntPeer());
+                DvmObject<?> dvmObject = value == null ? null : getObject(value.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
                 if (dvmField == null) {

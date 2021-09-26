@@ -533,8 +533,10 @@ public abstract class AbstractJni implements Jni {
             case "java/util/ArrayList->isEmpty()Z":
                 return ((ArrayListObject) dvmObject).isEmpty();
             case "java/util/Iterator->hasNext()Z":
-                Iterator<?> iterator = (Iterator<?>) dvmObject.getValue();
-                return iterator.hasNext();
+                Object iterator = dvmObject.getValue();
+                if (iterator instanceof Iterator) {
+                    return ((Iterator<?>) iterator).hasNext();
+                }
         }
 
         throw new UnsupportedOperationException(signature);

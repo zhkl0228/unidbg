@@ -1513,7 +1513,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new BackendException();
                 } else {
-                    DvmObject<?> obj = getObject(value.toIntPeer());
+                    DvmObject<?> obj = value == null ? null : getObject(value.toIntPeer());
                     dvmField.setObjectField(dvmObject, obj);
                     if (verbose) {
                         System.out.printf("JNIEnv->SetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
