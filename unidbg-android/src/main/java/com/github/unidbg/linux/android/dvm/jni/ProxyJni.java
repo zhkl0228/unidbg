@@ -746,6 +746,19 @@ class ProxyJni extends JniFunction {
     }
 
     @Override
+    public void setStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, boolean value) {
+        try {
+            Class<?> clazz = classLoader.loadClass(dvmClass.getName());
+            ProxyField field = ProxyUtils.findField(clazz, dvmField, visitor);
+            field.setBoolean(null, value);
+            return;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.warn("setStaticBooleanField", e);
+        }
+        super.setStaticBooleanField(vm, dvmClass, dvmField, value);
+    }
+
+    @Override
     public void setStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, int value) {
         try {
             Class<?> clazz = classLoader.loadClass(dvmClass.getName());
@@ -769,7 +782,7 @@ class ProxyJni extends JniFunction {
             log.warn("setStaticObjectField", e);
         }
         super.setStaticObjectField(vm, dvmClass, dvmField, value);
-    };
+    }
 
     @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {

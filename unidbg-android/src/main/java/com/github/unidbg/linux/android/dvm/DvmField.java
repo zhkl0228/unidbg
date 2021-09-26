@@ -114,6 +114,11 @@ public class DvmField extends Hashable {
         checkJni(vm, dvmClass).setStaticObjectField(vm, dvmClass, this, value);
     }
 
+    void setStaticBooleanField(boolean value) {
+        BaseVM vm = dvmClass.vm;
+        checkJni(vm, dvmClass).setStaticBooleanField(vm, dvmClass, this, value);
+    }
+
     void setStaticIntField(int value) {
         BaseVM vm = dvmClass.vm;
         checkJni(vm, dvmClass).setStaticIntField(vm, dvmClass, this, value);

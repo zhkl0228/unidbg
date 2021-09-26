@@ -2405,7 +2405,25 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _SetStaticBooleanField = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                int value = context.getIntArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticBooleanField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    boolean flag = BaseVM.valueOf(value);
+                    dvmField.setStaticBooleanField(flag);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticBooleanField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, flag, context.getLRPointer());
+                    }
+                }
+                return 0;
             }
         });
 

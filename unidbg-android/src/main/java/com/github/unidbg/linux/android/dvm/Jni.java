@@ -133,6 +133,9 @@ public interface Jni {
     void setObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, DvmObject<?> value);
     void setObjectField(BaseVM vm, DvmObject<?> dvmObject, String signature, DvmObject<?> value);
 
+    void setStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, boolean value);
+    void setStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature, boolean value);
+
     void setStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, int value);
     void setStaticIntField(BaseVM vm, DvmClass dvmClass, String signature, int value);
 

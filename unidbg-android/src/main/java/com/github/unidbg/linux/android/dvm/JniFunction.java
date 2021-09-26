@@ -4,7 +4,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public float callStaticFloatMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticFloatMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -14,7 +14,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public double callStaticDoubleMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticDoubleMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -24,7 +24,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void callStaticVoidMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        callStaticVoidMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -34,7 +34,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void callStaticVoidMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        callStaticVoidMethodV(vm, dvmClass, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -44,7 +44,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public boolean callStaticBooleanMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticBooleanMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -54,7 +54,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticBooleanMethodV(vm, dvmClass, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -64,7 +64,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public int callStaticIntMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticIntMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -74,7 +74,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public int callStaticIntMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticIntMethodV(vm, dvmClass, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -84,7 +84,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public long callStaticLongMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticLongMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -94,7 +94,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public long callStaticLongMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticLongMethodV(vm, dvmClass, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -104,7 +104,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticObjectMethod(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -114,7 +114,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> callStaticObjectMethodV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callStaticObjectMethodV(vm, dvmClass, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -124,7 +124,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return newObject(vm, dvmClass, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -134,7 +134,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> newObjectV(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return newObjectV(vm, dvmClass, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -149,7 +149,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void callVoidMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        callVoidMethod(vm, dvmObject, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -159,7 +159,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        callVoidMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -169,7 +169,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public boolean callBooleanMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callBooleanMethod(vm, dvmObject, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -179,7 +179,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public boolean callBooleanMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callBooleanMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -189,7 +189,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public char callCharMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callCharMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -199,7 +199,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public int callIntMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callIntMethod(vm, dvmObject, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -209,7 +209,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public double callDoubleMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callDoubleMethod(vm, dvmObject, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -219,7 +219,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public byte callByteMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callByteMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -229,7 +229,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public short callShortMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callShortMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -239,7 +239,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public int callIntMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callIntMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -249,7 +249,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> callObjectMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callObjectMethod(vm, dvmObject, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -259,7 +259,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public long callLongMethod(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VarArg varArg) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callLongMethod(vm, dvmObject, dvmMethod.getSignature(), varArg);
     }
 
     @Override
@@ -269,7 +269,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public long callLongMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callLongMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -279,7 +279,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public float callFloatMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callFloatMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -289,7 +289,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> callObjectMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return callObjectMethodV(vm, dvmObject, dvmMethod.getSignature(), vaList);
     }
 
     @Override
@@ -299,7 +299,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public boolean getStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getStaticBooleanField(vm, dvmClass, dvmField.getSignature());
     }
 
     @Override
@@ -309,7 +309,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public byte getStaticByteField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getStaticByteField(vm, dvmClass, dvmField.getSignature());
     }
 
     @Override
@@ -319,7 +319,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public int getStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getStaticIntField(vm, dvmClass, dvmField.getSignature());
     }
 
     @Override
@@ -329,7 +329,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getStaticObjectField(vm, dvmClass, dvmField.getSignature());
     }
 
     @Override
@@ -339,7 +339,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getBooleanField(vm, dvmObject, dvmField.getSignature());
     }
 
     @Override
@@ -349,7 +349,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public int getIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getIntField(vm, dvmObject, dvmField.getSignature());
     }
 
     @Override
@@ -359,7 +359,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public long getLongField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getLongField(vm, dvmObject, dvmField.getSignature());
     }
 
     @Override
@@ -369,7 +369,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public float getFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getFloatField(vm, dvmObject, dvmField.getSignature());
     }
 
     @Override
@@ -379,7 +379,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> getObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getObjectField(vm, dvmObject, dvmField.getSignature());
     }
 
     @Override
@@ -389,7 +389,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, boolean value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setBooleanField(vm, dvmObject, dvmField.getSignature(), value);
     }
 
     @Override
@@ -399,7 +399,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, int value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setIntField(vm, dvmObject, dvmField.getSignature(), value);
     }
 
     @Override
@@ -409,7 +409,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setFloatField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, float value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setFloatField(vm, dvmObject, dvmField.getSignature(), value);
     }
 
     @Override
@@ -419,7 +419,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setDoubleField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, double value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setDoubleField(vm, dvmObject, dvmField.getSignature(), value);
     }
 
     @Override
@@ -429,7 +429,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setLongField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, long value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setLongField(vm, dvmObject, dvmField.getSignature(), value);
     }
 
     @Override
@@ -439,7 +439,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setObjectField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField, DvmObject<?> value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setObjectField(vm, dvmObject, dvmField.getSignature(), value);
     }
 
     @Override
@@ -448,8 +448,18 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public void setStaticBooleanField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, boolean value) {
+        setStaticBooleanField(vm, dvmClass, dvmField.getSignature(), value);
+    }
+
+    @Override
+    public void setStaticBooleanField(BaseVM vm, DvmClass dvmClass, String signature, boolean value) {
+        throw new UnsupportedOperationException(signature);
+    }
+
+    @Override
     public void setStaticIntField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, int value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setStaticIntField(vm, dvmClass, dvmField.getSignature(), value);
     }
 
     @Override
@@ -458,16 +468,16 @@ public abstract class JniFunction implements Jni {
     }
 
     public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, DvmObject<?> value){
-        throw new UnsupportedOperationException(dvmField.getSignature());
-    };
+        setStaticObjectField(vm, dvmClass, dvmField.getSignature(), value);
+    }
 
     public void setStaticObjectField(BaseVM vm, DvmClass dvmClass, String signature, DvmObject<?> value){
         throw new UnsupportedOperationException(signature);
-    };
+    }
 
     @Override
     public void setStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, long value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setStaticLongField(vm, dvmClass, dvmField.getSignature(), value);
     }
 
     @Override
@@ -477,7 +487,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setStaticFloatField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, float value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setStaticFloatField(vm, dvmClass, dvmField.getSignature(), value);
     }
 
     @Override
@@ -487,7 +497,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public void setStaticDoubleField(BaseVM vm, DvmClass dvmClass, DvmField dvmField, double value) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        setStaticDoubleField(vm, dvmClass, dvmField.getSignature(), value);
     }
 
     @Override
@@ -497,7 +507,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public long getStaticLongField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
-        throw new UnsupportedOperationException(dvmField.getSignature());
+        return getStaticLongField(vm, dvmClass, dvmField.getSignature());
     }
 
     @Override
@@ -507,7 +517,7 @@ public abstract class JniFunction implements Jni {
 
     @Override
     public DvmObject<?> toReflectedMethod(BaseVM vm, DvmClass dvmClass, DvmMethod dvmMethod) {
-        throw new UnsupportedOperationException(dvmMethod.getSignature());
+        return toReflectedMethod(vm, dvmClass, dvmMethod.getSignature());
     }
 
     @Override
