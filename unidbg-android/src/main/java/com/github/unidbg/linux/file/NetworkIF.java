@@ -4,15 +4,17 @@ import java.net.Inet4Address;
 
 public class NetworkIF {
 
+    public final int index;
     public final String ifName;
     public final Inet4Address ipv4;
     public final Inet4Address broadcast;
 
-    public NetworkIF(String ifName, Inet4Address ipv4) {
-        this(ifName, ipv4, null);
+    public NetworkIF(int index, String ifName, Inet4Address ipv4) {
+        this(index, ifName, ipv4, null);
     }
 
-    public NetworkIF(String ifName, Inet4Address ipv4, Inet4Address broadcast) {
+    public NetworkIF(int index, String ifName, Inet4Address ipv4, Inet4Address broadcast) {
+        this.index = index;
         this.ifName = getIfName(ifName);
         this.ipv4 = ipv4;
         this.broadcast = broadcast;

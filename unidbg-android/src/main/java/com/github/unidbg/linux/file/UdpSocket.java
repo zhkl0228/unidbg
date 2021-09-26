@@ -265,13 +265,14 @@ public class UdpSocket extends SocketIO implements FileIO {
         }
         try {
             List<NetworkIF> list = getNetworkIFs(emulator);
-            if (ifindex < 0 || ifindex >= list.size()) {
-                throw new UnsupportedOperationException("ifindex=" + ifindex);
+            for (NetworkIF networkIF : list) {
+                if (ifindex == networkIF.index) {
+                    req.setName(networkIF.ifName);
+                    req.pack();
+                    return 0;
+                }
             }
-            NetworkIF networkIF = list.get(ifindex);
-            req.setName(networkIF.ifName);
-            req.pack();
-            return 0;
+            throw new IllegalStateException("ifindex=" + ifindex);
         } catch (SocketException e) {
             throw new IllegalStateException(e);
         }

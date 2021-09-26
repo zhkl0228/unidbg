@@ -67,7 +67,7 @@ public class NetLinkSocket extends SocketIO implements FileIO {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ByteBuffer bb = ByteBuffer.allocate(1024);
                 bb.order(ByteOrder.LITTLE_ENDIAN);
-                for (int i = 0; i < list.size(); i++) {
+                for (NetworkIF networkIF : list) {
                     bb.putInt(0); // length placeholder
                     bb.putShort(RTM_NEWADDR);
                     bb.putShort(NLM_F_MULTI);
@@ -78,9 +78,7 @@ public class NetLinkSocket extends SocketIO implements FileIO {
                     bb.put((byte) 0x8); // ifa_prefixlen
                     bb.put((byte) IFF_NOARP); // ifa_flags
                     bb.put((byte) -2); // ifa_scope
-                    bb.putInt(i);
-
-                    NetworkIF networkIF = list.get(i);
+                    bb.putInt(networkIF.index);
 
                     final short IFA_ADDRESS = 1;
                     bb.putShort((short) 0x8); // rta_len

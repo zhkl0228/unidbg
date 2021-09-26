@@ -96,7 +96,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
                             break;
                         }
                     }
-                    list.add(new NetworkIF(networkInterface.getName(), (Inet4Address) address, broadcast));
+                    list.add(new NetworkIF(networkInterface.getIndex(), networkInterface.getName(), (Inet4Address) address, broadcast));
                     break;
                 }
             }
