@@ -29,30 +29,97 @@ public class SystemPropertyHook implements HookListener {
 
     @Override
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
-        if ("libc.so".equals(libraryName) && "__system_property_get".equals(symbolName)) {
-            if (emulator.is64Bit()) {
-                return svcMemory.registerSvc(new Arm64Hook() {
-                    @Override
-                    protected HookStatus hook(Emulator<?> emulator) {
-                        return __system_property_get(old);
-                    }
-                }).peer;
-            } else {
-                return svcMemory.registerSvc(new ArmHook() {
-                    @Override
-                    protected HookStatus hook(Emulator<?> emulator) {
-                        return __system_property_get(old);
-                    }
-                }).peer;
+        if ("libc.so".equals(libraryName)) {
+            if ("__system_property_get".equals(symbolName)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Hook " + symbolName);
+                }
+                if (emulator.is64Bit()) {
+                    return svcMemory.registerSvc(new Arm64Hook() {
+                        @Override
+                        protected HookStatus hook(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            int index = 0;
+                            Pointer pointer = context.getPointerArg(index);
+                            String key = pointer.getString(0);
+                            return __system_property_get(old, key, index);
+                        }
+                    }).peer;
+                } else {
+                    return svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            int index = 0;
+                            Pointer pointer = context.getPointerArg(index);
+                            String key = pointer.getString(0);
+                            return __system_property_get(old, key, index);
+                        }
+                    }).peer;
+                }
+            }
+            if ("__system_property_read".equals(symbolName)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Hook " + symbolName);
+                }
+                if (emulator.is64Bit()) {
+                    return svcMemory.registerSvc(new Arm64Hook() {
+                        @Override
+                        protected HookStatus hook(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer pi = context.getPointerArg(0);
+                            String key = pi.share(PROP_VALUE_MAX + 4).getString(0);
+                            return __system_property_get(old, key, 1);
+                        }
+                    }).peer;
+                } else {
+                    return svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer pi = context.getPointerArg(0);
+                            String key = pi.share(PROP_VALUE_MAX + 4).getString(0);
+                            return __system_property_get(old, key, 1);
+                        }
+                    }).peer;
+                }
+            }
+            if ("__system_property_find".equals(symbolName)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Hook " + symbolName);
+                }
+                if (emulator.is64Bit()) {
+                    return svcMemory.registerSvc(new Arm64Hook() {
+                        @Override
+                        protected HookStatus hook(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer name = context.getPointerArg(0);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__system_property_find key=" + name.getString(0));
+                            }
+                            return HookStatus.RET(emulator, old);
+                        }
+                    }).peer;
+                } else {
+                    return svcMemory.registerSvc(new ArmHook() {
+                        @Override
+                        protected HookStatus hook(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer name = context.getPointerArg(0);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__system_property_find key=" + name.getString(0));
+                            }
+                            return HookStatus.RET(emulator, old);
+                        }
+                    }).peer;
+                }
             }
         }
         return 0;
     }
 
-    private HookStatus __system_property_get(long old) {
+    private HookStatus __system_property_get(long old, String key, int index) {
         RegisterContext context = emulator.getContext();
-        Pointer pointer = context.getPointerArg(0);
-        String key = pointer.getString(0);
         if (propertyProvider != null) {
             String value = propertyProvider.getProperty(key);
             if (value != null) {
@@ -65,7 +132,7 @@ public class SystemPropertyHook implements HookListener {
                     throw new BackendException("invalid property value length: key=" + key + ", value=" + value);
                 }
 
-                context.getPointerArg(1).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
+                context.getPointerArg(index + 1).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
                 return HookStatus.LR(emulator, data.length);
             }
         }
