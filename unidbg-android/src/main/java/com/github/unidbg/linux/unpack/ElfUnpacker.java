@@ -5,6 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.memory.MemRegion;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunctionListener;
 import org.apache.commons.io.FileUtils;
 import unicorn.Unicorn;
@@ -45,16 +46,21 @@ public class ElfUnpacker {
     }
 
     private final ByteBuffer buffer;
+    private boolean dirty;
 
     public void register(final Emulator<?> emulator, final Module module) {
         module.setInitFunctionListener(new InitFunctionListener() {
             @Override
             public void onPreCallInitFunction(Module module, long initFunction, int index) {
+                dirty = false;
             }
             @Override
             public void onPostCallInitFunction(Module module, long initFunction, int index) {
                 try {
-                    FileUtils.writeByteArrayToFile(outFile, elfFile);
+                    if (dirty) {
+                        System.out.println("Unpack initFunction=" + UnidbgPointer.pointer(emulator, module.base + initFunction));
+                        FileUtils.writeByteArrayToFile(outFile, elfFile);
+                    }
                 } catch (IOException e) {
                     throw new IllegalStateException(e);
                 }
@@ -77,6 +83,7 @@ public class ElfUnpacker {
                             buffer.clear();
                             buffer.putLong(value);
                             System.arraycopy(buffer.array(), 0, elfFile, fileOffset, size);
+                            dirty = true;
                         }
                     }
                     @Override

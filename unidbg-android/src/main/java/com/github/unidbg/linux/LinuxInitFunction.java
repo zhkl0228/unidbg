@@ -19,9 +19,9 @@ class LinuxInitFunction extends InitFunction {
     }
 
     @Override
-    public void call(Emulator<?> emulator) {
+    public long call(Emulator<?> emulator) {
         if (address == 0 || address == -1) {
-            return;
+            return address;
         }
 
         if (log.isDebugEnabled()) {
@@ -32,6 +32,7 @@ class LinuxInitFunction extends InitFunction {
         if (log.isDebugEnabled()) {
             System.err.println("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
+        return address;
     }
 
 }

@@ -35,7 +35,7 @@ class MachOModuleInit extends InitFunction {
     /**
      * initializer(int argc, const char* argv[], const char* envp[], const char* apple[], const struct ProgramVars* vars)
      */
-    public void call(Emulator<?> emulator) {
+    public long call(Emulator<?> emulator) {
 //        emulator.traceCode();
         if (isModInit) {
             log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address));
@@ -53,6 +53,7 @@ class MachOModuleInit extends InitFunction {
                 System.err.println("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(address) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
             }
         }
+        return load_base + address;
     }
 
     // (int argc, const char* argv[], const char* envp[], const char* apple[], const struct ProgramVars* vars)

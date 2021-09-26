@@ -29,7 +29,7 @@ class AbsoluteInitFunction extends InitFunction {
     }
 
     @Override
-    public void call(Emulator<?> emulator) {
+    public long call(Emulator<?> emulator) {
         long address = getFuncAddress(ptr);
         if (address == 0) {
             address = this.address;
@@ -43,7 +43,7 @@ class AbsoluteInitFunction extends InitFunction {
             if (log.isDebugEnabled()) {
                 log.debug("[" + libName + "]CallInitFunction: address=0x" + Long.toHexString(address) + ", ptr=" + ptr + ", func=" + ptr.getPointer(0));
             }
-            return;
+            return address;
         }
 
         Pointer pointer = UnidbgPointer.pointer(emulator, address);
@@ -56,6 +56,7 @@ class AbsoluteInitFunction extends InitFunction {
         if (AbsoluteInitFunction.log.isDebugEnabled()) {
             System.err.println("[" + libName + "]CallInitFunction: " + pointer + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
+        return address;
     }
 
 }

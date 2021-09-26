@@ -133,12 +133,13 @@ public class LinuxModule extends Module {
         int index = 0;
         while (!initFunctionList.isEmpty()) {
             InitFunction initFunction = initFunctionList.remove(0);
+            long initAddress = initFunction.getAddress();
             if (initFunctionListener != null) {
-                initFunctionListener.onPreCallInitFunction(this, initFunction.getAddress(), index);
+                initFunctionListener.onPreCallInitFunction(this, initAddress, index);
             }
-            initFunction.call(emulator);
+            initAddress = initFunction.call(emulator);
             if (initFunctionListener != null) {
-                initFunctionListener.onPostCallInitFunction(this, initFunction.getAddress(), index);
+                initFunctionListener.onPostCallInitFunction(this, initAddress, index);
             }
             index++;
         }
