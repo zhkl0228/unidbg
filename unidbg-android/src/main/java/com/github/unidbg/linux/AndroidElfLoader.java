@@ -285,26 +285,38 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     @Override
     public Symbol dlsym(long handle, String symbolName) {
+        if ("environ".equals(symbolName)) {
+            return new VirtualSymbol(symbolName, null, environ.toUIntPeer());
+        }
+        Module sm = null;
+        Symbol ret = null;
         for (LinuxModule module : modules.values()) {
             if (module.base == handle) { // virtual module may have same base address
                 Symbol symbol = module.findSymbolByName(symbolName, false);
                 if (symbol != null) {
-                    return symbol;
+                    ret = symbol;
+                    sm = module;
+                    break;
                 }
             }
         }
-        if ("environ".equals(symbolName)) {
-            return new VirtualSymbol(symbolName, null, environ.toUIntPeer());
-        }
-        if ((int) handle == RTLD_DEFAULT || handle == 0L) {
+        if (ret == null && ((int) handle == RTLD_DEFAULT || handle == 0L)) {
             for (Module module : modules.values()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
                 if (symbol != null) {
-                    return symbol;
+                    ret = symbol;
+                    sm = module;
+                    break;
                 }
             }
         }
-        return null;
+        for (HookListener listener : hookListeners) {
+            long hook = listener.hook(emulator.getSvcMemory(), sm == null ? null : sm.name, symbolName, ret == null ? 0L : ret.getAddress());
+            if (hook != 0) {
+                return new VirtualSymbol(symbolName, null, hook);
+            }
+        }
+        return ret;
     }
 
     @Override
