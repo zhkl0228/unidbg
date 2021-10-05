@@ -513,6 +513,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 return false;
             }
         }
+        final int traceSize = 0x10000;
         if (line.startsWith("traceRead")) { // start trace memory read
             Pattern pattern = Pattern.compile("traceRead\\s+(\\w+)\\s+(\\w+)");
             Matcher matcher = pattern.matcher(line);
@@ -521,6 +522,9 @@ public abstract class AbstractARMDebugger implements Debugger {
             if (matcher.find()) {
                 begin = Utils.parseNumber(matcher.group(1));
                 end = Utils.parseNumber(matcher.group(2));
+                if (begin > end && end > 0 && end <= traceSize) {
+                    end += begin;
+                }
                 if (begin >= end) {
                     File traceFile = new File("target/traceRead.txt");
                     if (!traceFile.exists() && !traceFile.createNewFile()) {
@@ -531,7 +535,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     traceRead.setRedirect(traceReadRedirectStream);
                     System.out.printf("Set trace all memory read success with trace file: %s.%n", traceFile);
                 } else {
-                    boolean needTraceFile = end - begin > 0x1000;
+                    boolean needTraceFile = end - begin > traceSize;
                     if (needTraceFile) {
                         File traceFile = new File(String.format("target/traceRead_0x%x-0x%x.txt", begin, end));
                         if (!traceFile.exists() && !traceFile.createNewFile()) {
@@ -569,6 +573,9 @@ public abstract class AbstractARMDebugger implements Debugger {
             if (matcher.find()) {
                 begin = Utils.parseNumber(matcher.group(1));
                 end = Utils.parseNumber(matcher.group(2));
+                if (begin > end && end > 0 && end <= traceSize) {
+                    end += begin;
+                }
                 if (begin >= end) {
                     File traceFile = new File("target/traceWrite.txt");
                     if (!traceFile.exists() && !traceFile.createNewFile()) {
@@ -579,7 +586,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     traceWrite.setRedirect(traceWriteRedirectStream);
                     System.out.printf("Set trace all memory write success with trace file: %s.%n", traceFile);
                 } else {
-                    boolean needTraceFile = end - begin > 0x1000;
+                    boolean needTraceFile = end - begin > traceSize;
                     if (needTraceFile) {
                         File traceFile = new File(String.format("target/traceWrite_0x%x-0x%x.txt", begin, end));
                         if (!traceFile.exists() && !traceFile.createNewFile()) {
@@ -618,6 +625,9 @@ public abstract class AbstractARMDebugger implements Debugger {
             if (matcher.find()) {
                 begin = Utils.parseNumber(matcher.group(1));
                 end = Utils.parseNumber(matcher.group(2));
+                if (begin > end && end > 0 && end < traceSize) {
+                    end += begin;
+                }
                 if (begin >= end) {
                     File traceFile = new File("target/traceCode.txt");
                     if (!traceFile.exists() && !traceFile.createNewFile()) {

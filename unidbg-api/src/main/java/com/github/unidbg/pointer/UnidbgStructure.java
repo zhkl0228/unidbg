@@ -2,14 +2,20 @@ package com.github.unidbg.pointer;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.Map;
 
 public abstract class UnidbgStructure extends Structure {
 
@@ -18,9 +24,9 @@ public abstract class UnidbgStructure extends Structure {
     /** Placeholder pointer to help avoid auto-allocation of memory where a
      * Structure needs a valid pointer but want to avoid actually reading from it.
      */
-    private static final Pointer PLACEHOLDER_MEMORY = new Pointer(0) {
+    private static final Pointer PLACEHOLDER_MEMORY = new UnidbgPointer(null) {
         @Override
-        public Pointer share(long offset, long sz) { return this; }
+        public UnidbgPointer share(long offset, long sz) { return this; }
     };
 
     public static int calculateSize(Class<? extends UnidbgStructure> type) {
@@ -30,6 +36,18 @@ public abstract class UnidbgStructure extends Structure {
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    protected UnidbgStructure(byte[] data) {
+        this(new UnidbgPointer(data) {
+            @Override
+            public UnidbgPointer share(long offset, long sz) {
+                if (offset == 0) {
+                    return this;
+                }
+                throw new UnsupportedOperationException("offset=0x" + Long.toHexString(offset) + ", sz=" + sz);
+            }
+        });
     }
 
     protected UnidbgStructure(Pointer p) {
@@ -43,7 +61,7 @@ public abstract class UnidbgStructure extends Structure {
             throw new NullPointerException("p is null");
         }
         if (!(p instanceof UnidbgPointer) && !isPlaceholderMemory(p)) {
-            throw new IllegalArgumentException("p is NOT UnicornPointer");
+            throw new IllegalArgumentException("p is NOT UnidbgPointer");
         }
     }
 
@@ -80,6 +98,131 @@ public abstract class UnidbgStructure extends Structure {
 
     public void unpack() {
         super.read();
+    }
+
+    /**
+     * @param debug If true, will include a native memory dump of the
+     * Structure's backing memory.
+     * @return String representation of this object.
+     */
+    public String toString(boolean debug) {
+        return toString(0, true, debug);
+    }
+
+    private String format(Class<?> type) {
+        String s = type.getName();
+        int dot = s.lastIndexOf(".");
+        return s.substring(dot + 1);
+    }
+
+    private String toString(int indent, boolean showContents, boolean dumpMemory) {
+        ensureAllocated();
+        String LS = System.getProperty("line.separator");
+        String name = format(getClass()) + "(" + getPointer() + ")";
+        if (!(getPointer() instanceof Memory)) {
+            name += " (" + size() + " bytes)";
+        }
+        StringBuilder prefix = new StringBuilder();
+        for (int idx=0;idx < indent;idx++) {
+            prefix.append("  ");
+        }
+        StringBuilder contents = new StringBuilder(LS);
+        if (!showContents) {
+            contents = new StringBuilder("...}");
+        }
+        else for (Iterator<StructField> i = fields().values().iterator(); i.hasNext();) {
+            StructField sf = i.next();
+            Object value = getFieldValue(sf.field);
+            String type = format(sf.type);
+            String index = "";
+            contents.append(prefix);
+            if (sf.type.isArray() && value != null) {
+                type = format(sf.type.getComponentType());
+                index = "[" + Array.getLength(value) + "]";
+            }
+            contents.append(String.format("  %s %s%s@0x%X", type, sf.name, index, sf.offset));
+            if (value instanceof UnidbgStructure) {
+                value = ((UnidbgStructure)value).toString(indent + 1, !(value instanceof Structure.ByReference), dumpMemory);
+            }
+            contents.append("=");
+            if (value instanceof Long) {
+                contents.append(String.format("0x%08X", value));
+            }
+            else if (value instanceof Integer) {
+                contents.append(String.format("0x%04X", value));
+            }
+            else if (value instanceof Short) {
+                contents.append(String.format("0x%02X", value));
+            }
+            else if (value instanceof Byte) {
+                contents.append(String.format("0x%01X", value));
+            }
+            else if (value instanceof byte[]) {
+                contents.append('"').append(new String((byte[]) value, StandardCharsets.UTF_8).trim()).append('"');
+            }
+            else {
+                contents.append(String.valueOf(value).trim());
+            }
+            contents.append(LS);
+            if (!i.hasNext())
+                contents.append(prefix).append("}");
+        }
+        if (indent == 0 && dumpMemory) {
+            final int BYTES_PER_ROW = 4;
+            contents.append(LS).append("memory dump").append(LS);
+            byte[] buf = getPointer().getByteArray(0, size());
+            for (int i=0;i < buf.length;i++) {
+                if ((i % BYTES_PER_ROW) == 0) contents.append("[");
+                if (buf[i] >=0 && buf[i] < 16)
+                    contents.append("0");
+                contents.append(Integer.toHexString(buf[i] & 0xff));
+                if ((i % BYTES_PER_ROW) == BYTES_PER_ROW-1 && i < buf.length-1)
+                    contents.append("]").append(LS);
+            }
+            contents.append("]");
+        }
+        return name + " {" + contents;
+    }
+
+    /** Obtain the value currently in the Java field.  Does not read from
+     * native memory.
+     * @param field field to look up
+     * @return current field value (Java-side only)
+     */
+    private Object getFieldValue(Field field) {
+        try {
+            return field.get(this);
+        }
+        catch (Exception e) {
+            throw new Error("Exception reading field '" + field.getName() + "' in " + getClass(), e);
+        }
+    }
+
+    private static final Field FIELD_STRUCT_FIELDS;
+
+    static {
+        try {
+            FIELD_STRUCT_FIELDS = Structure.class.getDeclaredField("structFields");
+            FIELD_STRUCT_FIELDS.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Return all fields in this structure (ordered).  This represents the
+     * layout of the structure, and will be shared among Structures of the
+     * same class except when the Structure can have a variable size.
+     * NOTE: {@link #ensureAllocated()} <em>must</em> be called prior to
+     * calling this method.
+     * @return {@link Map} of field names to field representations.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, StructField> fields() {
+        try {
+            return (Map<String, StructField>) FIELD_STRUCT_FIELDS.get(this);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
 }

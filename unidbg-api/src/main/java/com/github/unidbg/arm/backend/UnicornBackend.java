@@ -115,7 +115,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
         try {
             return unicorn.mem_read(address, size);
         } catch (UnicornException e) {
-            throw new BackendException(e);
+            throw new BackendException("mem_read address=0x" + Long.toHexString(address) + ", size=" + size, e);
         }
     }
 
@@ -124,7 +124,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
         try {
             unicorn.mem_write(address, bytes);
         } catch (UnicornException e) {
-            throw new BackendException(e);
+            throw new BackendException("mem_write address=0x" + Long.toHexString(address), e);
         }
     }
 
@@ -133,7 +133,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
         try {
             unicorn.mem_map(address, size, perms);
         } catch (UnicornException e) {
-            throw new BackendException(e);
+            throw new BackendException("mem_map address=0x" + Long.toHexString(address) + ", size=" + size + ", perms=0x" + Integer.toHexString(perms), e);
         }
     }
 
@@ -142,7 +142,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
         try {
             unicorn.mem_protect(address, size, perms);
         } catch (UnicornException e) {
-            throw new BackendException(e);
+            throw new BackendException("mem_protect address=0x" + Long.toHexString(address) + ", size=" + size + ", perms=0x" + Integer.toHexString(perms), e);
         }
     }
 
@@ -151,7 +151,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
         try {
             unicorn.mem_unmap(address, size);
         } catch (UnicornException e) {
-            throw new BackendException(e);
+            throw new BackendException("mem_unmap address=0x" + Long.toHexString(address) + ", size=" + size, e);
         }
     }
 

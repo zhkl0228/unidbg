@@ -13,4 +13,8 @@ public class BackendException extends RuntimeException {
         super(cause);
     }
 
+    public BackendException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

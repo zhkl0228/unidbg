@@ -39,6 +39,16 @@ public class UnidbgPointer extends Pointer {
 
     private final MemoryWriteListener listener;
 
+    UnidbgPointer(byte[] data) {
+        super(0);
+
+        this.emulator = null;
+        this.backend = data == null ? null : new ByteArrayBackend(data);
+        this.peer = 0L;
+        this.pointerSize = 0;
+        this.listener = null;
+    }
+
     private UnidbgPointer(Emulator<?> emulator, long peer, int pointerSize) {
         super(0);
 

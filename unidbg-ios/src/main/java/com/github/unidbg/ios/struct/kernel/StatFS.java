@@ -3,6 +3,7 @@ package com.github.unidbg.ios.struct.kernel;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,6 +11,10 @@ public class StatFS extends UnidbgStructure {
 
     private static final int MFSTYPENAMELEN = 16; /* length of fs type name including null */
     private static final int MAXPATHLEN = 1024; /* max bytes in pathname */
+
+    public StatFS(byte[] data) {
+        super(data);
+    }
 
     public StatFS(Pointer p) {
         super(p);
@@ -33,6 +38,39 @@ public class StatFS extends UnidbgStructure {
     public byte[] f_mntonname = new byte[MAXPATHLEN]; /* directory on which mounted */
     public byte[] f_mntfromname = new byte[MAXPATHLEN]; /* mounted filesystem */
     public int[] f_reserved = new int[8]; /* For future use */
+
+    public void setFsTypeName(String fsTypeName) {
+        if (fsTypeName == null) {
+            throw new NullPointerException();
+        }
+        byte[] data = fsTypeName.getBytes(StandardCharsets.UTF_8);
+        if (data.length + 1 >= MFSTYPENAMELEN) {
+            throw new IllegalStateException("Invalid MFSTYPENAMELEN: " + MFSTYPENAMELEN);
+        }
+        f_fstypename = Arrays.copyOf(data, MFSTYPENAMELEN);
+    }
+
+    public void setMntOnName(String mntOnName) {
+        if (mntOnName == null) {
+            throw new NullPointerException();
+        }
+        byte[] data = mntOnName.getBytes(StandardCharsets.UTF_8);
+        if (data.length + 1 >= MAXPATHLEN) {
+            throw new IllegalStateException("Invalid MAXPATHLEN: " + MAXPATHLEN);
+        }
+        f_mntonname = Arrays.copyOf(data, MAXPATHLEN);
+    }
+
+    public void setMntFromName(String mntFromName) {
+        if (mntFromName == null) {
+            throw new NullPointerException();
+        }
+        byte[] data = mntFromName.getBytes(StandardCharsets.UTF_8);
+        if (data.length + 1 >= MAXPATHLEN) {
+            throw new IllegalStateException("Invalid MAXPATHLEN: " + MAXPATHLEN);
+        }
+        f_mntfromname = Arrays.copyOf(data, MAXPATHLEN);
+    }
 
     @Override
     protected List<String> getFieldOrder() {
