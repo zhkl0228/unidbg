@@ -5,8 +5,8 @@ import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
+import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.listener.TraceCodeListener;
-import unicorn.Unicorn;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -37,10 +37,10 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
         this.listener = listener;
     }
 
-    private Unicorn.UnHook unHook;
+    private UnHook unHook;
 
     @Override
-    public void onAttach(Unicorn.UnHook unHook) {
+    public void onAttach(UnHook unHook) {
         if (this.unHook != null) {
             throw new IllegalStateException();
         }

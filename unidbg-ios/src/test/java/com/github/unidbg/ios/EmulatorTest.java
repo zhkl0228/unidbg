@@ -28,7 +28,7 @@ public abstract class EmulatorTest<T extends Emulator<?>> extends TestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
 
+        System.err.println("test offset=" + (System.currentTimeMillis() - start) + "ms, backend=" + emulator.getBackend());
         emulator.close();
-        System.err.println("test offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 }

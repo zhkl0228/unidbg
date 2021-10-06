@@ -4,7 +4,7 @@ import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.BackendFactory;
-import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.hookzz.HookZz;
 import com.github.unidbg.linux.ARM32SyscallHandler;
@@ -55,7 +55,7 @@ public class AndroidTest extends AbstractJni {
         final File executable = new File("unidbg-android/src/test/native/android/libs/armeabi-v7a/test");
         emulator = new AndroidARMEmulator(executable.getName(),
                 new File("target/rootfs"),
-                Collections.<BackendFactory>singleton(new DynarmicFactory(true))) {
+                Collections.<BackendFactory>singleton(new Unicorn2Factory(true))) {
             @Override
             protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
                 return new MyARMSyscallHandler(svcMemory);

@@ -11,6 +11,7 @@ import com.github.unidbg.Utils;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BlockHook;
 import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
@@ -34,7 +35,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
-import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
@@ -73,16 +73,16 @@ public abstract class AbstractARMDebugger implements Debugger {
         this.emulator = emulator;
     }
 
-    private final List<Unicorn.UnHook> unHookList = new ArrayList<>();
+    private final List<UnHook> unHookList = new ArrayList<>();
 
     @Override
-    public void onAttach(Unicorn.UnHook unHook) {
+    public void onAttach(UnHook unHook) {
         unHookList.add(unHook);
     }
 
     @Override
     public void detach() {
-        for (Iterator<Unicorn.UnHook> iterator = unHookList.iterator(); iterator.hasNext(); ) {
+        for (Iterator<UnHook> iterator = unHookList.iterator(); iterator.hasNext(); ) {
             iterator.next().unhook();
             iterator.remove();
         }

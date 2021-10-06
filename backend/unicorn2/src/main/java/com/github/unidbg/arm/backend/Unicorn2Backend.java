@@ -6,19 +6,19 @@ import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.pointer.UnidbgPointer;
-import unicorn.Arm64Const;
-import unicorn.ArmConst;
-import unicorn.Unicorn;
-import unicorn.UnicornConst;
-import unicorn.UnicornException;
+import unicorn2.Arm64Const;
+import unicorn2.ArmConst;
+import unicorn2.Unicorn;
+import unicorn2.UnicornConst;
+import unicorn2.UnicornException;
 
-public class UnicornBackend extends AbstractBackend implements Backend {
+class Unicorn2Backend extends AbstractBackend implements Backend {
 
     private final Emulator<?> emulator;
     private final boolean is64Bit;
     private final Unicorn unicorn;
 
-    UnicornBackend(Emulator<?> emulator, boolean is64Bit) throws BackendException {
+    Unicorn2Backend(Emulator<?> emulator, boolean is64Bit) throws BackendException {
         this.emulator = emulator;
         this.is64Bit = is64Bit;
         try {
@@ -205,10 +205,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.CodeHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn2.CodeHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, user);
+                    callback.hook(Unicorn2Backend.this, address, size, user);
                 }
             }, begin, end, user_data);
             callback.onAttach(new UnHook() {
@@ -225,15 +225,15 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void debugger_add(final DebugHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.debugger_add(new unicorn.DebugHook() {
+            final Unicorn.UnHook unHook = unicorn.debugger_add(new unicorn2.DebugHook() {
                 @Override
                 public void onBreak(Unicorn u, long address, int size, Object user) {
-                    callback.onBreak(UnicornBackend.this, address, size, user);
+                    callback.onBreak(Unicorn2Backend.this, address, size, user);
                 }
 
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, user);
+                    callback.hook(Unicorn2Backend.this, address, size, user);
                 }
             }, begin, end, user_data);
             callback.onAttach(new UnHook() {
@@ -250,10 +250,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final ReadHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.ReadHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn2.ReadHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, user);
+                    callback.hook(Unicorn2Backend.this, address, size, user);
                 }
             }, begin, end, user_data);
             callback.onAttach(new UnHook() {
@@ -270,10 +270,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final WriteHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.WriteHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn2.WriteHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, long value, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, value, user);
+                    callback.hook(Unicorn2Backend.this, address, size, value, user);
                 }
             }, begin, end, user_data);
             callback.onAttach(new UnHook() {
@@ -290,10 +290,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final EventMemHook callback, int type, Object user_data) throws BackendException {
         try {
-            unicorn.hook_add_new(new unicorn.EventMemHook() {
+            unicorn.hook_add_new(new unicorn2.EventMemHook() {
                 @Override
                 public boolean hook(Unicorn u, long address, int size, long value, Object user) {
-                    return callback.hook(UnicornBackend.this, address, size, value, user);
+                    return callback.hook(Unicorn2Backend.this, address, size, value, user);
                 }
             }, type, user_data);
         } catch (UnicornException e) {
@@ -304,7 +304,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final InterruptHook callback, Object user_data) throws BackendException {
         try {
-            unicorn.hook_add_new(new unicorn.InterruptHook() {
+            unicorn.hook_add_new(new unicorn2.InterruptHook() {
                 @Override
                 public void hook(Unicorn u, int intno, Object user) {
                     int swi;
@@ -313,14 +313,14 @@ public class UnicornBackend extends AbstractBackend implements Backend {
                         swi = (pc.getInt(-4) >> 5) & 0xffff;
                     } else {
                         UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
-                        boolean isThumb = ARM.isThumb(UnicornBackend.this);
+                        boolean isThumb = ARM.isThumb(Unicorn2Backend.this);
                         if (isThumb) {
                             swi = pc.getShort(-2) & 0xff;
                         } else {
                             swi = pc.getInt(-4) & 0xffffff;
                         }
                     }
-                    callback.hook(UnicornBackend.this, intno, swi, user);
+                    callback.hook(Unicorn2Backend.this, intno, swi, user);
                 }
             }, user_data);
         } catch (UnicornException e) {
@@ -331,10 +331,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final BlockHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.BlockHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn2.BlockHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hookBlock(UnicornBackend.this, address, size, user);
+                    callback.hookBlock(Unicorn2Backend.this, address, size, user);
                 }
             }, begin, end, user_data);
             callback.onAttach(new UnHook() {

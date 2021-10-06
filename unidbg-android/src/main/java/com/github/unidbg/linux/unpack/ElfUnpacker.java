@@ -3,12 +3,12 @@ package com.github.unidbg.linux.unpack;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunctionListener;
 import org.apache.commons.io.FileUtils;
-import unicorn.Unicorn;
 import unicorn.UnicornConst;
 
 import java.io.File;
@@ -71,7 +71,7 @@ public class ElfUnpacker {
             if ((region.perms & UnicornConst.UC_PROT_WRITE) == 0 && (region.perms & UnicornConst.UC_PROT_EXEC) == UnicornConst.UC_PROT_EXEC) { // 只读代码段
                 System.out.println("Begin unpack " + module.name + ": 0x" + Long.toHexString(region.begin) + "-0x" + Long.toHexString(region.end));
                 emulator.getBackend().hook_add_new(new WriteHook() {
-                    private Unicorn.UnHook unHook;
+                    private UnHook unHook;
                     @Override
                     public void hook(Backend backend, long address, int size, long value, Object user) {
                         long offset = address - module.base;
@@ -87,7 +87,7 @@ public class ElfUnpacker {
                         }
                     }
                     @Override
-                    public void onAttach(Unicorn.UnHook unHook) {
+                    public void onAttach(UnHook unHook) {
                         this.unHook = unHook;
                     }
                     @Override

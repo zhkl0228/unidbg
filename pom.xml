@@ -12,6 +12,7 @@
         <module>backend/dynarmic</module>
         <module>backend/hypervisor</module>
         <module>backend/kvm</module>
+        <module>backend/unicorn2</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

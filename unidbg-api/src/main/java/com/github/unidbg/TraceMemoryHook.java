@@ -4,13 +4,13 @@ import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.codec.binary.Hex;
-import unicorn.Unicorn;
 
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
@@ -33,10 +33,10 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
     TraceReadListener traceReadListener;
     TraceWriteListener traceWriteListener;
 
-    private Unicorn.UnHook unHook;
+    private UnHook unHook;
 
     @Override
-    public void onAttach(Unicorn.UnHook unHook) {
+    public void onAttach(UnHook unHook) {
         if (this.unHook != null) {
             throw new IllegalStateException();
         }

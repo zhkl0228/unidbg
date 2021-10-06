@@ -18,6 +18,11 @@
             <version>0.9.6-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>net.dongliu</groupId>
+            <artifactId>apk-parser</artifactId>
+            <version>2.6.4</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-dynarmic</artifactId>
             <version>0.9.6-SNAPSHOT</version>
@@ -36,9 +41,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.dongliu</groupId>
-            <artifactId>apk-parser</artifactId>
-            <version>2.6.4</version>
+            <groupId>com.github.zhkl0228</groupId>
+            <artifactId>unidbg-unicorn2</artifactId>
+            <version>0.9.6-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
