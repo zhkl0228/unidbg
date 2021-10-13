@@ -163,6 +163,15 @@ class ProxyUtils {
                 methods.add(method);
             }
         }
+        if (!isStatic) {
+            for (Method method : clazz.getDeclaredMethods()) {
+                if (method.getParameterTypes().length == types.length &&
+                        methodName.equals(method.getName()) &&
+                        Modifier.isStatic(method.getModifiers())) {
+                    methods.add(method);
+                }
+            }
+        }
         for (Method method : methods) {
             if (matchesTypes(method.getParameterTypes(), types, true)) {
                 return method;

@@ -311,7 +311,7 @@ public class DvmMethod extends Hashable {
 
     public void setMember(Member member) {
         ((AccessibleObject) member).setAccessible(true);
-        if (Modifier.isStatic(member.getModifiers()) ^ isStatic) {
+        if (!Modifier.isStatic(member.getModifiers()) && isStatic) {
             throw new IllegalStateException(toString());
         }
         if (member.getDeclaringClass().getName().equals(dvmClass.getName())) {
