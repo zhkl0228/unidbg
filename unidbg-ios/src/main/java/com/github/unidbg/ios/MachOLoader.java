@@ -20,7 +20,6 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
-import com.github.unidbg.ios.ipa.IpaLoader;
 import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
@@ -267,9 +266,14 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return module;
     }
 
-    private boolean isPayloadModule(Module module) {
-        String path = module.getPath();
-        return path.startsWith(IpaLoader.APP_DIR);
+    private com.github.unidbg.ios.Loader loader;
+
+    public void setLoader(com.github.unidbg.ios.Loader loader) {
+        this.loader = loader;
+    }
+
+    final boolean isPayloadModule(Module module) {
+        return loader != null && loader.isPayloadModule(module.getPath());
     }
 
     private MachOModule loadInternalPhase(LibraryFile libraryFile, boolean loadNeeded, boolean checkBootstrap, Collection<String> parentRpath) {
@@ -433,7 +437,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ID_DYLIB:
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     String dylibName = dylibCommand.name();
-                    if (dylibPath.startsWith(IpaLoader.APP_DIR)) {
+                    if (loader != null && loader.isPayloadModule(dylibPath)) {
                         dylibPath = dylibPath.replace("@executable_path/", "");
                     } else if (dylibName.startsWith("/")) {
                         dylibPath = dylibName;
@@ -1374,6 +1378,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if ("___NSArray0__".equals(symbolName)) {
             targetImage = this.modules.get("UIKit");
+            if (targetImage == null) {
+                targetImage = this.modules.get("AppKit");
+            }
             if (targetImage == null) {
                 throw new IllegalStateException();
             }

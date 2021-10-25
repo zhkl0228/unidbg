@@ -5,6 +5,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.hookzz.Dobby;
 import com.github.unidbg.linux.ARM64SyscallHandler;
@@ -33,7 +34,7 @@ import java.util.Arrays;
 public class Android64Test extends AbstractJni {
 
     public static void main(String[] args) throws IOException {
-        Logger.getLogger("com.github.unidbg.linux.ARM64SyscallHandler").setLevel(Level.INFO);
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         new Android64Test().test();
     }
 
@@ -55,7 +56,7 @@ public class Android64Test extends AbstractJni {
         final File executable = new File("unidbg-android/src/test/native/android/libs/arm64-v8a/test");
         emulator = new AndroidARM64Emulator(executable.getName(),
                 new File("target/rootfs"),
-                Arrays.asList(new HypervisorFactory(true), new DynarmicFactory(true))) {
+                Arrays.asList(new HypervisorFactory(true), new Unicorn2Factory(true), new DynarmicFactory(true))) {
             @Override
             protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
                 return new MyARMSyscallHandler(svcMemory);

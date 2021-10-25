@@ -2,7 +2,6 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.ios.ipa.IpaLoader;
 import com.github.unidbg.ios.struct.LoadCommand;
 import com.github.unidbg.ios.struct.MachHeader;
 import com.github.unidbg.ios.struct.MachHeader64;
@@ -95,7 +94,7 @@ public abstract class Dyld extends Dlfcn {
             if (module == loader.getExecutableModule()) {
                 continue;
             }
-            if (module.getPath().startsWith(IpaLoader.APP_DIR)) {
+            if (loader.isPayloadModule(module)) {
                 continue;
             }
             if (log.isDebugEnabled()) {

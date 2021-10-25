@@ -11,6 +11,7 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinARMEmulator;
 import com.github.unidbg.ios.DarwinResolver;
+import com.github.unidbg.ios.Loader;
 import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.memory.Memory;
@@ -36,7 +37,7 @@ import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class IpaLoader {
+public abstract class IpaLoader implements Loader {
 
     private static final Log log = LogFactory.getLog(IpaLoader.class);
 
@@ -72,7 +73,7 @@ public abstract class IpaLoader {
         this.executableBundlePath = generateExecutableBundlePath();
     }
 
-    public static final String APP_DIR = "/var/containers/Bundle/Application/";
+    private static final String APP_DIR = "/var/containers/Bundle/Application/";
     public static final String PAYLOAD_PREFIX = "Payload";
 
     private String generateExecutableBundlePath() {
@@ -202,9 +203,9 @@ public abstract class IpaLoader {
     }
 
     private LoadedIpa load(Emulator<DarwinFileIO> emulator, File ipa, String bundleAppDir, EmulatorConfigurator configurator, String... loads) throws IOException {
-        Memory memory = emulator.getMemory();
-        Module module = memory.load(new IpaLibraryFile(appDir, ipa, executable, bundleAppDir, loads), forceCallInit);
-        MachOLoader loader = (MachOLoader) memory;
+        MachOLoader loader = (MachOLoader) emulator.getMemory();
+        loader.setLoader(this);
+        Module module = loader.load(new IpaLibraryFile(appDir, ipa, executable, bundleAppDir, loads), forceCallInit);
         if (configurator != null) {
             configurator.onExecutableLoaded(emulator, (MachOModule) module);
         }
@@ -243,4 +244,8 @@ public abstract class IpaLoader {
         return null;
     }
 
+    @Override
+    public final boolean isPayloadModule(String path) {
+        return path.startsWith(APP_DIR);
+    }
 }
