@@ -431,6 +431,11 @@ public abstract class AbstractARMDebugger implements Debugger {
         if ("exit".equals(line) || "quit".equals(line)) { // continue
             return true;
         }
+        if ("gc".equals(line)) {
+            System.out.println("Run System.gc();");
+            System.gc();
+            return false;
+        }
         if (runnable == null || callbackRunning) {
             if ("c".equals(line)) { // continue
                 return true;
