@@ -20,12 +20,12 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>capstone</artifactId>
-            <version>3.0.12</version>
+            <version>3.0.13</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>keystone</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
