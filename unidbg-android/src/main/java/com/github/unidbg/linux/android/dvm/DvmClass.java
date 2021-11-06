@@ -236,7 +236,7 @@ public class DvmClass extends DvmObject<Class<?>> {
         if (fnPtr == null && index == -1) {
             index = method.length();
         }
-        String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_') + "_" + method.substring(0, index).replace("_", "_1");
+        String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_').replace("$", "_00024") + "_" + method.substring(0, index).replace("_", "_1");
         if (fnPtr == null) {
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
