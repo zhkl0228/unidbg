@@ -2853,7 +2853,29 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _NewString = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer unicodeChars = context.getPointerArg(1);
+                int len = context.getIntArg(2);
+                if (unicodeChars == null) {
+                    if (len == 0) {
+                        return VM.JNI_NULL;
+                    }
+                    throw new IllegalStateException("unicodeChars is null");
+                }
+                ByteBuffer buffer = ByteBuffer.wrap(unicodeChars.getByteArray(0, len * 2));
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                StringBuilder builder = new StringBuilder(len);
+                for (int i = 0; i < len; i++) {
+                    builder.append(buffer.getChar());
+                }
+                String string = builder.toString();
+                if (log.isDebugEnabled()) {
+                    log.debug("NewString unicodeChars=" + unicodeChars + ", len=" + len + ", string=" + string);
+                }
+                if (verbose) {
+                    System.out.printf("JNIEnv->NewString(\"%s\") was called from %s%n", string, context.getLRPointer());
+                }
+                return addLocalObject(new StringObject(DalvikVM.this, string));
             }
         });
 
