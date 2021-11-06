@@ -5,13 +5,13 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.UnixEmulator;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -109,6 +109,15 @@ public class LocalSocketIO extends SocketIO implements FileIO {
             emulator.getMemory().setErrno(UnixEmulator.EPERM);
             return -1;
         }
+    }
+
+    @Override
+    public int bind(Pointer addr, int addrlen) {
+        if (log.isDebugEnabled()) {
+            log.debug(Inspector.inspectString(addr.getByteArray(0, addrlen), "bind addrlen=" + addrlen));
+        }
+        emulator.getMemory().setErrno(UnixEmulator.EPERM);
+        return -1;
     }
 
     @Override

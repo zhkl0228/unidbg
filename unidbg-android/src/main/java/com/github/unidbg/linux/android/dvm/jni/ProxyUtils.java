@@ -11,6 +11,7 @@ import com.github.unidbg.linux.android.dvm.VarArg;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -145,7 +146,7 @@ class ProxyUtils {
         return true;
     }
 
-    static Method matchMethodTypes(Class<?> clazz, String methodName, Class<?>[] types, boolean isStatic) throws NoSuchMethodException {
+    static Member matchMethodTypes(Class<?> clazz, String methodName, Class<?>[] types, boolean isStatic) throws NoSuchMethodException {
         List<Method> methods = new ArrayList<>();
         if (isStatic) {
             for (Method method : clazz.getMethods()) {
@@ -180,6 +181,14 @@ class ProxyUtils {
         for (Method method : methods) {
             if (matchesTypes(method.getParameterTypes(), types, false)) {
                 return method;
+            }
+        }
+
+        if ("<init>".equals(methodName)) {
+            for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
+                if (matchesTypes(constructor.getParameterTypes(), types, true)) {
+                    return constructor;
+                }
             }
         }
 
@@ -252,7 +261,7 @@ class ProxyUtils {
             return new ProxyMethod(visitor, (Method) dvmMethod.member, args.toArray());
         }
         Class<?>[] types = classes.toArray(new Class[0]);
-        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
+        Member method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
         dvmMethod.setMember(method);
         return new ProxyMethod(visitor, method, args.toArray());
     }
@@ -265,7 +274,7 @@ class ProxyUtils {
             return new ProxyMethod(visitor, (Method) dvmMethod.member, args.toArray());
         }
         Class<?>[] types = classes.toArray(new Class[0]);
-        Method method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
+        Member method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
         dvmMethod.setMember(method);
         return new ProxyMethod(visitor, method, args.toArray());
     }

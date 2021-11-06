@@ -3,6 +3,7 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.linux.android.dvm.jni.ProxyDvmObject;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
@@ -125,6 +126,11 @@ public class DvmObject<T> extends Hashable {
                     list.add(array.hashCode());
                     vm.addLocalObject(array);
                     continue;
+                } else if (arg instanceof Enum) {
+                    DvmObject<?> obj = ProxyDvmObject.createObject(vm, arg);
+                    list.add(obj.hashCode());
+                    vm.addLocalObject(obj);
+                    continue;
                 }
 
                 list.add(arg);
@@ -135,6 +141,10 @@ public class DvmObject<T> extends Hashable {
 
     @Override
     public String toString() {
+        if (value instanceof Enum) {
+            return value.toString();
+        }
+
         if (objectType == null) {
             return getClass().getSimpleName() + "{" +
                     "value=" + value +

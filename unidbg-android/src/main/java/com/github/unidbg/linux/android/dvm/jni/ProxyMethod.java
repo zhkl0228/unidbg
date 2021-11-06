@@ -4,15 +4,16 @@ import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.linux.android.dvm.VM;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 class ProxyMethod implements ProxyCall {
 
     private final ProxyDvmObjectVisitor visitor;
-    private final Method method;
+    private final Member method;
     private final Object[] args;
 
-    ProxyMethod(ProxyDvmObjectVisitor visitor, Method method, Object[] args) {
+    ProxyMethod(ProxyDvmObjectVisitor visitor, Member method, Object[] args) {
         this.visitor = visitor;
         this.method = method;
         this.args = args;
@@ -26,7 +27,10 @@ class ProxyMethod implements ProxyCall {
             if (visitor != null) {
                 visitor.onProxyVisit(method, obj, args);
             }
-            return method.invoke(obj, args);
+            if (method instanceof Method) {
+                return ((Method) method).invoke(obj, args);
+            }
+            throw new UnsupportedOperationException("method=" + method);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
             if (cause instanceof BackendException) {
