@@ -246,9 +246,21 @@ static void test_NSException() {
   [exce raise];
 }
 
+static void test_thread_info() {
+  mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
+  thread_basic_info_data_t thread_data;
+  kern_return_t ret = thread_info(mach_thread_self(), THREAD_BASIC_INFO, (thread_info_t)&thread_data, &count);
+  char *buf = (char *) malloc(count * 10);
+  hex(buf, &thread_data, sizeof(thread_data));
+  printf("test_thread_info ret=%d, hex=%s\n", ret, buf);
+  free(buf);
+}
+
 int main(int argc, char *argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
+
+  test_thread_info();
 
   BootstrapTest *test = [[BootstrapTest alloc] init];
 
