@@ -7,7 +7,7 @@ static void print_lr(char *buf, uintptr_t lr) {
   Dl_info info;
   int success = dladdr((const void *) lr, &info);
   if(success) {
-    long offset = lr - (long) info.dli_fbase;
+    long offset = lr - (long) info.dli_fbase + 0x100000000ULL;
     const char *name = info.dli_fname;
     const char *find = name;
     while(find) {

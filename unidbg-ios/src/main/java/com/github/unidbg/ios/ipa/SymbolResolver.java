@@ -32,6 +32,8 @@ public class SymbolResolver implements HookListener {
 
     private UnidbgPointer __dispatch_source_type_memorypressure;
     private UnidbgPointer dispatch_source_type_memorypressure_init;
+    private UnidbgPointer dispatch_queue_attr_make_with_qos_class;
+    private UnidbgPointer dispatch_queue_attr_make_initially_inactive;
     private UnidbgPointer ___chkstk_darwin;
     private UnidbgPointer _clock_gettime;
 
@@ -88,6 +90,34 @@ public class SymbolResolver implements HookListener {
                 });
             }
             return ___chkstk_darwin.peer;
+        }
+        if ("_dispatch_queue_attr_make_with_qos_class".equals(symbolName) && emulator.is64Bit()) {
+            if (dispatch_queue_attr_make_with_qos_class == null) {
+                dispatch_queue_attr_make_with_qos_class = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        UnidbgPointer attr = context.getPointerArg(0);
+//                        System.out.println("dispatch_queue_attr_make_with_qos_class attr=" + attr);
+                        return attr == null ? 0 : attr.peer;
+                    }
+                });
+            }
+            return dispatch_queue_attr_make_with_qos_class.peer;
+        }
+        if ("_dispatch_queue_attr_make_initially_inactive".equals(symbolName) && emulator.is64Bit()) {
+            if (dispatch_queue_attr_make_initially_inactive == null) {
+                dispatch_queue_attr_make_initially_inactive = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        UnidbgPointer attr = context.getPointerArg(0);
+//                        System.out.println("dispatch_queue_attr_make_initially_inactive attr=" + attr);
+                        return attr == null ? 0 : attr.peer;
+                    }
+                });
+            }
+            return dispatch_queue_attr_make_initially_inactive.peer;
         }
         if ("__dispatch_source_type_memorypressure".equals(symbolName) && emulator.is64Bit()) {
             if (dispatch_source_type_memorypressure_init == null) {

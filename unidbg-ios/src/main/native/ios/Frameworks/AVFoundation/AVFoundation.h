@@ -12,3 +12,6 @@ const AVAudioSessionLocation AVAudioSessionPolarPatternOmnidirectional = @"Omnid
 const AVAudioSessionLocation AVAudioSessionPolarPatternCardioid = @"Cardioid";
 
 const NSNotificationName AVAudioSessionRouteChangeNotification = @"AVAudioSessionRouteChangeNotification";
+
+typedef NSString *AVCaptureSessionPreset;
+const AVCaptureSessionPreset AVCaptureSessionPreset1280x720 = @"AVCaptureSessionPreset1280x720";

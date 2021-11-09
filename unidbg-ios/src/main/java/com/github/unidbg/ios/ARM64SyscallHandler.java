@@ -841,7 +841,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private int psynch_cvwait(Emulator<?> emulator) {
         // TODO: implement
         log.info("psynch_cvwait LR=" + emulator.getContext().getLRPointer());
-        return 0;
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
+        emulator.getMemory().setErrno(UnixEmulator.EINTR);
+        return -1;
     }
 
     private int shm_open(Emulator<?> emulator) {

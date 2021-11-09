@@ -883,6 +883,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             throw new IllegalStateException();
         }
 
+        if ("_dispatch_queue_create_with_target$V2".equals(symbolName)) {
+            symbolName = "_dispatch_queue_create";
+        }
         Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
             symbol = targetImage.getExportByName(symbolName);

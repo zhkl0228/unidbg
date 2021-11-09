@@ -288,11 +288,17 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 @end
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
 @implementation NSURLSession (CFNetwork)
++ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration {
+  return [NSURLSession new];
+}
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue {
   return [NSURLSession new];
 }
 @end
+#pragma clang diagnostic pop
 
 @implementation UIViewController
 @end
@@ -336,6 +342,12 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 - (void)registerImage:(UIImage *)image withTraitCollection:(UITraitCollection *)traitCollection {
 }
+@end
+
+@implementation UICollectionReusableView
+@end
+
+@implementation UICollectionViewCell
 @end
 
 void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque, CGFloat scale) {

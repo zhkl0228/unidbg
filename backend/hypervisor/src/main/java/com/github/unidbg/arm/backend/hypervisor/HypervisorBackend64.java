@@ -133,7 +133,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return true;
             }
             default:
-                throw new UnsupportedOperationException("vaddr=0x" + Long.toHexString(vaddr));
+                throw new UnsupportedOperationException("vaddr=0x" + Long.toHexString(vaddr) + ", offset=0x" + Long.toHexString(offset));
         }
     }
 

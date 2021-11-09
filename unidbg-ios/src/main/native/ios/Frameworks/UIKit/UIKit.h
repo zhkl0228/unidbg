@@ -23,6 +23,10 @@ const NSNotificationName UIAccessibilityVoiceOverStatusChanged = @"UIAccessibili
 const NSNotificationName UIKeyboardWillShowNotification = @"UIKeyboardWillShowNotification";
 const NSNotificationName UIKeyboardWillHideNotification = @"UIKeyboardWillHideNotification";
 
+typedef CGFloat UIScrollViewDecelerationRate;
+const UIScrollViewDecelerationRate UIScrollViewDecelerationRateNormal = 0.0;
+const UIScrollViewDecelerationRate UIScrollViewDecelerationRateFast = 0.0;
+
 typedef CGFloat UIWindowLevel;
 const UIWindowLevel UIWindowLevelNormal = 0.0;
 
@@ -167,6 +171,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 @end
 
 @interface NSURLSession (CFNetwork)
++ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration;
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue;
 @end
 
@@ -186,3 +191,9 @@ typedef enum UIDeviceBatteryState : NSInteger {
 @end
 
 id __NSArray0__;
+
+@interface UICollectionReusableView : UIView
+@end
+
+@interface UICollectionViewCell : UICollectionReusableView
+@end
