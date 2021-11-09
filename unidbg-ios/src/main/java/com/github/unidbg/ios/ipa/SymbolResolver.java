@@ -36,6 +36,7 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer dispatch_queue_attr_make_initially_inactive;
     private UnidbgPointer ___chkstk_darwin;
     private UnidbgPointer _clock_gettime;
+    private UnidbgPointer _pthread_attr_set_qos_class_np;
 
     public SymbolResolver(Emulator<DarwinFileIO> emulator) {
         this.emulator = emulator;
@@ -49,9 +50,27 @@ public class SymbolResolver implements HookListener {
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, long old) {
-        /*if (symbolName.contains("chkstk_darwin")) {
+        /*if (symbolName.contains("pthread_attr_set_qos_class_np")) {
             System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
         }*/
+        if ("_pthread_attr_set_qos_class_np".equals(symbolName) && emulator.is64Bit()) {
+            if (_pthread_attr_set_qos_class_np == null) {
+                _pthread_attr_set_qos_class_np = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        Pointer __attr = context.getPointerArg(0);
+                        int __qos_class = context.getIntArg(1);
+                        int __relative_priority = context.getIntArg(2);
+                        if (log.isDebugEnabled()) {
+                            log.debug("_pthread_attr_set_qos_class_np __attr=" + __attr + ", __qos_class=" + __qos_class + ", __relative_priority=" + __relative_priority);
+                        }
+                        return 0;
+                    }
+                });
+            }
+            return _pthread_attr_set_qos_class_np.peer;
+        }
         if ("_clock_gettime".equals(symbolName) && emulator.is64Bit()) {
             if (_clock_gettime == null) {
                 _clock_gettime = svcMemory.registerSvc(new Arm64Svc() {
