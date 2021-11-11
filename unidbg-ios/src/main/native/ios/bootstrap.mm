@@ -252,7 +252,7 @@ static void test_thread_info() {
   kern_return_t ret = thread_info(mach_thread_self(), THREAD_BASIC_INFO, (thread_info_t)&thread_data, &count);
   char *buf = (char *) malloc(count * 10);
   hex(buf, &thread_data, sizeof(thread_data));
-  printf("test_thread_info ret=%d, hex=%s\n", ret, buf);
+  printf("test_thread_info ret=%d, hex=%s, THREAD_BASIC_INFO_COUNT=%d, THREAD_BASIC_INFO=%d\n", ret, buf, THREAD_BASIC_INFO_COUNT, THREAD_BASIC_INFO);
   free(buf);
 }
 

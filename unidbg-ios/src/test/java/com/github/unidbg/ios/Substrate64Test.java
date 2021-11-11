@@ -1,5 +1,6 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
@@ -15,8 +16,12 @@ import com.github.unidbg.hook.hookzz.Dobby;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.InstrumentCallback;
+import com.github.unidbg.ios.struct.kernel.ThreadBasicInfo;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -41,7 +46,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
         MachOLoader loader = (MachOLoader) emulator.getMemory();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         loader.setObjcRuntime(true);
@@ -156,10 +161,19 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
 
 //        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
 
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+        try {
+            byte[] thread_basic_info = Hex.decodeHex("000000008ab502000000000000000000570100000100000001000000000000000000000000000000".toCharArray());
+            ThreadBasicInfo basicInfo = new ThreadBasicInfo(thread_basic_info);
+            basicInfo.unpack();
+            Inspector.inspect(thread_basic_info, basicInfo.toString());
+        } catch (DecoderException e) {
+            throw new IllegalStateException(e);
+        }
+
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
 //        emulator.attach().addBreakPoint(null, 0x00000001000072E0L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
-        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.INFO);
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
 //        Module debugModule = emulator.getMemory().findModule("CoreFoundation");
 //        emulator.attach().addBreakPoint(debugModule, 0x0000000000105AA4);
         Logger.getLogger("com.github.unidbg.ios.Dyld64").setLevel(Level.INFO);

@@ -66,6 +66,8 @@ import com.github.unidbg.ios.struct.kernel.TaskInfoRequest;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
 import com.github.unidbg.ios.struct.kernel.TaskThreadsReply64;
+import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
+import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
 import com.github.unidbg.ios.struct.kernel.VmCopy64Request;
 import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmReadOverwriteReply;
@@ -2761,6 +2763,50 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
                 if (log.isDebugEnabled()) {
                     log.debug("vm_read_overwrite reply=" + reply + ", header=" + header);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3612: { // _thread_info
+                ThreadInfoRequest args = new ThreadInfoRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_info args=" + args);
+                }
+
+                final int THREAD_BASIC_INFO = 3;
+                if (args.flavor != THREAD_BASIC_INFO) {
+                    throw new UnsupportedOperationException();
+                }
+
+                ThreadBasicInfoReply reply = new ThreadBasicInfoReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                final int THREAD_BASIC_INFO_COUNT = 10;
+                final int POLICY_TIMESHARE = 1;
+                final int TH_STATE_RUNNING = 1;
+                reply.retCode = 0;
+                reply.outCnt = THREAD_BASIC_INFO_COUNT;
+                reply.info.user_time.tv_sec = 0;
+                reply.info.user_time.tv_usec = 177546;
+                reply.info.system_time.tv_sec = 0;
+                reply.info.system_time.tv_usec = 0;
+                reply.info.cpu_usage = 343;
+                reply.info.policy = POLICY_TIMESHARE;
+                reply.info.run_state = TH_STATE_RUNNING;
+                reply.info.flags = 0;
+                reply.info.suspend_count = 0;
+                reply.info.sleep_time = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_info reply=" + reply);
                 }
                 return MACH_MSG_SUCCESS;
             }

@@ -38,16 +38,31 @@ public abstract class UnidbgStructure extends Structure {
         }
     }
 
-    protected UnidbgStructure(byte[] data) {
-        this(new UnidbgPointer(data) {
-            @Override
-            public UnidbgPointer share(long offset, long sz) {
-                if (offset == 0) {
-                    return this;
-                }
-                throw new UnsupportedOperationException("offset=0x" + Long.toHexString(offset) + ", sz=" + sz);
+    private static class ByteArrayPointer extends UnidbgPointer {
+        private final byte[] data;
+        public ByteArrayPointer(byte[] data) {
+            super(data);
+            this.data = data;
+        }
+        @Override
+        public UnidbgPointer share(long offset, long sz) {
+            if (offset == 0) {
+                return this;
             }
-        });
+            if (offset > 0 && offset + sz < data.length) {
+                if (sz == 0) {
+                    sz = data.length - offset;
+                }
+                byte[] tmp = new byte[(int) sz];
+                System.arraycopy(data, (int) offset, tmp, 0, (int) sz);
+                return new ByteArrayPointer(tmp);
+            }
+            throw new UnsupportedOperationException("offset=0x" + Long.toHexString(offset) + ", sz=" + sz);
+        }
+    }
+
+    protected UnidbgStructure(byte[] data) {
+        this(new ByteArrayPointer(data));
     }
 
     protected UnidbgStructure(Pointer p) {
@@ -224,5 +239,4 @@ public abstract class UnidbgStructure extends Structure {
             throw new IllegalStateException(e);
         }
     }
-
 }
