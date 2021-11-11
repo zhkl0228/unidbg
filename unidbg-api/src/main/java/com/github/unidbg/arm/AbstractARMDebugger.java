@@ -168,30 +168,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         try {
             if (listener == null || listener.canDebug(emulator, new CodeHistory(address, size, ARM.isThumb(backend)))) {
-                if (traceHook != null) {
-                    traceHook.detach();
-                    traceHook = null;
-                }
-                if (traceHookRedirectStream != null) {
-                    com.alibaba.fastjson.util.IOUtils.close(traceHookRedirectStream);
-                    traceHookRedirectStream = null;
-                }
-                if (traceRead != null) {
-                    traceRead.detach();
-                    traceRead = null;
-                }
-                if (traceReadRedirectStream != null) {
-                    com.alibaba.fastjson.util.IOUtils.close(traceReadRedirectStream);
-                    traceReadRedirectStream = null;
-                }
-                if (traceWrite != null) {
-                    traceWrite.detach();
-                    traceWrite = null;
-                }
-                if (traceWriteRedirectStream != null) {
-                    com.alibaba.fastjson.util.IOUtils.close(traceWriteRedirectStream);
-                    traceWriteRedirectStream = null;
-                }
+                cancelTrace();
                 debugging = true;
                 loop(emulator, address, size, null);
             }
@@ -199,6 +176,33 @@ public abstract class AbstractARMDebugger implements Debugger {
             log.warn("process loop failed", e);
         } finally {
             debugging = false;
+        }
+    }
+
+    private void cancelTrace() {
+        if (traceHook != null) {
+            traceHook.detach();
+            traceHook = null;
+        }
+        if (traceHookRedirectStream != null) {
+            com.alibaba.fastjson.util.IOUtils.close(traceHookRedirectStream);
+            traceHookRedirectStream = null;
+        }
+        if (traceRead != null) {
+            traceRead.detach();
+            traceRead = null;
+        }
+        if (traceReadRedirectStream != null) {
+            com.alibaba.fastjson.util.IOUtils.close(traceReadRedirectStream);
+            traceReadRedirectStream = null;
+        }
+        if (traceWrite != null) {
+            traceWrite.detach();
+            traceWrite = null;
+        }
+        if (traceWriteRedirectStream != null) {
+            com.alibaba.fastjson.util.IOUtils.close(traceWriteRedirectStream);
+            traceWriteRedirectStream = null;
         }
     }
 
@@ -231,6 +235,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (ins != null && breakMnemonic.equals(ins.mnemonic)) {
                     breakMnemonic = null;
                     backend.setFastDebug(true);
+                    cancelTrace();
                     debugging = true;
                     loop(emulator, address, size, null);
                 }
@@ -252,6 +257,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             address = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
         }
         try {
+            cancelTrace();
             debugging = true;
             loop(emulator, address, 4, null);
         } catch (Exception e) {
@@ -284,6 +290,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             callbackRunning = false;
         }
         try {
+            cancelTrace();
             debugging = true;
             loop(emulator, -1, 0, runnable);
         } finally {

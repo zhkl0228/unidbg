@@ -1053,7 +1053,10 @@ public class ARM {
             sb.append(hex);
         }
         sb.append(" ]").append(space);
-        sb.append(String.format("0x%08x:" + space + "%s %s", ins.address, ins.mnemonic, ins.opStr));
+        sb.append(String.format("0x%08x:" + space + "%s", ins.address, ins.mnemonic));
+        if (ins.opStr != null && ins.opStr.length() > 0) {
+            sb.append(" ").append(ins.opStr);
+        }
 
         Arm.OpInfo opInfo = null;
         Arm64.OpInfo opInfo64 = null;
