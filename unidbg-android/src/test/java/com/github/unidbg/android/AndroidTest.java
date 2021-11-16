@@ -1,5 +1,6 @@
 package com.github.unidbg.android;
 
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
@@ -34,7 +35,13 @@ import java.util.Collections;
 public class AndroidTest extends AbstractJni {
 
     public static void main(String[] args) throws IOException {
-        new AndroidTest().test();
+        AndroidTest test = new AndroidTest();
+        test.test();
+        test.destroy();
+    }
+
+    private void destroy() {
+        IOUtils.close(emulator);
     }
 
     private final AndroidEmulator emulator;

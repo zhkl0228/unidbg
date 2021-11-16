@@ -1,5 +1,6 @@
 package com.github.unidbg.android;
 
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
@@ -35,7 +36,13 @@ public class Android64Test extends AbstractJni {
 
     public static void main(String[] args) throws IOException {
         Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
-        new Android64Test().test();
+        Android64Test test = new Android64Test();
+        test.test();
+        test.destroy();
+    }
+
+    private void destroy() {
+        IOUtils.close(emulator);
     }
 
     private final AndroidEmulator emulator;
@@ -73,7 +80,8 @@ public class Android64Test extends AbstractJni {
             }
         });
 
-//        emulator.traceCode();
+//        emulator.attach().addBreakPoint(null, 0x40400694);
+
         module = emulator.loadLibrary(executable);
 
         VM vm = emulator.createDalvikVM();
@@ -167,7 +175,6 @@ public class Android64Test extends AbstractJni {
                 0x789a, 0.12345D, true, 0x123, 0.456f, 0.789123D, (byte) 0x7f,
                 0x89abcdefL, 0.123f);
 
-//        emulator.attach().addBreakPoint(null, 0x40080648);
         System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 

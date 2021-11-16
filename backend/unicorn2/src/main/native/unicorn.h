@@ -19,3 +19,20 @@ struct new_hook {
     jobject hook;
     t_unicorn unicorn;
 };
+
+void armeb_uc_init() {
+  fprintf(stderr, "Unsupported armeb\n");
+  abort();
+}
+void arm64eb_uc_init() {
+  fprintf(stderr, "Unsupported arm64eb\n");
+  abort();
+}
+void arm64eb_context_reg_read() {
+  fprintf(stderr, "Unsupported arm64eb\n");
+  abort();
+}
+void arm64eb_context_reg_write() {
+  fprintf(stderr, "Unsupported arm64eb\n");
+  abort();
+}
