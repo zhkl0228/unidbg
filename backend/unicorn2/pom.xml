@@ -18,10 +18,5 @@
             <artifactId>unidbg-api</artifactId>
             <version>0.9.6-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>com.github.zhkl0228</groupId>
-            <artifactId>unicorn2</artifactId>
-            <version>0.0.1-beta</version>
-        </dependency>
     </dependencies>
 </project>

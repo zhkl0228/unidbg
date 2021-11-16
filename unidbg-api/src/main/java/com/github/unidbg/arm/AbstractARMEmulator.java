@@ -7,6 +7,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.arm.backend.EventMemHook;
+import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.arm.context.BackendArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.Debugger;
@@ -60,6 +61,13 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
                     attach().debug();
                 }
                 return false;
+            }
+            @Override
+            public void onAttach(UnHook unHook) {
+            }
+            @Override
+            public void detach() {
+                throw new UnsupportedOperationException();
             }
         }, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED | UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED | UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, null);
 

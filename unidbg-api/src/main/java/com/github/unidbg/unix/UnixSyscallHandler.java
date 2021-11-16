@@ -3,6 +3,7 @@ package com.github.unidbg.unix;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.debugger.Breaker;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.FileResult;
@@ -554,6 +555,15 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     @Override
     public void serialize(DataOutput out) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void onAttach(UnHook unHook) {
+    }
+
+    @Override
+    public void detach() {
         throw new UnsupportedOperationException();
     }
 
