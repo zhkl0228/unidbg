@@ -106,34 +106,34 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1u
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    setFastDebug
- * Signature: (Z)V
+ * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_setFastDebug
-  (JNIEnv *, jobject, jboolean);
+  (JNIEnv *, jclass, jlong, jboolean);
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    setSingleStep
- * Signature: (I)V
+ * Signature: (JI)V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_setSingleStep
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    addBreakPoint
- * Signature: (J)V
+ * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_addBreakPoint
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    removeBreakPoint
- * Signature: (J)V
+ * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_removeBreakPoint
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
@@ -178,10 +178,10 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_emu_1s
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    context_alloc
- * Signature: ()J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_context_1alloc
-  (JNIEnv *, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
@@ -189,23 +189,23 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_conte
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_free
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    context_save
- * Signature: (J)V
+ * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_context_1save
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    context_restore
- * Signature: (J)V
+ * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_context_1restore
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 #ifdef __cplusplus
 }

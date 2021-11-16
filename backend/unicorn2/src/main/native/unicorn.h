@@ -6,12 +6,16 @@
 
 KHASH_MAP_INIT_INT64(64, char)
 
+typedef struct unicorn {
+  khash_t(64) *bps_map;
+  uint64_t bps[SEARCH_BPS_COUNT];
+  uc_engine *uc;
+  jint singleStep;
+  jboolean fastDebug;
+} *t_unicorn;
+
 struct new_hook {
     uc_hook hh;
     jobject hook;
+    t_unicorn unicorn;
 };
-
-typedef struct unicorn {
-  khash_t(64) *bps_map;
-  uc_engine *uc;
-} *t_unicorn;

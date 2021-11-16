@@ -141,7 +141,6 @@ public class Unicorn {
     /**
      * Read register value.
      *
-     * @deprecated use Object reg_read(int regid) instead
      * @param regid  Register ID that is to be retrieved.
      * @param regsz  Size of the register being retrieved.
      * @return Byte array containing the requested register value.
@@ -155,7 +154,6 @@ public class Unicorn {
     /**
      * Write to register.
      *
-     * @deprecated use reg_write(int regid, Object value) instead
      * @param  regid  Register ID that is to be modified.
      * @param  value  Array containing value that will be written into register @regid
      */
@@ -252,10 +250,22 @@ public class Unicorn {
 
     private static native void mem_unmap(long handle, long address, long size) throws UnicornException;
 
-    public native void setFastDebug(boolean fastDebug);
-    public native void setSingleStep(int singleStep);
-    public native void addBreakPoint(long address);
-    public native void removeBreakPoint(long address);
+    public void setFastDebug(boolean fastDebug) {
+        setFastDebug(nativeHandle, fastDebug);
+    }
+    private static native void setFastDebug(long handle, boolean fastDebug);
+    public void setSingleStep(int singleStep) {
+        setSingleStep(nativeHandle, singleStep);
+    }
+    private static native void setSingleStep(long handle, int singleStep);
+    public void addBreakPoint(long address) {
+        addBreakPoint(nativeHandle, address);
+    }
+    private static native void addBreakPoint(long handle, long address);
+    public void removeBreakPoint(long address) {
+        removeBreakPoint(nativeHandle, address);
+    }
+    private static native void removeBreakPoint(long handle, long address);
 
     /**
      * Hook registration helper for hook types that require two additional arguments.
@@ -310,7 +320,11 @@ public class Unicorn {
      *
      * @return context handle for use with save/restore.
      */
-    public native long context_alloc();
+    public long context_alloc() {
+        return context_alloc(nativeHandle);
+    }
+
+    private static native long context_alloc(long handle);
 
     /**
      * Free a resource allocated within Unicorn. Use for handles
@@ -318,7 +332,7 @@ public class Unicorn {
      *
      * @param handle Previously allocated Unicorn object handle.
      */
-    public native void free(long handle);
+    public static native void free(long handle);
 
     /**
      * Save a copy of the internal CPU context.
@@ -327,7 +341,11 @@ public class Unicorn {
      *
      * @param context handle previously returned by context_alloc.
      */
-    public native void context_save(long context);
+    public void context_save(long context) {
+        context_save(nativeHandle, context);
+    }
+
+    private static native void context_save(long handle, long context);
 
     /**
      * Restore the current CPU context from a saved copy.
@@ -336,7 +354,11 @@ public class Unicorn {
      *
      * @param context handle previously returned by context_alloc.
      */
-    public native void context_restore(long context);
+    public void context_restore(long context) {
+        context_restore(nativeHandle, context);
+    }
+
+    private static native void context_restore(long handle, long context);
 
     public UnHook hook_add_new(BlockHook callback, long begin, long end, Object user_data) throws UnicornException {
         NewHook hook = new NewHook(callback, user_data);
