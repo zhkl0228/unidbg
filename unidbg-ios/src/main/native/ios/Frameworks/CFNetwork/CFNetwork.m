@@ -36,6 +36,10 @@ CFStringRef CFURLRequestCopyHTTPRequestMethod(CFURLRequestRef request) {
   return CFStringCreateCopy(kCFAllocatorDefault, request->httpMethod);
 }
 
+CFDictionaryRef CFURLRequestCopyAllHTTPHeaderFields(CFURLRequestRef request) {
+  return CFDictionaryCreateCopy(kCFAllocatorDefault, request->headerFields);
+}
+
 CFDataRef CFURLRequestCopyHTTPRequestBody(CFURLRequestRef request) {
   return CFDataCreateCopy(kCFAllocatorDefault, request->httpBody);
 }

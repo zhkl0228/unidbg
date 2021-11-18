@@ -40,6 +40,8 @@ typedef struct CFURLRequest {
 
 typedef CFURLRequestRef CFMutableURLRequestRef;
 
+CFDictionaryRef CFURLRequestCopyAllHTTPHeaderFields(CFURLRequestRef request);
+
 CFStringRef CFURLRequestCopyHTTPHeaderFieldValue(
   CFURLRequestRef   request,
   CFStringRef	   headerField);
