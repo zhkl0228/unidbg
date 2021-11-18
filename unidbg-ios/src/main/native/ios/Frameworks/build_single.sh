@@ -38,9 +38,3 @@ function build_UIKit() {
 }
 
 build_framework CFNetwork "CoreFoundation"
-
-build_framework ARKit "Foundation"
-build_framework IntentsUI "Foundation"
-build_framework NetworkExtension "Foundation"
-build_framework DeviceCheck "Foundation"
-build_framework Messages "Foundation"

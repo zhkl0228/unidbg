@@ -47,6 +47,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         Scanner scanner = new Scanner(System.in);
         String line;
         while ((line = scanner.nextLine()) != null) {
+            line = line.trim();
             try {
                 if ("help".equals(line)) {
                     showHelp(address);
