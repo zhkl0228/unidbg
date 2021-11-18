@@ -79,3 +79,5 @@ CFMutableURLRequestRef CFURLRequestCreateMutable(
 void CFURLRequestSetHTTPRequestBody(
   CFMutableURLRequestRef   mutableHTTPRequest,
   CFDataRef				httpBody);
+
+CFDataRef CFURLRequestCopyHTTPRequestBody(CFURLRequestRef request);

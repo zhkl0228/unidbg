@@ -36,6 +36,10 @@ CFStringRef CFURLRequestCopyHTTPRequestMethod(CFURLRequestRef request) {
   return CFStringCreateCopy(kCFAllocatorDefault, request->httpMethod);
 }
 
+CFDataRef CFURLRequestCopyHTTPRequestBody(CFURLRequestRef request) {
+  return CFDataCreateCopy(kCFAllocatorDefault, request->httpBody);
+}
+
 CFURLRef CFURLRequestGetURL(CFURLRequestRef request) {
   uintptr_t lr = 1;
   __asm__(
