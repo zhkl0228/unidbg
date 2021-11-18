@@ -133,6 +133,12 @@ void CFURLRequestSetCachePolicy(
   mutableRequest->cachePolicy = cachePolicy;
 }
 
+void CFURLRequestSetHTTPRequestBody(
+  CFMutableURLRequestRef   mutableHTTPRequest,
+  CFDataRef				httpBody) {
+  mutableHTTPRequest->httpBody = CFRetain(httpBody);
+}
+
 void _CFURLProtocolRegisterFoundationBridge(void *impl, Boolean preferCFURLProtocol) {
   uintptr_t lr = 1;
   __asm__(

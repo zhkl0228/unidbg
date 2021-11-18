@@ -35,6 +35,7 @@ typedef struct CFURLRequest {
     CFStringRef			  httpMethod;
     CFMutableDictionaryRef headerFields;
     CFDictionaryRef		  multipleHeaderFields;
+    CFDataRef				httpBody;
 } *CFURLRequestRef;
 
 typedef CFURLRequestRef CFMutableURLRequestRef;
@@ -74,3 +75,7 @@ CFMutableURLRequestRef CFURLRequestCreateMutable(
   CFURLRequestCachePolicy   cachePolicy,
   CFTimeInterval			timeout,
   CFURLRef				  mainDocumentURL);
+
+void CFURLRequestSetHTTPRequestBody(
+  CFMutableURLRequestRef   mutableHTTPRequest,
+  CFDataRef				httpBody);
