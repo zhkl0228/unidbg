@@ -23,6 +23,7 @@ public interface DarwinFileIO extends NewFileIO {
     int ATTR_CMN_OBJTYPE = 0x00000008;
     int ATTR_CMN_OBJID = 0x00000020;
     int ATTR_CMN_CRTIME = 0x00000200;
+    int ATTR_CMN_MODTIME = 0x00000400;
     int ATTR_CMN_FNDRINFO = 0x00004000;
     int ATTR_CMN_USERACCESS = 0x00200000; // (used to get the user's access mode to the file).
 

@@ -22,6 +22,14 @@ const NSNotificationName UIApplicationUserDidTakeScreenshotNotification = @"UIAp
 const NSNotificationName UIAccessibilityVoiceOverStatusChanged = @"UIAccessibilityVoiceOverStatusChanged";
 const NSNotificationName UIKeyboardWillShowNotification = @"UIKeyboardWillShowNotification";
 const NSNotificationName UIKeyboardWillHideNotification = @"UIKeyboardWillHideNotification";
+const NSNotificationName NSProcessInfoThermalStateDidChangeNotification = @"NSProcessInfoThermalStateDidChangeNotification";
+const NSNotificationName NSProcessInfoPowerStateDidChangeNotification = @"NSProcessInfoPowerStateDidChangeNotification";
+const NSNotificationName UIDeviceBatteryStateDidChangeNotification = @"UIDeviceBatteryStateDidChangeNotification";
+
+typedef NSString *UIApplicationLaunchOptionsKey;
+const UIApplicationLaunchOptionsKey UIApplicationLaunchOptionsLocalNotificationKey = @"UIApplicationLaunchOptionsLocalNotificationKey";
+const UIApplicationLaunchOptionsKey UIApplicationLaunchOptionsRemoteNotificationKey = @"UIApplicationLaunchOptionsRemoteNotificationKey";
+const UIApplicationLaunchOptionsKey UIApplicationLaunchOptionsURLKey = @"UIApplicationLaunchOptionsURLKey";
 
 typedef CGFloat UIScrollViewDecelerationRate;
 const UIScrollViewDecelerationRate UIScrollViewDecelerationRateNormal = 0.0;
@@ -111,6 +119,7 @@ typedef enum UIStatusBarStyle : NSInteger {
 @property(nonatomic) UIStatusBarStyle statusBarStyle;
 @property(nonatomic, getter=isIgnoringInteractionEvents) BOOL ignoringInteractionEvents;
 @property(nonatomic, getter=isProtectedDataAvailable) BOOL protectedDataAvailable;
+@property(nonatomic) NSInteger applicationIconBadgeNumber;
 
 + (UIApplication *)sharedApplication;
 
@@ -127,6 +136,8 @@ typedef enum UIStatusBarStyle : NSInteger {
 - (NSArray *)windows;
 
 - (void)beginIgnoringInteractionEvents;
+
+- (void)registerForRemoteNotifications;
 
 @end
 
@@ -170,6 +181,17 @@ typedef enum UIDeviceBatteryState : NSInteger {
 + (NSURLSessionConfiguration *)defaultSessionConfiguration;
 @end
 
+@interface NSTimerInvocation : NSObject
+@property(nonatomic, copy) void (^block)(NSTimer *timer);
++ (NSTimerInvocation *)invocationWithBlock: (void (^)(NSTimer *timer))block;
+- (void) callWithTimer: (NSTimer *) timer;
+@end
+
+@interface NSTimer (Foundation)
++ (NSTimer *)timerWithTimeInterval:(NSTimeInterval)interval repeats:(BOOL)repeats block:(void (^)(NSTimer *timer))block;
+- (void) callWithInvocation: (NSTimerInvocation *) invocation;
+@end
+
 @interface NSURLSession (CFNetwork)
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration;
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue;
@@ -180,6 +202,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 + (UIScreen *)mainScreen;
 - (CGRect)bounds;
 - (CGFloat)scale;
+- (CGFloat)nativeScale;
 @end
 
 @protocol UIAccessibilityIdentification

@@ -1522,6 +1522,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     @Override
     public Module dlopen(String path, boolean callInit) {
+        if ("/usr/lib/libSystem.dylib".equals(path)) {
+            path = "/usr/lib/libSystem.B.dylib";
+        }
         MachOModule loaded = modules.get(FilenameUtils.getName(path));
         if (loaded != null) {
             loaded.addReferenceCount();

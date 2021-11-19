@@ -2922,6 +2922,15 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         long tv_sec = currentTimeMillis / 1000;
         long tv_usec = (currentTimeMillis % 1000) * 1000 + nanoTime % 1000;
         context.setXLong(1, tv_usec);
+
+        Pointer tv = context.getPointerArg(0);
+        if (tv != null) {
+            TimeVal64 timeVal = new TimeVal64(tv);
+            timeVal.tv_sec = tv_sec;
+            timeVal.tv_usec = tv_usec;
+            timeVal.pack();
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("gettimeofday tv_sec=" + tv_sec + ", tv_usec=" + tv_usec);
         }

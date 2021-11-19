@@ -184,6 +184,14 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             }
             attrList.commonattr &= ~ATTR_CMN_CRTIME;
         }
+        if((attrList.commonattr & ATTR_CMN_MODTIME) != 0) {
+            TimeSpec timeSpec = new TimeSpec(pointer);
+            pointer = pointer.share(timeSpec.size());
+            if (log.isDebugEnabled()) {
+                log.debug("setattrlist timeSpec=" + timeSpec + ", pointer=" + pointer);
+            }
+            attrList.commonattr &= ~ATTR_CMN_MODTIME;
+        }
         if ((attrList.commonattr & ATTR_CMN_FNDRINFO) != 0) {
             FinderInfo finderInfo = new FinderInfo(pointer);
             pointer = pointer.share(finderInfo.size());

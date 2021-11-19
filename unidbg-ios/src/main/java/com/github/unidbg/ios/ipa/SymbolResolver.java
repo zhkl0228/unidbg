@@ -37,6 +37,9 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer ___chkstk_darwin;
     private UnidbgPointer _clock_gettime;
     private UnidbgPointer _pthread_attr_set_qos_class_np;
+    private UnidbgPointer _qos_class_self;
+    private UnidbgPointer _dispatch_assert_queue$V2;
+    private UnidbgPointer _dispatch_block_create;
 
     public SymbolResolver(Emulator<DarwinFileIO> emulator) {
         this.emulator = emulator;
@@ -50,9 +53,49 @@ public class SymbolResolver implements HookListener {
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, long old) {
-        /*if (symbolName.contains("pthread_attr_set_qos_class_np")) {
+        /*if (symbolName.contains("qos_class")) {
             System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
         }*/
+        if ("_dispatch_block_create".equals(symbolName) && emulator.is64Bit()) {
+            if (_dispatch_block_create == null) {
+                _dispatch_block_create = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        int flags = context.getIntArg(0);
+                        UnidbgPointer block = context.getPointerArg(1);
+                        log.info("_dispatch_block_create flags=0x" + Integer.toHexString(flags) + ", block=" + block);
+                        return block == null ? 0 : block.peer;
+                    }
+                });
+            }
+            return _dispatch_block_create.peer;
+        }
+        if ("_dispatch_assert_queue$V2".equals(symbolName) && emulator.is64Bit()) {
+            if (_dispatch_assert_queue$V2 == null) {
+                _dispatch_assert_queue$V2 = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        log.info("_dispatch_assert_queue$V2 queue=" + context.getPointerArg(0));
+                        return 0;
+                    }
+                });
+            }
+            return _dispatch_assert_queue$V2.peer;
+        }
+        if ("_qos_class_self".equals(symbolName) && emulator.is64Bit()) {
+            if (_qos_class_self == null) {
+                _qos_class_self = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        log.info("_qos_class_self");
+                        return 0;
+                    }
+                });
+            }
+            return _qos_class_self.peer;
+        }
         if ("_pthread_attr_set_qos_class_np".equals(symbolName) && emulator.is64Bit()) {
             if (_pthread_attr_set_qos_class_np == null) {
                 _pthread_attr_set_qos_class_np = svcMemory.registerSvc(new Arm64Svc() {

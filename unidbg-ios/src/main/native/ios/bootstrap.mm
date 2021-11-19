@@ -119,7 +119,7 @@ static BOOL isSystemClass(Class clazz) {
 }
 
 static void test_UIKit() {
-  NSLog(@"UIApplicationDidReceiveMemoryWarningNotification=%@", UIApplicationDidReceiveMemoryWarningNotification);
+  NSLog(@"UIApplicationLaunchOptionsLocalNotificationKey=%@", UIApplicationLaunchOptionsLocalNotificationKey);
   NSLog(@"UIApplicationDidEnterBackgroundNotification=%@", UIApplicationDidEnterBackgroundNotification);
   NSLog(@"UIApplicationDidFinishLaunchingNotification=%@", UIApplicationDidFinishLaunchingNotification);
   NSLog(@"UIApplicationBackgroundFetchIntervalMinimum=%f", UIApplicationBackgroundFetchIntervalMinimum);
