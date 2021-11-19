@@ -79,7 +79,7 @@ public class ObjcObject extends UnidbgStructure {
         if (str == null) {
             return "<description not available>";
         } else {
-            UnidbgPointer pointer = (UnidbgPointer) str.call("lengthOfBytesUsingEncoding:", NSUTF8StringEncoding);
+            UnidbgPointer pointer = str.call("lengthOfBytesUsingEncoding:", NSUTF8StringEncoding);
             int length = (int) (pointer.peer & 0x7fffffffL);
             byte[] bytes = str.call("UTF8String").getByteArray(0, length);
             return new String(bytes, StandardCharsets.UTF_8);

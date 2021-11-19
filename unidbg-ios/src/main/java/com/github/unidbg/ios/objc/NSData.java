@@ -7,7 +7,7 @@ import com.sun.jna.Pointer;
 public class NSData {
 
     public static NSData create(ObjcObject object) {
-        return new NSData(object);
+        return object == null ? null : new NSData(object);
     }
 
     private final ObjcObject object;
@@ -17,7 +17,7 @@ public class NSData {
     }
 
     public byte[] getBytes() {
-        UnidbgPointer pointer = (UnidbgPointer) object.call("length");
+        UnidbgPointer pointer = object.call("length");
         int length = (int) (pointer.peer & 0x7fffffff);
         Pointer bytes = getBytesPointer();
         return bytes.getByteArray(0, length);

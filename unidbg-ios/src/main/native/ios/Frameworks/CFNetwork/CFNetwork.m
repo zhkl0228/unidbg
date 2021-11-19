@@ -22,6 +22,7 @@ CFMutableURLRequestRef CFURLRequestCreateMutable(
   ref->httpMethod = CFSTR("GET");
   ref->cachePolicy = cachePolicy;
   ref->headerFields = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+  ref->httpBody = NULL;
   return ref;
 }
 
@@ -41,7 +42,7 @@ CFDictionaryRef CFURLRequestCopyAllHTTPHeaderFields(CFURLRequestRef request) {
 }
 
 CFDataRef CFURLRequestCopyHTTPRequestBody(CFURLRequestRef request) {
-  return CFDataCreateCopy(kCFAllocatorDefault, request->httpBody);
+  return request->httpBody ? CFDataCreateCopy(kCFAllocatorDefault, request->httpBody) : NULL;
 }
 
 CFURLRef CFURLRequestGetURL(CFURLRequestRef request) {
