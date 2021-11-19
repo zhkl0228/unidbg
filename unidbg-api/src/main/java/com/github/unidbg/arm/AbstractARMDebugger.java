@@ -530,6 +530,9 @@ public abstract class AbstractARMDebugger implements Debugger {
         if (line.startsWith("traceRead")) { // start trace memory read
             Pattern pattern = Pattern.compile("traceRead\\s+(\\w+)\\s+(\\w+)");
             Matcher matcher = pattern.matcher(line);
+            if (traceRead != null) {
+                traceRead.detach();
+            }
             traceRead = new TraceMemoryHook(true);
             long begin, end;
             if (matcher.find()) {
@@ -581,6 +584,9 @@ public abstract class AbstractARMDebugger implements Debugger {
         if (line.startsWith("traceWrite")) { // start trace memory write
             Pattern pattern = Pattern.compile("traceWrite\\s+(\\w+)\\s+(\\w+)");
             Matcher matcher = pattern.matcher(line);
+            if (traceWrite != null) {
+                traceWrite.detach();
+            }
             traceWrite = new TraceMemoryHook(false);
             long begin, end;
             if (matcher.find()) {
@@ -633,6 +639,9 @@ public abstract class AbstractARMDebugger implements Debugger {
             Memory memory = emulator.getMemory();
             Pattern pattern = Pattern.compile("trace\\s+(\\w+)\\s+(\\w+)");
             Matcher matcher = pattern.matcher(line);
+            if (traceHook != null) {
+                traceHook.detach();
+            }
             traceHook = new AssemblyCodeDumper(emulator);
             long begin, end;
             if (matcher.find()) {
@@ -651,7 +660,19 @@ public abstract class AbstractARMDebugger implements Debugger {
                     traceHook.setRedirect(traceHookRedirectStream);
                     System.out.printf("Set trace all instructions success with trace file: %s.%n", traceFile);
                 } else {
-                    System.out.printf("Set trace 0x%x->0x%x instructions success.%n", begin, end);
+                    boolean needTraceFile = end - begin > traceSize;
+                    if (needTraceFile) {
+                        File traceFile = new File(String.format("target/traceCode_0x%x-0x%x.txt", begin, end));
+                        if (!traceFile.exists() && !traceFile.createNewFile()) {
+                            throw new IllegalStateException("createNewFile: " + traceFile);
+                        }
+                        traceHookRedirectStream = new PrintStream(new FileOutputStream(traceFile), true);
+                        traceHookRedirectStream.printf("[%s]Start traceCode: 0x%x-0x%x%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), begin, end);
+                        traceHook.setRedirect(traceHookRedirectStream);
+                        System.out.printf("Set trace 0x%x->0x%x instructions success with trace file: %s.%n", begin, end, traceFile);
+                    } else {
+                        System.out.printf("Set trace 0x%x->0x%x instructions success.%n", begin, end);
+                    }
                 }
             } else {
                 String redirect = null;
@@ -839,6 +860,11 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
                 try(InputStream inputStream = Objects.requireNonNull(getClass().getResourceAsStream("/cc.c"))) {
                     String template = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+                    if (emulator.is64Bit()) {
+                        template = template.replace("$(ARCH_SPEC)", "-m64 -arch arm64");
+                    } else {
+                        template = template.replace("$(ARCH_SPEC)", "-m32 -arch armv7");
+                    }
                     System.err.println(template.replace("$(REPLACE_ASM)", sb.toString()));
                 }
             } else {
