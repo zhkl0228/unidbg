@@ -61,14 +61,19 @@ int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
   print_lr(buf, lr);
   int debug = is_debug();
   if(debug) {
+    fprintf(stderr, "Begin SecItemCopyMatching LR=%s\n", buf);
     CFShow(query);
   }
   int ret = errSecItemNotFound;
   CFStringRef class = CFDictionaryGetValue(query, kSecClass);
-  CFStringRef acct = CFDictionaryGetValue(query, kSecAttrAccount);
+  CFTypeRef acct = CFDictionaryGetValue(query, kSecAttrAccount);
   CFStringRef limit = CFDictionaryGetValue(query, kSecMatchLimit);
   CFDictionaryRef classDict = class == NULL ? NULL : CFDictionaryGetValue(plist, class);
   CFTypeRef value = acct == NULL || classDict == NULL ? NULL : CFDictionaryGetValue(classDict, acct);
+  if(CFGetTypeID(acct) != CFStringGetTypeID()) {
+    fprintf(stderr, "SecItemCopyMatching kSecAttrAccount is not CFString LR=%s\n", buf);
+    return ret;
+  }
   if(value && CFDictionaryGetValue(query, kSecReturnData) && CFStringCompare(limit, kSecMatchLimitOne, 0) == kCFCompareEqualTo) {
     if(result) {
       *result = CFRetain(value);
@@ -77,7 +82,7 @@ int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
   }
   if(debug) {
     CFShow(plist);
-    fprintf(stderr, "SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d, LR=%s\n", query, result, value, ret, buf);
+    fprintf(stderr, "End SecItemCopyMatching query=%p, result=%p, value=%p, ret=%d, LR=%s\n", query, result, value, ret, buf);
   }
   return ret;
 }
@@ -92,10 +97,15 @@ int SecItemDelete(CFDictionaryRef query) {
   print_lr(buf, lr);
   int debug = is_debug();
   if(debug) {
+    fprintf(stderr, "Begin SecItemDelete LR=%s\n", buf);
     CFShow(query);
   }
   CFStringRef class = CFDictionaryGetValue(query, kSecClass);
-  CFStringRef acct = CFDictionaryGetValue(query, kSecAttrAccount);
+  CFTypeRef acct = CFDictionaryGetValue(query, kSecAttrAccount);
+  if(CFGetTypeID(acct) != CFStringGetTypeID()) {
+    fprintf(stderr, "SecItemDelete kSecAttrAccount is not CFString LR=%s\n", buf);
+    return errSecUnimplemented;
+  }
   if(class && acct) {
     CFMutableDictionaryRef classDict = (CFMutableDictionaryRef) CFDictionaryGetValue(plist, class);
     if(classDict) {
@@ -105,7 +115,7 @@ int SecItemDelete(CFDictionaryRef query) {
   }
   if(debug) {
     CFShow(plist);
-    fprintf(stderr, "SecItemDelete query=%p, LR=%s\n", query, buf);
+    fprintf(stderr, "End SecItemDelete query=%p, LR=%s\n", query, buf);
   }
   return errSecSuccess;
 }
@@ -120,11 +130,16 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
   print_lr(buf, lr);
   int debug = is_debug();
   if(debug) {
+    fprintf(stderr, "Begin SecItemAdd LR=%s\n", buf);
     CFShow(attributes);
   }
   int ret = errSecUnimplemented;
   CFStringRef class = CFDictionaryGetValue(attributes, kSecClass);
-  CFStringRef acct = CFDictionaryGetValue(attributes, kSecAttrAccount);
+  CFTypeRef acct = CFDictionaryGetValue(attributes, kSecAttrAccount);
+  if(CFGetTypeID(acct) != CFStringGetTypeID()) {
+    fprintf(stderr, "SecItemAdd kSecAttrAccount is not CFString LR=%s\n", buf);
+    return ret;
+  }
   CFTypeRef data = CFDictionaryGetValue(attributes, kSecValueData);
   if(class && acct && data) {
     CFMutableDictionaryRef classDict = (CFMutableDictionaryRef) CFDictionaryGetValue(plist, class);
@@ -141,20 +156,20 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
 
     const UInt8 *ptr = CFDataGetBytePtr(data);
     CFIndex length = CFDataGetLength(data);
-    char *buf = malloc(length * 2 + 1);
+    char *hex = malloc(length * 2 + 1);
     int idx = 0;
     for(int i = 0; i < length; i++) {
-      idx += sprintf(&buf[idx], "%02x", ptr[i]);
+      idx += sprintf(&hex[idx], "%02x", ptr[i]);
     }
-    buf[idx] = 0;
+    hex[idx] = 0;
     if(debug) {
-      fprintf(stderr, "SecItemAdd ptr=%p, length=%ld, hex=%s\n", ptr, length, buf);
+      fprintf(stderr, "SecItemAdd ptr=%p, length=%ld, hex=%s, LR=%s\n", ptr, length, hex, buf);
     }
-    free(buf);
+    free(hex);
   }
   if(debug) {
     CFShow(plist);
-    fprintf(stderr, "SecItemAdd attributes=%p, acct=%s, ret=%d, LR=%s\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret, buf);
+    fprintf(stderr, "End SecItemAdd attributes=%p, acct=%s, ret=%d, LR=%s\n", attributes, CFStringGetCStringPtr(acct, kCFStringEncodingUTF8), ret, buf);
   }
   return ret;
 }

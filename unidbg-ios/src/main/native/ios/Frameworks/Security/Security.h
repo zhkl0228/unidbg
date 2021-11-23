@@ -24,3 +24,4 @@ const CFStringRef kSecAttrGeneric = CFSTR("gena");
 const CFStringRef kSecAttrLabel = CFSTR("labl");
 const CFStringRef kSecAttrDescription = CFSTR("desc");
 const CFStringRef kSecAttrSynchronizable = CFSTR("sync");
+const CFStringRef kSecAttrAccessibleWhenUnlockedThisDeviceOnly = CFSTR("aku");
