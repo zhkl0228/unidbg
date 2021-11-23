@@ -3,11 +3,12 @@ package com.github.unidbg.hook.substrate;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.IHook;
+import com.github.unidbg.hook.InlineHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.sun.jna.Pointer;
 
-public interface ISubstrate extends IHook {
+public interface ISubstrate extends IHook, InlineHook {
 
     /**
      * MSImageRef MSGetImageByName(const char *file);

@@ -8,7 +8,6 @@ import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.sun.jna.Pointer;
 
@@ -21,7 +20,6 @@ public class ThreadJoin19 {
             throw new IllegalStateException();
         }
         Memory memory = emulator.getMemory();
-        SvcMemory svcMemory = emulator.getSvcMemory();
         Module libc = memory.findModule("libc.so");
         Symbol _pthread_clone = libc.findSymbolByName("__pthread_clone", false);
         Symbol pthread_join = libc.findSymbolByName("pthread_join", false);
@@ -39,7 +37,7 @@ public class ThreadJoin19 {
                 return HookStatus.LR(emulator, 0);
             }
         });
-        hookZz.replace(_pthread_clone, svcMemory.registerSvc(new ThreadClonePatcher32(visitor, value_ptr)));
+        hookZz.replace(_pthread_clone, new ThreadClonePatcher32(visitor, value_ptr));
     }
 
 }

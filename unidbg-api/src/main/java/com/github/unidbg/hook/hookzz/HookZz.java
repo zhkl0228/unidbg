@@ -2,6 +2,7 @@ package com.github.unidbg.hook.hookzz;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
+import com.github.unidbg.Svc;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
@@ -97,11 +98,12 @@ public final class HookZz extends BaseHook implements IHookZz {
     }
 
     @Override
-    public void replace(long functionAddress, Pointer callback) {
-        if (callback == null) {
+    public void replace(long functionAddress, Svc svc) {
+        if (svc == null) {
             throw new NullPointerException();
         }
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer callback = emulator.getSvcMemory().registerSvc(svc);
         int ret = zzReplace.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall)[0].intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
@@ -109,8 +111,8 @@ public final class HookZz extends BaseHook implements IHookZz {
     }
 
     @Override
-    public void replace(Symbol symbol, Pointer callback) {
-        replace(symbol.getAddress(), callback);
+    public void replace(Symbol symbol, Svc svc) {
+        replace(symbol.getAddress(), svc);
     }
 
     @Override

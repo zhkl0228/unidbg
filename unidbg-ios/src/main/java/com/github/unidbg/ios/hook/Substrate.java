@@ -2,6 +2,7 @@ package com.github.unidbg.ios.hook;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.Svc;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -114,6 +115,41 @@ public class Substrate extends BaseHook implements ISubstrate {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup, enablePostCall);
         _MSHookFunction.call(emulator, UnidbgPointer.pointer(emulator, address), replace, backup);
+    }
+
+    @Override
+    public void replace(long functionAddress, Svc svc) {
+        if (svc == null) {
+            throw new NullPointerException();
+        }
+        final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer callback = emulator.getSvcMemory().registerSvc(svc);
+        _MSHookFunction.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall);
+    }
+
+    @Override
+    public void replace(Symbol symbol, Svc svc) {
+        replace(symbol.getAddress(), svc);
+    }
+
+    @Override
+    public void replace(long functionAddress, ReplaceCallback callback) {
+        hookFunction(functionAddress, callback);
+    }
+
+    @Override
+    public void replace(Symbol symbol, ReplaceCallback callback) {
+        hookFunction(symbol, callback);
+    }
+
+    @Override
+    public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
+        hookFunction(functionAddress, callback, enablePostCall);
+    }
+
+    @Override
+    public void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall) {
+        hookFunction(symbol, callback, enablePostCall);
     }
 
     @Override

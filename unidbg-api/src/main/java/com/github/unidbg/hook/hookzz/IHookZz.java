@@ -1,12 +1,14 @@
 package com.github.unidbg.hook.hookzz;
 
+import com.github.unidbg.Svc;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.IHook;
+import com.github.unidbg.hook.InlineHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.sun.jna.Pointer;
 
-public interface IHookZz extends IHook {
+public interface IHookZz extends IHook, InlineHook {
 
     void enable_arm_arm64_b_branch();
     void disable_arm_arm64_b_branch();
@@ -19,8 +21,8 @@ public interface IHookZz extends IHook {
     void replace(long functionAddress, ReplaceCallback callback);
     void replace(Symbol symbol, ReplaceCallback callback);
 
-    void replace(long functionAddress, Pointer callback);
-    void replace(Symbol symbol, Pointer callback);
+    void replace(long functionAddress, Svc replace);
+    void replace(Symbol symbol, Svc replace);
 
     void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall);
     void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall);

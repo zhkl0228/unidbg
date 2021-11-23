@@ -8,7 +8,6 @@ import com.github.unidbg.hook.HookContext;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.sun.jna.Pointer;
 
@@ -18,7 +17,6 @@ public class ThreadJoin23 {
 
     public static void patch(final Emulator<?> emulator, IHookZz hookZz, final ThreadJoinVisitor visitor) {
         Memory memory = emulator.getMemory();
-        SvcMemory svcMemory = emulator.getSvcMemory();
         Module libc = memory.findModule("libc.so");
         Symbol clone = libc.findSymbolByName("clone", false);
         Symbol pthread_join = libc.findSymbolByName("pthread_join", false);
@@ -40,7 +38,7 @@ public class ThreadJoin23 {
                 return HookStatus.LR(emulator, 0);
             }
         });
-        hookZz.replace(clone, svcMemory.registerSvc(emulator.is32Bit() ? new ClonePatcher32(visitor, value_ptr) : new ClonePatcher64(visitor, value_ptr)));
+        hookZz.replace(clone, emulator.is32Bit() ? new ClonePatcher32(visitor, value_ptr) : new ClonePatcher64(visitor, value_ptr));
     }
 
 }
