@@ -27,4 +27,10 @@ public class HexTest extends TestCase {
         assertEquals("abc\n123\n", FileUtils.readFileToString(testFile, StandardCharsets.UTF_8));
     }
 
+    public void testFormat() {
+        byte[] code = new byte[2];
+        assertEquals("    0000", String.format("%8s", Hex.encodeHexString(code)));
+        assertEquals("00000000", String.format("%8s", Hex.encodeHexString(new byte[4])));
+    }
+
 }

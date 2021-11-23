@@ -1,10 +1,14 @@
-package com.github.unidbg.linux.thread;
+package com.github.unidbg.ios.patch;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.ios.DarwinSyscall;
+import com.github.unidbg.ios.struct.kernel.Pthread;
+import com.github.unidbg.ios.struct.kernel.Pthread64;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.ThreadJoinVisitor;
@@ -20,15 +24,15 @@ import unicorn.Arm64Const;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
-class ClonePatcher64 extends Arm64Svc {
+class BsdThreadCreatePatcher64 extends Arm64Svc {
 
-    private static final Log log = LogFactory.getLog(ClonePatcher64.class);
+    private static final Log log = LogFactory.getLog(BsdThreadCreatePatcher64.class);
 
     private final ThreadJoinVisitor visitor;
     private final AtomicLong value_ptr;
     private int threadId;
 
-    public ClonePatcher64(ThreadJoinVisitor visitor, AtomicLong value_ptr) {
+    BsdThreadCreatePatcher64(ThreadJoinVisitor visitor, AtomicLong value_ptr) {
         this.visitor = visitor;
         this.value_ptr = value_ptr;
     }
@@ -36,21 +40,28 @@ class ClonePatcher64 extends Arm64Svc {
     @Override
     public long handle(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
-        Pointer pthread_start = context.getPointerArg(0);
-        Pointer child_stack = context.getPointerArg(1);
-        int flags = context.getIntArg(2);
+        Pointer start_routine = context.getPointerArg(0);
+        Pointer arg = context.getPointerArg(1);
+        Pointer stack = context.getPointerArg(2);
         Pointer thread = context.getPointerArg(3);
+        int flags = context.getIntArg(4);
+        log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));
 
-        Pointer start_routine = thread.getPointer(0x60);
-        Pointer arg = thread.getPointer(0x68);
-        log.info("clone start_routine=" + start_routine + ", child_stack=" + child_stack + ", flags=0x" + Integer.toHexString(flags) + ", arg=" + arg + ", pthread_start=" + pthread_start);
+        if (thread == null) {
+            MemoryBlock memoryBlock = emulator.getMemory().malloc(0x100, true);
+            thread = memoryBlock.getPointer();
+        }
+        Pthread pThread = new Pthread64(thread);
+        pThread.self = thread;
+        pThread.machThreadSelf = UnidbgPointer.pointer(emulator, DarwinSyscall.STATIC_PORT);
+        pThread.pack();
 
         Backend backend = emulator.getBackend();
         boolean join = visitor == null || visitor.canJoin(start_routine, ++threadId);
         UnidbgPointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
-            pointer = pointer.share(-8, 0); // threadId
-            pointer.setLong(0, threadId);
+            pointer = pointer.share(-8, 0);
+            pointer.setPointer(0, thread);
 
             if (join) {
                 pointer = pointer.share(-8, 0);
@@ -108,4 +119,5 @@ class ClonePatcher64 extends Arm64Svc {
         super.handleCallback(emulator);
         value_ptr.set(emulator.getContext().getLongArg(0));
     }
+
 }

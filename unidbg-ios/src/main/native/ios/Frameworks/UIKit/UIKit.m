@@ -8,6 +8,13 @@ static NSString *systemVersion = @"7.1";
 static NSString *model = @"iPhone";
 static NSString *name = @"iPhone5S";
 static NSString *identifierForVendor = @"00000000-0000-0000-0000-000000000000";
+const NSOperatingSystemVersion g_systemVersion = { 7, 1, 2 };
+
+@implementation NSProcessInfo (Foundation)
+- (NSOperatingSystemVersion) operatingSystemVersion {
+  return g_systemVersion;
+}
+@end
 
 int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSString *delegateClassName) {
   if(delegateClassName) {

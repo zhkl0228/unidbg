@@ -1,4 +1,4 @@
-package com.github.unidbg.linux.thread;
+package com.github.unidbg.unix;
 
 import com.sun.jna.Pointer;
 

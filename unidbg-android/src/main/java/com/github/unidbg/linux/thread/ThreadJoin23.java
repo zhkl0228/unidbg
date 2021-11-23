@@ -9,6 +9,7 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.sun.jna.Pointer;
 
 import java.util.concurrent.atomic.AtomicLong;

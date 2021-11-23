@@ -12,7 +12,7 @@ import com.github.unidbg.linux.file.LogCatFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.linux.thread.ThreadJoin19;
 import com.github.unidbg.linux.thread.ThreadJoin23;
-import com.github.unidbg.linux.thread.ThreadJoinVisitor;
+import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;

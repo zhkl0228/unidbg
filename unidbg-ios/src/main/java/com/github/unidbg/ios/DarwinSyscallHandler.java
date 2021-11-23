@@ -246,8 +246,6 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
         return false;
     }
 
-    static final int STATIC_PORT = 0x88;
-
     final int vproc_mig_look_up2(Pointer request, MachMsgHeader header) {
         VprocMigLookupRequest args = new VprocMigLookupRequest(request);
         args.unpack();

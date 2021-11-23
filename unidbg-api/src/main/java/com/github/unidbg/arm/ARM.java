@@ -14,13 +14,12 @@ import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -872,31 +871,6 @@ public class ARM {
         return ((size - 1) / align + 1) * align;
     }
 
-    public static String readCString(Backend backend, long address) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(0x1000);
-        int size = 0;
-        try {
-            while (true) {
-                byte[] oneByte = backend.mem_read(address, 1);
-                size += oneByte.length;
-
-                if (size > 0x1000) {
-                    throw new IllegalStateException("read utf8 string failed");
-                }
-
-                if (oneByte[0] == 0) {
-                    break;
-                }
-                baos.write(oneByte);
-                address += oneByte.length;
-            }
-
-            return baos.toString("UTf-8");
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
     static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
         return assembleDetail(emulator, ins, address, thumb, false);
     }
@@ -1034,25 +1008,14 @@ public class ARM {
         Module module = memory.findModuleByAddress(address);
         String maxLengthSoName = memory.getMaxLengthLibraryName();
         if (module != null) {
-            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name)).append(space);
-            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", address - module.base + (thumb ? 1 : 0))).append(space);
+            sb.append(String.format("[%-" + maxLengthSoName.length() + "s", module.name)).append(space);
+            sb.append(String.format("0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", address - module.base + (thumb ? 1 : 0))).append(space);
         } else if (address >= 0xfffe0000L && maxLengthSoName != null) { // kernel
-            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(address))).append(space);
-            sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", address - 0xfffe0000L + (thumb ? 1 : 0))).append(space);
+            sb.append(String.format("[%-" + maxLengthSoName.length() + "s", "0x" + Long.toHexString(address))).append(space);
+            sb.append(String.format("0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", address - 0xfffe0000L + (thumb ? 1 : 0))).append(space);
         }
-        sb.append("[");
-        if (ins.size == 2) {
-            sb.append(space).append("     ");
-        }
-        for (byte b : ins.bytes) {
-            sb.append(' ');
-            String hex = Integer.toHexString(b & 0xff);
-            if (hex.length() == 1) {
-                sb.append(0);
-            }
-            sb.append(hex);
-        }
-        sb.append(" ]").append(space);
+        sb.append("[").append(String.format("%-8s", Hex.encodeHexString(ins.bytes))).append("]");
+        sb.append(space);
         sb.append(String.format("0x%08x:" + space + "%s", ins.address, ins.mnemonic));
         if (ins.opStr != null && ins.opStr.length() > 0) {
             sb.append(" ").append(ins.opStr);

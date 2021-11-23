@@ -181,6 +181,10 @@ typedef enum UIDeviceBatteryState : NSInteger {
 + (NSURLSessionConfiguration *)defaultSessionConfiguration;
 @end
 
+@interface NSProcessInfo (Foundation)
+- (NSOperatingSystemVersion) operatingSystemVersion;
+@end
+
 @interface NSTimerInvocation : NSObject
 @property(nonatomic, copy) void (^block)(NSTimer *timer);
 + (NSTimerInvocation *)invocationWithBlock: (void (^)(NSTimer *timer))block;

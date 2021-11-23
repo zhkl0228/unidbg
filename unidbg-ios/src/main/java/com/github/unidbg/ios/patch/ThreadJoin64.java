@@ -1,4 +1,4 @@
-package com.github.unidbg.linux.thread;
+package com.github.unidbg.ios.patch;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
@@ -12,34 +12,32 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.sun.jna.Pointer;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class ThreadJoin19 {
+public class ThreadJoin64 {
 
     public static void patch(final Emulator<?> emulator, IHookZz hookZz, final ThreadJoinVisitor visitor) {
-        if (emulator.is64Bit()) {
-            throw new IllegalStateException();
-        }
         Memory memory = emulator.getMemory();
         SvcMemory svcMemory = emulator.getSvcMemory();
-        Module libc = memory.findModule("libc.so");
-        Symbol _pthread_clone = libc.findSymbolByName("__pthread_clone", false);
-        Symbol pthread_join = libc.findSymbolByName("pthread_join", false);
-        if (_pthread_clone == null || pthread_join == null) {
-            throw new IllegalStateException("_pthread_clone=" + _pthread_clone + ", pthread_join=" + pthread_join);
+        Module kernel = memory.findModule("libsystem_kernel.dylib");
+        Module pthread = memory.findModule("libsystem_pthread.dylib");
+        Symbol thread_create = kernel.findSymbolByName("___bsdthread_create", false);
+        Symbol pthread_join = pthread.findSymbolByName("_pthread_join", false);
+        if (thread_create == null || pthread_join == null) {
+            throw new IllegalStateException("thread_create=" + thread_create + ", pthread_join=" + pthread_join);
         }
-        final AtomicInteger value_ptr = new AtomicInteger();
+        final AtomicLong value_ptr = new AtomicLong();
         hookZz.replace(pthread_join, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
                 Pointer ptr = context.getPointerArg(1);
                 if (ptr != null) {
-                    ptr.setInt(0, value_ptr.get());
+                    ptr.setLong(0, value_ptr.get());
                 }
                 return HookStatus.LR(emulator, 0);
             }
         });
-        hookZz.replace(_pthread_clone, svcMemory.registerSvc(new ThreadClonePatcher32(visitor, value_ptr)));
+        hookZz.replace(thread_create, svcMemory.registerSvc(new BsdThreadCreatePatcher64(visitor, value_ptr)));
     }
 
 }

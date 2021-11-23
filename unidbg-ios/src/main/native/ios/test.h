@@ -218,6 +218,21 @@ static void test_pthread() {
   printf("pthread[%p] ret=%d\n", thread, ret);
 }
 
+static void *start_routine(void *arg) {
+  void *ret = (void *)&test_pthread;
+  printf("test_pthread_join start_routine arg=%p, ret=%p\n", arg, ret);
+  return ret;
+}
+
+static void test_pthread_join() {
+  pthread_t thread = 0;
+  void *arg = &thread;
+  int ret = pthread_create(&thread, NULL, start_routine, arg);
+  void *value = NULL;
+  int join_ret = pthread_join(thread, &value);
+  printf("test_pthread_join arg=%p, ret=%d, thread=0x%lx, join_ret=%d, value=%p\n", arg, ret, (long) thread, join_ret, value);
+}
+
 static void test_file() {
   const char *file = "/tmp/test_file.txt";
   int fd = open(file, O_RDWR | O_CREAT);
@@ -409,6 +424,7 @@ void do_test() {
   test_host_statistics();
   test_getfsstat();
   test_lr();
+  test_pthread_join();
 }
 
 __attribute__((constructor))
