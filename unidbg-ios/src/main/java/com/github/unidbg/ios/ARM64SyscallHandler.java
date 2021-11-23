@@ -354,6 +354,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 138:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator));
                     return;
+                case 169:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, csops(emulator));
+                    return;
                 case 194:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getrlimit(emulator));
                     return;
@@ -511,6 +514,41 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
+        }
+    }
+
+    private static final int CS_OPS_STATUS = 0; /* return status */
+    private static final int CS_RESTRICT = 0x0000800; /* tell dyld to treat restricted */
+    private static final int CS_ENFORCEMENT = 0x0001000; /* require enforcement */
+
+    private static final int CS_OPS_CDHASH = 5; /* get code directory hash */
+
+    private long csops(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int op = context.getIntArg(1);
+        Pointer addr = context.getPointerArg(2);
+        int length = context.getIntArg(3);
+        if (log.isDebugEnabled()) {
+            log.debug("csops pid=" + pid + ", op=" + op + ", addr=" + addr + ", length=" + length);
+        }
+        if (op == CS_OPS_STATUS) {
+            addr.setInt(0, CS_RESTRICT | CS_ENFORCEMENT);
+            return 0;
+        } else if (op == CS_OPS_CDHASH) {
+            byte[] cdhash = new byte[length];
+            for (int i = 0; i < length; i++) {
+                cdhash[i] = (byte) i;
+            }
+            addr.write(0, cdhash, 0, length);
+            return 0;
+        } else {
+            log.info("csops pid=" + pid + ", op=" + op + ", addr=" + addr + ", length=" + length);
+            Log log = LogFactory.getLog(AbstractEmulator.class);
+            if (log.isDebugEnabled()) {
+                emulator.attach().debug();
+            }
+            return -1;
         }
     }
 
@@ -1200,6 +1238,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private static final int PROC_SELFSET_THREADNAME = 2;
 
     private static final int PROC_INFO_CALL_PIDINFO = 0x2;
+    private static final int PROC_PIDPATHINFO = 11;
     private static final int PROC_PIDT_SHORTBSDINFO = 13;
 
     private int proc_info(Emulator<?> emulator) {
@@ -1243,7 +1282,18 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 log.debug(msg + ", info=" + info);
             }
             return info.size();
+        } else if (PROC_INFO_CALL_PIDINFO == callNum && PROC_PIDPATHINFO == flavor && executableBundlePath != null) {
+            byte[] data = executableBundlePath.getBytes(StandardCharsets.UTF_8);
+            if (bufferSize < data.length + 1) {
+                throw new UnsupportedOperationException();
+            }
+            buffer.write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
+            return 0;
         } else {
+            Log log = LogFactory.getLog(AbstractEmulator.class);
+            if (log.isDebugEnabled()) {
+                emulator.attach().debug();
+            }
             log.info(msg);
             return -1;
         }

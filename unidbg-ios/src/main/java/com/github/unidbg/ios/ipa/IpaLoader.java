@@ -11,6 +11,7 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinARMEmulator;
 import com.github.unidbg.ios.DarwinResolver;
+import com.github.unidbg.ios.DarwinSyscallHandler;
 import com.github.unidbg.ios.Loader;
 import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.ios.MachOModule;
@@ -130,6 +131,8 @@ public abstract class IpaLoader implements Loader {
         syscallHandler.addIOResolver(new IpaResolver(appDir.getPath(), ipa));
         FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getPath()));
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
+
+        ((DarwinSyscallHandler) syscallHandler).setExecutableBundlePath(executableBundlePath);
     }
 
     protected final List<BackendFactory> backendFactories = new ArrayList<>(5);

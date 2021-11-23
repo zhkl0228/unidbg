@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Arrays;
 
-abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> implements SyscallHandler<DarwinFileIO>, DarwinSyscall  {
+public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> implements SyscallHandler<DarwinFileIO>, DarwinSyscall  {
 
     private static final Log log = LogFactory.getLog(DarwinSyscallHandler.class);
 
@@ -285,6 +285,12 @@ abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> imp
             log.debug("vproc_mig_look_up2 reply=" + reply + ", data=" + data);
         }
         return MACH_MSG_SUCCESS;
+    }
+
+    protected String executableBundlePath;
+
+    public void setExecutableBundlePath(String executableBundlePath) {
+        this.executableBundlePath = executableBundlePath;
     }
 
 }

@@ -138,7 +138,7 @@ int SecItemAdd(CFDictionaryRef attributes, CFTypeRef *result) {
   CFTypeRef acct = CFDictionaryGetValue(attributes, kSecAttrAccount);
   if(CFGetTypeID(acct) != CFStringGetTypeID()) {
     fprintf(stderr, "SecItemAdd kSecAttrAccount is not CFString LR=%s\n", buf);
-    return ret;
+    return errSecSuccess;
   }
   CFTypeRef data = CFDictionaryGetValue(attributes, kSecValueData);
   if(class && acct && data) {
