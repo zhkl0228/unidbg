@@ -89,6 +89,9 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
                     @Override
                     public void visit(StringBuilder builder, Instruction ins) {
                         RegsAccess regsAccess = ins.regsAccess();
+                        if (regsAccess == null) {
+                            return;
+                        }
                         short[] regsRead = regsAccess.getRegsRead();
                         for (short reg : regsRead) {
                             if (emulator.is32Bit()) {

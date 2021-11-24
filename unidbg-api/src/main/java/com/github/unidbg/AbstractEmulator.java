@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -80,6 +82,8 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     protected final SvcMemory svcMemory;
 
     private final Family family;
+
+    protected final DateFormat dateFormat = new SimpleDateFormat("[HH:mm:ss SSS]");
 
     public AbstractEmulator(boolean is64Bit, String processName, long svcBase, int svcSize, File rootDir, Family family, Collection<BackendFactory> backendFactories) {
         super();

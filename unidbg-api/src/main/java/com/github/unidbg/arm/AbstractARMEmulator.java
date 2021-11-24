@@ -39,6 +39,7 @@ import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.Date;
 
 public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
@@ -211,7 +212,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     private void printAssemble(PrintStream out, Instruction[] insns, long address, boolean thumb, InstructionVisitor visitor) {
         StringBuilder sb = new StringBuilder();
         for (Instruction ins : insns) {
-            sb.append("### Trace Instruction ");
+            sb.append(dateFormat.format(new Date())).append(" Trace Instruction ");
             sb.append(ARM.assembleDetail(this, ins, address, thumb));
             if (visitor != null) {
                 visitor.visit(sb, ins);

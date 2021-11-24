@@ -15,6 +15,9 @@ import org.apache.commons.codec.binary.Hex;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * trace memory read
@@ -24,6 +27,7 @@ import java.nio.ByteOrder;
 public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
 
     private final boolean read;
+    private final DateFormat dateFormat = new SimpleDateFormat("[HH:mm:ss SSS]");
 
     public TraceMemoryHook(boolean read) {
         this.read = read;
@@ -81,7 +85,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
             }
             Emulator<?> emulator = (Emulator<?>) user;
             if (traceReadListener == null || traceReadListener.onRead(emulator, address, data, value)) {
-                printMsg("### Memory READ at 0x", emulator, address, size, value);
+                printMsg(dateFormat.format(new Date()) + " Memory READ at 0x", emulator, address, size, value);
             }
         } catch (BackendException e) {
             throw new IllegalStateException(e);
@@ -111,7 +115,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
         try {
             Emulator<?> emulator = (Emulator<?>) user;
             if (traceWriteListener == null || traceWriteListener.onWrite(emulator, address, size, value)) {
-                printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
+                printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
             }
         } catch (BackendException e) {
             throw new IllegalStateException(e);

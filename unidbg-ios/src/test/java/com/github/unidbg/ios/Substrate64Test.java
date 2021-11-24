@@ -16,7 +16,7 @@ import com.github.unidbg.hook.hookzz.Dobby;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.InstrumentCallback;
-import com.github.unidbg.ios.patch.ThreadJoin64;
+import com.github.unidbg.ios.thread.ThreadJoin64;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfo;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.ThreadJoinVisitor;

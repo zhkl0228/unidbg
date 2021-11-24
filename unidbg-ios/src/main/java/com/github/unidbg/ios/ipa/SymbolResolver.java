@@ -37,6 +37,7 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer ___chkstk_darwin;
     private UnidbgPointer _clock_gettime;
     private UnidbgPointer _pthread_attr_set_qos_class_np;
+    private UnidbgPointer _pthread_set_qos_class_self_np;
     private UnidbgPointer _qos_class_self;
     private UnidbgPointer _dispatch_assert_queue$V2;
     private UnidbgPointer _dispatch_block_create;
@@ -95,6 +96,23 @@ public class SymbolResolver implements HookListener {
                 });
             }
             return _qos_class_self.peer;
+        }
+        if ("_pthread_set_qos_class_self_np".equals(symbolName) && emulator.is64Bit()) {
+            if (_pthread_set_qos_class_self_np == null) {
+                _pthread_set_qos_class_self_np = svcMemory.registerSvc(new Arm64Svc() {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        int __qos_class = context.getIntArg(0);
+                        int __relative_priority = context.getIntArg(1);
+                        if (log.isDebugEnabled()) {
+                            log.debug("_pthread_set_qos_class_self_np __qos_class=" + __qos_class + ", __relative_priority=" + __relative_priority);
+                        }
+                        return 0;
+                    }
+                });
+            }
+            return _pthread_set_qos_class_self_np.peer;
         }
         if ("_pthread_attr_set_qos_class_np".equals(symbolName) && emulator.is64Bit()) {
             if (_pthread_attr_set_qos_class_np == null) {

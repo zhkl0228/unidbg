@@ -398,6 +398,11 @@ static void test_lr() {
   free(buf);
 }
 
+static void test_sleep() {
+  int ret = sleep(2);
+  printf("test_sleep ret=%d\n", ret);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -425,6 +430,7 @@ void do_test() {
   test_getfsstat();
   test_lr();
   test_pthread_join();
+  test_sleep();
 }
 
 __attribute__((constructor))

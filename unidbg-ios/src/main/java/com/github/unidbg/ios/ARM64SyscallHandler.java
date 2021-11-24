@@ -24,6 +24,7 @@ import com.github.unidbg.ios.file.TcpSocket;
 import com.github.unidbg.ios.file.UdpSocket;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.AslServerMessageRequest;
+import com.github.unidbg.ios.struct.kernel.ClockGetTimeReply;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceReply;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceRequest;
 import com.github.unidbg.ios.struct.kernel.HostInfoReply;
@@ -80,6 +81,7 @@ import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc64;
 import com.github.unidbg.ios.struct.sysctl.SockAddrDL;
 import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
+import com.github.unidbg.ios.thread.DarwinThread;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
@@ -421,7 +423,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
                     return;
                 case 334:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal_nocancel());
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal_nocancel(emulator));
                     return;
                 case 336:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator));
@@ -1299,9 +1301,13 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
     }
 
-    private int semwait_signal_nocancel() {
+    protected int semwait_signal_nocancel(Emulator<?> emulator) {
         // TODO: implement
         log.info("semwait_signal_nocancel");
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
         return 0;
     }
 
@@ -1337,11 +1343,13 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         throw new BackendException("statfs64 path=" + path + ", buf=" + buf);
     }
 
+    private int threadId;
+
     private long bsdthread_create(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
-        Pointer start_routine = context.getPointerArg(0);
-        Pointer arg = context.getPointerArg(1);
-        Pointer stack = context.getPointerArg(2);
+        UnidbgPointer start_routine = context.getPointerArg(0);
+        UnidbgPointer arg = context.getPointerArg(1);
+        UnidbgPointer stack = context.getPointerArg(2);
         UnidbgPointer thread = context.getPointerArg(3);
         int flags = context.getIntArg(4);
         if (thread == null) {
@@ -1357,6 +1365,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }
+        int threadId = ++this.threadId;
+        lastThread = threadId;
+        threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg));
         return thread.peer;
     }
 
@@ -2786,6 +2797,32 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
                 if (log.isDebugEnabled()) {
                     log.debug("task_threads reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 1000: { // clock_get_time
+                ClockGetTimeReply reply = new ClockGetTimeReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                long currentTimeMillis = System.currentTimeMillis();
+                long nanoTime = System.nanoTime();
+                long tv_sec = currentTimeMillis / 1000;
+                long tv_usec = (currentTimeMillis % 1000) * 1000 + nanoTime % 1000;
+
+                reply.retCode = 0;
+                reply.tv_sec = (int) tv_sec;
+                reply.tv_nsec = (int) tv_usec;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("clock_get_time reply=" + reply);
                 }
                 return MACH_MSG_SUCCESS;
             }

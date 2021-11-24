@@ -1,4 +1,4 @@
-package com.github.unidbg.ios.patch;
+package com.github.unidbg.ios.thread;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Svc;
