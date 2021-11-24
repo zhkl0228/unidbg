@@ -180,9 +180,9 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
-    public Instruction[] printAssemble(PrintStream out, long address, int size) {
+    public Instruction[] printAssemble(PrintStream out, long address, int size, InstructionVisitor visitor) {
         Instruction[] insns = disassemble(address, size, 0);
-        printAssemble(out, insns, address);
+        printAssemble(out, insns, address, visitor);
         return insns;
     }
 
@@ -200,11 +200,14 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         return createArm64Disassembler().disasm(code, address, count);
     }
 
-    private void printAssemble(PrintStream out, Instruction[] insns, long address) {
+    private void printAssemble(PrintStream out, Instruction[] insns, long address, InstructionVisitor visitor) {
         StringBuilder sb = new StringBuilder();
         for (Instruction ins : insns) {
             sb.append("### Trace Instruction ");
             sb.append(ARM.assembleDetail(this, ins, address, false));
+            if (visitor != null) {
+                visitor.visit(sb, ins);
+            }
             sb.append('\n');
             address += ins.getSize();
         }

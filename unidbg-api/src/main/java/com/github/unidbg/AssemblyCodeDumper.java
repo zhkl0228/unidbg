@@ -1,8 +1,11 @@
 package com.github.unidbg;
 
-import capstone.Capstone;
+import capstone.Arm64_const;
+import capstone.Arm_const;
 import capstone.api.Instruction;
+import capstone.api.RegsAccess;
 import com.alibaba.fastjson.util.IOUtils;
+import com.github.unidbg.arm.InstructionVisitor;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
@@ -75,14 +78,38 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
     }
 
     @Override
-    public void hook(Backend backend, long address, int size, Object user) {
+    public void hook(final Backend backend, long address, int size, Object user) {
         if (canTrace(address)) {
             try {
                 PrintStream out = System.out;
                 if (redirect != null) {
                     out = redirect;
                 }
-                Instruction[] insns = emulator.printAssemble(out, address, size);
+                Instruction[] insns = emulator.printAssemble(out, address, size, new InstructionVisitor() {
+                    @Override
+                    public void visit(StringBuilder builder, Instruction ins) {
+                        RegsAccess regsAccess = ins.regsAccess();
+                        short[] regsRead = regsAccess.getRegsRead();
+                        for (short reg : regsRead) {
+                            if (emulator.is32Bit()) {
+                                if ((reg >= Arm_const.ARM_REG_R0 && reg <= Arm_const.ARM_REG_R12) ||
+                                        reg == Arm_const.ARM_REG_LR || reg == Arm_const.ARM_REG_SP) {
+                                    int value = backend.reg_read(reg).intValue();
+                                    builder.append(' ').append(ins.regName(reg)).append("=0x").append(Long.toHexString(value & 0xffffffffL));
+                                }
+                            } else {
+                                if ((reg >= Arm64_const.ARM64_REG_X0 && reg <= Arm64_const.ARM64_REG_X28) ||
+                                        (reg >= Arm64_const.ARM64_REG_X29 && reg <= Arm64_const.ARM64_REG_SP)) {
+                                    long value = backend.reg_read(reg).longValue();
+                                    builder.append(' ').append(ins.regName(reg)).append("=0x").append(Long.toHexString(value));
+                                } else if (reg >= Arm64_const.ARM64_REG_W0 && reg <= Arm64_const.ARM64_REG_W30) {
+                                    int value = backend.reg_read(reg).intValue();
+                                    builder.append(' ').append(ins.regName(reg)).append("=0x").append(Long.toHexString(value & 0xffffffffL));
+                                }
+                            }
+                        }
+                    }
+                });
                 if (listener != null) {
                     if (insns == null || insns.length != 1) {
                         throw new IllegalStateException("insns=" + Arrays.toString(insns));

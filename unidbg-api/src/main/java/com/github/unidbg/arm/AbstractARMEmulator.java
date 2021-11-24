@@ -190,9 +190,9 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    public Instruction[] printAssemble(PrintStream out, long address, int size) {
+    public Instruction[] printAssemble(PrintStream out, long address, int size, InstructionVisitor visitor) {
         Instruction[] insns = disassemble(address, size, 0);
-        printAssemble(out, insns, address, ARM.isThumb(backend));
+        printAssemble(out, insns, address, ARM.isThumb(backend), visitor);
         return insns;
     }
 
@@ -208,11 +208,14 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
         return thumb ? createThumbCapstone().disasm(code, address, count) : createArmCapstone().disasm(code, address, count);
     }
 
-    private void printAssemble(PrintStream out, Instruction[] insns, long address, boolean thumb) {
+    private void printAssemble(PrintStream out, Instruction[] insns, long address, boolean thumb, InstructionVisitor visitor) {
         StringBuilder sb = new StringBuilder();
         for (Instruction ins : insns) {
             sb.append("### Trace Instruction ");
             sb.append(ARM.assembleDetail(this, ins, address, thumb));
+            if (visitor != null) {
+                visitor.visit(sb, ins);
+            }
             sb.append('\n');
             address += ins.getSize();
         }

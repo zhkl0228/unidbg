@@ -1,5 +1,10 @@
 package com.github.unidbg;
 
+import capstone.Capstone;
+import capstone.api.Disassembler;
+import capstone.api.DisassemblerFactory;
+import capstone.api.Instruction;
+import capstone.api.RegsAccess;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.utils.Inspector;
 import junit.framework.TestCase;
@@ -10,6 +15,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class HexTest extends TestCase {
 
@@ -20,6 +26,18 @@ public class HexTest extends TestCase {
         StringBuilder builder = new StringBuilder();
         ARM.appendHex(builder, 8, 8, '0', false);
         assertEquals(String.format("0x%08x", 8), builder.toString());
+    }
+
+    public void testDisassembler() throws Exception {
+        Disassembler disassembler = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+        disassembler.setDetail(true);
+        byte[] code = Hex.decodeHex("017544bd".toCharArray());
+        Instruction instruction = disassembler.disasm(code, 0)[0];
+        assertNotNull(instruction);
+        RegsAccess regsAccess = instruction.regsAccess();
+        assertNotNull(regsAccess);
+        System.out.println("regsRead=" + Arrays.toString(regsAccess.getRegsRead()));
+        System.out.println("regsWrite=" + Arrays.toString(regsAccess.getRegsWrite()));
     }
 
     public void testStream() throws Exception {
