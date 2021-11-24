@@ -1,10 +1,11 @@
 package com.github.unidbg.arm;
 
-import capstone.Arm;
-import capstone.Arm64;
 import capstone.Arm64_const;
 import capstone.Arm_const;
-import capstone.Capstone;
+import capstone.api.Instruction;
+import capstone.api.OpShift;
+import capstone.api.arm.MemType;
+import capstone.api.arm.Operand;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
@@ -871,63 +872,64 @@ public class ARM {
         return ((size - 1) / align + 1) * align;
     }
 
-    static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb) {
+    static String assembleDetail(Emulator<?> emulator, Instruction ins, long address, boolean thumb) {
         return assembleDetail(emulator, ins, address, thumb, false);
     }
 
-    private static void appendMemoryDetails32(Emulator<?> emulator, Capstone.CsInsn ins, Arm.OpInfo opInfo, boolean thumb, StringBuilder sb) {
+    private static void appendMemoryDetails32(Emulator<?> emulator, Instruction ins, capstone.api.arm.OpInfo opInfo, boolean thumb, StringBuilder sb) {
         Memory memory = emulator.getMemory();
-        Arm.MemType mem = null;
+        MemType mem = null;
         long addr = -1;
+        Operand[] op = opInfo.getOperands();
 
         // ldr rx, [pc, #0xab] or ldr.w rx, [pc, #0xcd] based capstone.setDetail(Capstone.CS_OPT_ON);
-        if (opInfo.op.length == 2 &&
-                opInfo.op[0].type == Arm_const.ARM_OP_REG &&
-                opInfo.op[1].type == Arm_const.ARM_OP_MEM) {
-            mem = opInfo.op[1].value.mem;
+        if (op.length == 2 &&
+                op[0].getType() == Arm_const.ARM_OP_REG &&
+                op[1].getType() == Arm_const.ARM_OP_MEM) {
+            mem = op[1].getValue().getMem();
 
-            if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+            if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
                 long base_value = base == null ? 0L : base.peer;
-                addr = base_value + mem.disp;
+                addr = base_value + mem.getDisp();
             }
 
             // ldr.w r0, [r2, r0, lsl #2]
-            Arm.OpShift shift;
-            if (mem.index > 0 && mem.scale == 1 && mem.lshift == 0 && mem.disp == 0 &&
-                    (shift = opInfo.op[1].shift) != null) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+            OpShift shift;
+            if (mem.getIndex() > 0 && mem.getScale() == 1 && mem.getLshift() == 0 && mem.getDisp() == 0 &&
+                    (shift = op[1].getShift()) != null) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
                 long base_value = base == null ? 0L : base.peer;
-                UnidbgPointer index = UnidbgPointer.register(emulator, mem.index);
+                UnidbgPointer index = UnidbgPointer.register(emulator, mem.getIndex());
                 int index_value = index == null ? 0 : (int) index.peer;
-                if (shift.type == Arm_const.ARM_OP_IMM) {
-                    addr = base_value + ((long) index_value << shift.value);
-                } else if (shift.type == Arm_const.ARM_OP_INVALID) {
+                if (shift.getType() == Arm_const.ARM_OP_IMM) {
+                    addr = base_value + ((long) index_value << shift.getValue());
+                } else if (shift.getType() == Arm_const.ARM_OP_INVALID) {
                     addr = base_value + index_value;
                 }
             }
         }
 
         // ldrb r0, [r1], #1
-        if (opInfo.op.length == 3 &&
-                opInfo.op[0].type == Arm_const.ARM_OP_REG &&
-                opInfo.op[1].type == Arm_const.ARM_OP_MEM &&
-                opInfo.op[2].type == Arm_const.ARM_OP_IMM) {
-            mem = opInfo.op[1].value.mem;
-            if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+        if (op.length == 3 &&
+                op[0].getType() == Arm_const.ARM_OP_REG &&
+                op[1].getType() == Arm_const.ARM_OP_MEM &&
+                op[2].getType() == Arm_const.ARM_OP_IMM) {
+            mem = op[1].getValue().getMem();
+            if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
                 addr = base == null ? 0L : base.peer;
             }
         }
         if (addr != -1) {
-            if (mem.base == Arm_const.ARM_REG_PC) {
+            if (mem.getBase() == Arm_const.ARM_REG_PC) {
                 addr += (thumb ? 4 : 8);
             }
             int bytesRead = 4;
-            if (ins.mnemonic.startsWith("ldrb") || ins.mnemonic.startsWith("strb")) {
+            if (ins.getMnemonic().startsWith("ldrb") || ins.getMnemonic().startsWith("strb")) {
                 bytesRead = 1;
             }
-            if (ins.mnemonic.startsWith("ldrh") || ins.mnemonic.startsWith("strh")) {
+            if (ins.getMnemonic().startsWith("ldrh") || ins.getMnemonic().startsWith("strh")) {
                 bytesRead = 2;
             }
             appendAddrValue(sb, addr, memory, emulator.is64Bit(), bytesRead);
@@ -935,16 +937,16 @@ public class ARM {
         }
 
         // ldrd r2, r1, [r5, #4]
-        if ("ldrd".equals(ins.mnemonic) && opInfo.op.length == 3 &&
-                opInfo.op[0].type == Arm_const.ARM_OP_REG &&
-                opInfo.op[1].type == Arm_const.ARM_OP_REG &&
-                opInfo.op[2].type == Arm_const.ARM_OP_MEM) {
-            mem = opInfo.op[2].value.mem;
-            if (mem.index == 0 && mem.scale == 1 && mem.lshift == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+        if ("ldrd".equals(ins.getMnemonic()) && op.length == 3 &&
+                op[0].getType() == Arm_const.ARM_OP_REG &&
+                op[1].getType() == Arm_const.ARM_OP_REG &&
+                op[2].getType() == Arm_const.ARM_OP_MEM) {
+            mem = op[2].getValue().getMem();
+            if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
                 long base_value = base == null ? 0L : base.peer;
-                addr = base_value + mem.disp;
-                if (mem.base == Arm_const.ARM_REG_PC) {
+                addr = base_value + mem.getDisp();
+                if (mem.getBase() == Arm_const.ARM_REG_PC) {
                     addr += (thumb ? 4 : 8);
                 }
                 appendAddrValue(sb, addr, memory, emulator.is64Bit(), 4);
@@ -953,86 +955,114 @@ public class ARM {
         }
     }
 
-    private static void appendMemoryDetails64(Emulator<?> emulator, Capstone.CsInsn ins, Arm64.OpInfo opInfo, StringBuilder sb) {
+    private static void appendMemoryDetails64(Emulator<?> emulator, Instruction ins, capstone.api.arm64.OpInfo opInfo, StringBuilder sb) {
         Memory memory = emulator.getMemory();
-        Arm64.MemType mem;
+        capstone.api.arm64.MemType mem;
         long addr = -1;
         int bytesRead = 8;
+        capstone.api.arm64.Operand[] op = opInfo.getOperands();
 
         // str w9, [sp, #0xab] based capstone.setDetail(Capstone.CS_OPT_ON);
-        if (opInfo.op.length == 2 &&
-                opInfo.op[0].type == Arm64_const.ARM64_OP_REG &&
-                opInfo.op[1].type == Arm64_const.ARM64_OP_MEM) {
-            if (opInfo.op[0].value.reg >= Arm64_const.ARM64_REG_W0 && opInfo.op[0].value.reg <= Arm64_const.ARM64_REG_W30) {
+        if (op.length == 2 &&
+                op[0].getType() == Arm64_const.ARM64_OP_REG &&
+                op[1].getType() == Arm64_const.ARM64_OP_MEM) {
+            if (op[0].getValue().getReg() >= Arm64_const.ARM64_REG_W0 && op[0].getValue().getReg() <= Arm64_const.ARM64_REG_W30) {
                 bytesRead = 4;
             }
-            mem = opInfo.op[1].value.mem;
+            mem = op[1].getValue().getMem();
 
-            if (mem.index == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+            if (mem.getIndex() == 0) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
                 long base_value = base == null ? 0L : base.peer;
-                addr = base_value + mem.disp;
+                addr = base_value + mem.getDisp();
             }
         }
 
         // ldrb r0, [r1], #1
-        if (opInfo.op.length == 3 &&
-                opInfo.op[0].type == Arm64_const.ARM64_OP_REG &&
-                opInfo.op[1].type == Arm64_const.ARM64_OP_MEM &&
-                opInfo.op[2].type == Arm64_const.ARM64_OP_IMM) {
-            if (opInfo.op[0].value.reg >= Arm64_const.ARM64_REG_W0 && opInfo.op[0].value.reg <= Arm64_const.ARM64_REG_W30) {
+        if (op.length == 3 &&
+                op[0].getType() == Arm64_const.ARM64_OP_REG &&
+                op[1].getType() == Arm64_const.ARM64_OP_MEM &&
+                op[2].getType() == Arm64_const.ARM64_OP_IMM) {
+            if (op[0].getValue().getReg() >= Arm64_const.ARM64_REG_W0 && op[0].getValue().getReg() <= Arm64_const.ARM64_REG_W30) {
                 bytesRead = 4;
             }
-            mem = opInfo.op[1].value.mem;
-            if (mem.index == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.base);
+            mem = op[1].getValue().getMem();
+            if (mem.getIndex() == 0) {
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
                 addr = base == null ? 0L : base.peer;
-                addr += mem.disp;
+                addr += mem.getDisp();
             }
         }
         if (addr != -1) {
-            if (ins.mnemonic.startsWith("ldrb") || ins.mnemonic.startsWith("strb")) {
+            if (ins.getMnemonic().startsWith("ldrb") || ins.getMnemonic().startsWith("strb")) {
                 bytesRead = 1;
             }
-            if (ins.mnemonic.startsWith("ldrh") || ins.mnemonic.startsWith("strh")) {
+            if (ins.getMnemonic().startsWith("ldrh") || ins.getMnemonic().startsWith("strh")) {
                 bytesRead = 2;
             }
             appendAddrValue(sb, addr, memory, emulator.is64Bit(), bytesRead);
         }
     }
 
-    public static String assembleDetail(Emulator<?> emulator, Capstone.CsInsn ins, long address, boolean thumb, boolean current) {
+    public static void appendHex(StringBuilder builder, long value, int width, char placeholder, boolean reverse) {
+        builder.append("0x");
+        String hex = Long.toHexString(value);
+        appendHex(builder, hex, width, placeholder, reverse);
+    }
+
+    public static void appendHex(StringBuilder builder, String hex, int width, char placeholder, boolean reverse) {
+        if (reverse) {
+            builder.append(hex);
+            for (int i = 0; i < width - hex.length(); i++) {
+                builder.append(placeholder);
+            }
+        } else {
+            for (int i = 0; i < width - hex.length(); i++) {
+                builder.append(placeholder);
+            }
+            builder.append(hex);
+        }
+    }
+
+    public static String assembleDetail(Emulator<?> emulator, Instruction ins, long address, boolean thumb, boolean current) {
         Memory memory = emulator.getMemory();
         char space = current ? '*' : ' ';
         StringBuilder sb = new StringBuilder();
         Module module = memory.findModuleByAddress(address);
         String maxLengthSoName = memory.getMaxLengthLibraryName();
         if (module != null) {
-            sb.append(String.format("[%-" + maxLengthSoName.length() + "s", module.name)).append(space);
-            sb.append(String.format("0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", address - module.base + (thumb ? 1 : 0))).append(space);
+            sb.append('[');
+            appendHex(sb, module.name, maxLengthSoName.length(), ' ', true);
+            sb.append(space);
+            appendHex(sb, address - module.base + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
+            sb.append(']').append(space);
         } else if (address >= 0xfffe0000L && maxLengthSoName != null) { // kernel
-            sb.append(String.format("[%-" + maxLengthSoName.length() + "s", "0x" + Long.toHexString(address))).append(space);
-            sb.append(String.format("0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", address - 0xfffe0000L + (thumb ? 1 : 0))).append(space);
+            sb.append('[');
+            appendHex(sb, "0x" + Long.toHexString(address), maxLengthSoName.length(), ' ', true);
+            sb.append(space);
+            appendHex(sb, address - 0xfffe0000L + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
+            sb.append(']').append(space);
         }
-        sb.append("[").append(String.format("%-8s", Hex.encodeHexString(ins.bytes))).append("]");
+        sb.append("[");
+        appendHex(sb, Hex.encodeHexString(ins.getBytes()), 8, ' ', true);
+        sb.append("]");
         sb.append(space);
-        sb.append(String.format("0x%08x:" + space + "%s", ins.address, ins.mnemonic));
-        if (ins.opStr != null && ins.opStr.length() > 0) {
-            sb.append(" ").append(ins.opStr);
-        }
+        appendHex(sb, ins.getAddress(), 8, '0', false);
+        sb.append(":").append(space);
+        sb.append(ins);
 
-        Arm.OpInfo opInfo = null;
-        Arm64.OpInfo opInfo64 = null;
-        if (ins.operands instanceof Arm.OpInfo) {
-            opInfo = (Arm.OpInfo) ins.operands;
+        capstone.api.arm.OpInfo opInfo = null;
+        capstone.api.arm64.OpInfo opInfo64 = null;
+        if (ins.getOperands() instanceof capstone.api.arm.OpInfo) {
+            opInfo = (capstone.api.arm.OpInfo) ins.getOperands();
         }
-        if (ins.operands instanceof Arm64.OpInfo) {
-            opInfo64 = (Arm64.OpInfo) ins.operands;
+        if (ins.getOperands() instanceof capstone.api.arm64.OpInfo) {
+            opInfo64 = (capstone.api.arm64.OpInfo) ins.getOperands();
         }
-        if (current && (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) && opInfo != null) {
+        if (current && (ins.getMnemonic().startsWith("ldr") || ins.getMnemonic().startsWith("str")) && opInfo != null) {
             appendMemoryDetails32(emulator, ins, opInfo, thumb, sb);
         }
-        if (current && (ins.mnemonic.startsWith("ldr") || ins.mnemonic.startsWith("str")) && opInfo64 != null) {
+        if (current && (ins.getMnemonic().startsWith("ldr") || ins.getMnemonic().startsWith("str")) && opInfo64 != null) {
             appendMemoryDetails64(emulator, ins, opInfo64, sb);
         }
 

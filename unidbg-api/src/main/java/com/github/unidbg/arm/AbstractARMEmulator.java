@@ -1,6 +1,10 @@
 package com.github.unidbg.arm;
 
 import capstone.Capstone;
+import capstone.api.Disassembler;
+import capstone.api.DisassemblerFactory;
+import capstone.api.Instruction;
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.Module;
@@ -83,22 +87,22 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
         setupTraps();
     }
 
-    private Capstone capstoneArmCache, capstoneThumbCache;
+    private Disassembler armDisassemblerCache, thumbDisassemblerCache;
 
-    private synchronized Capstone createThumbCapstone() {
-        if (capstoneThumbCache == null) {
-            this.capstoneThumbCache = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
-            this.capstoneThumbCache.setDetail(Capstone.CS_OPT_ON);
+    private synchronized Disassembler createThumbCapstone() {
+        if (thumbDisassemblerCache == null) {
+            this.thumbDisassemblerCache = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
+            this.thumbDisassemblerCache.setDetail(true);
         }
-        return capstoneThumbCache;
+        return thumbDisassemblerCache;
     }
 
-    private synchronized Capstone createArmCapstone() {
-        if (capstoneArmCache == null) {
-            this.capstoneArmCache = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
-            this.capstoneArmCache.setDetail(Capstone.CS_OPT_ON);
+    private synchronized Disassembler createArmCapstone() {
+        if (armDisassemblerCache == null) {
+            this.armDisassemblerCache = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
+            this.armDisassemblerCache.setDetail(true);
         }
-        return capstoneArmCache;
+        return armDisassemblerCache;
     }
 
     @Override
@@ -151,12 +155,8 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
             io.close();
         }
 
-        if (capstoneThumbCache != null) {
-            capstoneThumbCache.close();
-        }
-        if (capstoneArmCache != null) {
-            capstoneArmCache.close();
-        }
+        IOUtils.close(thumbDisassemblerCache);
+        IOUtils.close(armDisassemblerCache);
     }
 
     @Override
@@ -190,31 +190,31 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    public Capstone.CsInsn[] printAssemble(PrintStream out, long address, int size) {
-        Capstone.CsInsn[] insns = disassemble(address, size, 0);
+    public Instruction[] printAssemble(PrintStream out, long address, int size) {
+        Instruction[] insns = disassemble(address, size, 0);
         printAssemble(out, insns, address, ARM.isThumb(backend));
         return insns;
     }
 
     @Override
-    public Capstone.CsInsn[] disassemble(long address, int size, long count) {
+    public Instruction[] disassemble(long address, int size, long count) {
         boolean thumb = ARM.isThumb(backend);
         byte[] code = backend.mem_read(address, size);
         return thumb ? createThumbCapstone().disasm(code, address, count) : createArmCapstone().disasm(code, address, count);
     }
 
     @Override
-    public Capstone.CsInsn[] disassemble(long address, byte[] code, boolean thumb, long count) {
+    public Instruction[] disassemble(long address, byte[] code, boolean thumb, long count) {
         return thumb ? createThumbCapstone().disasm(code, address, count) : createArmCapstone().disasm(code, address, count);
     }
 
-    private void printAssemble(PrintStream out, Capstone.CsInsn[] insns, long address, boolean thumb) {
+    private void printAssemble(PrintStream out, Instruction[] insns, long address, boolean thumb) {
         StringBuilder sb = new StringBuilder();
-        for (Capstone.CsInsn ins : insns) {
+        for (Instruction ins : insns) {
             sb.append("### Trace Instruction ");
             sb.append(ARM.assembleDetail(this, ins, address, thumb));
             sb.append('\n');
-            address += ins.size;
+            address += ins.getSize();
         }
         out.print(sb);
     }

@@ -538,7 +538,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         } else if (op == CS_OPS_CDHASH) {
             byte[] cdhash = new byte[length];
             for (int i = 0; i < length; i++) {
-                cdhash[i] = (byte) i;
+                cdhash[i] = (byte) (i + 0x10);
             }
             addr.write(0, cdhash, 0, length);
             return 0;

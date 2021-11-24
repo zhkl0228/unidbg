@@ -21,6 +21,7 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.patch.LibDispatchPatcher;
+import com.github.unidbg.ios.patch.LibDyldPatcher;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
 import com.github.unidbg.ios.struct.kernel.Pthread64;
@@ -169,6 +170,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         vars.setPointer(2L * emulator.getPointerSize(), _NSGetArgv);
         vars.setPointer(3L * emulator.getPointerSize(), _NSGetEnviron);
         vars.setPointer(4L * emulator.getPointerSize(), _NSGetProgname);
+
+        addModuleListener(new LibDyldPatcher(_NSGetArgc, _NSGetArgv, _NSGetEnviron, _NSGetProgname));
 
         final UnidbgPointer thread = allocateStack(UnidbgStructure.calculateSize(emulator.is64Bit() ? Pthread64.class : Pthread32.class)); // reserve space for pthread_internal_t
         Pthread pthread = Pthread.create(emulator, thread);

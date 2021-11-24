@@ -1,7 +1,13 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
-import capstone.Arm64;
 import capstone.Capstone;
+import capstone.api.Disassembler;
+import capstone.api.DisassemblerFactory;
+import capstone.api.Instruction;
+import capstone.api.arm64.OpInfo;
+import capstone.api.arm64.OpValue;
+import capstone.api.arm64.Operand;
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
@@ -25,14 +31,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
         super(emulator, hypervisor);
     }
 
-    private Capstone capstoneInst;
+    private Disassembler disassembler;
 
-    private synchronized Capstone createCapstone() {
-        if (capstoneInst == null) {
-            this.capstoneInst = new Capstone(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
-            this.capstoneInst.setDetail(Capstone.CS_OPT_ON);
+    private synchronized Disassembler createDisassembler() {
+        if (disassembler == null) {
+            this.disassembler = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+            this.disassembler.setDetail(true);
         }
-        return capstoneInst;
+        return disassembler;
     }
 
     private static final long DARWIN_KERNEL_BASE = 0xffffff80001f0000L;
@@ -91,22 +97,23 @@ public class HypervisorBackend64 extends HypervisorBackend {
         Pointer pc = UnidbgPointer.pointer(emulator, elr);
         assert pc != null;
         byte[] code = pc.getByteArray(0, 4);
-        Capstone.CsInsn insn = createCapstone().disasm(code, elr, 1)[0];
+        Instruction insn = createDisassembler().disasm(code, elr, 1)[0];
         if (log.isDebugEnabled()) {
-            log.debug("handleCommRead vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn.mnemonic + " " + insn.opStr);
+            log.debug("handleCommRead vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn);
         }
-        Arm64.OpInfo opInfo = (Arm64.OpInfo) insn.operands;
-        if (opInfo.updateFlags || opInfo.writeback || !insn.mnemonic.startsWith("ldr") || vaddr < _COMM_PAGE64_BASE_ADDRESS) {
+        OpInfo opInfo = (OpInfo) insn.getOperands();
+        if (opInfo.isUpdateFlags() || opInfo.isWriteBack() || !insn.getMnemonic().startsWith("ldr") || vaddr < _COMM_PAGE64_BASE_ADDRESS) {
             throw new UnsupportedOperationException();
         }
+        Operand[] op = opInfo.getOperands();
         int offset = (int) (vaddr - _COMM_PAGE64_BASE_ADDRESS);
         switch (offset) {
             case 0x38: // uint64_t max memory size */
             case 0x40:
             case 0x58: {
-                Arm64.Operand operand = opInfo.op[0];
-                Arm64.OpValue value = operand.value;
-                reg_write(value.reg, 0x0L);
+                Operand operand = op[0];
+                OpValue value = operand.getValue();
+                reg_write(value.getReg(), 0x0L);
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }
@@ -116,9 +123,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case 0x60:
             case 0x64:
             case 0x90: {
-                Arm64.Operand operand = opInfo.op[0];
-                Arm64.OpValue value = operand.value;
-                reg_write(value.reg, 0x0);
+                Operand operand = op[0];
+                OpValue value = operand.getValue();
+                reg_write(value.getReg(), 0x0);
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }
@@ -126,9 +133,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case 0x34: // uint8_t number of active CPUs (hw.activecpu)
             case 0x35: // uint8_t number of physical CPUs (hw.physicalcpu_max)
             case 0x36: { // uint8_t number of logical CPUs (hw.logicalcpu_max)
-                Arm64.Operand operand = opInfo.op[0];
-                Arm64.OpValue value = operand.value;
-                reg_write(value.reg, 1);
+                Operand operand = op[0];
+                OpValue value = operand.getValue();
+                reg_write(value.getReg(), 1);
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }
@@ -340,9 +347,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     public synchronized void destroy() throws BackendException {
         super.destroy();
 
-        if (capstoneInst != null) {
-            capstoneInst.close();
-            capstoneInst = null;
-        }
+        IOUtils.close(disassembler);
+        disassembler = null;
     }
 }

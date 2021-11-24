@@ -1,6 +1,7 @@
 package com.github.unidbg;
 
 import capstone.Capstone;
+import capstone.api.Instruction;
 import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
@@ -81,7 +82,7 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
                 if (redirect != null) {
                     out = redirect;
                 }
-                Capstone.CsInsn[] insns = emulator.printAssemble(out, address, size);
+                Instruction[] insns = emulator.printAssemble(out, address, size);
                 if (listener != null) {
                     if (insns == null || insns.length != 1) {
                         throw new IllegalStateException("insns=" + Arrays.toString(insns));
