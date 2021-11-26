@@ -10,6 +10,18 @@
 #include <objc/runtime.h>
 #include <dlfcn.h>
 
+static bool matchesSuper(Class class, const char *keywords) {
+  if(class) {
+    const char *className = class_getName(class);
+    if(strcasestr(className, keywords)) {
+      return true;
+    }
+    return matchesSuper(class_getSuperclass(class), keywords);
+  } else {
+    return false;
+  }
+}
+
 @implementation ClassDump
 
 NSUInteger findClosedBracket(NSString *string) {
@@ -535,9 +547,13 @@ BOOL isSystemClass(Class clazz) {
 
 	int count = 0;
 	for(int i = 0; i < classCount; i++) {
-	    const char *className = class_getName(classes[i]);
+	    Class class = classes[i];
+	    const char *className = class_getName(class);
 	    if(strcasestr(className, keywords)) {
 	        NSLog(@"Found class: %s", className);
+	        count++;
+	    } else if(matchesSuper(class_getSuperclass(class), keywords)) {
+	        NSLog(@"Found super: %s", className);
 	        count++;
 	    }
 	}
