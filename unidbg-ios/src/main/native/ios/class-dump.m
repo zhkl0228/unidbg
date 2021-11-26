@@ -275,21 +275,21 @@ NSUInteger findClosedBracket(NSString *string) {
 	return [typeString componentsJoinedByString:@""];
 }
 
-+(NSString *) class_dump_class: (Class) clazz {
++(NSString *) class_dump_class: (Class) class {
 	NSMutableString *result = [NSMutableString new];
 	
-	const char *className = class_getName(clazz);
+	const char *className = class_getName(class);
 	
 	[result appendFormat:@"@interface %s", className];
 	
-	Class superclass = class_getSuperclass(clazz);
+	Class superclass = class_getSuperclass(class);
 	if(superclass) {
 		const char *superClassName = class_getName(superclass);
 		[result appendFormat:@" : %s", superClassName];
 	}
 	
 	unsigned int protocolCount;
-	Protocol *__unsafe_unretained *protocols = class_copyProtocolList(clazz, &protocolCount);
+	Protocol *__unsafe_unretained *protocols = class_copyProtocolList(class, &protocolCount);
 	
 	if(protocols) {
 		if(protocolCount > 0) {
@@ -305,7 +305,7 @@ NSUInteger findClosedBracket(NSString *string) {
 	}
 	
 	unsigned int ivarCount;
-	Ivar *ivars = class_copyIvarList(clazz, &ivarCount);
+	Ivar *ivars = class_copyIvarList(class, &ivarCount);
 	
 	if(ivars) {
 		if(ivarCount > 0) {
@@ -329,7 +329,7 @@ NSUInteger findClosedBracket(NSString *string) {
 	[result appendString:@"\n\n"];
 	
 	unsigned int propertyCount;
-	objc_property_t *properties = class_copyPropertyList(clazz, &propertyCount);
+	objc_property_t *properties = class_copyPropertyList(class, &propertyCount);
 	
 	if(properties) {
 		for(unsigned int i = 0; i < propertyCount; i++) {
@@ -434,7 +434,7 @@ NSUInteger findClosedBracket(NSString *string) {
 	
 	for(int m = 0; m < 2; m++) {
 		unsigned int methodCount;
-		Method *methods = class_copyMethodList(m? clazz: objc_getMetaClass(className), &methodCount);
+		Method *methods = class_copyMethodList(m? class: objc_getMetaClass(className), &methodCount);
 		
 		if(methods) {
 			for(unsigned int i = 0; i < methodCount; i++) {
@@ -472,8 +472,12 @@ NSUInteger findClosedBracket(NSString *string) {
 					}
 					[result appendFormat:@":(%@)arg%d", argType, j];
 				}
-				
-				[result appendString:@";\n"];
+
+				if([methodParts count] > 2) {
+				    [result appendFormat:@"; // %s\n", methodName];
+				} else {
+				    [result appendString:@";\n"];
+				}
 			}
 			
 			free(methods);
@@ -487,9 +491,9 @@ NSUInteger findClosedBracket(NSString *string) {
 	return result;
 }
 
-BOOL isSystemClass(Class clazz) {
+BOOL isSystemClass(Class class) {
 #if 0
-	const char *name = class_getName(clazz);
+	const char *name = class_getName(class);
 	
 	const char *cmp_name = name;
 	
@@ -502,7 +506,7 @@ BOOL isSystemClass(Class clazz) {
 	}
 #endif
 	
-	void *address = (__bridge void *)clazz;
+	void *address = (__bridge void *)class;
 	
 	if(!address) {
 		return NO;
@@ -523,9 +527,9 @@ BOOL isSystemClass(Class clazz) {
 }
 
 +(NSString *) my_dump_class: (const char *) name {
-    Class clazz = objc_getClass(name);
-    if(clazz) {
-        return [ClassDump class_dump_class: clazz];
+    Class class = objc_getClass(name);
+    if(class) {
+        return [ClassDump class_dump_class: class];
     }
     return nil;
 }
