@@ -1,8 +1,11 @@
 package com.github.unidbg.ios.ipa;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmSvc;
+import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookListener;
@@ -41,6 +44,8 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer _qos_class_self;
     private UnidbgPointer _dispatch_assert_queue$V2;
     private UnidbgPointer _dispatch_block_create;
+    private UnidbgPointer _dispatch_get_global_queue;
+    private UnidbgPointer _dispatch_group_async;
 
     public SymbolResolver(Emulator<DarwinFileIO> emulator) {
         this.emulator = emulator;
@@ -52,11 +57,64 @@ public class SymbolResolver implements HookListener {
     private static final int CLOCK_MONOTONIC_RAW = 4;
     private static final int CLOCK_MONOTONIC = 6;
 
+    private long old_dispatch_sync;
+
     @Override
-    public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, long old) {
-        /*if (symbolName.contains("qos_class")) {
+    public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        /*if (symbolName.contains("dispatch_sync")) {
             System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
         }*/
+        if ("_dispatch_sync".equals(symbolName) && "libdispatch.dylib".equals(libraryName)) {
+            old_dispatch_sync = old;
+        }
+        if ("_dispatch_group_async".equals(symbolName) && emulator.is64Bit()) {
+            if (_dispatch_group_async == null) {
+                _dispatch_group_async = svcMemory.registerSvc(new Arm64Hook() {
+                    @Override
+                    protected HookStatus hook(Emulator<?> emulator) {
+                        EditableArm64RegisterContext context = emulator.getContext();
+                        Pointer group = context.getPointerArg(0);
+                        UnidbgPointer queue = context.getPointerArg(1);
+                        UnidbgPointer block = context.getPointerArg(2);
+                        log.info("Patch dispatch_group_async to dispatch_sync group=" + group + ", queue=" + queue + ", block=" + block + ", LR=" + context.getLRPointer());
+                        context.setXLong(0, queue == null ? 0 : queue.peer);
+                        context.setXLong(1, block == null ? 0 : block.peer);
+                        return HookStatus.RET(emulator, old_dispatch_sync);
+                    }
+                });
+            }
+            return _dispatch_group_async.peer;
+        }
+        if ("_dispatch_get_global_queue".equals(symbolName) && emulator.is64Bit()) {
+            if (_dispatch_get_global_queue == null) {
+                _dispatch_get_global_queue = svcMemory.registerSvc(new Arm64Hook() {
+                    @Override
+                    protected HookStatus hook(Emulator<?> emulator) {
+                        EditableArm64RegisterContext context = emulator.getContext();
+                        int identifier = context.getIntArg(0);
+                        int flags = context.getIntArg(1);
+                        if (log.isDebugEnabled()) {
+                            log.debug("dispatch_get_global_queue identifier=0x" + Integer.toHexString(identifier) + ", flags=0x" + Integer.toHexString(flags));
+                        }
+                        int QOS_CLASS_USER_INTERACTIVE = 0x21;
+                        int QOS_CLASS_USER_INITIATED = 0x19;
+                        int QOS_CLASS_DEFAULT = 0x15;
+                        int QOS_CLASS_UTILITY = 0x11;
+                        int QOS_CLASS_BACKGROUND = 0x9;
+                        int DISPATCH_QUEUE_PRIORITY_DEFAULT = 0x0;
+                        if (identifier == QOS_CLASS_BACKGROUND ||
+                                identifier == QOS_CLASS_DEFAULT ||
+                                identifier == QOS_CLASS_USER_INITIATED ||
+                                identifier == QOS_CLASS_UTILITY ||
+                                identifier == QOS_CLASS_USER_INTERACTIVE) {
+                            context.setXLong(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
+                        }
+                        return HookStatus.RET(emulator, old);
+                    }
+                });
+            }
+            return _dispatch_get_global_queue.peer;
+        }
         if ("_dispatch_block_create".equals(symbolName) && emulator.is64Bit()) {
             if (_dispatch_block_create == null) {
                 _dispatch_block_create = svcMemory.registerSvc(new Arm64Svc() {

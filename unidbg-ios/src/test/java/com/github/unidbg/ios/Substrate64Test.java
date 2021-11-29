@@ -16,8 +16,9 @@ import com.github.unidbg.hook.hookzz.Dobby;
 import com.github.unidbg.hook.hookzz.HookEntryInfo;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.InstrumentCallback;
-import com.github.unidbg.ios.thread.ThreadJoin64;
+import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfo;
+import com.github.unidbg.ios.thread.ThreadJoin64;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.github.unidbg.utils.Inspector;
@@ -48,7 +49,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
         MachOLoader loader = (MachOLoader) emulator.getMemory();
 //        Debugger debugger = emulator.attach();
 //        debugger.addBreakPoint(null, 0x100dd29b4L);
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
 //        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
 //        emulator.traceCode();
         loader.setObjcRuntime(true);
@@ -196,6 +197,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
         super.setUp();
 
         emulator.getSyscallHandler().setVerbose(false);
+        emulator.getMemory().addHookListener(new SymbolResolver(emulator));
     }
 
     public static void main(String[] args) throws Exception {

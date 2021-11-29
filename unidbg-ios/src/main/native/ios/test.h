@@ -23,6 +23,7 @@
 #include <sys/param.h>
 #include <sys/ucred.h>
 #include <sys/mount.h>
+#include <dispatch/dispatch.h>
 
 #define RTM_IFINFO	0xe
 
@@ -403,6 +404,21 @@ static void test_sleep() {
   printf("test_sleep ret=%d\n", ret);
 }
 
+static void test_dispatch() {
+  int QOS_CLASS_UTILITY = 0x11;
+  dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0);
+  printf("Before test_dispatch queue=%p\n", queue);
+  dispatch_sync(queue, ^{
+    printf("test_dispatch dispatch_sync queue=%p\n", queue);
+  });
+  dispatch_group_t group =  dispatch_group_create();
+  dispatch_group_async(group, queue, ^{
+    printf("test_dispatch dispatch_group_async group=%p, queue=%p\n", group, queue);
+  });
+  long ret = dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+  printf("test_dispatch group=%p, queue=%p, ret=%ld\n", group, queue, ret);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -431,6 +447,7 @@ void do_test() {
   test_lr();
   test_pthread_join();
   test_sleep();
+  test_dispatch();
 }
 
 __attribute__((constructor))

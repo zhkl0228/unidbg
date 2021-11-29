@@ -24,7 +24,10 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.struct.StdString;
+import com.github.unidbg.unwind.Unwinder;
 import com.github.unidbg.utils.Inspector;
+import com.github.zhkl0228.demumble.DemanglerFactory;
+import com.github.zhkl0228.demumble.GccDemangler;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneEncoded;
@@ -895,6 +898,14 @@ public abstract class AbstractARMDebugger implements Debugger {
         long next = 0;
         boolean on = false;
         StringBuilder sb = new StringBuilder();
+        {
+            Module module = findModuleByAddress(emulator, address);
+            Symbol symbol = module.findClosestSymbolByAddress(address, false);
+            if (symbol != null && address - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
+                GccDemangler demangler = DemanglerFactory.createDemangler();
+                sb.append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(address - symbol.getAddress())).append("\n");
+            }
+        }
         long nextAddr = address;
         for (CodeHistory history : Collections.singletonList(new CodeHistory(address, size, ARM.isThumb(emulator.getBackend())))) {
             Instruction ins = history.disassemble(emulator);
@@ -943,6 +954,14 @@ public abstract class AbstractARMDebugger implements Debugger {
     @Override
     public final void disassembleBlock(Emulator<?> emulator, long address, boolean thumb) {
         StringBuilder sb = new StringBuilder();
+        {
+            Module module = findModuleByAddress(emulator, address);
+            Symbol symbol = module.findClosestSymbolByAddress(address, false);
+            if (symbol != null && address - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
+                GccDemangler demangler = DemanglerFactory.createDemangler();
+                sb.append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(address - symbol.getAddress())).append("\n");
+            }
+        }
         long nextAddr = address;
         UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
         assert pointer != null;

@@ -13,7 +13,7 @@
 static bool matchesSuper(Class class, const char *keywords) {
   if(class) {
     const char *className = class_getName(class);
-    if(strcasestr(className, keywords)) {
+    if(strcmp(className, keywords) == 0) {
       return true;
     }
     return matchesSuper(class_getSuperclass(class), keywords);

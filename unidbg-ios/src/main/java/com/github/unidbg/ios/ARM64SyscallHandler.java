@@ -237,6 +237,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case -36: // _semaphore_wait_trap
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _semaphore_wait_trap(emulator));
                     return;
+                case -38: // semaphore_timedwait_trap
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semaphore_timedwait_trap(emulator));
+                    return;
                 case -41: // _xpc_mach_port_guard
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_guard_trap(emulator));
                     return;
@@ -759,8 +762,23 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
+    private long semaphore_timedwait_trap(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int port = context.getIntArg(0);
+        log.info("semaphore_timedwait_trap port=" + port);
+        Log log = ARM64SyscallHandler.log;
+        if (!log.isDebugEnabled()) {
+            log = LogFactory.getLog(AbstractEmulator.class);
+        }
+        if (log.isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
+        return 0;
+    }
+
     private long _semaphore_wait_trap(Emulator<?> emulator) {
-        int port = emulator.getContext().getIntArg(0);
+        RegisterContext context = emulator.getContext();
+        int port = context.getIntArg(0);
         log.info("_semaphore_wait_trap port=" + port);
         Log log = ARM64SyscallHandler.log;
         if (!log.isDebugEnabled()) {
@@ -1360,12 +1378,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         pThread.self = thread;
         pThread.machThreadSelf = UnidbgPointer.pointer(emulator, STATIC_PORT);
         pThread.pack();
-        log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));
+        int threadId = ++this.threadId;
+        log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", threadId=" + threadId + ", flags=0x" + Integer.toHexString(flags));
         Log log = LogFactory.getLog(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }
-        int threadId = ++this.threadId;
         lastThread = threadId;
         threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg));
         return thread.peer;
