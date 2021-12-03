@@ -207,6 +207,22 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_contex
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_context_1restore
   (JNIEnv *, jclass, jlong, jlong);
 
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    testSampleArm
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_testSampleArm
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    testSampleArm64
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_testSampleArm64
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
