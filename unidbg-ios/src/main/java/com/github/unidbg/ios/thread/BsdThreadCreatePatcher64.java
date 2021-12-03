@@ -123,7 +123,7 @@ class BsdThreadCreatePatcher64 extends Arm64Svc {
     @Override
     public void handlePreCallback(Emulator<?> emulator) {
         if (visitor.isSaveContext()) {
-            emulator.pushContext();
+            emulator.pushContext(0x4);
         }
     }
 

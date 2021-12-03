@@ -90,11 +90,21 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         String syscall = null;
         Throwable exception = null;
         try {
-            if (swi == 0 && NR == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.POST_CALLBACK_SYSCALL_NUMBER) { // callback
+            if (swi == 0 && NR == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.POST_CALLBACK_SYSCALL_NUMBER) { // postCallback
                 int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
                     svc.handlePostCallback(emulator);
+                    return;
+                }
+                backend.emu_stop();
+                throw new IllegalStateException("svc number: " + swi);
+            }
+            if (swi == 0 && NR == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.PRE_CALLBACK_SYSCALL_NUMBER) { // preCallback
+                int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
+                Svc svc = svcMemory.getSvc(number);
+                if (svc != null) {
+                    svc.handlePreCallback(emulator);
                     return;
                 }
                 backend.emu_stop();

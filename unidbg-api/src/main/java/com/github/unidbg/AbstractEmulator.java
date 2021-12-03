@@ -381,13 +381,13 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
             }
         } catch (PopContextException e) {
+            int off = popContext();
+            long pc = backend.reg_read(is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC).longValue();
             if (is32Bit()) {
-                throw new UnsupportedOperationException(e);
+                pc &= 0xffffffffL;
             }
-            popContext();
-            long pc = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
             try {
-                backend.emu_start(pc + 4, until, timeout, 0);
+                backend.emu_start(pc + off, until, timeout, 0);
                 if (is64Bit()) {
                     return backend.reg_read(Arm64Const.UC_ARM64_REG_X0);
                 } else {
@@ -507,20 +507,33 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         getDlfcn().serialize(out);
     }
 
-    private final Stack<Long> contextStack = new Stack<>();
+    private static class Context {
+        private final long ctx;
+        private final int off;
+        Context(long ctx, int off) {
+            this.ctx = ctx;
+            this.off = off;
+        }
+        void restoreAndFree(Backend backend) {
+            backend.context_restore(ctx);
+            backend.context_free(ctx);
+        }
+    }
+
+    private final Stack<Context> contextStack = new Stack<>();
 
     @Override
-    public void pushContext() {
+    public void pushContext(int off) {
         long context = backend.context_alloc();
         backend.context_save(context);
-        contextStack.push(context);
+        contextStack.push(new Context(context, off));
     }
 
     @Override
-    public void popContext() {
-        long ctx = contextStack.pop();
-        backend.context_restore(ctx);
-        backend.context_free(ctx);
+    public int popContext() {
+        Context ctx = contextStack.pop();
+        ctx.restoreAndFree(backend);
+        return ctx.off;
     }
 
 }

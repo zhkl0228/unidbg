@@ -79,6 +79,12 @@ class ClonePatcher32 extends ArmSvc {
                     "cmp r7, #0",
                     "popeq {r0, r4-r7, pc}",
                     "pop {r0, ip}",
+
+                    "mov r7, #0",
+                    "mov r5, #0x" + Integer.toHexString(Svc.PRE_CALLBACK_SYSCALL_NUMBER),
+                    "mov r4, #0x" + Integer.toHexString(svcNumber),
+                    "svc #0",
+
                     "blx ip",
 
                     "mov r7, #0",

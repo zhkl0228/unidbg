@@ -79,10 +79,16 @@ class ClonePatcher64 extends Arm64Svc {
                     "ldr x7, [sp]",
                     "add sp, sp, #0x8",
                     "cmp x7, #0",
-                    "b.eq #0x38",
+                    "b.eq #0x48",
 
                     "ldp x0, x7, [sp]",
                     "add sp, sp, #0x10",
+
+                    "mov x8, #0",
+                    "mov x4, #0x" + Integer.toHexString(svcNumber),
+                    "mov x16, #0x" + Integer.toHexString(Svc.PRE_CALLBACK_SYSCALL_NUMBER),
+                    "svc #0",
+
                     "blr x7",
 
                     "mov x8, #0",
@@ -100,6 +106,13 @@ class ClonePatcher64 extends Arm64Svc {
             UnidbgPointer pointer = svcMemory.allocate(code.length, getClass().getSimpleName());
             pointer.write(code);
             return pointer;
+        }
+    }
+
+    @Override
+    public void handlePreCallback(Emulator<?> emulator) {
+        if (visitor.isSaveContext()) {
+            emulator.pushContext(0x4);
         }
     }
 
