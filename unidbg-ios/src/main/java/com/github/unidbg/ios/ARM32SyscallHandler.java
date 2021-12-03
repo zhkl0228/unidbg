@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
@@ -138,11 +139,11 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         String syscall = null;
         Throwable exception = null;
         try {
-            if (swi == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.CALLBACK_SYSCALL_NUMBER && (backend.reg_read(ArmConst.UC_ARM_REG_R7).intValue()) == 0) { // callback
+            if (swi == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.POST_CALLBACK_SYSCALL_NUMBER && (backend.reg_read(ArmConst.UC_ARM_REG_R7).intValue()) == 0) { // callback
                 int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
-                    svc.handleCallback(emulator);
+                    svc.handlePostCallback(emulator);
                     return;
                 }
                 backend.emu_stop();
@@ -468,6 +469,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         } catch (StopEmulatorException e) {
             backend.emu_stop();
             return;
+        } catch (PopContextException e) {
+            backend.emu_stop();
+            throw e;
         } catch (Throwable e) {
             backend.emu_stop();
             exception = e;

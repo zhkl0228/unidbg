@@ -56,6 +56,7 @@ public interface Backend {
     void context_restore(long context);
     void context_save(long context);
     long context_alloc();
+    void context_free(long context);
 
     int getPageSize();
 

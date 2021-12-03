@@ -225,6 +225,11 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
+    public void context_free(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int getPageSize() {
         return pageSize;
     }

@@ -846,7 +846,8 @@ public abstract class AbstractARMDebugger implements Debugger {
                     }
                     String asm = "    \"" + insn + "\\n\"";
                     sb.append(String.format("%-50s", asm));
-                    sb.append(" // offset 0x").append(Long.toHexString(insn.getAddress() - (address & ~1)));
+                    sb.append(" // 0x").append(Long.toHexString(insn.getAddress()));
+                    sb.append(" offset 0x").append(Long.toHexString(insn.getAddress() - (address & ~1)));
                     sb.append("\n");
                 }
                 sb.append('\n');
@@ -900,7 +901,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         StringBuilder sb = new StringBuilder();
         {
             Module module = findModuleByAddress(emulator, address);
-            Symbol symbol = module.findClosestSymbolByAddress(address, false);
+            Symbol symbol = module == null ? null : module.findClosestSymbolByAddress(address, false);
             if (symbol != null && address - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
                 GccDemangler demangler = DemanglerFactory.createDemangler();
                 sb.append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(address - symbol.getAddress())).append("\n");
@@ -956,7 +957,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         StringBuilder sb = new StringBuilder();
         {
             Module module = findModuleByAddress(emulator, address);
-            Symbol symbol = module.findClosestSymbolByAddress(address, false);
+            Symbol symbol = module == null ? null : module.findClosestSymbolByAddress(address, false);
             if (symbol != null && address - symbol.getAddress() <= Unwinder.SYMBOL_SIZE) {
                 GccDemangler demangler = DemanglerFactory.createDemangler();
                 sb.append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(address - symbol.getAddress())).append("\n");

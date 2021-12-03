@@ -21,7 +21,7 @@ public class DarwinEmulatorBuilder extends EmulatorBuilder<ARMEmulator<DarwinFil
         super(is64Bit);
     }
 
-    private final List<String> envList = new ArrayList<>();
+    protected final List<String> envList = new ArrayList<>();
 
     public DarwinEmulatorBuilder addEnv(String env) {
         envList.add(env);

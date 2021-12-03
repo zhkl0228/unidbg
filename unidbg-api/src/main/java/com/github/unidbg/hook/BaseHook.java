@@ -34,7 +34,7 @@ public abstract class BaseHook implements IHook {
                 return callback.onCall(emulator, new Arm64HookContext(context, emulator.<EditableArm64RegisterContext>getContext()), backup.getLong(0));
             }
             @Override
-            public void handleCallback(Emulator<?> emulator) {
+            public void handlePostCallback(Emulator<?> emulator) {
                 EditableArm64RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm64HookContext(context, registerContext));
             }
@@ -45,7 +45,7 @@ public abstract class BaseHook implements IHook {
                 return callback.onCall(emulator, new Arm32HookContext(context, emulator.<EditableArm32RegisterContext>getContext()), backup.getInt(0) & 0xffffffffL);
             }
             @Override
-            public void handleCallback(Emulator<?> emulator) {
+            public void handlePostCallback(Emulator<?> emulator) {
                 EditableArm32RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm32HookContext(context, registerContext));
             }

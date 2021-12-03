@@ -2,8 +2,22 @@ package com.github.unidbg.unix;
 
 import com.sun.jna.Pointer;
 
-public interface ThreadJoinVisitor {
+public abstract class ThreadJoinVisitor {
 
-    boolean canJoin(Pointer start_routine, int threadId);
+    private final boolean saveContext;
+
+    public ThreadJoinVisitor() {
+        this(false);
+    }
+
+    public ThreadJoinVisitor(boolean saveContext) {
+        this.saveContext = saveContext;
+    }
+
+    public boolean isSaveContext() {
+        return saveContext;
+    }
+
+    public abstract boolean canJoin(Pointer start_routine, int threadId);
 
 }

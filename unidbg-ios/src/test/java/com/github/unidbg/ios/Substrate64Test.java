@@ -4,6 +4,7 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.PopContextException;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
@@ -19,8 +20,10 @@ import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfo;
 import com.github.unidbg.ios.thread.ThreadJoin64;
+import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.ThreadJoinVisitor;
+import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.DecoderException;
@@ -39,8 +42,29 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        return DarwinEmulatorBuilder.for64Bit()
-                .addEnv("CFFIXED_USER_HOME=/var/mobile")
+        DarwinEmulatorBuilder builder = new DarwinEmulatorBuilder(true) {
+            @Override
+            public ARMEmulator<DarwinFileIO> build() {
+                return new DarwinARM64Emulator(processName, rootDir, backendFactories, envList.toArray(new String[0])) {
+                    @Override
+                    protected UnixSyscallHandler<DarwinFileIO> createSyscallHandler(SvcMemory svcMemory) {
+                        return new ARM64SyscallHandler(svcMemory) {
+                            @Override
+                            protected int semwait_signal(Emulator<?> emulator) {
+                                RegisterContext context = emulator.getContext();
+                                long tv_sec = context.getLongArg(4);
+                                int tv_nsec = context.getIntArg(5);
+                                if (tv_sec == 88 && tv_nsec == 0) {
+                                    throw new PopContextException();
+                                }
+                                return super.semwait_signal(emulator);
+                            }
+                        };
+                    }
+                };
+            }
+        };
+        return builder.addEnv("CFFIXED_USER_HOME=/var/mobile")
                 .setRootDir(new File("target/rootfs/substrate"))
                 .build();
     }
@@ -173,7 +197,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
             throw new IllegalStateException(e);
         }
 
-        ThreadJoin64.patch(emulator, hookZz, new ThreadJoinVisitor() {
+        ThreadJoin64.patch(emulator, hookZz, new ThreadJoinVisitor(true) {
             @Override
             public boolean canJoin(Pointer start_routine, int threadId) {
                 System.out.println("canJoin start_routine=" + start_routine + ", threadId=" + threadId);
@@ -181,7 +205,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
             }
         });
 
-//        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
 //        emulator.attach().addBreakPoint(null, 0x00000001000072E0L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
         Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);

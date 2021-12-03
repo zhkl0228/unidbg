@@ -64,4 +64,6 @@ public interface DarwinSyscall {
 
     int STATIC_PORT = 0x88;
 
+    int ETIMEDOUT = 60; /* Operation timed out */
+
 }

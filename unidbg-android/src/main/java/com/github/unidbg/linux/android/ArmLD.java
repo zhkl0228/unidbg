@@ -76,7 +76,7 @@ public class ArmLD extends Dlfcn {
                                         "popne {r4-r6}",
                                         "bne 0x24",
                                         "mov r7, #0",
-                                        "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                                        "mov r5, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                                         "mov r4, #0x" + Integer.toHexString(svcNumber),
                                         "svc #0",
                                         "pop {r4-r7, pc}"));
@@ -156,8 +156,8 @@ public class ArmLD extends Dlfcn {
                             }
                         }
                         @Override
-                        public void handleCallback(Emulator<?> emulator) {
-                            super.handleCallback(emulator);
+                        public void handlePostCallback(Emulator<?> emulator) {
+                            super.handlePostCallback(emulator);
 
                             if (block == null) {
                                 throw new IllegalStateException();

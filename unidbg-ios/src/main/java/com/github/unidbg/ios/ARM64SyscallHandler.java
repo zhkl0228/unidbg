@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
@@ -143,11 +144,21 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         String syscall = null;
         Throwable exception = null;
         try {
-            if (swi == 0 && NR == Svc.CALLBACK_SYSCALL_NUMBER && backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue() == 0) { // callback
+            if (swi == 0 && NR == Svc.POST_CALLBACK_SYSCALL_NUMBER && backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue() == 0) { // postCallback
                 int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
-                    svc.handleCallback(emulator);
+                    svc.handlePostCallback(emulator);
+                    return;
+                }
+                backend.emu_stop();
+                throw new IllegalStateException("svc number: " + swi);
+            }
+            if (swi == 0 && NR == Svc.PRE_CALLBACK_SYSCALL_NUMBER && backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue() == 0) { // preCallback
+                int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
+                Svc svc = svcMemory.getSvc(number);
+                if (svc != null) {
+                    svc.handlePreCallback(emulator);
                     return;
                 }
                 backend.emu_stop();
@@ -426,7 +437,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
                     return;
                 case 334:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal_nocancel(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal(emulator));
                     return;
                 case 336:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator));
@@ -507,6 +518,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         } catch (StopEmulatorException e) {
             backend.emu_stop();
             return;
+        } catch (PopContextException e) {
+            backend.emu_stop();
+            throw e;
         } catch (Throwable e) {
             backend.emu_stop();
             exception = e;
@@ -1325,14 +1339,27 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
     }
 
-    protected int semwait_signal_nocancel(Emulator<?> emulator) {
-        // TODO: implement
-        log.info("semwait_signal_nocancel");
+    protected int semwait_signal(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int cond_sem = context.getIntArg(0);
+        int mutex_sem = context.getIntArg(1);
+        int timeout = context.getIntArg(2);
+        int relative = context.getIntArg(3);
+        long tv_sec = context.getLongArg(4);
+        int tv_nsec = context.getIntArg(5);
+        log.info("semwait_signal cond_sem=" + cond_sem + ", mutex_sem=" + mutex_sem + ", timeout=" + timeout + ", relative=" + relative + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
         Log log = LogFactory.getLog(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }
-        return 0;
+        try {
+            Thread.sleep(tv_sec * 1000L + tv_nsec / 1000L, tv_nsec % 1000);
+            emulator.getMemory().setErrno(ETIMEDOUT);
+            return -1;
+        } catch (InterruptedException e) {
+            emulator.getMemory().setErrno(UnixEmulator.EINVAL);
+            return -1;
+        }
     }
 
     private int sandbox_ms(Emulator<?> emulator) {

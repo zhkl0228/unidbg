@@ -44,7 +44,7 @@ public abstract class ArmHook extends ArmSvc {
                         "popeq {r4-r7, pc}",
                         "blx r7",
                         "mov r7, #0",
-                        "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                        "mov r5, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                         "mov r4, #0x" + Integer.toHexString(svcNumber),
                         "svc #0",
                         "pop {r4-r7, pc}"));

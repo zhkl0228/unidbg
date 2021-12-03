@@ -190,6 +190,11 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
     }
 
     @Override
+    public void context_free(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void context_save(long context) {
         throw new UnsupportedOperationException();
     }

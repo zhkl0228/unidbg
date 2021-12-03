@@ -222,6 +222,9 @@ static void test_pthread() {
 static void *start_routine(void *arg) {
   void *ret = (void *)&test_pthread;
   printf("test_pthread_join start_routine arg=%p, ret=%p\n", arg, ret);
+  while(true) {
+    sleep(88);
+  }
   return ret;
 }
 

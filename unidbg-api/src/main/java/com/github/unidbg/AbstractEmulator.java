@@ -50,6 +50,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 /**
  * abstract emulator
@@ -379,20 +380,26 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 Number r1 = backend.reg_read(ArmConst.UC_ARM_REG_R1);
                 return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
             }
+        } catch (PopContextException e) {
+            if (is32Bit()) {
+                throw new UnsupportedOperationException(e);
+            }
+            popContext();
+            long pc = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
+            try {
+                backend.emu_start(pc + 4, until, timeout, 0);
+                if (is64Bit()) {
+                    return backend.reg_read(Arm64Const.UC_ARM64_REG_X0);
+                } else {
+                    Number r0 = backend.reg_read(ArmConst.UC_ARM_REG_R0);
+                    Number r1 = backend.reg_read(ArmConst.UC_ARM_REG_R1);
+                    return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
+                }
+            } catch (RuntimeException exception) {
+                return handleEmuException(exception, entry, pointer, start);
+            }
         } catch (RuntimeException e) {
-            if (!entry && e instanceof BackendException && !log.isDebugEnabled()) {
-                log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);
-                return -1;
-            }
-
-            boolean enterDebug = log.isDebugEnabled();
-            if (enterDebug) {
-                e.printStackTrace();
-                attach().debug();
-            } else {
-                log.warn("emulate " + pointer + " exception sp=" + getStackPointer() + ", msg=" + e.getMessage() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
-            }
-            return -1;
+            return handleEmuException(e, entry, pointer, start);
         } finally {
             if (exitHook != null) {
                 Runtime.getRuntime().removeShutdownHook(exitHook);
@@ -403,6 +410,22 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
             }
         }
+    }
+
+    private int handleEmuException(RuntimeException e, boolean entry, Pointer pointer, long start) {
+        if (!entry && e instanceof BackendException && !log.isDebugEnabled()) {
+            log.warn("emulate " + pointer + " failed: sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms", e);
+            return -1;
+        }
+
+        boolean enterDebug = log.isDebugEnabled();
+        if (enterDebug) {
+            e.printStackTrace();
+            attach().debug();
+        } else {
+            log.warn("emulate " + pointer + " exception sp=" + getStackPointer() + ", msg=" + e.getMessage() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        }
+        return -1;
     }
 
     protected abstract Pointer getStackPointer();
@@ -482,6 +505,22 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         getSvcMemory().serialize(out);
         getSyscallHandler().serialize(out);
         getDlfcn().serialize(out);
+    }
+
+    private final Stack<Long> contextStack = new Stack<>();
+
+    @Override
+    public void pushContext() {
+        long context = backend.context_alloc();
+        backend.context_save(context);
+        contextStack.push(context);
+    }
+
+    @Override
+    public void popContext() {
+        long ctx = contextStack.pop();
+        backend.context_restore(ctx);
+        backend.context_free(ctx);
     }
 
 }

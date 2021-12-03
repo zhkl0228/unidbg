@@ -90,15 +90,21 @@ class BsdThreadCreatePatcher64 extends Arm64Svc {
                     "ldr x7, [sp]",
                     "add sp, sp, #0x8",
                     "cmp x7, #0",
-                    "b.eq #0x38",
+                    "b.eq #0x48",
 
                     "ldp x0, x7, [sp]",
                     "add sp, sp, #0x10",
+
+                    "mov x8, #0",
+                    "mov x4, #0x" + Integer.toHexString(svcNumber),
+                    "mov x16, #0x" + Integer.toHexString(Svc.PRE_CALLBACK_SYSCALL_NUMBER),
+                    "svc #0",
+
                     "blr x7",
 
                     "mov x8, #0",
                     "mov x4, #0x" + Integer.toHexString(svcNumber),
-                    "mov x16, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                    "mov x16, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                     "svc #0",
 
                     "ldr x0, [sp]",
@@ -115,8 +121,15 @@ class BsdThreadCreatePatcher64 extends Arm64Svc {
     }
 
     @Override
-    public void handleCallback(Emulator<?> emulator) {
-        super.handleCallback(emulator);
+    public void handlePreCallback(Emulator<?> emulator) {
+        if (visitor.isSaveContext()) {
+            emulator.pushContext();
+        }
+    }
+
+    @Override
+    public void handlePostCallback(Emulator<?> emulator) {
+        super.handlePostCallback(emulator);
         value_ptr.set(emulator.getContext().getLongArg(0));
     }
 

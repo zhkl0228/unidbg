@@ -389,4 +389,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     public long context_alloc() {
         return unicorn.context_alloc();
     }
+
+    @Override
+    public void context_free(long context) {
+        unicorn.free(context);
+    }
 }

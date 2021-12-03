@@ -87,7 +87,7 @@ public class ArmLD64 extends Dlfcn {
 
                                         "mov x8, #0",
                                         "mov x4, #0x" + Integer.toHexString(svcNumber),
-                                        "mov x16, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                                        "mov x16, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                                         "svc #0",
 
                                         "ldp x29, x30, [sp]",
@@ -169,8 +169,8 @@ public class ArmLD64 extends Dlfcn {
                             }
                         }
                         @Override
-                        public void handleCallback(Emulator<?> emulator) {
-                            super.handleCallback(emulator);
+                        public void handlePostCallback(Emulator<?> emulator) {
+                            super.handlePostCallback(emulator);
 
                             if (block == null) {
                                 throw new IllegalStateException();

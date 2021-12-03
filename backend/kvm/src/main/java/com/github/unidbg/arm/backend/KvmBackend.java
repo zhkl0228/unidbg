@@ -285,4 +285,8 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void context_free(long context) {
+        throw new UnsupportedOperationException();
+    }
 }
