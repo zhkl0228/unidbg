@@ -5,8 +5,8 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.hook.HookContext;
+import com.github.unidbg.hook.InlineHook;
 import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.sun.jna.Pointer;
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadJoin19 {
 
-    public static void patch(final Emulator<?> emulator, IHookZz hookZz, final ThreadJoinVisitor visitor) {
+    public static void patch(final Emulator<?> emulator, InlineHook inlineHook, final ThreadJoinVisitor visitor) {
         if (emulator.is64Bit()) {
             throw new IllegalStateException();
         }
@@ -27,7 +27,7 @@ public class ThreadJoin19 {
             throw new IllegalStateException("_pthread_clone=" + _pthread_clone + ", pthread_join=" + pthread_join);
         }
         final AtomicInteger value_ptr = new AtomicInteger();
-        hookZz.replace(pthread_join, new ReplaceCallback() {
+        inlineHook.replace(pthread_join, new ReplaceCallback() {
             @Override
             public HookStatus onCall(Emulator<?> emulator, HookContext context, long originFunction) {
                 Pointer ptr = context.getPointerArg(1);
@@ -37,7 +37,7 @@ public class ThreadJoin19 {
                 return HookStatus.LR(emulator, 0);
             }
         });
-        hookZz.replace(_pthread_clone, new ThreadClonePatcher32(visitor, value_ptr));
+        inlineHook.replace(_pthread_clone, new ThreadClonePatcher32(visitor, value_ptr));
     }
 
 }

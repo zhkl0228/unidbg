@@ -1286,7 +1286,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return -1;
     }
 
-    private int nanosleep(Emulator<?> emulator) {
+    protected int nanosleep(Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         Pointer req = context.getR0Pointer();
         Pointer rem = context.getR1Pointer();

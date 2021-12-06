@@ -4,9 +4,11 @@ import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.PopContextException;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
+import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.hookzz.Dobby;
 import com.github.unidbg.linux.ARM64SyscallHandler;
@@ -20,9 +22,9 @@ import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VarArg;
 import com.github.unidbg.linux.struct.Stat64;
-import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -57,6 +59,18 @@ public class Android64Test extends AbstractJni {
         protected long fork(Emulator<?> emulator) {
             return emulator.getPid();
         }
+
+        @Override
+        protected int nanosleep(Emulator<?> emulator) {
+            RegisterContext context = emulator.getContext();
+            Pointer req = context.getPointerArg(0);
+            long tv_sec = req.getLong(0);
+            long tv_nsec = req.getLong(8);
+            if (tv_sec == 88 && tv_nsec == 0) {
+                throw new PopContextException();
+            }
+            return super.nanosleep(emulator);
+        }
     }
 
     private Android64Test() {
@@ -72,7 +86,7 @@ public class Android64Test extends AbstractJni {
         Memory memory = emulator.getMemory();
         AndroidResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
-        resolver.patchThread(emulator, Dobby.getInstance(emulator), new ThreadJoinVisitor() {
+        resolver.patchThread(emulator, Dobby.getInstance(emulator), new ThreadJoinVisitor(true) {
             @Override
             public boolean canJoin(Pointer start_routine, int threadId) {
                 System.out.println("canJoin start_routine=" + start_routine + ", threadId=" + threadId);
@@ -175,6 +189,7 @@ public class Android64Test extends AbstractJni {
                 0x789a, 0.12345D, true, 0x123, 0.456f, 0.789123D, (byte) 0x7f,
                 0x89abcdefL, 0.123f);
 
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 

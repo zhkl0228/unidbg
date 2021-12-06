@@ -654,7 +654,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         return sigprocmask(emulator, how, set, oldset);
     }
 
-    private int nanosleep(Emulator<?> emulator) {
+    protected int nanosleep(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer req = context.getPointerArg(0);
         Pointer rem = context.getPointerArg(1);

@@ -91,6 +91,13 @@ class ThreadClonePatcher32 extends ArmSvc {
     }
 
     @Override
+    public void handlePreCallback(Emulator<?> emulator) {
+        if (visitor.isSaveContext()) {
+            emulator.pushContext(0x4);
+        }
+    }
+
+    @Override
     public void handlePostCallback(Emulator<?> emulator) {
         super.handlePostCallback(emulator);
         value_ptr.set(emulator.getContext().getIntArg(0));

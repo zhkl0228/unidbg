@@ -4,8 +4,10 @@ import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.PopContextException;
 import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
+import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.hookzz.HookZz;
 import com.github.unidbg.linux.ARM32SyscallHandler;
@@ -20,9 +22,9 @@ import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VarArg;
 import com.github.unidbg.linux.file.Stdout;
 import com.github.unidbg.linux.struct.Dirent;
-import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -56,6 +58,18 @@ public class AndroidTest extends AbstractJni {
         protected int fork(Emulator<?> emulator) {
             return emulator.getPid();
         }
+
+        @Override
+        protected int nanosleep(Emulator<?> emulator) {
+            RegisterContext context = emulator.getContext();
+            Pointer req = context.getPointerArg(0);
+            int tv_sec = req.getInt(0);
+            int tv_nsec = req.getInt(4);
+            if (tv_sec == 88 && tv_nsec == 0) {
+                throw new PopContextException();
+            }
+            return super.nanosleep(emulator);
+        }
     }
 
     private AndroidTest() {
@@ -72,7 +86,7 @@ public class AndroidTest extends AbstractJni {
         emulator.getSyscallHandler().setVerbose(false);
         AndroidResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
-        resolver.patchThread(emulator, HookZz.getInstance(emulator), new ThreadJoinVisitor() {
+        resolver.patchThread(emulator, HookZz.getInstance(emulator), new ThreadJoinVisitor(true) {
             @Override
             public boolean canJoin(Pointer start_routine, int threadId) {
                 System.out.println("canJoin start_routine=" + start_routine + ", threadId=" + threadId);
@@ -177,6 +191,7 @@ public class AndroidTest extends AbstractJni {
                 0x89abcdefL, 0.123f);
 
         Logger.getLogger(Stdout.class).setLevel(Level.WARN);
+        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
         System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 
