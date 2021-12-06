@@ -416,7 +416,25 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _NewObjectA = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jmethodID = context.getPointerArg(2);
+                UnidbgPointer jvalue = context.getPointerArg(3);
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
+                if (log.isDebugEnabled()) {
+                    log.debug("NewObjectA clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue + ", lr=" + context.getLRPointer());
+                }
+                if (dvmMethod == null) {
+                    throw new BackendException();
+                } else {
+                    VaList vaList = new VaList32(emulator, DalvikVM.this, jvalue, dvmMethod);
+                    DvmObject<?> obj = dvmMethod.newObjectA(vaList);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->NewObjectA(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
+                    }
+                    return addLocalObject(obj);
+                }
             }
         });
 
