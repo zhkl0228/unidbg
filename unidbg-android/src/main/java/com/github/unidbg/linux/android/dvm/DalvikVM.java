@@ -428,7 +428,7 @@ public class DalvikVM extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new BackendException();
                 } else {
-                    VaList vaList = new VaList32(emulator, DalvikVM.this, jvalue, dvmMethod);
+                    VaList vaList = new JValueList(DalvikVM.this, jvalue, dvmMethod);
                     DvmObject<?> obj = dvmMethod.newObjectA(vaList);
                     if (verbose) {
                         System.out.printf("JNIEnv->NewObjectA(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
