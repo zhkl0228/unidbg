@@ -24,7 +24,7 @@ public class LibDyldPatcher extends ModulePatcher {
 
     @Override
     protected void patch32(Emulator<?> emulator, Module module) {
-        throw new UnsupportedOperationException();
+        patch(emulator, module);
     }
 
     private void setSymbolPointer(Emulator<?> emulator, Symbol symbol, Pointer pointer) {
@@ -35,6 +35,10 @@ public class LibDyldPatcher extends ModulePatcher {
 
     @Override
     protected void patch64(Emulator<?> emulator, Module module) {
+        patch(emulator, module);
+    }
+
+    private void patch(Emulator<?> emulator, Module module) {
         Symbol _NXArgc = module.findSymbolByName("_NXArgc", false);
         setSymbolPointer(emulator, _NXArgc, _NSGetArgc);
 

@@ -25,6 +25,7 @@ import com.github.unidbg.ios.file.TcpSocket;
 import com.github.unidbg.ios.file.UdpSocket;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.AslServerMessageRequest;
+import com.github.unidbg.ios.struct.kernel.ClockGetTimeReply;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceReply;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceRequest;
 import com.github.unidbg.ios.struct.kernel.HostInfoReply;
@@ -63,6 +64,8 @@ import com.github.unidbg.ios.struct.kernel.TaskGetSpecialPortRequest;
 import com.github.unidbg.ios.struct.kernel.TaskInfoRequest;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
+import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
+import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
 import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmCopyRequest;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Reply;
@@ -394,6 +397,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 case 329:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
                     return;
+                case 334:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal(emulator));
+                    return;
                 case 336:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, proc_info(emulator));
                     return;
@@ -458,9 +464,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     return;
                 case 399:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, close_NOCANCEL(emulator));
-                    return;
-                case 423:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal_nocancel());
                     return;
                 case 428:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, audit_session_self());
@@ -1167,6 +1170,25 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
+    protected int semwait_signal(Emulator<?> emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int cond_sem = context.getR0Int();
+        int mutex_sem = context.getR1Int();
+        int timeout = context.getR2Int();
+        int relative = context.getR3Int();
+        long tv_sec = context.getR4Int();
+        int tv_nsec = context.getR5Int();
+        log.info("semwait_signal cond_sem=" + cond_sem + ", mutex_sem=" + mutex_sem + ", timeout=" + timeout + ", relative=" + relative + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
+        try {
+            Thread.sleep(tv_sec * 1000L + tv_nsec / 1000L, tv_nsec % 1000);
+            emulator.getMemory().setErrno(ETIMEDOUT);
+            return -1;
+        } catch (InterruptedException e) {
+            emulator.getMemory().setErrno(UnixEmulator.EINVAL);
+            return -1;
+        }
+    }
+
     private static final int PROC_INFO_CALL_SETCONTROL = 0x5;
     private static final int PROC_SELFSET_THREADNAME = 2;
 
@@ -1220,12 +1242,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             log.info(msg);
             return 1;
         }
-    }
-
-    private int semwait_signal_nocancel() {
-        // TODO: implement
-        log.info("semwait_signal_nocancel");
-        return 0;
     }
 
     private int pthread_sigmask(Emulator<?> emulator) {
@@ -1848,6 +1864,76 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+            }
+            case 3612: { // _thread_info
+                ThreadInfoRequest args = new ThreadInfoRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_info args=" + args);
+                }
+
+                final int THREAD_BASIC_INFO = 3;
+                if (args.flavor != THREAD_BASIC_INFO) {
+                    throw new UnsupportedOperationException();
+                }
+
+                ThreadBasicInfoReply reply = new ThreadBasicInfoReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                final int THREAD_BASIC_INFO_COUNT = 10;
+                final int POLICY_TIMESHARE = 1;
+                final int TH_STATE_RUNNING = 1;
+                reply.retCode = 0;
+                reply.outCnt = THREAD_BASIC_INFO_COUNT;
+                reply.info.user_time.tv_sec = 0;
+                reply.info.user_time.tv_usec = 177546;
+                reply.info.system_time.tv_sec = 0;
+                reply.info.system_time.tv_usec = 0;
+                reply.info.cpu_usage = 343;
+                reply.info.policy = POLICY_TIMESHARE;
+                reply.info.run_state = TH_STATE_RUNNING;
+                reply.info.flags = 0;
+                reply.info.suspend_count = 0;
+                reply.info.sleep_time = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_info reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 1000: { // clock_get_time
+                ClockGetTimeReply reply = new ClockGetTimeReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                long currentTimeMillis = System.currentTimeMillis();
+                long nanoTime = System.nanoTime();
+                long tv_sec = currentTimeMillis / 1000;
+                long tv_usec = (currentTimeMillis % 1000) * 1000 + nanoTime % 1000;
+
+                reply.retCode = 0;
+                reply.tv_sec = (int) tv_sec;
+                reply.tv_nsec = (int) tv_usec;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("clock_get_time reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
             }
             case 206: // host_get_clock_service
             {

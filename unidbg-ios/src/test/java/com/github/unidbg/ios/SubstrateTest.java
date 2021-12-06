@@ -1,5 +1,6 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
@@ -16,6 +17,7 @@ import com.github.unidbg.hook.hookzz.HookZz;
 import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
+import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
@@ -158,9 +160,9 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
 //        emulator.attach(0xfffe0000L, 0xfffe0000L + 0x10000).addBreakPoint(null, 0xfffe0080L);
 //        emulator.traceCode(0xfffe0000L, 0xfffe0000L + 0x10000);
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
 //        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-        Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.DEBUG);
+        Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }
@@ -174,6 +176,7 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         emulator.getSyscallHandler().addIOResolver(new NSUserDefaultsResolver("unidbg", map));
 
         emulator.getSyscallHandler().setVerbose(false);
+        emulator.getMemory().addHookListener(new SymbolResolver(emulator));
     }
 
     public static void main(String[] args) throws Exception {

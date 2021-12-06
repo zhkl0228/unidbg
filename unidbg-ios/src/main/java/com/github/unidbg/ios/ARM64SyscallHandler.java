@@ -1348,10 +1348,6 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         long tv_sec = context.getLongArg(4);
         int tv_nsec = context.getIntArg(5);
         log.info("semwait_signal cond_sem=" + cond_sem + ", mutex_sem=" + mutex_sem + ", timeout=" + timeout + ", relative=" + relative + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
-        Log log = LogFactory.getLog(AbstractEmulator.class);
-        if (log.isDebugEnabled()) {
-            emulator.attach().debug();
-        }
         try {
             Thread.sleep(tv_sec * 1000L + tv_nsec / 1000L, tv_nsec % 1000);
             emulator.getMemory().setErrno(ETIMEDOUT);
