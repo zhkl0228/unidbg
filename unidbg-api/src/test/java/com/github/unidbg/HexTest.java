@@ -1,6 +1,5 @@
 package com.github.unidbg;
 
-import capstone.Capstone;
 import capstone.api.Disassembler;
 import capstone.api.DisassemblerFactory;
 import capstone.api.Instruction;
@@ -29,7 +28,7 @@ public class HexTest extends TestCase {
     }
 
     public void testDisassembler() throws Exception {
-        Disassembler disassembler = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+        Disassembler disassembler = DisassemblerFactory.createArm64Disassembler();
         disassembler.setDetail(true);
         byte[] code = Hex.decodeHex("017544bd".toCharArray());
         Instruction instruction = disassembler.disasm(code, 0)[0];

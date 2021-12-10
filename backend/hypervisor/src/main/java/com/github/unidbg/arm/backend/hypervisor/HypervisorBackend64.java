@@ -1,6 +1,5 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
-import capstone.Capstone;
 import capstone.api.Disassembler;
 import capstone.api.DisassemblerFactory;
 import capstone.api.Instruction;
@@ -35,7 +34,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     private synchronized Disassembler createDisassembler() {
         if (disassembler == null) {
-            this.disassembler = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+            this.disassembler = DisassemblerFactory.createArm64Disassembler();
             this.disassembler.setDetail(true);
         }
         return disassembler;

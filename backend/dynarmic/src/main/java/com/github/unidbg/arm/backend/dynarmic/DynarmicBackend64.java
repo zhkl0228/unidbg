@@ -21,16 +21,6 @@ public class DynarmicBackend64 extends DynarmicBackend {
     }
 
     @Override
-    public boolean handleInterpreterFallback(long pc, int num_instructions) {
-        try {
-            emulator.attach().debug();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    @Override
     public void callSVC(long pc, int swi) {
         if (log.isDebugEnabled()) {
             log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", swi=" + swi);

@@ -1,6 +1,5 @@
 package com.github.unidbg.arm;
 
-import capstone.Capstone;
 import capstone.api.Disassembler;
 import capstone.api.DisassemblerFactory;
 import capstone.api.Instruction;
@@ -34,7 +33,7 @@ public class InlineHook {
         if (pointer == null) {
             throw new IllegalArgumentException();
         }
-        try (Disassembler disassembler = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB)) {
+        try (Disassembler disassembler = DisassemblerFactory.createArmDisassembler(true)) {
             disassembler.setDetail(true);
 
             byte[] code = readThumbCode(pointer);
@@ -85,7 +84,7 @@ public class InlineHook {
         if (pointer == null) {
             throw new IllegalArgumentException();
         }
-        try (Disassembler disassembler = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM)) {
+        try (Disassembler disassembler = DisassemblerFactory.createArmDisassembler(false)) {
             disassembler.setDetail(true);
 
             byte[] code = pointer.getByteArray(0, 4);

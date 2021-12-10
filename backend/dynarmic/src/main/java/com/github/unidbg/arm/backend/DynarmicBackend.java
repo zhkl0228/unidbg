@@ -26,6 +26,12 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
         }
     }
 
+    @Override
+    public final boolean handleInterpreterFallback(long pc, int num_instructions) {
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_UDEF, 0);
+        return false;
+    }
+
     private static final int EXCEPTION_BREAKPOINT = 8;
 
     @Override

@@ -1,6 +1,5 @@
 package com.github.unidbg.arm;
 
-import capstone.Capstone;
 import capstone.api.Disassembler;
 import capstone.api.DisassemblerFactory;
 import capstone.api.Instruction;
@@ -91,7 +90,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     private synchronized Disassembler createArm64Disassembler() {
         if (arm64DisassemblerCache == null) {
-            this.arm64DisassemblerCache = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+            this.arm64DisassemblerCache = DisassemblerFactory.createArm64Disassembler();
             this.arm64DisassemblerCache.setDetail(true);
         }
         return arm64DisassemblerCache;

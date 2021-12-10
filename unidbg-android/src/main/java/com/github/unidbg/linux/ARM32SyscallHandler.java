@@ -81,6 +81,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             createBreaker(emulator).brk(pc, bkpt);
             return;
         }
+        if (intno == ARMEmulator.EXCP_UDEF) {
+            createBreaker(emulator).debug();
+            return;
+        }
 
         if (intno != ARMEmulator.EXCP_SWI) {
             throw new BackendException("intno=" + intno);

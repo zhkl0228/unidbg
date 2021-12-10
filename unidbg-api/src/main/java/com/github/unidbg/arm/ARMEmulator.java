@@ -46,6 +46,7 @@ public interface ARMEmulator<T extends NewFileIO> extends Emulator<T> {
 
     int PAGE_ALIGN = 0x1000; // 4k
 
+    int EXCP_UDEF = 1; /* undefined instruction */
     int EXCP_SWI = 2; /* software interrupt */
     int EXCP_BKPT = 7;
 

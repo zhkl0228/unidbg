@@ -135,6 +135,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             createBreaker(emulator).brk(pc, pc == null ? swi : (pc.getInt(0) >> 5) & 0xffff);
             return;
         }
+        if (intno == ARMEmulator.EXCP_UDEF) {
+            createBreaker(emulator).debug();
+            return;
+        }
 
         if (intno != ARMEmulator.EXCP_SWI) {
             throw new BackendException("intno=" + intno);

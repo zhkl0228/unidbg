@@ -1,6 +1,5 @@
 package com.github.unidbg.arm;
 
-import capstone.Capstone;
 import capstone.api.Disassembler;
 import capstone.api.DisassemblerFactory;
 import capstone.api.Instruction;
@@ -92,7 +91,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     private synchronized Disassembler createThumbCapstone() {
         if (thumbDisassemblerCache == null) {
-            this.thumbDisassemblerCache = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
+            this.thumbDisassemblerCache = DisassemblerFactory.createArmDisassembler(true);
             this.thumbDisassemblerCache.setDetail(true);
         }
         return thumbDisassemblerCache;
@@ -100,7 +99,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     private synchronized Disassembler createArmCapstone() {
         if (armDisassemblerCache == null) {
-            this.armDisassemblerCache = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
+            this.armDisassemblerCache = DisassemblerFactory.createArmDisassembler(false);
             this.armDisassemblerCache.setDetail(true);
         }
         return armDisassemblerCache;

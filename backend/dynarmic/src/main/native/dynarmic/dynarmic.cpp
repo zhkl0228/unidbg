@@ -216,6 +216,11 @@ public:
     }
 
     void InterpreterFallback(u32 pc, std::size_t num_instructions) override {
+        JNIEnv *env;
+        cachedJVM->AttachCurrentThread((void **)&env, NULL);
+        env->CallBooleanMethod(callback, handleInterpreterFallback, pc, num_instructions);
+        cpu->HaltExecution();
+        cachedJVM->DetachCurrentThread();
         fprintf(stderr, "Unicorn fallback @ 0x%x for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
         abort();
     }
@@ -427,17 +432,11 @@ public:
     void InterpreterFallback(u64 pc, std::size_t num_instructions) override {
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
-        jboolean processed = env->CallBooleanMethod(callback, handleInterpreterFallback, pc, num_instructions);
-        if (env->ExceptionCheck()) {
-            cpu->HaltExecution();
-        }
-        if(processed == JNI_TRUE) {
-            cpu->SetPC(pc + 4);
-        } else {
-            fprintf(stderr, "Unicorn fallback @ 0x%llx for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
-            abort();
-        }
+        env->CallBooleanMethod(callback, handleInterpreterFallback, pc, num_instructions);
+        cpu->HaltExecution();
         cachedJVM->DetachCurrentThread();
+        fprintf(stderr, "Unicorn fallback @ 0x%llx for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
+        abort();
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {

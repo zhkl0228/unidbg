@@ -1,6 +1,5 @@
 package com.github.unidbg.arm.backend.kvm;
 
-import capstone.Capstone;
 import capstone.api.Disassembler;
 import capstone.api.DisassemblerFactory;
 import capstone.api.Instruction;
@@ -68,7 +67,7 @@ public class KvmBackend64 extends KvmBackend {
 
     private synchronized Disassembler createDisassembler() {
         if (disassembler == null) {
-            this.disassembler = DisassemblerFactory.createDisassembler(Capstone.CS_ARCH_ARM64, Capstone.CS_MODE_ARM);
+            this.disassembler = DisassemblerFactory.createArm64Disassembler();
             this.disassembler.setDetail(true);
         }
         return disassembler;
