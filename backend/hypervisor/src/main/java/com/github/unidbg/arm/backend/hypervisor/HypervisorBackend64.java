@@ -112,7 +112,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case 0x58: {
                 Operand operand = op[0];
                 OpValue value = operand.getValue();
-                reg_write(value.getReg(), 0x0L);
+                reg_write(value.getUnicornReg(), 0x0L);
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }
@@ -124,7 +124,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case 0x90: {
                 Operand operand = op[0];
                 OpValue value = operand.getValue();
-                reg_write(value.getReg(), 0x0);
+                reg_write(value.getUnicornReg(), 0x0);
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }
@@ -134,7 +134,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case 0x36: { // uint8_t number of logical CPUs (hw.logicalcpu_max)
                 Operand operand = op[0];
                 OpValue value = operand.getValue();
-                reg_write(value.getReg(), 1);
+                reg_write(value.getUnicornReg(), 1);
                 hypervisor.reg_set_elr_el1(elr + 4);
                 return true;
             }

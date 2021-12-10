@@ -966,13 +966,13 @@ public class ARM {
         if (op.length == 2 &&
                 op[0].getType() == Arm64_const.ARM64_OP_REG &&
                 op[1].getType() == Arm64_const.ARM64_OP_MEM) {
-            if (op[0].getValue().getReg() >= Arm64_const.ARM64_REG_W0 && op[0].getValue().getReg() <= Arm64_const.ARM64_REG_W30) {
+            if (op[0].getValue().getUnicornReg() >= Arm64Const.UC_ARM64_REG_W0 && op[0].getValue().getUnicornReg() <= Arm64Const.UC_ARM64_REG_W30) {
                 bytesRead = 4;
             }
             mem = op[1].getValue().getMem();
 
             if (mem.getIndex() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.getDisp();
             }
@@ -983,12 +983,12 @@ public class ARM {
                 op[0].getType() == Arm64_const.ARM64_OP_REG &&
                 op[1].getType() == Arm64_const.ARM64_OP_MEM &&
                 op[2].getType() == Arm64_const.ARM64_OP_IMM) {
-            if (op[0].getValue().getReg() >= Arm64_const.ARM64_REG_W0 && op[0].getValue().getReg() <= Arm64_const.ARM64_REG_W30) {
+            if (op[0].getValue().getUnicornReg() >= Arm64Const.UC_ARM64_REG_W0 && op[0].getValue().getUnicornReg() <= Arm64Const.UC_ARM64_REG_W30) {
                 bytesRead = 4;
             }
             mem = op[1].getValue().getMem();
             if (mem.getIndex() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
                 addr = base == null ? 0L : base.peer;
                 addr += mem.getDisp();
             }

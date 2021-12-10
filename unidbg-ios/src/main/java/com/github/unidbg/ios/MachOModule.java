@@ -101,6 +101,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         throw new IllegalStateException("Cannot find segment for address " + Long.toHexString(address));
     }
 
+    private final List<InitFunction> allInitFunctionList = new ArrayList<>();
+
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
@@ -136,6 +138,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = machO == null ? Collections.<InitFunction>emptyList() : parseRoutines(machO);
         this.initFunctionList = machO == null ? Collections.<InitFunction>emptyList() : parseInitFunction(machO, buffer.duplicate(), name, emulator);
+        this.allInitFunctionList.addAll(routines);
+        this.allInitFunctionList.addAll(initFunctionList);
 
         if (machO == null) {
             exportSymbols = Collections.emptyMap();
@@ -698,6 +702,13 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     long entry = machHeader + entryPoint;
                     if (addr >= entry && (symbol == null || entry > symbol.getAddress())) {
                         symbol = new ExportSymbol("main", entry, this, 0, com.github.unidbg.ios.MachO.EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
+                    }
+                }
+                for (int i = 0; i < allInitFunctionList.size(); i++) {
+                    InitFunction initFunction = allInitFunctionList.get(i);
+                    long address = initFunction.getAddress();
+                    if (addr >= address && (symbol == null || address > symbol.getAddress())) {
+                        symbol = new ExportSymbol("InitFunc_" + i, address, this, 0, com.github.unidbg.ios.MachO.EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
                     }
                 }
 

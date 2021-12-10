@@ -18,12 +18,12 @@ public class A12ZTest {
         Emulator<?> emulator = builder.build();
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
-        emulator.getSyscallHandler().setVerbose(true);
+        emulator.getSyscallHandler().setVerbose(false);
 
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/a12z_osx"));
         long start = System.currentTimeMillis();
         int ret = module.callEntry(emulator);
-        System.err.println("testA12Z ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        System.err.println("testA12Z backend=" + emulator.getBackend() + ", ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
 }

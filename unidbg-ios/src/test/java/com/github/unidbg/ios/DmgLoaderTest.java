@@ -64,6 +64,6 @@ public class DmgLoaderTest implements EmulatorConfigurator {
 
     @Override
     public void onExecutableLoaded(Emulator<DarwinFileIO> emulator, MachOModule executable) {
-        emulator.attach().addBreakPoint(0x108127208L);
+        emulator.attach().addBreakPoint(0x106465630L);
     }
 }
