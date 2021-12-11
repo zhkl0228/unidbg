@@ -269,4 +269,24 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     public void hook_add_new(BlockHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void context_restore(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void context_free(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void context_save(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long context_alloc() {
+        throw new UnsupportedOperationException();
+    }
 }

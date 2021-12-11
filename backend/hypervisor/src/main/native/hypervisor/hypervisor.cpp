@@ -62,7 +62,6 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
       jboolean handled = env->CallBooleanMethod(hypervisor->callback, handleException, esr, far, elr, cpsr);
       if (env->ExceptionCheck()) {
-        printf("handle_exception cpsr=0x%llx\n", cpsr);
         return false;
       }
       return handled == JNI_TRUE;
@@ -663,6 +662,64 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
   uint64_t cpsr = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
   return cpsr;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    context_restore
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1restore
+  (JNIEnv *env, jclass clazz, jlong handle, jlong context) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  t_cpu_context ctx = (t_cpu_context) context;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  t_vcpu_context vcpu_context = cpu->cpu->context;
+  memcpy(vcpu_context, &ctx->ctx, sizeof(struct vcpu_context));
+  hypervisor->sp = ctx->sp;
+  hypervisor->cpacr = ctx->cpacr;
+  hypervisor->tpidr = ctx->tpidr;
+  hypervisor->tpidrro = ctx->tpidrro;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    context_save
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1save
+  (JNIEnv *env, jclass clazz, jlong handle, jlong context) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  t_cpu_context ctx = (t_cpu_context) context;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  t_vcpu_context vcpu_context = cpu->cpu->context;
+  memcpy(&ctx->ctx, vcpu_context, sizeof(struct vcpu_context));
+  ctx->sp = hypervisor->sp;
+  ctx->cpacr = hypervisor->cpacr;
+  ctx->tpidr = hypervisor->tpidr;
+  ctx->tpidrro = hypervisor->tpidrro;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    context_alloc
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1alloc
+  (JNIEnv *env, jclass clazz) {
+  void *ctx = malloc(sizeof(struct cpu_context));
+  return (jlong) ctx;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_free
+  (JNIEnv *env, jclass clazz, jlong context) {
+  void *ctx = (void *) context;
+  free(ctx);
 }
 
 /*

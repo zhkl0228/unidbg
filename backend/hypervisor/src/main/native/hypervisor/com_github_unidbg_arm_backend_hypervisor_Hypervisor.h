@@ -215,6 +215,38 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_emu_1stop
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    context_alloc
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1alloc
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    context_save
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1save
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    context_restore
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1restore
+  (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_free
+  (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

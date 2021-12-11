@@ -349,4 +349,24 @@ public class HypervisorBackend64 extends HypervisorBackend {
         IOUtils.close(disassembler);
         disassembler = null;
     }
+
+    @Override
+    public long context_alloc() {
+        return Hypervisor.context_alloc();
+    }
+
+    @Override
+    public void context_save(long context) {
+        hypervisor.context_save(context);
+    }
+
+    @Override
+    public void context_restore(long context) {
+        hypervisor.context_restore(context);
+    }
+
+    @Override
+    public void context_free(long context) {
+        Hypervisor.free(context);
+    }
 }

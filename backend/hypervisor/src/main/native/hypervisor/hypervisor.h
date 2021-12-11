@@ -78,3 +78,11 @@ static inline uint32_t syn_get_ec(uint32_t syn) {
 #define PSR_I_BIT	0x00000080
 #define PSR_A_BIT	0x00000100
 #define PSR_D_BIT	0x00000200
+
+typedef struct cpu_context {
+  struct vcpu_context ctx;
+  uint64_t sp;
+  uint64_t cpacr;
+  uint64_t tpidr;
+  uint64_t tpidrro;
+} *t_cpu_context;
