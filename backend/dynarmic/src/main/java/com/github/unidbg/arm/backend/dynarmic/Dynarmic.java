@@ -40,10 +40,27 @@ public class Dynarmic implements Closeable {
     private static native int emu_start(long handle, long pc);
     private static native int emu_stop(long handle);
 
+    private static native long context_alloc(long handle);
+    private static native void context_save(long handle, long context);
+    private static native void context_restore(long handle, long context);
+    public static native void free(long context);
+
     private final long nativeHandle;
 
     public Dynarmic(boolean is64Bit) {
         this.nativeHandle = nativeInitialize(is64Bit);
+    }
+
+    public long context_alloc() {
+        return context_alloc(nativeHandle);
+    }
+
+    public void context_save(long context) {
+        context_save(nativeHandle, context);
+    }
+
+    public void context_restore(long context) {
+        context_restore(nativeHandle, context);
     }
 
     public void setDynarmicCallback(DynarmicCallback callback) {

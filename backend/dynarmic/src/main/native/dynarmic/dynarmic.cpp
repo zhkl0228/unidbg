@@ -1255,6 +1255,90 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
   return 0;
 }
 
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    context_alloc
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_context_1alloc
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    void *ctx = malloc(sizeof(struct context64));
+    return (jlong) ctx;
+  } else {
+    void *ctx = malloc(sizeof(struct context32));
+    return (jlong) ctx;
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    context_restore
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_context_1restore
+  (JNIEnv *env, jclass clazz, jlong handle, jlong context) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
+    t_context64 ctx = (t_context64) context;
+    jit->SetSP(ctx->sp);
+    jit->SetPC(ctx->pc);
+    jit->SetRegisters(ctx->registers);
+    jit->SetVectors(ctx->vectors);
+    jit->SetFpcr(ctx->fpcr);
+    jit->SetFpsr(ctx->fpsr);
+    jit->SetPstate(ctx->pstate);
+  } else {
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
+    t_context32 ctx = (t_context32) context;
+    jit->Regs() = ctx->regs;
+    jit->ExtRegs() = ctx->extRegs;
+    jit->SetCpsr(ctx->cpsr);
+    jit->SetFpscr(ctx->fpscr);
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    context_save
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_context_1save
+  (JNIEnv *env, jclass clazz, jlong handle, jlong context) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  if(dynarmic->is64Bit) {
+    Dynarmic::A64::Jit *jit = dynarmic->jit64;
+    t_context64 ctx = (t_context64) context;
+    ctx->sp = jit->GetSP();
+    ctx->pc = jit->GetPC();
+    ctx->registers = jit->GetRegisters();
+    ctx->vectors = jit->GetVectors();
+    ctx->fpcr = jit->GetFpcr();
+    ctx->fpsr = jit->GetFpsr();
+    ctx->pstate = jit->GetPstate();
+  } else {
+    Dynarmic::A32::Jit *jit = dynarmic->jit32;
+    t_context32 ctx = (t_context32) context;
+    ctx->regs = jit->Regs();
+    ctx->extRegs = jit->ExtRegs();
+    ctx->cpsr = jit->Cpsr();
+    ctx->fpscr = jit->Fpscr();
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_free
+  (JNIEnv *env, jclass clazz, jlong context) {
+  void *ctx = (void *) context;
+  free(ctx);
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);

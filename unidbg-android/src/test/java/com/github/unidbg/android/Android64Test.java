@@ -77,7 +77,7 @@ public class Android64Test extends AbstractJni {
         final File executable = new File("unidbg-android/src/test/native/android/libs/arm64-v8a/test");
         emulator = new AndroidARM64Emulator(executable.getName(),
                 new File("target/rootfs"),
-                Arrays.asList(new HypervisorFactory(true), new Unicorn2Factory(true), new DynarmicFactory(true))) {
+                Arrays.asList(new HypervisorFactory(true), new DynarmicFactory(true), new Unicorn2Factory(true))) {
             @Override
             protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
                 return new MyARMSyscallHandler(svcMemory);

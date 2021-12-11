@@ -210,26 +210,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
-    public void context_restore(long context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void context_save(long context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long context_alloc() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void context_free(long context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public int getPageSize() {
         return pageSize;
     }

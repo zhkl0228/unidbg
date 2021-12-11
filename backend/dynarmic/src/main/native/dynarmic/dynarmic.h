@@ -3,6 +3,7 @@
 
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
+#include <vector>
 
 #include <dynarmic/exclusive_monitor.h>
 
@@ -21,3 +22,21 @@ typedef struct memory_page {
 } *t_memory_page;
 
 KHASH_MAP_INIT_INT64(memory, t_memory_page)
+
+using Vector = std::array<std::uint64_t, 2>;
+typedef struct context64 {
+  std::uint64_t sp;
+  std::uint64_t pc;
+  std::array<std::uint64_t, 31> registers;
+  std::array<Vector, 32> vectors;
+  std::uint32_t fpcr;
+  std::uint32_t fpsr;
+  std::uint32_t pstate;
+} *t_context64;
+
+typedef struct context32 {
+  std::array<std::uint32_t, 16> regs;
+  std::array<std::uint32_t, 64> extRegs;
+  std::uint32_t cpsr;
+  std::uint32_t fpscr;
+} *t_context32;
