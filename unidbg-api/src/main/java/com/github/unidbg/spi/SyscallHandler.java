@@ -30,4 +30,6 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook, Seri
 
     void setBreaker(Breaker breaker);
 
+    void setEnableThreadDispatcher(boolean threadDispatcherEnabled);
+
 }

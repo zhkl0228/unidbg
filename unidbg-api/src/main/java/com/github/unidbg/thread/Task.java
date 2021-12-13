@@ -2,7 +2,9 @@ package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
 
-interface Task {
+public interface Task {
+
+    String TASK_KEY = Task.class.getName();
 
     boolean canDispatch();
 

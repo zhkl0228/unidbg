@@ -567,4 +567,11 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         throw new UnsupportedOperationException();
     }
 
+    protected boolean threadDispatcherEnabled;
+
+    @Override
+    public void setEnableThreadDispatcher(boolean threadDispatcherEnabled) {
+        this.threadDispatcherEnabled = threadDispatcherEnabled;
+    }
+
 }

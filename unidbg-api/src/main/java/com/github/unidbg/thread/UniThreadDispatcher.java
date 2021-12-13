@@ -35,31 +35,36 @@ public class UniThreadDispatcher implements ThreadDispatcher {
             log.debug("runMainForResult main=" + main);
         }
 
-        while (true) {
-            if (taskList.isEmpty()) {
-                throw new IllegalStateException();
-            }
-            for (Iterator<Task> iterator = taskList.iterator(); iterator.hasNext(); ) {
-                Task task = iterator.next();
-                if (task.canDispatch()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Start dispatch task=" + task);
-                    }
-                    Number ret = task.dispatch(emulator);
-                    if (log.isDebugEnabled()) {
-                        log.debug("End dispatch task=" + task + ", ret=" + ret);
-                    }
-                    if (ret != null) {
-                        task.destroy(emulator);
-                        iterator.remove();
-                        if(task.isMainThread()) {
-                            return ret;
+        try {
+            while (true) {
+                if (taskList.isEmpty()) {
+                    throw new IllegalStateException();
+                }
+                for (Iterator<Task> iterator = taskList.iterator(); iterator.hasNext(); ) {
+                    Task task = iterator.next();
+                    if (task.canDispatch()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Start dispatch task=" + task);
                         }
-                    } else {
-                        task.saveContext(emulator);
+                        emulator.set(Task.TASK_KEY, task);
+                        Number ret = task.dispatch(emulator);
+                        if (log.isDebugEnabled()) {
+                            log.debug("End dispatch task=" + task + ", ret=" + ret);
+                        }
+                        if (ret != null) {
+                            task.destroy(emulator);
+                            iterator.remove();
+                            if(task.isMainThread()) {
+                                return ret;
+                            }
+                        } else {
+                            task.saveContext(emulator);
+                        }
                     }
                 }
             }
+        } finally {
+            emulator.set(Task.TASK_KEY, null);
         }
     }
 
