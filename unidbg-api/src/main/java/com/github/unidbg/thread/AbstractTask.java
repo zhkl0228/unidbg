@@ -30,7 +30,7 @@ abstract class AbstractTask implements Task {
             pc &= 0xffffffffL;
         }
         if (log.isDebugEnabled()) {
-            log.debug("resume task=" + this + ", pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until));
+            log.debug("continue run task=" + this + ", pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until));
         }
         return emulator.emulate(pc, until);
     }

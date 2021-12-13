@@ -23,6 +23,8 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.MemoryWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
+import com.github.unidbg.thread.PopContextException;
+import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.thread.UniThreadDispatcher;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -456,6 +458,8 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             } catch (RuntimeException exception) {
                 return handleEmuException(exception, pointer, start);
             }
+        } catch (ThreadContextSwitchException e) {
+            throw new UnsupportedOperationException(e);
         } catch (RuntimeException e) {
             return handleEmuException(e, pointer, start);
         } finally {
@@ -476,7 +480,11 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             e.printStackTrace();
             attach().debug();
         } else {
-            log.warn("emulate " + pointer + " exception sp=" + getStackPointer() + ", msg=" + e.getMessage() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+            String msg = e.getMessage();
+            if (msg == null) {
+                msg = e.getClass().getName();
+            }
+            log.warn("emulate " + pointer + " exception sp=" + getStackPointer() + ", msg=" + msg + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }
         return -1;
     }

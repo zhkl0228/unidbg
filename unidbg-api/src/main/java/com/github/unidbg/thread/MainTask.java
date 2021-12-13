@@ -2,7 +2,7 @@ package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
 
-abstract class MainTask extends AbstractTask implements Task {
+public abstract class MainTask extends AbstractTask implements Task {
 
     protected final long begin;
     protected final long until;

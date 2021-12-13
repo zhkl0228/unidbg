@@ -6,11 +6,11 @@ import com.github.unidbg.memory.Memory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
-public class EntryTask extends MainTask {
+public class Entry extends MainTask {
 
     private final long sp;
 
-    public EntryTask(long begin, long until, long sp) {
+    public Entry(long begin, long until, long sp) {
         super(begin, until);
         this.sp = sp;
     }

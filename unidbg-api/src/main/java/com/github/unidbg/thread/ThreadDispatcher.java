@@ -2,7 +2,7 @@ package com.github.unidbg.thread;
 
 public interface ThreadDispatcher {
 
-    void addTask(Task task);
+    void addThread(ThreadTask task);
 
     Number runMainForResult(MainTask main);
 

@@ -20,8 +20,8 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.SyscallHandler;
-import com.github.unidbg.thread.EntryTask;
-import com.github.unidbg.thread.FunctionTask32;
+import com.github.unidbg.thread.Entry;
+import com.github.unidbg.thread.Function32;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unwind.SimpleARMUnwinder;
 import com.github.unidbg.unwind.Unwinder;
@@ -229,7 +229,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
         long spBackup = memory.getStackPoint();
         try {
             return new Number[] {
-                    getThreadDispatcher().runMainForResult(new FunctionTask32(begin, LR, isPaddingArgument(), arguments))
+                    getThreadDispatcher().runMainForResult(new Function32(begin, LR, isPaddingArgument(), arguments))
             };
         } finally {
             memory.setStackPoint(spBackup);
@@ -240,7 +240,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public Number eEntry(long begin, long sp) {
         long spBackup = memory.getStackPoint();
         try {
-            return getThreadDispatcher().runMainForResult(new EntryTask(begin, LR, sp));
+            return getThreadDispatcher().runMainForResult(new Entry(begin, LR, sp));
         } finally {
             memory.setStackPoint(spBackup);
         }

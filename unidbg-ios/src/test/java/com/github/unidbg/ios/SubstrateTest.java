@@ -7,6 +7,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookLoader;
@@ -39,6 +40,7 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         return DarwinEmulatorBuilder.for32Bit()
                 .setProcessName("com.substrate.test")
                 .setRootDir(new File("target/rootfs/substrate"))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
     }
 

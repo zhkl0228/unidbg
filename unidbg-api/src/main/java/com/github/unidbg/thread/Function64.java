@@ -6,18 +6,18 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.Memory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import unicorn.ArmConst;
+import unicorn.Arm64Const;
 
 import java.util.Arrays;
 
-public class FunctionTask32 extends MainTask {
+public class Function64 extends MainTask {
 
-    private static final Log log = LogFactory.getLog(FunctionTask32.class);
+    private static final Log log = LogFactory.getLog(Function64.class);
 
     private final boolean paddingArgument;
     private final Number[] arguments;
 
-    public FunctionTask32(long begin, long until, boolean paddingArgument, Number[] arguments) {
+    public Function64(long begin, long until, boolean paddingArgument, Number[] arguments) {
         super(begin, until);
         this.paddingArgument = paddingArgument;
         this.arguments = arguments;
@@ -30,10 +30,10 @@ public class FunctionTask32 extends MainTask {
         ARM.initArgs(emulator, paddingArgument, arguments);
 
         long sp = memory.getStackPoint();
-        if (sp % 8 != 0) {
-            log.info("SP NOT 8 bytes aligned", new Exception(emulator.getStackPointer().toString()));
+        if (sp % 16 != 0) {
+            log.info("SP NOT 16 bytes aligned", new Exception(emulator.getStackPointer().toString()));
         }
-        backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
+        backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
         return emulator.emulate(begin, until);
     }
 

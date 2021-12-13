@@ -2,7 +2,8 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
-import com.github.unidbg.PopContextException;
+import com.github.unidbg.LongJumpException;
+import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
@@ -491,7 +492,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         } catch (StopEmulatorException e) {
             backend.emu_stop();
             return;
-        } catch (PopContextException e) {
+        } catch (LongJumpException e) {
             backend.emu_stop();
             throw e;
         } catch (Throwable e) {

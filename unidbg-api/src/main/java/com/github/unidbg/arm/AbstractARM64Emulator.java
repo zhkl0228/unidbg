@@ -20,8 +20,8 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.SyscallHandler;
-import com.github.unidbg.thread.EntryTask;
-import com.github.unidbg.thread.FunctionTask64;
+import com.github.unidbg.thread.Entry;
+import com.github.unidbg.thread.Function64;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unwind.SimpleARM64Unwinder;
 import com.github.unidbg.unwind.Unwinder;
@@ -231,7 +231,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         long spBackup = memory.getStackPoint();
         try {
             return new Number[]{
-                    getThreadDispatcher().runMainForResult(new FunctionTask64(begin, LR, isPaddingArgument(), arguments))
+                    getThreadDispatcher().runMainForResult(new Function64(begin, LR, isPaddingArgument(), arguments))
             };
         } finally {
             memory.setStackPoint(spBackup);
@@ -242,7 +242,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     public Number eEntry(long begin, long sp) {
         long spBackup = memory.getStackPoint();
         try {
-            return getThreadDispatcher().runMainForResult(new EntryTask(begin, LR, sp));
+            return getThreadDispatcher().runMainForResult(new Entry(begin, LR, sp));
         } finally {
             memory.setStackPoint(spBackup);
         }

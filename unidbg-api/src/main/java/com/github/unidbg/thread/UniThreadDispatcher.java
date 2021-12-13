@@ -23,7 +23,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
     }
 
     @Override
-    public void addTask(Task task) {
+    public void addThread(ThreadTask task) {
         taskList.add(task);
     }
 

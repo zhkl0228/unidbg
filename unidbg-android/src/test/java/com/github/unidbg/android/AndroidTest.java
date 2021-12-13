@@ -4,7 +4,7 @@ import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.PopContextException;
+import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.arm.context.RegisterContext;
