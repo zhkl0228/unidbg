@@ -41,7 +41,7 @@ public class URLibraryFile implements LibraryFile {
         if (version == null) {
             return null;
         }
-        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs);
+        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs, DarwinResolver.class);
     }
 
     @Override

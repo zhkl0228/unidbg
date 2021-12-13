@@ -49,12 +49,12 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
 
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName) {
-        return resolveLibrary(libraryName, version, excludeLibs);
+        return resolveLibrary(libraryName, version, excludeLibs, getClass());
     }
 
     private static final Pattern SYSTEM_LIBRARY_FRAMEWORK_PATTERN = Pattern.compile("/System/Library/Frameworks/(\\w+).framework/Versions/[A-C]/(\\w+)");
 
-    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs) {
+    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs, Class<?> resClass) {
         if (!excludeLibs.isEmpty() && excludeLibs.contains(FilenameUtils.getName(libraryName))) {
             return null;
         }
@@ -69,7 +69,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         String name = "/ios/" + version + libraryName.replace('+', 'p');
-        URL url = DarwinResolver.class.getResource(name);
+        URL url = resClass.getResource(name);
         if (url != null) {
             return new URLibraryFile(url, libraryName, version, excludeLibs);
         }
@@ -107,7 +107,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
-        File file = ResourceUtils.extractResource(DarwinResolver.class, iosResource, path);
+        File file = ResourceUtils.extractResource(getClass(), iosResource, path);
         if (file != null) {
             return FileResult.fallback(createFileIO(file, path, oflags));
         }

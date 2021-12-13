@@ -62,7 +62,7 @@ public class ByteArrayFileIO extends BaseDarwinFileIO {
     }
 
     @Override
-    protected byte[] getMmapData(int offset, int length) {
+    protected byte[] getMmapData(long addr, int offset, int length) {
         if (offset == 0 && length == bytes.length) {
             return bytes;
         } else {

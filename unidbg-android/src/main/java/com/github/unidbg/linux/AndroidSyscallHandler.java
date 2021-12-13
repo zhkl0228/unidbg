@@ -1,6 +1,7 @@
 package com.github.unidbg.linux;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.linux.AndroidFileIO;
@@ -13,6 +14,7 @@ import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.spi.SyscallHandler;
+import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
@@ -164,6 +166,33 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         return new Pair<>(writeIO, readIO);
     }
 
+    protected int fchmodat(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname_p = context.getPointerArg(1);
+        int mode = context.getIntArg(2);
+        int flags = context.getIntArg(3);
+        String pathname = pathname_p.getString(0);
+        if (log.isDebugEnabled()) {
+            log.debug("fchmodat dirfd=" + dirfd + ", pathname=" + pathname + ", mode=0x" + Integer.toHexString(mode) + ", flags=0x" + Integer.toHexString(flags));
+        }
+        return 0;
+    }
+
+    protected int fchownat(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname_p = context.getPointerArg(1);
+        int owner = context.getIntArg(2);
+        int group = context.getIntArg(3);
+        int flags = context.getIntArg(4);
+        String pathname = pathname_p.getString(0);
+        if (log.isDebugEnabled()) {
+            log.debug("fchownat dirfd=" + dirfd + ", pathname=" + pathname + ", owner=" + owner + ", group=" + group + ", flags=0x" + Integer.toHexString(flags));
+        }
+        return 0;
+    }
+
     protected int mkdirat(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int dirfd = context.getIntArg(0);
@@ -173,8 +202,19 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (log.isDebugEnabled()) {
             log.debug("mkdirat dirfd=" + dirfd + ", pathname=" + pathname + ", mode=" + Integer.toHexString(mode));
         }
-        emulator.getMemory().setErrno(UnixEmulator.EACCES);
-        return -1;
+        if (dirfd != IO.AT_FDCWD) {
+            throw new BackendException();
+        }
+        if (emulator.getFileSystem().mkdir(pathname, mode)) {
+            if (log.isDebugEnabled()) {
+                log.debug("mkdir pathname=" + pathname + ", mode=" + mode);
+            }
+            return 0;
+        } else {
+            log.info("mkdir pathname=" + pathname + ", mode=" + mode);
+            emulator.getMemory().setErrno(UnixEmulator.EACCES);
+            return -1;
+        }
     }
 
     final int select(int nfds, Pointer checkfds, Pointer clearfds, boolean checkRead) {

@@ -7,6 +7,7 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
@@ -169,6 +170,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi != DARWIN_SWI_SYSCALL) {
+                if (swi == Arm64Svc.SVC_MAX) {
+                    throw new PopContextException();
+                }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, svc.handle(emulator));

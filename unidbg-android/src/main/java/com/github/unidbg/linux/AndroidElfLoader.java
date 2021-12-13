@@ -77,7 +77,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         this.environ = initializeTLS(new String[] {
                 "ANDROID_DATA=/data",
                 "ANDROID_ROOT=/system",
-                "PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin"
+                "PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin",
+                "NO_ADDR_COMPAT_LAYOUT_FIXUP=1"
         });
         this.setErrno(0);
     }

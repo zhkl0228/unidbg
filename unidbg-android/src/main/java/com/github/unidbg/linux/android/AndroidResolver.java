@@ -60,13 +60,17 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
             return null;
         }
 
-        return resolveLibrary(emulator, libraryName, sdk);
+        return resolveLibrary(emulator, libraryName, sdk, getClass());
     }
 
     static LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName, int sdk) {
+        return resolveLibrary(emulator, libraryName, sdk, AndroidResolver.class);
+    }
+
+    protected static LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName, int sdk, Class<?> resClass) {
         final String lib = emulator.is32Bit() ? "lib" : "lib64";
         String name = "/android/sdk" + sdk + "/" + lib + "/" + libraryName.replace('+', 'p');
-        URL url = AndroidResolver.class.getResource(name);
+        URL url = resClass.getResource(name);
         if (url != null) {
             return new URLibraryFile(url, libraryName, sdk, emulator.is64Bit());
         }
@@ -98,7 +102,7 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         }
 
         String androidResource = FilenameUtils.normalize("/android/sdk" + sdk + "/" + path, true);
-        File file = ResourceUtils.extractResource(AndroidResolver.class, androidResource, path);
+        File file = ResourceUtils.extractResource(getClass(), androidResource, path);
         if (file != null) {
             return FileResult.fallback(createFileIO(file, path, oflags));
         }

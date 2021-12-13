@@ -7,7 +7,9 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.Cpsr;
+import com.github.unidbg.arm.ThumbSvc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
@@ -167,6 +169,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi != DARWIN_SWI_SYSCALL) {
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX)) {
+                    throw new PopContextException();
+                }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));

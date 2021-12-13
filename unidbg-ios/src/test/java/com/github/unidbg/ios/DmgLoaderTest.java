@@ -3,6 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.classdump.ClassDumper;
@@ -23,7 +24,8 @@ public class DmgLoaderTest implements EmulatorConfigurator {
         long start = System.currentTimeMillis();
         File dmg = new File(FileUtils.getUserDirectory(), "Downloads/WeChat.app");
         DmgLoader ipaLoader = new DmgLoader64(dmg, new File("target/rootfs/dmg"));
-        ipaLoader.addBackendFactory(new DynarmicFactory(false));
+        ipaLoader.addBackendFactory(new DynarmicFactory(true));
+        ipaLoader.addBackendFactory(new HypervisorFactory(false));
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
         LoadedDmg loader = ipaLoader.load(this);
         final Emulator<?> emulator = loader.getEmulator();

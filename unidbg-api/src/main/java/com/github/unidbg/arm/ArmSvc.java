@@ -10,8 +10,14 @@ import java.nio.ByteOrder;
 
 public abstract class ArmSvc implements Svc {
 
+    public static final int SVC_MAX = 0xffffff;
+
     public static int assembleSvc(int svcNumber) {
-        return 0xef000000 | svcNumber;
+        if (svcNumber >= 0 && svcNumber < SVC_MAX) {
+            return 0xef000000 | svcNumber;
+        } else {
+            throw new IllegalStateException("svcNumber=0x" + Integer.toHexString(svcNumber));
+        }
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
@@ -102,6 +103,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi != 0) {
+                if (swi == Arm64Svc.SVC_MAX) {
+                    throw new PopContextException();
+                }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, svc.handle(emulator));
@@ -151,6 +155,12 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 38:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, renameat(emulator));
                     return;
+                case 53:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fchmodat(emulator));
+                    return;
+                case 54:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fchownat(emulator));
+                    return;
                 case 56:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, openat(backend, emulator));
                     return;
@@ -186,6 +196,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 80:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fstat(backend, emulator));
                     return;
+                case 83:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fdatasync(emulator));
+                    return;
                 case 98:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, futex(emulator));
                     return;
@@ -218,7 +231,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, sched_getaffinity(emulator));
                     return;
                 case 167:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, prctl(backend, emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, prctl(emulator));
                     return;
                 case 169:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
@@ -333,6 +346,15 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private long fdatasync(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("fdatasync fd=" + fd);
+        }
+        return 0;
     }
 
     private long gerrandom(Emulator<?> emulator) {
@@ -1036,12 +1058,14 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
     }
 
     private static final int PR_SET_NAME = 15;
+    private static final int PR_SET_NO_NEW_PRIVS = 38;
     private static final int BIONIC_PR_SET_VMA =              0x53564d41;
     private static final int PR_SET_PTRACER = 0x59616d61;
 
-    private int prctl(Backend backend, Emulator<?> emulator) {
-        int option = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).intValue();
-        long arg2 = backend.reg_read(Arm64Const.UC_ARM64_REG_X1).longValue();
+    private int prctl(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int option = context.getIntArg(0);
+        long arg2 = context.getLongArg(1);
         if (log.isDebugEnabled()) {
             log.debug("prctl option=0x" + Integer.toHexString(option) + ", arg2=0x" + Long.toHexString(arg2));
         }
@@ -1053,9 +1077,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 }
                 return 0;
             case BIONIC_PR_SET_VMA:
-                Pointer addr = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X2);
-                int len = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
-                Pointer pointer = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X4);
+                Pointer addr = context.getPointerArg(2);
+                int len = context.getIntArg(3);
+                Pointer pointer = context.getPointerArg(4);
                 if (log.isDebugEnabled()) {
                     log.debug("prctl set vma addr=" + addr + ", len=" + len + ", pointer=" + pointer + ", name=" + pointer.getString(0));
                 }
@@ -1065,6 +1089,8 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 if (log.isDebugEnabled()) {
                     log.debug("prctl set ptracer: " + pid);
                 }
+                return 0;
+            case PR_SET_NO_NEW_PRIVS:
                 return 0;
         }
         throw new UnsupportedOperationException("option=" + option);

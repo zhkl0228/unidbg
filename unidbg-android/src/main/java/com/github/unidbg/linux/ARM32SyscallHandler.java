@@ -7,6 +7,8 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.ArmSvc;
+import com.github.unidbg.arm.ThumbSvc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
@@ -115,6 +117,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi != 0) {
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX)) {
+                    throw new PopContextException();
+                }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));
@@ -730,6 +735,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
     protected int fork(Emulator<?> emulator) {
         log.info("fork");
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
     }
@@ -963,9 +972,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     }
 
     private int execve(Emulator<?> emulator) {
-        Pointer filename = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer argv = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer envp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        RegisterContext context = emulator.getContext();
+        Pointer filename = context.getPointerArg(0);
+        Pointer argv = context.getPointerArg(1);
+        Pointer envp = context.getPointerArg(2);
         assert filename != null;
         List<String> args = new ArrayList<>();
         Pointer pointer;
@@ -979,6 +989,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             envp = envp.share(4);
         }
         log.info("execve filename=" + filename.getString(0) + ", args=" + args + ", env=" + env);
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }

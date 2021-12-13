@@ -14,8 +14,14 @@ public abstract class Arm64Svc implements Svc {
 
     private static final Log log = LogFactory.getLog(Arm64Svc.class);
 
+    public static final int SVC_MAX = 0xffff;
+
     public static int assembleSvc(int svcNumber) {
-        return 0xd4000001 | (svcNumber << 5);
+        if (svcNumber >= 0 && svcNumber < SVC_MAX) {
+            return 0xd4000001 | (svcNumber << 5);
+        } else {
+            throw new IllegalStateException("svcNumber=0x" + Integer.toHexString(svcNumber));
+        }
     }
 
     @Override
