@@ -266,18 +266,6 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    @Deprecated
-    public void eBlock(long begin, long until) {
-        long spBackup = memory.getStackPoint();
-        try {
-            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-            emulate(begin, until, timeout, true);
-        } finally {
-            memory.setStackPoint(spBackup);
-        }
-    }
-
-    @Override
     public int getPointerSize() {
         return 4;
     }

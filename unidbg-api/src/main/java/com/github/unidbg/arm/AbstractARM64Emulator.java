@@ -268,18 +268,6 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
-    @Deprecated
-    public void eBlock(long begin, long until) {
-        long spBackup = memory.getStackPoint();
-        try {
-            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, LR);
-            emulate(begin, until, timeout, true);
-        } finally {
-            memory.setStackPoint(spBackup);
-        }
-    }
-
-    @Override
     protected Pointer getStackPointer() {
         return UnidbgPointer.register(this, Arm64Const.UC_ARM64_REG_SP);
     }

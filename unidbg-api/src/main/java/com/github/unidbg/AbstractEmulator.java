@@ -21,8 +21,6 @@ import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceSystemMemoryWriteListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.memory.MemoryBlock;
-import com.github.unidbg.memory.MemoryBlockImpl;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.MemoryWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -45,7 +43,6 @@ import java.lang.management.ManagementFactory;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -168,27 +165,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     protected abstract Dlfcn createDyld(SvcMemory svcMemory);
 
     protected abstract UnixSyscallHandler<T> createSyscallHandler(SvcMemory svcMemory);
-
-    @Override
-    @Deprecated
-    public void runAsm(String... asm) {
-        byte[] shellCode = assemble(Arrays.asList(asm));
-
-        if (shellCode.length < 2) {
-            throw new IllegalStateException("run asm failed");
-        }
-
-        long spBackup = getMemory().getStackPoint();
-        MemoryBlock block = MemoryBlockImpl.allocExecutable(getMemory(), shellCode.length);
-        UnidbgPointer pointer = block.getPointer();
-        pointer.write(0, shellCode, 0, shellCode.length);
-        try {
-            emulate(pointer.peer, pointer.peer + shellCode.length, 0, false);
-        } finally {
-            block.free();
-            getMemory().setStackPoint(spBackup);
-        }
-    }
 
     protected abstract byte[] assemble(Iterable<String> assembly);
 
@@ -364,6 +340,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 exitHook = new Thread() {
                     @Override
                     public void run() {
+                        backend.emu_stop();
                         Debugger debugger = attach();
                         if (!debugger.isDebugging()) {
                             debugger.debug();
