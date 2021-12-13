@@ -28,9 +28,6 @@ static int sdk_int = 0;
 static void *start_routine(void *arg) {
   void *ret = &sdk_int;
   printf("test_pthread start_routine arg=%p, ret=%p\n", arg, ret);
-  while(true) {
-    sleep(88);
-  }
   return ret;
 }
 
