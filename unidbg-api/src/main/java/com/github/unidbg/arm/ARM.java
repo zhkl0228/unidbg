@@ -1132,7 +1132,7 @@ public class ARM {
 
     private static final Log log = LogFactory.getLog(ARM.class);
 
-    static Arguments initArgs(Emulator<?> emulator, boolean padding, Number... arguments) {
+    public static Arguments initArgs(Emulator<?> emulator, boolean padding, Number... arguments) {
         Backend backend = emulator.getBackend();
         Memory memory = emulator.getMemory();
 

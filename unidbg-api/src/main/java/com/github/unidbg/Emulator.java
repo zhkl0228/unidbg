@@ -18,6 +18,7 @@ import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.spi.ValuePair;
+import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.unwind.Unwinder;
 
 import java.io.Closeable;
@@ -63,8 +64,6 @@ public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassemble
     TraceHook traceCode(long begin, long end, TraceCodeListener listener);
 
     Number[] eFunc(long begin, Number... arguments);
-
-    void eInit(long begin, Number... arguments);
 
     Number eEntry(long begin, long sp);
 
@@ -122,5 +121,7 @@ public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassemble
 
     void pushContext(int off);
     int popContext();
+
+    ThreadDispatcher getThreadDispatcher();
 
 }

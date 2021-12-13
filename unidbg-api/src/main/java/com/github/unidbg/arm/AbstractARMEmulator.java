@@ -20,6 +20,8 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.SyscallHandler;
+import com.github.unidbg.thread.EntryTask;
+import com.github.unidbg.thread.FunctionTask32;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unwind.SimpleARMUnwinder;
 import com.github.unidbg.unwind.Unwinder;
@@ -226,21 +228,9 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public Number[] eFunc(long begin, Number... arguments) {
         long spBackup = memory.getStackPoint();
         try {
-            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-            final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
-            return eFunc(begin, args, LR, true);
-        } finally {
-            memory.setStackPoint(spBackup);
-        }
-    }
-
-    @Override
-    public void eInit(long begin, Number... arguments) {
-        long spBackup = memory.getStackPoint();
-        try {
-            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-            final Arguments args = ARM.initArgs(this, isPaddingArgument(), arguments);
-            eFunc(begin, args, LR, false);
+            return new Number[] {
+                    getThreadDispatcher().runMainForResult(new FunctionTask32(begin, LR, isPaddingArgument(), arguments))
+            };
         } finally {
             memory.setStackPoint(spBackup);
         }
@@ -250,9 +240,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public Number eEntry(long begin, long sp) {
         long spBackup = memory.getStackPoint();
         try {
-            memory.setStackPoint(sp);
-            backend.reg_write(ArmConst.UC_ARM_REG_LR, LR);
-            return emulate(begin, LR, timeout, true);
+            return getThreadDispatcher().runMainForResult(new EntryTask(begin, LR, sp));
         } finally {
             memory.setStackPoint(spBackup);
         }
@@ -262,7 +250,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public void eThread(long fn, long arg, long sp) {
         backend.reg_write(ArmConst.UC_ARM_REG_R0, arg);
         backend.reg_write(ArmConst.UC_ARM_REG_SP, sp);
-        emulate(fn, LR, timeout, false);
+        emulate(fn, LR, timeout);
     }
 
     @Override
@@ -276,7 +264,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     @Override
-    protected Pointer getStackPointer() {
+    public Pointer getStackPointer() {
         return UnidbgPointer.register(this, ArmConst.UC_ARM_REG_SP);
     }
 
