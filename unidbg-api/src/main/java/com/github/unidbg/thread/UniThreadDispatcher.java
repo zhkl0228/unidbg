@@ -54,7 +54,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                         if (log.isDebugEnabled()) {
                             log.debug("End dispatch task=" + task + ", ret=" + ret);
                         }
-                        if (ret != null) {
+                        if (ret != null || task.isFinished()) {
                             task.destroy(emulator);
                             iterator.remove();
                             if(task.isMainThread()) {
@@ -62,6 +62,13 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                             }
                         } else {
                             task.saveContext(emulator);
+                        }
+                    }
+
+                    if (log.isDebugEnabled()) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignored) {
                         }
                     }
                 }

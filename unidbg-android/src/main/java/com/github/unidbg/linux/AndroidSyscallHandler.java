@@ -94,6 +94,17 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         return minFd;
     }
 
+    protected int sched_setscheduler(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int policy = context.getIntArg(1);
+        Pointer param = context.getPointerArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("sched_setscheduler pid=" + pid + ", policy=" + policy + ", param=" + param);
+        }
+        return 0;
+    }
+
     @Override
     protected FileResult<AndroidFileIO> createFdDir(int oflags, String pathname) {
         List<DirectoryFileIO.DirectoryEntry> list = new ArrayList<>();

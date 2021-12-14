@@ -3,12 +3,11 @@ package com.github.unidbg.linux;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LongJumpException;
-import com.github.unidbg.arm.AbstractARM64Emulator;
-import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.AbstractARM64Emulator;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
@@ -32,7 +31,10 @@ import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.PopContextException;
+import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
+import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
@@ -279,6 +281,20 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 226:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mprotect(backend, emulator));
+                    return;
+                case 93:
+                    int status = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).intValue();
+                    Task task = emulator.get(Task.TASK_KEY);
+                    if (task instanceof ThreadTask) {
+                        ThreadTask threadTask = (ThreadTask) task;
+                        threadTask.setExitStatus(status);
+                        return;
+                    }
+                    System.out.println("exit status=" + status);
+                    if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                        emulator.attach().debug();
+                    }
+                    backend.emu_stop();
                     return;
                 case 94:
                     exit_group(emulator);
@@ -1213,7 +1229,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 if (log.isDebugEnabled()) {
                     log.debug("futex FUTEX_WAIT mytype=" + mytype + ", shared=" + shared + ", timeout=" + timeout + ", test=" + (mytype | shared));
                 }
-                if (threadDispatcherEnabled) {
+                if (threadDispatcherEnabled && emulator.get(Task.TASK_KEY) != null) {
                     throw new ThreadContextSwitchException();
                 } else {
                     uaddr.setInt(0, mytype | shared);

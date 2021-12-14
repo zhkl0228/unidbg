@@ -673,7 +673,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         return module;
     }
 
-    private long __thread_entry;
+    public long __thread_entry;
 
     private String maxSoName;
     private long maxSizeOfSo;

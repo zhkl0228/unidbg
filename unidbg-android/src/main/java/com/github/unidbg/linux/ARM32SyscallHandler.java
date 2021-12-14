@@ -34,7 +34,9 @@ import com.github.unidbg.linux.struct.SysInfo32;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
+import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
@@ -143,6 +145,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             switch (NR) {
                 case 1:
                     int status = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
+                    Task task = emulator.get(Task.TASK_KEY);
+                    if (task instanceof ThreadTask) {
+                        ThreadTask threadTask = (ThreadTask) task;
+                        threadTask.setExitStatus(status);
+                        return;
+                    }
                     System.out.println("exit status=" + status);
                     if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
                         emulator.attach().debug();
@@ -287,6 +295,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 150:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, mlock(emulator));
+                    return;
+                case 156:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_setscheduler(emulator));
                     return;
                 case 162:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
@@ -1813,7 +1824,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 if (log.isDebugEnabled()) {
                     log.debug("futex FUTEX_WAIT mytype=" + mytype + ", shared=" + shared + ", timeout=" + timeout + ", test=" + (mytype | shared));
                 }
-                if (threadDispatcherEnabled) {
+                if (threadDispatcherEnabled && emulator.get(Task.TASK_KEY) != null) {
                     throw new ThreadContextSwitchException();
                 } else {
                     uaddr.setInt(0, mytype | shared);

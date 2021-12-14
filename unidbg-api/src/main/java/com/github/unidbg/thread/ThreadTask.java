@@ -1,7 +1,6 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
-import com.github.unidbg.Emulator;
 
 public abstract class ThreadTask extends AbstractTask implements Task {
 
@@ -14,6 +13,13 @@ public abstract class ThreadTask extends AbstractTask implements Task {
     @Override
     public final boolean isMainThread() {
         return false;
+    }
+
+    private int exitStatus;
+
+    public void setExitStatus(int status) {
+        this.exitStatus = status;
+        setFinished();
     }
 
     @Override

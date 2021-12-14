@@ -2,6 +2,7 @@ package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -22,6 +23,17 @@ abstract class AbstractTask implements Task {
         return this.context != 0;
     }
 
+    private boolean finished;
+
+    @Override
+    public boolean isFinished() {
+        return finished;
+    }
+
+    protected void setFinished() {
+        this.finished = true;
+    }
+
     protected final Number continueRun(AbstractEmulator<?> emulator, long until) {
         Backend backend = emulator.getBackend();
         backend.context_restore(this.context);
@@ -30,7 +42,7 @@ abstract class AbstractTask implements Task {
             pc &= 0xffffffffL;
         }
         if (log.isDebugEnabled()) {
-            log.debug("continue run task=" + this + ", pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until));
+            log.debug("continue run task=" + this + ", pc=" + UnidbgPointer.pointer(emulator, pc) + ", until=0x" + Long.toHexString(until));
         }
         return emulator.emulate(pc, until);
     }
@@ -45,7 +57,7 @@ abstract class AbstractTask implements Task {
     }
 
     @Override
-    public final void destroy(AbstractEmulator<?> emulator) {
+    public void destroy(AbstractEmulator<?> emulator) {
         Backend backend = emulator.getBackend();
         if (this.context != 0) {
             backend.context_free(this.context);
