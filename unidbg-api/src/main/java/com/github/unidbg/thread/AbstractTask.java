@@ -1,6 +1,7 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.logging.Log;
@@ -40,6 +41,9 @@ abstract class AbstractTask implements Task {
         long pc = backend.reg_read(emulator.is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC).longValue();
         if (emulator.is32Bit()) {
             pc &= 0xffffffffL;
+            if (ARM.isThumb(backend)) {
+                pc += 1;
+            }
         }
         if (log.isDebugEnabled()) {
             log.debug("continue run task=" + this + ", pc=" + UnidbgPointer.pointer(emulator, pc) + ", until=0x" + Long.toHexString(until));

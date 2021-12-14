@@ -6,4 +6,6 @@ public interface ThreadDispatcher {
 
     Number runMainForResult(MainTask main);
 
+    int getTaskCount();
+
 }

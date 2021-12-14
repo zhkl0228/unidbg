@@ -84,6 +84,7 @@ import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unix.struct.TimeVal32;
@@ -172,6 +173,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             if (swi != DARWIN_SWI_SYSCALL) {
                 if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX)) {
                     throw new PopContextException();
+                }
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX) - 1) {
+                    throw new ThreadContextSwitchException();
                 }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {

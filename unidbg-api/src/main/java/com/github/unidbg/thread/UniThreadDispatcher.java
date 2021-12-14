@@ -85,4 +85,8 @@ public class UniThreadDispatcher implements ThreadDispatcher {
         }
     }
 
+    @Override
+    public int getTaskCount() {
+        return taskList.size();
+    }
 }

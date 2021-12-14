@@ -125,6 +125,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX)) {
                     throw new PopContextException();
                 }
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX) - 1) {
+                    throw new ThreadContextSwitchException();
+                }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));
@@ -1836,6 +1839,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             case FUTEX_WAKE:
                 if (log.isDebugEnabled()) {
                     log.debug("futex FUTEX_WAKE val=0x" + Integer.toHexString(val) + ", old=" + old + ", task=" + task);
+                }
+                if (emulator.getThreadDispatcher().getTaskCount() <= 1) {
+                    return 0;
                 }
                 if (threadDispatcherEnabled && task != null) {
                     throw new ThreadContextSwitchException();

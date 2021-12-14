@@ -13,7 +13,7 @@ public abstract class ThumbSvc implements Svc {
     public static final int SVC_MAX = 0xff;
 
     public static short assembleSvc(int svcNumber) {
-        if (svcNumber >= 0 && svcNumber < SVC_MAX) {
+        if (svcNumber >= 0 && svcNumber < SVC_MAX - 1) {
             return (short) (0xdf00 | svcNumber);
         } else {
             throw new IllegalStateException("svcNumber=0x" + Integer.toHexString(svcNumber));

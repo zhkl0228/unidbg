@@ -17,7 +17,7 @@ public abstract class Arm64Svc implements Svc {
     public static final int SVC_MAX = 0xffff;
 
     public static int assembleSvc(int svcNumber) {
-        if (svcNumber >= 0 && svcNumber < SVC_MAX) {
+        if (svcNumber >= 0 && svcNumber < SVC_MAX - 1) {
             return 0xd4000001 | (svcNumber << 5);
         } else {
             throw new IllegalStateException("svcNumber=0x" + Integer.toHexString(svcNumber));
