@@ -152,7 +152,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Throwable exception = null;
         try {
             if (swi == 0 && NR == Svc.POST_CALLBACK_SYSCALL_NUMBER && backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue() == 0) { // postCallback
-                int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
+                int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X12).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
                     svc.handlePostCallback(emulator);
@@ -162,7 +162,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi == 0 && NR == Svc.PRE_CALLBACK_SYSCALL_NUMBER && backend.reg_read(Arm64Const.UC_ARM64_REG_X8).intValue() == 0) { // preCallback
-                int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
+                int number = backend.reg_read(Arm64Const.UC_ARM64_REG_X12).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
                     svc.handlePreCallback(emulator);

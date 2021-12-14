@@ -35,6 +35,7 @@ public abstract class BaseHook implements IHook {
             }
             @Override
             public void handlePostCallback(Emulator<?> emulator) {
+                super.handlePostCallback(emulator);
                 EditableArm64RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm64HookContext(context, registerContext));
             }
@@ -46,6 +47,7 @@ public abstract class BaseHook implements IHook {
             }
             @Override
             public void handlePostCallback(Emulator<?> emulator) {
+                super.handlePostCallback(emulator);
                 EditableArm32RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm32HookContext(context, registerContext));
             }

@@ -68,7 +68,7 @@ public class DynarmicBackend64 extends DynarmicBackend {
                     return dynarmic.reg_read64(regId - Arm64Const.UC_ARM64_REG_X0);
                 case Arm64Const.UC_ARM64_REG_SP:
                     return dynarmic.reg_read_sp64();
-                case Arm64Const.UC_ARM64_REG_FP:
+                case Arm64Const.UC_ARM64_REG_X29:
                     return dynarmic.reg_read64(29);
                 case Arm64Const.UC_ARM64_REG_LR:
                     return dynarmic.reg_read64(30);
@@ -121,6 +121,9 @@ public class DynarmicBackend64 extends DynarmicBackend {
                     break;
                 case Arm64Const.UC_ARM64_REG_SP:
                     dynarmic.reg_set_sp64(value.longValue());
+                    break;
+                case Arm64Const.UC_ARM64_REG_X29:
+                    dynarmic.reg_write64(29, value.longValue());
                     break;
                 case Arm64Const.UC_ARM64_REG_LR:
                     dynarmic.reg_write64(30, value.longValue());

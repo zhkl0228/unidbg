@@ -87,23 +87,23 @@ class BsdThreadCreatePatcher64 extends Arm64Svc {
                     "stp x29, x30, [sp]",
                     "svc #0x" + Integer.toHexString(svcNumber),
 
-                    "ldr x7, [sp]",
+                    "ldr x13, [sp]",
                     "add sp, sp, #0x8",
-                    "cmp x7, #0",
+                    "cmp x13, #0",
                     "b.eq #0x48",
 
-                    "ldp x0, x7, [sp]",
+                    "ldp x0, x13, [sp]",
                     "add sp, sp, #0x10",
 
                     "mov x8, #0",
-                    "mov x4, #0x" + Integer.toHexString(svcNumber),
+                    "mov x12, #0x" + Integer.toHexString(svcNumber),
                     "mov x16, #0x" + Integer.toHexString(Svc.PRE_CALLBACK_SYSCALL_NUMBER),
                     "svc #0",
 
-                    "blr x7",
+                    "blr x13",
 
                     "mov x8, #0",
-                    "mov x4, #0x" + Integer.toHexString(svcNumber),
+                    "mov x12, #0x" + Integer.toHexString(svcNumber),
                     "mov x16, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                     "svc #0",
 

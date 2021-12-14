@@ -138,18 +138,18 @@ public class Dyld64 extends Dyld {
                             "stp x29, x30, [sp]",
                             "svc #0x" + Integer.toHexString(svcNumber),
 
-                            "ldr x7, [sp]",
+                            "ldr x13, [sp]",
                             "add sp, sp, #0x8", // manipulated stack in __dyld_register_func_for_add_image
-                            "cmp x7, #0",
+                            "cmp x13, #0",
                             "b.eq #0x38",
-                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "adr lr, #-0xf", // jump to ldr x13, [sp]
                             "bic lr, lr, #0x1",
 
                             "ldr x0, [sp]",
                             "add sp, sp, #0x8",
                             "ldr x1, [sp]",
                             "add sp, sp, #0x8",
-                            "br x7", // call (headerType *mh, unsigned long	vmaddr_slide)
+                            "br x13", // call (headerType *mh, unsigned long	vmaddr_slide)
 
                             "ldr x0, [sp]", // with return address
                             "add sp, sp, #0x8",
@@ -223,11 +223,11 @@ public class Dyld64 extends Dyld {
                             "stp x29, x30, [sp]",
                             "svc #0x" + Integer.toHexString(svcNumber),
 
-                            "ldr x7, [sp]",
+                            "ldr x13, [sp]",
                             "add sp, sp, #0x8", // manipulated stack in dyld_image_state_change_handler
-                            "cmp x7, #0",
+                            "cmp x13, #0",
                             "b.eq #0x40",
-                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "adr lr, #-0xf", // jump to ldr x13, [sp]
                             "bic lr, lr, #0x1",
 
                             "ldr x0, [sp]",
@@ -236,7 +236,7 @@ public class Dyld64 extends Dyld {
                             "add sp, sp, #0x8",
                             "ldr x2, [sp]",
                             "add sp, sp, #0x8",
-                            "br x7", // call (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
+                            "br x13", // call (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
 
                             "ldr x0, [sp]", // with return address
                             "add sp, sp, #0x8",
@@ -364,13 +364,13 @@ public class Dyld64 extends Dyld {
                             "stp x29, x30, [sp]",
                             "svc #0x" + Integer.toHexString(svcNumber),
 
-                            "ldr x7, [sp]",
+                            "ldr x13, [sp]",
                             "add sp, sp, #0x8", // manipulated stack in dlopen
-                            "cmp x7, #0",
+                            "cmp x13, #0",
                             "b.eq #0x28",
-                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "adr lr, #-0xf", // jump to ldr x13, [sp]
                             "bic lr, lr, #0x1",
-                            "br x7", // call init array
+                            "br x13", // call init array
 
                             "ldr x0, [sp]", // with return address
                             "add sp, sp, #0x8",

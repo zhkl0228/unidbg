@@ -64,9 +64,9 @@ public class ArmLD64 extends Dlfcn {
                                         "stp x29, x30, [sp]",
                                         "svc #0x" + Integer.toHexString(svcNumber),
 
-                                        "ldr x7, [sp]",
+                                        "ldr x13, [sp]",
                                         "add sp, sp, #0x8",
-                                        "cmp x7, #0",
+                                        "cmp x13, #0",
                                         "b.eq #0x58",
                                         "ldr x0, [sp]",
                                         "add sp, sp, #0x8",
@@ -74,19 +74,19 @@ public class ArmLD64 extends Dlfcn {
                                         "add sp, sp, #0x8",
                                         "ldr x2, [sp]",
                                         "add sp, sp, #0x8",
-                                        "blr x7",
+                                        "blr x13",
                                         "cmp w0, #0",
                                         "b.eq #0xc",
 
-                                        "ldr x7, [sp]",
+                                        "ldr x13, [sp]",
                                         "add sp, sp, #0x8",
-                                        "cmp x7, #0",
+                                        "cmp x13, #0",
                                         "b.eq #0x58",
                                         "add sp, sp, #0x18",
                                         "b 0x40",
 
                                         "mov x8, #0",
-                                        "mov x4, #0x" + Integer.toHexString(svcNumber),
+                                        "mov x12, #0x" + Integer.toHexString(svcNumber),
                                         "mov x16, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                                         "svc #0",
 
@@ -207,12 +207,12 @@ public class ArmLD64 extends Dlfcn {
                             buffer.putInt(0xd10043ff); // "sub sp, sp, #0x10"
                             buffer.putInt(0xa9007bfd); // "stp x29, x30, [sp]"
                             buffer.putInt(Arm64Svc.assembleSvc(svcNumber)); // "svc #0x" + Integer.toHexString(svcNumber)
-                            buffer.putInt(0xf94003e7); // "ldr x7, [sp]"
+                            buffer.putInt(0xf94003ed); // "ldr x13, [sp]"
                             buffer.putInt(0x910023ff); // "add sp, sp, #0x8", manipulated stack in dlopen
-                            buffer.putInt(0xf10000ff); // "cmp x7, #0"
+                            buffer.putInt(0xf10001bf); // "cmp x13, #0"
                             buffer.putInt(0x54000060); // "b.eq #0x24"
-                            buffer.putInt(0x10ffff9e); // "adr lr, #-0xf", jump to ldr x7, [sp]
-                            buffer.putInt(0xd61f00e0); // "br x7", call init array
+                            buffer.putInt(0x10ffff9e); // "adr lr, #-0xf", jump to ldr x13, [sp]
+                            buffer.putInt(0xd61f01a0); // "br x13", call init array
                             buffer.putInt(0xf94003e0); // "ldr x0, [sp]", with return address
                             buffer.putInt(0x910023ff); // "add sp, sp, #0x8"
                             buffer.putInt(0xa9407bfd); // "ldp x29, x30, [sp]"

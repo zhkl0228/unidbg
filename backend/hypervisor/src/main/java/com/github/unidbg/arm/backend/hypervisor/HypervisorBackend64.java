@@ -225,6 +225,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 case Arm64Const.UC_ARM64_REG_SP:
                     hypervisor.reg_set_sp64(value.longValue());
                     break;
+                case Arm64Const.UC_ARM64_REG_X29:
+                    hypervisor.reg_write64(29, value.longValue());
+                    break;
                 case Arm64Const.UC_ARM64_REG_LR:
                     hypervisor.reg_write64(30, value.longValue());
                     break;
@@ -316,7 +319,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                     return (int) (hypervisor.reg_read64(regId - Arm64Const.UC_ARM64_REG_W0) & 0xffffffffL);
                 case Arm64Const.UC_ARM64_REG_SP:
                     return hypervisor.reg_read_sp64();
-                case Arm64Const.UC_ARM64_REG_FP:
+                case Arm64Const.UC_ARM64_REG_X29:
                     return hypervisor.reg_read64(29);
                 case Arm64Const.UC_ARM64_REG_LR:
                     return hypervisor.reg_read64(30);
