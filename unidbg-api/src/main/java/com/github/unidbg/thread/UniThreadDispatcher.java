@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 抢占式调度
@@ -64,19 +65,19 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                             task.saveContext(emulator);
                         }
                     }
-
-                    if (log.isDebugEnabled()) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
                 }
 
                 Collections.reverse(threadTaskList);
                 for (Iterator<ThreadTask> iterator = threadTaskList.iterator(); iterator.hasNext(); ) {
                     taskList.add(0, iterator.next());
                     iterator.remove();
+                }
+
+                if (log.isDebugEnabled()) {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
         } finally {

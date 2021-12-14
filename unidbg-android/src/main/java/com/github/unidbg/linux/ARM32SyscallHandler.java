@@ -1140,7 +1140,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             }
             return count;
         }
-        throw new AbstractMethodError("newselect nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout);
+        throw new AbstractMethodError("newselect nfds=" + nfds + ", readfds=null, writefds=" + writefds + ", exceptfds=null, timeout=" + timeout);
     }
 
     protected int pselect6(Emulator<?> emulator) {
@@ -1183,7 +1183,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             }
             return count;
         }
-        throw new AbstractMethodError("pselect6 nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
+        throw new AbstractMethodError("pselect6 nfds=" + nfds + ", readfds=null, writefds=" + writefds + ", exceptfds=null, timeout=" + timeout + ", LR=" + context.getLRPointer());
     }
 
     private int getpeername(Backend backend, Emulator<?> emulator) {
@@ -1810,10 +1810,13 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             log.debug("futex uaddr=" + uaddr + ", _futexop=" + futex_op + ", op=" + (futex_op & 0x7f) + ", val=" + val + ", old=" + old);
         }
 
+        Task task = emulator.get(Task.TASK_KEY);
         switch (futex_op & 0x7f) {
             case FUTEX_WAIT:
                 if (old != val) {
-                    throw new IllegalStateException("old=" + old + ", val=" + val);
+                    Memory memory = emulator.getMemory();
+                    memory.setErrno(UnixEmulator.EAGAIN);
+                    return -1;
                 }
                 if (!threadDispatcherEnabled) {
                     java.lang.Thread.yield();
@@ -1822,15 +1825,21 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 int mytype = val & 0xc000;
                 int shared = val & 0x2000;
                 if (log.isDebugEnabled()) {
-                    log.debug("futex FUTEX_WAIT mytype=" + mytype + ", shared=" + shared + ", timeout=" + timeout + ", test=" + (mytype | shared));
+                    log.debug("futex FUTEX_WAIT mytype=" + mytype + ", shared=" + shared + ", timeout=" + timeout + ", test=" + (mytype | shared) + ", task=" + task);
                 }
-                if (threadDispatcherEnabled && emulator.get(Task.TASK_KEY) != null) {
+                if (threadDispatcherEnabled && task != null) {
                     throw new ThreadContextSwitchException();
                 } else {
                     uaddr.setInt(0, mytype | shared);
                     return 0;
                 }
             case FUTEX_WAKE:
+                if (log.isDebugEnabled()) {
+                    log.debug("futex FUTEX_WAKE val=0x" + Integer.toHexString(val) + ", old=" + old + ", task=" + task);
+                }
+                if (threadDispatcherEnabled && task != null) {
+                    throw new ThreadContextSwitchException();
+                }
                 return 0;
             default:
                 throw new AbstractMethodError();
