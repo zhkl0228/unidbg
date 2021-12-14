@@ -3,6 +3,7 @@ package com.github.unidbg.linux;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -90,7 +91,9 @@ public class LinuxThread extends Thread {
             long pc = backend.reg_read(emulator.is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC).longValue();
             if (emulator.is32Bit()) {
                 pc &= 0xffffffffL;
-                pc += 1;
+                if (ARM.isThumb(backend)) {
+                    pc += 1;
+                }
             }
             log.info("resume thread: fn=" + this.fn + ", arg=" + this.arg + ", child_stack=" + this.child_stack + ", pc=0x" + Long.toHexString(pc) + ", __thread_entry=0x" + Long.toHexString(__thread_entry));
             backend.emu_start(pc, 0, timeout, 0);
