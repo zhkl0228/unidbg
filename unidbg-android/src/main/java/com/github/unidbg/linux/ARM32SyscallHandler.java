@@ -3,6 +3,7 @@ package com.github.unidbg.linux;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LongJumpException;
+import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
@@ -33,6 +34,7 @@ import com.github.unidbg.linux.struct.SysInfo32;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
@@ -836,7 +838,16 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(4, 0);
 
-        Thread thread = new LinuxThread(child_stack, fn, arg);
+        Thread thread = new LinuxThread(child_stack, fn, arg, AbstractARMEmulator.LR);
+
+        if (threadDispatcherEnabled) {
+            if (verbose) {
+                System.out.printf("pthread_clone fn=%s%n", fn);
+            }
+            emulator.getThreadDispatcher().addThread(thread);
+            return threadId;
+        }
+
         threadMap.put(threadId, thread);
         lastThread = threadId;
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
@@ -1793,15 +1804,21 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 if (old != val) {
                     throw new IllegalStateException("old=" + old + ", val=" + val);
                 }
-                java.lang.Thread.yield();
+                if (!threadDispatcherEnabled) {
+                    java.lang.Thread.yield();
+                }
                 Pointer timeout = context.getPointerArg(3);
                 int mytype = val & 0xc000;
                 int shared = val & 0x2000;
                 if (log.isDebugEnabled()) {
                     log.debug("futex FUTEX_WAIT mytype=" + mytype + ", shared=" + shared + ", timeout=" + timeout + ", test=" + (mytype | shared));
                 }
-                uaddr.setInt(0, mytype | shared);
-                return 0;
+                if (threadDispatcherEnabled) {
+                    throw new ThreadContextSwitchException();
+                } else {
+                    uaddr.setInt(0, mytype | shared);
+                    return 0;
+                }
             case FUTEX_WAKE:
                 return 0;
             default:

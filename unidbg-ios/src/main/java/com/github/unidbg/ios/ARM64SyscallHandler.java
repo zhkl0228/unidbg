@@ -3,6 +3,7 @@ package com.github.unidbg.ios;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LongJumpException;
+import com.github.unidbg.arm.AbstractARM64Emulator;
 import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
@@ -1423,7 +1424,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             emulator.attach().debug();
         }
         lastThread = threadId;
-        threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg));
+        threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg, AbstractARM64Emulator.LR));
         return thread.peer;
     }
 

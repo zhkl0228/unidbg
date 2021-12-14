@@ -1,5 +1,6 @@
 package com.github.unidbg.linux;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.Backend;
@@ -20,10 +21,30 @@ public class LinuxThread extends Thread {
     private final UnidbgPointer fn;
     private final UnidbgPointer arg;
 
-    LinuxThread(UnidbgPointer child_stack, UnidbgPointer fn, UnidbgPointer arg) {
+    LinuxThread(UnidbgPointer child_stack, UnidbgPointer fn, UnidbgPointer arg, long until) {
+        super(until);
+
         this.child_stack = child_stack;
         this.fn = fn;
         this.arg = arg;
+    }
+
+    @Override
+    public String toString() {
+        return "LinuxThread fn=" + fn + ", arg=" + arg + ", child_stack=" + child_stack;
+    }
+
+    @Override
+    protected Number runThread(AbstractEmulator<?> emulator) {
+        Backend backend = emulator.getBackend();
+        if (emulator.is32Bit()) {
+            backend.reg_write(ArmConst.UC_ARM_REG_R0, this.arg.peer);
+            backend.reg_write(ArmConst.UC_ARM_REG_SP, this.child_stack.peer);
+        } else {
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X0, this.arg.peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_SP, this.child_stack.peer);
+        }
+        return emulator.emulate(this.fn.peer, until);
     }
 
     private long context;

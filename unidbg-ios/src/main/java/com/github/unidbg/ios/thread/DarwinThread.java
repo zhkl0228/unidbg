@@ -1,5 +1,6 @@
 package com.github.unidbg.ios.thread;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.MemoryBlock;
@@ -19,12 +20,19 @@ public class DarwinThread extends Thread {
     private final UnidbgPointer arg;
     private final UnidbgPointer stack;
 
-    public DarwinThread(Emulator<?> emulator, UnidbgPointer start_routine, UnidbgPointer arg) {
+    public DarwinThread(Emulator<?> emulator, UnidbgPointer start_routine, UnidbgPointer arg, long until) {
+        super(until);
+
         this.start_routine = start_routine;
         this.arg = arg;
 
         MemoryBlock block = emulator.getMemory().malloc(THREAD_STACK_SIZE, true);
         this.stack = block.getPointer().share(THREAD_STACK_SIZE, 0);
+    }
+
+    @Override
+    protected Number runThread(AbstractEmulator<?> emulator) {
+        throw new UnsupportedOperationException();
     }
 
     private long context;

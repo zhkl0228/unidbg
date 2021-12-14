@@ -5,6 +5,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -22,9 +23,11 @@ public class UniThreadDispatcher implements ThreadDispatcher {
         this.emulator = emulator;
     }
 
+    private final List<ThreadTask> threadTaskList = new ArrayList<>();
+
     @Override
     public void addThread(ThreadTask task) {
-        taskList.add(task);
+        threadTaskList.add(task);
     }
 
     @Override
@@ -61,6 +64,12 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                             task.saveContext(emulator);
                         }
                     }
+                }
+
+                Collections.reverse(threadTaskList);
+                for (Iterator<ThreadTask> iterator = threadTaskList.iterator(); iterator.hasNext(); ) {
+                    taskList.add(0, iterator.next());
+                    iterator.remove();
                 }
             }
         } finally {

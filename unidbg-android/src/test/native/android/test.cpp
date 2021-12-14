@@ -41,6 +41,8 @@ static void *start_routine(void *arg) {
     pthread_cond_wait(&ctx->threadCond, &ctx->threadLock);
   }
   printf("test_pthread start_routine arg=%p, ret=%p\n", arg, ret);
+  ctx->status = 3;
+  pthread_cond_broadcast(&ctx->threadCond);
   return ret;
 }
 
@@ -56,12 +58,18 @@ static void test_pthread() {
   pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
   int ret = pthread_create(&thread, &threadAttr, start_routine, arg);
   pthread_attr_destroy(&threadAttr);
+
   while (context.status != 1) {
     pthread_cond_wait(&context.threadCond, &context.threadLock);
   }
   printf("test_pthread first arg=%p, ret=%d, thread=0x%lx\n", arg, ret, thread);
   context.status = 2;
   pthread_cond_broadcast(&context.threadCond);
+
+  while (context.status != 3) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+
   pthread_cond_destroy(&context.threadCond);
   pthread_mutex_destroy(&context.threadLock);
   printf("test_pthread second arg=%p, ret=%d, thread=0x%lx\n", arg, ret, thread);
