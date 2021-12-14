@@ -46,7 +46,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                 }
                 for (Iterator<Task> iterator = taskList.iterator(); iterator.hasNext(); ) {
                     Task task = iterator.next();
-                    if (task.isFinished()) {
+                    if (task.isDead()) {
                         task.destroy(emulator);
                         iterator.remove();
                         continue;

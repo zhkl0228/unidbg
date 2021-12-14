@@ -28,6 +28,11 @@ public abstract class MainTask extends AbstractTask implements Task {
     }
 
     @Override
+    public boolean isDead() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         return "MainThread begin=0x" + Long.toHexString(begin) + ", until=" + Long.toHexString(until);
     }

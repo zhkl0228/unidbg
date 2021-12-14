@@ -24,17 +24,6 @@ abstract class AbstractTask implements Task {
         return this.context != 0;
     }
 
-    private boolean finished;
-
-    @Override
-    public boolean isFinished() {
-        return finished;
-    }
-
-    protected void setFinished() {
-        this.finished = true;
-    }
-
     protected final Number continueRun(AbstractEmulator<?> emulator, long until) {
         Backend backend = emulator.getBackend();
         backend.context_restore(this.context);

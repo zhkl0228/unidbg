@@ -16,6 +16,6 @@ public interface Task {
 
     void destroy(AbstractEmulator<?> emulator);
 
-    boolean isFinished();
+    boolean isDead();
 
 }

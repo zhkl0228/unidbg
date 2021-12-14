@@ -15,11 +15,18 @@ public abstract class ThreadTask extends AbstractTask implements Task {
         return false;
     }
 
-    private int exitStatus;
+    private boolean finished;
+
+    @Override
+    public boolean isDead() {
+        return finished;
+    }
+
+    protected int exitStatus;
 
     public void setExitStatus(int status) {
         this.exitStatus = status;
-        setFinished();
+        this.finished = true;
     }
 
     @Override
