@@ -46,6 +46,11 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                 }
                 for (Iterator<Task> iterator = taskList.iterator(); iterator.hasNext(); ) {
                     Task task = iterator.next();
+                    if (task.isFinished()) {
+                        task.destroy(emulator);
+                        iterator.remove();
+                        continue;
+                    }
                     if (task.canDispatch()) {
                         if (log.isDebugEnabled()) {
                             log.debug("Start dispatch task=" + task);
@@ -55,7 +60,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                         if (log.isDebugEnabled()) {
                             log.debug("End dispatch task=" + task + ", ret=" + ret);
                         }
-                        if (ret != null || task.isFinished()) {
+                        if (ret != null) {
                             task.destroy(emulator);
                             iterator.remove();
                             if(task.isMainThread()) {

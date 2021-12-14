@@ -1,5 +1,6 @@
 package com.github.unidbg.linux;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -14,6 +15,9 @@ import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.spi.SyscallHandler;
+import com.github.unidbg.thread.Task;
+import com.github.unidbg.thread.ThreadContextSwitchException;
+import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -287,6 +291,22 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             log.info("unlinkat dirfd=" + dirfd + ", pathname=" + pathname.getString(0) + ", flags=" + flags);
         }
         return 0;
+    }
+
+    protected void exit(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int status = context.getIntArg(0);
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task instanceof ThreadTask) {
+            ThreadTask threadTask = (ThreadTask) task;
+            threadTask.setExitStatus(status);
+            throw new ThreadContextSwitchException();
+        }
+        System.out.println("exit status=" + status);
+        if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+            emulator.attach().debug();
+        }
+        emulator.getBackend().emu_stop();
     }
 
 }

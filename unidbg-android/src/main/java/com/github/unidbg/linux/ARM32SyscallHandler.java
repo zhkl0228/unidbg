@@ -3,12 +3,11 @@ package com.github.unidbg.linux;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LongJumpException;
-import com.github.unidbg.arm.AbstractARMEmulator;
-import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.ThumbSvc;
 import com.github.unidbg.arm.backend.Backend;
@@ -34,9 +33,9 @@ import com.github.unidbg.linux.struct.SysInfo32;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
-import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
@@ -147,18 +146,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
             switch (NR) {
                 case 1:
-                    int status = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-                    Task task = emulator.get(Task.TASK_KEY);
-                    if (task instanceof ThreadTask) {
-                        ThreadTask threadTask = (ThreadTask) task;
-                        threadTask.setExitStatus(status);
-                        return;
-                    }
-                    System.out.println("exit status=" + status);
-                    if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
-                        emulator.attach().debug();
-                    }
-                    backend.emu_stop();
+                    exit(emulator);
                     return;
                 case 2:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fork(emulator));

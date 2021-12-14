@@ -34,7 +34,6 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
-import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
@@ -286,18 +285,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mprotect(backend, emulator));
                     return;
                 case 93:
-                    int status = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).intValue();
-                    Task task = emulator.get(Task.TASK_KEY);
-                    if (task instanceof ThreadTask) {
-                        ThreadTask threadTask = (ThreadTask) task;
-                        threadTask.setExitStatus(status);
-                        return;
-                    }
-                    System.out.println("exit status=" + status);
-                    if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
-                        emulator.attach().debug();
-                    }
-                    backend.emu_stop();
+                    exit(emulator);
                     return;
                 case 94:
                     exit_group(emulator);
