@@ -176,8 +176,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         Pointer uinfo = context.getPointerArg(1);
         Pointer uts = context.getPointerArg(2);
         int sigsetsize = context.getIntArg(3);
-        log.info("rt_sigtimedwait uthese=" + uthese + ", uinfo=" + uinfo + ", uts=" + uts + ", sigsetsize=" + sigsetsize);
-        createBreaker(emulator).debug();
+        Task task = emulator.get(Task.TASK_KEY);
+        log.info("rt_sigtimedwait uthese=" + uthese + ", uinfo=" + uinfo + ", uts=" + uts + ", sigsetsize=" + sigsetsize + ", task=" + task);
         return 0;
     }
 
@@ -429,15 +429,35 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (log.isDebugEnabled()) {
             log.debug("kill pid=" + pid + ", sig=" + sig);
         }
-        if (pid == 0 && sig > 0) {
+        Task task = emulator.get(Task.TASK_KEY);
+        if (pid == 0 && sig > 0 && task != null) {
             SigAction action = sigActionMap.get(sig);
             if (action != null) {
-                emulator.getThreadDispatcher().addThread(new SignalTask(emulator, sig, action));
+                task.addSignalTask(new SignalTask(emulator, sig, action));
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
             return 0;
         }
         throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
+    }
+
+    protected int tgkill(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int tgid = context.getIntArg(0);
+        int tid = context.getIntArg(1);
+        int sig = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("tgkill tgid=" + tgid + ", tid=" + tid + ", sig=" + sig);
+        }
+        Task task = emulator.get(Task.TASK_KEY);
+        if (sig > 0 && task != null) {
+            SigAction action = sigActionMap.get(sig);
+            if (action != null) {
+                task.addSignalTask(new SignalTask(emulator, sig, action));
+                throw new ThreadContextSwitchException().setReturnValue(0);
+            }
+        }
+        return 0;
     }
 
 }

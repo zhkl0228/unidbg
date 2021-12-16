@@ -335,7 +335,7 @@ static void test_signal() {
 
 static void handler(int signo, siginfo_t *info, void *ucontext) {
     printf("signo=%d, info=%p, ucontext=%p\n", signo, info, ucontext);
-    printf("return data: %d\n", info->si_value.sival_int);
+    printf("return data: %d, si_signo=%d\n", info->si_value.sival_int, info->si_signo);
 }
 
 static void test_signalaction() {
@@ -366,9 +366,9 @@ static void test_signalaction() {
 
         //发送信号
         kill(0, SIGINT);
-        printf("send group signal: %d success!\n", SIGINT);
-        kill(0, SIGRTMIN);
-        printf("send group signal: %d success!\n", SIGRTMIN);
+        printf("send signal: %d success!\n", SIGINT);
+        raise(SIGRTMIN);
+        printf("raise signal: %d success!\n", SIGRTMIN);
     }
 }
 

@@ -403,7 +403,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 }
                 case 268:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(backend));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(emulator));
                     return;
                 case 269:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, utimes(emulator));
@@ -763,16 +763,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         }
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
-    }
-
-    private int tgkill(Backend backend) {
-        int tgid = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        int tid = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int sig = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("tgkill tgid=" + tgid + ", tid=" + tid + ", sig=" + sig);
-        }
-        return 0;
     }
 
     private int threadId;

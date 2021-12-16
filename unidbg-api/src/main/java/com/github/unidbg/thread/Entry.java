@@ -28,6 +28,6 @@ public class Entry extends MainTask {
 
     @Override
     public String toString() {
-        return "Entry entry=0x" + Long.toHexString(entry) + ", sp=0x" + Long.toHexString(sp);
+        return "Executable entry=0x" + Long.toHexString(entry) + ", sp=0x" + Long.toHexString(sp);
     }
 }

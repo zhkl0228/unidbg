@@ -236,6 +236,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 123:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, sched_getaffinity(emulator));
                     return;
+                case 137:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, rt_sigtimedwait(emulator));
+                    return;
                 case 167:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, prctl(emulator));
                     return;
@@ -479,17 +482,6 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         log.info("fork");
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
-    }
-
-    private int tgkill(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int tgid = context.getIntArg(0);
-        int tid = context.getIntArg(1);
-        int sig = context.getIntArg(2);
-        if (log.isDebugEnabled()) {
-            log.debug("tgkill tgid=" + tgid + ", tid=" + tid + ", sig=" + sig);
-        }
-        return 0;
     }
 
     private int threadId;

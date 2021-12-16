@@ -11,6 +11,10 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 abstract class AbstractTask implements Task {
 
     private static final Log log = LogFactory.getLog(AbstractTask.class);
@@ -24,6 +28,23 @@ abstract class AbstractTask implements Task {
 
     protected final boolean isContextSaved() {
         return this.context != 0;
+    }
+
+    private final List<Task> signalTaskList = new ArrayList<>();
+
+    @Override
+    public void addSignalTask(Task task) {
+        signalTaskList.add(task);
+    }
+
+    @Override
+    public void removeSignalTask(Task task) {
+        signalTaskList.remove(task);
+    }
+
+    @Override
+    public List<Task> getSignalTaskList() {
+        return signalTaskList.isEmpty() ? Collections.<Task>emptyList() : new ArrayList<>(signalTaskList);
     }
 
     protected final Number continueRun(AbstractEmulator<?> emulator, long until) {
