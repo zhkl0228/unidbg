@@ -219,22 +219,54 @@ static void test_pthread() {
   printf("pthread[%p] ret=%d\n", thread, ret);
 }
 
+typedef struct thread_context {
+  int status;
+  pthread_cond_t threadCond;
+  pthread_mutex_t threadLock;
+} *t_thread_context;
+
 static void *start_routine(void *arg) {
+  t_thread_context ctx = (t_thread_context) arg;
+  ctx->status = 1;
+  pthread_cond_broadcast(&ctx->threadCond);
+  printf("test_pthread start_routine ctx=%p\n", ctx);
   void *ret = (void *)&test_pthread;
-  printf("test_pthread_join start_routine arg=%p, ret=%p\n", arg, ret);
-  while(true) {
-    sleep(88);
+  while (ctx->status != 2) {
+    pthread_cond_wait(&ctx->threadCond, &ctx->threadLock);
   }
+  printf("test_pthread start_routine arg=%p, ret=%p\n", arg, ret);
+  ctx->status = 3;
+  pthread_cond_broadcast(&ctx->threadCond);
   return ret;
 }
 
 static void test_pthread_join() {
   pthread_t thread = 0;
-  void *arg = &thread;
-  int ret = pthread_create(&thread, NULL, start_routine, arg);
-  void *value = NULL;
-  int join_ret = pthread_join(thread, &value);
-  printf("test_pthread_join arg=%p, ret=%d, thread=0x%lx, join_ret=%d, value=%p\n", arg, ret, (long) thread, join_ret, value);
+  struct thread_context context;
+  context.status = 0;
+  pthread_cond_init(&context.threadCond, NULL);
+  pthread_mutex_init(&context.threadLock, NULL);
+  void *arg = &context;
+  pthread_attr_t threadAttr;
+  pthread_attr_init(&threadAttr);
+  pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
+  int ret = pthread_create(&thread, &threadAttr, start_routine, arg);
+  pthread_attr_destroy(&threadAttr);
+
+  while (context.status != 1) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+  printf("test_pthread first arg=%p, ret=%d, thread=%p\n", arg, ret, thread);
+  context.status = 2;
+  pthread_cond_broadcast(&context.threadCond);
+
+  while (context.status != 3) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+
+  pthread_cond_destroy(&context.threadCond);
+  pthread_mutex_destroy(&context.threadLock);
+  printf("test_pthread second arg=%p, ret=%d, thread=%p\n", arg, ret, thread);
 }
 
 static void test_file() {

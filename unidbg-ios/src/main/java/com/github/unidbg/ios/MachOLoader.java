@@ -127,9 +127,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         this.setErrno(0);
     }
 
-    private static final long __TSD_THREAD_SELF = 0;
-    private static final long __TSD_ERRNO = 1;
-    private static final long __TSD_MIG_REPLY = 2;
+    public static final long __TSD_THREAD_SELF = 0;
+    public static final long __TSD_ERRNO = 1;
+    public static final long __TSD_MIG_REPLY = 2;
 //    private static final int __PTK_FRAMEWORK_OBJC_KEY5 = 0x2d;
 
     private void initializeTSD(String[] envs) {

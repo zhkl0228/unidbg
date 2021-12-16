@@ -33,6 +33,12 @@ public class Pthread64 extends Pthread {
     public Pointer stackaddr; // base of the stack
     public long stacksize; // size of stack (page multiple and >= PTHREAD_STACK_MIN)
 
+    @Override
+    public void setStack(Pointer stackAddress, long stackSize) {
+        this.stackaddr = stackAddress;
+        this.stacksize = stackSize;
+    }
+
     public Pointer freeaddr; // stack/thread allocation base address
     public long freesize; // stack/thread allocation size
     public long guardsize; // guard page size in bytes

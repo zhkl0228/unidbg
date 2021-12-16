@@ -32,6 +32,12 @@ public class Pthread32 extends Pthread {
     public Pointer stackaddr; // base of the stack
     public int stacksize; // size of stack (page multiple and >= PTHREAD_STACK_MIN)
 
+    @Override
+    public void setStack(Pointer stackAddress, long stackSize) {
+        this.stackaddr = stackAddress;
+        this.stacksize = (int) stackSize;
+    }
+
     public Pointer freeaddr; // stack/thread allocation base address
     public int freesize; // stack/thread allocation size
     public int guardsize; // guard page size in bytes

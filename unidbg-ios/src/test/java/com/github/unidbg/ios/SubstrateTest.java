@@ -7,7 +7,6 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookLoader;
@@ -40,7 +39,6 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         return DarwinEmulatorBuilder.for32Bit()
                 .setProcessName("com.substrate.test")
                 .setRootDir(new File("target/rootfs/substrate"))
-                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
     }
 
@@ -50,9 +48,7 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
     private void processMS() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setObjcRuntime(true);
-//        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x402ffd10);
-        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.INFO);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         long start;
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/libsubstrate.dylib"));
 
@@ -154,16 +150,8 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         HookLoader.load(emulator).hookObjcMsgSend(null);
 
         start = System.currentTimeMillis();
-//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-//        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-//        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
-//        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
-//        emulator.attach(0x4128F000, 0x41339000).addBreakPoint(null, 0x4128F000 + 0x0001E9B8);
-
-//        emulator.attach(0xfffe0000L, 0xfffe0000L + 0x10000).addBreakPoint(null, 0xfffe0080L);
-//        emulator.traceCode(0xfffe0000L, 0xfffe0000L + 0x10000);
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-//        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
+        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -177,11 +165,14 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         map.put("name", getClass().getName());
         emulator.getSyscallHandler().addIOResolver(new NSUserDefaultsResolver("unidbg", map));
 
+        emulator.getSyscallHandler().setEnableThreadDispatcher(true);
         emulator.getSyscallHandler().setVerbose(false);
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
     }
 
     public static void main(String[] args) throws Exception {
+        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.DEBUG);
+
         SubstrateTest test = new SubstrateTest();
         test.setUp();
         test.processMS();

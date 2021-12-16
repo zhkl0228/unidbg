@@ -60,7 +60,7 @@ public abstract class Unwinder {
             Symbol symbol = module.findClosestSymbolByAddress(ip.peer, false);
             if (symbol != null && ip.peer - symbol.getAddress() <= SYMBOL_SIZE) {
                 GccDemangler demangler = DemanglerFactory.createDemangler();
-                sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(ip.peer - symbol.getAddress()));
+                sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(ip.peer - (symbol.getAddress() & ~1)));
             }
         } else {
             sb.append(String.format(format, 0)).append(String.format(format, ip.peer));

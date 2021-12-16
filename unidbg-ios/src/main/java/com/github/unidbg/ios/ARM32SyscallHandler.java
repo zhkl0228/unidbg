@@ -3,11 +3,11 @@ package com.github.unidbg.ios;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LongJumpException;
-import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.arm.ThumbSvc;
@@ -79,11 +79,13 @@ import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc32;
 import com.github.unidbg.ios.struct.sysctl.SockAddrDL;
 import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
+import com.github.unidbg.ios.thread.DarwinThread;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -403,7 +405,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_mutexdrop(emulator));
                     return;
                 case 305:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait());
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
                     return;
                 case 327:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, issetugid());
@@ -799,12 +801,12 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int bsdthread_create(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        Pointer start_routine = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer arg = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer stack = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        UnidbgPointer thread = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        int flags = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
+        RegisterContext context = emulator.getContext();
+        UnidbgPointer start_routine = context.getPointerArg(0);
+        UnidbgPointer arg = context.getPointerArg(1);
+        UnidbgPointer stack = context.getPointerArg(2);
+        UnidbgPointer thread = context.getPointerArg(3);
+        int flags = context.getIntArg(4);
         if (thread == null) {
             MemoryBlock memoryBlock = emulator.getMemory().malloc(0x100, true);
             thread = memoryBlock.getPointer();
@@ -813,7 +815,16 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         pThread.self = thread;
         pThread.machThreadSelf = UnidbgPointer.pointer(emulator, STATIC_PORT);
         pThread.pack();
-        log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));
+
+        if (threadDispatcherEnabled) {
+            if (verbose) {
+                System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
+            }
+            emulator.getThreadDispatcher().addThread(new DarwinThread(emulator, start_routine, arg, AbstractARMEmulator.LR, pThread));
+        } else {
+            log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));
+        }
+
         return (int) thread.peer;
     }
 
@@ -933,10 +944,15 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    private int psynch_cvwait() {
-        // TODO: implement
-        log.info("psynch_cvwait");
-        return 0;
+    private int psynch_cvwait(Emulator<?> emulator) {
+        if (threadDispatcherEnabled) {
+            throw new ThreadContextSwitchException();
+        }
+
+        log.info("psynch_cvwait LR=" + emulator.getContext().getLRPointer());
+        emulator.attach().debug();
+        emulator.getMemory().setErrno(UnixEmulator.EINTR);
+        return -1;
     }
 
     private int close(Emulator<?> emulator) {
@@ -1517,6 +1533,14 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 action = name.getInt(4);
                 msg = "sysctl CTL_HW action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 switch (action) {
+                    case HW_CPU_FREQ:
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 1800000000);
+                        }
+                        return 0;
                     case HW_PAGESIZE:
                         log.debug(msg);
                         if (bufferSize != null) {

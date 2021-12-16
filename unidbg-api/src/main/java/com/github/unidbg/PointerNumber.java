@@ -29,4 +29,9 @@ public class PointerNumber extends Number {
     public double doubleValue() {
         throw new AbstractMethodError();
     }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
 }

@@ -41,4 +41,6 @@ public abstract class Pthread extends UnidbgStructure {
         return getPointer().share(fieldOffset("errno"));
     }
 
+    public abstract void setStack(Pointer stackAddress, long stackSize);
+
 }
