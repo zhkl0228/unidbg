@@ -17,6 +17,7 @@ import com.github.unidbg.linux.signal.SignalTask;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.Task;
@@ -404,8 +405,11 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             log.debug("sigaction signum=" + signum + ", action=" + action + ", oldAction=" + oldAction);
         }
         if (SIGKILL == signum || SIGSTOP == signum) {
-            emulator.getMemory().setErrno(UnixEmulator.EINVAL);
-            return SIG_ERR;
+            if (oldAction != null) {
+                oldAction.sa_handler = UnidbgPointer.pointer(emulator, SIG_ERR);
+                oldAction.pack();
+            }
+            return -UnixEmulator.EINVAL;
         }
         SigAction lastAction = sigActionMap.put(signum, action);
         if (oldAction != null) {

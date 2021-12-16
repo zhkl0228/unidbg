@@ -28,7 +28,7 @@ static void init() {
     act.sa_flags = SA_SIGINFO;
     int ret = sigaction(i, &act, &old);
     int err = ret == -1 ? errno : 0;
-    printf("init signal sig=%d, old=%p, error=%d, msg=%s\n", i, old.sa_sigaction, err, strerror(err));
+    printf("init signal sig=%d, old=%p, err=%d, msg=%s, error=%p\n", i, old.sa_sigaction, err, strerror(err), &errno);
   }
 }
 

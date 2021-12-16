@@ -63,11 +63,11 @@ public class UniThreadDispatcher implements ThreadDispatcher {
 
                         for (SignalTask signalTask : task.getSignalTaskList()) {
                             if (log.isDebugEnabled()) {
-                                log.debug("Start dispatch signalTask=" + signalTask);
+                                log.debug("Start run signalTask=" + signalTask);
                             }
                             signalTask.runHandler(emulator);
                             if (log.isDebugEnabled()) {
-                                log.debug("End dispatch signalTask=" + signalTask);
+                                log.debug("End run signalTask=" + signalTask);
                             }
                             signalTask.destroy(emulator);
                             task.removeSignalTask(signalTask);
