@@ -40,7 +40,7 @@ public class SignalFunction extends MainTask {
     @Override
     protected Number run(AbstractEmulator<?> emulator) {
         Backend backend = emulator.getBackend();
-        if (action.needSigInfo()) {
+        if (action.needSigInfo() && infoBlock == null) {
             infoBlock = emulator.getMemory().malloc(128, true);
             infoBlock.getPointer().setInt(0, signum);
         }

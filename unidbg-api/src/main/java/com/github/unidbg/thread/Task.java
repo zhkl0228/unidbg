@@ -4,7 +4,7 @@ import com.github.unidbg.AbstractEmulator;
 
 import java.util.List;
 
-public interface Task {
+public interface Task extends Disposable {
 
     String TASK_KEY = Task.class.getName();
 
@@ -15,8 +15,6 @@ public interface Task {
     void saveContext(AbstractEmulator<?> emulator);
 
     boolean isMainThread();
-
-    void destroy(AbstractEmulator<?> emulator);
 
     boolean isDead();
 

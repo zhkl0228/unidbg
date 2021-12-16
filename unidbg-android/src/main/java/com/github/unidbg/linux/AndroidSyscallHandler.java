@@ -433,7 +433,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (pid == 0 && sig > 0 && task != null) {
             SigAction action = sigActionMap.get(sig);
             if (action != null) {
-                task.addSignalTask(new SignalTask(emulator, sig, action));
+                task.addSignalTask(new SignalTask(sig, action));
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
             return 0;
@@ -453,7 +453,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (sig > 0 && task != null) {
             SigAction action = sigActionMap.get(sig);
             if (action != null) {
-                task.addSignalTask(new SignalTask(emulator, sig, action));
+                task.addSignalTask(new SignalTask(sig, action));
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
         }
