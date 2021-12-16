@@ -12,14 +12,12 @@ import com.github.unidbg.linux.file.EventFD;
 import com.github.unidbg.linux.file.PipedReadFileIO;
 import com.github.unidbg.linux.file.PipedWriteFileIO;
 import com.github.unidbg.linux.signal.SigAction;
+import com.github.unidbg.linux.signal.SignalFunction;
 import com.github.unidbg.linux.signal.SignalTask;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
-import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.SyscallHandler;
-import com.github.unidbg.thread.Function32;
-import com.github.unidbg.thread.Function64;
 import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
@@ -393,12 +391,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
     public MainTask createSignalHandlerTask(Emulator<?> emulator, int sig) {
         SigAction action = sigActionMap.get(sig);
         if (action != null) {
-            UnidbgPointer handler = (UnidbgPointer) action.sa_handler;
-            if (emulator.is32Bit()) {
-                return new Function32(handler.peer, emulator.getReturnAddress(), false, sig);
-            } else {
-                return new Function64(handler.peer, emulator.getReturnAddress(), false, sig);
-            }
+            return new SignalFunction(emulator, sig, action);
         }
         return super.createSignalHandlerTask(emulator, sig);
     }

@@ -8,10 +8,12 @@ import unicorn.ArmConst;
 
 public class Entry extends MainTask {
 
+    private final long entry;
     private final long sp;
 
-    public Entry(long begin, long until, long sp) {
-        super(begin, until);
+    public Entry(long entry, long until, long sp) {
+        super(until);
+        this.entry = entry;
         this.sp = sp;
     }
 
@@ -21,7 +23,11 @@ public class Entry extends MainTask {
         Memory memory = emulator.getMemory();
         memory.setStackPoint(sp);
         backend.reg_write(emulator.is64Bit() ? Arm64Const.UC_ARM64_REG_LR : ArmConst.UC_ARM_REG_LR, until);
-        return emulator.emulate(begin, until);
+        return emulator.emulate(entry, until);
     }
 
+    @Override
+    public String toString() {
+        return "Entry entry=0x" + Long.toHexString(entry) + ", sp=0x" + Long.toHexString(sp);
+    }
 }

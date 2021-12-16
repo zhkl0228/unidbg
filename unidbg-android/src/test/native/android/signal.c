@@ -12,14 +12,23 @@ static void sig(int signo) {
     printf("catch signo=%d\n", signo);
 }
 
+static void sig_act(int signo, siginfo_t *info, void *ucontext) {
+    printf("catch signo=%d, info=%p, ucontext=%p\n", signo, info, ucontext);
+}
+
 __attribute__((constructor))
 static void init() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
   for(int i = 1; i <= 64; i++) {
-    sighandler_t old = signal(i, sig);
-    int err = old == SIG_ERR ? errno : 0;
-    printf("init signal sig=%d, old=%p, error=%d, msg=%s\n", i, old, err, strerror(err));
+    struct sigaction act;
+    struct sigaction old;
+    sigemptyset(&act.sa_mask);
+    act.sa_sigaction = sig_act;
+    act.sa_flags = SA_SIGINFO;
+    int ret = sigaction(i, &act, &old);
+    int err = ret == -1 ? errno : 0;
+    printf("init signal sig=%d, old=%p, error=%d, msg=%s\n", i, old.sa_sigaction, err, strerror(err));
   }
 }
 

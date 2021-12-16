@@ -14,11 +14,13 @@ public class Function64 extends MainTask {
 
     private static final Log log = LogFactory.getLog(Function64.class);
 
+    private final long address;
     private final boolean paddingArgument;
     private final Number[] arguments;
 
-    public Function64(long begin, long until, boolean paddingArgument, Number... arguments) {
-        super(begin, until);
+    public Function64(long address, long until, boolean paddingArgument, Number... arguments) {
+        super(until);
+        this.address = address;
         this.paddingArgument = paddingArgument;
         this.arguments = arguments;
     }
@@ -34,12 +36,12 @@ public class Function64 extends MainTask {
             log.info("SP NOT 16 bytes aligned", new Exception(emulator.getStackPointer().toString()));
         }
         backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
-        return emulator.emulate(begin, until);
+        return emulator.emulate(address, until);
     }
 
     @Override
     public String toString() {
-        return super.toString() + ", arguments=" + Arrays.toString(arguments);
+        return "Function64 address=0x" + Long.toHexString(address) + ", arguments=" + Arrays.toString(arguments);
     }
 
 }

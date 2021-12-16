@@ -4,11 +4,9 @@ import com.github.unidbg.AbstractEmulator;
 
 public abstract class MainTask extends AbstractTask implements Task {
 
-    protected final long begin;
     protected final long until;
 
-    protected MainTask(long begin, long until) {
-        this.begin = begin;
+    protected MainTask(long until) {
         this.until = until;
     }
 
@@ -30,11 +28,6 @@ public abstract class MainTask extends AbstractTask implements Task {
     @Override
     public boolean isDead() {
         return false;
-    }
-
-    @Override
-    public String toString() {
-        return "MainThread begin=0x" + Long.toHexString(begin) + ", until=" + Long.toHexString(until);
     }
 
 }
