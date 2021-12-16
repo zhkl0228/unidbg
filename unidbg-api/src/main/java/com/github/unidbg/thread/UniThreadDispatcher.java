@@ -49,7 +49,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                     if (task.isDead()) {
                         task.destroy(emulator);
                         iterator.remove();
-                        for (Task signalTask : task.getSignalTaskList()) {
+                        for (SignalTask signalTask : task.getSignalTaskList()) {
                             signalTask.destroy(emulator);
                             task.removeSignalTask(signalTask);
                         }
@@ -61,20 +61,16 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                         }
                         emulator.set(Task.TASK_KEY, task);
 
-                        for (Task signalTask : task.getSignalTaskList()) {
+                        for (SignalTask signalTask : task.getSignalTaskList()) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Start dispatch signalTask=" + signalTask);
                             }
-                            Number ret = signalTask.dispatch(emulator);
+                            signalTask.runHandler(emulator);
                             if (log.isDebugEnabled()) {
-                                log.debug("End dispatch signalTask=" + signalTask + ", ret=" + ret);
+                                log.debug("End dispatch signalTask=" + signalTask);
                             }
-                            if (ret != null) {
-                                signalTask.destroy(emulator);
-                                task.removeSignalTask(signalTask);
-                            } else {
-                                throw new UnsupportedOperationException();
-                            }
+                            signalTask.destroy(emulator);
+                            task.removeSignalTask(signalTask);
                         }
 
                         Number ret = task.dispatch(emulator);

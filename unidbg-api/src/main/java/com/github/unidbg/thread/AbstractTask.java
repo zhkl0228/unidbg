@@ -30,21 +30,21 @@ abstract class AbstractTask implements Task {
         return this.context != 0;
     }
 
-    private final List<Task> signalTaskList = new ArrayList<>();
+    private final List<SignalTask> signalTaskList = new ArrayList<>();
 
     @Override
-    public void addSignalTask(Task task) {
+    public void addSignalTask(SignalTask task) {
         signalTaskList.add(task);
     }
 
     @Override
-    public void removeSignalTask(Task task) {
+    public void removeSignalTask(SignalTask task) {
         signalTaskList.remove(task);
     }
 
     @Override
-    public List<Task> getSignalTaskList() {
-        return signalTaskList.isEmpty() ? Collections.<Task>emptyList() : new ArrayList<>(signalTaskList);
+    public List<SignalTask> getSignalTaskList() {
+        return signalTaskList.isEmpty() ? Collections.<SignalTask>emptyList() : new ArrayList<>(signalTaskList);
     }
 
     protected final Number continueRun(AbstractEmulator<?> emulator, long until) {

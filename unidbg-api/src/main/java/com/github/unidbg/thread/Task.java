@@ -20,10 +20,10 @@ public interface Task {
 
     boolean isDead();
 
-    void addSignalTask(Task task);
+    void addSignalTask(SignalTask task);
 
-    List<Task> getSignalTaskList();
+    List<SignalTask> getSignalTaskList();
 
-    void removeSignalTask(Task task);
+    void removeSignalTask(SignalTask task);
 
 }

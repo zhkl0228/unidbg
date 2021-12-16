@@ -9,7 +9,7 @@ import com.github.unidbg.thread.ThreadTask;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
-public class SignalTask extends ThreadTask {
+public class SignalTask extends ThreadTask implements com.github.unidbg.thread.SignalTask {
 
     private final UnidbgPointer stack;
     private final int signum;
@@ -20,6 +20,14 @@ public class SignalTask extends ThreadTask {
         this.stack = allocateStack(emulator);
         this.signum = signum;
         this.action = action;
+    }
+
+    @Override
+    public void runHandler(AbstractEmulator<?> emulator) {
+        Number ret = dispatch(emulator);
+        if (ret == null) {
+            throw new IllegalStateException();
+        }
     }
 
     @Override
