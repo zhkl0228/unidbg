@@ -7,7 +7,6 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
-import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.arm.ThumbSvc;
@@ -820,7 +819,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             if (verbose) {
                 System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
             }
-            emulator.getThreadDispatcher().addThread(new DarwinThread(emulator, start_routine, arg, AbstractARMEmulator.LR, pThread));
+            emulator.getThreadDispatcher().addThread(new DarwinThread(emulator, start_routine, arg, pThread));
         } else {
             log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));
         }

@@ -5,7 +5,6 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.Thread;
 import org.apache.commons.logging.Log;
@@ -36,40 +35,30 @@ public class LinuxThread extends Thread {
         return "LinuxThread fn=" + fn + ", arg=" + arg + ", child_stack=" + child_stack;
     }
 
-    private static final int THREAD_STACK_SIZE = 0x80000;
-
-    private MemoryBlock stack;
-
-    @Override
-    public void destroy(AbstractEmulator<?> emulator) {
-        super.destroy(emulator);
-
-        if (stack != null) {
-            stack.free();
-        }
-    }
-
     @Override
     protected Number runThread(AbstractEmulator<?> emulator) {
         Backend backend = emulator.getBackend();
         if (emulator.is32Bit()) {
             AndroidElfLoader loader = (AndroidElfLoader) emulator.getMemory();
             if (loader.__thread_entry != 0) {
-                stack = loader.malloc(THREAD_STACK_SIZE, true);
-                backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.getPointer().share(THREAD_STACK_SIZE, 0).peer);
+                UnidbgPointer stack = allocateStack(emulator);
+                backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.peer);
 
                 backend.reg_write(ArmConst.UC_ARM_REG_R0, this.fn.peer);
                 backend.reg_write(ArmConst.UC_ARM_REG_R1, this.arg.peer);
                 backend.reg_write(ArmConst.UC_ARM_REG_R2, this.child_stack.peer);
+                backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
                 return emulator.emulate(loader.__thread_entry, until);
             } else {
                 backend.reg_write(ArmConst.UC_ARM_REG_R0, this.arg.peer);
                 backend.reg_write(ArmConst.UC_ARM_REG_SP, this.child_stack.peer);
+                backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
                 return emulator.emulate(this.fn.peer, until);
             }
         } else {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X0, this.arg.peer);
             backend.reg_write(Arm64Const.UC_ARM64_REG_SP, this.child_stack.peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
             return emulator.emulate(this.fn.peer, until);
         }
     }

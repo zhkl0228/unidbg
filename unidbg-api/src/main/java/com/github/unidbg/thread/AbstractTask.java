@@ -1,8 +1,10 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -56,5 +58,21 @@ abstract class AbstractTask implements Task {
             backend.context_free(this.context);
             this.context = 0;
         }
+        if (stackBlock != null) {
+            stackBlock.free();
+            stackBlock = null;
+        }
     }
+
+    public static final int THREAD_STACK_SIZE = 0x80000;
+
+    private MemoryBlock stackBlock;
+
+    protected final UnidbgPointer allocateStack(Emulator<?> emulator) {
+        if (stackBlock == null) {
+            stackBlock = emulator.getMemory().malloc(THREAD_STACK_SIZE, true);
+        }
+        return stackBlock.getPointer().share(THREAD_STACK_SIZE, 0);
+    }
+
 }

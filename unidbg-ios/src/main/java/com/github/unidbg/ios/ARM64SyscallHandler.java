@@ -3,8 +3,6 @@ package com.github.unidbg.ios;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LongJumpException;
-import com.github.unidbg.arm.AbstractARM64Emulator;
-import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
@@ -91,6 +89,7 @@ import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -933,8 +932,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int psynch_cvwait(Emulator<?> emulator) {
+        // TODO: implement
         log.info("psynch_cvwait LR=" + emulator.getContext().getLRPointer());
-        emulator.attach().debug();
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
         emulator.getMemory().setErrno(UnixEmulator.EINTR);
         return -1;
     }
@@ -1424,7 +1427,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             emulator.attach().debug();
         }
         lastThread = threadId;
-        threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg, AbstractARM64Emulator.LR, pThread));
+        threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg, pThread));
         return thread.peer;
     }
 
@@ -3194,7 +3197,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (signum == DarwinSyscall.SIGBUS) {
             signum = UnixSyscallHandler.SIGBUS;
         }
-        return sigaction(signum, act, oldact);
+        return sigaction(emulator, signum, act, oldact);
     }
 
     private int fcntl(Emulator<?> emulator) {

@@ -171,6 +171,7 @@ public class AndroidTest extends AbstractJni {
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.linux.AndroidSyscallHandler").setLevel(Level.INFO);
         System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 

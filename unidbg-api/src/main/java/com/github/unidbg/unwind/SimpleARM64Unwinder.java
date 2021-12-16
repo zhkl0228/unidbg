@@ -1,7 +1,6 @@
 package com.github.unidbg.unwind;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.AbstractARM64Emulator;
 import com.github.unidbg.pointer.UnidbgPointer;
 import unicorn.Arm64Const;
 
@@ -19,7 +18,7 @@ public class SimpleARM64Unwinder extends Unwinder {
     @Override
     public Frame createFrame(UnidbgPointer ip, UnidbgPointer fp) {
         if (ip != null) {
-            if (ip.peer == AbstractARM64Emulator.LR) {
+            if (ip.peer == emulator.getReturnAddress()) {
                 return new Frame(ip, null);
             }
 

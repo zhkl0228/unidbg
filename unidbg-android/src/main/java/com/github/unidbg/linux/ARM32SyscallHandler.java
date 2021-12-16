@@ -7,7 +7,6 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
-import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.ThumbSvc;
 import com.github.unidbg.arm.backend.Backend;
@@ -218,7 +217,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, getppid(emulator));
                     return;
                 case 67:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(emulator));
                     return;
                 case 78:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
@@ -237,6 +236,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 94:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fchmod(backend));
+                    return;
+                case 96:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, getpriority(emulator));
+                    return;
+                case 97:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, setpriority(emulator));
                     return;
                 case 103:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, syslog(backend, emulator));
@@ -287,8 +292,17 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 150:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, mlock(emulator));
                     return;
+                case 155:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_getparam(emulator));
+                    return;
                 case 156:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_setscheduler(emulator));
+                    return;
+                case 157:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_getscheduler(emulator));
+                    return;
+                case 158:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_yield(emulator));
                     return;
                 case 162:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
@@ -302,6 +316,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 172:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, prctl(backend, emulator));
+                    return;
+                case 177:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigtimedwait(emulator));
                     return;
                 case 180:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, pread64(emulator));
@@ -840,7 +857,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(4, 0);
 
-        Thread thread = new LinuxThread(child_stack, fn, arg, AbstractARMEmulator.LR);
+        Thread thread = new LinuxThread(child_stack, fn, arg, emulator.getReturnAddress());
 
         if (threadDispatcherEnabled) {
             if (verbose) {
@@ -1334,16 +1351,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return 0;
     }
 
-    protected int kill(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int pid = context.getIntArg(0);
-        int sig = context.getIntArg(1);
-        if (log.isDebugEnabled()) {
-            log.debug("kill pid=" + pid + ", sig=" + sig);
-        }
-        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
-    }
-
     private int setitimer(Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         int which = context.getR0Int();
@@ -1355,12 +1362,13 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return 0;
     }
 
-    private int sigaction(Backend backend, Emulator<?> emulator) {
-        int signum = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer act = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oldact = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+    private int sigaction(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int signum = context.getIntArg(0);
+        Pointer act = context.getPointerArg(1);
+        Pointer oldact = context.getPointerArg(2);
 
-        return sigaction(signum, act, oldact);
+        return sigaction(emulator, signum, act, oldact);
     }
 
     private int recvfrom(Emulator<?> emulator) {

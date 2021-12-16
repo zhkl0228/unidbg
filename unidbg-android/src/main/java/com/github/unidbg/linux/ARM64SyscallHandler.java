@@ -7,7 +7,6 @@ import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
-import com.github.unidbg.arm.AbstractARM64Emulator;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
@@ -457,7 +456,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(8, 0);
 
-        Thread thread = new LinuxThread(child_stack, fn, arg, AbstractARM64Emulator.LR);
+        Thread thread = new LinuxThread(child_stack, fn, arg, emulator.getReturnAddress());
         if (threadDispatcherEnabled) {
             if (verbose) {
                 System.out.printf("pthread_clone fn=%s%n", fn);
@@ -714,23 +713,13 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         return 0;
     }
 
-    protected int kill(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int pid = context.getIntArg(0);
-        int sig = context.getIntArg(1);
-        if (log.isDebugEnabled()) {
-            log.debug("kill pid=" + pid + ", sig=" + sig);
-        }
-        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig);
-    }
-
     private int sigaction(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int signum = context.getIntArg(0);
         Pointer act = context.getPointerArg(1);
         Pointer oldact = context.getPointerArg(2);
 
-        return sigaction(signum, act, oldact);
+        return sigaction(emulator, signum, act, oldact);
     }
 
     private int pselect6(Emulator<?> emulator) {
