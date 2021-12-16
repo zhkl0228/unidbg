@@ -6,6 +6,7 @@ import com.github.unidbg.debugger.Breaker;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.serialize.Serializable;
+import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.unix.FileListener;
 
 /**
@@ -31,5 +32,7 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook, Seri
     void setBreaker(Breaker breaker);
 
     void setEnableThreadDispatcher(boolean threadDispatcherEnabled);
+
+    MainTask createSignalHandlerTask(Emulator<?> emulator, int sig);
 
 }

@@ -11,10 +11,16 @@ import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.EventFD;
 import com.github.unidbg.linux.file.PipedReadFileIO;
 import com.github.unidbg.linux.file.PipedWriteFileIO;
+import com.github.unidbg.linux.signal.SigAction;
+import com.github.unidbg.linux.signal.SignalTask;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.SyscallHandler;
+import com.github.unidbg.thread.Function32;
+import com.github.unidbg.thread.Function64;
+import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.thread.ThreadTask;
@@ -31,6 +37,7 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -106,6 +113,73 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (log.isDebugEnabled()) {
             log.debug("sched_setscheduler pid=" + pid + ", policy=" + policy + ", param=" + param);
         }
+        return 0;
+    }
+
+    private static final int SCHED_OTHER = 0;
+
+    protected int sched_getscheduler(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("sched_getscheduler pid=" + pid);
+        }
+        return SCHED_OTHER;
+    }
+
+    protected int sched_getparam(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        Pointer param = context.getPointerArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("sched_getparam pid=" + pid + ", param=" + param);
+        }
+        param.setInt(0, ANDROID_PRIORITY_NORMAL);
+        return 0;
+    }
+
+    protected int sched_yield(Emulator<AndroidFileIO> emulator) {
+        if (log.isDebugEnabled()) {
+            log.debug("sched_yield");
+        }
+        if (emulator.getThreadDispatcher().getTaskCount() <= 1) {
+            return 0;
+        } else {
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        }
+    }
+
+    private static final int ANDROID_PRIORITY_NORMAL = 0; /* most threads run at normal priority */
+
+    protected int getpriority(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int which = context.getIntArg(0);
+        int who = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("getpriority which=" + which + ", who=" + who);
+        }
+        return ANDROID_PRIORITY_NORMAL;
+    }
+
+    protected int setpriority(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int which = context.getIntArg(0);
+        int who = context.getIntArg(1);
+        int prio = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("setpriority which=" + which + ", who=" + who + ", prio=" + prio);
+        }
+        return 0;
+    }
+
+    protected int rt_sigtimedwait(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer uthese = context.getPointerArg(0);
+        Pointer uinfo = context.getPointerArg(1);
+        Pointer uts = context.getPointerArg(2);
+        int sigsetsize = context.getIntArg(3);
+        log.info("rt_sigtimedwait uthese=" + uthese + ", uinfo=" + uinfo + ", uts=" + uts + ", sigsetsize=" + sigsetsize);
+        createBreaker(emulator).debug();
         return 0;
     }
 
@@ -300,13 +374,77 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (task instanceof ThreadTask) {
             ThreadTask threadTask = (ThreadTask) task;
             threadTask.setExitStatus(status);
-            throw new ThreadContextSwitchException();
+            throw new ThreadContextSwitchException().setReturnValue(0);
         }
         System.out.println("exit status=" + status);
         if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
             emulator.attach().debug();
         }
         emulator.getBackend().emu_stop();
+    }
+
+    private static final int SIGKILL = 9;
+    private static final int SIGSTOP = 19;
+    private static final int SIG_ERR = -1;
+
+    private final Map<Integer, SigAction> sigActionMap = new HashMap<>();
+
+    @Override
+    public MainTask createSignalHandlerTask(Emulator<?> emulator, int sig) {
+        SigAction action = sigActionMap.get(sig);
+        if (action != null) {
+            UnidbgPointer handler = (UnidbgPointer) action.sa_handler;
+            if (emulator.is32Bit()) {
+                return new Function32(handler.peer, emulator.getReturnAddress(), false, sig);
+            } else {
+                return new Function64(handler.peer, emulator.getReturnAddress(), false, sig);
+            }
+        }
+        return super.createSignalHandlerTask(emulator, sig);
+    }
+
+    @Override
+    protected int sigaction(Emulator<?> emulator, int signum, Pointer act, Pointer oldact) {
+        SigAction action = SigAction.create(emulator, act);
+        SigAction oldAction = SigAction.create(emulator, oldact);
+        if (log.isDebugEnabled()) {
+            log.debug("sigaction signum=" + signum + ", action=" + action + ", oldAction=" + oldAction);
+        }
+        if (SIGKILL == signum || SIGSTOP == signum) {
+            emulator.getMemory().setErrno(UnixEmulator.EINVAL);
+            return SIG_ERR;
+        }
+        SigAction lastAction = sigActionMap.put(signum, action);
+        if (oldAction != null) {
+            if (lastAction == null) {
+                oldact.write(0, new byte[oldAction.size()], 0, oldAction.size());
+            } else {
+                oldAction.sa_handler = lastAction.sa_handler;
+                oldAction.sa_restorer = lastAction.sa_restorer;
+                oldAction.setFlags(lastAction.getFlags());
+                oldAction.setMask(lastAction.getMask());
+                oldAction.pack();
+            }
+        }
+        return 0;
+    }
+
+    protected int kill(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pid = context.getIntArg(0);
+        int sig = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("kill pid=" + pid + ", sig=" + sig);
+        }
+        if (pid == 0 && sig > 0) {
+            SigAction action = sigActionMap.get(sig);
+            if (action != null) {
+                emulator.getThreadDispatcher().addThread(new SignalTask(emulator, sig, action));
+                throw new ThreadContextSwitchException().setReturnValue(0);
+            }
+            return 0;
+        }
+        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
     }
 
 }

@@ -70,6 +70,13 @@ public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassemble
     void eThread(long fn, long arg, long sp);
 
     /**
+     * emulate signal handler
+     * @param sig signal number
+     * @return <code>true</code> means called handler function.
+     */
+    boolean emulateSignal(int sig);
+
+    /**
      * 是否正在运行
      */
     boolean isRunning();
@@ -123,5 +130,7 @@ public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassemble
     int popContext();
 
     ThreadDispatcher getThreadDispatcher();
+
+    long getReturnAddress();
 
 }

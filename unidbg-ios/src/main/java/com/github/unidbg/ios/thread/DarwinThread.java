@@ -3,7 +3,6 @@ package com.github.unidbg.ios.thread;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.Thread;
 import org.apache.commons.logging.Log;
@@ -14,8 +13,6 @@ public class DarwinThread extends Thread {
 
     private static final Log log = LogFactory.getLog(DarwinThread.class);
 
-    private static final int THREAD_STACK_SIZE = 0x80000;
-
     private final UnidbgPointer start_routine;
     private final UnidbgPointer arg;
     private final UnidbgPointer stack;
@@ -25,9 +22,7 @@ public class DarwinThread extends Thread {
 
         this.start_routine = start_routine;
         this.arg = arg;
-
-        MemoryBlock block = emulator.getMemory().malloc(THREAD_STACK_SIZE, true);
-        this.stack = block.getPointer().share(THREAD_STACK_SIZE, 0);
+        this.stack = allocateStack(emulator);
     }
 
     @Override

@@ -3,8 +3,6 @@ package com.github.unidbg.ios;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LongJumpException;
-import com.github.unidbg.arm.AbstractARM64Emulator;
-import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
@@ -91,6 +89,7 @@ import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -1428,7 +1427,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             emulator.attach().debug();
         }
         lastThread = threadId;
-        threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg, AbstractARM64Emulator.LR));
+        threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg, emulator.getReturnAddress()));
         return thread.peer;
     }
 
@@ -3198,7 +3197,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (signum == DarwinSyscall.SIGBUS) {
             signum = UnixSyscallHandler.SIGBUS;
         }
-        return sigaction(signum, act, oldact);
+        return sigaction(emulator, signum, act, oldact);
     }
 
     private int fcntl(Emulator<?> emulator) {

@@ -23,6 +23,7 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.MemoryWriteListener;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
+import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.thread.ThreadDispatcher;
@@ -321,6 +322,23 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         return threadDispatcher;
     }
 
+    @Override
+    public boolean emulateSignal(int sig) {
+        MainTask main = getSyscallHandler().createSignalHandlerTask(this, sig);
+        if (main == null) {
+            return false;
+        } else {
+            Memory memory = getMemory();
+            long spBackup = memory.getStackPoint();
+            try {
+                threadDispatcher.runMainForResult(main);
+            } finally {
+                memory.setStackPoint(spBackup);
+            }
+            return true;
+        }
+    }
+
     /**
      * @return <code>null</code>表示执行未完成，需要线程调度
      */
@@ -381,6 +399,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 return handleEmuException(exception, pointer, start);
             }
         } catch (ThreadContextSwitchException e) {
+            e.syncReturnValue(this);
             return null;
         } catch (RuntimeException e) {
             return handleEmuException(e, pointer, start);

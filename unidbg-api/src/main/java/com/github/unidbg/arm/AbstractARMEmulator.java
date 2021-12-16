@@ -46,7 +46,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     private static final Log log = LogFactory.getLog(AbstractARMEmulator.class);
 
-    public static final long LR = 0xffff0000L;
+    private static final long LR = 0xffff0000L;
 
     protected final Memory memory;
     private final UnixSyscallHandler<T> syscallHandler;
@@ -271,5 +271,10 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     @Override
     public Unwinder getUnwinder() {
         return new SimpleARMUnwinder(this);
+    }
+
+    @Override
+    public long getReturnAddress() {
+        return LR;
     }
 }

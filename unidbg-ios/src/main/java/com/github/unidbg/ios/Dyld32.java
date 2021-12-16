@@ -3,7 +3,6 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.HookStatus;
@@ -606,7 +605,7 @@ public class Dyld32 extends Dyld {
                         public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
                             emulator.attach().debug();
-                            emulator.getBackend().reg_write(ArmConst.UC_ARM_REG_LR, AbstractARMEmulator.LR);
+                            emulator.getBackend().reg_write(ArmConst.UC_ARM_REG_LR, emulator.getReturnAddress());
                             return 0;
                         }
                     }).peer;

@@ -17,7 +17,7 @@ public class Function32 extends MainTask {
     private final boolean paddingArgument;
     private final Number[] arguments;
 
-    public Function32(long begin, long until, boolean paddingArgument, Number[] arguments) {
+    public Function32(long begin, long until, boolean paddingArgument, Number... arguments) {
         super(begin, until);
         this.paddingArgument = paddingArgument;
         this.arguments = arguments;

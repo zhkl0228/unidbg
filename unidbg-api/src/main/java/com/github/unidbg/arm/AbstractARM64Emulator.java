@@ -49,7 +49,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     protected final Memory memory;
     private final UnixSyscallHandler<T> syscallHandler;
 
-    public static final long LR = 0x7ffff0000L;
+    private static final long LR = 0x7ffff0000L;
 
     private final Dlfcn dlfcn;
 
@@ -263,5 +263,10 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     @Override
     public Unwinder getUnwinder() {
         return new SimpleARM64Unwinder(this);
+    }
+
+    @Override
+    public long getReturnAddress() {
+        return LR;
     }
 }

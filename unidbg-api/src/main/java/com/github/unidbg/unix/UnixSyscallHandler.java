@@ -11,6 +11,7 @@ import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.spi.SyscallHandler;
+import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.unix.struct.TimeVal32;
 import com.github.unidbg.unix.struct.TimeVal64;
 import com.github.unidbg.unix.struct.TimeZone;
@@ -404,7 +405,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     private static final int SIGSYS = 31; /* Bad system call.  */
     private static final int SIGRTMIN = 32;
 
-    protected final int sigaction(int signum, Pointer act, Pointer oldact) {
+    protected int sigaction(Emulator<?> emulator, int signum, Pointer act, Pointer oldact) {
         final int ACT_SIZE = 16;
         return sigaction(signum, act, oldact, ACT_SIZE);
     }
@@ -574,4 +575,8 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         this.threadDispatcherEnabled = threadDispatcherEnabled;
     }
 
+    @Override
+    public MainTask createSignalHandlerTask(Emulator<?> emulator, int sig) {
+        return null;
+    }
 }
