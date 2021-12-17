@@ -19,10 +19,12 @@ import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
+import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
@@ -168,6 +170,79 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         int prio = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             log.debug("setpriority which=" + which + ", who=" + who + ", prio=" + prio);
+        }
+        return 0;
+    }
+
+    private static final int SIG_BLOCK = 0;
+    private static final int SIG_UNBLOCK = 1;
+    private static final int SIG_SETMASK = 2;
+
+    @Override
+    protected int sigprocmask(Emulator<?> emulator, int how, Pointer set, Pointer oldset) {
+        ThreadDispatcher threadDispatcher = emulator.getThreadDispatcher();
+        Task task = emulator.get(Task.TASK_KEY);
+        SigSet old = task.isMainThread() ? threadDispatcher.getMainThreadSigMaskSet() : task.getSigMaskSet();
+        if (oldset != null && old != null) {
+            if (emulator.is32Bit()) {
+                oldset.setInt(0, (int) old.getSigSet());
+            } else {
+                oldset.setLong(0, old.getSigSet());
+            }
+        }
+        if (set == null) {
+            return 0;
+        }
+        long value = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
+        switch (how) {
+            case SIG_BLOCK:
+                if (old == null) {
+                    SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
+                    SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
+                    if (task.isMainThread()) {
+                        threadDispatcher.setMainThreadSigMaskSet(sigSet);
+                        threadDispatcher.setMainThreadSigPendingSet(sigPendingSet);
+                    } else {
+                        task.setSigMaskSet(sigSet, sigPendingSet);
+                    }
+                } else {
+                    old.blockSigSet(value);
+                }
+                return 0;
+            case SIG_UNBLOCK:
+                if (old != null) {
+                    old.unblockSigSet(value);
+                }
+                return 0;
+            case SIG_SETMASK:
+                SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
+                SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
+                if (task.isMainThread()) {
+                    threadDispatcher.setMainThreadSigMaskSet(sigSet);
+                    threadDispatcher.setMainThreadSigPendingSet(sigPendingSet);
+                } else {
+                    task.setSigMaskSet(sigSet, sigPendingSet);
+                }
+                return 0;
+        }
+        return super.sigprocmask(emulator, how, set, oldset);
+    }
+
+    protected int rt_sigpending(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer set = context.getPointerArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("rt_sigpending set=" + set);
+        }
+        ThreadDispatcher threadDispatcher = emulator.getThreadDispatcher();
+        Task task = emulator.get(Task.TASK_KEY);
+        SigSet sigSet = task.isMainThread() ? threadDispatcher.getMainThreadSigPendingSet() : task.getSigPendingSet();
+        if (set != null && sigSet != null) {
+            if (emulator.is32Bit()) {
+                set.setInt(0, (int) sigSet.getSigSet());
+            } else {
+                set.setLong(0, sigSet.getSigSet());
+            }
         }
         return 0;
     }
@@ -437,13 +512,23 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         Task task = emulator.get(Task.TASK_KEY);
         if (pid == 0 && sig > 0 && task != null) {
             SigAction action = sigActionMap.get(sig);
-            if (action != null) {
-                task.addSignalTask(new SignalTask(sig, action));
-                throw new ThreadContextSwitchException().setReturnValue(0);
-            }
-            return 0;
+            return processSignal(emulator.getThreadDispatcher(), sig, task, action);
         }
         throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
+    }
+
+    private int processSignal(ThreadDispatcher threadDispatcher, int sig, Task task, SigAction action) {
+        if (action != null) {
+            SigSet sigMaskSet = task.isMainThread() ? threadDispatcher.getMainThreadSigMaskSet() : task.getSigMaskSet();
+            SigSet sigPendingSet = task.isMainThread() ? threadDispatcher.getMainThreadSigPendingSet() : task.getSigPendingSet();
+            if (sigMaskSet == null || !sigMaskSet.containsSigNumber(sig)) {
+                task.addSignalTask(new SignalTask(sig, action));
+                throw new ThreadContextSwitchException().setReturnValue(0);
+            } else if (sigPendingSet != null) {
+                sigPendingSet.addSigNumber(sig);
+            }
+        }
+        return 0;
     }
 
     protected int tgkill(Emulator<?> emulator) {

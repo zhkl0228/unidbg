@@ -271,7 +271,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 126:
                 case 175:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(emulator));
                     return;
                 case 132:
                     syscall = "getpgid";
@@ -321,6 +321,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 172:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, prctl(backend, emulator));
+                    return;
+                case 176:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigpending(emulator));
                     return;
                 case 177:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigtimedwait(emulator));
@@ -1313,10 +1316,11 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         throw new UnsupportedOperationException();
     }
 
-    private int sigprocmask(Backend backend, Emulator<?> emulator) {
-        int how = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer set = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oldset = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+    private int sigprocmask(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int how = context.getIntArg(0);
+        Pointer set = context.getPointerArg(1);
+        Pointer oldset = context.getPointerArg(2);
         return sigprocmask(emulator, how, set, oldset);
     }
 

@@ -1,6 +1,8 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.signal.SigSet;
+import com.github.unidbg.signal.SignalTask;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -39,11 +41,25 @@ public class UniThreadDispatcher implements ThreadDispatcher {
         boolean ret = false;
         for (Task task : list) {
             if (tid == 0 && task.isMainThread()) {
+                if (mainThreadSigMaskSet != null && mainThreadSigMaskSet.containsSigNumber(signalTask.getSigNumber())) {
+                    if (mainThreadSigPendingSet != null) {
+                        mainThreadSigPendingSet.addSigNumber(signalTask.getSigNumber());
+                    }
+                    return false;
+                }
                 task.addSignalTask(signalTask);
                 ret = true;
                 break;
             }
             if (tid == task.getId()) {
+                SigSet sigSet = task.getSigMaskSet();
+                if (sigSet != null && sigSet.containsSigNumber(signalTask.getSigNumber())) {
+                    SigSet sigPendingSet = task.getSigPendingSet();
+                    if (sigPendingSet != null) {
+                        sigPendingSet.addSigNumber(signalTask.getSigNumber());
+                    }
+                    return false;
+                }
                 task.addSignalTask(signalTask);
                 ret = true;
                 break;
@@ -137,5 +153,28 @@ public class UniThreadDispatcher implements ThreadDispatcher {
     @Override
     public int getTaskCount() {
         return taskList.size() + threadTaskList.size();
+    }
+
+    private SigSet mainThreadSigMaskSet;
+    private SigSet mainThreadSigPendingSet;
+
+    @Override
+    public SigSet getMainThreadSigMaskSet() {
+        return mainThreadSigMaskSet;
+    }
+
+    @Override
+    public void setMainThreadSigMaskSet(SigSet mainThreadSigMaskSet) {
+        this.mainThreadSigMaskSet = mainThreadSigMaskSet;
+    }
+
+    @Override
+    public SigSet getMainThreadSigPendingSet() {
+        return mainThreadSigPendingSet;
+    }
+
+    @Override
+    public void setMainThreadSigPendingSet(SigSet mainThreadSigPendingSet) {
+        this.mainThreadSigPendingSet = mainThreadSigPendingSet;
     }
 }

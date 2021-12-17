@@ -8,7 +8,7 @@ import com.github.unidbg.thread.BaseTask;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
-public class SignalTask extends BaseTask implements com.github.unidbg.thread.SignalTask {
+public class SignalTask extends BaseTask implements com.github.unidbg.signal.SignalTask {
 
     private final int signum;
     private final SigAction action;
@@ -16,6 +16,11 @@ public class SignalTask extends BaseTask implements com.github.unidbg.thread.Sig
     public SignalTask(int signum, SigAction action) {
         this.signum = signum;
         this.action = action;
+    }
+
+    @Override
+    public int getSigNumber() {
+        return signum;
     }
 
     private UnidbgPointer stack;

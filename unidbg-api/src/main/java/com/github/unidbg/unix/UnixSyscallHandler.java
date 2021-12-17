@@ -246,7 +246,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return 0;
     }
 
-    protected final int sigprocmask(Emulator<?> emulator, int how, Pointer set, Pointer oldset) {
+    protected int sigprocmask(Emulator<?> emulator, int how, Pointer set, Pointer oldset) {
         if (log.isDebugEnabled()) {
             log.debug("sigprocmask how=" + how + ", set=" + set + ", oldset=" + oldset);
         }

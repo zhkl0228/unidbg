@@ -4,6 +4,8 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.signal.SigSet;
+import com.github.unidbg.signal.SignalTask;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
@@ -21,6 +23,25 @@ abstract class AbstractTask extends BaseTask implements Task {
 
     public AbstractTask(int id) {
         this.id = id;
+    }
+
+    private SigSet sigMaskSet;
+    private SigSet sigPendingSet;
+
+    @Override
+    public SigSet getSigMaskSet() {
+        return sigMaskSet;
+    }
+
+    @Override
+    public SigSet getSigPendingSet() {
+        return sigPendingSet;
+    }
+
+    @Override
+    public void setSigMaskSet(SigSet sigMaskSet, SigSet sigPendingSet) {
+        this.sigMaskSet = sigMaskSet;
+        this.sigPendingSet = sigPendingSet;
     }
 
     @Override

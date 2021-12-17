@@ -34,10 +34,33 @@ static void init() {
   }
 }
 
+static void do_sigprocmask() {
+  sigset_t set, old;
+  sigemptyset(&set);
+  sigemptyset(&old);
+  sigaddset(&set, SIGTSTP);
+  int ret = sigprocmask(SIG_SETMASK, &set, &old);
+  char set_buf[256];
+  char old_buf[256];
+  memset(set_buf, 0, 256);
+  memset(old_buf, 0, 256);
+  hex(set_buf, &set, sizeof(set));
+  hex(old_buf, &old, sizeof(old));
+  printf("do_sigprocmask ret=%d, set=%s, old=%s\n", ret, set_buf, old_buf);
+}
+
 static void *start_routine(void *arg) {
   pid_t tid = gettid();
   printf("Call start_routine arg=%p, tid=%d, errno=%p\n", arg, tid, &errno);
+  do_sigprocmask();
   raise(SIGTSTP);
+  sigset_t set;
+  sigemptyset(&set);
+  int ret = sigpending(&set);
+  char buf[256];
+  memset(buf, 0, 256);
+  hex(buf, &set, sizeof(set));
+  printf("sigpending ret=%d, set=%s, size=%zu\n", ret, buf, sizeof(set));
   return (void *) &init;
 }
 

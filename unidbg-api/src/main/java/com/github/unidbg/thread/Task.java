@@ -1,6 +1,8 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.signal.SigSet;
+import com.github.unidbg.signal.SignalTask;
 
 import java.util.List;
 
@@ -29,5 +31,11 @@ public interface Task extends Disposable {
     boolean isContextSaved();
 
     void restoreContext(AbstractEmulator<?> emulator);
+
+    SigSet getSigMaskSet();
+
+    void setSigMaskSet(SigSet sigMaskSet, SigSet sigPendingSet);
+
+    SigSet getSigPendingSet();
 
 }
