@@ -1290,6 +1290,10 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_cont
     jit->SetFpcr(ctx->fpcr);
     jit->SetFpsr(ctx->fpsr);
     jit->SetPstate(ctx->pstate);
+
+    DynarmicCallbacks64 *cb = dynarmic->cb64;
+    cb->tpidr_el0 = ctx->tpidr_el0;
+    cb->tpidrro_el0 = ctx->tpidrro_el0;
   } else {
     Dynarmic::A32::Jit *jit = dynarmic->jit32;
     t_context32 ctx = (t_context32) context;
@@ -1297,6 +1301,9 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_cont
     jit->ExtRegs() = ctx->extRegs;
     jit->SetCpsr(ctx->cpsr);
     jit->SetFpscr(ctx->fpscr);
+
+    DynarmicCallbacks32 *cb = dynarmic->cb32;
+    cb->cp15.get()->uro = ctx->uro;
   }
 }
 
@@ -1318,6 +1325,10 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_cont
     ctx->fpcr = jit->GetFpcr();
     ctx->fpsr = jit->GetFpsr();
     ctx->pstate = jit->GetPstate();
+
+    DynarmicCallbacks64 *cb = dynarmic->cb64;
+    ctx->tpidr_el0 = cb->tpidr_el0;
+    ctx->tpidrro_el0 = cb->tpidrro_el0;
   } else {
     Dynarmic::A32::Jit *jit = dynarmic->jit32;
     t_context32 ctx = (t_context32) context;
@@ -1325,6 +1336,9 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_cont
     ctx->extRegs = jit->ExtRegs();
     ctx->cpsr = jit->Cpsr();
     ctx->fpscr = jit->Fpscr();
+
+    DynarmicCallbacks32 *cb = dynarmic->cb32;
+    ctx->uro = cb->cp15.get()->uro;
   }
 }
 

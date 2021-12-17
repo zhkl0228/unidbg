@@ -32,6 +32,8 @@ typedef struct context64 {
   std::uint32_t fpcr;
   std::uint32_t fpsr;
   std::uint32_t pstate;
+  std::uint64_t tpidr_el0;
+  std::uint64_t tpidrro_el0;
 } *t_context64;
 
 typedef struct context32 {
@@ -39,4 +41,5 @@ typedef struct context32 {
   std::array<std::uint32_t, 64> extRegs;
   std::uint32_t cpsr;
   std::uint32_t fpscr;
+  std::uint32_t uro;
 } *t_context32;
