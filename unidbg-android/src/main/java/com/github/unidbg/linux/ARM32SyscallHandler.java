@@ -29,6 +29,8 @@ import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
 import com.github.unidbg.linux.struct.Stat32;
 import com.github.unidbg.linux.struct.SysInfo32;
+import com.github.unidbg.linux.thread.KitKatThread;
+import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -135,7 +137,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
 
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 ARM.showThumbRegs(emulator);
             }
 
@@ -256,7 +258,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fsync(backend));
                     return;
                 case 120:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, clone(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, clone(emulator));
                     return;
                 case 122:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
@@ -389,6 +391,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 248:
                     exit_group(emulator);
+                    return;
+                case 256:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, set_tid_address(emulator));
                     return;
                 case 263:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, clock_gettime(backend, emulator));
@@ -536,7 +541,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return getrandom(buf, bufSize, flags);
     }
 
-    private int clone(Backend backend, Emulator<?> emulator) {
+    private int clone(Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         Pointer child_stack = context.getPointerArg(1);
         if (child_stack == null &&
@@ -547,11 +552,11 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
         int fn = context.getR5Int();
         int arg = context.getR6Int();
-        if (child_stack != null && child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
+        if (child_stack != null && child_stack.getInt(0) == fn && child_stack.getInt(4) == arg) {
             // http://androidxref.com/6.0.1_r10/xref/bionic/libc/arch-arm/bionic/__bionic_clone.S#49
-            return bionic_clone(backend, emulator);
+            return bionic_clone(emulator);
         } else {
-            return pthread_clone(backend, emulator);
+            return pthread_clone(emulator);
         }
     }
 
@@ -785,9 +790,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private static final int CLONE_CHILD_SETTID = 0x01000000;
     private static final int CLONE_STOPPED = 0x02000000;
 
-    private int pthread_clone(Backend backend, Emulator<?> emulator) {
-        int flags = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        UnidbgPointer child_stack = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+    private int pthread_clone(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int flags = context.getIntArg(0);
+        UnidbgPointer child_stack = context.getPointerArg(1);
         List<String> list = new ArrayList<>();
         if ((flags & CLONE_VM) != 0) {
             list.add("CLONE_VM");
@@ -847,16 +853,17 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(4, 0);
 
-        Thread thread = new LinuxThread(child_stack, fn, arg, emulator.getReturnAddress());
-
         if (threadDispatcherEnabled) {
             if (verbose) {
                 System.out.printf("pthread_clone fn=%s%n", fn);
             }
-            emulator.getThreadDispatcher().addThread(thread);
+            AndroidElfLoader loader = (AndroidElfLoader) emulator.getMemory();
+            emulator.getThreadDispatcher().addThread(new KitKatThread(emulator.getReturnAddress(),
+                    loader.__thread_entry, child_stack, fn, arg));
             return threadId;
         }
 
+        Thread thread = new LinuxThread(child_stack, fn, arg, emulator.getReturnAddress());
         threadMap.put(threadId, thread);
         lastThread = threadId;
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
@@ -867,14 +874,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return threadId;
     }
 
-    private int bionic_clone(Backend backend, Emulator<?> emulator) {
-        int flags = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer child_stack = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer pid = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        Pointer tls = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        Pointer ctid = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
-        Pointer fn = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R5);
-        Pointer arg = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R6);
+    private int bionic_clone(Emulator<?> emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int flags = context.getR0Int();
+        Pointer child_stack = context.getR1Pointer();
+        Pointer pid = context.getR2Pointer();
+        Pointer tls = context.getR3Pointer();
+        Pointer ctid = context.getR4Pointer();
+        UnidbgPointer fn = context.getR5Pointer();
+        UnidbgPointer arg = context.getR6Pointer();
         List<String> list = new ArrayList<>();
         if ((flags & CLONE_VM) != 0) {
             list.add("CLONE_VM");
@@ -929,6 +937,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         }
         if (log.isDebugEnabled()) {
             log.debug("bionic_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", pid=" + pid + ", tls=" + tls + ", ctid=" + ctid + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
+        }
+        if (threadDispatcherEnabled) {
+            if (verbose) {
+                System.out.printf("bionic_clone fn=%s%n", fn);
+            }
+            emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid));
+            int threadId = ++this.threadId;
+            ctid.setInt(0, threadId);
+            return threadId;
         }
         emulator.getMemory().setErrno(UnixEmulator.EAGAIN);
         throw new AbstractMethodError();

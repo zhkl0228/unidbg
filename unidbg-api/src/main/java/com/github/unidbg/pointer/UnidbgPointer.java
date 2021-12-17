@@ -29,6 +29,10 @@ public class UnidbgPointer extends Pointer {
     public final long peer;
     private final int pointerSize;
 
+    public static long nativeValue(Pointer ptr) {
+        return ptr == null ? 0 : ((UnidbgPointer) ptr).peer;
+    }
+
     public long toUIntPeer() {
         return peer & 0xffffffffL;
     }

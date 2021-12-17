@@ -20,7 +20,7 @@ __attribute__((constructor))
 static void init() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
-  for(int i = 1; i <= 64; i++) {
+  for(int i = 1; i <= SIGUNUSED; i++) {
     struct sigaction act;
     struct sigaction old;
     sigemptyset(&act.sa_mask);
@@ -32,9 +32,16 @@ static void init() {
   }
 }
 
+static void *start_routine(void *arg) {
+  printf("Call start_routine arg=%p, errno=%p\n", arg, &errno);
+  return (void *) &init;
+}
+
 int main(int argc, char *argv[]) {
-  printf("Start signal test.\n");
-  for(int i = 1; i <= 64; i++) {
+  pthread_t main = pthread_self();
+  pid_t tid = gettid();
+  printf("Start signal test, main=%ld, tid=%d.\n", main, tid);
+  for(int i = 1; i <= SIGUNUSED; i++) {
     sighandler_t old = signal(i, sig);
     printf("main signal sig=%d, old=%p\n", i, old);
   }
@@ -43,5 +50,14 @@ int main(int argc, char *argv[]) {
   printf("sizeof(struct siginfo)=%d\n", (int) sizeof(struct siginfo));
   int ret = kill(0, SIGALRM);
   printf("kill ret=%d\n", ret);
+  ret = raise(SIGTERM);
+  printf("raise ret=%d, sizeof(pid_t)=%zu\n", ret, sizeof(pid_t));
+  ret = pthread_kill(main, SIGTSTP);
+  printf("pthread_kill ret=%d\n", ret);
+  pthread_t thread = 0;
+  ret = pthread_create(&thread, NULL, start_routine, &sigaction);
+  void *value = NULL;
+  int join_ret = pthread_join(thread, &value);
+  printf("pthread_join ret=%d, join_ret=%d, thread=%ld, value=%p\n", ret, join_ret, thread, value);
   return 0;
 }

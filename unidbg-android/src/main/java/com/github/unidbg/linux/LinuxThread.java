@@ -31,36 +31,8 @@ public class LinuxThread extends Thread {
     }
 
     @Override
-    public String toString() {
-        return "LinuxThread fn=" + fn + ", arg=" + arg + ", child_stack=" + child_stack;
-    }
-
-    @Override
     protected Number runThread(AbstractEmulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        if (emulator.is32Bit()) {
-            AndroidElfLoader loader = (AndroidElfLoader) emulator.getMemory();
-            if (loader.__thread_entry != 0) {
-                UnidbgPointer stack = allocateStack(emulator);
-                backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.peer);
-
-                backend.reg_write(ArmConst.UC_ARM_REG_R0, this.fn.peer);
-                backend.reg_write(ArmConst.UC_ARM_REG_R1, this.arg.peer);
-                backend.reg_write(ArmConst.UC_ARM_REG_R2, this.child_stack.peer);
-                backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
-                return emulator.emulate(loader.__thread_entry, until);
-            } else {
-                backend.reg_write(ArmConst.UC_ARM_REG_R0, this.arg.peer);
-                backend.reg_write(ArmConst.UC_ARM_REG_SP, this.child_stack.peer);
-                backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
-                return emulator.emulate(this.fn.peer, until);
-            }
-        } else {
-            backend.reg_write(Arm64Const.UC_ARM64_REG_X0, this.arg.peer);
-            backend.reg_write(Arm64Const.UC_ARM64_REG_SP, this.child_stack.peer);
-            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
-            return emulator.emulate(this.fn.peer, until);
-        }
+        throw new UnsupportedOperationException();
     }
 
     private long context;

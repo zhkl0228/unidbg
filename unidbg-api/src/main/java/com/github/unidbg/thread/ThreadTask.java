@@ -18,7 +18,7 @@ public abstract class ThreadTask extends AbstractTask implements Task {
     private boolean finished;
 
     @Override
-    public boolean isDead() {
+    public boolean isFinish() {
         return finished;
     }
 

@@ -58,8 +58,7 @@ public class SignalFunction extends MainTask {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X2, 0); // void *ucontext
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
         }
-        UnidbgPointer handler = (UnidbgPointer) action.sa_handler;
-        return emulator.emulate(handler.peer, until);
+        return emulator.emulate(UnidbgPointer.nativeValue(action.sa_handler), until);
     }
 
 }

@@ -27,6 +27,8 @@ import com.github.unidbg.linux.file.SocketIO;
 import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
 import com.github.unidbg.linux.struct.Stat64;
+import com.github.unidbg.linux.thread.KitKatThread;
+import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -121,7 +123,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 throw new BackendException("svc number: " + swi);
             }
 
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 ARM.showRegs64(emulator, null);
             }
 
@@ -204,6 +206,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 83:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fdatasync(emulator));
+                    return;
+                case 96:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, set_tid_address(emulator));
                     return;
                 case 98:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, futex(emulator));
@@ -388,7 +393,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
         long fn = context.getXLong(5);
         long arg = context.getXLong(6);
-        if (child_stack != null && child_stack.getLong(-8) == fn && child_stack.getLong(-16) == arg) {
+        if (child_stack != null && child_stack.getLong(0) == fn && child_stack.getLong(8) == arg) {
             // http://androidxref.com/6.0.1_r10/xref/bionic/libc/arch-arm/bionic/__bionic_clone.S#49
             return bionic_clone(emulator);
         } else {
@@ -459,15 +464,17 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(8, 0);
 
-        Thread thread = new LinuxThread(child_stack, fn, arg, emulator.getReturnAddress());
         if (threadDispatcherEnabled) {
             if (verbose) {
                 System.out.printf("pthread_clone fn=%s%n", fn);
             }
-            emulator.getThreadDispatcher().addThread(thread);
+            AndroidElfLoader loader = (AndroidElfLoader) emulator.getMemory();
+            emulator.getThreadDispatcher().addThread(new KitKatThread(emulator.getReturnAddress(),
+                    loader.__thread_entry, child_stack, fn, arg));
             return threadId;
         }
 
+        Thread thread = new LinuxThread(child_stack, fn, arg, emulator.getReturnAddress());
         threadMap.put(threadId, thread);
         lastThread = threadId;
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
@@ -511,8 +518,8 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         Pointer pid = context.getPointerArg(2);
         Pointer tls = context.getPointerArg(3);
         Pointer ctid = context.getPointerArg(4);
-        Pointer fn = context.getPointerArg(5);
-        Pointer arg = context.getPointerArg(6);
+        UnidbgPointer fn = context.getPointerArg(5);
+        UnidbgPointer arg = context.getPointerArg(6);
         List<String> list = new ArrayList<>();
         if ((flags & CLONE_VM) != 0) {
             list.add("CLONE_VM");
@@ -567,6 +574,15 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         }
         if (log.isDebugEnabled()) {
             log.debug("bionic_clone child_stack=" + child_stack + ", pid=" + pid + ", tls=" + tls + ", ctid=" + ctid + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
+        }
+        if (threadDispatcherEnabled) {
+            if (verbose) {
+                System.out.printf("bionic_clone fn=%s%n", fn);
+            }
+            emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid));
+            int threadId = ++this.threadId;
+            ctid.setInt(0, threadId);
+            return threadId;
         }
         emulator.getMemory().setErrno(UnixEmulator.EAGAIN);
         throw new AbstractMethodError();

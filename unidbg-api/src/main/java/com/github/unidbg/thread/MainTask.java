@@ -26,7 +26,7 @@ public abstract class MainTask extends AbstractTask implements Task {
     }
 
     @Override
-    public boolean isDead() {
+    public boolean isFinish() {
         return false;
     }
 

@@ -43,8 +43,7 @@ public class SignalTask extends BaseTask implements com.github.unidbg.thread.Sig
             backend.reg_write(Arm64Const.UC_ARM64_REG_X2, 0); // void *ucontext
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, emulator.getReturnAddress());
         }
-        UnidbgPointer handler = (UnidbgPointer) action.sa_handler;
-        Number ret = emulator.emulate(handler.peer, emulator.getReturnAddress());
+        Number ret = emulator.emulate(UnidbgPointer.nativeValue(action.sa_handler), emulator.getReturnAddress());
         if (ret == null) {
             throw new IllegalStateException();
         }

@@ -16,7 +16,7 @@ public interface Task extends Disposable {
 
     boolean isMainThread();
 
-    boolean isDead();
+    boolean isFinish();
 
     void addSignalTask(SignalTask task);
 

@@ -187,7 +187,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi + ", NR=" + NR);
             }
 
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 ARM.showThumbRegs(emulator);
             }
 

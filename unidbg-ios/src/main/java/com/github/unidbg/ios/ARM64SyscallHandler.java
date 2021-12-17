@@ -187,7 +187,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 throw new BackendException("svc number: " + swi + ", NR=" + NR + ", intno=" + intno);
             }
 
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.debug("handle syscall NR=" + NR);
                 ARM.showRegs64(emulator, null);
             }

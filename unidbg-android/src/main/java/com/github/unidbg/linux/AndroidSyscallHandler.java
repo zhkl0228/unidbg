@@ -17,6 +17,7 @@ import com.github.unidbg.linux.signal.SignalTask;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
+import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.thread.MainTask;
@@ -329,7 +330,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         return count;
     }
 
-    final int sigaltstack(Emulator<?> emulator) {
+    protected int sigaltstack(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer ss = context.getPointerArg(0);
         Pointer old_ss = context.getPointerArg(1);
@@ -460,6 +461,20 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                 task.addSignalTask(new SignalTask(sig, action));
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
+        }
+        return 0;
+    }
+
+    protected int set_tid_address(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer tidptr = context.getPointerArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("set_tid_address tidptr=" + tidptr);
+        }
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task instanceof MarshmallowThread) {
+            MarshmallowThread thread = (MarshmallowThread) task;
+            thread.set_tid_address(tidptr);
         }
         return 0;
     }

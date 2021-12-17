@@ -6,6 +6,7 @@ import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.memory.Memory;
@@ -48,6 +49,7 @@ public class Signal64Test {
 
     private void test() {
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.linux.AndroidSyscallHandler").setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
         emulator.emulateSignal(29);

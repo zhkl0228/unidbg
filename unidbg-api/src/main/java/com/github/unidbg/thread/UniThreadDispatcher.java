@@ -46,7 +46,10 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                 }
                 for (Iterator<Task> iterator = taskList.iterator(); iterator.hasNext(); ) {
                     Task task = iterator.next();
-                    if (task.isDead()) {
+                    if (task.isFinish()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Finish task=" + task);
+                        }
                         task.destroy(emulator);
                         iterator.remove();
                         for (SignalTask signalTask : task.getSignalTaskList()) {
@@ -109,6 +112,6 @@ public class UniThreadDispatcher implements ThreadDispatcher {
 
     @Override
     public int getTaskCount() {
-        return taskList.size();
+        return taskList.size() + threadTaskList.size();
     }
 }
