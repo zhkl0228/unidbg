@@ -265,7 +265,14 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                 }
             }
         }
+        if (!task.isMainThread()) {
+            throw new ThreadContextSwitchException().setReturnValue(-1);
+        }
         log.info("rt_sigtimedwait set=" + set + ", info=" + info + ", timeout=" + timeout + ", sigsetsize=" + sigsetsize + ", sigSet=" + sigSet + ", task=" + task);
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
         return 0;
     }
 

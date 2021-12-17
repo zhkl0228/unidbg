@@ -94,7 +94,6 @@ int main(int argc, char *argv[]) {
   printf("raise ret=%d, sizeof(pid_t)=%zu\n", ret, sizeof(pid_t));
   pthread_t thread = 0;
   ret = pthread_create(&thread, NULL, start_routine, &sigaction);
-  sleep(1);
   pthread_kill(thread, SIGTSTP);
   pthread_kill(thread, SIGALRM);
   printf("pthread_kill ret=%d\n", ret);
