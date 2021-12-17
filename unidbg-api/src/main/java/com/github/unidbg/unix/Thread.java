@@ -5,8 +5,8 @@ import com.github.unidbg.thread.ThreadTask;
 
 public abstract class Thread extends ThreadTask {
 
-    public Thread(long until) {
-        super(until);
+    public Thread(int tid, long until) {
+        super(tid, until);
     }
 
     public abstract void runThread(Emulator<?> emulator, long __thread_entry, long timeout);

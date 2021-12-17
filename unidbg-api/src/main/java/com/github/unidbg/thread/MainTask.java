@@ -6,7 +6,8 @@ public abstract class MainTask extends AbstractTask implements Task {
 
     protected final long until;
 
-    protected MainTask(long until) {
+    protected MainTask(int pid, long until) {
+        super(pid);
         this.until = until;
     }
 

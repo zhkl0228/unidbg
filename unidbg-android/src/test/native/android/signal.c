@@ -9,11 +9,13 @@
 #include "test.h"
 
 static void sig(int signo) {
-    printf("catch signo=%d\n", signo);
+  pid_t tid = gettid();
+  printf("catch signo=%d, tid=%d\n", signo, tid);
 }
 
 static void sig_act(int signo, siginfo_t *info, void *ucontext) {
-    printf("catch signo=%d, info=%p, ucontext=%p\n", signo, info, ucontext);
+  pid_t tid = gettid();
+  printf("catch signo=%d, info=%p, ucontext=%p, tid=%d\n", signo, info, ucontext, tid);
 }
 
 __attribute__((constructor))
@@ -33,14 +35,16 @@ static void init() {
 }
 
 static void *start_routine(void *arg) {
-  printf("Call start_routine arg=%p, errno=%p\n", arg, &errno);
+  pid_t tid = gettid();
+  printf("Call start_routine arg=%p, tid=%d, errno=%p\n", arg, tid, &errno);
+  raise(SIGTSTP);
   return (void *) &init;
 }
 
 int main(int argc, char *argv[]) {
   pthread_t main = pthread_self();
   pid_t tid = gettid();
-  printf("Start signal test, main=%ld, tid=%d.\n", main, tid);
+  printf("Start signal test, main=%p, pid=%d, tid=%d.\n", (void *) main, getpid(), tid);
   for(int i = 1; i <= SIGUNUSED; i++) {
     sighandler_t old = signal(i, sig);
     printf("main signal sig=%d, old=%p\n", i, old);
@@ -52,12 +56,12 @@ int main(int argc, char *argv[]) {
   printf("kill ret=%d\n", ret);
   ret = raise(SIGTERM);
   printf("raise ret=%d, sizeof(pid_t)=%zu\n", ret, sizeof(pid_t));
-  ret = pthread_kill(main, SIGTSTP);
-  printf("pthread_kill ret=%d\n", ret);
   pthread_t thread = 0;
   ret = pthread_create(&thread, NULL, start_routine, &sigaction);
+  pthread_kill(thread, SIGTSTP);
+  printf("pthread_kill ret=%d\n", ret);
   void *value = NULL;
   int join_ret = pthread_join(thread, &value);
-  printf("pthread_join ret=%d, join_ret=%d, thread=%ld, value=%p\n", ret, join_ret, thread, value);
+  printf("pthread_join ret=%d, join_ret=%d, thread=%p, value=%p\n", ret, join_ret, (void *)thread, value);
   return 0;
 }

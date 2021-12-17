@@ -229,7 +229,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
         long spBackup = memory.getStackPoint();
         try {
             return new Number[] {
-                    getThreadDispatcher().runMainForResult(new Function32(begin, LR, isPaddingArgument(), arguments))
+                    getThreadDispatcher().runMainForResult(new Function32(getPid(), begin, LR, isPaddingArgument(), arguments))
             };
         } finally {
             memory.setStackPoint(spBackup);
@@ -240,7 +240,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     public Number eEntry(long begin, long sp) {
         long spBackup = memory.getStackPoint();
         try {
-            return getThreadDispatcher().runMainForResult(new Entry(begin, LR, sp));
+            return getThreadDispatcher().runMainForResult(new Entry(getPid(), begin, LR, sp));
         } finally {
             memory.setStackPoint(spBackup);
         }

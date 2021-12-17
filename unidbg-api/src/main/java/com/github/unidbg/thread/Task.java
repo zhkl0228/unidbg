@@ -8,6 +8,8 @@ public interface Task extends Disposable {
 
     String TASK_KEY = Task.class.getName();
 
+    int getId();
+
     boolean canDispatch();
 
     Number dispatch(AbstractEmulator<?> emulator);
@@ -23,5 +25,9 @@ public interface Task extends Disposable {
     List<SignalTask> getSignalTaskList();
 
     void removeSignalTask(SignalTask task);
+
+    boolean isContextSaved();
+
+    void restoreContext(AbstractEmulator<?> emulator);
 
 }

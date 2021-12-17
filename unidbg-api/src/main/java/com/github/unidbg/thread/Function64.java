@@ -18,8 +18,8 @@ public class Function64 extends MainTask {
     private final boolean paddingArgument;
     private final Number[] arguments;
 
-    public Function64(long address, long until, boolean paddingArgument, Number... arguments) {
-        super(until);
+    public Function64(int pid, long address, long until, boolean paddingArgument, Number... arguments) {
+        super(pid, until);
         this.address = address;
         this.paddingArgument = paddingArgument;
         this.arguments = arguments;

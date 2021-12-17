@@ -17,6 +17,17 @@ abstract class AbstractTask extends BaseTask implements Task {
 
     private static final Log log = LogFactory.getLog(AbstractTask.class);
 
+    private final int id;
+
+    public AbstractTask(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public int getId() {
+        return id;
+    }
+
     @Override
     public final boolean canDispatch() {
         return true;
@@ -24,7 +35,8 @@ abstract class AbstractTask extends BaseTask implements Task {
 
     private long context;
 
-    protected final boolean isContextSaved() {
+    @Override
+    public final boolean isContextSaved() {
         return this.context != 0;
     }
 
@@ -43,6 +55,12 @@ abstract class AbstractTask extends BaseTask implements Task {
     @Override
     public List<SignalTask> getSignalTaskList() {
         return signalTaskList.isEmpty() ? Collections.<SignalTask>emptyList() : new ArrayList<>(signalTaskList);
+    }
+
+    @Override
+    public void restoreContext(AbstractEmulator<?> emulator) {
+        Backend backend = emulator.getBackend();
+        backend.context_restore(this.context);
     }
 
     protected final Number continueRun(AbstractEmulator<?> emulator, long until) {

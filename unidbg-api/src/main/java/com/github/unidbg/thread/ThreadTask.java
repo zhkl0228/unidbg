@@ -6,7 +6,8 @@ public abstract class ThreadTask extends AbstractTask implements Task {
 
     protected final long until;
 
-    protected ThreadTask(long until) {
+    protected ThreadTask(int tid, long until) {
+        super(tid);
         this.until = until;
     }
 

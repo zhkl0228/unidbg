@@ -20,7 +20,7 @@ public class DarwinThread extends Thread {
     private final Pthread pthread;
 
     public DarwinThread(Emulator<?> emulator, UnidbgPointer start_routine, UnidbgPointer arg, Pthread pthread) {
-        super(emulator.getReturnAddress());
+        super(emulator.getPid(), emulator.getReturnAddress());
 
         this.start_routine = start_routine;
         this.arg = arg;

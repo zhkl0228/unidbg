@@ -8,4 +8,6 @@ public interface ThreadDispatcher {
 
     int getTaskCount();
 
+    boolean sendSignal(int tid, SignalTask signalTask);
+
 }

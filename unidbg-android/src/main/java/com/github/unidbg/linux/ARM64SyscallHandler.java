@@ -145,8 +145,11 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, lseek(emulator));
                     return;
                 case  172: // getpid
-                case  178: // gettid
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, emulator.getPid());
+                    return;
+                case  178: // gettid
+                    Task task = emulator.get(Task.TASK_KEY);
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, task == null ? 0 : task.getId());
                     return;
                 case 129:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, kill(emulator));
@@ -457,7 +460,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         if ((flags & CLONE_STOPPED) != 0) {
             list.add("CLONE_STOPPED");
         }
-        int threadId = ++this.threadId;
+        int threadId = incrementThreadId(emulator);
 
         UnidbgPointer fn = child_stack.getPointer(0);
         child_stack = child_stack.share(8, 0);
@@ -469,12 +472,12 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 System.out.printf("pthread_clone fn=%s%n", fn);
             }
             AndroidElfLoader loader = (AndroidElfLoader) emulator.getMemory();
-            emulator.getThreadDispatcher().addThread(new KitKatThread(emulator.getReturnAddress(),
+            emulator.getThreadDispatcher().addThread(new KitKatThread(threadId, emulator.getReturnAddress(),
                     loader.__thread_entry, child_stack, fn, arg));
             return threadId;
         }
 
-        Thread thread = new LinuxThread(child_stack, fn, arg, emulator.getReturnAddress());
+        Thread thread = new LinuxThread(emulator.getPid(), child_stack, fn, arg, emulator.getReturnAddress());
         threadMap.put(threadId, thread);
         lastThread = threadId;
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
@@ -490,8 +493,6 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
     }
-
-    private int threadId;
 
     private static final int CLONE_VM = 0x00000100;
     private static final int CLONE_FS = 0x00000200;
@@ -575,12 +576,12 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("bionic_clone child_stack=" + child_stack + ", pid=" + pid + ", tls=" + tls + ", ctid=" + ctid + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         }
+        int threadId = incrementThreadId(emulator);
         if (threadDispatcherEnabled) {
             if (verbose) {
                 System.out.printf("bionic_clone fn=%s%n", fn);
             }
-            emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid));
-            int threadId = ++this.threadId;
+            emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid, threadId));
             ctid.setInt(0, threadId);
             return threadId;
         }

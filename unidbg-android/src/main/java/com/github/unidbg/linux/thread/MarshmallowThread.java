@@ -14,8 +14,8 @@ public class MarshmallowThread extends ThreadTask {
     private final UnidbgPointer fn;
     private final UnidbgPointer thread;
 
-    public MarshmallowThread(Emulator<?> emulator, UnidbgPointer fn, UnidbgPointer thread, Pointer tidptr) {
-        super(emulator.getReturnAddress());
+    public MarshmallowThread(Emulator<?> emulator, UnidbgPointer fn, UnidbgPointer thread, Pointer tidptr, int tid) {
+        super(tid, emulator.getReturnAddress());
         this.fn = fn;
         this.thread = thread;
         this.tidptr = tidptr;

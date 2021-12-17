@@ -18,8 +18,8 @@ public class Function32 extends MainTask {
     private final boolean paddingArgument;
     private final Number[] arguments;
 
-    public Function32(long address, long until, boolean paddingArgument, Number... arguments) {
-        super(until);
+    public Function32(int pid, long address, long until, boolean paddingArgument, Number... arguments) {
+        super(pid, until);
         this.address = address;
         this.paddingArgument = paddingArgument;
         this.arguments = arguments;

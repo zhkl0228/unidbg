@@ -13,8 +13,8 @@ public class KitKatThread extends ThreadTask {
     private final UnidbgPointer fn;
     private final UnidbgPointer arg;
 
-    public KitKatThread(long until, long __thread_entry, UnidbgPointer child_stack, UnidbgPointer fn, UnidbgPointer arg) {
-        super(until);
+    public KitKatThread(int tid, long until, long __thread_entry, UnidbgPointer child_stack, UnidbgPointer fn, UnidbgPointer arg) {
+        super(tid, until);
         this.__thread_entry = __thread_entry;
         this.child_stack = child_stack;
         this.fn = fn;

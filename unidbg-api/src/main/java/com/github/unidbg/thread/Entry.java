@@ -11,8 +11,8 @@ public class Entry extends MainTask {
     private final long entry;
     private final long sp;
 
-    public Entry(long entry, long until, long sp) {
-        super(until);
+    public Entry(int pid, long entry, long until, long sp) {
+        super(pid, until);
         this.entry = entry;
         this.sp = sp;
     }

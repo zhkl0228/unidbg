@@ -454,11 +454,10 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (log.isDebugEnabled()) {
             log.debug("tgkill tgid=" + tgid + ", tid=" + tid + ", sig=" + sig);
         }
-        Task task = emulator.get(Task.TASK_KEY);
-        if (sig > 0 && task != null) {
+        if (sig > 0) {
             SigAction action = sigActionMap.get(sig);
-            if (action != null) {
-                task.addSignalTask(new SignalTask(sig, action));
+            if (action != null &&
+                    emulator.getThreadDispatcher().sendSignal(tid, new SignalTask(sig, action))) {
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
         }
@@ -477,6 +476,15 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             thread.set_tid_address(tidptr);
         }
         return 0;
+    }
+
+    private int threadId;
+
+    protected final int incrementThreadId(Emulator<?> emulator) {
+        if (threadId == 0) {
+//            threadId = emulator.getPid();
+        }
+        return ++threadId;
     }
 
 }

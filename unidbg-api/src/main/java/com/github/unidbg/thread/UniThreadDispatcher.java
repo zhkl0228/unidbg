@@ -32,6 +32,27 @@ public class UniThreadDispatcher implements ThreadDispatcher {
     }
 
     @Override
+    public boolean sendSignal(int tid, SignalTask signalTask) {
+        List<Task> list = new ArrayList<>();
+        list.addAll(taskList);
+        list.addAll(threadTaskList);
+        boolean ret = false;
+        for (Task task : list) {
+            if (tid == 0 && task.isMainThread()) {
+                task.addSignalTask(signalTask);
+                ret = true;
+                break;
+            }
+            if (tid == task.getId()) {
+                task.addSignalTask(signalTask);
+                ret = true;
+                break;
+            }
+        }
+        return ret;
+    }
+
+    @Override
     public Number runMainForResult(MainTask main) {
         taskList.add(0, main);
 
@@ -64,16 +85,19 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                         }
                         emulator.set(Task.TASK_KEY, task);
 
-                        for (SignalTask signalTask : task.getSignalTaskList()) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Start run signalTask=" + signalTask);
+                        if(task.isContextSaved()) {
+                            task.restoreContext(emulator);
+                            for (SignalTask signalTask : task.getSignalTaskList()) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Start run signalTask=" + signalTask);
+                                }
+                                signalTask.runHandler(emulator);
+                                if (log.isDebugEnabled()) {
+                                    log.debug("End run signalTask=" + signalTask);
+                                }
+                                signalTask.destroy(emulator);
+                                task.removeSignalTask(signalTask);
                             }
-                            signalTask.runHandler(emulator);
-                            if (log.isDebugEnabled()) {
-                                log.debug("End run signalTask=" + signalTask);
-                            }
-                            signalTask.destroy(emulator);
-                            task.removeSignalTask(signalTask);
                         }
 
                         Number ret = task.dispatch(emulator);

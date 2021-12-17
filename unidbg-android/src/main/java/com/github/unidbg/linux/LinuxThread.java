@@ -22,8 +22,8 @@ public class LinuxThread extends Thread {
     private final UnidbgPointer fn;
     private final UnidbgPointer arg;
 
-    LinuxThread(UnidbgPointer child_stack, UnidbgPointer fn, UnidbgPointer arg, long until) {
-        super(until);
+    LinuxThread(int pid, UnidbgPointer child_stack, UnidbgPointer fn, UnidbgPointer arg, long until) {
+        super(pid, until);
 
         this.child_stack = child_stack;
         this.fn = fn;

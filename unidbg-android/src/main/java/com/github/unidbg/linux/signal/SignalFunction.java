@@ -15,7 +15,7 @@ public class SignalFunction extends MainTask {
     private final SigAction action;
 
     public SignalFunction(Emulator<?> emulator, int signum, SigAction action) {
-        super(emulator.getReturnAddress());
+        super(emulator.getPid(), emulator.getReturnAddress());
         this.signum = signum;
         this.action = action;
     }
