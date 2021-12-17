@@ -38,6 +38,7 @@ static void do_sigprocmask() {
   sigset_t set, old;
   sigemptyset(&set);
   sigemptyset(&old);
+  sigaddset(&set, SIGALRM);
   sigaddset(&set, SIGTSTP);
   int ret = sigprocmask(SIG_SETMASK, &set, &old);
   char set_buf[256];
@@ -49,10 +50,22 @@ static void do_sigprocmask() {
   printf("do_sigprocmask ret=%d, set=%s, old=%s\n", ret, set_buf, old_buf);
 }
 
+static void do_sigwait() {
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGTSTP);
+  sigaddset(&set, SIGALRM);
+  int sig = 0;
+  int ret = sigwait(&set, &sig);
+  printf("do_sigwait ret=%d, sig=%d\n", ret, sig);
+}
+
 static void *start_routine(void *arg) {
   pid_t tid = gettid();
   printf("Call start_routine arg=%p, tid=%d, errno=%p\n", arg, tid, &errno);
   do_sigprocmask();
+  raise(SIGTSTP);
+  do_sigwait();
   raise(SIGTSTP);
   sigset_t set;
   sigemptyset(&set);
@@ -81,7 +94,9 @@ int main(int argc, char *argv[]) {
   printf("raise ret=%d, sizeof(pid_t)=%zu\n", ret, sizeof(pid_t));
   pthread_t thread = 0;
   ret = pthread_create(&thread, NULL, start_routine, &sigaction);
+  sleep(1);
   pthread_kill(thread, SIGTSTP);
+  pthread_kill(thread, SIGALRM);
   printf("pthread_kill ret=%d\n", ret);
   void *value = NULL;
   int join_ret = pthread_join(thread, &value);

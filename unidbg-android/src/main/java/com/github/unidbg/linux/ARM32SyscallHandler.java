@@ -224,6 +224,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 67:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(emulator));
                     return;
+                case 73:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigpending(emulator));
+                    return;
                 case 78:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
                     return;

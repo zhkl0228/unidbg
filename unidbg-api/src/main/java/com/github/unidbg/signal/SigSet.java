@@ -1,6 +1,6 @@
 package com.github.unidbg.signal;
 
-public interface SigSet {
+public interface SigSet extends Iterable<Integer> {
 
     long getSigSet();
 

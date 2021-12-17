@@ -249,12 +249,23 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
 
     protected int rt_sigtimedwait(Emulator<AndroidFileIO> emulator) {
         RegisterContext context = emulator.getContext();
-        Pointer uthese = context.getPointerArg(0);
-        Pointer uinfo = context.getPointerArg(1);
-        Pointer uts = context.getPointerArg(2);
+        Pointer set = context.getPointerArg(0);
+        Pointer info = context.getPointerArg(1);
+        Pointer timeout = context.getPointerArg(2);
         int sigsetsize = context.getIntArg(3);
+        long value = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
         Task task = emulator.get(Task.TASK_KEY);
-        log.info("rt_sigtimedwait uthese=" + uthese + ", uinfo=" + uinfo + ", uts=" + uts + ", sigsetsize=" + sigsetsize + ", task=" + task);
+        SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
+        SigSet sigPendingSet = task.isMainThread() ? emulator.getThreadDispatcher().getMainThreadSigPendingSet() : task.getSigPendingSet();
+        if (sigPendingSet != null) {
+            for (Integer signum : sigSet) {
+                if (sigPendingSet.containsSigNumber(signum)) {
+                    sigPendingSet.removeSigNumber(signum);
+                    return signum;
+                }
+            }
+        }
+        log.info("rt_sigtimedwait set=" + set + ", info=" + info + ", timeout=" + timeout + ", sigsetsize=" + sigsetsize + ", sigSet=" + sigSet + ", task=" + task);
         return 0;
     }
 
