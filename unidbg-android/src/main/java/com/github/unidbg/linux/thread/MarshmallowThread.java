@@ -31,6 +31,17 @@ public class MarshmallowThread extends ThreadTask {
         }
     }
 
+    private Pointer errno;
+
+    @Override
+    public boolean setErrno(int errno) {
+        if (this.errno != null) {
+            this.errno.setInt(0, errno);
+            return true;
+        }
+        return super.setErrno(errno);
+    }
+
     @Override
     public String toString() {
         return "MarshmallowThread fn=" + fn + ", arg=" + thread;
@@ -41,14 +52,18 @@ public class MarshmallowThread extends ThreadTask {
         Backend backend = emulator.getBackend();
         UnidbgPointer stack = allocateStack(emulator);
         if (emulator.is32Bit()) {
+            Pointer tls = thread.share(0x48);
+            this.errno = tls.share(8);
             backend.reg_write(ArmConst.UC_ARM_REG_R0, UnidbgPointer.nativeValue(thread));
             backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.peer);
-            backend.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, UnidbgPointer.nativeValue(thread.share(0x48))); // tls
+            backend.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, UnidbgPointer.nativeValue(tls));
             backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
         } else {
+            Pointer tls = thread.share(0xb0);
+            this.errno = tls.share(16);
             backend.reg_write(Arm64Const.UC_ARM64_REG_X0, UnidbgPointer.nativeValue(thread));
             backend.reg_write(Arm64Const.UC_ARM64_REG_SP, stack.peer);
-            backend.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, UnidbgPointer.nativeValue(thread.share(0xb0))); // tls
+            backend.reg_write(Arm64Const.UC_ARM64_REG_TPIDR_EL0, UnidbgPointer.nativeValue(tls));
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
         }
         return emulator.emulate(this.fn.peer, until);

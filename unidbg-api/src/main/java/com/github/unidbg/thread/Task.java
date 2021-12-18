@@ -33,4 +33,6 @@ public interface Task extends SignalOps, Disposable {
 
     void restoreContext(AbstractEmulator<?> emulator);
 
+    boolean setErrno(int errno);
+
 }

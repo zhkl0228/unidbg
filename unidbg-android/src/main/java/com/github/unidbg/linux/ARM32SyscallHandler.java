@@ -459,7 +459,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, getsockopt(backend, emulator));
                     return;
                 case 322:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, openat(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, openat(emulator));
                     return;
                 case 323:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(emulator));
@@ -1956,11 +1956,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return stat64(emulator, path, statbuf);
     }
 
-    private int openat(Backend backend, Emulator<AndroidFileIO> emulator) {
-        int dirfd = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer pathname_p = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int oflags = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
-        int mode = backend.reg_read(ArmConst.UC_ARM_REG_R3).intValue();
+    private int openat(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname_p = context.getPointerArg(1);
+        int oflags = context.getIntArg(2);
+        int mode = context.getIntArg(3);
         String pathname = pathname_p.getString(0);
         String msg = "openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
@@ -1969,14 +1970,16 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         pathname = FilenameUtils.normalize(pathname, true);
         if ("/data/misc/zoneinfo/current/tzdata".equals(pathname) || "/dev/pmsg0".equals(pathname)) {
             emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            return -UnixEmulator.ENOENT;
         }
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
                 log.info(msg);
+                return -emulator.getMemory().getLastErrno();
+            } else {
+                return fd;
             }
-            return fd;
         } else {
             if (dirfd != IO.AT_FDCWD) {
                 throw new BackendException();
@@ -1985,16 +1988,18 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
                 log.info(msg);
+                return -emulator.getMemory().getLastErrno();
+            } else {
+                return fd;
             }
-            return fd;
         }
     }
 
     private int open(Emulator<AndroidFileIO> emulator) {
-        Backend backend = emulator.getBackend();
-        Pointer pathname_p = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int oflags = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int mode = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
+        RegisterContext context = emulator.getContext();
+        Pointer pathname_p = context.getPointerArg(0);
+        int oflags = context.getIntArg(1);
+        int mode = context.getIntArg(2);
         String pathname = pathname_p.getString(0);
         String msg = "open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", from=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
         if (log.isDebugEnabled()) {
@@ -2003,8 +2008,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
             log.info(msg);
+            return -emulator.getMemory().getLastErrno();
+        } else {
+            return fd;
         }
-        return fd;
     }
 
     private int ftruncate(Backend backend) {

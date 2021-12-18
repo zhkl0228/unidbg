@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <sched.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include "test.h"
 
@@ -73,7 +74,9 @@ static void *start_routine(void *arg) {
   char buf[256];
   memset(buf, 0, 256);
   hex(buf, &set, sizeof(set));
-  printf("sigpending ret=%d, set=%s, size=%zu\n", ret, buf, sizeof(set));
+  printf("sigpending ret=%d, set=%s, size=%zu, errno=%p\n", ret, buf, sizeof(set), &errno);
+  FILE *fp = fopen("/failed", "r");
+  printf("open fp=%p, errno=%d, msg=%s\n", fp, errno, strerror(errno));
   return (void *) &init;
 }
 

@@ -14,6 +14,7 @@ import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.ElfLibraryFile;
+import com.github.unidbg.linux.thread.PThreadInternal;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryAllocBlock;
@@ -25,6 +26,7 @@ import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
+import com.github.unidbg.thread.Task;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -128,6 +130,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     private UnidbgPointer initializeTLS(String[] envs) {
         final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
+        PThreadInternal pThread = new PThreadInternal(thread);
+        pThread.tid = emulator.getPid();
+        pThread.pack();
 
         final Pointer __stack_chk_guard = allocateStack(emulator.getPointerSize());
 
@@ -791,8 +796,20 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     private Pointer errno;
 
+    private int lastErrno;
+
+    @Override
+    public int getLastErrno() {
+        return lastErrno;
+    }
+
     @Override
     public void setErrno(int errno) {
+        this.lastErrno = errno;
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task != null && task.setErrno(errno)) {
+            return;
+        }
         this.errno.setInt(0, errno);
     }
 

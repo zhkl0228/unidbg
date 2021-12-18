@@ -1499,8 +1499,16 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
     }
 
+    private int lastErrno;
+
+    @Override
+    public int getLastErrno() {
+        return lastErrno;
+    }
+
     @Override
     public void setErrno(int errno) {
+        this.lastErrno = errno;
         if (this.errno != null) {
             this.errno.setInt(0, errno);
         }

@@ -173,7 +173,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fchownat(emulator));
                     return;
                 case 56:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, openat(backend, emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, openat(emulator));
                     return;
                 case 57:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, close(backend, emulator));
@@ -1347,11 +1347,12 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         }
     }
 
-    private int openat(Backend backend, Emulator<AndroidFileIO> emulator) {
-        int dirfd = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).intValue();
-        Pointer pathname_p = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-        int oflags = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
-        int mode = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+    private int openat(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname_p = context.getPointerArg(1);
+        int oflags = context.getIntArg(2);
+        int mode = context.getIntArg(3);
         String pathname = pathname_p.getString(0);
         String msg = "openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
@@ -1360,22 +1361,28 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         pathname = FilenameUtils.normalize(pathname, true);
         if ("/data/misc/zoneinfo/current/tzdata".equals(pathname) || "/dev/pmsg0".equals(pathname)) {
             emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            return -UnixEmulator.ENOENT;
         }
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
                 log.info(msg);
+                return -emulator.getMemory().getLastErrno();
+            } else {
+                return fd;
             }
-            return fd;
         } else {
             if (dirfd != IO.AT_FDCWD) {
                 throw new BackendException();
             }
 
-            log.warn(msg);
-            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            int fd = open(emulator, pathname, oflags);
+            if (fd == -1) {
+                log.info(msg);
+                return -emulator.getMemory().getLastErrno();
+            } else {
+                return fd;
+            }
         }
     }
 

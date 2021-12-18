@@ -124,4 +124,8 @@ abstract class AbstractTask extends BaseTask implements Task {
         }
     }
 
+    @Override
+    public boolean setErrno(int errno) {
+        return false;
+    }
 }
