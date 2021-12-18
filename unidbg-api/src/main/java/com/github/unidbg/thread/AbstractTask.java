@@ -39,8 +39,12 @@ abstract class AbstractTask extends BaseTask implements Task {
     }
 
     @Override
-    public void setSigMaskSet(SigSet sigMaskSet, SigSet sigPendingSet) {
+    public void setSigMaskSet(SigSet sigMaskSet) {
         this.sigMaskSet = sigMaskSet;
+    }
+
+    @Override
+    public void setSigPendingSet(SigSet sigPendingSet) {
         this.sigPendingSet = sigPendingSet;
     }
 

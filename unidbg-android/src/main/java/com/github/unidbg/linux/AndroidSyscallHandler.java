@@ -203,7 +203,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                         threadDispatcher.setMainThreadSigMaskSet(sigSet);
                         threadDispatcher.setMainThreadSigPendingSet(sigPendingSet);
                     } else {
-                        task.setSigMaskSet(sigSet, sigPendingSet);
+                        task.setSigMaskSet(sigSet);
+                        task.setSigPendingSet(sigPendingSet);
                     }
                 } else {
                     old.blockSigSet(value);
@@ -221,7 +222,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                     threadDispatcher.setMainThreadSigMaskSet(sigSet);
                     threadDispatcher.setMainThreadSigPendingSet(sigPendingSet);
                 } else {
-                    task.setSigMaskSet(sigSet, sigPendingSet);
+                    task.setSigMaskSet(sigSet);
+                    task.setSigPendingSet(sigPendingSet);
                 }
                 return 0;
         }

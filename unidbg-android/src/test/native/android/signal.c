@@ -40,7 +40,7 @@ static void do_sigprocmask() {
   sigemptyset(&old);
   sigaddset(&set, SIGALRM);
   sigaddset(&set, SIGTSTP);
-  int ret = sigprocmask(SIG_SETMASK, &set, &old);
+  int ret = pthread_sigmask(SIG_SETMASK, &set, &old);
   char set_buf[256];
   char old_buf[256];
   memset(set_buf, 0, 256);

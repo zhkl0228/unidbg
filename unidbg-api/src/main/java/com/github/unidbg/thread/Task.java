@@ -34,7 +34,8 @@ public interface Task extends Disposable {
 
     SigSet getSigMaskSet();
 
-    void setSigMaskSet(SigSet sigMaskSet, SigSet sigPendingSet);
+    void setSigMaskSet(SigSet sigMaskSet);
+    void setSigPendingSet(SigSet sigPendingSet);
 
     SigSet getSigPendingSet();
 

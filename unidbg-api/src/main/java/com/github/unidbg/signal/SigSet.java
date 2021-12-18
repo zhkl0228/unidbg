@@ -4,6 +4,8 @@ public interface SigSet extends Iterable<Integer> {
 
     long getSigSet();
 
+    void setSigSet(long value);
+
     void blockSigSet(long value);
 
     void unblockSigSet(long value);

@@ -18,6 +18,11 @@ public class SigSet implements com.github.unidbg.signal.SigSet {
     }
 
     @Override
+    public void setSigSet(long value) {
+        this.value = value;
+    }
+
+    @Override
     public void blockSigSet(long value) {
         this.value |= value;
     }
