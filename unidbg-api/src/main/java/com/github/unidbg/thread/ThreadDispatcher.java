@@ -1,9 +1,10 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.signal.SigSet;
+import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.SignalTask;
 
-public interface ThreadDispatcher {
+public interface ThreadDispatcher extends SignalOps {
 
     void addThread(ThreadTask task);
 
@@ -12,10 +13,5 @@ public interface ThreadDispatcher {
     int getTaskCount();
 
     boolean sendSignal(int tid, SignalTask signalTask);
-
-    SigSet getMainThreadSigMaskSet();
-    void setMainThreadSigMaskSet(SigSet mainThreadSigMaskSet);
-    SigSet getMainThreadSigPendingSet();
-    void setMainThreadSigPendingSet(SigSet mainThreadSigPendingSet);
 
 }

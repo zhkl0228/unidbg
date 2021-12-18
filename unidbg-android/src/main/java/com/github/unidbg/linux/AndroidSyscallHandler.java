@@ -20,6 +20,7 @@ import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.signal.SigSet;
+import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.Task;
@@ -180,9 +181,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
 
     @Override
     protected int sigprocmask(Emulator<?> emulator, int how, Pointer set, Pointer oldset) {
-        ThreadDispatcher threadDispatcher = emulator.getThreadDispatcher();
         Task task = emulator.get(Task.TASK_KEY);
-        SigSet old = task.isMainThread() ? threadDispatcher.getMainThreadSigMaskSet() : task.getSigMaskSet();
+        SignalOps signalOps = task.isMainThread() ? emulator.getThreadDispatcher() : task;
+        SigSet old = signalOps.getSigMaskSet();
         if (oldset != null && old != null) {
             if (emulator.is32Bit()) {
                 oldset.setInt(0, (int) old.getSigSet());
@@ -199,13 +200,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                 if (old == null) {
                     SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
                     SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
-                    if (task.isMainThread()) {
-                        threadDispatcher.setMainThreadSigMaskSet(sigSet);
-                        threadDispatcher.setMainThreadSigPendingSet(sigPendingSet);
-                    } else {
-                        task.setSigMaskSet(sigSet);
-                        task.setSigPendingSet(sigPendingSet);
-                    }
+                    signalOps.setSigMaskSet(sigSet);
+                    signalOps.setSigPendingSet(sigPendingSet);
                 } else {
                     old.blockSigSet(value);
                 }
@@ -218,13 +214,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             case SIG_SETMASK:
                 SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
                 SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
-                if (task.isMainThread()) {
-                    threadDispatcher.setMainThreadSigMaskSet(sigSet);
-                    threadDispatcher.setMainThreadSigPendingSet(sigPendingSet);
-                } else {
-                    task.setSigMaskSet(sigSet);
-                    task.setSigPendingSet(sigPendingSet);
-                }
+                signalOps.setSigMaskSet(sigSet);
+                signalOps.setSigPendingSet(sigPendingSet);
                 return 0;
         }
         return super.sigprocmask(emulator, how, set, oldset);
@@ -236,9 +227,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (log.isDebugEnabled()) {
             log.debug("rt_sigpending set=" + set);
         }
-        ThreadDispatcher threadDispatcher = emulator.getThreadDispatcher();
         Task task = emulator.get(Task.TASK_KEY);
-        SigSet sigSet = task.isMainThread() ? threadDispatcher.getMainThreadSigPendingSet() : task.getSigPendingSet();
+        SignalOps signalOps = task.isMainThread() ? emulator.getThreadDispatcher() : task;
+        SigSet sigSet = signalOps.getSigPendingSet();
         if (set != null && sigSet != null) {
             if (emulator.is32Bit()) {
                 set.setInt(0, (int) sigSet.getSigSet());
@@ -258,7 +249,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         long value = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
         Task task = emulator.get(Task.TASK_KEY);
         SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
-        SigSet sigPendingSet = task.isMainThread() ? emulator.getThreadDispatcher().getMainThreadSigPendingSet() : task.getSigPendingSet();
+        SignalOps signalOps = task.isMainThread() ? emulator.getThreadDispatcher() : task;
+        SigSet sigPendingSet = signalOps.getSigPendingSet();
         if (sigPendingSet != null) {
             for (Integer signum : sigSet) {
                 if (sigPendingSet.containsSigNumber(signum)) {
@@ -539,8 +531,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
 
     private int processSignal(ThreadDispatcher threadDispatcher, int sig, Task task, SigAction action) {
         if (action != null) {
-            SigSet sigMaskSet = task.isMainThread() ? threadDispatcher.getMainThreadSigMaskSet() : task.getSigMaskSet();
-            SigSet sigPendingSet = task.isMainThread() ? threadDispatcher.getMainThreadSigPendingSet() : task.getSigPendingSet();
+            SignalOps signalOps = task.isMainThread() ? threadDispatcher : task;
+            SigSet sigMaskSet = signalOps.getSigMaskSet();
+            SigSet sigPendingSet = signalOps.getSigPendingSet();
             if (sigMaskSet == null || !sigMaskSet.containsSigNumber(sig)) {
                 task.addSignalTask(new SignalTask(sig, action));
                 throw new ThreadContextSwitchException().setReturnValue(0);

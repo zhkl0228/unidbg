@@ -2,6 +2,7 @@ package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.signal.SigSet;
+import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.SignalTask;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -107,7 +108,8 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Start run signalTask=" + signalTask);
                                 }
-                                signalTask.runHandler(task, emulator);
+                                SignalOps ops = task.isMainThread() ? this : task;
+                                signalTask.runHandler(ops, emulator);
                                 if (log.isDebugEnabled()) {
                                     log.debug("End run signalTask=" + signalTask);
                                 }
@@ -159,22 +161,22 @@ public class UniThreadDispatcher implements ThreadDispatcher {
     private SigSet mainThreadSigPendingSet;
 
     @Override
-    public SigSet getMainThreadSigMaskSet() {
+    public SigSet getSigMaskSet() {
         return mainThreadSigMaskSet;
     }
 
     @Override
-    public void setMainThreadSigMaskSet(SigSet mainThreadSigMaskSet) {
-        this.mainThreadSigMaskSet = mainThreadSigMaskSet;
+    public void setSigMaskSet(SigSet sigMaskSet) {
+        this.mainThreadSigMaskSet = sigMaskSet;
     }
 
     @Override
-    public SigSet getMainThreadSigPendingSet() {
+    public SigSet getSigPendingSet() {
         return mainThreadSigPendingSet;
     }
 
     @Override
-    public void setMainThreadSigPendingSet(SigSet mainThreadSigPendingSet) {
-        this.mainThreadSigPendingSet = mainThreadSigPendingSet;
+    public void setSigPendingSet(SigSet sigPendingSet) {
+        this.mainThreadSigPendingSet = sigPendingSet;
     }
 }

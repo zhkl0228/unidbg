@@ -5,8 +5,8 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.signal.SigSet;
+import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.thread.BaseTask;
-import com.github.unidbg.thread.Task;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
@@ -28,12 +28,13 @@ public class SignalTask extends BaseTask implements com.github.unidbg.signal.Sig
     private UnidbgPointer stack;
 
     @Override
-    public void runHandler(Task task, AbstractEmulator<?> emulator) {
-        SigSet sigSet = task.getSigMaskSet();
+    public void runHandler(SignalOps signalOps, AbstractEmulator<?> emulator) {
+        SigSet sigSet = signalOps.getSigMaskSet();
         try {
             long sa_mask = action.getMask();
             if (sigSet == null) {
-                task.setSigMaskSet(new com.github.unidbg.linux.signal.SigSet(sa_mask));
+                SigSet newSigSet = new com.github.unidbg.linux.signal.SigSet(sa_mask);
+                signalOps.setSigMaskSet(newSigSet);
             } else {
                 sigSet.blockSigSet(sa_mask);
             }
@@ -63,7 +64,7 @@ public class SignalTask extends BaseTask implements com.github.unidbg.signal.Sig
                 throw new IllegalStateException();
             }
         } finally {
-            task.setSigMaskSet(sigSet);
+            signalOps.setSigMaskSet(sigSet);
         }
     }
 
