@@ -15,8 +15,23 @@ public abstract class BaseTask implements RunnableTask {
 
     private static final Log log = LogFactory.getLog(BaseTask.class);
 
+    private Waiter waiter;
+
+    @Override
+    public void setWaiter(Waiter waiter) {
+        this.waiter = waiter;
+    }
+
+    @Override
+    public Waiter getWaiter() {
+        return waiter;
+    }
+
     @Override
     public final boolean canDispatch() {
+        if (waiter != null) {
+            return waiter.canDispatch();
+        }
         return true;
     }
 
@@ -28,7 +43,7 @@ public abstract class BaseTask implements RunnableTask {
     }
 
     @Override
-    public final void saveContext(AbstractEmulator<?> emulator) {
+    public final void saveContext(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
         if (this.context == 0) {
             this.context = backend.context_alloc();
@@ -37,7 +52,7 @@ public abstract class BaseTask implements RunnableTask {
     }
 
     @Override
-    public void restoreContext(AbstractEmulator<?> emulator) {
+    public void restoreContext(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
         backend.context_restore(this.context);
     }
@@ -55,11 +70,15 @@ public abstract class BaseTask implements RunnableTask {
         if (log.isDebugEnabled()) {
             log.debug("continue run task=" + this + ", pc=" + UnidbgPointer.pointer(emulator, pc) + ", until=0x" + Long.toHexString(until));
         }
+        Waiter waiter = getWaiter();
+        if (waiter != null) {
+            waiter.onContinueRun(emulator);
+        }
         return emulator.emulate(pc, until);
     }
 
     @Override
-    public void destroy(AbstractEmulator<?> emulator) {
+    public void destroy(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
 
         if (stackBlock != null) {

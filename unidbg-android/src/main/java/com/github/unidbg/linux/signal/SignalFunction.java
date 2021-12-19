@@ -28,7 +28,7 @@ public class SignalFunction extends MainTask {
     private MemoryBlock infoBlock;
 
     @Override
-    public void destroy(AbstractEmulator<?> emulator) {
+    public void destroy(Emulator<?> emulator) {
         super.destroy(emulator);
 
         if (infoBlock != null) {

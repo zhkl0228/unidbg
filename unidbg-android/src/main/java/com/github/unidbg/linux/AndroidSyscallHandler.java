@@ -646,7 +646,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (threadId == 0) {
             threadId = emulator.getPid();
         }
-        return (++threadId) & 0xffff;
+        return (++threadId) & 0xffff; // http://androidxref.com/6.0.1_r10/xref/bionic/libc/bionic/pthread_mutex.cpp#215
     }
 
 }

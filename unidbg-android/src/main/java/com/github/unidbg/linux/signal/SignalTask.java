@@ -1,6 +1,7 @@
 package com.github.unidbg.linux.signal;
 
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -74,7 +75,7 @@ public class SignalTask extends AbstractSignalTask {
     private MemoryBlock infoBlock;
 
     @Override
-    public void destroy(AbstractEmulator<?> emulator) {
+    public void destroy(Emulator<?> emulator) {
         super.destroy(emulator);
 
         if (infoBlock != null) {

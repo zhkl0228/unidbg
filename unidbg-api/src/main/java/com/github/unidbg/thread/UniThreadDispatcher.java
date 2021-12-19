@@ -35,6 +35,11 @@ public class UniThreadDispatcher implements ThreadDispatcher {
     }
 
     @Override
+    public List<Task> getTaskList() {
+        return taskList;
+    }
+
+    @Override
     public boolean sendSignal(int tid, SignalTask signalTask) {
         List<Task> list = new ArrayList<>();
         list.addAll(taskList);
@@ -67,6 +72,13 @@ public class UniThreadDispatcher implements ThreadDispatcher {
             }
         }
         return ret;
+    }
+
+    private RunnableTask runningTask;
+
+    @Override
+    public RunnableTask getRunningTask() {
+        return runningTask;
     }
 
     @Override
@@ -110,6 +122,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                                         log.debug("Start run signalTask=" + signalTask);
                                     }
                                     SignalOps ops = task.isMainThread() ? this : task;
+                                    this.runningTask = signalTask;
                                     Number ret = signalTask.callHandler(ops, emulator);
                                     if (log.isDebugEnabled()) {
                                         log.debug("End run signalTask=" + signalTask + ", ret=" + ret);
@@ -122,12 +135,9 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                                     }
                                 }
                             }
-
-                            if (!task.getSignalTaskList().isEmpty()) {
-                                continue;
-                            }
                         }
 
+                        this.runningTask = task;
                         Number ret = task.dispatch(emulator);
                         if (log.isDebugEnabled()) {
                             log.debug("End dispatch task=" + task + ", ret=" + ret);

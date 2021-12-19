@@ -1,17 +1,21 @@
 package com.github.unidbg.thread;
 
-import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.Emulator;
 
 public interface RunnableTask {
 
     boolean canDispatch();
 
-    void saveContext(AbstractEmulator<?> emulator);
+    void saveContext(Emulator<?> emulator);
 
     boolean isContextSaved();
 
-    void restoreContext(AbstractEmulator<?> emulator);
+    void restoreContext(Emulator<?> emulator);
 
-    void destroy(AbstractEmulator<?> emulator);
+    void destroy(Emulator<?> emulator);
+
+    void setWaiter(Waiter waiter);
+
+    Waiter getWaiter();
 
 }
