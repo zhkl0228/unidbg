@@ -73,6 +73,7 @@ public abstract class BaseTask implements RunnableTask {
         Waiter waiter = getWaiter();
         if (waiter != null) {
             waiter.onContinueRun(emulator);
+            setWaiter(null);
         }
         return emulator.emulate(pc, until);
     }

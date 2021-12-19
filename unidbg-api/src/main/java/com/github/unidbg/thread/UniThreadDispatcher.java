@@ -133,6 +133,8 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                                     } else {
                                         signalTask.saveContext(emulator);
                                     }
+                                } else if (log.isDebugEnabled()) {
+                                    log.debug("Skip call handler signalTask=" + signalTask);
                                 }
                             }
                         }
@@ -151,6 +153,8 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                         } else {
                             task.saveContext(emulator);
                         }
+                    } else if (log.isDebugEnabled()) {
+                        log.debug("Skip dispatch task=" + task);
                     }
                 }
 
@@ -168,6 +172,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                 }
             }
         } finally {
+            this.runningTask = null;
             emulator.set(Task.TASK_KEY, null);
         }
     }

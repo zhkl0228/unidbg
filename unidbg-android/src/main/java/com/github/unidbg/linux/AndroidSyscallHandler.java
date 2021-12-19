@@ -17,6 +17,8 @@ import com.github.unidbg.linux.signal.SignalTask;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
+import com.github.unidbg.linux.thread.FutexIndefinitelyWaiter;
+import com.github.unidbg.linux.thread.FutexWaiter;
 import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -24,10 +26,12 @@ import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.thread.MainTask;
+import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.thread.ThreadTask;
+import com.github.unidbg.thread.Waiter;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -271,9 +275,6 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                     memory.setErrno(UnixEmulator.EAGAIN);
                     return -1;
                 }
-                if (!threadDispatcherEnabled) {
-                    java.lang.Thread.yield();
-                }
                 Pointer timeout = context.getPointerArg(3);
                 TimeSpec timeSpec = timeout == null ? null : TimeSpec.createTimeSpec(emulator, timeout);
                 int mtype = val & MUTEX_TYPE_MASK;
@@ -281,11 +282,20 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                 if (log.isDebugEnabled()) {
                     log.debug("futex FUTEX_WAIT mtype=0x" + Integer.toHexString(mtype) + ", shared=" + shared + ", timeSpec=" + timeSpec + ", test=" + (mtype | shared) + ", task=" + task);
                 }
+                RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+                if (threadDispatcherEnabled && runningTask != null) {
+                    if (timeSpec == null) {
+                        runningTask.setWaiter(new FutexIndefinitelyWaiter(uaddr, val));
+                        throw new ThreadContextSwitchException();
+                    } else {
+                        emulator.getMemory().setErrno(ETIMEDOUT);
+                        throw new ThreadContextSwitchException().setReturnValue(-1);
+                    }
+                }
                 if (threadDispatcherEnabled && emulator.getThreadDispatcher().getTaskCount() > 1) {
                     emulator.getMemory().setErrno(ETIMEDOUT);
                     throw new ThreadContextSwitchException().setReturnValue(-1);
                 } else {
-//                    uaddr.setShort(0, (short) (mtype | shared));
                     return 0;
                 }
             case FUTEX_WAKE:
@@ -294,6 +304,20 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                 }
                 if (emulator.getThreadDispatcher().getTaskCount() <= 1) {
                     return 0;
+                }
+                int count = 0;
+                for (Task t : emulator.getThreadDispatcher().getTaskList()) {
+                    Waiter waiter = t.getWaiter();
+                    if (waiter instanceof FutexWaiter) {
+                        if (((FutexWaiter) waiter).wakeUp(uaddr)) {
+                            if (++count >= val) {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (count > 0) {
+                    throw new ThreadContextSwitchException().setReturnValue(count);
                 }
                 if (threadDispatcherEnabled && task != null) {
                     throw new ThreadContextSwitchException().setReturnValue(1);
