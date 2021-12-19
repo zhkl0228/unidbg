@@ -10,7 +10,7 @@ import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.thread.Task;
+import com.github.unidbg.thread.RunnableTask;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -20,7 +20,6 @@ import org.apache.commons.codec.binary.Hex;
 import unicorn.Arm64Const;
 
 import java.util.Scanner;
-import java.util.concurrent.Callable;
 
 class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
@@ -35,8 +34,8 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
         try {
             if (address != -1) {
-                Task task = emulator.get(Task.TASK_KEY);
-                System.out.println("debugger break at: 0x" + Long.toHexString(address) + (task == null ? "" : (" @ " + task)));
+                RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+                System.out.println("debugger break at: 0x" + Long.toHexString(address) + (runningTask == null ? "" : (" @ " + runningTask)));
                 emulator.showRegs();
             }
             if (address > 0) {

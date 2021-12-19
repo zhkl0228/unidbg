@@ -95,7 +95,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
     @Override
     public void runThreads(long timeout, TimeUnit unit) {
         if (timeout <= 0 || unit == null) {
-            throw new IllegalStateException("Invalid timeout.");
+            throw new IllegalArgumentException("Invalid timeout.");
         }
         run(timeout, unit);
     }
