@@ -16,7 +16,7 @@ import com.github.unidbg.ios.struct.attr.UserAccess;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.unix.UnixEmulator;
-import com.github.unidbg.unix.struct.TimeSpec;
+import com.github.unidbg.unix.struct.TimeSpec32;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -127,7 +127,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             attrList.commonattr &= ~ATTR_CMN_OBJID;
         }
         if((attrList.commonattr & ATTR_CMN_CRTIME) != 0) {
-            TimeSpec timeSpec = new TimeSpec(pointer);
+            TimeSpec32 timeSpec = new TimeSpec32(pointer);
             pointer = pointer.share(timeSpec.size());
             list.add(timeSpec);
             attrList.commonattr &= ~ATTR_CMN_CRTIME;
@@ -177,7 +177,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
         }
         Pointer pointer = attrBuf.share(4);
         if((attrList.commonattr & ATTR_CMN_CRTIME) != 0) {
-            TimeSpec timeSpec = new TimeSpec(pointer);
+            TimeSpec32 timeSpec = new TimeSpec32(pointer);
             pointer = pointer.share(timeSpec.size());
             if (log.isDebugEnabled()) {
                 log.debug("setattrlist timeSpec=" + timeSpec + ", pointer=" + pointer);
@@ -185,7 +185,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             attrList.commonattr &= ~ATTR_CMN_CRTIME;
         }
         if((attrList.commonattr & ATTR_CMN_MODTIME) != 0) {
-            TimeSpec timeSpec = new TimeSpec(pointer);
+            TimeSpec32 timeSpec = new TimeSpec32(pointer);
             pointer = pointer.share(timeSpec.size());
             if (log.isDebugEnabled()) {
                 log.debug("setattrlist timeSpec=" + timeSpec + ", pointer=" + pointer);

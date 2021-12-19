@@ -1,14 +1,12 @@
 package com.github.unidbg.signal;
 
 import com.github.unidbg.AbstractEmulator;
-import com.github.unidbg.thread.Disposable;
-import com.github.unidbg.thread.Task;
-import com.github.unidbg.thread.ThreadDispatcher;
+import com.github.unidbg.thread.RunnableTask;
 
-public interface SignalTask extends Disposable {
+public interface SignalTask extends RunnableTask {
 
     int getSigNumber();
 
-    void runHandler(SignalOps signalOps, AbstractEmulator<?> emulator);
+    Number callHandler(SignalOps signalOps, AbstractEmulator<?> emulator);
 
 }

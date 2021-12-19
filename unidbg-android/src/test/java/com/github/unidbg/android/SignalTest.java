@@ -19,6 +19,11 @@ import java.io.IOException;
 public class SignalTest {
 
     public static void main(String[] args) throws IOException {
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.linux.AndroidSyscallHandler").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
+
         SignalTest test = new SignalTest();
         test.test();
         test.destroy();
@@ -48,10 +53,6 @@ public class SignalTest {
     }
 
     private void test() {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
-        Logger.getLogger("com.github.unidbg.linux.AndroidSyscallHandler").setLevel(Level.INFO);
-        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
         emulator.emulateSignal(17);
         int code = module.callEntry(emulator);
         System.err.println("exit code: " + code + ", backend=" + emulator.getBackend());

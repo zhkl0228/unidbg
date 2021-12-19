@@ -105,16 +105,26 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                         if(task.isContextSaved()) {
                             task.restoreContext(emulator);
                             for (SignalTask signalTask : task.getSignalTaskList()) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Start run signalTask=" + signalTask);
+                                if (signalTask.canDispatch()) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Start run signalTask=" + signalTask);
+                                    }
+                                    SignalOps ops = task.isMainThread() ? this : task;
+                                    Number ret = signalTask.callHandler(ops, emulator);
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("End run signalTask=" + signalTask + ", ret=" + ret);
+                                    }
+                                    if (ret != null) {
+                                        signalTask.destroy(emulator);
+                                        task.removeSignalTask(signalTask);
+                                    } else {
+                                        signalTask.saveContext(emulator);
+                                    }
                                 }
-                                SignalOps ops = task.isMainThread() ? this : task;
-                                signalTask.runHandler(ops, emulator);
-                                if (log.isDebugEnabled()) {
-                                    log.debug("End run signalTask=" + signalTask);
-                                }
-                                signalTask.destroy(emulator);
-                                task.removeSignalTask(signalTask);
+                            }
+
+                            if (!task.getSignalTaskList().isEmpty()) {
+                                continue;
                             }
                         }
 

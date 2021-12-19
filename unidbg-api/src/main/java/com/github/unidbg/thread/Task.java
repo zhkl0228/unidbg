@@ -1,23 +1,18 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
-import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.SignalTask;
 
 import java.util.List;
 
-public interface Task extends SignalOps, Disposable {
+public interface Task extends SignalOps, RunnableTask {
 
     String TASK_KEY = Task.class.getName();
 
     int getId();
 
-    boolean canDispatch();
-
     Number dispatch(AbstractEmulator<?> emulator);
-
-    void saveContext(AbstractEmulator<?> emulator);
 
     boolean isMainThread();
 
@@ -28,10 +23,6 @@ public interface Task extends SignalOps, Disposable {
     List<SignalTask> getSignalTaskList();
 
     void removeSignalTask(SignalTask task);
-
-    boolean isContextSaved();
-
-    void restoreContext(AbstractEmulator<?> emulator);
 
     boolean setErrno(int errno);
 

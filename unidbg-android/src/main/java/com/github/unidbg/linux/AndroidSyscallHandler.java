@@ -18,6 +18,7 @@ import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.linux.thread.MarshmallowThread;
+import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
@@ -30,6 +31,7 @@ import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.unix.struct.TimeSpec;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import net.dongliu.apk.parser.utils.Pair;
@@ -238,6 +240,68 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             }
         }
         return 0;
+    }
+
+    private static final int FUTEX_CMD_MASK = 0x7f;
+    private static final int FUTEX_PRIVATE_FLAG = 0x80;
+    private static final int MUTEX_SHARED_MASK = 0x2000;
+    private static final int MUTEX_TYPE_MASK = 0xc000;
+    private static final int FUTEX_WAIT = 0;
+    private static final int FUTEX_WAKE = 1;
+
+    private static final int ETIMEDOUT = 110;
+
+    protected int futex(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer uaddr = context.getPointerArg(0);
+        int futex_op = context.getIntArg(1);
+        int val = context.getIntArg(2);
+        int old = uaddr.getInt(0);
+        boolean isPrivate = (futex_op & FUTEX_PRIVATE_FLAG) != 0;
+        int cmd = futex_op & FUTEX_CMD_MASK;
+        if (log.isDebugEnabled()) {
+            log.debug("futex uaddr=" + uaddr + ", isPrivate=" + isPrivate + ", cmd=" + cmd + ", val=0x" + Integer.toHexString(val) + ", old=0x" + Integer.toHexString(old) + ", LR=" + context.getLRPointer());
+        }
+
+        Task task = emulator.get(Task.TASK_KEY);
+        switch (cmd) {
+            case FUTEX_WAIT:
+                if (old != val) {
+                    Memory memory = emulator.getMemory();
+                    memory.setErrno(UnixEmulator.EAGAIN);
+                    return -1;
+                }
+                if (!threadDispatcherEnabled) {
+                    java.lang.Thread.yield();
+                }
+                Pointer timeout = context.getPointerArg(3);
+                TimeSpec timeSpec = timeout == null ? null : TimeSpec.createTimeSpec(emulator, timeout);
+                int mtype = val & MUTEX_TYPE_MASK;
+                int shared = val & MUTEX_SHARED_MASK;
+                if (log.isDebugEnabled()) {
+                    log.debug("futex FUTEX_WAIT mtype=0x" + Integer.toHexString(mtype) + ", shared=" + shared + ", timeSpec=" + timeSpec + ", test=" + (mtype | shared) + ", task=" + task);
+                }
+                if (threadDispatcherEnabled && emulator.getThreadDispatcher().getTaskCount() > 1) {
+                    emulator.getMemory().setErrno(ETIMEDOUT);
+                    throw new ThreadContextSwitchException().setReturnValue(-1);
+                } else {
+//                    uaddr.setShort(0, (short) (mtype | shared));
+                    return 0;
+                }
+            case FUTEX_WAKE:
+                if (log.isDebugEnabled()) {
+                    log.debug("futex FUTEX_WAKE val=0x" + Integer.toHexString(val) + ", old=" + old + ", task=" + task);
+                }
+                if (emulator.getThreadDispatcher().getTaskCount() <= 1) {
+                    return 0;
+                }
+                if (threadDispatcherEnabled && task != null) {
+                    throw new ThreadContextSwitchException().setReturnValue(1);
+                }
+                return 0;
+            default:
+                throw new AbstractMethodError("futex_op=0x" + Integer.toHexString(futex_op));
+        }
     }
 
     protected int rt_sigtimedwait(Emulator<AndroidFileIO> emulator) {
@@ -582,7 +646,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (threadId == 0) {
             threadId = emulator.getPid();
         }
-        return ++threadId;
+        return (++threadId) & 0xffff;
     }
 
 }

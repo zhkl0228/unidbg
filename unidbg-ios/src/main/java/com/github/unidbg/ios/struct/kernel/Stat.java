@@ -1,7 +1,7 @@
 package com.github.unidbg.ios.struct.kernel;
 
 import com.github.unidbg.file.ios.StatStructure;
-import com.github.unidbg.unix.struct.TimeSpec;
+import com.github.unidbg.unix.struct.TimeSpec32;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
@@ -16,10 +16,10 @@ public final class Stat extends StatStructure {
         unpack();
     }
 
-    public TimeSpec st_atimespec; /* time of last access */
-    public TimeSpec st_mtimespec; /* time of last data modification */
-    public TimeSpec st_ctimespec; /* time of last status change */
-    public TimeSpec st_birthtimespec; /* time of file creation(birth) */
+    public TimeSpec32 st_atimespec; /* time of last access */
+    public TimeSpec32 st_mtimespec; /* time of last data modification */
+    public TimeSpec32 st_ctimespec; /* time of last status change */
+    public TimeSpec32 st_birthtimespec; /* time of file creation(birth) */
 
     @Override
     public void setSt_atimespec(long tv_sec, long tv_nsec) {

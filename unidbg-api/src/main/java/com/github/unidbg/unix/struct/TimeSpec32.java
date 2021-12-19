@@ -5,14 +5,14 @@ import com.sun.jna.Pointer;
 import java.util.Arrays;
 import java.util.List;
 
-public class TimeSpec64 extends TimeSpec {
+public class TimeSpec32 extends TimeSpec {
 
-    public TimeSpec64(Pointer p) {
+    public TimeSpec32(Pointer p) {
         super(p);
     }
 
-    public long tv_sec; // unsigned long
-    public long tv_nsec; // long
+    public int tv_sec; // unsigned long
+    public int tv_nsec; // long
 
     @Override
     public long getTvSec() {
