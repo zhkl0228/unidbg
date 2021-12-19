@@ -6,64 +6,64 @@ import java.util.List;
 
 public class SigSet implements com.github.unidbg.signal.SigSet {
 
-    private long value;
+    private long mask;
 
-    public SigSet(long value) {
-        this.value = value;
+    public SigSet(long mask) {
+        this.mask = mask;
     }
 
     @Override
-    public long getSigSet() {
-        return value;
+    public long getMask() {
+        return mask;
     }
 
     @Override
-    public void setSigSet(long value) {
-        this.value = value;
+    public void setMask(long mask) {
+        this.mask = mask;
     }
 
     @Override
-    public void blockSigSet(long value) {
-        this.value |= value;
+    public void blockSigSet(long mask) {
+        this.mask |= mask;
     }
 
     @Override
-    public void unblockSigSet(long value) {
-        this.value &= ~value;
+    public void unblockSigSet(long mask) {
+        this.mask &= ~mask;
     }
 
     @Override
     public boolean containsSigNumber(int signum) {
         int bit = signum - 1;
-        return (value & (1L << bit)) != 0;
+        return (mask & (1L << bit)) != 0;
     }
 
     @Override
     public void removeSigNumber(int signum) {
         int bit = signum - 1;
-        this.value &= (1L << bit);
+        this.mask &= (1L << bit);
     }
 
     @Override
     public void addSigNumber(int signum) {
         int bit = signum - 1;
-        this.value |= (1L << bit);
+        this.mask |= (1L << bit);
     }
 
     private class SigSetIterator implements Iterator<Integer> {
 
         public SigSetIterator(SigSet sigSet) {
-            this.value = sigSet.value;
+            this.mask = sigSet.mask;
         }
 
-        private long value;
+        private long mask;
         private int bit;
         private int nextBit;
 
         @Override
         public boolean hasNext() {
             for (int i = bit; i < 64; i++) {
-                if ((value & (1L << i)) != 0) {
+                if ((mask & (1L << i)) != 0) {
                     nextBit = i;
                     return true;
                 }
@@ -73,12 +73,12 @@ public class SigSet implements com.github.unidbg.signal.SigSet {
         @Override
         public Integer next() {
             bit = nextBit;
-            this.value &= ~(1L << bit);
+            this.mask &= ~(1L << bit);
             return bit + 1;
         }
         @Override
         public void remove() {
-            SigSet.this.value &= ~(1L << bit);
+            SigSet.this.mask &= ~(1L << bit);
         }
     }
 

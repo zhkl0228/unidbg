@@ -2,13 +2,13 @@ package com.github.unidbg.signal;
 
 public interface SigSet extends Iterable<Integer> {
 
-    long getSigSet();
+    long getMask();
 
-    void setSigSet(long value);
+    void setMask(long mask);
 
-    void blockSigSet(long value);
+    void blockSigSet(long mask);
 
-    void unblockSigSet(long value);
+    void unblockSigSet(long mask);
 
     boolean containsSigNumber(int signum);
 

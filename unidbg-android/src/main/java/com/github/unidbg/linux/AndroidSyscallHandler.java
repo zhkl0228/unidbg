@@ -188,33 +188,33 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         SigSet old = signalOps.getSigMaskSet();
         if (oldset != null && old != null) {
             if (emulator.is32Bit()) {
-                oldset.setInt(0, (int) old.getSigSet());
+                oldset.setInt(0, (int) old.getMask());
             } else {
-                oldset.setLong(0, old.getSigSet());
+                oldset.setLong(0, old.getMask());
             }
         }
         if (set == null) {
             return 0;
         }
-        long value = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
+        long mask = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
         switch (how) {
             case SIG_BLOCK:
                 if (old == null) {
-                    SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
+                    SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(mask);
                     SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
                     signalOps.setSigMaskSet(sigSet);
                     signalOps.setSigPendingSet(sigPendingSet);
                 } else {
-                    old.blockSigSet(value);
+                    old.blockSigSet(mask);
                 }
                 return 0;
             case SIG_UNBLOCK:
                 if (old != null) {
-                    old.unblockSigSet(value);
+                    old.unblockSigSet(mask);
                 }
                 return 0;
             case SIG_SETMASK:
-                SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
+                SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(mask);
                 SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
                 signalOps.setSigMaskSet(sigSet);
                 signalOps.setSigPendingSet(sigPendingSet);
@@ -234,9 +234,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         SigSet sigSet = signalOps.getSigPendingSet();
         if (set != null && sigSet != null) {
             if (emulator.is32Bit()) {
-                set.setInt(0, (int) sigSet.getSigSet());
+                set.setInt(0, (int) sigSet.getMask());
             } else {
-                set.setLong(0, sigSet.getSigSet());
+                set.setLong(0, sigSet.getMask());
             }
         }
         return 0;
@@ -310,9 +310,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         Pointer info = context.getPointerArg(1);
         Pointer timeout = context.getPointerArg(2);
         int sigsetsize = context.getIntArg(3);
-        long value = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
+        long mask = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
         Task task = emulator.get(Task.TASK_KEY);
-        SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(value);
+        SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(mask);
         SignalOps signalOps = task.isMainThread() ? emulator.getThreadDispatcher() : task;
         SigSet sigPendingSet = signalOps.getSigPendingSet();
         if (sigPendingSet != null) {
