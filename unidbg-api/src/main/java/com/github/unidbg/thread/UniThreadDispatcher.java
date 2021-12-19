@@ -89,7 +89,20 @@ public class UniThreadDispatcher implements ThreadDispatcher {
             log.debug("runMainForResult main=" + main);
         }
 
+        return run(0, null);
+    }
+
+    @Override
+    public void runThreads(long timeout, TimeUnit unit) {
+        if (timeout <= 0 || unit == null) {
+            throw new IllegalStateException("Invalid timeout.");
+        }
+        run(timeout, unit);
+    }
+
+    private Number run(long timeout, TimeUnit unit) {
         try {
+            long start = System.currentTimeMillis();
             while (true) {
                 if (taskList.isEmpty()) {
                     throw new IllegalStateException();
@@ -162,6 +175,14 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                 for (Iterator<ThreadTask> iterator = threadTaskList.iterator(); iterator.hasNext(); ) {
                     taskList.add(0, iterator.next());
                     iterator.remove();
+                }
+
+                if (timeout > 0 && unit != null &&
+                        System.currentTimeMillis() - start >= unit.toMillis(timeout)) {
+                    return null;
+                }
+                if (taskList.isEmpty()) {
+                    return null;
                 }
 
                 if (log.isDebugEnabled()) {

@@ -4,6 +4,7 @@ import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.SignalTask;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public interface ThreadDispatcher extends SignalOps {
 
@@ -12,6 +13,8 @@ public interface ThreadDispatcher extends SignalOps {
     List<Task> getTaskList();
 
     Number runMainForResult(MainTask main);
+
+    void runThreads(long timeout, TimeUnit unit);
 
     int getTaskCount();
 
