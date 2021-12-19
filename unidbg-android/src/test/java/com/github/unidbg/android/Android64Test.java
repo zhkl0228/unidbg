@@ -28,12 +28,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 
 public class Android64Test extends AbstractJni {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         Android64Test test = new Android64Test();
         test.test();
