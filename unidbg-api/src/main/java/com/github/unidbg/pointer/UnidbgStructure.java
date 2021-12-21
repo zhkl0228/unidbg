@@ -24,7 +24,7 @@ public abstract class UnidbgStructure extends Structure {
     /** Placeholder pointer to help avoid auto-allocation of memory where a
      * Structure needs a valid pointer but want to avoid actually reading from it.
      */
-    private static final Pointer PLACEHOLDER_MEMORY = new UnidbgPointer(null) {
+    private static final Pointer PLACEHOLDER_MEMORY = new UnidbgPointer(null, null) {
         @Override
         public UnidbgPointer share(long offset, long sz) { return this; }
     };
@@ -39,9 +39,11 @@ public abstract class UnidbgStructure extends Structure {
     }
 
     private static class ByteArrayPointer extends UnidbgPointer {
+        private final Emulator<?> emulator;
         private final byte[] data;
-        public ByteArrayPointer(byte[] data) {
-            super(data);
+        public ByteArrayPointer(Emulator<?> emulator, byte[] data) {
+            super(emulator, data);
+            this.emulator = emulator;
             this.data = data;
         }
         @Override
@@ -55,14 +57,18 @@ public abstract class UnidbgStructure extends Structure {
                 }
                 byte[] tmp = new byte[(int) sz];
                 System.arraycopy(data, (int) offset, tmp, 0, (int) sz);
-                return new ByteArrayPointer(tmp);
+                return new ByteArrayPointer(emulator, tmp);
             }
             throw new UnsupportedOperationException("offset=0x" + Long.toHexString(offset) + ", sz=" + sz);
         }
     }
 
+    protected UnidbgStructure(Emulator<?> emulator, byte[] data) {
+        this(new ByteArrayPointer(emulator, data));
+    }
+
     protected UnidbgStructure(byte[] data) {
-        this(new ByteArrayPointer(data));
+        this(null, data);
     }
 
     protected UnidbgStructure(Pointer p) {

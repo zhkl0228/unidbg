@@ -1,5 +1,6 @@
 package com.github.unidbg.ios.struct.kernel;
 
+import com.github.unidbg.Emulator;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
@@ -7,8 +8,24 @@ import java.util.List;
 
 public class Pthread32 extends Pthread {
 
+    public Pthread32(Emulator<?> emulator, byte[] data) {
+        super(emulator, data);
+        setAlignType(ALIGN_NONE);
+    }
+
     public Pthread32(Pointer p) {
         super(p);
+        setAlignType(ALIGN_NONE);
+    }
+
+    @Override
+    public void setThreadId(int threadId) {
+        this.thread_id = threadId;
+    }
+
+    @Override
+    public int getThreadId() {
+        return (int) thread_id;
     }
 
     public int sig; // _PTHREAD_SIG
@@ -17,6 +34,7 @@ public class Pthread32 extends Pthread {
     public int lock;
     public int detached;
     public long thread_id; // 64-bit unique thread id
+    public int pad0;
     public Pointer fun; // thread start routine
     public Pointer arg; // thread start routine argument
     public Pointer exit_value; // thread exit value storage
@@ -44,7 +62,7 @@ public class Pthread32 extends Pthread {
 
     @Override
     protected List<String> getFieldOrder() {
-        return Arrays.asList("sig", "__cleanup_stack", "childrun", "lock", "detached", "thread_id", "fun", "arg",
+        return Arrays.asList("sig", "__cleanup_stack", "childrun", "lock", "detached", "thread_id", "pad0", "fun", "arg",
                 "exit_value", "joiner_notify", "max_tsd_key", "cancel_state", "cancel_error", "err_no", "joiner",
                 "sched_priority", "plist", "pthread_name", "stackaddr", "stacksize", "freeaddr", "freesize", "guardsize",
                 "self", "errno", "mig_reply", "machThreadSelf");

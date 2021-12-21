@@ -1,14 +1,14 @@
-package com.github.unidbg.linux.signal;
+package com.github.unidbg.signal;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class SigSet implements com.github.unidbg.signal.SigSet {
+public class UnixSigSet implements SigSet {
 
     private long mask;
 
-    public SigSet(long mask) {
+    public UnixSigSet(long mask) {
         this.mask = mask;
     }
 
@@ -52,7 +52,7 @@ public class SigSet implements com.github.unidbg.signal.SigSet {
 
     private class SigSetIterator implements Iterator<Integer> {
 
-        public SigSetIterator(SigSet sigSet) {
+        public SigSetIterator(UnixSigSet sigSet) {
             this.mask = sigSet.mask;
         }
 
@@ -78,7 +78,7 @@ public class SigSet implements com.github.unidbg.signal.SigSet {
         }
         @Override
         public void remove() {
-            SigSet.this.mask &= ~(1L << bit);
+            UnixSigSet.this.mask &= ~(1L << bit);
         }
     }
 

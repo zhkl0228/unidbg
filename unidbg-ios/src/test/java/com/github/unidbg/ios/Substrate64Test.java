@@ -4,7 +4,6 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
-import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.HookStatus;
@@ -19,10 +18,9 @@ import com.github.unidbg.hook.hookzz.IHookZz;
 import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfo;
-import com.github.unidbg.ios.thread.ThreadJoin64;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.unix.ThreadJoinVisitor;
+import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -197,14 +195,6 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
             throw new IllegalStateException(e);
         }
 
-        ThreadJoin64.patch(emulator, hookZz, new ThreadJoinVisitor(true) {
-            @Override
-            public boolean canJoin(Pointer start_routine, int threadId) {
-                System.out.println("canJoin start_routine=" + start_routine + ", threadId=" + threadId);
-                return start_routine.toString().contains("unidbg");
-            }
-        });
-
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
 //        emulator.attach().addBreakPoint(null, 0x00000001000072E0L);
 //        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
@@ -220,6 +210,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
     protected void setUp() throws Exception {
         super.setUp();
 
+        emulator.getSyscallHandler().setEnableThreadDispatcher(true);
         emulator.getSyscallHandler().setVerbose(false);
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
     }

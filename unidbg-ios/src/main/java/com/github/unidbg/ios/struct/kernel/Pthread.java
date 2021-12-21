@@ -17,6 +17,10 @@ public abstract class Pthread extends UnidbgStructure {
 
     private static final int MAXTHREADNAMESIZE = 64;
 
+    public Pthread(Emulator<?> emulator, byte[] data) {
+        super(emulator, data);
+    }
+
     public Pthread(Pointer p) {
         super(p);
     }
@@ -42,5 +46,9 @@ public abstract class Pthread extends UnidbgStructure {
     }
 
     public abstract void setStack(Pointer stackAddress, long stackSize);
+
+    public abstract void setThreadId(int threadId);
+
+    public abstract int getThreadId();
 
 }

@@ -1,4 +1,4 @@
-package com.github.unidbg.linux.signal;
+package com.github.unidbg.ios.signal;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
@@ -27,7 +27,7 @@ public class SignalTask extends AbstractSignalTask {
     public Number callHandler(SignalOps signalOps, AbstractEmulator<?> emulator) {
         SigSet sigSet = signalOps.getSigMaskSet();
         try {
-            long sa_mask = action.getMask();
+            long sa_mask = action.sa_mask;
             if (sigSet == null) {
                 SigSet newSigSet = new UnixSigSet(sa_mask);
                 signalOps.setSigMaskSet(newSigSet);

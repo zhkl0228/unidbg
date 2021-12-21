@@ -151,7 +151,7 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
         start = System.currentTimeMillis();
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.DEBUG);
         Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");

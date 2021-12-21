@@ -1125,7 +1125,7 @@ public class ARM {
                     sb.append(" (-0x").append(Integer.toHexString(-value)).append(")");
                 }
             }
-        } catch (BackendException exception) {
+        } catch (RuntimeException exception) {
             sb.append(" => ").append(exception.getMessage());
         }
     }

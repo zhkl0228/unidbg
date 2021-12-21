@@ -407,10 +407,10 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected int sigaction(Emulator<?> emulator, int signum, Pointer act, Pointer oldact) {
         final int ACT_SIZE = 16;
-        return sigaction(signum, act, oldact, ACT_SIZE);
+        return sigaction(emulator, signum, act, oldact, ACT_SIZE);
     }
 
-    protected final int sigaction(int signum, Pointer act, Pointer oldact, int sizeOfSigAction) {
+    protected final int sigaction(Emulator<?> emulator, int signum, Pointer act, Pointer oldact, int sizeOfSigAction) {
         String prefix = "Unknown";
         if (signum > 32) {
             signum -= 32;
@@ -455,6 +455,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
                 return 0;
         }
 
+        createBreaker(emulator).debug();
         throw new UnsupportedOperationException("signum=" + signum);
     }
 

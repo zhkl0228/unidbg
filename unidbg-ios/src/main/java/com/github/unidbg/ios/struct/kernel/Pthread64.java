@@ -11,6 +11,16 @@ public class Pthread64 extends Pthread {
         super(p);
     }
 
+    @Override
+    public void setThreadId(int threadId) {
+        this.thread_id = threadId;
+    }
+
+    @Override
+    public int getThreadId() {
+        return (int) thread_id;
+    }
+
     public long sig; // _PTHREAD_SIG
     public Pointer __cleanup_stack;
     public int childrun;

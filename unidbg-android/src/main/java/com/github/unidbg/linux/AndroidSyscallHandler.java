@@ -14,6 +14,7 @@ import com.github.unidbg.linux.file.PipedWriteFileIO;
 import com.github.unidbg.linux.signal.SigAction;
 import com.github.unidbg.linux.signal.SignalFunction;
 import com.github.unidbg.linux.signal.SignalTask;
+import com.github.unidbg.signal.UnixSigSet;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
@@ -204,8 +205,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         switch (how) {
             case SIG_BLOCK:
                 if (old == null) {
-                    SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(mask);
-                    SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
+                    SigSet sigSet = new UnixSigSet(mask);
+                    SigSet sigPendingSet = new UnixSigSet(0);
                     signalOps.setSigMaskSet(sigSet);
                     signalOps.setSigPendingSet(sigPendingSet);
                 } else {
@@ -218,8 +219,8 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                 }
                 return 0;
             case SIG_SETMASK:
-                SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(mask);
-                SigSet sigPendingSet = new com.github.unidbg.linux.signal.SigSet(0);
+                SigSet sigSet = new UnixSigSet(mask);
+                SigSet sigPendingSet = new UnixSigSet(0);
                 signalOps.setSigMaskSet(sigSet);
                 signalOps.setSigPendingSet(sigPendingSet);
                 return 0;
@@ -336,7 +337,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         int sigsetsize = context.getIntArg(3);
         long mask = emulator.is32Bit() ? set.getInt(0) : set.getLong(0);
         Task task = emulator.get(Task.TASK_KEY);
-        SigSet sigSet = new com.github.unidbg.linux.signal.SigSet(mask);
+        SigSet sigSet = new UnixSigSet(mask);
         SignalOps signalOps = task.isMainThread() ? emulator.getThreadDispatcher() : task;
         SigSet sigPendingSet = signalOps.getSigPendingSet();
         if (sigPendingSet != null) {

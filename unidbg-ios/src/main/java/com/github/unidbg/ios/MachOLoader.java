@@ -40,6 +40,7 @@ import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
+import com.github.unidbg.thread.Task;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -175,7 +176,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         addModuleListener(new LibDyldPatcher(_NSGetArgc, _NSGetArgv, _NSGetEnviron, _NSGetProgname));
 
-        final UnidbgPointer thread = allocateStack(UnidbgStructure.calculateSize(emulator.is64Bit() ? Pthread64.class : Pthread32.class)); // reserve space for pthread_internal_t
+        final Pointer thread = allocateStack(UnidbgStructure.calculateSize(emulator.is64Bit() ? Pthread64.class : Pthread32.class)); // reserve space for pthread_internal_t
         Pthread pthread = Pthread.create(emulator, thread);
 
         /* 0xa4必须固定，否则初始化objc会失败 */
@@ -1509,6 +1510,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     @Override
     public void setErrno(int errno) {
         this.lastErrno = errno;
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task != null && task.setErrno(errno)) {
+            return;
+        }
         if (this.errno != null) {
             this.errno.setInt(0, errno);
         }
