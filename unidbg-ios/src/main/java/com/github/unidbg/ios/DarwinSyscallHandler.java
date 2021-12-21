@@ -16,12 +16,15 @@ import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupData;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupReply;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupRequest;
+import com.github.unidbg.ios.thread.SemWaiter;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.UnixSigSet;
 import com.github.unidbg.spi.SyscallHandler;
+import com.github.unidbg.thread.DestroyListener;
+import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.thread.ThreadDispatcher;
@@ -342,6 +345,60 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
                     emulator.getThreadDispatcher().sendSignal(threadPort, new SignalTask(sig, action))) {
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
+        }
+        return 0;
+    }
+
+    protected int bsdthread_terminate(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        final UnidbgPointer freeaddr = context.getPointerArg(0);
+        final int freesize = context.getIntArg(1);
+        int kport = context.getIntArg(2);
+        int joinsem = context.getIntArg(3);
+        if (log.isDebugEnabled()) {
+            log.debug("bsdthread_terminate freeaddr=" + freeaddr + ", freesize=" + freesize + ", kport=" + kport + ", joinsem=" + joinsem);
+        }
+        if (joinsem != 0) {
+            semaphoreMap.put(joinsem, Boolean.TRUE);
+        }
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task instanceof ThreadTask) {
+            ThreadTask threadTask = (ThreadTask) task;
+            threadTask.setExitStatus(0);
+            threadTask.setDestroyListener(new DestroyListener() {
+                @Override
+                public void onDestroy(Emulator<?> emulator) {
+                    emulator.getMemory().munmap(freeaddr.peer, freesize);
+                }
+            });
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        }
+        return 0;
+    }
+
+    private final Map<Integer, Boolean> semaphoreMap = new HashMap<>();
+
+    protected int semwait_signal(Emulator<?> emulator, RunnableTask runningTask, int cond_sem, int mutex_sem, int timeout, int relative,
+                                 long tv_sec, int tv_nsec) {
+        if (mutex_sem != 0 || timeout != 0 ||
+                relative != 0 || tv_sec != 0 || tv_nsec != 0) {
+            createBreaker(emulator).debug();
+            throw new UnsupportedOperationException("semwait_signal cond_sem=" + cond_sem + ", mutex_sem=" + mutex_sem + ", timeout=" + timeout + ", relative=" + relative + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
+        }
+        runningTask.setWaiter(new SemWaiter(cond_sem, semaphoreMap));
+        throw new ThreadContextSwitchException().setReturnValue(0);
+    }
+
+    protected int disable_threadsignal(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int status = context.getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("disable_threadsignal status=" + status);
+        }
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task == emulator.getThreadDispatcher().getRunningTask() &&
+                !task.getSignalTaskList().isEmpty()) {
+            throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;
     }

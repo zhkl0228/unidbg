@@ -19,6 +19,7 @@ public class KQueue64Test {
         this.emulator = DarwinEmulatorBuilder.for64Bit()
                 .setRootDir(new File("target/rootfs/kqueue"))
                 .build();
+        emulator.getSyscallHandler().setEnableThreadDispatcher(true);
         Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new DarwinResolver());
         this.module = memory.load(new File("unidbg-ios/src/test/resources/example_binaries/kqueue"));
@@ -33,10 +34,10 @@ public class KQueue64Test {
     }
 
     public static void main(String[] args) {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.DEBUG);
-        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.DEBUG);
-        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.DEBUG);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
         KQueue64Test test = new KQueue64Test();
         test.test();
         test.destroy();

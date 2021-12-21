@@ -7,6 +7,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.thread.ThreadTask;
+import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
 public class BsdThread extends ThreadTask {
@@ -49,7 +50,13 @@ public class BsdThread extends ThreadTask {
 
             backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
         } else {
-            throw new UnsupportedOperationException();
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X0, this.thread.peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X1, getId());
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X2, this.fun.peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X3, this.arg == null ? 0 : this.arg.peer);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X4, stackSize);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X5, pflags);
+            backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
         }
 
         return emulator.emulate(_pthread_start.getAddress(), until);
