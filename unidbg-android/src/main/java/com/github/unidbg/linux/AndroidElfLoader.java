@@ -807,7 +807,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     public void setErrno(int errno) {
         this.lastErrno = errno;
         Task task = emulator.get(Task.TASK_KEY);
-        if (task != null && task.setErrno(errno)) {
+        if (task != null && task.setErrno(emulator, errno)) {
             return;
         }
         this.errno.setInt(0, errno);

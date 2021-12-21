@@ -1511,7 +1511,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     public void setErrno(int errno) {
         this.lastErrno = errno;
         Task task = emulator.get(Task.TASK_KEY);
-        if (task != null && task.setErrno(errno)) {
+        if (task != null && task.setErrno(emulator, errno)) {
             return;
         }
         if (this.errno != null) {

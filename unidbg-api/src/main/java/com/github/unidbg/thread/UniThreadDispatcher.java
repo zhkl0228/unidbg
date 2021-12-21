@@ -89,7 +89,22 @@ public class UniThreadDispatcher implements ThreadDispatcher {
             log.debug("runMainForResult main=" + main);
         }
 
-        return run(0, null);
+        Number ret = run(0, null);
+        for (Iterator<Task> iterator = taskList.iterator(); iterator.hasNext(); ) {
+            Task task = iterator.next();
+            if (task.isFinish()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Finish task=" + task);
+                }
+                task.destroy(emulator);
+                iterator.remove();
+                for (SignalTask signalTask : task.getSignalTaskList()) {
+                    signalTask.destroy(emulator);
+                    task.removeSignalTask(signalTask);
+                }
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -110,15 +125,6 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                 for (Iterator<Task> iterator = taskList.iterator(); iterator.hasNext(); ) {
                     Task task = iterator.next();
                     if (task.isFinish()) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Finish task=" + task);
-                        }
-                        task.destroy(emulator);
-                        iterator.remove();
-                        for (SignalTask signalTask : task.getSignalTaskList()) {
-                            signalTask.destroy(emulator);
-                            task.removeSignalTask(signalTask);
-                        }
                         continue;
                     }
                     if (task.canDispatch()) {

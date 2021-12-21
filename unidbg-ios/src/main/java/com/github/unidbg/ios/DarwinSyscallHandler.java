@@ -16,7 +16,6 @@ import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupData;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupReply;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupRequest;
-import com.github.unidbg.ios.thread.DarwinThread;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.signal.SigSet;
@@ -26,6 +25,7 @@ import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.thread.ThreadDispatcher;
+import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
@@ -331,15 +331,15 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
 
     protected int pthread_kill(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
-        int thread = context.getIntArg(0);
+        int threadPort = context.getIntArg(0);
         int sig = context.getIntArg(1);
         if (log.isDebugEnabled()) {
-            log.debug("pthread_kill thread=" + thread + ", sig=" + sig);
+            log.debug("pthread_kill threadPort=" + threadPort + ", sig=" + sig);
         }
         if (sig > 0) {
             SigAction action = sigActionMap.get(sig);
             if (action != null &&
-                    emulator.getThreadDispatcher().sendSignal(thread, new SignalTask(sig, action))) {
+                    emulator.getThreadDispatcher().sendSignal(threadPort, new SignalTask(sig, action))) {
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
         }
@@ -435,9 +435,9 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (task != null) {
             if (task.isMainThread()) {
                 return emulator.getPid();
-            } else if (task instanceof DarwinThread) {
-                DarwinThread thread = (DarwinThread) task;
-                return thread.getThreadId();
+            } else if (task instanceof ThreadTask) {
+                ThreadTask thread = (ThreadTask) task;
+                return thread.getId();
             }
         }
         log.debug("thread_selfid");

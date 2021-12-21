@@ -34,12 +34,12 @@ public class MarshmallowThread extends ThreadTask {
     private Pointer errno;
 
     @Override
-    public boolean setErrno(int errno) {
+    public boolean setErrno(Emulator<?> emulator, int errno) {
         if (this.errno != null) {
             this.errno.setInt(0, errno);
             return true;
         }
-        return super.setErrno(errno);
+        return super.setErrno(emulator, errno);
     }
 
     @Override

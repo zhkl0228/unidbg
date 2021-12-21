@@ -1,5 +1,6 @@
 package com.github.unidbg.thread;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalTask;
 
@@ -61,7 +62,7 @@ abstract class AbstractTask extends BaseTask implements Task {
     }
 
     @Override
-    public boolean setErrno(int errno) {
+    public boolean setErrno(Emulator<?> emulator, int errno) {
         return false;
     }
 }

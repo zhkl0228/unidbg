@@ -400,6 +400,9 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             }
         } catch (ThreadContextSwitchException e) {
             e.syncReturnValue(this);
+            if (log.isDebugEnabled()) {
+                e.printStackTrace();
+            }
             return null;
         } catch (RuntimeException e) {
             return handleEmuException(e, pointer, start);

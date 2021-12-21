@@ -20,4 +20,6 @@ public interface RunnableTask {
 
     void setResult(Emulator<?> emulator, Number ret);
 
+    void setDestroyListener(DestroyListener listener);
+
 }

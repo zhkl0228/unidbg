@@ -1,6 +1,7 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.AbstractEmulator;
+import com.github.unidbg.Emulator;
 import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.SignalTask;
 
@@ -24,6 +25,6 @@ public interface Task extends SignalOps, RunnableTask {
 
     void removeSignalTask(SignalTask task);
 
-    boolean setErrno(int errno);
+    boolean setErrno(Emulator<?> emulator, int errno);
 
 }

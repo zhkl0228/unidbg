@@ -91,6 +91,10 @@ public abstract class BaseTask implements RunnableTask {
             backend.context_free(this.context);
             this.context = 0;
         }
+
+        if (destroyListener != null) {
+            destroyListener.onDestroy(emulator);
+        }
     }
 
     public static final int THREAD_STACK_SIZE = 0x80000;
@@ -108,4 +112,10 @@ public abstract class BaseTask implements RunnableTask {
     public void setResult(Emulator<?> emulator, Number ret) {
     }
 
+    private DestroyListener destroyListener;
+
+    @Override
+    public void setDestroyListener(DestroyListener listener) {
+        this.destroyListener = listener;
+    }
 }

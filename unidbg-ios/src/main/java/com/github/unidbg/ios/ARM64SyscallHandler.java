@@ -452,6 +452,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 327:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, issetugid());
                     return;
+                case 328:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_kill(emulator));
+                    return;
                 case 334:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal(emulator));
                     return;
@@ -793,8 +796,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private int swtch_pri(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int pri = context.getIntArg(0);
-        log.info("swtch_pri pri=" + pri + ", LR=" + context.getLRPointer());
-        createBreaker(emulator).debug();
+        if (log.isDebugEnabled()) {
+            log.debug("swtch_pri pri=" + pri + ", LR=" + context.getLRPointer());
+        }
         return 0;
     }
 
@@ -1428,7 +1432,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Pointer errno = thread.share(pThread.size());
 
         pThread.self = thread;
-        pThread.machThreadSelf = UnidbgPointer.pointer(emulator, STATIC_PORT);
+        pThread.machThreadSelf = UnidbgPointer.pointer(emulator, threadId);
         pThread.setThreadId(threadId);
         pThread.pack();
 

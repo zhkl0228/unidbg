@@ -80,7 +80,7 @@ public class DarwinThread extends Thread {
     }
 
     @Override
-    public boolean setErrno(int errno) {
+    public boolean setErrno(Emulator<?> emulator, int errno) {
         this.errno.setInt(0, errno);
         return true;
     }
