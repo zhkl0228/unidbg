@@ -141,6 +141,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                                         log.debug("End run signalTask=" + signalTask + ", ret=" + ret);
                                     }
                                     if (ret != null) {
+                                        signalTask.setResult(emulator, ret);
                                         signalTask.destroy(emulator);
                                         task.removeSignalTask(signalTask);
                                     } else {
@@ -158,6 +159,7 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                             log.debug("End dispatch task=" + task + ", ret=" + ret);
                         }
                         if (ret != null) {
+                            task.setResult(emulator, ret);
                             task.destroy(emulator);
                             iterator.remove();
                             if(task.isMainThread()) {

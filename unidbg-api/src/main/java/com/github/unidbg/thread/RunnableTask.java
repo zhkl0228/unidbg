@@ -18,4 +18,6 @@ public interface RunnableTask {
 
     Waiter getWaiter();
 
+    void setResult(Emulator<?> emulator, Number ret);
+
 }

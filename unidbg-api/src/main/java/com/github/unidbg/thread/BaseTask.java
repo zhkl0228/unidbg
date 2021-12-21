@@ -104,4 +104,8 @@ public abstract class BaseTask implements RunnableTask {
         return stackBlock.getPointer().share(THREAD_STACK_SIZE, 0);
     }
 
+    @Override
+    public void setResult(Emulator<?> emulator, Number ret) {
+    }
+
 }

@@ -28,6 +28,16 @@ public class Pthread32 extends Pthread {
         return (int) thread_id;
     }
 
+    @Override
+    public void setDetached(int detached) {
+        this.detached |= PTHREAD_CREATE_JOINABLE;
+    }
+
+    @Override
+    public void setExitValue(Pointer pointer) {
+        this.exit_value = pointer;
+    }
+
     public int sig; // _PTHREAD_SIG
     public Pointer __cleanup_stack;
     public int childrun;
@@ -56,15 +66,20 @@ public class Pthread32 extends Pthread {
         this.stacksize = (int) stackSize;
     }
 
+    @Override
+    public void setSig(long sig) {
+        this.sig = (int) sig;
+    }
+
     public Pointer freeaddr; // stack/thread allocation base address
     public int freesize; // stack/thread allocation size
     public int guardsize; // guard page size in bytes
 
     @Override
     protected List<String> getFieldOrder() {
-        return Arrays.asList("sig", "__cleanup_stack", "childrun", "lock", "detached", "thread_id", "pad0", "fun", "arg",
+        return Arrays.asList("sig", "__cleanup_stack", "childrun", "lock", "detached", "thread_id", "fun", "arg",
                 "exit_value", "joiner_notify", "max_tsd_key", "cancel_state", "cancel_error", "err_no", "joiner",
-                "sched_priority", "plist", "pthread_name", "stackaddr", "stacksize", "freeaddr", "freesize", "guardsize",
+                "sched_priority", "plist", "pad0", "pthread_name", "stackaddr", "stacksize", "freeaddr", "freesize", "guardsize",
                 "self", "errno", "mig_reply", "machThreadSelf");
     }
 }

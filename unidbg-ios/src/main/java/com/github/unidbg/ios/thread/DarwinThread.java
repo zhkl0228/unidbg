@@ -3,6 +3,7 @@ package com.github.unidbg.ios.thread;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.Thread;
@@ -32,6 +33,16 @@ public class DarwinThread extends Thread {
         this.errno = errno;
     }
 
+    @Override
+    public void setResult(Emulator<?> emulator, Number ret) {
+        super.setResult(emulator, ret);
+
+        Pointer exitValue = UnidbgPointer.pointer(emulator, BaseHook.numberToAddress(emulator, ret));
+        pthread.unpack();
+        pthread.setExitValue(exitValue);
+        pthread.pack();
+    }
+
     public int getThreadId() {
         return threadId;
     }
@@ -56,6 +67,7 @@ public class DarwinThread extends Thread {
         tsd.setPointer(0, pthread.getPointer());
         tsd.setPointer(emulator.getPointerSize(), pthread.getErrno());
         pthread.getErrno().setPointer(0, errno);
+
         if (emulator.is32Bit()) {
             backend.reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
             backend.reg_write(ArmConst.UC_ARM_REG_LR, until);

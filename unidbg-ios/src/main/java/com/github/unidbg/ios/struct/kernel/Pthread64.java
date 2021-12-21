@@ -54,6 +54,21 @@ public class Pthread64 extends Pthread {
     public long guardsize; // guard page size in bytes
 
     @Override
+    public void setSig(long sig) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setDetached(int detached) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setExitValue(Pointer pointer) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("sig", "__cleanup_stack", "childrun", "lock", "detached", "pad0", "thread_id", "fun", "arg",
                 "exit_value", "joiner_notify", "max_tsd_key", "cancel_state", "cancel_error", "err_no", "joiner",

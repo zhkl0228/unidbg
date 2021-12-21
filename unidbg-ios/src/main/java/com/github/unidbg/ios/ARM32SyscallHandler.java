@@ -846,7 +846,12 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         int threadId = incrementThreadId(emulator);
 
         Pthread pThread = new Pthread32(thread);
+
+        Pointer errno = thread.share(pThread.size());
+
+        pThread.setSig(0x54485244L);
         pThread.self = thread;
+        pThread.setDetached(Pthread.PTHREAD_CREATE_JOINABLE);
         pThread.machThreadSelf = UnidbgPointer.pointer(emulator, STATIC_PORT);
         pThread.setThreadId(threadId);
         pThread.pack();
@@ -855,7 +860,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             if (verbose) {
                 System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
             }
-            emulator.getThreadDispatcher().addThread(new DarwinThread(emulator, start_routine, arg, pThread, threadId, thread.share(pThread.size())));
+            emulator.getThreadDispatcher().addThread(new DarwinThread(emulator, start_routine, arg, pThread, threadId, errno));
             throw new ThreadContextSwitchException().setReturnValue(thread.peer);
         } else {
             log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));

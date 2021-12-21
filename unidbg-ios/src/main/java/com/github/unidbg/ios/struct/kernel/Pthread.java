@@ -16,6 +16,7 @@ public abstract class Pthread extends UnidbgStructure {
     }
 
     private static final int MAXTHREADNAMESIZE = 64;
+    public static final int PTHREAD_CREATE_JOINABLE = 1;
 
     public Pthread(Emulator<?> emulator, byte[] data) {
         super(emulator, data);
@@ -50,5 +51,11 @@ public abstract class Pthread extends UnidbgStructure {
     public abstract void setThreadId(int threadId);
 
     public abstract int getThreadId();
+
+    public abstract void setSig(long sig);
+
+    public abstract void setDetached(int detached);
+
+    public abstract void setExitValue(Pointer pointer);
 
 }
