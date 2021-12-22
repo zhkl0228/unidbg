@@ -38,6 +38,7 @@ public class KQueue64Test {
         Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.ios.kevent").setLevel(Level.INFO);
         KQueue64Test test = new KQueue64Test();
         test.test();
         test.destroy();

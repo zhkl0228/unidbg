@@ -24,7 +24,6 @@ import com.github.unidbg.ios.file.LocalDarwinUdpSocket;
 import com.github.unidbg.ios.file.SocketIO;
 import com.github.unidbg.ios.file.TcpSocket;
 import com.github.unidbg.ios.file.UdpSocket;
-import com.github.unidbg.ios.struct.KEvent64;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.AslServerMessageRequest;
 import com.github.unidbg.ios.struct.kernel.ClockGetTimeReply;
@@ -95,6 +94,7 @@ import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.UnixEmulator;
+import com.github.unidbg.unix.struct.TimeSpec;
 import com.github.unidbg.unix.struct.TimeVal64;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -102,7 +102,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
-import unicorn.ArmConst;
 import unicorn.UnicornConst;
 
 import java.net.SocketException;
@@ -1372,11 +1371,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             buffer.write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
             return 0;
         } else {
+            log.info(msg);
             Log log = LogFactory.getLog(AbstractEmulator.class);
             if (log.isDebugEnabled()) {
                 emulator.attach().debug();
             }
-            log.info(msg);
             return -1;
         }
     }
@@ -3064,22 +3063,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 5;
     }
 
-    private int guarded_kqueue_np(Emulator<?> emulator) {
-        // TODO: implement
-        RegisterContext context = emulator.getContext();
-        Pointer guard = context.getPointerArg(0);
-        int guardFlags = context.getIntArg(1);
-        KEvent64 kev = new KEvent64(guard.getPointer(0));
-        kev.unpack();
-        log.info("guarded_kqueue_np kev=" + kev + ", guardFlags=0x" + Integer.toHexString(guardFlags) + ", LR=" + context.getLRPointer());
-        if (log.isDebugEnabled()) {
-            createBreaker(emulator).debug();
-        }
-        return 0;
-    }
-
     private int kevent64(Emulator<?> emulator) {
-        // TODO: implement
         RegisterContext context = emulator.getContext();
         int kq = context.getIntArg(0);
         Pointer changelist = context.getPointerArg(1);
@@ -3088,11 +3072,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int nevents = context.getIntArg(4);
         int flags = context.getIntArg(5);
         Pointer timeout = context.getPointerArg(6);
-        log.info("kevent64 kq=" + kq + ", changelist=" + changelist + ", nchanges=" + nchanges + ", eventlist=" + eventlist + ", nevents=" + nevents + ", flags=0x" + Integer.toHexString(flags) + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
-        if (log.isDebugEnabled()) {
-            createBreaker(emulator).debug();
-        }
-        return 0;
+        return kevent64(emulator, kq, changelist, nchanges, eventlist, nevents, flags, TimeSpec.createTimeSpec(emulator, timeout));
     }
 
     private int sigprocmask(Emulator<?> emulator) {

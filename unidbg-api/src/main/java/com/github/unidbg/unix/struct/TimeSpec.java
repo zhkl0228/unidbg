@@ -7,6 +7,9 @@ import com.sun.jna.Pointer;
 public abstract class TimeSpec extends UnidbgStructure {
 
     public static TimeSpec createTimeSpec(Emulator<?> emulator, Pointer ptr) {
+        if (ptr == null) {
+            return null;
+        }
         TimeSpec timeSpec = emulator.is32Bit() ? new TimeSpec32(ptr) : new TimeSpec64(ptr);
         timeSpec.unpack();
         return timeSpec;

@@ -56,6 +56,9 @@ public class BsdThread extends ThreadTask {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X3, this.arg == null ? 0 : this.arg.peer);
             backend.reg_write(Arm64Const.UC_ARM64_REG_X4, stackSize);
             backend.reg_write(Arm64Const.UC_ARM64_REG_X5, pflags);
+
+            backend.reg_write(Arm64Const.UC_ARM64_REG_SP, stack.peer);
+
             backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
         }
 

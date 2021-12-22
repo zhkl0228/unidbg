@@ -6,8 +6,11 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
+import com.github.unidbg.ios.kevent.KEvent;
+import com.github.unidbg.ios.kevent.KEventWaiter;
 import com.github.unidbg.ios.signal.SigAction;
 import com.github.unidbg.ios.signal.SignalTask;
+import com.github.unidbg.ios.kevent.KEvent64;
 import com.github.unidbg.ios.struct.VMStatistics;
 import com.github.unidbg.ios.struct.kernel.HostStatisticsReply;
 import com.github.unidbg.ios.struct.kernel.HostStatisticsRequest;
@@ -31,6 +34,7 @@ import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.thread.ThreadTask;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.unix.struct.TimeSpec;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -549,6 +553,53 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             default:
                 throw new IllegalStateException();
         }
+    }
+
+    protected int kqueue() {
+        if (log.isDebugEnabled()) {
+            log.debug("kqueue");
+        }
+        int fd = getMinFd();
+        fdMap.put(fd, new KEvent(0));
+        return fd;
+    }
+
+    protected int guarded_kqueue_np(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer guard = context.getPointerArg(0);
+        int guardFlags = context.getIntArg(1);
+        KEvent64 kev = new KEvent64(guard.getPointer(0));
+        kev.unpack();
+        if (log.isDebugEnabled()) {
+            log.debug("guarded_kqueue_np kev=" + kev + ", guardFlags=0x" + Integer.toHexString(guardFlags) + ", LR=" + context.getLRPointer());
+        }
+        int fd = getMinFd();
+        fdMap.put(fd, new KEvent(guardFlags));
+        return fd;
+    }
+
+    protected int kevent64(Emulator<?> emulator, int kq, Pointer changelist, int nchanges, Pointer eventlist, int nevents, int flags, TimeSpec timeSpec) {
+        RegisterContext context = emulator.getContext();
+        if (log.isDebugEnabled()) {
+            log.debug("kevent64 kq=" + kq + ", changelist=" + changelist + ", nchanges=" + nchanges + ", eventlist=" + eventlist + ", nevents=" + nevents + ", flags=0x" + Integer.toHexString(flags) + ", timeSpec=" + timeSpec + ", LR=" + context.getLRPointer());
+        }
+        if (timeSpec != null) {
+            throw new UnsupportedOperationException();
+        }
+        KEvent event = (KEvent) fdMap.get(kq);
+        event.processChangeList(changelist, nchanges);
+        if (eventlist == null || nevents <= 0) {
+            return 0;
+        }
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        if (runningTask != null) {
+            runningTask.setWaiter(new KEventWaiter(event, eventlist, nevents));
+            throw new ThreadContextSwitchException();
+        }
+        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
+        return 0;
     }
 
 }
