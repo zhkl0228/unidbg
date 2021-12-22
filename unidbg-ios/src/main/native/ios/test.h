@@ -220,7 +220,7 @@ static void test_pthread() {
 }
 
 typedef struct thread_context {
-  int status;
+  volatile int status;
   pthread_cond_t threadCond;
   pthread_mutex_t threadLock;
 } *t_thread_context;

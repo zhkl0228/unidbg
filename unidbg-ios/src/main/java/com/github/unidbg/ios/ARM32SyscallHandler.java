@@ -418,6 +418,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 case 302:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_mutexdrop(emulator));
                     return;
+                case 303:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvbroad(emulator));
+                    return;
                 case 305:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
                     return;
@@ -864,8 +867,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
 
         if (thread == null) {
             int stackSize = (int) stack.toUIntPeer();
-            MemoryBlock memoryBlock = emulator.getMemory().malloc(stackSize + 0x100, true);
-            thread = memoryBlock.getPointer().share(stackSize, 0);
+            int pageSize = emulator.getPageAlign();
+            MemoryBlock memoryBlock = emulator.getMemory().malloc(stackSize + pageSize * 2, true);
+            thread = memoryBlock.getPointer().share(stackSize + pageSize, 0);
 
             if (threadDispatcherEnabled) {
                 Pthread pThread = new Pthread32(thread);
@@ -959,15 +963,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         int pset = context.getIntArg(2);
         if (log.isDebugEnabled()) {
             log.debug("_mach_port_insert_member task=" + task + ", name=" + name + ", pset=" + pset);
-        }
-        return 0;
-    }
-
-    private long _semaphore_wait_trap(Emulator<?> emulator) {
-        int port = emulator.getContext().getIntArg(0);
-        log.info("_semaphore_wait_trap port=" + port);
-        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
-            createBreaker(emulator).debug();
         }
         return 0;
     }

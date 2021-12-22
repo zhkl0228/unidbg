@@ -380,10 +380,36 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         return 0;
     }
 
+    protected int _semaphore_wait_trap(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int port = context.getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("_semaphore_wait_trap port=" + port);
+        }
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        if (threadDispatcherEnabled && runningTask != null) {
+            runningTask.setWaiter(new SemWaiter(port, semaphoreMap));
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        }
+        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
+        return 0;
+    }
+
     private final Map<Integer, Boolean> semaphoreMap = new HashMap<>();
 
     protected int semwait_signal(Emulator<?> emulator, RunnableTask runningTask, int cond_sem, int mutex_sem, int timeout, int relative,
                                  long tv_sec, int tv_nsec) {
+        if (timeout == 1 && relative == 1 && (tv_sec > 0 || tv_nsec > 0)) {
+            try {
+                Thread.sleep(tv_sec * 1000L + tv_nsec / 1000L, tv_nsec % 1000);
+                emulator.getMemory().setErrno(ETIMEDOUT);
+                return -1;
+            } catch (InterruptedException e) {
+                throw new IllegalStateException(e);
+            }
+        }
         if (mutex_sem != 0 || timeout != 0 ||
                 relative != 0 || tv_sec != 0 || tv_nsec != 0) {
             createBreaker(emulator).debug();
@@ -598,6 +624,18 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         }
         if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
+        }
+        return 0;
+    }
+
+    protected int psynch_cvbroad(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer ocond = context.getPointerArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("psynch_cvbroad ocond=" + ocond);
+        }
+        if (threadDispatcherEnabled) {
+            throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;
     }

@@ -16,6 +16,7 @@ public class BsdThread extends ThreadTask {
     private final UnidbgPointer fun;
     private final UnidbgPointer arg;
 
+    private final UnidbgPointer stack;
     private final int stackSize;
 
     public BsdThread(Emulator<?> emulator, int tid, UnidbgPointer thread, UnidbgPointer fun, UnidbgPointer arg, int stackSize) {
@@ -23,6 +24,7 @@ public class BsdThread extends ThreadTask {
         this.thread = thread;
         this.fun = fun;
         this.arg = arg;
+        this.stack = thread;
         this.stackSize = stackSize;
     }
 
@@ -34,8 +36,6 @@ public class BsdThread extends ThreadTask {
             throw new IllegalStateException();
         }
 
-        UnidbgPointer stack = allocateStack(emulator);
-
         int pflags = 0;
 
         if (emulator.is32Bit()) {
@@ -44,8 +44,8 @@ public class BsdThread extends ThreadTask {
             backend.reg_write(ArmConst.UC_ARM_REG_R2, this.fun.peer);
             backend.reg_write(ArmConst.UC_ARM_REG_R3, this.arg == null ? 0 : this.arg.peer);
 
-            stack.setInt(-8, stackSize);
-            stack.setInt(-4, pflags);
+            stack.share(-8).setInt(0, stackSize);
+            stack.share(-4).setInt(0, pflags);
             backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.peer - 8);
 
             backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
@@ -77,6 +77,6 @@ public class BsdThread extends ThreadTask {
 
     @Override
     public String toString() {
-        return "BsdThread fun=" + fun + ", arg=" + arg;
+        return "BsdThread fun=" + fun + ", arg=" + arg + ", stack=" + stack;
     }
 }

@@ -446,6 +446,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 302:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_mutexdrop(emulator));
                     return;
+                case 303:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_cvbroad(emulator));
+                    return;
                 case 305:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_cvwait(emulator));
                     return;
@@ -824,20 +827,6 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         RegisterContext context = emulator.getContext();
         int port = context.getIntArg(0);
         log.info("semaphore_timedwait_trap port=" + port);
-        Log log = ARM64SyscallHandler.log;
-        if (!log.isDebugEnabled()) {
-            log = LogFactory.getLog(AbstractEmulator.class);
-        }
-        if (log.isDebugEnabled()) {
-            createBreaker(emulator).debug();
-        }
-        return 0;
-    }
-
-    private long _semaphore_wait_trap(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int port = context.getIntArg(0);
-        log.info("_semaphore_wait_trap port=" + port);
         Log log = ARM64SyscallHandler.log;
         if (!log.isDebugEnabled()) {
             log = LogFactory.getLog(AbstractEmulator.class);
@@ -1451,8 +1440,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
         if (thread == null) {
             int stackSize = (int) stack.toUIntPeer();
-            MemoryBlock memoryBlock = emulator.getMemory().malloc(stackSize + 0x100, true);
-            thread = memoryBlock.getPointer().share(stackSize, 0);
+            int pageSize = emulator.getPageAlign();
+            MemoryBlock memoryBlock = emulator.getMemory().malloc(stackSize + pageSize * 2, true);
+            thread = memoryBlock.getPointer().share(stackSize + pageSize, 0);
 
             if (threadDispatcherEnabled) {
                 Pthread pThread = new Pthread64(thread);

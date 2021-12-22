@@ -1,25 +1,15 @@
 package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
-import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
-import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookLoader;
-import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.Dobby;
-import com.github.unidbg.hook.hookzz.HookEntryInfo;
-import com.github.unidbg.hook.hookzz.HookZz;
-import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
 import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -51,55 +41,6 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         long start;
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/libsubstrate.dylib"));
-
-//        emulator.traceCode();
-
-        /*IFishHook fishHook = FishHook.getInstance(emulator);
-        fishHook.rebindSymbol("memcpy", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer dest = context.getPointerArg(0);
-                Pointer src = context.getPointerArg(1);
-                int size = context.getIntArg(2);
-                System.err.println("fishhook memcpy dest=" + dest + ", src=" + src + ", size=" + size);
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });*/
-
-//        IWhale whale = Whale.getInstance(emulator);
-        /*whale.WImportHookFunction("_malloc", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                Unicorn unicorn = emulator.getUnicorn();
-                int size = ((Number) unicorn.reg_read(ArmConst.UC_ARM_REG_R0)).intValue();
-                System.err.println("IWhale hook _malloc size=" + size);
-                return HookStatus.RET(unicorn, originFunction);
-            }
-        });*/
-
-//        Logger.getLogger("com.github.unidbg.ios.ARM32SyscallHandler").setLevel(Level.DEBUG);
-        Symbol _malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
-        Dobby.getInstance(emulator).replace(_malloc_zone_malloc, new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer zone = context.getPointerArg(0);
-                int size = context.getIntArg(1);
-                System.err.println("_malloc_zone_malloc zone=" + zone + ", size=" + size);
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });
-
-        IHookZz hookZz = HookZz.getInstance(emulator);
-        Symbol _free = module.findSymbolByName("_free");
-//        emulator.attach().addBreakPoint(null, _free.getAddress());
-        hookZz.instrument(_free, new InstrumentCallback<RegisterContext>() {
-            @Override
-            public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
-                System.err.println("dbiCall _free=" + ctx.getPointerArg(0));
-            }
-        });
 
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
@@ -150,9 +91,12 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         HookLoader.load(emulator).hookObjcMsgSend(null);
 
         start = System.currentTimeMillis();
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.DEBUG);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.ios.kevent").setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }
@@ -171,8 +115,6 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
     }
 
     public static void main(String[] args) throws Exception {
-        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.DEBUG);
-
         SubstrateTest test = new SubstrateTest();
         test.setUp();
         test.processMS();

@@ -69,102 +69,14 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
 
     public void testMS() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
-//        Debugger debugger = emulator.attach();
-//        debugger.addBreakPoint(null, 0x100dd29b4L);
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-//        Logger.getLogger("com.github.unidbg.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
-//        emulator.traceCode();
         loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/libsubstrate.dylib"));
-
-        /*IFishHook fishHook = FishHook.getInstance(emulator);
-        fishHook.rebindSymbol("memcpy", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer dest = context.getPointerArg(0);
-                Pointer src = context.getPointerArg(1);
-                int size = context.getIntArg(2);
-                System.err.println("fishhook memcpy dest=" + dest + ", src=" + src + ", size=" + size);
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });*/
-
-//        IWhale whale = Whale.getInstance(emulator);
-//        Logger.getLogger("com.github.emulator.ios.ARM64SyscallHandler").setLevel(Level.DEBUG);
-//        Module libwhale = emulator.getMemory().findModule("libwhale.dylib");
-//        emulator.attach(libwhale.base, libwhale.base + libwhale.size).addBreakPoint(libwhale, 0x0000184b0);
-        /*whale.importHookFunction("_malloc", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                int size = context.getIntArg(0);
-                System.err.println("IWhale hook _malloc size=" + size);
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });*/
-
-        IHookZz hookZz = Dobby.getInstance(emulator);
-        Symbol malloc_zone_malloc = module.findSymbolByName("_malloc_zone_malloc");
-//        Module libhookzz = emulator.getMemory().findModule("libhookzz.dylib");
-//        Debugger debugger = emulator.attach();
-//        debugger.addBreakPoint(libhookzz, 0x0000000000007850);
-//        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
-//        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.DEBUG);
-//        emulator.traceCode(libhookzz.base, libhookzz.base + libhookzz.size);
-        hookZz.replace(malloc_zone_malloc, new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer zone = context.getPointerArg(0);
-                int size = context.getIntArg(1);
-                System.err.println("HookZz _malloc_zone_malloc zone=" + zone + ", size=" + size);
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });
-//        emulator.attach().debug();
 
         Symbol symbol = module.findSymbolByName("_MSGetImageByName");
         assertNotNull(symbol);
 
-//        emulator.traceCode();
-        hookZz.instrument(symbol, new InstrumentCallback<RegisterContext>() {
-            @Override
-            public void dbiCall(Emulator<?> emulator, RegisterContext ctx, HookEntryInfo info) {
-                System.err.println("HookZz preCall _MSGetImageByName=" + ctx.getPointerArg(0).getString(0));
-            }
-        });
-
         long start = System.currentTimeMillis();
-
-//        emulator.traceRead();
-//        emulator.attach().addBreakPoint(null, 0x401495dc);
-//        emulator.traceCode();
-
-        /*whale.inlineHookFunction(symbol, new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer pointer = context.getPointerArg(0);
-                System.err.println("IWhale onCall _MSGetImageByName=" + pointer.getString(0) + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });*/
-
-//        emulator.traceCode();
-        /*whale.importHookFunction("_strcmp", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer pointer1 = context.getPointerArg(0);
-                Pointer pointer2 = context.getPointerArg(1);
-                System.out.println("IWhale strcmp str1=" + pointer1.getString(0) + ", str2=" + pointer2.getString(0) + ", originFunction=0x" + Long.toHexString(originFunction));
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });*/
-
-        // emulator.attach().addBreakPoint(module, 0x00b608L);
-//        emulator.traceCode();
         Number[] numbers = symbol.call(emulator, "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
         long ret = numbers[0].longValue();
         System.err.println("_MSGetImageByName ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -180,11 +92,6 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
         HookLoader.load(emulator).hookObjcMsgSend(this);
 
         start = System.currentTimeMillis();
-//        Logger.getLogger("com.github.unidbg.ios.MachOLoader").setLevel(Level.DEBUG);
-//        Logger.getLogger("com.github.unidbg.spi.AbstractLoader").setLevel(Level.DEBUG);
-//        emulator.attach(0x102984000L, 0x102998000L).addBreakPoint(null, 0x102984000L + 0x000000000000A0A4);
-
-//        new CoreTelephony("中国电信", "460", "cn", "01", false).processHook(emulator);
 
         try {
             byte[] thread_basic_info = Hex.decodeHex("000000008ab502000000000000000000570100000100000001000000000000000000000000000000".toCharArray());
@@ -196,11 +103,7 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
         }
 
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-//        emulator.attach().addBreakPoint(null, 0x00000001000072E0L);
-//        emulator.traceCode(0xffffe0000L, 0xffffe0000L + 0x10000);
         Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
-//        Module debugModule = emulator.getMemory().findModule("CoreFoundation");
-//        emulator.attach().addBreakPoint(debugModule, 0x0000000000105AA4);
         Logger.getLogger(Dyld64.class).setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");

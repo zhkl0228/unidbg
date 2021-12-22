@@ -115,6 +115,56 @@ static void *start_routine(void *arg) {
   return (void *) &init;
 }
 
+typedef struct thread_context {
+  volatile int status;
+  pthread_cond_t threadCond;
+  pthread_mutex_t threadLock;
+} *t_thread_context;
+
+static void *join_routine(void *arg) {
+  t_thread_context ctx = (t_thread_context) arg;
+  ctx->status = 1;
+  pthread_cond_broadcast(&ctx->threadCond);
+  printf("test_pthread start_routine ctx=%p\n", ctx);
+  void *ret = (void *)&join_routine;
+  while (ctx->status != 2) {
+    pthread_cond_wait(&ctx->threadCond, &ctx->threadLock);
+  }
+  printf("test_pthread start_routine arg=%p, ret=%p\n", arg, ret);
+  ctx->status = 3;
+  pthread_cond_broadcast(&ctx->threadCond);
+  return ret;
+}
+
+static void test_pthread_join() {
+  pthread_t thread = 0;
+  struct thread_context context;
+  context.status = 0;
+  pthread_cond_init(&context.threadCond, NULL);
+  pthread_mutex_init(&context.threadLock, NULL);
+  void *arg = &context;
+  pthread_attr_t threadAttr;
+  pthread_attr_init(&threadAttr);
+  pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
+  int ret = pthread_create(&thread, &threadAttr, join_routine, arg);
+  pthread_attr_destroy(&threadAttr);
+
+  while (context.status != 1) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+  printf("test_pthread first arg=%p, ret=%d, thread=%p\n", arg, ret, thread);
+  context.status = 2;
+  pthread_cond_broadcast(&context.threadCond);
+
+  while (context.status != 3) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+
+  pthread_cond_destroy(&context.threadCond);
+  pthread_mutex_destroy(&context.threadLock);
+  printf("test_pthread second arg=%p, ret=%d, thread=%p\n", arg, ret, thread);
+}
+
 int main(int argc, char *argv[]) {
     printf("Start kqueue test: sizeof(pid_t)=%zu\n", sizeof(pid_t));
 
@@ -139,6 +189,8 @@ int main(int argc, char *argv[]) {
     void *value = NULL;
     int join_ret = pthread_join(thread, &value);
     printf("pthread_join ret=%d, join_ret=%d, thread=%p, value=%p\n", ret, join_ret, (void *)thread, value);
+
+    test_pthread_join();
 
     return 0;
 }
