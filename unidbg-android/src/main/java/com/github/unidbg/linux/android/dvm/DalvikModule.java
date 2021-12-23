@@ -30,7 +30,7 @@ public class DalvikModule {
                 if (log.isDebugEnabled()) {
                     log.debug("Call [" + module.name + "]JNI_OnLoad: 0x" + Long.toHexString(onLoad.getAddress()));
                 }
-                Number ret = onLoad.call(emulator, vm.getJavaVM(), null)[0];
+                Number ret = onLoad.call(emulator, vm.getJavaVM(), null);
                 int version = ret.intValue();
                 if (log.isDebugEnabled()) {
                     log.debug("Call [" + module.name + "]JNI_OnLoad finished: version=0x" + Integer.toHexString(version) + ", offset=" + (System.currentTimeMillis() - start) + "ms");

@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
@@ -42,7 +41,6 @@ import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.unix.IO;
-import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -1640,31 +1638,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     @Override
     public long getMaxSizeOfLibrary() {
         return maxSizeOfDylib;
-    }
-
-    @Override
-    public void runThread(int threadId, long timeout) {
-        try {
-            emulator.setTimeout(timeout);
-            Thread thread = syscallHandler.threadMap.get(threadId);
-            if (thread != null) {
-                thread.runThread(emulator, 0L, timeout);
-            } else {
-                throw new IllegalStateException("thread: " + threadId + " not exits");
-            }
-        } finally {
-            emulator.setTimeout(AbstractEmulator.DEFAULT_TIMEOUT);
-        }
-    }
-
-    @Override
-    public void runLastThread(long timeout) {
-        runThread(syscallHandler.lastThread, timeout);
-    }
-
-    @Override
-    public boolean hasThread(int threadId) {
-        throw new UnsupportedOperationException();
     }
 
     final List<UnidbgPointer> addImageCallbacks = new ArrayList<>();

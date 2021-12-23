@@ -28,7 +28,6 @@ import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.unix.IO;
-import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
@@ -101,31 +100,6 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     @Override
     protected LibraryFile createLibraryFile(File file) {
         return new ElfLibraryFile(file, emulator.is64Bit());
-    }
-
-    @Override
-    public boolean hasThread(int threadId) {
-        return syscallHandler.threadMap.containsKey(threadId);
-    }
-
-    @Override
-    public void runLastThread(long timeout) {
-        runThread(syscallHandler.lastThread, timeout);
-    }
-
-    @Override
-    public void runThread(int threadId, long timeout) {
-        try {
-            emulator.setTimeout(timeout);
-            Thread thread = syscallHandler.threadMap.get(threadId);
-            if (thread != null) {
-                thread.runThread(emulator, __thread_entry, timeout);
-            } else {
-                throw new IllegalStateException("thread: " + threadId + " not exits");
-            }
-        } finally {
-            emulator.setTimeout(AbstractEmulator.DEFAULT_TIMEOUT);
-        }
     }
 
     private UnidbgPointer initializeTLS(String[] envs) {

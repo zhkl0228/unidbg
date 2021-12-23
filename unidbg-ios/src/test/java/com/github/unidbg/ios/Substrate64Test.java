@@ -6,22 +6,15 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
-import com.github.unidbg.arm.HookStatus;
-import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.hook.MsgSendCallback;
-import com.github.unidbg.hook.ReplaceCallback;
-import com.github.unidbg.hook.hookzz.Dobby;
-import com.github.unidbg.hook.hookzz.HookEntryInfo;
-import com.github.unidbg.hook.hookzz.IHookZz;
-import com.github.unidbg.hook.hookzz.InstrumentCallback;
 import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfo;
-import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.thread.PopContextException;
-import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.DecoderException;
@@ -40,30 +33,12 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
 
     @Override
     protected ARMEmulator<DarwinFileIO> createARMEmulator() {
-        DarwinEmulatorBuilder builder = new DarwinEmulatorBuilder(true) {
-            @Override
-            public ARMEmulator<DarwinFileIO> build() {
-                return new DarwinARM64Emulator(processName, rootDir, backendFactories, envList.toArray(new String[0])) {
-                    @Override
-                    protected UnixSyscallHandler<DarwinFileIO> createSyscallHandler(SvcMemory svcMemory) {
-                        return new ARM64SyscallHandler(svcMemory) {
-                            @Override
-                            protected int semwait_signal(Emulator<?> emulator) {
-                                RegisterContext context = emulator.getContext();
-                                long tv_sec = context.getLongArg(4);
-                                int tv_nsec = context.getIntArg(5);
-                                if (tv_sec == 88 && tv_nsec == 0) {
-                                    throw new PopContextException();
-                                }
-                                return super.semwait_signal(emulator);
-                            }
-                        };
-                    }
-                };
-            }
-        };
-        return builder.addEnv("CFFIXED_USER_HOME=/var/mobile")
+        return DarwinEmulatorBuilder.for64Bit()
+                .addEnv("CFFIXED_USER_HOME=/var/mobile")
                 .setRootDir(new File("target/rootfs/substrate"))
+                .addBackendFactory(new DynarmicFactory(true))
+                .addBackendFactory(new HypervisorFactory(true))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
     }
 
@@ -77,16 +52,16 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
         assertNotNull(symbol);
 
         long start = System.currentTimeMillis();
-        Number[] numbers = symbol.call(emulator, "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
-        long ret = numbers[0].longValue();
+        Number number = symbol.call(emulator, "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
+        long ret = number.longValue();
         System.err.println("_MSGetImageByName ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         symbol = module.findSymbolByName("_MSFindSymbol");
         assertNotNull(symbol);
         start = System.currentTimeMillis();
         // emulator.traceCode();
-        numbers = symbol.call(emulator, UnidbgPointer.pointer(emulator, ret), "_MSGetImageByName");
-        ret = numbers[0].longValue();
+        number = symbol.call(emulator, UnidbgPointer.pointer(emulator, ret), "_MSGetImageByName");
+        ret = number.longValue();
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         HookLoader.load(emulator).hookObjcMsgSend(this);

@@ -11,7 +11,6 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Utils;
 import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
@@ -1132,7 +1131,7 @@ public class ARM {
 
     private static final Log log = LogFactory.getLog(ARM.class);
 
-    public static Arguments initArgs(Emulator<?> emulator, boolean padding, Number... arguments) {
+    public static void initArgs(Emulator<?> emulator, boolean padding, Number... arguments) {
         Backend backend = emulator.getBackend();
         Memory memory = emulator.getMemory();
 
@@ -1230,7 +1229,6 @@ public class ARM {
                 pointer.setInt(0, number.intValue());
             }
         }
-        return args;
     }
 
     public static UnidbgPointer adjust_ip(UnidbgPointer ip) {

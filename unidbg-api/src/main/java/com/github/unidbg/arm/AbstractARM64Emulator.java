@@ -227,32 +227,13 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     @Override
-    public Number[] eFunc(long begin, Number... arguments) {
-        long spBackup = memory.getStackPoint();
-        try {
-            return new Number[]{
-                    getThreadDispatcher().runMainForResult(new Function64(getPid(), begin, LR, isPaddingArgument(), arguments))
-            };
-        } finally {
-            memory.setStackPoint(spBackup);
-        }
+    public Number eFunc(long begin, Number... arguments) {
+        return runMainForResult(new Function64(getPid(), begin, LR, isPaddingArgument(), arguments));
     }
 
     @Override
     public Number eEntry(long begin, long sp) {
-        long spBackup = memory.getStackPoint();
-        try {
-            return getThreadDispatcher().runMainForResult(new Entry(getPid(), begin, LR, sp));
-        } finally {
-            memory.setStackPoint(spBackup);
-        }
-    }
-
-    @Override
-    public void eThread(long fn, long arg, long sp) {
-        backend.reg_write(Arm64Const.UC_ARM64_REG_X0, arg);
-        backend.reg_write(Arm64Const.UC_ARM64_REG_SP, sp);
-        emulate(fn, LR, timeout);
+        return runMainForResult(new Entry(getPid(), begin, LR, sp));
     }
 
     @Override

@@ -56,7 +56,7 @@ public class XpcTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/xpc"));
 
         Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
-        Pointer zone = UnidbgPointer.pointer(emulator, malloc_default_zone.call(emulator)[0].intValue());
+        Pointer zone = UnidbgPointer.pointer(emulator, malloc_default_zone.call(emulator).intValue());
         assertNotNull(zone);
         System.err.println("_malloc_default_zone zone=" + zone);
 

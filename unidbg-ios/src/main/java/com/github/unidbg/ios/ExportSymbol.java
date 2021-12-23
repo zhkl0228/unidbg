@@ -24,7 +24,7 @@ public class ExportSymbol extends Symbol implements MachO {
     }
 
     @Override
-    public Number[] call(Emulator<?> emulator, Object... args) {
+    public Number call(Emulator<?> emulator, Object... args) {
         return module.callFunction(emulator, getValue(), args);
     }
 

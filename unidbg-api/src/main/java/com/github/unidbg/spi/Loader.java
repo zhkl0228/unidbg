@@ -44,19 +44,6 @@ public interface Loader {
     long getMaxSizeOfLibrary();
 
     /**
-     * 运行线程
-     * @param timeout Duration to emulate the code (in microseconds).
-     */
-    void runThread(int threadId, long timeout);
-
-    /**
-     * 运行最后创建的线程
-     */
-    void runLastThread(long timeout);
-
-    boolean hasThread(int threadId);
-
-    /**
      * 加载虚拟模块
      */
     Module loadVirtualModule(String name, final Map<String, UnidbgPointer> symbols);

@@ -38,7 +38,6 @@ import com.github.unidbg.thread.PopContextException;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.IO;
-import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -870,9 +869,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             return threadId;
         }
 
-        Thread thread = new LinuxThread(threadId, child_stack, fn, arg, emulator.getReturnAddress());
-        threadMap.put(threadId, thread);
-        lastThread = threadId;
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         Log log = LogFactory.getLog(AbstractEmulator.class);
         if (log.isDebugEnabled()) {

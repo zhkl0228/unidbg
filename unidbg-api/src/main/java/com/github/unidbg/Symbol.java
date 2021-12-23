@@ -12,7 +12,7 @@ public abstract class Symbol {
         this.name = name;
     }
 
-    public abstract Number[] call(Emulator<?> emulator, Object... args);
+    public abstract Number call(Emulator<?> emulator, Object... args);
 
     public  abstract long getAddress();
 

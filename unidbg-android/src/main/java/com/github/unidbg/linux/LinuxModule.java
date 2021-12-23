@@ -253,7 +253,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public Number[] callFunction(Emulator<?> emulator, long offset, Object... args) {
+    public Number callFunction(Emulator<?> emulator, long offset, Object... args) {
         return emulateFunction(emulator, base + offset, args);
     }
 

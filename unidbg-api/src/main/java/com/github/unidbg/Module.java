@@ -39,9 +39,9 @@ public abstract class Module {
         return regions;
     }
 
-    public abstract Number[] callFunction(Emulator<?> emulator, long offset, Object... args);
+    public abstract Number callFunction(Emulator<?> emulator, long offset, Object... args);
 
-    public final Number[] callFunction(Emulator<?> emulator, String symbolName, Object... args) {
+    public final Number callFunction(Emulator<?> emulator, String symbolName, Object... args) {
         Symbol symbol = findSymbolByName(symbolName, false);
         if (symbol == null) {
             throw new IllegalStateException("find symbol failed: " + symbolName);
@@ -135,7 +135,7 @@ public abstract class Module {
         return this.pathPointer;
     }
 
-    public static Number[] emulateFunction(Emulator<?> emulator, long address, Object... args) {
+    public static Number emulateFunction(Emulator<?> emulator, long address, Object... args) {
         List<Number> list = new ArrayList<>(args.length);
         for (Object arg : args) {
             if (arg instanceof String) {

@@ -7,10 +7,10 @@ import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.ios.kevent.KEvent;
+import com.github.unidbg.ios.kevent.KEvent64;
 import com.github.unidbg.ios.kevent.KEventWaiter;
 import com.github.unidbg.ios.signal.SigAction;
 import com.github.unidbg.ios.signal.SignalTask;
-import com.github.unidbg.ios.kevent.KEvent64;
 import com.github.unidbg.ios.struct.VMStatistics;
 import com.github.unidbg.ios.struct.kernel.HostStatisticsReply;
 import com.github.unidbg.ios.struct.kernel.HostStatisticsRequest;
@@ -26,7 +26,6 @@ import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.UnixSigSet;
 import com.github.unidbg.spi.SyscallHandler;
-import com.github.unidbg.thread.DestroyListener;
 import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
@@ -369,12 +368,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (task instanceof ThreadTask) {
             ThreadTask threadTask = (ThreadTask) task;
             threadTask.setExitStatus(0);
-            threadTask.setDestroyListener(new DestroyListener() {
-                @Override
-                public void onDestroy(Emulator<?> emulator) {
-                    emulator.getMemory().munmap(freeaddr.peer, freesize);
-                }
-            });
+            emulator.getMemory().munmap(freeaddr.peer, freesize);
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;

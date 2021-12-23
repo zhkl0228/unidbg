@@ -82,7 +82,7 @@ public final class Dobby extends BaseHook implements IHookZz {
         if (dobby_enable_near_branch_trampoline == null) {
             return;
         }
-        int ret = dobby_enable_near_branch_trampoline.call(emulator)[0].intValue();
+        int ret = dobby_enable_near_branch_trampoline.call(emulator).intValue();
         if (ret != RT_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -93,7 +93,7 @@ public final class Dobby extends BaseHook implements IHookZz {
         if (dobby_disable_near_branch_trampoline == null) {
             return;
         }
-        int ret = dobby_disable_near_branch_trampoline.call(emulator)[0].intValue();
+        int ret = dobby_disable_near_branch_trampoline.call(emulator).intValue();
         if (ret != RT_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -116,7 +116,7 @@ public final class Dobby extends BaseHook implements IHookZz {
         }
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer callback = emulator.getSvcMemory().registerSvc(svc);
-        int ret = dobbyHook.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall)[0].intValue();
+        int ret = dobbyHook.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall).intValue();
         if (ret != RT_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -131,7 +131,7 @@ public final class Dobby extends BaseHook implements IHookZz {
     public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replaceCall = createReplacePointer(callback, originCall, enablePostCall);
-        int ret = dobbyHook.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
+        int ret = dobbyHook.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), replaceCall, originCall).intValue();
         if (ret != RT_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -177,7 +177,7 @@ public final class Dobby extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        int ret = dobbyInstrument.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), dbiCall)[0].intValue();
+        int ret = dobbyInstrument.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), dbiCall).intValue();
         if (ret != RT_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }

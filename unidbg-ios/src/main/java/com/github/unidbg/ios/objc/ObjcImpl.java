@@ -59,7 +59,7 @@ class ObjcImpl extends ObjC {
 
     @Override
     public ObjcClass getMetaClass(String className) {
-        Number number = _objc_getMetaClass.call(emulator, className)[0];
+        Number number = _objc_getMetaClass.call(emulator, className);
         Pointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalArgumentException(className + " NOT found");
@@ -69,7 +69,7 @@ class ObjcImpl extends ObjC {
 
     @Override
     public ObjcClass getClass(String className) {
-        Number number = _objc_getClass.call(emulator, className)[0];
+        Number number = _objc_getClass.call(emulator, className);
         Pointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalArgumentException(className + " NOT found");
@@ -79,14 +79,14 @@ class ObjcImpl extends ObjC {
 
     @Override
     public ObjcClass lookUpClass(String className) {
-        Number number = _objc_lookUpClass.call(emulator, className)[0];
+        Number number = _objc_lookUpClass.call(emulator, className);
         Pointer pointer = UnidbgPointer.pointer(emulator, number);
         return pointer == null ? null : ObjcClass.create(emulator, pointer);
     }
 
     @Override
     public Pointer registerName(String selectorName) {
-        Number number = _sel_registerName.call(emulator, selectorName)[0];
+        Number number = _sel_registerName.call(emulator, selectorName);
         Pointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalStateException(selectorName);
@@ -97,7 +97,7 @@ class ObjcImpl extends ObjC {
     @Override
     public UnidbgPointer getMethodImplementation(ObjcClass objcClass, String selectorName) {
         Pointer selector = registerName(selectorName);
-        Number number = _class_getMethodImplementation.call(emulator, objcClass, selector)[0];
+        Number number = _class_getMethodImplementation.call(emulator, objcClass, selector);
         UnidbgPointer pointer = UnidbgPointer.pointer(emulator, number);
         if (pointer == null) {
             throw new IllegalStateException(selectorName);
@@ -107,6 +107,6 @@ class ObjcImpl extends ObjC {
 
     @Override
     public Number msgSend(Emulator<?> emulator, Object... args) {
-        return _objc_msgSend.call(emulator, args)[0];
+        return _objc_msgSend.call(emulator, args);
     }
 }
