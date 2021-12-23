@@ -59,7 +59,7 @@ public class BsdThread extends ThreadTask {
 
             backend.reg_write(Arm64Const.UC_ARM64_REG_SP, stack.peer);
 
-            backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
+            backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
         }
 
         return emulator.emulate(_pthread_start.getAddress(), until);
