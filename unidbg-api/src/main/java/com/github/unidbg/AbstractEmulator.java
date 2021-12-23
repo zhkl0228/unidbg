@@ -352,7 +352,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     /**
      * @return <code>null</code>表示执行未完成，需要线程调度
      */
-    public final Number emulate(long begin, long until) {
+    public final Number emulate(long begin, long until) throws PopContextException {
         if (running) {
             backend.emu_stop();
             throw new IllegalStateException("running");
@@ -389,24 +389,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 Number r0 = backend.reg_read(ArmConst.UC_ARM_REG_R0);
                 Number r1 = backend.reg_read(ArmConst.UC_ARM_REG_R1);
                 return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
-            }
-        } catch (PopContextException e) {
-            int off = popContext();
-            long pc = backend.reg_read(is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC).longValue();
-            if (is32Bit()) {
-                pc &= 0xffffffffL;
-            }
-            try {
-                backend.emu_start(pc + off, until, timeout, 0);
-                if (is64Bit()) {
-                    return backend.reg_read(Arm64Const.UC_ARM64_REG_X0);
-                } else {
-                    Number r0 = backend.reg_read(ArmConst.UC_ARM_REG_R0);
-                    Number r1 = backend.reg_read(ArmConst.UC_ARM_REG_R1);
-                    return (r0.intValue() & 0xffffffffL) | ((r1.intValue() & 0xffffffffL) << 32);
-                }
-            } catch (RuntimeException exception) {
-                return handleEmuException(exception, pointer, start);
             }
         } catch (ThreadContextSwitchException e) {
             e.syncReturnValue(this);

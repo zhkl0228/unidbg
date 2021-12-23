@@ -141,17 +141,21 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                                         log.debug("Start run signalTask=" + signalTask);
                                     }
                                     SignalOps ops = task.isMainThread() ? this : task;
-                                    this.runningTask = signalTask;
-                                    Number ret = signalTask.callHandler(ops, emulator);
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("End run signalTask=" + signalTask + ", ret=" + ret);
-                                    }
-                                    if (ret != null) {
-                                        signalTask.setResult(emulator, ret);
-                                        signalTask.destroy(emulator);
-                                        task.removeSignalTask(signalTask);
-                                    } else {
-                                        signalTask.saveContext(emulator);
+                                    try {
+                                        this.runningTask = signalTask;
+                                        Number ret = signalTask.callHandler(ops, emulator);
+                                        if (log.isDebugEnabled()) {
+                                            log.debug("End run signalTask=" + signalTask + ", ret=" + ret);
+                                        }
+                                        if (ret != null) {
+                                            signalTask.setResult(emulator, ret);
+                                            signalTask.destroy(emulator);
+                                            task.removeSignalTask(signalTask);
+                                        } else {
+                                            signalTask.saveContext(emulator);
+                                        }
+                                    } catch (PopContextException e) {
+                                        this.runningTask.popContext(emulator);
                                     }
                                 } else if (log.isDebugEnabled()) {
                                     log.debug("Skip call handler signalTask=" + signalTask);
@@ -159,20 +163,24 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                             }
                         }
 
-                        this.runningTask = task;
-                        Number ret = task.dispatch(emulator);
-                        if (log.isDebugEnabled()) {
-                            log.debug("End dispatch task=" + task + ", ret=" + ret);
-                        }
-                        if (ret != null) {
-                            task.setResult(emulator, ret);
-                            task.destroy(emulator);
-                            iterator.remove();
-                            if(task.isMainThread()) {
-                                return ret;
+                        try {
+                            this.runningTask = task;
+                            Number ret = task.dispatch(emulator);
+                            if (log.isDebugEnabled()) {
+                                log.debug("End dispatch task=" + task + ", ret=" + ret);
                             }
-                        } else {
-                            task.saveContext(emulator);
+                            if (ret != null) {
+                                task.setResult(emulator, ret);
+                                task.destroy(emulator);
+                                iterator.remove();
+                                if(task.isMainThread()) {
+                                    return ret;
+                                }
+                            } else {
+                                task.saveContext(emulator);
+                            }
+                        } catch(PopContextException e) {
+                            this.runningTask.popContext(emulator);
                         }
                     } else if (log.isDebugEnabled()) {
                         log.debug("Skip dispatch task=" + task);

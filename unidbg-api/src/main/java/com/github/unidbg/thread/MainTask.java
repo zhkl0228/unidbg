@@ -12,7 +12,7 @@ public abstract class MainTask extends AbstractTask implements Task {
     }
 
     @Override
-    public Number dispatch(AbstractEmulator<?> emulator) {
+    public Number dispatch(AbstractEmulator<?> emulator) throws PopContextException {
         if (isContextSaved()) {
             return continueRun(emulator, until);
         }
