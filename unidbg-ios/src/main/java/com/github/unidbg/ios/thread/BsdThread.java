@@ -2,7 +2,6 @@ package com.github.unidbg.ios.thread;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
-import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -12,6 +11,7 @@ import unicorn.ArmConst;
 
 public class BsdThread extends ThreadTask {
 
+    private final UnidbgPointer thread_start;
     private final UnidbgPointer thread;
     private final UnidbgPointer fun;
     private final UnidbgPointer arg;
@@ -19,8 +19,9 @@ public class BsdThread extends ThreadTask {
     private final UnidbgPointer stack;
     private final int stackSize;
 
-    public BsdThread(Emulator<?> emulator, int tid, UnidbgPointer thread, UnidbgPointer fun, UnidbgPointer arg, int stackSize) {
+    public BsdThread(Emulator<?> emulator, int tid, UnidbgPointer thread_start, UnidbgPointer thread, UnidbgPointer fun, UnidbgPointer arg, int stackSize) {
         super(tid, emulator.getReturnAddress());
+        this.thread_start = thread_start;
         this.thread = thread;
         this.fun = fun;
         this.arg = arg;
@@ -31,10 +32,6 @@ public class BsdThread extends ThreadTask {
     @Override
     protected Number runThread(AbstractEmulator<?> emulator) {
         Backend backend = emulator.getBackend();
-        Symbol _pthread_start = emulator.getMemory().findModule("libsystem_pthread.dylib").findSymbolByName("__pthread_start", false);
-        if (_pthread_start == null) {
-            throw new IllegalStateException();
-        }
 
         int pflags = 0;
 
@@ -43,11 +40,10 @@ public class BsdThread extends ThreadTask {
             backend.reg_write(ArmConst.UC_ARM_REG_R1, getId());
             backend.reg_write(ArmConst.UC_ARM_REG_R2, this.fun.peer);
             backend.reg_write(ArmConst.UC_ARM_REG_R3, this.arg == null ? 0 : this.arg.peer);
+            backend.reg_write(ArmConst.UC_ARM_REG_R4, stackSize);
+            backend.reg_write(ArmConst.UC_ARM_REG_R5, pflags);
 
-            stack.share(-8).setInt(0, stackSize);
-            stack.share(-4).setInt(0, pflags);
-            backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.peer - 8);
-
+            backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.peer);
             backend.reg_write(ArmConst.UC_ARM_REG_LR, until);
         } else {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X0, this.thread.peer);
@@ -58,11 +54,10 @@ public class BsdThread extends ThreadTask {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X5, pflags);
 
             backend.reg_write(Arm64Const.UC_ARM64_REG_SP, stack.peer);
-
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
         }
 
-        return emulator.emulate(_pthread_start.getAddress(), until);
+        return emulator.emulate(thread_start.peer, until);
     }
 
     @Override

@@ -40,7 +40,7 @@ public class KQueueTest {
     }
 
     public static void main(String[] args) {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
         Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);

@@ -15,11 +15,14 @@ import com.github.unidbg.ios.struct.VMStatistics;
 import com.github.unidbg.ios.struct.kernel.HostStatisticsReply;
 import com.github.unidbg.ios.struct.kernel.HostStatisticsRequest;
 import com.github.unidbg.ios.struct.kernel.MachMsgHeader;
+import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupData;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupReply;
 import com.github.unidbg.ios.struct.kernel.VprocMigLookupRequest;
+import com.github.unidbg.ios.thread.BsdThread;
 import com.github.unidbg.ios.thread.SemWaiter;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.signal.SigSet;
@@ -313,7 +316,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
 
     private int threadId;
 
-    protected final int incrementThreadId(Emulator<?> emulator) {
+    private int incrementThreadId(Emulator<?> emulator) {
         if (threadId == 0) {
             threadId = emulator.getPid();
         }
@@ -348,28 +351,6 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
                     emulator.getThreadDispatcher().sendSignal(threadPort, new SignalTask(sig, action))) {
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
-        }
-        return 0;
-    }
-
-    protected int bsdthread_terminate(Emulator<DarwinFileIO> emulator) {
-        RegisterContext context = emulator.getContext();
-        final UnidbgPointer freeaddr = context.getPointerArg(0);
-        final int freesize = context.getIntArg(1);
-        int kport = context.getIntArg(2);
-        int joinsem = context.getIntArg(3);
-        if (log.isDebugEnabled()) {
-            log.debug("bsdthread_terminate freeaddr=" + freeaddr + ", freesize=" + freesize + ", kport=" + kport + ", joinsem=" + joinsem);
-        }
-        if (joinsem != 0) {
-            semaphoreMap.put(joinsem, Boolean.TRUE);
-        }
-        Task task = emulator.get(Task.TASK_KEY);
-        if (task instanceof ThreadTask) {
-            ThreadTask threadTask = (ThreadTask) task;
-            threadTask.setExitStatus(0);
-            emulator.getMemory().munmap(freeaddr.peer, freesize);
-            throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;
     }
@@ -632,6 +613,73 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;
+    }
+
+    private UnidbgPointer thread_start;
+    private int pthreadSize;
+
+    protected int bsdthread_register(UnidbgPointer thread_start, int pthreadSize) {
+        this.thread_start = thread_start;
+        this.pthreadSize = pthreadSize;
+        return 0;
+    }
+
+    protected int bsdthread_terminate(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        final UnidbgPointer freeaddr = context.getPointerArg(0);
+        final int freesize = context.getIntArg(1);
+        int kport = context.getIntArg(2);
+        int joinsem = context.getIntArg(3);
+        if (log.isDebugEnabled()) {
+            log.debug("bsdthread_terminate freeaddr=" + freeaddr + ", freesize=" + freesize + ", kport=" + kport + ", joinsem=" + joinsem);
+        }
+        if (joinsem != 0) {
+            semaphoreMap.put(joinsem, Boolean.TRUE);
+        }
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task instanceof ThreadTask) {
+            ThreadTask threadTask = (ThreadTask) task;
+            threadTask.setExitStatus(0);
+            emulator.getMemory().munmap(freeaddr.peer, freesize);
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        }
+        return 0;
+    }
+
+    protected long bsdthread_create(Emulator<?> emulator, UnidbgPointer start_routine, UnidbgPointer arg, UnidbgPointer stack, UnidbgPointer thread, int flags) {
+        int threadId = incrementThreadId(emulator);
+
+        if (thread == null) {
+            if (thread_start == null || pthreadSize <= 0) {
+                throw new IllegalStateException();
+            }
+
+            int stackSize = (int) stack.toUIntPeer();
+            int pageSize = emulator.getPageAlign();
+            MemoryBlock memoryBlock = emulator.getMemory().malloc(pageSize + stackSize + pthreadSize, true);
+            thread = memoryBlock.getPointer().share(pageSize + stackSize, 0);
+
+            String msg = "bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags);
+            if (threadDispatcherEnabled) {
+                if (log.isDebugEnabled()) {
+                    log.debug(msg);
+                }
+                Pthread pThread = Pthread.create(emulator, thread);
+                pThread.machThreadSelf = UnidbgPointer.pointer(emulator, threadId);
+                pThread.pack();
+
+                if (verbose) {
+                    System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
+                }
+
+                emulator.getThreadDispatcher().addThread(new BsdThread(emulator, threadId, thread_start, thread, start_routine, arg, stackSize));
+            } else {
+                log.info(msg);
+            }
+            return thread.peer;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
 }

@@ -43,7 +43,7 @@ public class KQueue64Test {
 
     public static void main(String[] args) {
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.ios.kevent").setLevel(Level.INFO);

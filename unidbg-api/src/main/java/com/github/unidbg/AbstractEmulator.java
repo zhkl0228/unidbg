@@ -396,6 +396,8 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 e.printStackTrace();
             }
             return null;
+        } catch (PopContextException e) {
+            throw e;
         } catch (RuntimeException e) {
             return handleEmuException(e, pointer, start);
         } finally {

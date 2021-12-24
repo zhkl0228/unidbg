@@ -83,9 +83,6 @@ import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc64;
 import com.github.unidbg.ios.struct.sysctl.SockAddrDL;
 import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
-import com.github.unidbg.ios.thread.BsdThread;
-import com.github.unidbg.ios.thread.DarwinThread;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -1436,65 +1433,21 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         UnidbgPointer thread = context.getPointerArg(3);
         int flags = context.getIntArg(4);
 
-        int threadId = incrementThreadId(emulator);
-
-        if (thread == null) {
-            int stackSize = (int) stack.toUIntPeer();
-            int pageSize = emulator.getPageAlign();
-            MemoryBlock memoryBlock = emulator.getMemory().malloc(stackSize + pageSize * 2, true);
-            thread = memoryBlock.getPointer().share(stackSize + pageSize, 0);
-
-            if (threadDispatcherEnabled) {
-                Pthread pThread = new Pthread64(thread);
-                pThread.machThreadSelf = UnidbgPointer.pointer(emulator, threadId);
-                pThread.pack();
-
-                if (verbose) {
-                    System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
-                }
-
-                emulator.getThreadDispatcher().addThread(new BsdThread(emulator, threadId, thread, start_routine, arg, stackSize));
-                return thread.peer;
-            }
-        }
-
-        Pthread pThread = new Pthread64(thread);
-
-        Pointer errno = thread.share(pThread.size());
-
-        pThread.self = thread;
-        pThread.machThreadSelf = UnidbgPointer.pointer(emulator, threadId);
-        pThread.setThreadId(threadId);
-        pThread.pack();
-
-        if (threadDispatcherEnabled) {
-            if (verbose) {
-                System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
-            }
-            emulator.getThreadDispatcher().addThread(new DarwinThread(emulator, start_routine, arg, pThread, threadId, errno));
-        } else {
-            log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", threadId=" + threadId + ", flags=0x" + Integer.toHexString(flags));
-            Log log = LogFactory.getLog(AbstractEmulator.class);
-            if (log.isDebugEnabled()) {
-                emulator.attach().debug();
-            }
-        }
-
-        return thread.peer;
+        return bsdthread_create(emulator, start_routine, arg, stack, thread, flags);
     }
 
     private int bsdthread_register(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        UnidbgPointer thread_start = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-        UnidbgPointer start_wqthread = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-        int PTHREAD_SIZE = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
-        UnidbgPointer data = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X3);
-        int dataSize = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
-        long offset = backend.reg_read(Arm64Const.UC_ARM64_REG_X5).longValue();
+        RegisterContext context = emulator.getContext();
+        UnidbgPointer thread_start = context.getPointerArg(0);
+        UnidbgPointer start_wqthread = context.getPointerArg(1);
+        int pthreadSize = context.getIntArg(2);
+        UnidbgPointer data = context.getPointerArg(3);
+        int dataSize = context.getIntArg(4);
+        long offset = context.getLongArg(5);
         if (log.isDebugEnabled()) {
-            log.debug("bsdthread_register thread_start=" + thread_start + ", start_wqthread=" + start_wqthread + ", PTHREAD_SIZE=" + PTHREAD_SIZE + ", data=" + data + ", dataSize=" + dataSize + ", offset=0x" + Long.toHexString(offset));
+            log.debug("bsdthread_register thread_start=" + thread_start + ", start_wqthread=" + start_wqthread + ", pthreadSize=" + pthreadSize + ", data=" + data + ", dataSize=" + dataSize + ", offset=0x" + Long.toHexString(offset));
         }
-        return 0;
+        return bsdthread_register(thread_start, pthreadSize);
     }
 
     private int readlink(Emulator<?> emulator) {
