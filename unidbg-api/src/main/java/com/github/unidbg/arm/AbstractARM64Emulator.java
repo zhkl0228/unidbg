@@ -60,8 +60,8 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
         backend.hook_add_new(new EventMemHook() {
             @Override
-            public boolean hook(Backend backend, long address, int size, long value, Object user) {
-                log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value));
+            public boolean hook(Backend backend, long address, int size, long value, Object user, UnmappedType unmappedType) {
+                log.warn(unmappedType + " memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value));
                 if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
                     attach().debug();
                 }

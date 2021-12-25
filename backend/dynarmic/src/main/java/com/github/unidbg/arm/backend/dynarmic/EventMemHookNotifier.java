@@ -18,13 +18,13 @@ public class EventMemHookNotifier {
 
     public void handleMemoryReadFailed(Backend backend, long vaddr, int size) {
         if ((type & UnicornConst.UC_HOOK_MEM_READ_UNMAPPED) != 0) {
-            callback.hook(backend, vaddr, size, 0, user_data);
+            callback.hook(backend, vaddr, size, 0, user_data, EventMemHook.UnmappedType.Read);
         }
     }
 
     public void handleMemoryWriteFailed(Backend backend, long vaddr, int size) {
         if ((type & UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED) != 0) {
-            callback.hook(backend, vaddr, size, 0, user_data);
+            callback.hook(backend, vaddr, size, 0, user_data, EventMemHook.UnmappedType.Write);
         }
     }
 }

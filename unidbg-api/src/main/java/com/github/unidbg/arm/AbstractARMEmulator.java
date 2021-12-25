@@ -60,9 +60,9 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
         backend.hook_add_new(new EventMemHook() {
             @Override
-            public boolean hook(Backend backend, long address, int size, long value, Object user) {
+            public boolean hook(Backend backend, long address, int size, long value, Object user, UnmappedType unmappedType) {
                 RegisterContext context = getContext();
-                log.warn("memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value) + ", PC=" + context.getPCPointer() + ", LR=" + context.getLRPointer());
+                log.warn(unmappedType + " memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value) + ", PC=" + context.getPCPointer() + ", LR=" + context.getLRPointer());
                 if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
                     attach().debug();
                 }

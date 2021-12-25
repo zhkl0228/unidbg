@@ -12,6 +12,8 @@ import unicorn.Unicorn;
 import unicorn.UnicornConst;
 import unicorn.UnicornException;
 
+import java.util.Map;
+
 public class UnicornBackend extends AbstractBackend implements Backend {
 
     private final Emulator<?> emulator;
@@ -289,13 +291,33 @@ public class UnicornBackend extends AbstractBackend implements Backend {
 
     @Override
     public void hook_add_new(final EventMemHook callback, int type, Object user_data) throws BackendException {
+        if ((type & UnicornConst.UC_HOOK_MEM_READ_UNMAPPED) != 0) {
+            hookEventMem(callback, UnicornConst.UC_HOOK_MEM_READ_UNMAPPED, user_data, EventMemHook.UnmappedType.Read);
+        }
+        if ((type & UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED) != 0) {
+            hookEventMem(callback, UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED, user_data, EventMemHook.UnmappedType.Write);
+        }
+        if ((type & UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED) != 0) {
+            hookEventMem(callback, UnicornConst.UC_HOOK_MEM_FETCH_UNMAPPED, user_data, EventMemHook.UnmappedType.Fetch);
+        }
+    }
+
+    private void hookEventMem(final EventMemHook callback, final int type, Object user_data, final EventMemHook.UnmappedType unmappedType) {
         try {
-            unicorn.hook_add_new(new unicorn.EventMemHook() {
+            Map<Integer, Unicorn.UnHook> map = unicorn.hook_add_new(new unicorn.EventMemHook() {
                 @Override
                 public boolean hook(Unicorn u, long address, int size, long value, Object user) {
-                    return callback.hook(UnicornBackend.this, address, size, value, user);
+                    return callback.hook(UnicornBackend.this, address, size, value, user, unmappedType);
                 }
             }, type, user_data);
+            for (final Unicorn.UnHook unHook : map.values()) {
+                callback.onAttach(new UnHook() {
+                    @Override
+                    public void unhook() {
+                        unHook.unhook();
+                    }
+                });
+            }
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
