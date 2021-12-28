@@ -359,6 +359,33 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         return 0;
     }
 
+    protected int rt_sigqueue(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int tgid = context.getIntArg(0);
+        int sig = context.getIntArg(1);
+        UnidbgPointer info = context.getPointerArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("rt_sigqueue tgid=" + tgid + ", sig=" + sig);
+        }
+        Task task = emulator.get(Task.TASK_KEY);
+        // 检查pid是有匹配进程存在
+        if (!(tgid == 0 || tgid == -1 || Math.abs(tgid) == emulator.getPid())) {
+            return -UnixEmulator.ESRCH;
+        }
+        // 检查进程是否存在, 无需发送信号
+        if (sig == 0) {
+            return 0;
+        }
+        if (sig < 0 || sig > 64) {
+            return -UnixEmulator.EINVAL;
+        }
+        if (task != null) {
+            SigAction sigAction = sigActionMap.get(sig);
+            return processSignal(emulator.getThreadDispatcher(), sig, task, sigAction, info);
+        }
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     protected FileResult<AndroidFileIO> createFdDir(int oflags, String pathname) {
         List<DirectoryFileIO.DirectoryEntry> list = new ArrayList<>();
@@ -486,7 +513,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         int count = 0;
         for (int i = 0; i < nfds; i++) {
             int mask = checkfds.getInt(i / 32);
-            if(((mask >> i) & 1) == 1) {
+            if (((mask >> i) & 1) == 1) {
                 AndroidFileIO io = fdMap.get(i);
                 if (!checkRead || io.canRead()) {
                     count++;
@@ -610,21 +637,27 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (log.isDebugEnabled()) {
             log.debug("kill pid=" + pid + ", sig=" + sig);
         }
+        if (sig == 0) {
+            return 0;
+        }
+        if (sig < 0 || sig > 64) {
+            return -UnixEmulator.EINVAL;
+        }
         Task task = emulator.get(Task.TASK_KEY);
-        if (pid == 0 && sig > 0 && task != null) {
+        if ((pid == 0 || pid == emulator.getPid()) && task != null) {
             SigAction action = sigActionMap.get(sig);
-            return processSignal(emulator.getThreadDispatcher(), sig, task, action);
+            return processSignal(emulator.getThreadDispatcher(), sig, task, action, null);
         }
         throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
     }
 
-    private int processSignal(ThreadDispatcher threadDispatcher, int sig, Task task, SigAction action) {
+    private int processSignal(ThreadDispatcher threadDispatcher, int sig, Task task, SigAction action, Pointer sig_info) {
         if (action != null) {
             SignalOps signalOps = task.isMainThread() ? threadDispatcher : task;
             SigSet sigMaskSet = signalOps.getSigMaskSet();
             SigSet sigPendingSet = signalOps.getSigPendingSet();
             if (sigMaskSet == null || !sigMaskSet.containsSigNumber(sig)) {
-                task.addSignalTask(new SignalTask(sig, action));
+                task.addSignalTask(new SignalTask(sig, action, sig_info));
                 throw new ThreadContextSwitchException().setReturnValue(0);
             } else if (sigPendingSet != null) {
                 sigPendingSet.addSigNumber(sig);
@@ -641,12 +674,16 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         if (log.isDebugEnabled()) {
             log.debug("tgkill tgid=" + tgid + ", tid=" + tid + ", sig=" + sig);
         }
-        if (sig > 0) {
-            SigAction action = sigActionMap.get(sig);
-            if (action != null &&
-                    emulator.getThreadDispatcher().sendSignal(tid, new SignalTask(sig, action))) {
-                throw new ThreadContextSwitchException().setReturnValue(0);
-            }
+        if (sig == 0) {
+            return 0;
+        }
+        if (sig < 0 || sig > 64) {
+            return -UnixEmulator.EINVAL;
+        }
+        SigAction action = sigActionMap.get(sig);
+        if (action != null &&
+                emulator.getThreadDispatcher().sendSignal(tid, new SignalTask(sig, action))) {
+            throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;
     }

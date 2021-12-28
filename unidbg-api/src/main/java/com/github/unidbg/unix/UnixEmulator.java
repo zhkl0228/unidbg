@@ -4,6 +4,7 @@ public interface UnixEmulator {
 
     int EPERM = 1; /* Operation not permitted */
     int ENOENT = 2; /* No such file or directory */
+    int ESRCH = 3; /* No such process */
     int EINTR = 4; /* Interrupted system call */
     int EBADF = 9; /* Bad file descriptor */
     int EAGAIN = 11; /* Resource temporarily unavailable */

@@ -9,6 +9,7 @@ import com.github.unidbg.signal.AbstractSignalTask;
 import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.UnixSigSet;
+import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
@@ -17,10 +18,16 @@ public class SignalTask extends AbstractSignalTask {
     private final SigAction action;
 
     public SignalTask(int signum, SigAction action) {
-        super(signum);
-        this.action = action;
+        this(signum, action, null);
     }
 
+    public SignalTask(int signum, SigAction action, Pointer sig_info) {
+        super(signum);
+        this.action = action;
+        this.sig_info = sig_info;
+    }
+
+    private Pointer sig_info;
     private UnidbgPointer stack;
 
     @Override
@@ -48,20 +55,21 @@ public class SignalTask extends AbstractSignalTask {
         if (stack == null) {
             stack = allocateStack(emulator);
         }
-        if (action.needSigInfo() && infoBlock == null) {
+        if (action.needSigInfo() && infoBlock == null && sig_info == null) {
             infoBlock = emulator.getMemory().malloc(128, true);
             infoBlock.getPointer().setInt(0, signum);
+            sig_info = infoBlock.getPointer();
         }
         if (emulator.is32Bit()) {
             backend.reg_write(ArmConst.UC_ARM_REG_SP, stack.peer);
             backend.reg_write(ArmConst.UC_ARM_REG_R0, signum);
-            backend.reg_write(ArmConst.UC_ARM_REG_R1, infoBlock == null ? 0 : infoBlock.getPointer().peer); // siginfo_t *info
+            backend.reg_write(ArmConst.UC_ARM_REG_R1, sig_info == null ? 0 : UnidbgPointer.nativeValue(sig_info)); // siginfo_t *info
             backend.reg_write(ArmConst.UC_ARM_REG_R2, 0); // void *ucontext
             backend.reg_write(ArmConst.UC_ARM_REG_LR, emulator.getReturnAddress());
         } else {
             backend.reg_write(Arm64Const.UC_ARM64_REG_SP, stack.peer);
             backend.reg_write(Arm64Const.UC_ARM64_REG_X0, signum);
-            backend.reg_write(Arm64Const.UC_ARM64_REG_X1, infoBlock == null ? 0 : infoBlock.getPointer().peer); // siginfo_t *info
+            backend.reg_write(Arm64Const.UC_ARM64_REG_X1, sig_info == null ? 0 : UnidbgPointer.nativeValue(sig_info)); // siginfo_t *info
             backend.reg_write(Arm64Const.UC_ARM64_REG_X2, 0); // void *ucontext
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, emulator.getReturnAddress());
         }

@@ -330,6 +330,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 177:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigtimedwait(emulator));
                     return;
+                case 178:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigqueue(emulator));
+                    return;
                 case 180:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, pread64(emulator));
                     return;
@@ -976,7 +979,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         int fd = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
         long offset_high = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue() & 0xffffffffL;
         long offset_low = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue() & 0xffffffffL;
-        long offset = (offset_high<<32) | offset_low;
+        long offset = (offset_high << 32) | offset_low;
         Pointer result = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
         int whence = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
         if (log.isDebugEnabled()) {
@@ -1240,7 +1243,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 pollfd.setShort(6, (short) 0);
             } else {
                 short revents = 0;
-                if((events & POLLOUT) != 0) {
+                if ((events & POLLOUT) != 0) {
                     revents = POLLOUT;
                 } else if ((events & POLLIN) != 0) {
                     revents = POLLIN;
@@ -1685,7 +1688,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private static final int PR_SET_DUMPABLE = 4;
     private static final int PR_SET_NAME = 15;
     private static final int PR_GET_NAME = 16;
-    private static final int BIONIC_PR_SET_VMA =              0x53564d41;
+    private static final int BIONIC_PR_SET_VMA = 0x53564d41;
     private static final int PR_SET_PTRACER = 0x59616d61;
 
     private int prctl(Backend backend, Emulator<?> emulator) {
