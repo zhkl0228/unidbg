@@ -247,6 +247,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         return 0;
     }
 
+
     private static final int FUTEX_CMD_MASK = 0x7f;
     private static final int FUTEX_PRIVATE_FLAG = 0x80;
     private static final int MUTEX_SHARED_MASK = 0x2000;
@@ -357,6 +358,34 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             emulator.attach().debug();
         }
         return 0;
+    }
+
+    protected int rt_sigqueue(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int tgid = context.getIntArg(0);
+        int sig = context.getIntArg(1);
+        UnidbgPointer info = context.getPointerArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("rt_sigqueue tgid=" + tgid + ", sig=" + sig);
+        }
+        Task task = emulator.get(Task.TASK_KEY);
+        // 检查pid是有匹配进程存在
+        if (!(tgid == 0 || tgid == -1 || Math.abs(tgid) == emulator.getPid())) {
+            return -UnixEmulator.ESRCH;
+        }
+        // 检查进程是否存在, 无需发送信号
+        if (sig == 0) {
+            return 0;
+        }
+        if (sig < 0 || sig > 64) {
+            return -UnixEmulator.EINVAL;
+        }
+        if (task != null) {
+            SigAction sigAction = sigActionMap.get(sig);
+            //sigAction.sig_info = info;
+            return processSignal(emulator.getThreadDispatcher(), sig, task, sigAction, info);
+        }
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -486,7 +515,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
         int count = 0;
         for (int i = 0; i < nfds; i++) {
             int mask = checkfds.getInt(i / 32);
-            if(((mask >> i) & 1) == 1) {
+            if (((mask >> i) & 1) == 1) {
                 AndroidFileIO io = fdMap.get(i);
                 if (!checkRead || io.canRead()) {
                     count++;
@@ -576,11 +605,13 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
 
     @Override
     protected int sigaction(Emulator<?> emulator, int signum, Pointer act, Pointer oldact) {
+        //TODO action参数解包 (64位有BUG， 暂定)
         SigAction action = SigAction.create(emulator, act);
         SigAction oldAction = SigAction.create(emulator, oldact);
         if (log.isDebugEnabled()) {
             log.debug("sigaction signum=" + signum + ", action=" + action + ", oldAction=" + oldAction);
         }
+        // SIGKILL 和 SIGSTOP 不允许自定义处理
         if (SIGKILL == signum || SIGSTOP == signum) {
             if (oldAction != null) {
                 oldAction.sa_handler = UnidbgPointer.pointer(emulator, SIG_ERR);
@@ -611,20 +642,32 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             log.debug("kill pid=" + pid + ", sig=" + sig);
         }
         Task task = emulator.get(Task.TASK_KEY);
-        if (pid == 0 && sig > 0 && task != null) {
+        // 检查pid是有匹配进程存在
+        if (!(pid == 0 || pid == -1 || Math.abs(pid) == emulator.getPid())) {
+            emulator.getMemory().setErrno(UnixEmulator.ESRCH);
+            return UnixEmulator.ESRCH;
+        }
+        // 检查进程是否存在, 无需发送信号
+        if (sig == 0) {
+            return 0;
+        }
+        if (sig < 0 || sig > 64) {
+            return -UnixEmulator.EINVAL;
+        }
+        if (/*pid == 0 && */ task != null) {
             SigAction action = sigActionMap.get(sig);
-            return processSignal(emulator.getThreadDispatcher(), sig, task, action);
+            return processSignal(emulator.getThreadDispatcher(), sig, task, action, null);
         }
         throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
     }
 
-    private int processSignal(ThreadDispatcher threadDispatcher, int sig, Task task, SigAction action) {
+    private int processSignal(ThreadDispatcher threadDispatcher, int sig, Task task, SigAction action, Pointer sig_info) {
         if (action != null) {
             SignalOps signalOps = task.isMainThread() ? threadDispatcher : task;
             SigSet sigMaskSet = signalOps.getSigMaskSet();
             SigSet sigPendingSet = signalOps.getSigPendingSet();
             if (sigMaskSet == null || !sigMaskSet.containsSigNumber(sig)) {
-                task.addSignalTask(new SignalTask(sig, action));
+                task.addSignalTask(new SignalTask(sig, action, sig_info));
                 throw new ThreadContextSwitchException().setReturnValue(0);
             } else if (sigPendingSet != null) {
                 sigPendingSet.addSigNumber(sig);
@@ -647,6 +690,9 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                     emulator.getThreadDispatcher().sendSignal(tid, new SignalTask(sig, action))) {
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
+        }
+        if (sig < 0 || sig > 64) {
+            return -UnixEmulator.EINVAL;
         }
         return 0;
     }

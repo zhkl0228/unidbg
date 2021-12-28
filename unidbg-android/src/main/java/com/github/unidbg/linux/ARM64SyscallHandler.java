@@ -143,10 +143,10 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 62:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, lseek(emulator));
                     return;
-                case  172: // getpid
+                case 172: // getpid
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, emulator.getPid());
                     return;
-                case  178: // gettid
+                case 178: // gettid
                     Task task = emulator.get(Task.TASK_KEY);
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, task == null ? 0 : task.getId());
                     return;
@@ -248,6 +248,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 137:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, rt_sigtimedwait(emulator));
+                    return;
+                case 138:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, rt_sigqueue(emulator));
                     return;
                 case 167:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, prctl(emulator));
@@ -685,7 +688,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 pollfd.setShort(6, (short) 0);
             } else {
                 short revents = 0;
-                if((events & POLLOUT) != 0) {
+                if ((events & POLLOUT) != 0) {
                     revents = POLLOUT;
                 } else if ((events & POLLIN) != 0) {
                     revents = POLLIN;
@@ -1074,7 +1077,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
     private static final int PR_SET_NAME = 15;
     private static final int PR_SET_NO_NEW_PRIVS = 38;
-    private static final int BIONIC_PR_SET_VMA =              0x53564d41;
+    private static final int BIONIC_PR_SET_VMA = 0x53564d41;
     private static final int PR_SET_PTRACER = 0x59616d61;
 
     private int prctl(Emulator<?> emulator) {
