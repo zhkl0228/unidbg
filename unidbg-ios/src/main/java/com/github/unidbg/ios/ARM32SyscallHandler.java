@@ -702,15 +702,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return ret;
     }
 
-    private int swtch_pri(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int pri = context.getIntArg(0);
-        if (log.isDebugEnabled()) {
-            log.debug("swtch_pri pri=" + pri + ", LR=" + context.getLRPointer());
-        }
-        return 0;
-    }
-
     private boolean handleMachineDependentSyscall(Emulator<?> emulator, int NR) {
         Backend backend = emulator.getBackend();
         switch (NR) {

@@ -659,14 +659,15 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             MemoryBlock memoryBlock = emulator.getMemory().malloc(pageSize + stackSize + pthreadSize, true);
             thread = memoryBlock.getPointer().share(pageSize + stackSize, 0);
 
+            Pthread pThread = Pthread.create(emulator, thread);
+            pThread.machThreadSelf = UnidbgPointer.pointer(emulator, threadId);
+            pThread.pack();
+
             String msg = "bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags);
             if (threadDispatcherEnabled) {
                 if (log.isDebugEnabled()) {
                     log.debug(msg);
                 }
-                Pthread pThread = Pthread.create(emulator, thread);
-                pThread.machThreadSelf = UnidbgPointer.pointer(emulator, threadId);
-                pThread.pack();
 
                 if (verbose) {
                     System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
@@ -680,6 +681,18 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    protected int swtch_pri(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int pri = context.getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("swtch_pri pri=" + pri + ", LR=" + context.getLRPointer());
+        }
+        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
+        return 0;
     }
 
 }

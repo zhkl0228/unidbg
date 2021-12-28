@@ -811,15 +811,6 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    private int swtch_pri(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int pri = context.getIntArg(0);
-        if (log.isDebugEnabled()) {
-            log.debug("swtch_pri pri=" + pri + ", LR=" + context.getLRPointer());
-        }
-        return 0;
-    }
-
     private long semaphore_timedwait_trap(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int port = context.getIntArg(0);

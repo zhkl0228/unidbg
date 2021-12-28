@@ -91,7 +91,7 @@ public abstract class UnidbgStructure extends Structure {
         if (Pointer.class.isAssignableFrom(nativeType)) {
             Emulator<?> emulator = AbstractEmulator.getContextEmulator();
             if (emulator == null) {
-                log.warn("getNativeSize context emulator is null");
+                log.warn("getNativeSize context emulator is null", new IllegalStateException());
             }
             return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
         }

@@ -373,6 +373,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 exitHook = new Thread() {
                     @Override
                     public void run() {
+                        setContextEmulator(AbstractEmulator.this);
                         backend.emu_stop();
                         Debugger debugger = attach();
                         if (!debugger.isDebugging()) {
