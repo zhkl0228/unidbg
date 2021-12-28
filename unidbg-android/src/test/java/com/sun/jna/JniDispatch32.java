@@ -69,7 +69,7 @@ public class JniDispatch32 {
         MemoryBlock block = null;
         try {
             block = memory.malloc(0x10, false);
-            Number ret = __system_property_get.call(emulator, "ro.build.version.sdk", block.getPointer())[0];
+            Number ret = __system_property_get.call(emulator, "ro.build.version.sdk", block.getPointer());
             System.out.println("sdk=" + new String(block.getPointer().getByteArray(0, ret.intValue())) + ", libc=" + memory.findModule("libc.so"));
         } finally {
             if (block != null) {

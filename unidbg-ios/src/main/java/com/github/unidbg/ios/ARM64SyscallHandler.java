@@ -1478,8 +1478,6 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             if (log.isDebugEnabled()) {
                 emulator.attach().debug();
             }
-            lastThread = threadId;
-            threadMap.put(threadId, new DarwinThread(emulator, start_routine, arg, pThread, threadId, errno));
         }
 
         return thread.peer;

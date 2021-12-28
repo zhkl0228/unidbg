@@ -6,14 +6,14 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.unix.Thread;
+import com.github.unidbg.thread.ThreadTask;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
-public class DarwinThread extends Thread {
+public class DarwinThread extends ThreadTask {
 
     private static final Log log = LogFactory.getLog(DarwinThread.class);
 
@@ -83,36 +83,6 @@ public class DarwinThread extends Thread {
     public boolean setErrno(Emulator<?> emulator, int errno) {
         this.errno.setInt(0, errno);
         return true;
-    }
-
-    private long context;
-
-    @Override
-    public void runThread(Emulator<?> emulator, long __thread_entry, long timeout) {
-        if (emulator.is32Bit()) {
-            throw new UnsupportedOperationException();
-        }
-        Backend backend = emulator.getBackend();
-
-        UnidbgPointer stack = allocateStack(emulator);
-        pthread.setStack(stack, THREAD_STACK_SIZE);
-        pthread.pack();
-
-        if (this.context == 0) {
-            log.info("run thread: start_routine=" + this.start_routine + ", arg=" + this.arg + ", stack=" + stack);
-            UnidbgPointer tsd = pthread.getTSD();
-            backend.reg_write(Arm64Const.UC_ARM64_REG_TPIDRRO_EL0, tsd.peer);
-            emulator.eThread(this.start_routine.peer, this.arg == null ? 0L : this.arg.peer, stack.peer);
-        } else {
-            backend.context_restore(this.context);
-            long pc = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
-            log.info("resume thread: start_routine=" + this.start_routine + ", arg=" + this.arg + ", stack=" + stack + ", pc=0x" + Long.toHexString(pc));
-            backend.emu_start(pc, 0, timeout, 0);
-        }
-        if (this.context == 0) {
-            this.context = backend.context_alloc();
-        }
-        backend.context_save(this.context);
     }
 
 }

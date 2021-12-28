@@ -73,7 +73,7 @@ public final class HookZz extends BaseHook implements IHookZz {
 
     @Override
     public void enable_arm_arm64_b_branch() {
-        int ret = zz_enable_arm_arm64_b_branch.call(emulator)[0].intValue();
+        int ret = zz_enable_arm_arm64_b_branch.call(emulator).intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -81,7 +81,7 @@ public final class HookZz extends BaseHook implements IHookZz {
 
     @Override
     public void disable_arm_arm64_b_branch() {
-        int ret = zz_disable_arm_arm64_b_branch.call(emulator)[0].intValue();
+        int ret = zz_disable_arm_arm64_b_branch.call(emulator).intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -104,7 +104,7 @@ public final class HookZz extends BaseHook implements IHookZz {
         }
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer callback = emulator.getSvcMemory().registerSvc(svc);
-        int ret = zzReplace.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall)[0].intValue();
+        int ret = zzReplace.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall).intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -119,7 +119,7 @@ public final class HookZz extends BaseHook implements IHookZz {
     public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replaceCall = createReplacePointer(callback, originCall, enablePostCall);
-        int ret = zzReplace.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), replaceCall, originCall)[0].intValue();
+        int ret = zzReplace.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), replaceCall, originCall).intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -166,7 +166,7 @@ public final class HookZz extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        int ret = zzWrap.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), preCall, postCall)[0].intValue();
+        int ret = zzWrap.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), preCall, postCall).intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -196,7 +196,7 @@ public final class HookZz extends BaseHook implements IHookZz {
                 return 0;
             }
         });
-        int ret = zzDynamicBinaryInstrumentation.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), dbiCall)[0].intValue();
+        int ret = zzDynamicBinaryInstrumentation.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), dbiCall).intValue();
         if (ret != RS_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }

@@ -40,9 +40,6 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     public final Map<Integer, T> fdMap = new TreeMap<>();
 
-    public final Map<Integer, Thread> threadMap = new HashMap<>(5);
-    public int lastThread = -1;
-
     protected boolean verbose;
 
     @Override

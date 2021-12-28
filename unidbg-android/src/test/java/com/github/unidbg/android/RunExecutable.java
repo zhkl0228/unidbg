@@ -47,7 +47,7 @@ class RunExecutable {
                 assert pointer != null;
                 System.err.println("environ=" + pointer + ", value=" + pointer.getPointer(0));
             }
-            Number __errno = libc.callFunction(emulator, "__errno")[0];
+            Number __errno = libc.callFunction(emulator, "__errno");
             Pointer pointer = UnidbgPointer.pointer(emulator, __errno.intValue() & 0xffffffffL);
             assert pointer != null;
             emulator.getMemory().setErrno(UnixEmulator.EACCES);
@@ -55,7 +55,7 @@ class RunExecutable {
             assert value == UnixEmulator.EACCES;
 
 //             emulator.traceCode();
-            Pointer strerror = UnidbgPointer.pointer(emulator, libc.callFunction(emulator, "strerror", UnixEmulator.ECONNREFUSED)[0].intValue() & 0xffffffffL);
+            Pointer strerror = UnidbgPointer.pointer(emulator, libc.callFunction(emulator, "strerror", UnixEmulator.ECONNREFUSED).intValue() & 0xffffffffL);
             assert strerror != null;
             System.out.println(strerror.getString(0));
 

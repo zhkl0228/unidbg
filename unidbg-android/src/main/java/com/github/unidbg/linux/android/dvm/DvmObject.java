@@ -136,7 +136,7 @@ public class DvmObject<T> extends Hashable {
                 list.add(arg);
             }
         }
-        return Module.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
+        return Module.emulateFunction(emulator, fnPtr.peer, list.toArray());
     }
 
     @Override

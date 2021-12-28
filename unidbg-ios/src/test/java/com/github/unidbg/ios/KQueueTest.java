@@ -4,6 +4,8 @@ import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.memory.Memory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -18,6 +20,8 @@ public class KQueueTest {
     public KQueueTest() {
         this.emulator = DarwinEmulatorBuilder.for32Bit()
                 .setRootDir(new File("target/rootfs/kqueue"))
+                .addBackendFactory(new DynarmicFactory(true))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
         Memory memory = emulator.getMemory();
@@ -26,7 +30,9 @@ public class KQueueTest {
     }
 
     private void test() {
+        long start = System.currentTimeMillis();
         module.callEntry(emulator);
+        System.out.println("offset=" + (System.currentTimeMillis() - start) + "ms, backend=" + emulator.getBackend());
     }
 
     private void destroy() {

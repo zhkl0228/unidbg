@@ -55,7 +55,7 @@ public class FishHook extends BaseHook implements IFishHook {
     @Override
     public void rebindSymbol(String symbol, ReplaceCallback callback, boolean enablePostCall) {
         Pointer rebinding = createRebinding(symbol, callback, enablePostCall);
-        int ret = rebind_symbols.call(emulator, rebinding, 1)[0].intValue();
+        int ret = rebind_symbols.call(emulator, rebinding, 1).intValue();
         if (ret != RET_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }
@@ -72,7 +72,7 @@ public class FishHook extends BaseHook implements IFishHook {
         Pointer rebinding = memory.malloc(emulator.getPointerSize() * 3, false).getPointer();
         rebinding.setPointer(0, symbolPointer);
         rebinding.setPointer(emulator.getPointerSize(), replaceCall);
-        rebinding.setPointer(2 * emulator.getPointerSize(), originCall);
+        rebinding.setPointer(2L * emulator.getPointerSize(), originCall);
         return rebinding;
     }
 
@@ -87,7 +87,7 @@ public class FishHook extends BaseHook implements IFishHook {
         long header = mm.machHeader;
         long slide = Dyld.computeSlide(emulator, header);
         Pointer rebinding = createRebinding(symbol, callback, enablePostCall);
-        int ret = rebind_symbols_image.call(emulator, UnidbgPointer.pointer(emulator, header), UnidbgPointer.pointer(emulator, slide), rebinding, 1)[0].intValue();
+        int ret = rebind_symbols_image.call(emulator, UnidbgPointer.pointer(emulator, header), UnidbgPointer.pointer(emulator, slide), rebinding, 1).intValue();
         if (ret != RET_SUCCESS) {
             throw new IllegalStateException("ret=" + ret);
         }

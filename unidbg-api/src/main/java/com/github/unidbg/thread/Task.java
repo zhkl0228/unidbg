@@ -13,7 +13,7 @@ public interface Task extends SignalOps, RunnableTask {
 
     int getId();
 
-    Number dispatch(AbstractEmulator<?> emulator);
+    Number dispatch(AbstractEmulator<?> emulator) throws PopContextException;
 
     boolean isMainThread();
 

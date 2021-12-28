@@ -5,6 +5,8 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.ios.ipa.NSUserDefaultsResolver;
@@ -29,6 +31,8 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         return DarwinEmulatorBuilder.for32Bit()
                 .setProcessName("com.substrate.test")
                 .setRootDir(new File("target/rootfs/substrate"))
+                .addBackendFactory(new DynarmicFactory(true))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
     }
 
@@ -76,16 +80,16 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
         // emulator.attach().addBreakPoint(module, 0x00b608L);
 //        emulator.traceCode();
-        Number[] numbers = symbol.call(emulator, "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
-        long ret = numbers[0].intValue() & 0xffffffffL;
+        Number number = symbol.call(emulator, "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
+        long ret = number.intValue() & 0xffffffffL;
         System.err.println("_MSGetImageByName ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         symbol = module.findSymbolByName("_MSFindSymbol");
         assertNotNull(symbol);
         start = System.currentTimeMillis();
 //         emulator.traceCode();
-        numbers = symbol.call(emulator, UnidbgPointer.pointer(emulator, ret), "_MSGetImageByName");
-        ret = numbers[0].intValue() & 0xffffffffL;
+        number = symbol.call(emulator, UnidbgPointer.pointer(emulator, ret), "_MSGetImageByName");
+        ret = number.intValue() & 0xffffffffL;
         System.err.println("_MSFindSymbol ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
         HookLoader.load(emulator).hookObjcMsgSend(null);

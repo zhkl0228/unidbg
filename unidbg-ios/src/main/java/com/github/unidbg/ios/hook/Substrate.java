@@ -68,8 +68,8 @@ public class Substrate extends BaseHook implements ISubstrate {
 
     @Override
     public Module getImageByName(String file) {
-        Number[] numbers = _MSGetImageByName.call(emulator, file);
-        long ret = numberToAddress(numbers[0]);
+        Number number = _MSGetImageByName.call(emulator, file);
+        long ret = numberToAddress(number);
         if (ret == 0) {
             return null;
         } else {
@@ -86,8 +86,8 @@ public class Substrate extends BaseHook implements ISubstrate {
     @Override
     public Symbol findSymbol(Module image, String name) {
         MachOModule mm = (MachOModule) image;
-        Number[] numbers = _MSFindSymbol.call(emulator, mm == null ? null : UnidbgPointer.pointer(emulator, mm.machHeader), name);
-        long ret = numberToAddress(numbers[0]);
+        Number number = _MSFindSymbol.call(emulator, mm == null ? null : UnidbgPointer.pointer(emulator, mm.machHeader), name);
+        long ret = numberToAddress(number);
         if (ret == 0) {
             return null;
         } else {

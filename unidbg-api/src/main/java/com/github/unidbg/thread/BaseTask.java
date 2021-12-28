@@ -52,6 +52,20 @@ public abstract class BaseTask implements RunnableTask {
     }
 
     @Override
+    public void popContext(Emulator<?> emulator) {
+        Backend backend = emulator.getBackend();
+        int off = emulator.popContext();
+        long pc;
+        if (emulator.is32Bit()) {
+            pc = backend.reg_read(ArmConst.UC_ARM_REG_PC).intValue() & 0xfffffffeL;
+        } else {
+            pc = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
+        }
+        backend.reg_write(emulator.is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC, pc + off);
+        saveContext(emulator);
+    }
+
+    @Override
     public void restoreContext(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
         backend.context_restore(this.context);
@@ -60,12 +74,14 @@ public abstract class BaseTask implements RunnableTask {
     protected final Number continueRun(AbstractEmulator<?> emulator, long until) {
         Backend backend = emulator.getBackend();
         backend.context_restore(this.context);
-        long pc = backend.reg_read(emulator.is32Bit() ? ArmConst.UC_ARM_REG_PC : Arm64Const.UC_ARM64_REG_PC).longValue();
+        long pc;
         if (emulator.is32Bit()) {
-            pc &= 0xffffffffL;
+            pc = backend.reg_read(ArmConst.UC_ARM_REG_PC).intValue() & 0xfffffffeL;
             if (ARM.isThumb(backend)) {
-                pc += 1;
+                pc |= 1;
             }
+        } else {
+            pc = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
         }
         if (log.isDebugEnabled()) {
             log.debug("continue run task=" + this + ", pc=" + UnidbgPointer.pointer(emulator, pc) + ", until=0x" + Long.toHexString(until));

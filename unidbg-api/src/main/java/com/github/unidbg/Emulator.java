@@ -63,11 +63,9 @@ public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassemble
     TraceHook traceCode(long begin, long end);
     TraceHook traceCode(long begin, long end, TraceCodeListener listener);
 
-    Number[] eFunc(long begin, Number... arguments);
+    Number eFunc(long begin, Number... arguments);
 
     Number eEntry(long begin, long sp);
-
-    void eThread(long fn, long arg, long sp);
 
     /**
      * emulate signal handler
