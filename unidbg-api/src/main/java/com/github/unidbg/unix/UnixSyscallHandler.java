@@ -38,7 +38,12 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     private final List<IOResolver<T>> resolvers = new ArrayList<>(5);
 
-    public final Map<Integer, T> fdMap = new TreeMap<>();
+    protected final Map<Integer, T> fdMap = new TreeMap<>();
+
+    @Override
+    public FileIO getFileIO(int fd) {
+        return fdMap.get(fd);
+    }
 
     protected boolean verbose;
 
@@ -564,6 +569,13 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     @Override
     public void detach() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void destroy() {
+        for (FileIO io : fdMap.values()) {
+            io.close();
+        }
     }
 
     protected boolean threadDispatcherEnabled;

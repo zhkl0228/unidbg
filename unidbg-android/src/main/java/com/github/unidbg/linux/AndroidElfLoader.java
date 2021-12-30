@@ -1,6 +1,5 @@
 package com.github.unidbg.linux;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
@@ -750,7 +749,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
         try {
             FileIO file;
-            if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
+            if (start == 0 && fd > 0 && (file = syscallHandler.getFileIO(fd)) != null) {
                 long addr = allocateMapAddress(0, aligned);
                 if (log.isDebugEnabled()) {
                     log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));

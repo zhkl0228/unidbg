@@ -117,5 +117,4 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
 
         return null;
     }
-
 }

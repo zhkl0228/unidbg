@@ -6,14 +6,13 @@ import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.file.ByteArrayFileIO;
 import com.github.unidbg.ios.file.DirectoryFileIO;
+import com.github.unidbg.ios.file.JarEntryFileIO;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -75,9 +74,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
                 if (entry.isDirectory()) {
                     return FileResult.success(createDirectoryFileIO(entry.getName(), pathname, oflags));
                 } else {
-                    try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                        return FileResult.<DarwinFileIO>success(new ByteArrayFileIO(oflags, pathname, IOUtils.toByteArray(inputStream)));
-                    }
+                    return FileResult.<DarwinFileIO>success(new JarEntryFileIO(oflags, pathname, ipa, entry));
                 }
             } catch (IOException e) {
                 throw new IllegalStateException(e);

@@ -75,10 +75,15 @@ public class ResourceUtils {
                         int check = sub.indexOf('/');
                         if (check == -1 && !jarEntry.isDirectory()) { // sub file
                             File out = new File(dir, sub);
+                            File crcFile = new File(dir, "crc_" + jarEntry.getCrc() + "." + sub);
+                            if (crcFile.exists()) {
+                                continue;
+                            }
                             try (InputStream inputStream = jarFile.getInputStream(jarEntry);
                                  OutputStream outputStream = new FileOutputStream(out)) {
                                 IOUtils.copy(inputStream, outputStream);
                             }
+                            FileUtils.touch(crcFile);
                         } else if (check != -1 && check + 1 == sub.length() && jarEntry.isDirectory()) {
                             File subDir = new File(dir, sub.substring(0, check));
                             FileUtils.forceMkdir(subDir);

@@ -14,7 +14,6 @@ import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.arm.context.BackendArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.Debugger;
-import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -144,9 +143,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     @Override
     protected void closeInternal() {
-        for (FileIO io : syscallHandler.fdMap.values()) {
-            io.close();
-        }
+        syscallHandler.destroy();
 
         IOUtils.close(arm64DisassemblerCache);
     }

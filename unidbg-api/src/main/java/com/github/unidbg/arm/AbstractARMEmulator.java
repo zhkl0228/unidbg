@@ -14,7 +14,6 @@ import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.arm.context.BackendArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.Debugger;
-import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -153,9 +152,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     @Override
     protected void closeInternal() {
-        for (FileIO io : syscallHandler.fdMap.values()) {
-            io.close();
-        }
+        syscallHandler.destroy();
 
         IOUtils.close(thumbDisassemblerCache);
         IOUtils.close(armDisassemblerCache);

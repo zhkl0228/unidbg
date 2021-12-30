@@ -3,6 +3,7 @@ package com.github.unidbg.spi;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.InterruptHook;
 import com.github.unidbg.debugger.Breaker;
+import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.NewFileIO;
 import com.github.unidbg.serialize.Serializable;
@@ -34,5 +35,9 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook, Seri
     void setEnableThreadDispatcher(boolean threadDispatcherEnabled);
 
     MainTask createSignalHandlerTask(Emulator<?> emulator, int sig);
+
+    FileIO getFileIO(int fd);
+
+    void destroy();
 
 }
