@@ -1,11 +1,23 @@
+#include <vector>
+
+#ifdef DYNARMIC_MASTER
+#include <dynarmic/interface/A32/a32.h>
+#include <dynarmic/interface/A32/config.h>
+
+#include <dynarmic/interface/A64/a64.h>
+#include <dynarmic/interface/A64/config.h>
+
+#include <dynarmic/interface/exclusive_monitor.h>
+#else
 #include <dynarmic/A32/a32.h>
 #include <dynarmic/A32/config.h>
 
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
-#include <vector>
 
 #include <dynarmic/exclusive_monitor.h>
+#endif
+
 
 #include "khash.h"
 #include "com_github_unidbg_arm_backend_dynarmic_Dynarmic.h"

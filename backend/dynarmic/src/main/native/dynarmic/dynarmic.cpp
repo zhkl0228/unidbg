@@ -63,11 +63,13 @@ public:
         return false;
     }
 
+#ifndef DYNARMIC_MASTER
     u16 MemoryReadThumbCode(u32 vaddr) override {
         u16 code = MemoryRead16(vaddr);
 //        printf("MemoryReadThumbCode[%s->%s:%d]: vaddr=0x%x, code=0x%04x\n", __FILE__, __func__, __LINE__, vaddr, code);
         return code;
     }
+#endif
 
     u8 MemoryRead8(u32 vaddr) override {
         u8 *dest = (u8 *) get_memory(memory, vaddr, num_page_table_entries, page_table);
