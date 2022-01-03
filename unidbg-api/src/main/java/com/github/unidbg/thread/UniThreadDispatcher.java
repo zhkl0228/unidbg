@@ -4,6 +4,7 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
 import com.github.unidbg.signal.SignalTask;
+import com.github.unidbg.signal.UnixSigSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -40,36 +41,39 @@ public class UniThreadDispatcher implements ThreadDispatcher {
     }
 
     @Override
-    public boolean sendSignal(int tid, SignalTask signalTask) {
+    public boolean sendSignal(int tid, int sig, SignalTask signalTask) {
         List<Task> list = new ArrayList<>();
         list.addAll(taskList);
         list.addAll(threadTaskList);
         boolean ret = false;
         for (Task task : list) {
+            SignalOps signalOps = null;
             if (tid == 0 && task.isMainThread()) {
-                if (mainThreadSigMaskSet != null && mainThreadSigMaskSet.containsSigNumber(signalTask.getSigNumber())) {
-                    if (mainThreadSigPendingSet != null) {
-                        mainThreadSigPendingSet.addSigNumber(signalTask.getSigNumber());
-                    }
-                    return false;
-                }
-                task.addSignalTask(signalTask);
-                ret = true;
-                break;
+                signalOps = this;
             }
             if (tid == task.getId()) {
-                SigSet sigSet = task.getSigMaskSet();
-                if (sigSet != null && sigSet.containsSigNumber(signalTask.getSigNumber())) {
-                    SigSet sigPendingSet = task.getSigPendingSet();
-                    if (sigPendingSet != null) {
-                        sigPendingSet.addSigNumber(signalTask.getSigNumber());
-                    }
-                    return false;
-                }
-                task.addSignalTask(signalTask);
-                ret = true;
-                break;
+                signalOps = task;
             }
+            if (signalOps == null) {
+                continue;
+            }
+            SigSet sigSet = signalOps.getSigMaskSet();
+            SigSet sigPendingSet = signalOps.getSigPendingSet();
+            if (sigPendingSet == null) {
+                sigPendingSet = new UnixSigSet(0);
+                signalOps.setSigPendingSet(sigPendingSet);
+            }
+            if (sigSet != null && sigSet.containsSigNumber(sig)) {
+                sigPendingSet.addSigNumber(sig);
+                return false;
+            }
+            if (signalTask != null) {
+                task.addSignalTask(signalTask);
+            } else {
+                sigPendingSet.addSigNumber(sig);
+            }
+            ret = true;
+            break;
         }
         return ret;
     }

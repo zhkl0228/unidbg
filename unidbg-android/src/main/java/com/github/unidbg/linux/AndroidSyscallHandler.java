@@ -51,7 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> implements SyscallHandler<AndroidFileIO> {
+public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> implements SyscallHandler<AndroidFileIO> {
 
     private static final Log log = LogFactory.getLog(AndroidSyscallHandler.class);
 
@@ -289,13 +289,11 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
                         runningTask.setWaiter(new FutexIndefinitelyWaiter(uaddr, val));
                         throw new ThreadContextSwitchException();
                     } else {
-                        emulator.getMemory().setErrno(ETIMEDOUT);
-                        throw new ThreadContextSwitchException().setReturnValue(-1);
+                        throw new ThreadContextSwitchException().setReturnValue(-ETIMEDOUT);
                     }
                 }
                 if (threadDispatcherEnabled && emulator.getThreadDispatcher().getTaskCount() > 1) {
-                    emulator.getMemory().setErrno(ETIMEDOUT);
-                    throw new ThreadContextSwitchException().setReturnValue(-1);
+                    throw new ThreadContextSwitchException().setReturnValue(-ETIMEDOUT);
                 } else {
                     return 0;
                 }
@@ -349,7 +347,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             }
         }
         if (!task.isMainThread()) {
-            throw new ThreadContextSwitchException().setReturnValue(-1);
+            throw new ThreadContextSwitchException().setReturnValue(-UnixEmulator.EINTR);
         }
         log.info("rt_sigtimedwait set=" + set + ", info=" + info + ", timeout=" + timeout + ", sigsetsize=" + sigsetsize + ", sigSet=" + sigSet + ", task=" + task);
         Log log = LogFactory.getLog(AbstractEmulator.class);
@@ -681,8 +679,7 @@ abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFileIO> i
             return -UnixEmulator.EINVAL;
         }
         SigAction action = sigActionMap.get(sig);
-        if (action != null &&
-                emulator.getThreadDispatcher().sendSignal(tid, new SignalTask(sig, action))) {
+        if (emulator.getThreadDispatcher().sendSignal(tid, sig, action == null ? null : new SignalTask(sig, action))) {
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;

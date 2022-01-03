@@ -866,9 +866,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             if (verbose) {
                 System.out.printf("pthread_clone fn=%s%n", fn);
             }
-            AndroidElfLoader loader = (AndroidElfLoader) emulator.getMemory();
-            emulator.getThreadDispatcher().addThread(new KitKatThread(threadId, emulator.getReturnAddress(),
-                    loader.__thread_entry, child_stack, fn, arg));
+            emulator.getThreadDispatcher().addThread(new KitKatThread(threadId, emulator.getReturnAddress(), child_stack, fn, arg));
             return threadId;
         }
 

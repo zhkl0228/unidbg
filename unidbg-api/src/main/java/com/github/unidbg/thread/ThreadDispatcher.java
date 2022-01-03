@@ -18,7 +18,7 @@ public interface ThreadDispatcher extends SignalOps {
 
     int getTaskCount();
 
-    boolean sendSignal(int tid, SignalTask signalTask);
+    boolean sendSignal(int tid, int sig, SignalTask signalTask);
 
     RunnableTask getRunningTask();
 

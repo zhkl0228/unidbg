@@ -46,7 +46,7 @@ public class SignalTest {
         Memory memory = emulator.getMemory();
         emulator.getSyscallHandler().setVerbose(false);
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
-        AndroidResolver resolver = new AndroidResolver(23);
+        AndroidResolver resolver = new AndroidResolver(19);
         memory.setLibraryResolver(resolver);
 
         module = emulator.loadLibrary(executable, true);

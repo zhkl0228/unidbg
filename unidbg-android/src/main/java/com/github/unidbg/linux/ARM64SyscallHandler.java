@@ -473,13 +473,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         child_stack = child_stack.share(8, 0);
 
         if (threadDispatcherEnabled) {
-            if (verbose) {
-                System.out.printf("pthread_clone fn=%s%n", fn);
-            }
-            AndroidElfLoader loader = (AndroidElfLoader) emulator.getMemory();
-            emulator.getThreadDispatcher().addThread(new KitKatThread(threadId, emulator.getReturnAddress(),
-                    loader.__thread_entry, child_stack, fn, arg));
-            return threadId;
+            throw new UnsupportedOperationException();
         }
 
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);

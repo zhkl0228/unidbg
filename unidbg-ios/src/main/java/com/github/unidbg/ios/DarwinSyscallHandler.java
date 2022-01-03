@@ -347,8 +347,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         }
         if (sig > 0) {
             SigAction action = sigActionMap.get(sig);
-            if (action != null &&
-                    emulator.getThreadDispatcher().sendSignal(threadPort, new SignalTask(sig, action))) {
+            if (emulator.getThreadDispatcher().sendSignal(threadPort, sig, action == null ? null : new SignalTask(sig, action))) {
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
         }
