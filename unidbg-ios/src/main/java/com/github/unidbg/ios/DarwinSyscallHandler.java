@@ -376,6 +376,11 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
     protected int semwait_signal(Emulator<?> emulator, RunnableTask runningTask, int cond_sem, int mutex_sem, int timeout, int relative,
                                  long tv_sec, int tv_nsec) {
         if (timeout == 1 && relative == 1 && (tv_sec > 0 || tv_nsec > 0)) {
+            if (threadDispatcherEnabled) {
+                runningTask.setWaiter(new SemWaiter(cond_sem, semaphoreMap, tv_sec, tv_nsec));
+                throw new ThreadContextSwitchException().setReturnValue(0);
+            }
+
             try {
                 Thread.sleep(tv_sec * 1000L + tv_nsec / 1000L, tv_nsec % 1000);
                 emulator.getMemory().setErrno(ETIMEDOUT);
