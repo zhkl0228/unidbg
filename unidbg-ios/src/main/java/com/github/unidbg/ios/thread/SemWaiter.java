@@ -35,9 +35,12 @@ public class SemWaiter implements Waiter {
         if (val != null) {
             return true;
         }
-        if (waitMillis > 0 && System.currentTimeMillis() - startWaitTimeInMillis >= waitMillis) {
-            timeout = true;
-            return true;
+        if (waitMillis > 0) {
+            if (System.currentTimeMillis() - startWaitTimeInMillis >= waitMillis) {
+                timeout = true;
+                return true;
+            }
+            Thread.yield();
         }
         return false;
     }
