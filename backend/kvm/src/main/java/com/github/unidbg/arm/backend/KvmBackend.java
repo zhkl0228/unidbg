@@ -215,7 +215,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     @Override
     public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
-        if (timeout != 0 || count != 0) {
+        if (count != 0) {
             throw new UnsupportedOperationException();
         }
         if (log.isDebugEnabled()) {

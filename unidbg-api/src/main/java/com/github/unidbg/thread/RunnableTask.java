@@ -1,6 +1,5 @@
 package com.github.unidbg.thread;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 
 public interface RunnableTask {

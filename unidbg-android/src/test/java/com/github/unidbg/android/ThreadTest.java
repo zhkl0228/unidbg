@@ -3,6 +3,7 @@ package com.github.unidbg.android;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.arm.backend.DynarmicFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.linux.ARM32SyscallHandler;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -28,6 +29,7 @@ public class ThreadTest extends AbstractJni {
     private ThreadTest() {
         emulator = AndroidEmulatorBuilder.for32Bit()
                 .addBackendFactory(new DynarmicFactory(true))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .setProcessName("test").build();
         final Memory memory = emulator.getMemory();
         memory.setLibraryResolver(new AndroidResolver(23));
