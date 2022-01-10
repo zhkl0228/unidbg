@@ -66,9 +66,10 @@ public class Signal64Test {
     }
 
     private void test() {
+        long start = System.currentTimeMillis();
         emulator.emulateSignal(29);
         int code = module.callEntry(emulator);
-        System.err.println("exit code: " + code + ", backend=" + emulator.getBackend());
+        System.err.println("exit code: " + code + ", backend=" + emulator.getBackend() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
 }

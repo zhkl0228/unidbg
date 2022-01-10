@@ -55,11 +55,17 @@ abstract class TraceFunctionCall implements CodeHook {
             }
         }
         try {
-            Instruction instruction = emulator.disassemble(address, size, 1)[0];
-            onInstruction(instruction);
+            Instruction instruction = disassemble(address, size);
+            if (instruction != null) {
+                onInstruction(instruction);
+            }
         } catch (BackendException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    protected Instruction disassemble(long address, int size) {
+        return emulator.disassemble(address, size, 1)[0];
     }
 
     protected abstract void onInstruction(Instruction instruction);

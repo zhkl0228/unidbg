@@ -8,10 +8,38 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.FunctionCallListener;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 class TraceFunctionCall64 extends TraceFunctionCall {
 
     public TraceFunctionCall64(Emulator<?> emulator, FunctionCallListener listener) {
         super(emulator, listener);
+    }
+
+    private static final int BL_MASK = ~0x3ffffff;
+    private static final int BL = 0x94000000;
+
+    private static final int BLR_MASK = ~0x3e0;
+    private static final int BLR = 0xd63f0000;
+
+    @Override
+    protected Instruction disassemble(long address, int size) {
+        if (size != 4) {
+            throw new IllegalStateException();
+        }
+        byte[] code = emulator.getBackend().mem_read(address, 4);
+        ByteBuffer buffer = ByteBuffer.wrap(code).order(ByteOrder.LITTLE_ENDIAN);
+        int value = buffer.getInt();
+        if ((value & BL_MASK) == BL) {
+            Instruction[] instructions = emulator.disassemble(address, code, false, 1);
+            return instructions[0];
+        }
+        if ((value & BLR_MASK) == BLR) {
+            Instruction[] instructions = emulator.disassemble(address, code, false, 1);
+            return instructions[0];
+        }
+        return null;
     }
 
     @Override
