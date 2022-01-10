@@ -8,6 +8,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.debugger.Debugger;
+import com.github.unidbg.debugger.FunctionCallListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.thread.RunnableTask;
@@ -25,6 +26,13 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
     SimpleARM64Debugger(Emulator<?> emulator) {
         super(emulator);
+    }
+
+    @Override
+    public void traceFunctionCall(Module module, FunctionCallListener listener) {
+        Backend backend = emulator.getBackend();
+        TraceFunctionCall hook = new TraceFunctionCall64(emulator, listener);
+        backend.hook_add_new(hook, module.base, module.base + module.size, this);
     }
 
     @Override

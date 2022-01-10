@@ -19,6 +19,7 @@ import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.debugger.DebugListener;
 import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.debugger.Debugger;
+import com.github.unidbg.debugger.FunctionCallListener;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
@@ -139,6 +140,11 @@ public abstract class AbstractARMDebugger implements Debugger {
         BreakPoint breakPoint = emulator.getBackend().addBreakPoint(address, callback, thumb);
         breakMap.put(address, breakPoint);
         return breakPoint;
+    }
+
+    @Override
+    public void traceFunctionCall(Module module, FunctionCallListener listener) {
+        throw new UnsupportedOperationException();
     }
 
     protected abstract Keystone createKeystone(boolean isThumb);
