@@ -7,12 +7,17 @@ import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.debugger.FunctionCallListener;
+import com.github.unidbg.utils.Inspector;
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.Stack;
 
-abstract class TraceFunctionCall implements CodeHook {
+public abstract class TraceFunctionCall implements CodeHook {
+
+    private static final Log log = LogFactory.getLog(TraceFunctionCall.class);
 
     protected final Emulator<?> emulator;
     private final FunctionCallListener listener;
@@ -57,16 +62,39 @@ abstract class TraceFunctionCall implements CodeHook {
         try {
             Instruction instruction = disassemble(address, size);
             if (instruction != null) {
+                if (log.isDebugEnabled()) {
+                    if (!instruction.getMnemonic().startsWith("bl")) {
+                        log.warn(Inspector.inspectString(backend.mem_read(address, size), "Invalid " + instruction + ": thumb=" + ARM.isThumb(backend)));
+                    }
+                }
                 onInstruction(instruction);
+            } else if (log.isDebugEnabled()) {
+                Instruction[] instructions = emulator.disassemble(address, size, 1);
+                if (instructions.length != 1) {
+                    return;
+                }
+                instruction = instructions[0];
+                String mnemonic = instruction.getMnemonic();
+                if (emulator.is32Bit()) {
+                    if (mnemonic.startsWith("bl") &&
+                            !mnemonic.startsWith("ble") &&
+                            !mnemonic.startsWith("blt") &&
+                            !mnemonic.startsWith("bls") &&
+                            !mnemonic.startsWith("blo")) {
+                        log.warn(Inspector.inspectString(backend.mem_read(address, size), "Unsupported " + instruction + ": thumb=" + ARM.isThumb(backend)));
+                    }
+                } else {
+                    if (mnemonic.startsWith("bl")) {
+                        log.warn(Inspector.inspectString(backend.mem_read(address, size), "Unsupported " + instruction + ": thumb=" + ARM.isThumb(backend)));
+                    }
+                }
             }
         } catch (BackendException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    protected Instruction disassemble(long address, int size) {
-        return emulator.disassemble(address, size, 1)[0];
-    }
+    protected abstract Instruction disassemble(long address, int size);
 
     protected abstract void onInstruction(Instruction instruction);
 

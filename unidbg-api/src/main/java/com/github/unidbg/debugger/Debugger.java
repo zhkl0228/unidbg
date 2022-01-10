@@ -22,6 +22,7 @@ public interface Debugger extends Breaker, DebugHook, BlockHook, Closeable {
 
     /**
      * use with unicorn
+     * @param module <code>null</code> means all modules.
      */
     void traceFunctionCall(Module module, FunctionCallListener listener);
 
