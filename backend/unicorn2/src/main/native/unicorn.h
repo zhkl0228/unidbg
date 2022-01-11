@@ -12,6 +12,9 @@ typedef struct unicorn {
   uc_engine *uc;
   jint singleStep;
   jboolean fastDebug;
+  uc_hook count_hook;
+  uint64_t emu_count;
+  uint64_t emu_counter;
 } *t_unicorn;
 
 struct new_hook {

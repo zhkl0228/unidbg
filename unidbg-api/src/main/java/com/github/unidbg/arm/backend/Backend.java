@@ -59,4 +59,6 @@ public interface Backend {
 
     int getPageSize();
 
+    void registerEmuCountHook(long emu_count);
+
 }

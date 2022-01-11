@@ -11,4 +11,9 @@ public abstract class AbstractBackend implements Backend {
         return 0;
     }
 
+    @Override
+    public void registerEmuCountHook(long emu_count) {
+        throw new UnsupportedOperationException();
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.github.unidbg.arm.backend.unicorn;
 
+import com.github.unidbg.thread.ThreadContextSwitchException;
 import unicorn.UnicornConst;
 import unicorn.UnicornException;
 
@@ -47,7 +48,7 @@ public class Unicorn {
         }
         private boolean unhooked;
         private void unhookInternal() {
-            if (!unhooked) {
+            if (!unhooked && handle != 0) {
                 hook_del(handle);
             }
             unhooked = true;
@@ -186,6 +187,18 @@ public class Unicorn {
     }
 
     private static native void reg_write(long handle, int regid, long value) throws UnicornException;
+
+    public UnHook registerEmuCountHook(long emu_count) {
+        NewHook hook = new NewHook(new CodeHook() {
+            @Override
+            public void hook(Unicorn u, long address, int size, Object user) {
+                throw new ThreadContextSwitchException();
+            }
+        }, null);
+        return new UnHook(register_emu_count_hook(nativeHandle, emu_count, hook));
+    }
+
+    private static native long register_emu_count_hook(long handle, long emu_count, NewHook hook);
 
     /**
      * Read memory contents.

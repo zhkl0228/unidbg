@@ -181,7 +181,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
     uint64_t end = (uint64_t) arg2;
 
     struct new_hook *nh = malloc(sizeof(struct new_hook));
-    nh->hh = hh;
     nh->hook = (*env)->NewGlobalRef(env, hook);
     nh->unicorn = unicorn;
 
@@ -204,9 +203,57 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
       free(nh);
       throwException(env, err);
       return 0;
+    } else {
+      nh->hh = hh;
     }
 
     return (jlong)nh;
+}
+
+static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data) {
+    struct new_hook *nh = (struct new_hook *) user_data;
+
+    // count this instruction. ah ah ah.
+    nh->unicorn->emu_counter++;
+
+    if (nh->unicorn->emu_counter > nh->unicorn->emu_count) {
+        uc_emu_stop(uc);
+
+        JNIEnv *env;
+        (*cachedJVM)->AttachCurrentThread(cachedJVM, (void **)&env, NULL);
+        (*env)->CallVoidMethod(env, nh->hook, onCode, (jlong)address, (int)size);
+        (*cachedJVM)->DetachCurrentThread(cachedJVM);
+    }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    register_emu_count_hook
+ * Signature: (JJLcom/github/unidbg/arm/backend/unicorn/Unicorn/NewHook;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_register_1emu_1count_1hook
+  (JNIEnv *env, jclass cls, jlong handle, jlong emu_count, jobject hook) {
+  t_unicorn unicorn = (t_unicorn) handle;
+  unicorn->emu_count = emu_count;
+
+  if (emu_count > 0 && unicorn->count_hook == 0) {
+    struct new_hook *nh = malloc(sizeof(struct new_hook));
+    nh->hook = (*env)->NewGlobalRef(env, hook);
+    nh->unicorn = unicorn;
+
+    uc_err err = uc_hook_add(unicorn->uc, &unicorn->count_hook, UC_HOOK_CODE, hook_count_cb, nh, 1, 0);
+    if (err != UC_ERR_OK) {
+      (*env)->DeleteGlobalRef(env, nh->hook);
+      free(nh);
+      throwException(env, err);
+      return 0;
+    } else {
+      nh->hh = unicorn->count_hook;
+      return (jlong)nh;
+    }
+  } else {
+    return 0;
+  }
 }
 
 /*
@@ -223,7 +270,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
   uc_err err = UC_ERR_OK;
 
   struct new_hook *nh = malloc(sizeof(struct new_hook));
-  nh->hh = hh;
   nh->hook = (*env)->NewGlobalRef(env, hook);
   nh->unicorn = unicorn;
 
@@ -245,6 +291,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
     free(nh);
     throwException(env, err);
     return 0;
+  } else {
+    nh->hh = hh;
   }
 
   return (jlong)nh;
@@ -300,6 +348,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_emu_1s
   (JNIEnv *env, jclass cls, jlong handle, jlong begin, jlong until, jlong timeout, jlong count) {
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
+  unicorn->emu_counter = 0;
 
    uc_err err = uc_emu_start(eng, (uint64_t)begin, (uint64_t)until, (uint64_t)timeout, (size_t)count);
    if (err != UC_ERR_OK) {
@@ -523,7 +572,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
     uint64_t end = (uint64_t) arg2;
 
     struct new_hook *nh = malloc(sizeof(struct new_hook));
-    nh->hh = hh;
     nh->hook = (*env)->NewGlobalRef(env, hook);
     nh->unicorn = unicorn;
 
@@ -533,6 +581,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
       free(nh);
       throwException(env, err);
       return 0;
+    } else {
+      nh->hh = hh;
     }
 
     return (jlong)nh;

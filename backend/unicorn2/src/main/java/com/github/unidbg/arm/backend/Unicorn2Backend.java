@@ -420,4 +420,18 @@ class Unicorn2Backend extends AbstractBackend implements Backend {
     public void context_free(long context) {
         Unicorn.free(context);
     }
+
+    private Unicorn.UnHook unHook;
+
+    @Override
+    public void registerEmuCountHook(long emu_count) {
+        if (unHook != null) {
+            throw new IllegalStateException();
+        }
+        if (emu_count <= 0) {
+            throw new IllegalArgumentException();
+        } else {
+            unHook = unicorn.registerEmuCountHook(emu_count);
+        }
+    }
 }

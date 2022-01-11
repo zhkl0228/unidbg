@@ -65,6 +65,14 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_reg_1w
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    register_emu_count_hook
+ * Signature: (JJLcom/github/unidbg/arm/backend/unicorn/Unicorn/NewHook;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_register_1emu_1count_1hook
+  (JNIEnv *, jclass, jlong, jlong, jobject);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    mem_read
  * Signature: (JJJ)[B
  */

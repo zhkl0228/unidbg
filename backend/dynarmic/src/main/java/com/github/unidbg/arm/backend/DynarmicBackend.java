@@ -74,9 +74,6 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
 
     @Override
     public final synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
-        if (count != 0) {
-            throw new UnsupportedOperationException();
-        }
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
         }

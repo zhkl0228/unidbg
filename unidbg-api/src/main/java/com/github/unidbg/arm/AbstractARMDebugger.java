@@ -143,6 +143,11 @@ public abstract class AbstractARMDebugger implements Debugger {
     }
 
     @Override
+    public void traceFunctionCall(FunctionCallListener listener) {
+        traceFunctionCall(null, listener);
+    }
+
+    @Override
     public void traceFunctionCall(Module module, FunctionCallListener listener) {
         throw new UnsupportedOperationException();
     }

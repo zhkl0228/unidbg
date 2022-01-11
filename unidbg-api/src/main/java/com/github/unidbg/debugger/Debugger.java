@@ -20,6 +20,8 @@ public interface Debugger extends Breaker, DebugHook, BlockHook, Closeable {
     BreakPoint addBreakPoint(long address);
     BreakPoint addBreakPoint(long address, BreakPointCallback callback);
 
+    void traceFunctionCall(FunctionCallListener listener);
+
     /**
      * use with unicorn
      * @param module <code>null</code> means all modules.

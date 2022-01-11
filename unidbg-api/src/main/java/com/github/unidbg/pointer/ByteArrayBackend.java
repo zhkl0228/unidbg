@@ -177,4 +177,8 @@ class ByteArrayBackend implements Backend {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void registerEmuCountHook(long emu_count) {
+        throw new UnsupportedOperationException();
+    }
 }
