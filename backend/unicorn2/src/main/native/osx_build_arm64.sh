@@ -1,3 +1,4 @@
+# git clone https://github.com/zhkl0228/unicorn
 # UNICORN_ARCHS="arm aarch64" UNICORN_STATIC=yes ./make.sh
 
 JAVA_INC="$(realpath "$JAVA_HOME"/include)"
