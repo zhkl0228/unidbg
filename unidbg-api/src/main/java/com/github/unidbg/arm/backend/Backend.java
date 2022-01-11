@@ -2,7 +2,6 @@ package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
-import unicorn.Unicorn;
 
 public interface Backend {
 

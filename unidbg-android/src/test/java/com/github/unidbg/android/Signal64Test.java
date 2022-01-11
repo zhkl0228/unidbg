@@ -5,6 +5,7 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.TraceFunctionCall;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.debugger.FunctionCallListener;
@@ -26,6 +27,7 @@ public class Signal64Test {
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger(AndroidSyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger(TraceFunctionCall.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
 
         Signal64Test test = new Signal64Test();
@@ -68,9 +70,9 @@ public class Signal64Test {
 
     private void test() {
         long start = System.currentTimeMillis();
-        emulator.emulateSignal(29);
+        boolean ret = emulator.emulateSignal(29);
         int code = module.callEntry(emulator);
-        System.err.println("exit code: " + code + ", backend=" + emulator.getBackend() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+        System.err.println("exit code: " + code + ", ret=" + ret + ", backend=" + emulator.getBackend() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
 
 }

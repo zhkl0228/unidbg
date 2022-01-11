@@ -32,7 +32,9 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
     public void traceFunctionCall(Module module, FunctionCallListener listener) {
         Backend backend = emulator.getBackend();
         TraceFunctionCall hook = new TraceFunctionCall64(emulator, listener);
-        backend.hook_add_new(hook, module.base, module.base + module.size, this);
+        long begin = module == null ? 1 : module.base;
+        long end = module == null ? 0 : module.base + module.size;
+        backend.hook_add_new(hook, begin, end, emulator);
     }
 
     @Override

@@ -18,10 +18,10 @@ class TraceFunctionCall64 extends TraceFunctionCall {
     }
 
     private static final int BL_MASK = ~0x3ffffff;
-    private static final int BL = 0x94000000;
+    private static final int BL = 0x94000000; // BL <label>
 
     private static final int BLR_MASK = ~0x3e0;
-    private static final int BLR = 0xd63f0000;
+    private static final int BLR = 0xd63f0000; // BLR <Xn>
 
     @Override
     protected Instruction disassemble(long address, int size) {
@@ -46,7 +46,7 @@ class TraceFunctionCall64 extends TraceFunctionCall {
     protected void onInstruction(Instruction instruction) {
         String mnemonic = instruction.getMnemonic();
         RegisterContext context = emulator.getContext();
-        if (mnemonic.startsWith("bl")) {
+        if ("bl".equals(mnemonic) || "blr".equals(mnemonic)) {
             OpInfo operands = (OpInfo) instruction.getOperands();
             Operand operand = operands.getOperands()[0];
             final long functionAddress;
@@ -65,6 +65,8 @@ class TraceFunctionCall64 extends TraceFunctionCall {
                 args[i] = context.getLongArg(i);
             }
             pushFunction(instruction.getAddress(), functionAddress, instruction.getAddress() + instruction.getSize(), args);
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
