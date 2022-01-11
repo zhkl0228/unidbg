@@ -63,6 +63,7 @@ public class SignalTest {
                 System.out.println("onCallFinish caller=" + UnidbgPointer.pointer(emulator, callerAddress) + ", function=" + UnidbgPointer.pointer(emulator, functionAddress));
             }
         });
+        emulator.traceCode(module.base, module.base + module.size);
     }
 
     private void test() {

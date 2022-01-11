@@ -208,17 +208,20 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     private void printAssemble(PrintStream out, Instruction[] insns, long address, boolean thumb, InstructionVisitor visitor) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
         for (Instruction ins : insns) {
-            sb.append(dateFormat.format(new Date())).append(" Trace Instruction ");
-            sb.append(ARM.assembleDetail(this, ins, address, thumb));
-            if (visitor != null) {
-                visitor.visit(sb, ins);
+            if(visitor != null) {
+                visitor.visitLast(builder);
             }
-            sb.append('\n');
+            builder.append('\n');
+            builder.append(dateFormat.format(new Date())).append(" Trace Instruction ");
+            builder.append(ARM.assembleDetail(this, ins, address, thumb));
+            if (visitor != null) {
+                visitor.visit(builder, ins);
+            }
             address += ins.getSize();
         }
-        out.print(sb);
+        out.print(builder);
     }
 
     @Override

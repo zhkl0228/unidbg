@@ -200,17 +200,20 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     private void printAssemble(PrintStream out, Instruction[] insns, long address, InstructionVisitor visitor) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
         for (Instruction ins : insns) {
-            sb.append(dateFormat.format(new Date())).append(" Trace Instruction ");
-            sb.append(ARM.assembleDetail(this, ins, address, false));
-            if (visitor != null) {
-                visitor.visit(sb, ins);
+            if(visitor != null) {
+                visitor.visitLast(builder);
             }
-            sb.append('\n');
+            builder.append('\n');
+            builder.append(dateFormat.format(new Date())).append(" Trace Instruction ");
+            builder.append(ARM.assembleDetail(this, ins, address, false));
+            if (visitor != null) {
+                visitor.visit(builder, ins);
+            }
             address += ins.getSize();
         }
-        out.print(sb);
+        out.print(builder);
     }
 
     @Override

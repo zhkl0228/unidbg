@@ -6,4 +6,5 @@ public interface InstructionVisitor {
 
     void visit(StringBuilder builder, Instruction ins);
 
+    void visitLast(StringBuilder builder);
 }
