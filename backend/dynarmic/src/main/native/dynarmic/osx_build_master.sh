@@ -10,4 +10,4 @@ DYNARMIC_HOME=~/Downloads/dynarmic
   $DYNARMIC_HOME/build/src/dynarmic/libdynarmic.a \
   $DYNARMIC_HOME/build/externals/zydis/libZydis.a \
   $DYNARMIC_HOME/build/externals/fmt/libfmt.a && \
-  mv libdynarmic.dylib ../../resources/natives/osx_64
+  mv libdynarmic.dylib ../../resources/natives/osx_64/

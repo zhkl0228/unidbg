@@ -8,4 +8,4 @@ UNICORN_HOME=~/Downloads/unicorn
   -I $UNICORN_HOME/include unicorn.c sample_arm.c sample_arm64.c \
   -I "$JAVA_INC" -I "$JAVA_PLATFORM_INC" -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -fPIC -Wno-missing-braces \
   $UNICORN_HOME/build/libaarch64-softmmu.a $UNICORN_HOME/build/libarm-softmmu.a $UNICORN_HOME/build/libunicorn-common.a $UNICORN_HOME/build/libunicorn.a &&
-  mv libunicorn.dylib ../resources/natives/osx_64
+  mv libunicorn.dylib ../resources/natives/osx_64/

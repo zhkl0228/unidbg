@@ -11,4 +11,4 @@ UNICORN_HOME=~/git/unicorn
   -I $UNICORN_HOME/include unicorn.c sample_arm.c sample_arm64.c \
   -I "$JAVA_INC" -I "$JAVA_PLATFORM_INC" -fPIC \
   $UNICORN_HOME/libunicorn.a &&
-  mv libunicorn.dylib ../resources/natives/osx_arm64
+  mv libunicorn.dylib ../resources/natives/osx_arm64/

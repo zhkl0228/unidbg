@@ -10,4 +10,4 @@ gcc -o libunicorn.so -shared -O3 -DNDEBUG \
   -I $UNICORN_HOME/include unicorn.c sample_arm.c sample_arm64.c \
   -I "$JAVA_INC" -I "$JAVA_PLATFORM_INC" -fPIC \
   $UNICORN_HOME/libunicorn.a &&
-  mv libunicorn.so ../resources/natives/linux_64
+  mv libunicorn.so ../resources/natives/linux_64/

@@ -9,4 +9,4 @@ DYNARMIC_HOME=~/git/dynarmic
   -I "$JAVA_INC" -I "$JAVA_PLATFORM_INC" \
   $DYNARMIC_HOME/build/src/libdynarmic.a \
   $DYNARMIC_HOME/build/externals/fmt/libfmt.a && \
-  mv libdynarmic.dylib ../../resources/natives/osx_64
+  mv libdynarmic.dylib ../../resources/natives/osx_64/
