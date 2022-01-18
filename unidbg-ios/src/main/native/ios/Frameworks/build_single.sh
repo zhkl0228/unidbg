@@ -37,8 +37,4 @@ function build_UIKit() {
   mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework/
 }
 
-build_UIKit UIKit "Foundation"
-build_framework Security "CoreFoundation"
-build_framework CoreVideo "CoreFoundation"
-build_framework PushKit "Foundation"
-build_framework CFNetwork "CoreFoundation"
+build_framework SpriteKit "CoreFoundation"
