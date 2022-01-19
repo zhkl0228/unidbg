@@ -11,7 +11,9 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Utils;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.binary.Hex;
@@ -1024,10 +1026,12 @@ public class ARM {
     }
 
     public static String assembleDetail(Emulator<?> emulator, Instruction ins, long address, boolean thumb, boolean current) {
+        SvcMemory svcMemory = emulator.getSvcMemory();
+        MemRegion region = svcMemory.findRegion(address);
         Memory memory = emulator.getMemory();
         char space = current ? '*' : ' ';
         StringBuilder sb = new StringBuilder();
-        Module module = memory.findModuleByAddress(address);
+        Module module = region != null ? null : memory.findModuleByAddress(address);
         String maxLengthSoName = memory.getMaxLengthLibraryName();
         if (module != null) {
             sb.append('[');
@@ -1035,11 +1039,16 @@ public class ARM {
             sb.append(space);
             appendHex(sb, address - module.base + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
             sb.append(']').append(space);
-        } else if (address >= 0xfffe0000L && maxLengthSoName != null) { // kernel
+        } else if (address >= svcMemory.getBase() && maxLengthSoName != null) { // kernel
             sb.append('[');
-            appendHex(sb, "0x" + Long.toHexString(address), maxLengthSoName.length(), ' ', true);
+            int maxLength = maxLengthSoName.length();
+            if (region == null) {
+                appendHex(sb, "0x" + Long.toHexString(address), maxLength, ' ', true);
+            } else {
+                appendHex(sb, region.getName().substring(0, Math.min(maxLength, region.getName().length())), maxLength, ' ', true);
+            }
             sb.append(space);
-            appendHex(sb, address - 0xfffe0000L + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
+            appendHex(sb, address - svcMemory.getBase() + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
             sb.append(']').append(space);
         }
         sb.append("[");

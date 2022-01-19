@@ -31,6 +31,11 @@ public abstract class ArmHook extends ArmSvc {
         this.enablePostCall = enablePostCall;
     }
 
+    public ArmHook(String name, boolean enablePostCall) {
+        super(name);
+        this.enablePostCall = enablePostCall;
+    }
+
     @Override
     public final UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         byte[] code;
@@ -56,7 +61,8 @@ public abstract class ArmHook extends ArmSvc {
             buffer.putInt(0xe49df004); // pop {pc}: manipulated stack in handle
             code = buffer.array();
         }
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmHook");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "ArmHook" : name);
         pointer.write(0, code, 0, code.length);
         if (log.isDebugEnabled()) {
             log.debug("ARM hook: pointer=" + pointer);

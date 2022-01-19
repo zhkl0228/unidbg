@@ -31,6 +31,11 @@ public abstract class Arm64Hook extends Arm64Svc {
         this.enablePostCall = enablePostCall;
     }
 
+    public Arm64Hook(String name, boolean enablePostCall) {
+        super(name);
+        this.enablePostCall = enablePostCall;
+    }
+
     @Override
     public final UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         byte[] code;
@@ -60,7 +65,8 @@ public abstract class Arm64Hook extends Arm64Svc {
             buffer.putInt(0xd61f0220); // br x17: manipulated stack in handle
             code = buffer.array();
         }
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "Arm64Hook");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "Arm64Hook" : name);
         pointer.write(0, code, 0, code.length);
         if (log.isDebugEnabled()) {
             log.debug("ARM64 hook: pointer=" + pointer);

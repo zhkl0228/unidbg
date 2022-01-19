@@ -15,4 +15,6 @@ public interface Svc {
     void handlePreCallback(Emulator<?> emulator);
     void handlePostCallback(Emulator<?> emulator);
 
+    String getName();
+
 }

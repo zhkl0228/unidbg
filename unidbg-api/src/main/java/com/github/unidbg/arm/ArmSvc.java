@@ -20,6 +20,16 @@ public abstract class ArmSvc implements Svc {
         }
     }
 
+    private final String name;
+
+    public ArmSvc() {
+        this(null);
+    }
+
+    public ArmSvc(String name) {
+        this.name = name;
+    }
+
     @Override
     public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         ByteBuffer buffer = ByteBuffer.allocate(8);
@@ -27,7 +37,8 @@ public abstract class ArmSvc implements Svc {
         buffer.putInt(assembleSvc(svcNumber)); // svc #svcNumber
         buffer.putInt(0xe12fff1e); // bx lr
         byte[] code = buffer.array();
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmSvc");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "ArmSvc" : name);
         pointer.write(code);
         return pointer;
     }
@@ -38,5 +49,10 @@ public abstract class ArmSvc implements Svc {
 
     @Override
     public void handlePreCallback(Emulator<?> emulator) {
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

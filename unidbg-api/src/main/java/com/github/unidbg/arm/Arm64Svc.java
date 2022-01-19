@@ -24,23 +24,34 @@ public abstract class Arm64Svc implements Svc {
         }
     }
 
+    private final String name;
+
+    public Arm64Svc() {
+        this(null);
+    }
+
+    public Arm64Svc(String name) {
+        this.name = name;
+    }
+
     @Override
     public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         if (log.isDebugEnabled()) {
             log.debug("onRegister: " + getClass(), new Exception("svcNumber=0x" + Integer.toHexString(svcNumber)));
         }
 
-        return register(svcMemory, svcNumber);
+        String name = getName();
+        return register(svcMemory, svcNumber, name == null ? "Arm64Svc" : name);
     }
 
-    private static UnidbgPointer register(SvcMemory svcMemory, int svcNumber) {
+    private static UnidbgPointer register(SvcMemory svcMemory, int svcNumber, String name) {
         ByteBuffer buffer = ByteBuffer.allocate(8);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putInt(assembleSvc(svcNumber)); // "svc #0x" + Integer.toHexString(svcNumber)
         buffer.putInt(0xd65f03c0); // ret
 
         byte[] code = buffer.array();
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "Arm64Svc");
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name);
         pointer.write(0, code, 0, code.length);
         return pointer;
     }
@@ -51,5 +62,10 @@ public abstract class Arm64Svc implements Svc {
 
     @Override
     public void handlePreCallback(Emulator<?> emulator) {
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

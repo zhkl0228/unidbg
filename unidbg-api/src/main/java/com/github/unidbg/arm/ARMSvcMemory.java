@@ -62,9 +62,11 @@ public class ARMSvcMemory implements SvcMemory {
 
     @Override
     public MemRegion findRegion(long addr) {
-        for (MemRegion region : memRegions) {
-            if (addr >= region.begin && addr < region.end) {
-                return region;
+        if (addr >= baseAddr && addr < baseAddr + size) {
+            for (MemRegion region : memRegions) {
+                if (addr >= region.begin && addr < region.end) {
+                    return region;
+                }
             }
         }
         return null;

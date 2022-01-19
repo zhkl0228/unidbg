@@ -20,6 +20,16 @@ public abstract class ThumbSvc implements Svc {
         }
     }
 
+    private final String name;
+
+    public ThumbSvc() {
+        this(null);
+    }
+
+    public ThumbSvc(String name) {
+        this.name = name;
+    }
+
     @Override
     public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         ByteBuffer buffer = ByteBuffer.allocate(4);
@@ -27,7 +37,8 @@ public abstract class ThumbSvc implements Svc {
         buffer.putShort(assembleSvc(svcNumber)); // svc #svcNumber
         buffer.putShort((short) 0x4770); // bx lr
         byte[] code = buffer.array();
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "ThumbSvc");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "ThumbSvc" : name);
         pointer.write(code);
         return pointer;
     }
@@ -38,5 +49,10 @@ public abstract class ThumbSvc implements Svc {
 
     @Override
     public void handlePreCallback(Emulator<?> emulator) {
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }
