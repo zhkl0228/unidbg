@@ -181,9 +181,13 @@ typedef enum UIDeviceBatteryState : NSInteger {
 + (NSURLSessionConfiguration *)defaultSessionConfiguration;
 @end
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 @interface NSProcessInfo (Foundation)
 - (NSOperatingSystemVersion) operatingSystemVersion;
+- (NSProcessInfoThermalState) thermalState;
 @end
+#pragma clang diagnostic pop
 
 @interface NSTimerInvocation : NSObject
 @property(nonatomic, copy) void (^block)(NSTimer *timer);

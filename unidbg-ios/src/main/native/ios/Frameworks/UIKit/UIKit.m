@@ -14,6 +14,9 @@ const NSOperatingSystemVersion g_systemVersion = { 7, 1, 2 };
 - (NSOperatingSystemVersion) operatingSystemVersion {
   return g_systemVersion;
 }
+- (NSProcessInfoThermalState) thermalState {
+  return NSProcessInfoThermalStateNominal;
+}
 @end
 
 int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSString *delegateClassName) {

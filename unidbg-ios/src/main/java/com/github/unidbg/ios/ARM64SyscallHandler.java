@@ -355,6 +355,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     syscall = "posix_madvise";
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, 0);
                     return;
+                case 89:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getdtablesize());
+                    return;
                 case 92:
                 case 406: // fcntl_NOCANCEL
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(emulator));
@@ -571,6 +574,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private int getdtablesize() {
+        return 0x1000;
     }
 
     private static final int CS_OPS_STATUS = 0; /* return status */
