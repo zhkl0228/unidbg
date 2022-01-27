@@ -3,13 +3,18 @@ package com.github.unidbg.thread;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
+import com.github.unidbg.arm.FunctionCall;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
+
+import java.util.Stack;
 
 public abstract class BaseTask implements RunnableTask {
 
@@ -133,5 +138,30 @@ public abstract class BaseTask implements RunnableTask {
     @Override
     public void setDestroyListener(DestroyListener listener) {
         this.destroyListener = listener;
+    }
+
+    private final Stack<FunctionCall> stack = new Stack<>();
+    private final Bag<Long> bag = new HashBag<>();
+
+    @Override
+    public void pushFunction(Emulator<?> emulator, FunctionCall call) {
+        stack.push(call);
+        bag.add(call.returnAddress);
+
+        if (log.isDebugEnabled()) {
+            log.debug("pushFunction call=" + call.toReadableString(emulator));
+        }
+    }
+
+    @Override
+    public FunctionCall popFunction(Emulator<?> emulator, long address) {
+        if (bag.remove(address)) {
+            FunctionCall call = stack.pop();
+            if (log.isDebugEnabled()) {
+                log.debug("popFunction call=" + call.toReadableString(emulator) + ", address=" + UnidbgPointer.pointer(emulator, address));
+            }
+            return call;
+        }
+        return null;
     }
 }

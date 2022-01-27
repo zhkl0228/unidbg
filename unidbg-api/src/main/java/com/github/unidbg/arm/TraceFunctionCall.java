@@ -1,19 +1,18 @@
 package com.github.unidbg.arm;
 
 import capstone.api.Instruction;
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.debugger.FunctionCallListener;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.utils.Inspector;
-import org.apache.commons.collections4.Bag;
-import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.util.Stack;
 
 public abstract class TraceFunctionCall implements CodeHook {
 
@@ -27,36 +26,33 @@ public abstract class TraceFunctionCall implements CodeHook {
         this.listener = listener;
     }
 
-    private static class FunctionCall {
-        private final long callerAddress;
-        private final long functionAddress;
-        private final long returnAddress;
-        private final Number[] args;
-        public FunctionCall(long callerAddress, long functionAddress, long returnAddress, Number[] args) {
-            this.callerAddress = callerAddress;
-            this.functionAddress = functionAddress;
-            this.returnAddress = returnAddress;
-            this.args = args;
-        }
-    }
-
-    private final Stack<FunctionCall> stack = new Stack<>();
-    private final Bag<Long> bag = new HashBag<>();
-
     final void pushFunction(long callerAddress, long functionAddress, long returnAddress, Number[] args) {
-        stack.push(new FunctionCall(callerAddress, functionAddress, returnAddress, args));
-        bag.add(returnAddress);
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        FunctionCall call = new FunctionCall(callerAddress, functionAddress, returnAddress, args);
+        runningTask.pushFunction(emulator, call);
         listener.onCall(emulator, callerAddress, functionAddress);
     }
 
+    private boolean detectedIllegalState;
+
     @Override
     public void hook(Backend backend, long address, int size, Object user) {
-        if (bag.remove(address)) {
-            FunctionCall functionCall = stack.pop();
-            if (functionCall.returnAddress != address) {
-                throw new IllegalStateException();
+        if (detectedIllegalState) {
+            return;
+        }
+
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        FunctionCall call = runningTask.popFunction(emulator, address);
+        if (call != null) {
+            if (call.returnAddress != address) {
+                log.warn("Illegal state address=" + UnidbgPointer.pointer(emulator, address) + ", call=" + call.toReadableString(emulator));
+                if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                    emulator.attach().debug();
+                }
+                detectedIllegalState = true;
+                return;
             } else {
-                listener.postCall(emulator, functionCall.callerAddress, functionCall.functionAddress, functionCall.args);
+                listener.postCall(emulator, call.callerAddress, call.functionAddress, call.args);
             }
         }
         try {

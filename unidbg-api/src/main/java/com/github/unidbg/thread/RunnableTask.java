@@ -1,6 +1,7 @@
 package com.github.unidbg.thread;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.FunctionCall;
 
 public interface RunnableTask {
 
@@ -23,4 +24,8 @@ public interface RunnableTask {
     void setDestroyListener(DestroyListener listener);
 
     void popContext(Emulator<?> emulator);
+
+    void pushFunction(Emulator<?> emulator, FunctionCall call);
+    FunctionCall popFunction(Emulator<?> emulator, long address);
+
 }
