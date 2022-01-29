@@ -24,4 +24,5 @@ public class FunctionCall {
                 ", returnAddress=" + UnidbgPointer.pointer(emulator, returnAddress) +
                 '}';
     }
+
 }

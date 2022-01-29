@@ -9,6 +9,7 @@ import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.debugger.FunctionCallListener;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.BaseTask;
 import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.utils.Inspector;
 import org.apache.commons.logging.Log;
@@ -30,6 +31,7 @@ public abstract class TraceFunctionCall implements CodeHook {
         RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
         FunctionCall call = new FunctionCall(callerAddress, functionAddress, returnAddress, args);
         runningTask.pushFunction(emulator, call);
+        listener.onDebugPushFunction(emulator, call);
         listener.onCall(emulator, callerAddress, functionAddress);
     }
 
@@ -44,9 +46,11 @@ public abstract class TraceFunctionCall implements CodeHook {
         RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
         FunctionCall call = runningTask.popFunction(emulator, address);
         if (call != null) {
+            listener.onDebugPopFunction(emulator, address, call);
             if (call.returnAddress != address) {
                 log.warn("Illegal state address=" + UnidbgPointer.pointer(emulator, address) + ", call=" + call.toReadableString(emulator));
-                if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled() ||
+                        LogFactory.getLog(BaseTask.class).isDebugEnabled()) {
                     emulator.attach().debug();
                 }
                 detectedIllegalState = true;

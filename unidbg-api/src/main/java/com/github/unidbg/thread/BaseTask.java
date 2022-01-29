@@ -146,22 +146,42 @@ public abstract class BaseTask implements RunnableTask {
     @Override
     public void pushFunction(Emulator<?> emulator, FunctionCall call) {
         stack.push(call);
-        bag.add(call.returnAddress);
+        bag.add(call.returnAddress, 1);
 
         if (log.isDebugEnabled()) {
-            log.debug("pushFunction call=" + call.toReadableString(emulator));
+            log.debug("pushFunction call=" + call.toReadableString(emulator) + ", bagCount=" + bag.getCount(call.returnAddress));
         }
     }
 
     @Override
     public FunctionCall popFunction(Emulator<?> emulator, long address) {
-        if (bag.remove(address)) {
-            FunctionCall call = stack.pop();
-            if (log.isDebugEnabled()) {
-                log.debug("popFunction call=" + call.toReadableString(emulator) + ", address=" + UnidbgPointer.pointer(emulator, address));
-            }
-            return call;
+        if (!bag.contains(address)) {
+            return null;
         }
-        return null;
+
+        FunctionCall call;
+        if (emulator.is64Bit()) { // check LR for aarch64
+            call = stack.peek();
+            long lr = emulator.getContext().getLR();
+            if (lr != call.returnAddress) {
+                return null;
+            }
+
+            bag.remove(address, 1);
+            stack.pop();
+        } else {
+            bag.remove(address, 1);
+            call = stack.pop();
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("popFunction call=" + call.toReadableString(emulator) + ", address=" + UnidbgPointer.pointer(emulator, address) + ", stackSize=" + stack.size() + ", bagCount=" + bag.getCount(address));
+        }
+        if (call.returnAddress != address) {
+            for (FunctionCall fc : stack) {
+                log.warn("stackCall call=" + fc.toReadableString(emulator) + ", bagCount=" + bag.getCount(fc.returnAddress));
+            }
+        }
+        return call;
     }
 }
