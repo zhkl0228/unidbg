@@ -817,7 +817,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         if (line.startsWith("p")) {
             long originalAddress = address;
             String assembly = line.substring(1).trim();
-            boolean isThumb = (address & 1) != 0;
+            boolean isThumb = ARM.isThumb(backend);
             try (Keystone keystone = createKeystone(isThumb)) {
                 KeystoneEncoded encoded = keystone.assemble(assembly);
                 byte[] code = encoded.getMachineCode();
