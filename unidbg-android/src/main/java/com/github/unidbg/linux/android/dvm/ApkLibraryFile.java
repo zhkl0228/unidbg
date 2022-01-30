@@ -27,6 +27,11 @@ class ApkLibraryFile implements LibraryFile {
     }
 
     @Override
+    public long getFileSize() {
+        return soData.length;
+    }
+
+    @Override
     public String getName() {
         return soName;
     }

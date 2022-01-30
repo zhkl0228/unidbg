@@ -17,4 +17,6 @@ public interface LibraryFile {
 
     String getPath();
 
+    long getFileSize();
+
 }

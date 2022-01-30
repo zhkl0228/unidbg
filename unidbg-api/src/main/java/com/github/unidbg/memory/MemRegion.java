@@ -36,6 +36,10 @@ public class MemRegion implements Comparable<MemRegion> {
             public String getPath() {
                 return name;
             }
+            @Override
+            public long getFileSize() {
+                throw new UnsupportedOperationException();
+            }
         }, 0);
     }
 
