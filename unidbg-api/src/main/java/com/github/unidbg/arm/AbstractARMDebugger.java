@@ -998,7 +998,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (name.length() > maxLength) {
                     name = name.substring(name.length() - maxLength);
                 }
-                module = new Module(name, region.begin, region.end - region.begin, Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList()) {
+                module = new Module(name, region.begin, region.end - region.begin, Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(), null) {
                     @Override
                     public Number callFunction(Emulator<?> emulator, long offset, Object... args) {
                         throw new UnsupportedOperationException();

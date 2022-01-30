@@ -731,7 +731,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
                 dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
-                fEHFrameSection, fUnwindInfoSection, objcSections, segments.toArray(new Segment[0]));
+                fEHFrameSection, fUnwindInfoSection, objcSections, segments.toArray(new Segment[0]), libraryFile);
         processRebase(log, module);
         if (isExecutable) {
             setExecuteModule(module);

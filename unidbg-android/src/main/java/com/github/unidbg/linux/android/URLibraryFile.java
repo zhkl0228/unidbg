@@ -52,6 +52,19 @@ public class URLibraryFile implements LibraryFile {
     }
 
     @Override
+    public long getFileSize() {
+        if ("file".equalsIgnoreCase(url.getProtocol())) {
+            return new File(url.getPath()).length();
+        } else {
+            try {
+                return IOUtils.toByteArray(url).length;
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    @Override
     public String getPath() {
         return "/system/" + (is64Bit ? "lib64/" : "lib/") + name;
     }

@@ -15,6 +15,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
+import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
@@ -110,8 +111,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners, List<String> ordinalList,
                 Section fEHFrameSection, Section fUnwindInfoSection,
                 Map<String, MachO.SegmentCommand64.Section64> objcSections,
-                Segment[] segments) {
-        super(name, base, size, neededLibraries, regions);
+                Segment[] segments, LibraryFile libraryFile) {
+        super(name, base, size, neededLibraries, regions, libraryFile);
         this.emulator = emulator;
         this.machO = machO;
         this.symtabCommand = symtabCommand;
@@ -779,7 +780,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Collections.<String, Module>emptyMap(),
                 Collections.<String, Module>emptyMap(),
                 name, emulator, null, null, null, null, 0L, false, null,
-                Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null, null, null) {
+                Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);

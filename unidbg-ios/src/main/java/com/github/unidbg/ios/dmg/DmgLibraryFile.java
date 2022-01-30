@@ -35,6 +35,11 @@ public class DmgLibraryFile implements LibraryFile {
     }
 
     @Override
+    public long getFileSize() {
+        return file.length();
+    }
+
+    @Override
     public String getName() {
         return executable;
     }

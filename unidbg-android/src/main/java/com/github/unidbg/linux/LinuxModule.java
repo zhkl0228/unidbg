@@ -9,6 +9,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
+import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
@@ -61,7 +62,7 @@ public class LinuxModule extends Module {
         LinuxModule module = new LinuxModule(base, size, name, null,
                 Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
                 Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(),
-                null, null, null, null, null) {
+                null, null, null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);
@@ -98,8 +99,8 @@ public class LinuxModule extends Module {
     LinuxModule(long base, long size, String name, SymbolLocator dynsym,
                 List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader,
-                ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure) {
-        super(name, base, size, neededLibraries, regions);
+                ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure, LibraryFile libraryFile) {
+        super(name, base, size, neededLibraries, regions, libraryFile);
 
         this.dynsym = dynsym;
         this.unresolvedSymbol = unresolvedSymbol;
