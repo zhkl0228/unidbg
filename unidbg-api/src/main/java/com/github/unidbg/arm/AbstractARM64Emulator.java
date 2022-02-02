@@ -206,7 +206,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
                 visitor.visitLast(builder);
             }
             builder.append('\n');
-            builder.append(dateFormat.format(new Date())).append(" Trace Instruction ");
+            builder.append(dateFormat.format(new Date()));
             builder.append(ARM.assembleDetail(this, ins, address, false));
             if (visitor != null) {
                 visitor.visit(builder, ins);

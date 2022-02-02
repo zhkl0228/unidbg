@@ -214,7 +214,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
                 visitor.visitLast(builder);
             }
             builder.append('\n');
-            builder.append(dateFormat.format(new Date())).append(" Trace Instruction ");
+            builder.append(dateFormat.format(new Date()));
             builder.append(ARM.assembleDetail(this, ins, address, thumb));
             if (visitor != null) {
                 visitor.visit(builder, ins);
