@@ -22,6 +22,11 @@ public class ElfLibraryRawFile implements LibraryFile {
     }
 
     @Override
+    public long getFileSize() {
+        return raw.capacity();
+    }
+
+    @Override
     public String getName() {
         return name;
     }

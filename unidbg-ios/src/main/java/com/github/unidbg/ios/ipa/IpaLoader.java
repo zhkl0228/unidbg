@@ -74,11 +74,15 @@ public abstract class IpaLoader implements Loader {
         this.executableBundlePath = generateExecutableBundlePath();
     }
 
+    private String generateRandomSeed() {
+        return appDir + bundleIdentifier + "_" + bundleVersion;
+    }
+
     private static final String APP_DIR = "/var/containers/Bundle/Application/";
     public static final String PAYLOAD_PREFIX = "Payload";
 
     private String generateExecutableBundlePath() {
-        UUID uuid = UUID.nameUUIDFromBytes((appDir + "_Application").getBytes(StandardCharsets.UTF_8));
+        UUID uuid = UUID.nameUUIDFromBytes((generateRandomSeed() + "_Application").getBytes(StandardCharsets.UTF_8));
         return appDir.replace(PAYLOAD_PREFIX, APP_DIR + uuid.toString().toUpperCase()) + executable;
     }
 
@@ -191,7 +195,7 @@ public abstract class IpaLoader implements Loader {
             list.add("OBJC_PRINT_IVAR_SETUP=YES"); // log processing of non-fragile ivars
             list.add("OBJC_PRINT_VTABLE_SETUP=YES"); // log processing of class vtables
         }
-        UUID uuid = UUID.nameUUIDFromBytes((appDir + "_Documents").getBytes(StandardCharsets.UTF_8));
+        UUID uuid = UUID.nameUUIDFromBytes((generateRandomSeed() + "_Documents").getBytes(StandardCharsets.UTF_8));
         String homeDir = "/var/mobile/Containers/Data/Application/" + uuid.toString().toUpperCase();
         list.add("CFFIXED_USER_HOME=" + homeDir);
         FileUtils.forceMkdir(new File(rootDir, homeDir));

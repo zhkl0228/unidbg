@@ -19,6 +19,11 @@ public class ElfLibraryFile implements LibraryFile {
     }
 
     @Override
+    public long getFileSize() {
+        return elfFile.length();
+    }
+
+    @Override
     public String getName() {
         return elfFile.getName();
     }

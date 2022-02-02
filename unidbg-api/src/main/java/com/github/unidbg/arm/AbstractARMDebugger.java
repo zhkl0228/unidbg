@@ -817,7 +817,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         if (line.startsWith("p")) {
             long originalAddress = address;
             String assembly = line.substring(1).trim();
-            boolean isThumb = (address & 1) != 0;
+            boolean isThumb = ARM.isThumb(backend);
             try (Keystone keystone = createKeystone(isThumb)) {
                 KeystoneEncoded encoded = keystone.assemble(assembly);
                 byte[] code = encoded.getMachineCode();
@@ -998,7 +998,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (name.length() > maxLength) {
                     name = name.substring(name.length() - maxLength);
                 }
-                module = new Module(name, region.begin, region.end - region.begin, Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList()) {
+                module = new Module(name, region.begin, region.end - region.begin, Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(), null) {
                     @Override
                     public Number callFunction(Emulator<?> emulator, long offset, Object... args) {
                         throw new UnsupportedOperationException();
