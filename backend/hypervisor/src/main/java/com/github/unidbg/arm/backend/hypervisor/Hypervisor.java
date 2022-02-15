@@ -10,6 +10,7 @@ public class Hypervisor implements Closeable {
     private static final Log log = LogFactory.getLog(Hypervisor.class);
 
     public static final long REG_VBAR_EL1 = 0xf0000000L;
+    public static final long PSTATE$SS = 1 << 21;
 
     public static native int getPageSize();
 
@@ -58,6 +59,11 @@ public class Hypervisor implements Closeable {
     }
     public int getWRPs() {
         return getWRPs(nativeHandle);
+    }
+
+    private static native void enable_single_step(long handle, boolean status);
+    public void enable_single_step(boolean status) {
+        enable_single_step(nativeHandle, status);
     }
 
     public void install_hw_breakpoint(int n, long address) {
@@ -223,7 +229,6 @@ public class Hypervisor implements Closeable {
         }
     }
 
-    @SuppressWarnings("unused")
     public void reg_set_spsr_el1(long value) {
         if (log.isDebugEnabled()) {
             log.debug("reg_set_spsr_el1 value=0x" + Long.toHexString(value));

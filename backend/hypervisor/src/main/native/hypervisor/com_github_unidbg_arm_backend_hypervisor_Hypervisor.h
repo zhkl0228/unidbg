@@ -9,6 +9,8 @@ extern "C" {
 #endif
 #undef com_github_unidbg_arm_backend_hypervisor_Hypervisor_REG_VBAR_EL1
 #define com_github_unidbg_arm_backend_hypervisor_Hypervisor_REG_VBAR_EL1 4026531840LL
+#undef com_github_unidbg_arm_backend_hypervisor_Hypervisor_PSTATE_00024SS
+#define com_github_unidbg_arm_backend_hypervisor_Hypervisor_PSTATE_00024SS 2097152LL
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    getPageSize
@@ -264,6 +266,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getWRPs
   (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    enable_single_step
+ * Signature: (JZ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_enable_1single_1step
+  (JNIEnv *, jclass, jlong, jboolean);
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor

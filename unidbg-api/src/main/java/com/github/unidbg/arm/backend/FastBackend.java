@@ -84,7 +84,7 @@ abstract class FastBackend extends AbstractBackend {
     }
 
     @Override
-    public final void setSingleStep(int singleStep) {
+    public void setSingleStep(int singleStep) {
     }
 
     @Override

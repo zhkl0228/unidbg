@@ -194,6 +194,29 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    enable_single_step
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_enable_1single_1step
+  (JNIEnv *env, jclass clazz, jlong handle, jboolean status) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  uint64_t mdscr_el1 = 0;
+  uint64_t cpsr = 0;
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_MDSCR_EL1, &mdscr_el1));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
+
+  if(status) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_MDSCR_EL1, mdscr_el1 | 0x1ULL)); // MDSCR_EL1.SS
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, cpsr | com_github_unidbg_arm_backend_hypervisor_Hypervisor_PSTATE_00024SS));
+  } else {
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_MDSCR_EL1, mdscr_el1 & ~0x1ULL)); // MDSCR_EL1.SS
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, cpsr & ~com_github_unidbg_arm_backend_hypervisor_Hypervisor_PSTATE_00024SS));
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    install_hw_breakpoint
  * Signature: (JIJ)V
  */

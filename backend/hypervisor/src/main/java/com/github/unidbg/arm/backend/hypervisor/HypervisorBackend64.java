@@ -111,6 +111,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private final HypervisorBreakPoint[] breakpoints;
     private final HypervisorBreakPoint[] restoreBreakpoints;
 
+    private int singleStep;
+
+    @Override
+    public void setSingleStep(int singleStep) {
+        this.singleStep = singleStep;
+        hypervisor.enable_single_step(true);
+    }
+
     @Override
     public BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb) {
         if (thumb) {
@@ -154,6 +162,17 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case EC_AA64_BKPT: {
                 int bkpt = (int) (esr & 0xffff);
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, bkpt);
+                return true;
+            }
+            case EC_SOFTWARESTEP: {
+                if (--singleStep == 0) {
+                    int status = (int) (esr & 0x3f);
+                    interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+                } else if (singleStep > 0) {
+                    hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+                } else {
+                    hypervisor.enable_single_step(false);
+                }
                 return true;
             }
             case EC_BREAKPOINT: {
