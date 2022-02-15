@@ -11,7 +11,10 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
+import com.github.unidbg.arm.backend.DebugHook;
 import com.github.unidbg.arm.backend.HypervisorBackend;
+import com.github.unidbg.debugger.BreakPoint;
+import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
@@ -28,6 +31,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     public HypervisorBackend64(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator, hypervisor);
+
+        breakpoints = new HypervisorBreakPoint[hypervisor.getBRPs()];
+        restoreBreakpoints = new HypervisorBreakPoint[hypervisor.getBRPs()];
     }
 
     private Disassembler disassembler;
@@ -52,11 +58,92 @@ public class HypervisorBackend64 extends HypervisorBackend {
         super.mem_map(address, size, perms);
     }
 
+    private DebugHook debugCallback;
+    private Object debugUserData;
+
+    @Override
+    public void debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
+        this.debugCallback = callback;
+        this.debugUserData = user_data;
+    }
+
+    private class HypervisorBreakPoint implements BreakPoint {
+        protected final long address;
+        private final BreakPointCallback callback;
+        private final boolean restore;
+        public HypervisorBreakPoint(long address, BreakPointCallback callback, boolean restore) {
+            this.address = address;
+            this.callback = callback;
+            this.restore = restore;
+        }
+
+        private boolean temporary;
+
+        @Override
+        public boolean isTemporary() {
+            return temporary;
+        }
+
+        @Override
+        public void setTemporary(boolean temporary) {
+            this.temporary = temporary;
+        }
+
+        @Override
+        public BreakPointCallback getCallback() {
+            return callback;
+        }
+
+        @Override
+        public final boolean isThumb() {
+            return false;
+        }
+        private void onBreak(int n) {
+            hypervisor.install_hw_breakpoint(n, address - 4);
+        }
+        private HypervisorBreakPoint postBreak(int n) {
+            long newBP = address + 4;
+            hypervisor.install_hw_breakpoint(n, newBP);
+            return new HypervisorBreakPoint(newBP, null, true);
+        }
+    }
+
+    private final HypervisorBreakPoint[] breakpoints;
+    private final HypervisorBreakPoint[] restoreBreakpoints;
+
+    @Override
+    public BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb) {
+        if (thumb) {
+            throw new IllegalStateException();
+        }
+        for (int i = 0; i < breakpoints.length; i++) {
+            if (breakpoints[i] == null) {
+                hypervisor.install_hw_breakpoint(i, address);
+                HypervisorBreakPoint bp = new HypervisorBreakPoint(address, callback, false);
+                breakpoints[i] = bp;
+                return bp;
+            }
+        }
+        throw new UnsupportedOperationException("Max BKPs: " + breakpoints.length);
+    }
+
+    @Override
+    public boolean removeBreakPoint(long address) {
+        for (int i = 0; i < breakpoints.length; i++) {
+            if (breakpoints[i] != null && breakpoints[i].address == address) {
+                breakpoints[i] = null;
+                hypervisor.disable_hw_breakpoint(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean handleException(long esr, long far, long elr, long spsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec));
+            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", spsr=0x" + Long.toHexString(spsr));
         }
         switch (ec) {
             case EC_AA64_SVC: {
@@ -67,6 +154,30 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case EC_AA64_BKPT: {
                 int bkpt = (int) (esr & 0xffff);
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, bkpt);
+                return true;
+            }
+            case EC_BREAKPOINT: {
+                if (debugCallback != null) {
+                    for (int i = 0; i < restoreBreakpoints.length; i++) {
+                        HypervisorBreakPoint breakpoint = restoreBreakpoints[i];
+                        if (breakpoint != null && breakpoint.restore && breakpoint.address == elr) {
+                            breakpoint.onBreak(i);
+                            restoreBreakpoints[i] = null;
+                            return true;
+                        }
+                    }
+                    debugCallback.onBreak(this, elr, 4, debugUserData);
+                    for (int i = 0; i < breakpoints.length; i++) {
+                        HypervisorBreakPoint breakpoint = breakpoints[i];
+                        if (breakpoint != null && breakpoint.address == elr) {
+                            restoreBreakpoints[i] = breakpoint.postBreak(i);
+                            break;
+                        }
+                    }
+                } else {
+                    int status = (int) (esr & 0x3f);
+                    interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+                }
                 return true;
             }
             case EC_DATAABORT: {
@@ -86,6 +197,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }
             default:
+                log.warn("handleException ec=0x" + Integer.toHexString(ec));
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
     }

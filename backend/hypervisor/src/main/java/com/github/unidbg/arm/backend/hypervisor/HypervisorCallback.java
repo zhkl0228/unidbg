@@ -3,6 +3,8 @@ package com.github.unidbg.arm.backend.hypervisor;
 public interface HypervisorCallback {
 
     int EC_AA64_SVC = 0x15;
+    int EC_BREAKPOINT = 0x30;
+    int EC_SOFTWARESTEP = 0x32;
     int EC_AA64_BKPT = 0x3c;
     int EC_DATAABORT = 0x24;
 

@@ -22,8 +22,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     protected final Hypervisor hypervisor;
     private final int pageSize;
 
-    protected static final long REG_VBAR_EL1 = 0xf0000000L;
-
     protected HypervisorBackend(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator);
         this.hypervisor = hypervisor;
@@ -39,18 +37,18 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     public void onInitialize() {
         super.onInitialize();
 
-        mem_map(REG_VBAR_EL1, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
+        mem_map(Hypervisor.REG_VBAR_EL1, getPageSize(), UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC);
         ByteBuffer buffer = ByteBuffer.allocate(getPageSize());
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         while (buffer.hasRemaining()) {
             if (buffer.position() == 0x400) {
                 buffer.putInt(0xd4000002); // hvc #0
-            }
-            if (buffer.hasRemaining()) {
                 buffer.putInt(0xd69f03e0); // eret
+                continue;
             }
+            buffer.putInt(0xd4201100); // brk #0x88
         }
-        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, REG_VBAR_EL1);
+        UnidbgPointer ptr = UnidbgPointer.pointer(emulator, Hypervisor.REG_VBAR_EL1);
         assert ptr != null;
         ptr.write(buffer.array());
     }
@@ -133,10 +131,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     @Override
     public void hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
     }
 
     @Override

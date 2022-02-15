@@ -9,6 +9,8 @@ public class Hypervisor implements Closeable {
 
     private static final Log log = LogFactory.getLog(Hypervisor.class);
 
+    public static final long REG_VBAR_EL1 = 0xf0000000L;
+
     public static native int getPageSize();
 
     private static native int setHypervisorCallback(long handle, HypervisorCallback callback);
@@ -47,6 +49,25 @@ public class Hypervisor implements Closeable {
     private static native void context_save(long handle, long context);
     private static native void context_restore(long handle, long context);
     public static native void free(long context);
+
+    private static native int getBRPs(long handle);
+    private static native int getWRPs(long handle);
+
+    public int getBRPs() {
+        return getBRPs(nativeHandle);
+    }
+    public int getWRPs() {
+        return getWRPs(nativeHandle);
+    }
+
+    public void install_hw_breakpoint(int n, long address) {
+        install_hw_breakpoint(nativeHandle, n, address);
+    }
+    private static native void install_hw_breakpoint(long handle, int n, long address);
+    public void disable_hw_breakpoint(int n) {
+        disable_hw_breakpoint(nativeHandle, n);
+    }
+    private static native void disable_hw_breakpoint(long handle, int n);
 
     private final long nativeHandle;
 

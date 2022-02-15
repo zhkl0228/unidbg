@@ -7,6 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_github_unidbg_arm_backend_hypervisor_Hypervisor_REG_VBAR_EL1
+#define com_github_unidbg_arm_backend_hypervisor_Hypervisor_REG_VBAR_EL1 4026531840LL
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    getPageSize
@@ -246,6 +248,38 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_free
   (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getBRPs
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getBRPs
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getWRPs
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getWRPs
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    install_hw_breakpoint
+ * Signature: (JIJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_install_1hw_1breakpoint
+  (JNIEnv *, jclass, jlong, jint, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    disable_hw_breakpoint
+ * Signature: (JI)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_disable_1hw_1breakpoint
+  (JNIEnv *, jclass, jlong, jint);
 
 #ifdef __cplusplus
 }
