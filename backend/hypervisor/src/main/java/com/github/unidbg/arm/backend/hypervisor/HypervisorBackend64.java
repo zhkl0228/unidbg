@@ -13,6 +13,8 @@ import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.DebugHook;
 import com.github.unidbg.arm.backend.HypervisorBackend;
+import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -25,6 +27,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class HypervisorBackend64 extends HypervisorBackend {
 
     private static final Log log = LogFactory.getLog(HypervisorBackend64.class);
@@ -34,9 +39,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
     public HypervisorBackend64(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator, hypervisor);
 
-        int brps = hypervisor.getBRPs();
-        breakpoints = new HypervisorBreakPoint[brps];
-        restoreBreakpoints = new HypervisorBreakPoint[brps];
+        breakpoints = new HypervisorBreakPoint[hypervisor.getBRPs()];
+        watchpoints = new HypervisorWatchpoint[hypervisor.getWRPs()];
     }
 
     private Disassembler disassembler;
@@ -70,48 +74,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
         this.debugUserData = user_data;
     }
 
-    private class HypervisorBreakPoint implements BreakPoint {
-        protected final long address;
-        private final BreakPointCallback callback;
-
-        public HypervisorBreakPoint(long address, BreakPointCallback callback) {
-            this.address = address;
-            this.callback = callback;
-        }
-
-        private boolean temporary;
-
-        @Override
-        public boolean isTemporary() {
-            return temporary;
-        }
-
-        @Override
-        public void setTemporary(boolean temporary) {
-            this.temporary = temporary;
-        }
-
-        @Override
-        public BreakPointCallback getCallback() {
-            return callback;
-        }
-
-        @Override
-        public final boolean isThumb() {
-            return false;
-        }
-        private void onBreak(int n) {
-            hypervisor.install_hw_breakpoint(n, address - INS_SIZE);
-        }
-        private HypervisorBreakPoint postBreak(int n) {
-            long newBP = address + INS_SIZE;
-            hypervisor.install_hw_breakpoint(n, newBP);
-            return new HypervisorBreakPoint(newBP, null);
-        }
-    }
-
     private final HypervisorBreakPoint[] breakpoints;
-    private final HypervisorBreakPoint[] restoreBreakpoints;
+    private final Map<Long, RestoreBreakPoint> restoreBreakpointMap = new HashMap<>();
 
     private int singleStep;
 
@@ -150,10 +114,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
     }
 
     @Override
-    public boolean handleException(long esr, long far, long elr, long spsr) {
+    public boolean handleException(long esr, long far, final long elr, long spsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", spsr=0x" + Long.toHexString(spsr));
+        }
+        RestoreBreakPoint restoreBreakPoint = restoreBreakpointMap.remove(elr);
+        if (restoreBreakPoint != null) {
+            restoreBreakPoint.onRestore();
         }
         switch (ec) {
             case EC_AA64_SVC: {
@@ -171,7 +139,31 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return true;
             }
             case EC_BREAKPOINT: {
-                return onBreakpoint(esr, elr);
+                if (restoreBreakPoint != null) {
+                    return true;
+                }
+                onBreakpoint(esr, elr);
+                for (int i = 0; i < breakpoints.length; i++) {
+                    HypervisorBreakPoint bp = breakpoints[i];
+                    if (bp != null && bp.address == elr) {
+                        long address = elr + INS_SIZE;
+                        hypervisor.install_hw_breakpoint(i, address);
+                        restoreBreakpointMap.put(address, new RestoreBreakPoint(elr, i) {
+                            @Override
+                            public void onRestore() {
+                                if (breakpoints[super.n] != null) {
+                                    hypervisor.install_hw_breakpoint(super.n, super.address);
+                                }
+                            }
+                        });
+                        break;
+                    }
+                }
+                return true;
+            }
+            case EC_WATCHPOINT: {
+                onWatchpoint(esr, far, elr);
+                return true;
             }
             case EC_DATAABORT: {
                 boolean isv = (esr & ARM_EL_ISV) != 0;
@@ -195,42 +187,85 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
     }
 
-    private boolean onBreakpoint(long esr, long elr) {
+    private final HypervisorWatchpoint[] watchpoints;
+
+    @Override
+    public void hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException {
+        for (int i = 0; i < watchpoints.length; i++) {
+            if (watchpoints[i] == null) {
+                HypervisorWatchpoint wp = new HypervisorWatchpoint(callback, begin, end, user_data, i, false);
+                wp.install(hypervisor);
+                watchpoints[i] = wp;
+                return;
+            }
+        }
+        throw new UnsupportedOperationException("Max WRPs: " + watchpoints.length);
+    }
+
+    @Override
+    public void hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException {
+        for (int i = 0; i < watchpoints.length; i++) {
+            if (watchpoints[i] == null) {
+                HypervisorWatchpoint wp = new HypervisorWatchpoint(callback, begin, end, user_data, i, true);
+                wp.install(hypervisor);
+                watchpoints[i] = wp;
+                return;
+            }
+        }
+        throw new UnsupportedOperationException("Max WRPs: " + watchpoints.length);
+    }
+
+    private void onWatchpoint(long esr, long address, long elr) {
+        boolean write = ((esr >> 6) & 1) == 1;
+        int status = (int) (esr & 0x3f);
+        boolean isWrite = ((esr >> 6) & 1) != 0;
+        if (log.isDebugEnabled()) {
+            log.debug("onWatchpoint write=" + write + ", address=0x" + Long.toHexString(address) + ", status=0x" + Integer.toHexString(status));
+        }
+        for (int i = 0; i < watchpoints.length; i++) {
+            if (watchpoints[i] != null && watchpoints[i].contains(address, isWrite)) {
+                watchpoints[i].onHit(this, address, isWrite);
+                installRestoreWatchpoint(i, watchpoints[i], elr);
+                return;
+            }
+        }
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+    }
+
+    private void installRestoreWatchpoint(int n, final HypervisorWatchpoint watchpoint, long elr) {
+        hypervisor.disable_watchpoint(n);
+        for (int i = 0; i < breakpoints.length; i++) {
+            if (breakpoints[i] == null) {
+                long bp = elr + INS_SIZE;
+                hypervisor.install_hw_breakpoint(i, bp);
+                RestoreBreakPoint breakPoint = new RestoreBreakPoint(bp, i) {
+                    @Override
+                    public void onRestore() {
+                        hypervisor.disable_hw_breakpoint(super.n);
+                        breakpoints[super.n] = null;
+                        watchpoint.install(hypervisor);
+                    }
+                };
+                breakpoints[i] = breakPoint;
+                restoreBreakpointMap.put(bp, breakPoint);
+                return;
+            }
+        }
+        emulator.attach().debug();
+    }
+
+    private void onBreakpoint(long esr, long elr) {
         if (debugCallback != null) {
-            for (int i = 0; i < restoreBreakpoints.length; i++) {
-                HypervisorBreakPoint breakpoint = restoreBreakpoints[i];
-                if (breakpoint != null && breakpoint.address == elr) {
-                    breakpoint.onBreak(i);
-                    restoreBreakpoints[i] = null;
-                    return true;
-                }
-            }
             debugCallback.onBreak(this, elr, INS_SIZE, debugUserData);
-            for (int i = 0; i < breakpoints.length; i++) {
-                HypervisorBreakPoint breakpoint = breakpoints[i];
-                if (breakpoint != null && breakpoint.address == elr) {
-                    restoreBreakpoints[i] = breakpoint.postBreak(i);
-                    break;
-                }
-            }
         } else {
             int status = (int) (esr & 0x3f);
             interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
         }
-        return true;
     }
 
     private void onSoftwareStep(long esr, long elr, long spsr) {
         if (--singleStep == 0) {
             if (debugCallback != null) {
-                for (int i = 0; i < restoreBreakpoints.length; i++) {
-                    HypervisorBreakPoint breakpoint = restoreBreakpoints[i];
-                    if (breakpoint != null && breakpoint.address == elr) {
-                        breakpoint.onBreak(i);
-                        restoreBreakpoints[i] = null;
-                        break;
-                    }
-                }
                 debugCallback.onBreak(this, elr, INS_SIZE, debugUserData);
             } else {
                 int status = (int) (esr & 0x3f);

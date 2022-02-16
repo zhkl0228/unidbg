@@ -291,6 +291,14 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_disable_1hw_1breakpoint
   (JNIEnv *, jclass, jlong, jint);
 
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    install_watchpoint
+ * Signature: (JIJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_install_1watchpoint
+  (JNIEnv *, jclass, jlong, jint, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

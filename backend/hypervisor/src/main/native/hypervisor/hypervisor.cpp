@@ -217,6 +217,90 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    install_watchpoint
+ * Signature: (JIJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_install_1watchpoint
+  (JNIEnv *env, jclass clazz, jlong handle, jint n, jlong dbgwcr, jlong dbgwvr) {
+  t_hypervisor hypervisor = (t_hypervisor) handle;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if(n < 0 || n >= cpu->WRPs) {
+    abort();
+    return;
+  }
+  switch (n) {
+    case 0:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR0_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR0_EL1, dbgwvr));
+      break;
+    case 1:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR1_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR1_EL1, dbgwvr));
+      break;
+    case 2:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR2_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR2_EL1, dbgwvr));
+      break;
+    case 3:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR3_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR3_EL1, dbgwvr));
+      break;
+    case 4:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR4_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR4_EL1, dbgwvr));
+      break;
+    case 5:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR5_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR5_EL1, dbgwvr));
+      break;
+    case 6:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR6_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR6_EL1, dbgwvr));
+      break;
+    case 7:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR7_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR7_EL1, dbgwvr));
+      break;
+    case 8:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR8_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR8_EL1, dbgwvr));
+      break;
+    case 9:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR9_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR9_EL1, dbgwvr));
+      break;
+    case 10:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR10_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR10_EL1, dbgwvr));
+      break;
+    case 11:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR11_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR11_EL1, dbgwvr));
+      break;
+    case 12:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR12_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR12_EL1, dbgwvr));
+      break;
+    case 13:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR13_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR13_EL1, dbgwvr));
+      break;
+    case 14:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR14_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR14_EL1, dbgwvr));
+      break;
+    case 15:
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWCR15_EL1, dbgwcr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_DBGWVR15_EL1, dbgwvr));
+      break;
+    default:
+      abort();
+      break;
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    install_hw_breakpoint
  * Signature: (JIJ)V
  */

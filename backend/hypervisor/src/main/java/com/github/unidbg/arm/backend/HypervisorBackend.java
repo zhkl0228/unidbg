@@ -134,16 +134,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
-    public void hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException {
     }
 
