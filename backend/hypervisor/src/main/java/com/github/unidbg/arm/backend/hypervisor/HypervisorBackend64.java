@@ -70,11 +70,10 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private class HypervisorBreakPoint implements BreakPoint {
         protected final long address;
         private final BreakPointCallback callback;
-        private final boolean restore;
-        public HypervisorBreakPoint(long address, BreakPointCallback callback, boolean restore) {
+
+        public HypervisorBreakPoint(long address, BreakPointCallback callback) {
             this.address = address;
             this.callback = callback;
-            this.restore = restore;
         }
 
         private boolean temporary;
@@ -104,7 +103,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         private HypervisorBreakPoint postBreak(int n) {
             long newBP = address + 4;
             hypervisor.install_hw_breakpoint(n, newBP);
-            return new HypervisorBreakPoint(newBP, null, true);
+            return new HypervisorBreakPoint(newBP, null);
         }
     }
 
@@ -127,7 +126,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         for (int i = 0; i < breakpoints.length; i++) {
             if (breakpoints[i] == null) {
                 hypervisor.install_hw_breakpoint(i, address);
-                HypervisorBreakPoint bp = new HypervisorBreakPoint(address, callback, false);
+                HypervisorBreakPoint bp = new HypervisorBreakPoint(address, callback);
                 breakpoints[i] = bp;
                 return bp;
             }
@@ -165,39 +164,11 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return true;
             }
             case EC_SOFTWARESTEP: {
-                if (--singleStep == 0) {
-                    int status = (int) (esr & 0x3f);
-                    interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
-                } else if (singleStep > 0) {
-                    hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
-                } else {
-                    hypervisor.enable_single_step(false);
-                }
+                onSoftwareStep(esr, elr, spsr);
                 return true;
             }
             case EC_BREAKPOINT: {
-                if (debugCallback != null) {
-                    for (int i = 0; i < restoreBreakpoints.length; i++) {
-                        HypervisorBreakPoint breakpoint = restoreBreakpoints[i];
-                        if (breakpoint != null && breakpoint.restore && breakpoint.address == elr) {
-                            breakpoint.onBreak(i);
-                            restoreBreakpoints[i] = null;
-                            return true;
-                        }
-                    }
-                    debugCallback.onBreak(this, elr, 4, debugUserData);
-                    for (int i = 0; i < breakpoints.length; i++) {
-                        HypervisorBreakPoint breakpoint = breakpoints[i];
-                        if (breakpoint != null && breakpoint.address == elr) {
-                            restoreBreakpoints[i] = breakpoint.postBreak(i);
-                            break;
-                        }
-                    }
-                } else {
-                    int status = (int) (esr & 0x3f);
-                    interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
-                }
-                return true;
+                return onBreakpoint(esr, elr);
             }
             case EC_DATAABORT: {
                 boolean isv = (esr & ARM_EL_ISV) != 0;
@@ -218,6 +189,54 @@ public class HypervisorBackend64 extends HypervisorBackend {
             default:
                 log.warn("handleException ec=0x" + Integer.toHexString(ec));
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
+        }
+    }
+
+    private boolean onBreakpoint(long esr, long elr) {
+        if (debugCallback != null) {
+            for (int i = 0; i < restoreBreakpoints.length; i++) {
+                HypervisorBreakPoint breakpoint = restoreBreakpoints[i];
+                if (breakpoint != null && breakpoint.address == elr) {
+                    breakpoint.onBreak(i);
+                    restoreBreakpoints[i] = null;
+                    return true;
+                }
+            }
+            debugCallback.onBreak(this, elr, 4, debugUserData);
+            for (int i = 0; i < breakpoints.length; i++) {
+                HypervisorBreakPoint breakpoint = breakpoints[i];
+                if (breakpoint != null && breakpoint.address == elr) {
+                    restoreBreakpoints[i] = breakpoint.postBreak(i);
+                    break;
+                }
+            }
+        } else {
+            int status = (int) (esr & 0x3f);
+            interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+        }
+        return true;
+    }
+
+    private void onSoftwareStep(long esr, long elr, long spsr) {
+        if (--singleStep == 0) {
+            if (debugCallback != null) {
+                for (int i = 0; i < restoreBreakpoints.length; i++) {
+                    HypervisorBreakPoint breakpoint = restoreBreakpoints[i];
+                    if (breakpoint != null && breakpoint.address == elr) {
+                        breakpoint.onBreak(i);
+                        restoreBreakpoints[i] = null;
+                        break;
+                    }
+                }
+                debugCallback.onBreak(this, elr, 4, debugUserData);
+            } else {
+                int status = (int) (esr & 0x3f);
+                interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+            }
+        } else if (singleStep > 0) {
+            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+        } else {
+            hypervisor.enable_single_step(false);
         }
     }
 

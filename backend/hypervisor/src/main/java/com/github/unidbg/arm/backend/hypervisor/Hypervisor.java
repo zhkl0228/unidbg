@@ -63,14 +63,23 @@ public class Hypervisor implements Closeable {
 
     private static native void enable_single_step(long handle, boolean status);
     public void enable_single_step(boolean status) {
+        if (log.isDebugEnabled()) {
+            log.debug("enable_single_step status=" + status);
+        }
         enable_single_step(nativeHandle, status);
     }
 
     public void install_hw_breakpoint(int n, long address) {
+        if (log.isDebugEnabled()) {
+            log.debug("install_hw_breakpoint n=" + n + ", address=0x" + Long.toHexString(address));
+        }
         install_hw_breakpoint(nativeHandle, n, address);
     }
     private static native void install_hw_breakpoint(long handle, int n, long address);
     public void disable_hw_breakpoint(int n) {
+        if (log.isDebugEnabled()) {
+            log.debug("disable_hw_breakpoint n=" + n);
+        }
         disable_hw_breakpoint(nativeHandle, n);
     }
     private static native void disable_hw_breakpoint(long handle, int n);
