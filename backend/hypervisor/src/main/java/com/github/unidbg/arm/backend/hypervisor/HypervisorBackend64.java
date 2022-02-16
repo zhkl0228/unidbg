@@ -29,11 +29,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     private static final Log log = LogFactory.getLog(HypervisorBackend64.class);
 
+    private static final int INS_SIZE = 4;
+
     public HypervisorBackend64(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator, hypervisor);
 
-        breakpoints = new HypervisorBreakPoint[hypervisor.getBRPs()];
-        restoreBreakpoints = new HypervisorBreakPoint[hypervisor.getBRPs()];
+        int brps = hypervisor.getBRPs();
+        breakpoints = new HypervisorBreakPoint[brps];
+        restoreBreakpoints = new HypervisorBreakPoint[brps];
     }
 
     private Disassembler disassembler;
@@ -98,10 +101,10 @@ public class HypervisorBackend64 extends HypervisorBackend {
             return false;
         }
         private void onBreak(int n) {
-            hypervisor.install_hw_breakpoint(n, address - 4);
+            hypervisor.install_hw_breakpoint(n, address - INS_SIZE);
         }
         private HypervisorBreakPoint postBreak(int n) {
-            long newBP = address + 4;
+            long newBP = address + INS_SIZE;
             hypervisor.install_hw_breakpoint(n, newBP);
             return new HypervisorBreakPoint(newBP, null);
         }
@@ -202,7 +205,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                     return true;
                 }
             }
-            debugCallback.onBreak(this, elr, 4, debugUserData);
+            debugCallback.onBreak(this, elr, INS_SIZE, debugUserData);
             for (int i = 0; i < breakpoints.length; i++) {
                 HypervisorBreakPoint breakpoint = breakpoints[i];
                 if (breakpoint != null && breakpoint.address == elr) {
@@ -228,7 +231,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                         break;
                     }
                 }
-                debugCallback.onBreak(this, elr, 4, debugUserData);
+                debugCallback.onBreak(this, elr, INS_SIZE, debugUserData);
             } else {
                 int status = (int) (esr & 0x3f);
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
