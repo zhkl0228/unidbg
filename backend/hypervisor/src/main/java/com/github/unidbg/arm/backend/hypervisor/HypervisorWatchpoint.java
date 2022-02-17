@@ -30,9 +30,9 @@ class HypervisorWatchpoint {
 
     public void onHit(Backend backend, long address, boolean isWrite) {
         if (isWrite) {
-            ((WriteHook) callback).hook(backend, address, 1, 0, user_data);
+            ((WriteHook) callback).hook(backend, address, 0, 0, user_data);
         } else {
-            ((ReadHook) callback).hook(backend, address, 1, user_data);
+            ((ReadHook) callback).hook(backend, address, 0, user_data);
         }
     }
 
