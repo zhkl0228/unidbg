@@ -15,7 +15,7 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.InitFunction;
-import com.github.unidbg.unix.struct.DlInfo;
+import com.github.unidbg.unix.struct.DlInfo32;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -379,12 +379,12 @@ public class Dyld32 extends Dyld {
 
                 Symbol symbol = module.findClosestSymbolByAddress(addr, true);
 
-                DlInfo dlInfo = new DlInfo(info);
-                dlInfo.dli_fname = module.createPathMemory(svcMemory);
-                dlInfo.dli_fbase = UnidbgPointer.pointer(emulator, module.machHeader);
+                DlInfo32 dlInfo = new DlInfo32(info);
+                dlInfo.dli_fname = (int) UnidbgPointer.nativeValue(module.createPathMemory(svcMemory));
+                dlInfo.dli_fbase = (int) module.machHeader;
                 if (symbol != null) {
-                    dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
-                    dlInfo.dli_saddr = UnidbgPointer.pointer(emulator, symbol.getAddress());
+                    dlInfo.dli_sname = (int) UnidbgPointer.nativeValue(symbol.createNameMemory(svcMemory));
+                    dlInfo.dli_saddr = (int) symbol.getAddress();
                 }
                 dlInfo.pack();
                 return 1;

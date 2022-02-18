@@ -608,7 +608,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
         }
         if (SIGKILL == signum || SIGSTOP == signum) {
             if (oldAction != null) {
-                oldAction.sa_handler = UnidbgPointer.pointer(emulator, SIG_ERR);
+                oldAction.setSaHandler(SIG_ERR);
                 oldAction.pack();
             }
             return -UnixEmulator.EINVAL;
@@ -618,8 +618,8 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             if (lastAction == null) {
                 oldact.write(0, new byte[oldAction.size()], 0, oldAction.size());
             } else {
-                oldAction.sa_handler = lastAction.sa_handler;
-                oldAction.sa_restorer = lastAction.sa_restorer;
+                oldAction.setSaHandler(lastAction.getSaHandler());
+                oldAction.setSaRestorer(lastAction.getSaRestorer());
                 oldAction.setFlags(lastAction.getFlags());
                 oldAction.setMask(lastAction.getMask());
                 oldAction.pack();

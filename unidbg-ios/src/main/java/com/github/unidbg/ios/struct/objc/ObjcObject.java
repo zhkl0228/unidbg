@@ -14,13 +14,13 @@ import java.util.List;
 
 import static com.github.unidbg.ios.objc.Constants.NSUTF8StringEncoding;
 
-public class ObjcObject extends UnidbgStructure {
+public abstract class ObjcObject extends UnidbgStructure {
 
     public static ObjcObject create(Emulator<?> emulator, Pointer pointer) {
         if (pointer == null) {
             return null;
         } else {
-            ObjcObject obj = new ObjcObject(emulator, pointer);
+            ObjcObject obj = emulator.is64Bit() ? new ObjcObject64(emulator, pointer) : new ObjcObject32(emulator, pointer);
             obj.unpack();
             return obj;
         }
@@ -33,22 +33,17 @@ public class ObjcObject extends UnidbgStructure {
         this.emulator = emulator;
     }
 
-    public Pointer isa;
-
-    @Override
-    protected List<String> getFieldOrder() {
-        return Collections.singletonList("isa");
-    }
-
     public ObjcClass getObjClass() {
         if (emulator.is64Bit()) {
-            UnidbgPointer pointer = (UnidbgPointer) isa;
+            UnidbgPointer pointer = getIsa(emulator);
             long address = pointer.peer & 0x1fffffff8L;
             return ObjcClass.create(emulator, UnidbgPointer.pointer(emulator, address));
         } else {
-            return ObjcClass.create(emulator, isa);
+            return ObjcClass.create(emulator, getIsa(emulator));
         }
     }
+
+    public abstract UnidbgPointer getIsa(Emulator<?> emulator);
 
     public UnidbgPointer call(String selectorName, Object... args) {
         ObjC objc = ObjC.getInstance(emulator);
@@ -84,6 +79,11 @@ public class ObjcObject extends UnidbgStructure {
             byte[] bytes = str.call("UTF8String").getByteArray(0, length);
             return new String(bytes, StandardCharsets.UTF_8);
         }
+    }
+
+    @Override
+    protected List<String> getFieldOrder() {
+        return Collections.singletonList("isa");
     }
 
 }

@@ -6,14 +6,14 @@ import com.sun.jna.Pointer;
 import java.util.Arrays;
 import java.util.List;
 
-public class TailqPthread extends UnidbgStructure {
+public class TailqPthread64 extends UnidbgStructure {
 
-    public TailqPthread(Pointer p) {
+    public TailqPthread64(Pointer p) {
         super(p);
     }
 
-    public Pointer tqe_next;
-    public Pointer tqe_prev;
+    public long tqe_next;
+    public long tqe_prev;
 
     @Override
     protected List<String> getFieldOrder() {

@@ -17,7 +17,6 @@ import com.github.unidbg.spi.ArmDisassembler;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.SyscallHandler;
-import com.github.unidbg.spi.ValuePair;
 import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.unwind.Unwinder;
 
@@ -30,7 +29,7 @@ import java.net.URL;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassembler, ValuePair, Serializable {
+public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassembler, Serializable {
 
     int getPointerSize();
 
@@ -130,5 +129,8 @@ public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassemble
     ThreadDispatcher getThreadDispatcher();
 
     long getReturnAddress();
+
+    void set(String key, Object value);
+    <V> V get(String key);
 
 }

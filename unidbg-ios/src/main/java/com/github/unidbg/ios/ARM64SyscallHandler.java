@@ -40,7 +40,7 @@ import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesReply;
 import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesRequest;
 import com.github.unidbg.ios.struct.kernel.MachPortTypeReply;
 import com.github.unidbg.ios.struct.kernel.MachPortTypeRequest;
-import com.github.unidbg.ios.struct.kernel.MachPortsLookup64Reply;
+import com.github.unidbg.ios.struct.kernel.MachPortsLookupReply64;
 import com.github.unidbg.ios.struct.kernel.MachTimebaseInfo;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelReply;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelRequest;
@@ -2480,7 +2480,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             }
             case 3404: // mach_ports_lookup
             {
-                MachPortsLookup64Reply reply = new MachPortsLookup64Reply(request);
+                MachPortsLookupReply64 reply = new MachPortsLookupReply64(request);
                 reply.unpack();
 
                 header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;

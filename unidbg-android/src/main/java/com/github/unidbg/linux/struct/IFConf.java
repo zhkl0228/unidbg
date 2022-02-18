@@ -1,24 +1,21 @@
 package com.github.unidbg.linux.struct;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
-import java.util.Arrays;
-import java.util.List;
+public abstract class IFConf extends UnidbgStructure {
 
-public class IFConf extends UnidbgStructure {
-
-    public IFConf(Pointer p) {
-        super(p);
-        unpack();
+    public static IFConf create(Emulator<?> emulator, Pointer pointer) {
+        return emulator.is64Bit() ? new IFConf64(pointer) : new IFConf32(pointer);
     }
 
     public int ifc_len;
-    public Pointer ifcu_req;
 
-    @Override
-    protected List<String> getFieldOrder() {
-        return Arrays.asList("ifc_len", "ifcu_req");
+    public IFConf(Pointer p) {
+        super(p);
     }
+
+    public abstract long getIfcuReq();
 
 }

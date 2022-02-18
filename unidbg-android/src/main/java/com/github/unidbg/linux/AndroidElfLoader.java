@@ -103,7 +103,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     private UnidbgPointer initializeTLS(String[] envs) {
         final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
-        PThreadInternal pThread = new PThreadInternal(thread);
+        PThreadInternal pThread = PThreadInternal.create(emulator, thread);
         pThread.tid = emulator.getPid();
         pThread.pack();
 

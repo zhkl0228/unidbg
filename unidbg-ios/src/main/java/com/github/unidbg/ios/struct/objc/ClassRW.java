@@ -1,12 +1,13 @@
 package com.github.unidbg.ios.struct.objc;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class ClassRW extends UnidbgStructure implements ObjcConstants {
+public abstract class ClassRW extends UnidbgStructure implements ObjcConstants {
 
     ClassRW(Pointer p) {
         super(p);
@@ -14,15 +15,6 @@ public class ClassRW extends UnidbgStructure implements ObjcConstants {
 
     public int flags;
     public int version;
-    public Pointer ro;
-    public Pointer methodList;
-    public Pointer properties;
-    public Pointer protocols;
-
-    public Pointer firstSubclass;
-    public Pointer nextSiblingClass;
-
-    public Pointer demangledName;
 
     @Override
     protected List<String> getFieldOrder() {
@@ -37,10 +29,6 @@ public class ClassRW extends UnidbgStructure implements ObjcConstants {
         flags = (flags | set) & ~clear;
     }
 
-    public ClassRO ro() {
-        ClassRO ro = new ClassRO(this.ro);
-        ro.unpack();
-        return ro;
-    }
+    public abstract ClassRO ro(Emulator<?> emulator);
 
 }

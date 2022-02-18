@@ -356,7 +356,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             } else if (stringType == StringType.std_string) {
                 StdString string = StdString.createStdString(emulator, pointer);
                 long size = string.getDataSize();
-                byte[] data = string.getData();
+                byte[] data = string.getData(emulator);
                 Inspector.inspect(data, size >= 1024 ? (label + ", hex=" + Hex.encodeHexString(data) + ", std=" + new String(data, StandardCharsets.UTF_8)) : label);
             } else {
                 throw new UnsupportedOperationException("stringType=" + stringType);

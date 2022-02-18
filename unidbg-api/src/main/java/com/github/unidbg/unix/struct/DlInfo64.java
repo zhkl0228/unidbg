@@ -6,16 +6,16 @@ import com.sun.jna.Pointer;
 import java.util.Arrays;
 import java.util.List;
 
-public class DlInfo extends UnidbgStructure {
+public class DlInfo64 extends UnidbgStructure {
 
-    public DlInfo(Pointer p) {
+    public DlInfo64(Pointer p) {
         super(p);
     }
 
-    public Pointer dli_fname; /* Pathname of shared object */
-    public Pointer dli_fbase; /* Base address of shared object */
-    public Pointer dli_sname; /* Name of nearest symbol */
-    public Pointer dli_saddr; /* Address of nearest symbol */
+    public long dli_fname; /* Pathname of shared object */
+    public long dli_fbase; /* Base address of shared object */
+    public long dli_sname; /* Name of nearest symbol */
+    public long dli_saddr; /* Address of nearest symbol */
 
     @Override
     protected List<String> getFieldOrder() {

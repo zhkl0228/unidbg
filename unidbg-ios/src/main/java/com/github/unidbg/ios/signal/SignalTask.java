@@ -65,12 +65,12 @@ public class SignalTask extends AbstractSignalTask {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X2, 0); // void *ucontext
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, emulator.getReturnAddress());
         }
-        return emulator.emulate(UnidbgPointer.nativeValue(action.sa_handler), emulator.getReturnAddress());
+        return emulator.emulate(action.getSaHandler(), emulator.getReturnAddress());
     }
 
     @Override
     public String toString() {
-        return "SignalTask sa_handler=" + action.sa_handler + ", stack=" + stack + ", signum=" + signum;
+        return "SignalTask sa_handler=" + action.getSaHandler() + ", stack=" + stack + ", signum=" + signum;
     }
 
     private MemoryBlock infoBlock;

@@ -58,13 +58,13 @@ public class TaskDyldInfo extends UnidbgStructure {
         }
 
         if (emulator.is64Bit()) {
-            allocateAllImage64(emulator, svcMemory, modules);
+            allocateAllImage64(svcMemory, modules);
         } else {
-            allocateAllImage32(emulator, svcMemory, modules);
+            allocateAllImage32(svcMemory, modules);
         }
     }
 
-    private void allocateAllImage64(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
+    private void allocateAllImage64(SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos64.class);
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_64;
@@ -78,8 +78,8 @@ public class TaskDyldInfo extends UnidbgStructure {
         for (Module module : modules) {
             MachOModule mm = (MachOModule) module;
             DyldImageInfo64 info = new DyldImageInfo64(pointer);
-            info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
-            info.imageFilePath = mm.createPathMemory(svcMemory);
+            info.imageLoadAddress = mm.machHeader;
+            info.imageFilePath = UnidbgPointer.nativeValue(mm.createPathMemory(svcMemory));
             info.imageFileModDate = 0;
             info.pack();
             pointer = pointer.share(size);
@@ -88,18 +88,18 @@ public class TaskDyldInfo extends UnidbgStructure {
         DyldAllImageInfos64 infos = new DyldAllImageInfos64(all_image_info_addr);
         infos.version = 14;
         infos.infoArrayCount = modules.size();
-        infos.infoArray = infoArray;
+        infos.infoArray = UnidbgPointer.nativeValue(infoArray);
         infos.libSystemInitialized = Constants.YES;
-        infos.dyldImageLoadAddress = null;
-        infos.dyldVersion = dyldVersion;
+        infos.dyldImageLoadAddress = 0L;
+        infos.dyldVersion = UnidbgPointer.nativeValue(dyldVersion);
         infos.uuidArrayCount = 0;
-        infos.uuidArray = null;
-        infos.dyldAllImageInfosAddress = all_image_info_addr;
+        infos.uuidArray = 0L;
+        infos.dyldAllImageInfosAddress = UnidbgPointer.nativeValue(all_image_info_addr);
         infos.initialImageCount = modules.size();
         infos.pack();
     }
 
-    private void allocateAllImage32(Emulator<?> emulator, SvcMemory svcMemory, Collection<Module> modules) {
+    private void allocateAllImage32(SvcMemory svcMemory, Collection<Module> modules) {
         int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos32.class);
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_32;
@@ -113,8 +113,8 @@ public class TaskDyldInfo extends UnidbgStructure {
         for (Module module : modules) {
             MachOModule mm = (MachOModule) module;
             DyldImageInfo32 info = new DyldImageInfo32(pointer);
-            info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
-            info.imageFilePath = mm.createPathMemory(svcMemory);
+            info.imageLoadAddress = (int) mm.machHeader;
+            info.imageFilePath = (int) UnidbgPointer.nativeValue(mm.createPathMemory(svcMemory));
             info.imageFileModDate = 0;
             info.pack();
             pointer = pointer.share(size);
@@ -123,13 +123,13 @@ public class TaskDyldInfo extends UnidbgStructure {
         DyldAllImageInfos32 infos = new DyldAllImageInfos32(all_image_info_addr);
         infos.version = 14;
         infos.infoArrayCount = modules.size();
-        infos.infoArray = infoArray;
+        infos.infoArray = (int) UnidbgPointer.nativeValue(infoArray);
         infos.libSystemInitialized = Constants.YES;
-        infos.dyldImageLoadAddress = null;
-        infos.dyldVersion = dyldVersion;
+        infos.dyldImageLoadAddress = 0;
+        infos.dyldVersion = (int) UnidbgPointer.nativeValue(dyldVersion);
         infos.uuidArrayCount = 0;
-        infos.uuidArray = null;
-        infos.dyldAllImageInfosAddress = all_image_info_addr;
+        infos.uuidArray = 0;
+        infos.dyldAllImageInfosAddress = (int) UnidbgPointer.nativeValue(all_image_info_addr);
         infos.initialImageCount = modules.size();
         infos.pack();
     }

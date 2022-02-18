@@ -6,14 +6,14 @@ import com.sun.jna.Pointer;
 import java.util.Arrays;
 import java.util.List;
 
-public class Pcred extends UnidbgStructure {
+public class Pcred32 extends UnidbgStructure {
 
-    public Pcred(Pointer p) {
+    public Pcred32(Pointer p) {
         super(p);
     }
 
     public byte[] pc_lock = new byte[72]; /* opaque content */
-    public Pointer pc_ucred; /* Current credentials. */
+    public int pc_ucred; /* Current credentials. */
     public int p_ruid; /* Real user id. */
     public int p_svuid; /* Saved effective user id. */
     public int p_rgid; /* Real group id. */

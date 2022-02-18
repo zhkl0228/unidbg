@@ -12,7 +12,7 @@ public class File32 extends UnidbgStructure {
         public __sbuf(Pointer p) {
             super(p);
         }
-        public Pointer _base;
+        public int _base; // ptr
         public int _size;
         @Override
         protected List<String> getFieldOrder() {
@@ -25,20 +25,20 @@ public class File32 extends UnidbgStructure {
         unpack();
     }
 
-    public Pointer _p;
+    public int _p; // ptr
     public int _r;
     public int _w;
     public short _flags;
     public short _file;
     public __sbuf _bf;
     public int _lbfsize;
-    public Pointer _cookie;
-    public Pointer _close;
-    public Pointer _read;
-    public Pointer _seek;
-    public Pointer _write;
+    public int _cookie; // ptr
+    public int _close; // ptr
+    public int _read; // ptr
+    public int _seek; // ptr
+    public int _write; // ptr
     public __sbuf _ext;
-    public Pointer _up;
+    public int _up; // ptr
     public int _ur;
     public byte[] _ubuf = new byte[3];
     public byte[] _nbuf = new byte[1];

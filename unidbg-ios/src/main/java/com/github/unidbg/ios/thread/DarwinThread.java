@@ -3,7 +3,6 @@ package com.github.unidbg.ios.thread;
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.thread.ThreadTask;
@@ -37,9 +36,8 @@ public class DarwinThread extends ThreadTask {
     public void setResult(Emulator<?> emulator, Number ret) {
         super.setResult(emulator, ret);
 
-        Pointer exitValue = UnidbgPointer.pointer(emulator, BaseHook.numberToAddress(emulator, ret));
         pthread.unpack();
-        pthread.setExitValue(exitValue);
+        pthread.setExitValue(ret.intValue());
         pthread.pack();
     }
 

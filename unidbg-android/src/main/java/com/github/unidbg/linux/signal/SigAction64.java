@@ -11,6 +11,29 @@ public class SigAction64 extends SigAction {
         super(p);
     }
 
+    public long sa_handler;
+    public long sa_restorer;
+
+    @Override
+    public long getSaHandler() {
+        return sa_handler;
+    }
+
+    @Override
+    public void setSaHandler(long sa_handler) {
+        this.sa_handler = sa_handler;
+    }
+
+    @Override
+    public long getSaRestorer() {
+        return sa_restorer;
+    }
+
+    @Override
+    public void setSaRestorer(long sa_restorer) {
+        this.sa_restorer = sa_restorer;
+    }
+
     public long sa_mask;
     public int sa_flags;
 

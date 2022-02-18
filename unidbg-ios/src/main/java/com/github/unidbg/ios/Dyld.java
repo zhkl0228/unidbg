@@ -104,15 +104,15 @@ public abstract class Dyld extends Dlfcn {
             MachOModule mm = (MachOModule) module;
             if (emulator.is64Bit()) {
                 DyldImageInfo64 info = new DyldImageInfo64(pointer);
-                info.imageFilePath = mm.createPathMemory(svcMemory);
-                info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
+                info.imageFilePath = UnidbgPointer.nativeValue(mm.createPathMemory(svcMemory));
+                info.imageLoadAddress = mm.machHeader;
                 info.imageFileModDate = 0;
                 info.pack();
                 list.add(info);
             } else {
                 DyldImageInfo32 info = new DyldImageInfo32(pointer);
-                info.imageFilePath = mm.createPathMemory(svcMemory);
-                info.imageLoadAddress = UnidbgPointer.pointer(emulator, mm.machHeader);
+                info.imageFilePath = (int) UnidbgPointer.nativeValue(mm.createPathMemory(svcMemory));
+                info.imageLoadAddress = (int) mm.machHeader;
                 info.imageFileModDate = 0;
                 info.pack();
                 list.add(info);
