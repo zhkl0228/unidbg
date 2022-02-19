@@ -70,6 +70,8 @@ import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
 import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
+import com.github.unidbg.ios.struct.kernel.ThreadStateReply32;
+import com.github.unidbg.ios.struct.kernel.ThreadStateRequest;
 import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmCopyRequest;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Reply;
@@ -1893,6 +1895,47 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+            }
+            case 3603: { // _thread_get_state
+                ThreadStateRequest args = new ThreadStateRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state args=" + request);
+                }
+
+                ThreadStateReply32 reply = new ThreadStateReply32(request);
+                reply.unpack();
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                if (args.flavor != ThreadStateRequest.ARM_THREAD_STATE) {
+                    reply.retCode = 4;
+                    reply.pack();
+                    if (log.isDebugEnabled()) {
+                        log.debug("_thread_get_state reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.retCode = 0;
+                reply.outCnt = ThreadStateRequest.ARM_THREAD_STATE_COUNT;
+                for (int reg = ArmConst.UC_ARM_REG_R0; reg <= ArmConst.UC_ARM_REG_R12; reg++) {
+                    reply.state.__r[reg - ArmConst.UC_ARM_REG_R0] = backend.reg_read(reg).intValue();
+                }
+                reply.state.__sp = backend.reg_read(ArmConst.UC_ARM_REG_SP).intValue();
+                reply.state.__lr = backend.reg_read(ArmConst.UC_ARM_REG_LR).intValue();
+                reply.state.__pc = backend.reg_read(ArmConst.UC_ARM_REG_PC).intValue();
+                reply.state.__cpsr = backend.reg_read(ArmConst.UC_ARM_REG_CPSR).intValue();
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
             }
             case 3612: { // _thread_info
                 ThreadInfoRequest args = new ThreadInfoRequest(request);

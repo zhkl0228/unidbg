@@ -454,6 +454,30 @@ static void test_dispatch() {
   printf("test_dispatch group=%p, queue=%p, ret=%ld\n", group, queue, ret);
 }
 
+static void test_thread_get_state() {
+  pthread_t thread = pthread_self();
+  mach_port_t port = pthread_mach_thread_np(thread);
+  arm_thread_state_t state = {0};
+  thread_state_flavor_t flavor = ARM_THREAD_STATE;
+  uint32_t count = ARM_THREAD_STATE_COUNT;
+  int ret = thread_get_state(port, flavor, (thread_state_t) &state, &count);
+  char buf[1024];
+  hex(buf, &state, sizeof(state));
+  printf("test_thread_get_state thread=%p, port=%d, buf=%s, ret=%d, ARM_THREAD_STATE_COUNT=%d, count=%d\n", thread, port, buf, ret, ARM_THREAD_STATE_COUNT, count);
+}
+
+static void test_thread_get_state64() {
+  pthread_t thread = pthread_self();
+  mach_port_t port = pthread_mach_thread_np(thread);
+  arm_thread_state64_t state = {0};
+  thread_state_flavor_t flavor = ARM_THREAD_STATE64;
+  uint32_t count = ARM_THREAD_STATE64_COUNT;
+  int ret = thread_get_state(port, flavor, (thread_state_t) &state, &count);
+  char buf[1024];
+  hex(buf, &state, sizeof(state));
+  printf("test_thread_get_state thread=%p, port=%d, buf=%s, ret=%d, ARM_THREAD_STATE64_COUNT=%d, count=%d\n", thread, port, buf, ret, ARM_THREAD_STATE64_COUNT, count);
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -483,6 +507,8 @@ void do_test() {
   test_pthread_join();
   test_sleep();
   test_dispatch();
+  test_thread_get_state();
+  test_thread_get_state64();
 }
 
 __attribute__((constructor))

@@ -527,6 +527,15 @@ public class Dyld64 extends Dyld {
                 return canLoad ? 1 : 0;
             }
         });
+        __dyld_fork_child = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                if (log.isDebugEnabled()) {
+                    log.debug("_dyld_fork_child");
+                }
+                return 0;
+            }
+        });
     }
 
     private final Pointer __dyld_image_count;
@@ -542,6 +551,7 @@ public class Dyld64 extends Dyld {
     private final Pointer __dyld__NSGetExecutablePath;
     private final Pointer __dyld_fast_stub_entry;
     private final Pointer __dyld_find_unwind_sections;
+    private final Pointer __dyld_fork_child;
 
     @Override
     final int _stub_binding_helper() {
@@ -614,6 +624,9 @@ public class Dyld64 extends Dyld {
                 return 1;
             case "__dyld_dyld_register_image_state_change_handler":
                 address.setPointer(0, __dyld_dyld_register_image_state_change_handler);
+                return 1;
+            case "__dyld_fork_child":
+                address.setPointer(0, __dyld_fork_child);
                 return 1;
             default:
                 log.info("_dyld_func_lookup name=" + name + ", address=" + address);

@@ -76,6 +76,12 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         System.exit(status);
     }
 
+    protected int fork(Emulator<?> emulator) {
+        log.info("fork");
+        emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
+        return -1;
+    }
+
     protected final int open_NOCANCEL(Emulator<DarwinFileIO> emulator, int offset) {
         RegisterContext context = emulator.getContext();
         Pointer pathname_p = context.getPointerArg(offset);
