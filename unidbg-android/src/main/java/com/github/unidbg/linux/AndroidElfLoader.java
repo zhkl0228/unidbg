@@ -756,7 +756,23 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+        try {
+            FileIO file;
+            if (fd > 0 && (file = syscallHandler.getFileIO(fd)) != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("mmap2 start=0x" + Long.toHexString(start) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                }
+                long ret = file.mmap2(emulator, start, aligned, prot, offset, length);
+                if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
+                    log.warn("mmap2 replace exists memory map start=0x" + Long.toHexString(start));
+                }
+                return ret;
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
 
+        emulator.attach().debug();
         throw new AbstractMethodError("mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset);
     }
 
