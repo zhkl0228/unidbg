@@ -478,6 +478,29 @@ static void test_thread_get_state64() {
   printf("test_thread_get_state thread=%p, port=%d, buf=%s, ret=%d, ARM_THREAD_STATE64_COUNT=%d, count=%d\n", thread, port, buf, ret, ARM_THREAD_STATE64_COUNT, count);
 }
 
+static void test_vm_region() {
+  bool more = true;
+  vm_size_t size;
+  task_t task = mach_task_self();
+  for (vm_address_t address = VM_MIN_ADDRESS; more; address += size) {
+    mach_port_t object_name;
+    mach_msg_type_number_t info_count;
+#if defined __aarch64__
+    struct vm_region_basic_info_64 info;
+    info_count = VM_REGION_BASIC_INFO_COUNT_64;
+    int ret = vm_region_64(task, &address, &size, VM_REGION_BASIC_INFO_64, (vm_region_info_t)&info, &info_count, &object_name);
+#else
+    struct vm_region_basic_info info;
+    info_count = VM_REGION_BASIC_INFO_COUNT;
+    int ret = vm_region(task, &address, &size, VM_REGION_BASIC_INFO, (vm_region_info_t)&info, &info_count, &object_name);
+#endif
+    more = ret == KERN_SUCCESS;
+    char buf[1024];
+    hex(buf, &info, sizeof(info));
+    printf("test_vm_region address=0x%lx, size=0x%lx, ret=%d, info_count=%d, object_name=%d, info=%s, behavior=0x%lx\n", (size_t) address, (size_t) size, ret, info_count, object_name, buf, (size_t) ((uintptr_t) &info.behavior - (uintptr_t) &info));
+  }
+}
+
 void do_test() {
   test_printf();
   test_sysctl_CTL_UNSPEC();
@@ -509,6 +532,7 @@ void do_test() {
   test_dispatch();
   test_thread_get_state();
   test_thread_get_state64();
+  test_vm_region();
 }
 
 __attribute__((constructor))

@@ -76,6 +76,8 @@ import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmCopyRequest;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Reply;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Request;
+import com.github.unidbg.ios.struct.kernel.VmRegionReply;
+import com.github.unidbg.ios.struct.kernel.VmRegionRequest;
 import com.github.unidbg.ios.struct.kernel.VmRemapReply;
 import com.github.unidbg.ios.struct.kernel.VmRemapRequest;
 import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
@@ -2512,6 +2514,70 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 3800: { // vm_region
+                VmRegionRequest args = new VmRegionRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region args=" + args);
+                }
+
+                if (args.flavor != VmRegionRequest.VM_REGION_BASIC_INFO) {
+                    throw new UnsupportedOperationException("flavor=" + args.flavor);
+                }
+
+                VmRegionReply reply = new VmRegionReply(request);
+                reply.unpack();
+
+                header.setMsgBits(true);
+                header.msgh_size = header.size() + reply.size() - 4;
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                MemoryMap memoryRegion = null;
+                for (MemoryMap memoryMap : emulator.getMemory().getMemoryMap()) {
+                    if (memoryMap.base >= args.address) {
+                        memoryRegion = memoryMap;
+                        break;
+                    }
+                }
+
+                if (memoryRegion == null) {
+                    header.setMsgBits(false);
+                    header.msgh_size = 0x24;
+                    header.pack();
+                    reply.pad1 = 1;
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("vm_region reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.NDR.mig_vers = 1;
+                reply.NDR.int_rep = 0;
+                reply.retCode = 0x110000;
+                reply.outCnt = VmRegionRequest.VM_REGION_BASIC_INFO_COUNT;
+                reply.address = (int) memoryRegion.base;
+                reply.size = (int) memoryRegion.size;
+                reply.info.protection = memoryRegion.prot;
+                reply.info.max_protection = memoryRegion.prot;
+                reply.info.inheritance = 0;
+                reply.info.shared = false;
+                reply.info.reserved = false;
+                reply.info.offset = 0;
+                reply.info.behavior = 0;
+                reply.info.user_wired_count = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region reply=" + reply);
+                }
+
+                return MACH_MSG_SUCCESS;
+            }
             case 3405: { // task_info
                 TaskInfoRequest args = new TaskInfoRequest(request);
                 args.unpack();
@@ -2540,6 +2606,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+                throw new UnsupportedOperationException("flavor=" + args.flavor);
             }
             case 217: // host_request_notification
                 HostRequestNotificationRequest args = new HostRequestNotificationRequest(request);

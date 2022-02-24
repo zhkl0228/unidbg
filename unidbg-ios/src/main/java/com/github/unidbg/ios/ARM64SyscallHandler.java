@@ -71,13 +71,15 @@ import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
 import com.github.unidbg.ios.struct.kernel.TaskThreadsReply64;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
+import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
 import com.github.unidbg.ios.struct.kernel.ThreadStateReply64;
 import com.github.unidbg.ios.struct.kernel.ThreadStateRequest;
-import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
 import com.github.unidbg.ios.struct.kernel.VmCopy64Request;
 import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmReadOverwriteReply;
 import com.github.unidbg.ios.struct.kernel.VmReadOverwriteRequest;
+import com.github.unidbg.ios.struct.kernel.VmRegion64Reply;
+import com.github.unidbg.ios.struct.kernel.VmRegion64Request;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse64Reply;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse64Request;
 import com.github.unidbg.ios.struct.kernel.VmRemapReply;
@@ -372,7 +374,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 0));
                     return;
                 case 98:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 0));
                     return;
                 case 116:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
@@ -393,7 +395,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, rmdir(emulator));
                     return;
                 case 138:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator, 0));
+                    return;
+                case 159:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, unmount(emulator));
                     return;
                 case 169:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, csops(emulator));
@@ -580,6 +585,16 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private int unmount(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer target = context.getPointerArg(0);
+        int flags = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("unmount target=" + target.getString(0) + ", flags=0x" + Integer.toHexString(flags));
+        }
+        return 0;
     }
 
     private UnidbgPointer shared_region;
@@ -779,10 +794,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
      * set file access and modification times
      * int utimes(const char *path, const struct timeval times[2]);
      */
-    private long utimes(Emulator<?> emulator) {
+    private long utimes(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        Pointer path = context.getPointerArg(0);
-        Pointer times = context.getPointerArg(1);
+        Pointer path = context.getPointerArg(offset);
+        Pointer times = context.getPointerArg(offset + 1);
         String pathname = path.getString(0);
         if (log.isDebugEnabled()) {
             log.debug("utimes pathname=" + pathname + ", times=" + times);
@@ -808,11 +823,17 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             case 20:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
                 return true;
+            case 39:
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getppid(emulator));
+                return true;
             case 97:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 1));
                 return true;
             case 98:
-                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 1));
+                return true;
+            case 138:
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator, 1));
                 return true;
             case 190:
             case 340:
@@ -2824,6 +2845,69 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 4816: { // vm_region_64
+                VmRegion64Request args = new VmRegion64Request(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region_64 args=" + args);
+                }
+                if (args.flavor != VmRegion64Request.VM_REGION_BASIC_INFO_64) {
+                    throw new UnsupportedOperationException("flavor=" + args.flavor);
+                }
+
+                VmRegion64Reply reply = new VmRegion64Reply(request);
+                reply.unpack();
+
+                header.setMsgBits(true);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                MemoryMap memoryRegion = null;
+                for (MemoryMap memoryMap : emulator.getMemory().getMemoryMap()) {
+                    if (memoryMap.base >= args.address) {
+                        memoryRegion = memoryMap;
+                        break;
+                    }
+                }
+
+                if (memoryRegion == null) {
+                    header.setMsgBits(false);
+                    header.msgh_size = 0x24;
+                    header.pack();
+                    reply.retCode1 = 1;
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("vm_region_64 reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.NDR.mig_vers = 1;
+                reply.NDR.int_rep = 0;
+                reply.retCode2 = 0x110000;
+                reply.outCnt = VmRegion64Request.VM_REGION_BASIC_INFO_COUNT_64;
+                reply.address = memoryRegion.base;
+                reply.size = memoryRegion.size;
+                reply.info.protection = memoryRegion.prot;
+                reply.info.max_protection = memoryRegion.prot;
+                reply.info.inheritance = 0;
+                reply.info.shared = false;
+                reply.info.reserved = false;
+                reply.info.offset = 0;
+                reply.info.behavior = 0;
+                reply.info.user_wired_count = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region_64 reply=" + reply);
+                }
+
+                return MACH_MSG_SUCCESS;
+            }
             case 3405: { // task_info
                 TaskInfoRequest args = new TaskInfoRequest(request);
                 args.unpack();
@@ -2852,6 +2936,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+                throw new UnsupportedOperationException("flavor=" + args.flavor);
             }
             case 78: { // _dispatch_send_wakeup_runloop_thread
                 if (log.isDebugEnabled()) {
@@ -3231,11 +3316,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return sendto(emulator, sockfd, buf, len, flags, dest_addr, addrlen);
     }
 
-    private int connect(Emulator<?> emulator) {
+    private int connect(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        int sockfd = context.getIntArg(0);
-        Pointer addr = context.getPointerArg(1);
-        int addrlen = context.getIntArg(2);
+        int sockfd = context.getIntArg(offset);
+        Pointer addr = context.getPointerArg(offset + 1);
+        int addrlen = context.getIntArg(offset + 2);
         return connect(emulator, sockfd, addr, addrlen);
     }
 

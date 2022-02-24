@@ -57,14 +57,15 @@ public class TaskDyldInfo extends UnidbgStructure {
             System.out.printf("task_info TASK_DYLD_INFO called with %d modules from %s%n", modules.size(), emulator.getContext().getLRPointer());
         }
 
+        MachOModule libdyld = (MachOModule) emulator.getMemory().findModule("libdyld.dylib");
         if (emulator.is64Bit()) {
-            allocateAllImage64(svcMemory, modules);
+            allocateAllImage64(svcMemory, modules, libdyld);
         } else {
-            allocateAllImage32(svcMemory, modules);
+            allocateAllImage32(svcMemory, modules, libdyld);
         }
     }
 
-    private void allocateAllImage64(SvcMemory svcMemory, Collection<Module> modules) {
+    private void allocateAllImage64(SvcMemory svcMemory, Collection<Module> modules, MachOModule libdyld) {
         int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos64.class);
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_64;
@@ -90,7 +91,7 @@ public class TaskDyldInfo extends UnidbgStructure {
         infos.infoArrayCount = modules.size();
         infos.infoArray = UnidbgPointer.nativeValue(infoArray);
         infos.libSystemInitialized = Constants.YES;
-        infos.dyldImageLoadAddress = 0L;
+        infos.dyldImageLoadAddress = libdyld == null ? 0x0L : libdyld.machHeader;
         infos.dyldVersion = UnidbgPointer.nativeValue(dyldVersion);
         infos.uuidArrayCount = 0;
         infos.uuidArray = 0L;
@@ -99,7 +100,7 @@ public class TaskDyldInfo extends UnidbgStructure {
         infos.pack();
     }
 
-    private void allocateAllImage32(SvcMemory svcMemory, Collection<Module> modules) {
+    private void allocateAllImage32(SvcMemory svcMemory, Collection<Module> modules, MachOModule libdyld) {
         int all_image_info_size = UnidbgStructure.calculateSize(DyldAllImageInfos32.class);
 
         this.all_image_info_format = TASK_DYLD_ALL_IMAGE_INFO_32;
@@ -125,7 +126,7 @@ public class TaskDyldInfo extends UnidbgStructure {
         infos.infoArrayCount = modules.size();
         infos.infoArray = (int) UnidbgPointer.nativeValue(infoArray);
         infos.libSystemInitialized = Constants.YES;
-        infos.dyldImageLoadAddress = 0;
+        infos.dyldImageLoadAddress = libdyld == null ? 0x0 : (int) libdyld.machHeader;
         infos.dyldVersion = (int) UnidbgPointer.nativeValue(dyldVersion);
         infos.uuidArrayCount = 0;
         infos.uuidArray = 0;
