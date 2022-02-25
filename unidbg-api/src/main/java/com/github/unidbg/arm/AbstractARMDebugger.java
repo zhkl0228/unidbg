@@ -24,6 +24,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.Task;
 import com.github.unidbg.unix.struct.StdString;
 import com.github.unidbg.unwind.Unwinder;
 import com.github.unidbg.utils.Inspector;
@@ -457,6 +458,12 @@ public abstract class AbstractARMDebugger implements Debugger {
         if ("gc".equals(line)) {
             System.out.println("Run System.gc();");
             System.gc();
+            return false;
+        }
+        if ("threads".equals(line)) {
+            for (Task task : emulator.getThreadDispatcher().getTaskList()) {
+                System.out.println(task.getId() + ": " + task);
+            }
             return false;
         }
         if (runnable == null || callbackRunning) {

@@ -1,7 +1,6 @@
 package com.github.unidbg.linux.thread;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.memory.Memory;
 import com.github.unidbg.unix.UnixEmulator;
 import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
@@ -17,8 +16,6 @@ public class FutexIndefinitelyWaiter extends FutexWaiter {
     protected void onContinueRunInternal(Emulator<?> emulator) {
         super.onContinueRunInternal(emulator);
 
-        Memory memory = emulator.getMemory();
-        memory.setErrno(UnixEmulator.EAGAIN);
-        emulator.getBackend().reg_write(emulator.is32Bit() ? ArmConst.UC_ARM_REG_R0 : Arm64Const.UC_ARM64_REG_X0, -1);
+        emulator.getBackend().reg_write(emulator.is32Bit() ? ArmConst.UC_ARM_REG_R0 : Arm64Const.UC_ARM64_REG_X0, -UnixEmulator.EAGAIN);
     }
 }

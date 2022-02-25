@@ -1347,22 +1347,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return -1;
     }
 
-    protected int nanosleep(Emulator<?> emulator) {
-        Arm32RegisterContext context = emulator.getContext();
-        Pointer req = context.getR0Pointer();
-        Pointer rem = context.getR1Pointer();
-        int tv_sec = req.getInt(0);
-        int tv_nsec = req.getInt(4);
-        if (log.isDebugEnabled()) {
-            log.debug("nanosleep req=" + req + ", rem=" + rem + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
-        }
-        try {
-            java.lang.Thread.sleep(tv_sec * 1000L + tv_nsec / 1000000L);
-        } catch (InterruptedException ignored) {
-        }
-        return 0;
-    }
-
     private int setitimer(Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         int which = context.getR0Int();

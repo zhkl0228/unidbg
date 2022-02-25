@@ -47,8 +47,13 @@ abstract class AbstractTask extends BaseTask implements Task {
     private final List<SignalTask> signalTaskList = new ArrayList<>();
 
     @Override
-    public void addSignalTask(SignalTask task) {
+    public final void addSignalTask(SignalTask task) {
         signalTaskList.add(task);
+
+        Waiter waiter = getWaiter();
+        if (waiter != null) {
+            waiter.onSignalTask(task);
+        }
     }
 
     @Override

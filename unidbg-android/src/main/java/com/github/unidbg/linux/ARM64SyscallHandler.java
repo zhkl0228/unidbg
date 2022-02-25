@@ -27,7 +27,6 @@ import com.github.unidbg.linux.file.SocketIO;
 import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
 import com.github.unidbg.linux.struct.Stat64;
-import com.github.unidbg.linux.thread.KitKatThread;
 import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
@@ -700,22 +699,6 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         Pointer set = context.getPointerArg(1);
         Pointer oldset = context.getPointerArg(2);
         return sigprocmask(emulator, how, set, oldset);
-    }
-
-    protected int nanosleep(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer req = context.getPointerArg(0);
-        Pointer rem = context.getPointerArg(1);
-        long tv_sec = req.getLong(0);
-        long tv_nsec = req.getLong(8);
-        if (log.isDebugEnabled()) {
-            log.debug("nanosleep req=" + req + ", rem=" + rem + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
-        }
-        try {
-            java.lang.Thread.sleep(tv_sec * 1000L + tv_nsec / 1000000L);
-        } catch (InterruptedException ignored) {
-        }
-        return 0;
     }
 
     private int sigaction(Emulator<?> emulator) {

@@ -22,4 +22,20 @@ public abstract class TimeSpec extends UnidbgStructure {
     public abstract long getTvSec();
     public abstract long getTvNsec();
 
+    public long toMillis() {
+        return getTvSec() * 1000L + getTvNsec() / 1000000L;
+    }
+
+    public void setMillis(long millis) {
+        if (millis < 0) {
+            millis = 0;
+        }
+        long tvSec = millis / 1000L;
+        long tvNsec = millis % 1000L * 1000000L;
+
+        setTv(tvSec, tvNsec);
+    }
+
+    protected abstract void setTv(long tvSec, long tvNsec);
+
 }

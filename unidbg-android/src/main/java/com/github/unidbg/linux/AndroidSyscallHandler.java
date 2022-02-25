@@ -14,6 +14,7 @@ import com.github.unidbg.linux.file.PipedWriteFileIO;
 import com.github.unidbg.linux.signal.SigAction;
 import com.github.unidbg.linux.signal.SignalFunction;
 import com.github.unidbg.linux.signal.SignalTask;
+import com.github.unidbg.linux.thread.NanoSleepWaiter;
 import com.github.unidbg.signal.UnixSigSet;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
@@ -706,6 +707,27 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             threadId = emulator.getPid();
         }
         return (++threadId) & 0xffff; // http://androidxref.com/6.0.1_r10/xref/bionic/libc/bionic/pthread_mutex.cpp#215
+    }
+
+    protected int nanosleep(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer req = context.getPointerArg(0);
+        Pointer rem = context.getPointerArg(1);
+        TimeSpec timeSpec = TimeSpec.createTimeSpec(emulator, req);
+        if (log.isDebugEnabled()) {
+            log.debug("nanosleep req=" + req + ", rem=" + rem + ", timeSpec=" + timeSpec);
+        }
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        if (threadDispatcherEnabled && runningTask != null) {
+            runningTask.setWaiter(new NanoSleepWaiter(emulator, rem, timeSpec));
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        } else {
+            try {
+                java.lang.Thread.sleep(timeSpec.toMillis());
+            } catch (InterruptedException ignored) {
+            }
+            return 0;
+        }
     }
 
 }

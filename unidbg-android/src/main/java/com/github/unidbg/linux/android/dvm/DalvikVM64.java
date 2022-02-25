@@ -194,10 +194,11 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _ExceptionOccurred = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
+                long exception = throwable == null ? JNI_NULL : (throwable.hashCode() & 0xffffffffL);
                 if (log.isDebugEnabled()) {
-                    log.debug("ExceptionOccurred");
+                    log.debug("ExceptionOccurred: 0x" + Long.toHexString(exception));
                 }
-                return throwable == null ? JNI_NULL : (throwable.hashCode() & 0xffffffffL);
+                return exception;
             }
         });
 
@@ -3406,8 +3407,16 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (object == null) {
                     return JNIInvalidRefType;
                 }
-                ObjRef dvmGlobalObject = globalObjectMap.get(object.toIntPeer());
+                int hash = object.toIntPeer();
                 ObjRef dvmLocalObject = localObjectMap.get(object.toIntPeer());
+                ObjRef dvmGlobalObject;
+                if (globalObjectMap.containsKey(hash)) {
+                    dvmGlobalObject = globalObjectMap.get(hash);
+                } else if (weakGlobalObjectMap.containsKey(hash)) {
+                    dvmGlobalObject = weakGlobalObjectMap.get(hash);
+                } else {
+                    dvmGlobalObject = null;
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("GetObjectRefType object=" + object + ", dvmGlobalObject=" + dvmGlobalObject + ", dvmLocalObject=" + dvmLocalObject);
                 }

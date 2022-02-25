@@ -3,6 +3,7 @@ package com.github.unidbg.ios.kevent;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.thread.AbstractWaiter;
 import com.github.unidbg.thread.Waiter;
 import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
@@ -10,7 +11,7 @@ import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
-public class KEventWaiter implements Waiter {
+public class KEventWaiter extends AbstractWaiter implements Waiter {
 
     private static final Log log = LogFactory.getLog(KEventWaiter.class);
 
@@ -50,5 +51,4 @@ public class KEventWaiter implements Waiter {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X0, i);
         }
     }
-
 }
