@@ -493,6 +493,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 356:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, eventfd2(emulator));
                     return;
+                case 352:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, fallocate(emulator));
+                    return;
                 case 358:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, dup3(emulator));
                     return;
@@ -532,6 +535,18 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private int fallocate(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int mode = context.getIntArg(1);
+        int offset = context.getIntArg(2);
+        int len = context.getIntArg(3);
+        if (log.isDebugEnabled()) {
+            log.debug("fallocate fd=" + fd + ", mode=0x" + Integer.toHexString(mode) + ", offset=" + offset + ", len=" + len);
+        }
+        return 0;
     }
 
     private int mlock(Emulator<?> emulator) {
