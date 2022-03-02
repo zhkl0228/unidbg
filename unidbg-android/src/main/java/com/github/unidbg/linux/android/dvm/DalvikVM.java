@@ -2932,6 +2932,9 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + context.getLRPointer());
                 }
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetStringUTFChars(\"%s\") was called from %s%n", string, context.getLRPointer());
+                }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
                 UnidbgPointer pointer = string.allocateMemoryBlock(emulator, data.length);
                 pointer.write(0, data, 0, data.length);

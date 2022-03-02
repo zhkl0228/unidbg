@@ -537,18 +537,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         }
     }
 
-    private int fallocate(Emulator<AndroidFileIO> emulator) {
-        RegisterContext context = emulator.getContext();
-        int fd = context.getIntArg(0);
-        int mode = context.getIntArg(1);
-        int offset = context.getIntArg(2);
-        int len = context.getIntArg(3);
-        if (log.isDebugEnabled()) {
-            log.debug("fallocate fd=" + fd + ", mode=0x" + Integer.toHexString(mode) + ", offset=" + offset + ", len=" + len);
-        }
-        return 0;
-    }
-
     private int mlock(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer addr = context.getPointerArg(0);
