@@ -20,17 +20,12 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>capstone</artifactId>
-            <version>3.1.5</version>
+            <version>3.1.6</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>keystone</artifactId>
-            <version>0.9.6</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.zhkl0228</groupId>
-            <artifactId>jna_silicon</artifactId>
-            <version>4.5.2-1</version>
+            <version>0.9.7</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>

@@ -1,15 +1,10 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
-import com.sun.jna.NativeLoader;
 
 import java.util.Collection;
 
 public abstract class BackendFactory {
-
-    static {
-        NativeLoader.loadAppleSilicon();
-    }
 
     private final boolean fallbackUnicorn;
 

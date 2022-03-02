@@ -6,7 +6,6 @@ import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.ios.struct.kernel.VmRegionBasicInfo;
 import com.github.unidbg.ios.struct.kernel.VmRegionBasicInfo64;
 import com.github.unidbg.utils.Inspector;
-import com.sun.jna.NativeLoader;
 import junit.framework.TestCase;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
@@ -21,7 +20,6 @@ import java.util.Map;
 public class PListTest extends TestCase {
 
     public void testStruct() throws Exception {
-        NativeLoader.loadAppleSilicon();
         VmRegionBasicInfo64 vmRegionBasicInfo64 = new VmRegionBasicInfo64(Hex.decodeHex("030000000300000001000000000000000000000000000000000000000000000000000000".toCharArray()));
         vmRegionBasicInfo64.unpack();
         System.out.println(vmRegionBasicInfo64);
