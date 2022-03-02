@@ -52,7 +52,7 @@ abstract class AbstractTask extends BaseTask implements Task {
 
         Waiter waiter = getWaiter();
         if (waiter != null) {
-            waiter.onSignalTask(task);
+            waiter.onSignal(task);
         }
     }
 

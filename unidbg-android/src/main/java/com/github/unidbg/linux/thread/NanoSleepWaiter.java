@@ -30,8 +30,8 @@ public class NanoSleepWaiter extends AndroidWaiter {
     private boolean onSignal;
 
     @Override
-    public void onSignalTask(SignalTask task) {
-        super.onSignalTask(task);
+    public void onSignal(SignalTask task) {
+        super.onSignal(task);
 
         onSignal = true;
 

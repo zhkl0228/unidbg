@@ -9,5 +9,5 @@ public interface Waiter {
 
     void onContinueRun(Emulator<?> emulator);
 
-    void onSignalTask(SignalTask task);
+    void onSignal(SignalTask task);
 }

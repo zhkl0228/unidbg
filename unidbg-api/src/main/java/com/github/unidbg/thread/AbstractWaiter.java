@@ -5,7 +5,7 @@ import com.github.unidbg.signal.SignalTask;
 public abstract class AbstractWaiter implements Waiter {
 
     @Override
-    public void onSignalTask(SignalTask task) {
+    public void onSignal(SignalTask task) {
     }
 
 }
