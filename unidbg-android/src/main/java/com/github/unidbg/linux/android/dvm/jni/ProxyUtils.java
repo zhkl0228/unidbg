@@ -237,28 +237,12 @@ class ProxyUtils {
         return new ProxyConstructor(visitor, constructor, args.toArray());
     }
 
-    static ProxyCall findConstructor(Class<?> clazz, DvmMethod dvmMethod, VaList vaList, ProxyDvmObjectVisitor visitor) throws NoSuchMethodException {
-        if (!"<init>".equals(dvmMethod.getMethodName())) {
-            throw new IllegalStateException(dvmMethod.getMethodName());
-        }
-        List<Class<?>> classes = new ArrayList<>(10);
-        List<Object> args = new ArrayList<>(10);
-        parseMethodArgs(dvmMethod, classes, args, vaList, clazz.getClassLoader());
-        if (dvmMethod.member != null) {
-            return new ProxyConstructor(visitor, (Constructor<?>) dvmMethod.member, args.toArray());
-        }
-        Class<?>[] types = classes.toArray(new Class<?>[0]);
-        Constructor<?> constructor = matchConstructorTypes(clazz, types);
-        dvmMethod.setMember(constructor);
-        return new ProxyConstructor(visitor, constructor, args.toArray());
-    }
-
     static ProxyCall findMethod(Class<?> clazz, DvmMethod dvmMethod, VarArg varArg, boolean isStatic, ProxyDvmObjectVisitor visitor) throws NoSuchMethodException {
         List<Class<?>> classes = new ArrayList<>(10);
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, varArg, clazz.getClassLoader());
         if (dvmMethod.member != null) {
-            return new ProxyMethod(visitor, (Method) dvmMethod.member, args.toArray());
+            return new ProxyMethod(visitor, dvmMethod.member, args.toArray());
         }
         Class<?>[] types = classes.toArray(new Class[0]);
         Member method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
@@ -271,7 +255,7 @@ class ProxyUtils {
         List<Object> args = new ArrayList<>(10);
         parseMethodArgs(dvmMethod, classes, args, vaList, clazz.getClassLoader());
         if (dvmMethod.member != null) {
-            return new ProxyMethod(visitor, (Method) dvmMethod.member, args.toArray());
+            return new ProxyMethod(visitor, dvmMethod.member, args.toArray());
         }
         Class<?>[] types = classes.toArray(new Class[0]);
         Member method = matchMethodTypes(clazz, dvmMethod.getMethodName(), types, isStatic);
@@ -279,19 +263,59 @@ class ProxyUtils {
         return new ProxyMethod(visitor, method, args.toArray());
     }
 
+    static Field matchField(Class<?> clazz, String fieldName, Class<?> fieldType, boolean isStatic) throws NoSuchFieldException {
+        List<Field> fields = new ArrayList<>();
+        if (isStatic) {
+            for (Field field : clazz.getFields()) {
+                if (fieldName.equals(field.getName()) &&
+                        Modifier.isStatic(field.getModifiers())) {
+                    fields.add(field);
+                }
+            }
+        }
+        for (Field field : clazz.getDeclaredFields()) {
+            if (fieldName.equals(field.getName()) &&
+                    isStatic == Modifier.isStatic(field.getModifiers())) {
+                fields.add(field);
+            }
+        }
+        if (!isStatic) {
+            for (Field field : clazz.getDeclaredFields()) {
+                if (fieldName.equals(field.getName()) &&
+                        Modifier.isStatic(field.getModifiers())) {
+                    fields.add(field);
+                }
+            }
+        }
+        for (Field field : fields) {
+            if (matchesTypes(new Class[] { field.getType() }, new Class[] { fieldType }, true)) {
+                return field;
+            }
+        }
+        for (Field field : fields) {
+            if (matchesTypes(new Class[] { field.getType() }, new Class[] { fieldType }, false)) {
+                return field;
+            }
+        }
+
+        Class<?> parentClass = clazz.getSuperclass();
+        if (!isStatic && parentClass != null) {
+            try {
+                return matchField(parentClass, fieldName, fieldType, false);
+            } catch(NoSuchFieldException ignored) {}
+        }
+
+        throw new NoSuchFieldException(clazz.getName() + "." + fieldName + ":" + fieldType);
+    }
+
     static ProxyField findField(Class<?> clazz, DvmField dvmField, ProxyDvmObjectVisitor visitor) throws NoSuchFieldException {
         if (dvmField.filed != null) {
             return new ProxyField(visitor, dvmField.filed);
         }
-        String fieldName = dvmField.getFieldName();
-        try {
-            Field field = clazz.getField(fieldName);
-            dvmField.setFiled(field);
-            return new ProxyField(visitor, field);
-        } catch (NoSuchFieldException e) {
-            Field field = clazz.getDeclaredField(fieldName);
-            dvmField.setFiled(field);
-            return new ProxyField(visitor, field);
-        }
+
+        Shorty shorty = dvmField.decodeShorty();
+        Field field = matchField(clazz, dvmField.getFieldName(), shorty.decodeType(clazz.getClassLoader()), dvmField.isStatic());
+        dvmField.setFiled(field);
+        return new ProxyField(visitor, field);
     }
 }
