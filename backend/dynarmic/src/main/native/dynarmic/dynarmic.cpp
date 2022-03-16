@@ -1356,9 +1356,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_free
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
-
   JNIEnv *env;
   if (JNI_OK != vm->GetEnv((void **)&env, JNI_VERSION_1_6)) {
     return JNI_ERR;

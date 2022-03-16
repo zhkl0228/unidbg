@@ -288,8 +288,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     @Override
     public TraceHook traceCode(long begin, long end, TraceCodeListener listener) {
-        AssemblyCodeDumper hook = new AssemblyCodeDumper(this);
-        hook.initialize(begin, end, listener);
+        AssemblyCodeDumper hook = new AssemblyCodeDumper(this, begin, end, listener);
         backend.hook_add_new(hook, begin, end, this);
         return hook;
     }

@@ -9,6 +9,7 @@ import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.listener.TraceCodeListener;
+import com.github.unidbg.memory.Memory;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -22,22 +23,36 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
 
     private final Emulator<?> emulator;
 
-    public AssemblyCodeDumper(Emulator<?> emulator) {
+    public AssemblyCodeDumper(Emulator<?> emulator, long begin, long end, TraceCodeListener listener) {
         super();
 
         this.emulator = emulator;
-    }
-
-    private boolean traceInstruction;
-    private long traceBegin, traceEnd;
-    private TraceCodeListener listener;
-
-    public void initialize(long begin, long end, TraceCodeListener listener) {
-        this.traceInstruction = true;
         this.traceBegin = begin;
         this.traceEnd = end;
         this.listener = listener;
+
+        Memory memory = emulator.getMemory();
+        if (begin > end) {
+            maxLengthLibraryName = memory.getMaxLengthLibraryName().length();
+        } else {
+            int value = 0;
+            for (Module module : memory.getLoadedModules()) {
+                long min = Math.max(begin, module.base);
+                long max = Math.min(end, module.base + module.size);
+                if (min < max) {
+                    int length = module.name.length();
+                    if (length > value) {
+                        value = length;
+                    }
+                }
+            }
+            maxLengthLibraryName = value;
+        }
     }
+
+    private final long traceBegin, traceEnd;
+    private final TraceCodeListener listener;
+    private final int maxLengthLibraryName;
 
     private UnHook unHook;
 
@@ -65,7 +80,7 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
     }
 
     private boolean canTrace(long address) {
-        return traceInstruction && (traceBegin > traceEnd || (address >= traceBegin && address <= traceEnd));
+        return (traceBegin > traceEnd || (address >= traceBegin && address <= traceEnd));
     }
 
     private PrintStream redirect;
@@ -85,7 +100,7 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
                 if (redirect != null) {
                     out = redirect;
                 }
-                Instruction[] insns = emulator.printAssemble(out, address, size, new InstructionVisitor() {
+                Instruction[] insns = emulator.printAssemble(out, address, size, maxLengthLibraryName, new InstructionVisitor() {
                     @Override
                     public void visitLast(StringBuilder builder) {
                         if (lastInstructionWritePrinter != null) {
