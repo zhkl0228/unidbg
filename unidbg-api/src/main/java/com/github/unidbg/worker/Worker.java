@@ -1,6 +1,18 @@
 package com.github.unidbg.worker;
 
-import java.io.Closeable;
+public abstract class Worker implements AutoCloseable {
 
-public interface Worker extends Closeable {
+    private final WorkerPool pool;
+
+    public Worker(WorkerPool pool) {
+        this.pool = pool;
+    }
+
+    public abstract void destroy();
+
+    @Override
+    public final void close() {
+        pool.release(this);
+    }
+
 }

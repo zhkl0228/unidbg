@@ -422,11 +422,7 @@ static void test_getfsstat() {
 }
 
 static void test_lr() {
-  uintptr_t lr = 1;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
   char *buf = (char *) malloc(128);
   memset(buf, 0, 128);
   hex(buf, (void *)lr, 8);
@@ -537,11 +533,7 @@ void do_test() {
 
 __attribute__((constructor))
 void init() {
-  uintptr_t lr = 1;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
   lr &= (~(0x4000-1));
   char *buf = (char *) malloc(128);
   memset(buf, 0, 128);

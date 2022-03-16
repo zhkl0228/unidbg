@@ -1,5 +1,6 @@
 package com.bytedance.frameworks.core.encrypt;
 
+import com.alibaba.fastjson.util.IOUtils;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
@@ -29,7 +30,6 @@ import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 
 import java.io.File;
-import java.io.IOException;
 
 public class TTEncrypt {
 
@@ -57,8 +57,8 @@ public class TTEncrypt {
         TTEncryptUtils = vm.resolveClass("com/bytedance/frameworks/core/encrypt/TTEncryptUtils");
     }
 
-    void destroy() throws IOException {
-        emulator.close();
+    void destroy() {
+        IOUtils.close(emulator);
         if (logging) {
             System.out.println("destroy");
         }
