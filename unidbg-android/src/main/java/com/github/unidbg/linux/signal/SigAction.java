@@ -22,12 +22,15 @@ public abstract class SigAction extends UnidbgStructure {
         return action;
     }
 
+    public abstract long getSaHandler();
+    public abstract void setSaHandler(long sa_handler);
+
+    public abstract long getSaRestorer();
+    public abstract void setSaRestorer(long sa_restorer);
+
     public boolean needSigInfo() {
         return (getFlags() & SA_SIGINFO) != 0;
     }
-
-    public Pointer sa_handler;
-    public Pointer sa_restorer;
 
     public abstract long getMask();
 

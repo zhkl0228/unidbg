@@ -11,7 +11,12 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
+import com.github.unidbg.arm.backend.DebugHook;
 import com.github.unidbg.arm.backend.HypervisorBackend;
+import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.WriteHook;
+import com.github.unidbg.debugger.BreakPoint;
+import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
@@ -22,12 +27,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
+import java.util.Stack;
+
 public class HypervisorBackend64 extends HypervisorBackend {
 
     private static final Log log = LogFactory.getLog(HypervisorBackend64.class);
 
+    private static final int INS_SIZE = 4;
+
     public HypervisorBackend64(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator, hypervisor);
+
+        breakpoints = new HypervisorBreakPoint[hypervisor.getBRPs()];
+        watchpoints = new HypervisorWatchpoint[hypervisor.getWRPs()];
     }
 
     private Disassembler disassembler;
@@ -52,11 +64,62 @@ public class HypervisorBackend64 extends HypervisorBackend {
         super.mem_map(address, size, perms);
     }
 
+    private DebugHook debugCallback;
+    private Object debugUserData;
+
     @Override
-    public boolean handleException(long esr, long far, long elr, long spsr) {
+    public void debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException {
+        this.debugCallback = callback;
+        this.debugUserData = user_data;
+    }
+
+    private final HypervisorBreakPoint[] breakpoints;
+    private final Stack<ExceptionVisitor> visitorStack = new Stack<>();
+
+    private int singleStep;
+
+    @Override
+    public void setSingleStep(int singleStep) {
+        this.singleStep = singleStep;
+        hypervisor.enable_single_step(true);
+    }
+
+    @Override
+    public BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb) {
+        if (thumb) {
+            throw new IllegalStateException();
+        }
+        for (int i = 0; i < breakpoints.length; i++) {
+            if (breakpoints[i] == null) {
+                hypervisor.install_hw_breakpoint(i, address);
+                HypervisorBreakPoint bp = new HypervisorBreakPoint(address, callback);
+                breakpoints[i] = bp;
+                return bp;
+            }
+        }
+        throw new UnsupportedOperationException("Max BKPs: " + breakpoints.length);
+    }
+
+    @Override
+    public boolean removeBreakPoint(long address) {
+        for (int i = 0; i < breakpoints.length; i++) {
+            if (breakpoints[i] != null && breakpoints[i].address == address) {
+                breakpoints[i] = null;
+                hypervisor.disable_hw_breakpoint(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean handleException(long esr, long far, final long elr, long spsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec));
+            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", spsr=0x" + Long.toHexString(spsr));
+        }
+        while (!visitorStack.isEmpty()) {
+            visitorStack.pop().onException();
         }
         switch (ec) {
             case EC_AA64_SVC: {
@@ -67,6 +130,34 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case EC_AA64_BKPT: {
                 int bkpt = (int) (esr & 0xffff);
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, bkpt);
+                return true;
+            }
+            case EC_SOFTWARESTEP: {
+                onSoftwareStep(esr, elr, spsr);
+                return true;
+            }
+            case EC_BREAKPOINT: {
+                onBreakpoint(esr, elr);
+                for (int i = 0; i < breakpoints.length; i++) {
+                    HypervisorBreakPoint bp = breakpoints[i];
+                    if (bp != null && bp.address == elr) {
+                        hypervisor.disable_hw_breakpoint(i);
+                        visitorStack.push(new ExceptionVisitor(i) {
+                            @Override
+                            public void onException() {
+                                if (breakpoints[super.n] != null) {
+                                    hypervisor.install_hw_breakpoint(super.n, elr);
+                                }
+                            }
+                        });
+                        step();
+                        break;
+                    }
+                }
+                return true;
+            }
+            case EC_WATCHPOINT: {
+                onWatchpoint(esr, far);
                 return true;
             }
             case EC_DATAABORT: {
@@ -86,7 +177,95 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }
             default:
+                log.warn("handleException ec=0x" + Integer.toHexString(ec));
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
+        }
+    }
+
+    private void step() {
+        if (singleStep < 0) {
+            singleStep = 0;
+        }
+        hypervisor.enable_single_step(true);
+    }
+
+    private final HypervisorWatchpoint[] watchpoints;
+
+    @Override
+    public void hook_add_new(ReadHook callback, long begin, long end, Object user_data) throws BackendException {
+        for (int i = 0; i < watchpoints.length; i++) {
+            if (watchpoints[i] == null) {
+                HypervisorWatchpoint wp = new HypervisorWatchpoint(callback, begin, end, user_data, i, false);
+                wp.install(hypervisor);
+                watchpoints[i] = wp;
+                return;
+            }
+        }
+        throw new UnsupportedOperationException("Max WRPs: " + watchpoints.length);
+    }
+
+    @Override
+    public void hook_add_new(WriteHook callback, long begin, long end, Object user_data) throws BackendException {
+        for (int i = 0; i < watchpoints.length; i++) {
+            if (watchpoints[i] == null) {
+                HypervisorWatchpoint wp = new HypervisorWatchpoint(callback, begin, end, user_data, i, true);
+                wp.install(hypervisor);
+                watchpoints[i] = wp;
+                return;
+            }
+        }
+        throw new UnsupportedOperationException("Max WRPs: " + watchpoints.length);
+    }
+
+    private void onWatchpoint(long esr, long address) {
+        boolean write = ((esr >> 6) & 1) == 1;
+        int status = (int) (esr & 0x3f);
+        boolean isWrite = ((esr >> 6) & 1) != 0;
+        if (log.isDebugEnabled()) {
+            log.debug("onWatchpoint write=" + write + ", address=0x" + Long.toHexString(address) + ", status=0x" + Integer.toHexString(status));
+        }
+        for (int i = 0; i < watchpoints.length; i++) {
+            if (watchpoints[i] != null && watchpoints[i].contains(address, isWrite)) {
+                watchpoints[i].onHit(this, address, isWrite);
+                installRestoreWatchpoint(i, watchpoints[i]);
+                return;
+            }
+        }
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+    }
+
+    private void installRestoreWatchpoint(int n, final HypervisorWatchpoint watchpoint) {
+        hypervisor.disable_watchpoint(n);
+        visitorStack.push(new ExceptionVisitor(n) {
+            @Override
+            public void onException() {
+                watchpoint.install(hypervisor);
+            }
+        });
+        step();
+    }
+
+    private void onBreakpoint(long esr, long elr) {
+        if (debugCallback != null) {
+            debugCallback.onBreak(this, elr, INS_SIZE, debugUserData);
+        } else {
+            int status = (int) (esr & 0x3f);
+            interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+        }
+    }
+
+    private void onSoftwareStep(long esr, long elr, long spsr) {
+        if (--singleStep == 0) {
+            if (debugCallback != null) {
+                debugCallback.onBreak(this, elr, INS_SIZE, debugUserData);
+            } else {
+                int status = (int) (esr & 0x3f);
+                interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+            }
+        } else if (singleStep > 0) {
+            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+        } else {
+            hypervisor.enable_single_step(false);
         }
     }
 

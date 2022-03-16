@@ -16,7 +16,7 @@ public class KInfoProc64 extends UnidbgStructure {
     }
 
     public ExternProc64 kp_proc; /* proc structure */
-    public EProc kp_eproc;
+    public EProc64 kp_eproc;
 
     @Override
     protected List<String> getFieldOrder() {

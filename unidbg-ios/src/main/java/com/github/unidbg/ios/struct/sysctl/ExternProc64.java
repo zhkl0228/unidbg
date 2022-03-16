@@ -18,11 +18,11 @@ public class ExternProc64 extends UnidbgStructure implements DarwinSyscall {
         super(p);
     }
 
-    public Pointer __p_forw;
-    public Pointer __p_back;
+    public long __p_forw;
+    public long __p_back;
 
-    public Pointer p_vmspace; /* Address space. */
-    public Pointer p_sigacts; /* Signal actions, state (PROC ONLY). */
+    public long p_vmspace; /* Address space. */
+    public long p_sigacts; /* Signal actions, state (PROC ONLY). */
 
     public int p_flag; /* P_* flags. */
     public byte p_stat; /* S* process status. */
@@ -32,8 +32,8 @@ public class ExternProc64 extends UnidbgStructure implements DarwinSyscall {
 
     public int p_dupfd; /* Sideways return value from fdopen. XXX */
 
-    public Pointer user_stack; /* where user stack was allocated */
-    public Pointer exit_thread; /* XXX Which thread is exiting? */
+    public long user_stack; /* where user stack was allocated */
+    public long exit_thread; /* XXX Which thread is exiting? */
 
     public int p_debugger; /* allow to debug */
     public boolean sigwait; /* indication to suspend */
@@ -41,8 +41,8 @@ public class ExternProc64 extends UnidbgStructure implements DarwinSyscall {
     public int p_cpticks; /* Ticks of cpu time. */
     public int p_pctcpu; /* %cpu for this process during p_swtime */
 
-    public Pointer p_wchan; /* Sleep address. */
-    public Pointer p_wmesg; /* Reason for sleep. */
+    public long p_wchan; /* Sleep address. */
+    public long p_wmesg; /* Reason for sleep. */
 
     public int p_swtime; /* Time swapped in or out. */
     public int p_slptime; /* Time since last blocked. */
@@ -55,9 +55,9 @@ public class ExternProc64 extends UnidbgStructure implements DarwinSyscall {
     public long p_iticks; /* Statclock hits processing intr. */
 
     public int p_traceflag; /* Kernel trace points. */
-    public Pointer p_tracep; /* Trace to vnode. */
+    public long p_tracep; /* Trace to vnode. */
     public int p_siglist;
-    public Pointer p_textvp; /* Vnode of executable. */
+    public long p_textvp; /* Vnode of executable. */
     public int p_holdcnt; /* If non-zero, don't swap. */
 
     public int p_sigmask;
@@ -69,11 +69,11 @@ public class ExternProc64 extends UnidbgStructure implements DarwinSyscall {
     public byte p_nice; /* Process "nice" value. */
     public byte[] p_comm = new byte[MAXCOMLEN + 1];
 
-    public Pointer p_pgrp; /* Pointer to process group. */
-    public Pointer p_addr; /* Kernel virtual addr of u-area (PROC ONLY). */
+    public long p_pgrp; /* Pointer to process group. */
+    public long p_addr; /* Kernel virtual addr of u-area (PROC ONLY). */
     public short p_xstat; /* Exit status for wait; also stop signal. */
     public short p_acflag; /* Accounting flags. */
-    public Pointer p_ru; /* Exit information. XXX */
+    public long p_ru; /* Exit information. XXX */
 
     @Override
     protected List<String> getFieldOrder() {

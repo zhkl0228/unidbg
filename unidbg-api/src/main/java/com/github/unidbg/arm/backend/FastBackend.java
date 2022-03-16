@@ -50,7 +50,7 @@ abstract class FastBackend extends AbstractBackend {
     private final Map<Integer, SoftBreakPoint> softBreakpointMap = new HashMap<>();
 
     @Override
-    public final BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb) {
+    public BreakPoint addBreakPoint(long address, BreakPointCallback callback, boolean thumb) {
         int svcNumber = ++this.svcNumber; // begin with 2
         byte[] code = addSoftBreakPoint(address, svcNumber, thumb);
 
@@ -66,7 +66,7 @@ abstract class FastBackend extends AbstractBackend {
     protected abstract byte[] addSoftBreakPoint(long address, int svcNumber, boolean thumb);
 
     @Override
-    public final boolean removeBreakPoint(long address) {
+    public boolean removeBreakPoint(long address) {
         address &= (~1);
 
         for (Iterator<Map.Entry<Integer, SoftBreakPoint>> iterator = softBreakpointMap.entrySet().iterator(); iterator.hasNext(); ) {
@@ -84,7 +84,7 @@ abstract class FastBackend extends AbstractBackend {
     }
 
     @Override
-    public final void setSingleStep(int singleStep) {
+    public void setSingleStep(int singleStep) {
     }
 
     @Override

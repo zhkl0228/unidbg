@@ -3,6 +3,8 @@ package com.github.unidbg.ios;
 import com.dd.plist.NSDictionary;
 import com.dd.plist.PropertyListParser;
 import com.github.unidbg.ios.struct.kernel.StatFS;
+import com.github.unidbg.ios.struct.kernel.VmRegionBasicInfo;
+import com.github.unidbg.ios.struct.kernel.VmRegionBasicInfo64;
 import com.github.unidbg.utils.Inspector;
 import junit.framework.TestCase;
 import org.apache.commons.codec.binary.Base64;
@@ -16,6 +18,16 @@ import java.util.Locale;
 import java.util.Map;
 
 public class PListTest extends TestCase {
+
+    public void testStruct() throws Exception {
+        VmRegionBasicInfo64 vmRegionBasicInfo64 = new VmRegionBasicInfo64(Hex.decodeHex("030000000300000001000000000000000000000000000000000000000000000000000000".toCharArray()));
+        vmRegionBasicInfo64.unpack();
+        System.out.println(vmRegionBasicInfo64);
+
+        VmRegionBasicInfo vmRegionBasicInfo = new VmRegionBasicInfo(Hex.decodeHex("0100000001000000000000000000000000000000000000000000000000000000".toCharArray()));
+        vmRegionBasicInfo.unpack();
+        System.out.println(vmRegionBasicInfo);
+    }
 
     public void testPList() throws Exception {
         Map<String, Object> map = new HashMap<>();

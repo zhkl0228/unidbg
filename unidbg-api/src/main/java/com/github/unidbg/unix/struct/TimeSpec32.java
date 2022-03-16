@@ -25,6 +25,12 @@ public class TimeSpec32 extends TimeSpec {
     }
 
     @Override
+    protected void setTv(long tvSec, long tvNsec) {
+        this.tv_sec = (int) tvSec;
+        this.tv_nsec = (int) tvNsec;
+    }
+
+    @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("tv_sec", "tv_nsec");
     }

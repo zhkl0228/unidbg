@@ -14,6 +14,7 @@ import com.github.unidbg.linux.file.PipedWriteFileIO;
 import com.github.unidbg.linux.signal.SigAction;
 import com.github.unidbg.linux.signal.SignalFunction;
 import com.github.unidbg.linux.signal.SignalTask;
+import com.github.unidbg.linux.thread.NanoSleepWaiter;
 import com.github.unidbg.signal.UnixSigSet;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
@@ -608,7 +609,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
         }
         if (SIGKILL == signum || SIGSTOP == signum) {
             if (oldAction != null) {
-                oldAction.sa_handler = UnidbgPointer.pointer(emulator, SIG_ERR);
+                oldAction.setSaHandler(SIG_ERR);
                 oldAction.pack();
             }
             return -UnixEmulator.EINVAL;
@@ -618,8 +619,8 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             if (lastAction == null) {
                 oldact.write(0, new byte[oldAction.size()], 0, oldAction.size());
             } else {
-                oldAction.sa_handler = lastAction.sa_handler;
-                oldAction.sa_restorer = lastAction.sa_restorer;
+                oldAction.setSaHandler(lastAction.getSaHandler());
+                oldAction.setSaRestorer(lastAction.getSaRestorer());
                 oldAction.setFlags(lastAction.getFlags());
                 oldAction.setMask(lastAction.getMask());
                 oldAction.pack();
@@ -706,6 +707,39 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             threadId = emulator.getPid();
         }
         return (++threadId) & 0xffff; // http://androidxref.com/6.0.1_r10/xref/bionic/libc/bionic/pthread_mutex.cpp#215
+    }
+
+    protected int nanosleep(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer req = context.getPointerArg(0);
+        Pointer rem = context.getPointerArg(1);
+        TimeSpec timeSpec = TimeSpec.createTimeSpec(emulator, req);
+        if (log.isDebugEnabled()) {
+            log.debug("nanosleep req=" + req + ", rem=" + rem + ", timeSpec=" + timeSpec);
+        }
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        if (threadDispatcherEnabled && runningTask != null) {
+            runningTask.setWaiter(new NanoSleepWaiter(emulator, rem, timeSpec));
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        } else {
+            try {
+                java.lang.Thread.sleep(timeSpec.toMillis());
+            } catch (InterruptedException ignored) {
+            }
+            return 0;
+        }
+    }
+
+    protected int fallocate(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int mode = context.getIntArg(1);
+        int offset = context.getIntArg(2);
+        int len = context.getIntArg(3);
+        if (log.isDebugEnabled()) {
+            log.debug("fallocate fd=" + fd + ", mode=0x" + Integer.toHexString(mode) + ", offset=" + offset + ", len=" + len);
+        }
+        return 0;
     }
 
 }

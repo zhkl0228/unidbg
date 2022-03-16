@@ -22,7 +22,7 @@ public class SignalFunction extends MainTask {
 
     @Override
     public String toString() {
-        return "SignalFunction sa_handler=" + action.sa_handler + ", signum=" + signum;
+        return "SignalFunction sa_handler=" + action.getSaHandler() + ", signum=" + signum;
     }
 
     private MemoryBlock infoBlock;
@@ -58,7 +58,7 @@ public class SignalFunction extends MainTask {
             backend.reg_write(Arm64Const.UC_ARM64_REG_X2, 0); // void *ucontext
             backend.reg_write(Arm64Const.UC_ARM64_REG_LR, until);
         }
-        return emulator.emulate(UnidbgPointer.nativeValue(action.sa_handler), until);
+        return emulator.emulate(action.getSaHandler(), until);
     }
 
 }

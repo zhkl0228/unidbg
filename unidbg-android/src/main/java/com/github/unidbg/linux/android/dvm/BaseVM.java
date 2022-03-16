@@ -89,6 +89,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     final Map<Integer, ObjRef> globalObjectMap = new HashMap<>();
+    final Map<Integer, ObjRef> weakGlobalObjectMap = new HashMap<>();
     final Map<Integer, ObjRef> localObjectMap = new HashMap<>();
 
     private DvmClassFactory dvmClassFactory;
@@ -135,7 +136,11 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             ((DvmAwareObject) value).initializeDvm(emulator, this, object);
         }
         if (global) {
-            globalObjectMap.put(hash, new ObjRef(object, weak));
+            if (weak) {
+                weakGlobalObjectMap.put(hash, new ObjRef(object, true));
+            } else {
+                globalObjectMap.put(hash, new ObjRef(object, false));
+            }
         } else {
             localObjectMap.put(hash, new ObjRef(object, weak));
         }
@@ -166,8 +171,10 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         ObjRef ref;
         if (localObjectMap.containsKey(hash)) {
             ref = localObjectMap.get(hash);
-        } else {
+        } else if(globalObjectMap.containsKey(hash)) {
             ref = globalObjectMap.get(hash);
+        } else {
+            ref = weakGlobalObjectMap.get(hash);
         }
         return ref == null ? null : (T) ref.obj;
     }
@@ -311,7 +318,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         for (Integer key : classMap.keySet()) {
             map.remove(key);
         }
-        System.err.println("globalObjectSize=" + globalObjectMap.size() + ", localObjectSize=" + localObjectMap.size() + ", classSize=" + classMap.size() + ", globalObjectSize=" + map.size());
+        System.err.println("globalObjectSize=" + globalObjectMap.size() + ", localObjectSize=" + localObjectMap.size() + ", weakGlobalObjectSize=" + weakGlobalObjectMap.size() + ", classSize=" + classMap.size() + ", globalObjectSize=" + map.size());
         System.err.println("heap: " + memoryUsage(heap) + ", nonheap: " + memoryUsage(nonheap));
     }
 

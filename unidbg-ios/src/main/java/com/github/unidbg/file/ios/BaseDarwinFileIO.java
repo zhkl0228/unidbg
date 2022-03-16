@@ -76,7 +76,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
     }
 
     public int fstatfs(StatFS statFS) {
-        throw new UnsupportedOperationException(getClass().getName());
+        throw new UnsupportedOperationException(getClass().getName() + " path=" + getPath());
     }
 
     @Override

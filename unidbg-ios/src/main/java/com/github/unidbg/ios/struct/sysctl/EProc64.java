@@ -9,26 +9,26 @@ import java.util.List;
 /**
  * eproc
  */
-public class EProc extends UnidbgStructure {
+public class EProc64 extends UnidbgStructure {
 
     private static final int WMESGLEN = 7;
     private static final int COMAPT_MAXLOGNAME = 12;
 
-    public EProc(Pointer p) {
+    public EProc64(Pointer p) {
         super(p);
     }
 
-    public Pointer e_paddr; /* address of proc */
-    public Pointer e_sess; /* session pointer */
-    public Pcred e_pcred; /* process credentials */
+    public long e_paddr; /* address of proc */
+    public long e_sess; /* session pointer */
+    public Pcred64 e_pcred; /* process credentials */
     public Ucred e_ucred; /* current credentials */
-    public VmSpace e_vm; /* address space */
+    public VmSpace64 e_vm; /* address space */
     public int e_ppid; /* parent process id */
     public int e_pgid; /* process group id */
     public short e_jobc; /* job control counter */
     public int e_tdev; /* controlling tty dev */
     public int e_tpgid; /* tty process group id */
-    public Pointer e_tsess; /* tty session pointer */
+    public long e_tsess; /* tty session pointer */
     public byte[] e_wmesg = new byte[WMESGLEN + 1]; /* wchan message */
     public int e_xsize; /* text size */
     public short e_xrssize; /* text rss */

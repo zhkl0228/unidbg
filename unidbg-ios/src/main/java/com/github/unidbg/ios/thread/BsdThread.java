@@ -6,6 +6,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.thread.ThreadTask;
+import com.sun.jna.Pointer;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
@@ -63,8 +64,9 @@ public class BsdThread extends ThreadTask {
     @Override
     public boolean setErrno(Emulator<?> emulator, int errno) {
         Pthread pthread = Pthread.create(emulator, thread);
-        if (pthread.errno != null) {
-            pthread.errno.setInt(0, errno);
+        Pointer errnoPointer = pthread.getErrnoPointer(emulator);
+        if (errnoPointer != null) {
+            errnoPointer.setInt(0, errno);
             return true;
         }
         return super.setErrno(emulator, errno);

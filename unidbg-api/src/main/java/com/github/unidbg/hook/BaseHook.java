@@ -65,18 +65,6 @@ public abstract class BaseHook implements IHook {
         return emulator.createURLibraryFile(url, lib);
     }
 
-    protected final long numberToAddress(Number number) {
-        return numberToAddress(emulator, number);
-    }
-
-    public static long numberToAddress(Emulator<?> emulator, Number number) {
-        if (emulator.is64Bit()) {
-            return number.longValue();
-        } else {
-            return number.intValue() & 0xffffffffL;
-        }
-    }
-
     @Override
     public Module getModule() {
         return module;

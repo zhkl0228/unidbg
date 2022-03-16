@@ -2,6 +2,8 @@ package com.github.unidbg.linux.android.dvm;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DvmField extends Hashable {
 
@@ -25,13 +27,78 @@ public class DvmField extends Hashable {
         return fieldName;
     }
 
-    @SuppressWarnings("unused")
     public String getFieldType() {
         return fieldType;
     }
 
+    public boolean isStatic() {
+        return isStatic;
+    }
+
     final String getSignature() {
         return dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+    }
+
+    private Shorty[] shortyCache;
+
+    public final Shorty decodeShorty() {
+        if (shortyCache != null) {
+            return shortyCache[0];
+        }
+
+        char[] chars = getFieldType().toCharArray();
+        List<Shorty> list = new ArrayList<>(chars.length);
+        int arrayDimensions = 0;
+        boolean isType = false;
+        Shorty shorty = null;
+        StringBuilder binaryName = new StringBuilder();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+
+            if (isType) {
+                if (c == ';') {
+                    isType = false;
+                    shorty.setBinaryName(binaryName.toString());
+                    binaryName.delete(0, binaryName.length());
+                } else {
+                    binaryName.append(c);
+                }
+                continue;
+            }
+
+            char type = '0';
+            switch (c) {
+                case 'L':
+                    isType = true;
+                    type = c;
+                    break;
+                case 'B':
+                case 'C':
+                case 'I':
+                case 'S':
+                case 'Z':
+                case 'D':
+                case 'F':
+                case 'J':
+                    type = c;
+                    break;
+                case '[':
+                    arrayDimensions++;
+                    break;
+                default:
+                    throw new IllegalStateException("i=" + i + ", char=" + chars[i] + ", fieldType=" + fieldType);
+            }
+
+            if (type == '0') {
+                continue;
+            }
+
+            shorty = new Shorty(arrayDimensions, type);
+            list.add(shorty);
+            arrayDimensions = 0;
+        }
+        shortyCache = list.toArray(new Shorty[0]);
+        return shortyCache[0];
     }
 
     DvmObject<?> getStaticObjectField() {

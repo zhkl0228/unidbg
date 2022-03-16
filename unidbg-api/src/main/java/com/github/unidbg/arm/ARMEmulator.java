@@ -48,6 +48,6 @@ public interface ARMEmulator<T extends NewFileIO> extends Emulator<T> {
 
     int EXCP_UDEF = 1; /* undefined instruction */
     int EXCP_SWI = 2; /* software interrupt */
-    int EXCP_BKPT = 7;
+    int EXCP_BKPT = 7; /* software breakpoint */
 
 }

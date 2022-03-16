@@ -3,13 +3,14 @@ package com.github.unidbg.ios.thread;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.ios.DarwinSyscall;
+import com.github.unidbg.thread.AbstractWaiter;
 import com.github.unidbg.thread.Waiter;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
 import java.util.Map;
 
-public class SemWaiter implements Waiter {
+public class SemWaiter extends AbstractWaiter implements Waiter {
 
     private final int sem;
     private final Map<Integer, Boolean> semaphoreMap;

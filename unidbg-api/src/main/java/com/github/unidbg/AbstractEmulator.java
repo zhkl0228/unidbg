@@ -67,14 +67,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     protected long timeout = DEFAULT_TIMEOUT;
 
-    private static final ThreadLocal<Emulator<?>> EMULATOR_THREAD_LOCAL = new ThreadLocal<>();
-    public static Emulator<?> getContextEmulator() {
-        return EMULATOR_THREAD_LOCAL.get();
-    }
-    public static void setContextEmulator(Emulator<?> emulator) {
-        EMULATOR_THREAD_LOCAL.set(emulator);
-    }
-
     private final RegisterContext registerContext;
 
     private final FileSystem<T> fileSystem;
@@ -110,7 +102,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         String pid = name.split("@")[0];
         this.pid = Integer.parseInt(pid) & 0x7fff;
 
-        setContextEmulator(this);
         this.svcMemory = new ARMSvcMemory(svcBase, svcSize, this);
         this.threadDispatcher = new UniThreadDispatcher(this);
 
@@ -356,13 +347,14 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             backend.emu_stop();
             throw new IllegalStateException("running");
         }
+        if (is32Bit()) {
+            begin &= 0xffffffffL;
+        }
 
         final Pointer pointer = UnidbgPointer.pointer(this, begin);
         long start = 0;
         Thread exitHook = null;
         try {
-            setContextEmulator(this);
-
             if (log.isDebugEnabled()) {
                 log.debug("emulate " + pointer + " started sp=" + getStackPointer());
             }
@@ -372,7 +364,6 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
                 exitHook = new Thread() {
                     @Override
                     public void run() {
-                        setContextEmulator(AbstractEmulator.this);
                         backend.emu_stop();
                         Debugger debugger = attach();
                         if (!debugger.isDebugging()) {

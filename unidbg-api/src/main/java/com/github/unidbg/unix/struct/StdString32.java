@@ -1,5 +1,7 @@
 package com.github.unidbg.unix.struct;
 
+import com.github.unidbg.Emulator;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
@@ -17,19 +19,19 @@ public class StdString32 extends StdString {
 
     public byte isTiny;
     public int size;
-    public Pointer value;
+    public int value;
 
     @Override
     protected List<String> getFieldOrder() {
         return Arrays.asList("isTiny", "size", "value");
     }
 
-    public Pointer getDataPointer() {
+    public Pointer getDataPointer(Emulator<?> emulator) {
         boolean isTiny = (this.isTiny & 1) == 0;
         if (isTiny) {
             return getPointer().share(1);
         } else {
-            return value;
+            return UnidbgPointer.pointer(emulator, value);
         }
     }
 

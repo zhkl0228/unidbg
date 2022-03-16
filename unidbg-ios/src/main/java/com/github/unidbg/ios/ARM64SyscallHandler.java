@@ -27,6 +27,7 @@ import com.github.unidbg.ios.file.UdpSocket;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.AslServerMessageRequest;
 import com.github.unidbg.ios.struct.kernel.ClockGetTimeReply;
+import com.github.unidbg.ios.struct.kernel.DyldCacheHeader;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceReply;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceRequest;
 import com.github.unidbg.ios.struct.kernel.HostInfoReply;
@@ -40,7 +41,7 @@ import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesReply;
 import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesRequest;
 import com.github.unidbg.ios.struct.kernel.MachPortTypeReply;
 import com.github.unidbg.ios.struct.kernel.MachPortTypeRequest;
-import com.github.unidbg.ios.struct.kernel.MachPortsLookup64Reply;
+import com.github.unidbg.ios.struct.kernel.MachPortsLookupReply64;
 import com.github.unidbg.ios.struct.kernel.MachTimebaseInfo;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelReply;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelRequest;
@@ -71,10 +72,14 @@ import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
 import com.github.unidbg.ios.struct.kernel.TaskThreadsReply64;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
 import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
+import com.github.unidbg.ios.struct.kernel.ThreadStateReply64;
+import com.github.unidbg.ios.struct.kernel.ThreadStateRequest;
 import com.github.unidbg.ios.struct.kernel.VmCopy64Request;
 import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmReadOverwriteReply;
 import com.github.unidbg.ios.struct.kernel.VmReadOverwriteRequest;
+import com.github.unidbg.ios.struct.kernel.VmRegion64Reply;
+import com.github.unidbg.ios.struct.kernel.VmRegion64Request;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse64Reply;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse64Request;
 import com.github.unidbg.ios.struct.kernel.VmRemapReply;
@@ -113,9 +118,6 @@ import static com.github.unidbg.ios.MachO.MAP_MY_FIXED;
 import static com.github.unidbg.ios.file.SocketIO.AF_LINK;
 import static com.github.unidbg.ios.file.SocketIO.AF_ROUTE;
 
-/**
- * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
- */
 public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
     private static final Log log = LogFactory.getLog(ARM64SyscallHandler.class);
@@ -285,6 +287,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 1:
                     exit(emulator);
                     return;
+                case 2:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fork(emulator));
+                    return;
                 case 4:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, write(emulator, 0));
                     return;
@@ -369,7 +374,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 0));
                     return;
                 case 98:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 0));
                     return;
                 case 116:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
@@ -390,7 +395,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, rmdir(emulator));
                     return;
                 case 138:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator, 0));
+                    return;
+                case 159:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, unmount(emulator));
                     return;
                 case 169:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, csops(emulator));
@@ -439,6 +447,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     return;
                 case 286:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_getugid_np(emulator));
+                    return;
+                case 294:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, shared_region_check_np(emulator));
                     return;
                 case 301:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, psynch_mutexwait(emulator));
@@ -574,6 +585,33 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private int unmount(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer target = context.getPointerArg(0);
+        int flags = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("unmount target=" + target.getString(0) + ", flags=0x" + Integer.toHexString(flags));
+        }
+        return 0;
+    }
+
+    private UnidbgPointer shared_region;
+
+    private int shared_region_check_np(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer start_address = context.getPointerArg(0);
+        if (shared_region == null) {
+            shared_region = emulator.getMemory().mmap(emulator.getPageAlign(), UnicornConst.UC_PROT_READ);
+            DyldCacheHeader dyldCacheHeader = new DyldCacheHeader(shared_region);
+            dyldCacheHeader.pack();
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("shared_region_check_np start_address=" + start_address + ", LR=" + context.getLRPointer());
+        }
+        start_address.setPointer(0, shared_region);
+        return 0;
     }
 
     private int getdtablesize() {
@@ -760,10 +798,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
      * set file access and modification times
      * int utimes(const char *path, const struct timeval times[2]);
      */
-    private long utimes(Emulator<?> emulator) {
+    private long utimes(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        Pointer path = context.getPointerArg(0);
-        Pointer times = context.getPointerArg(1);
+        Pointer path = context.getPointerArg(offset);
+        Pointer times = context.getPointerArg(offset + 1);
         String pathname = path.getString(0);
         if (log.isDebugEnabled()) {
             log.debug("utimes pathname=" + pathname + ", times=" + times);
@@ -789,11 +827,17 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             case 20:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getpid(emulator));
                 return true;
+            case 39:
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getppid(emulator));
+                return true;
             case 97:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator, 1));
                 return true;
             case 98:
-                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator, 1));
+                return true;
+            case 138:
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator, 1));
                 return true;
             case 190:
             case 340:
@@ -2484,7 +2528,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             }
             case 3404: // mach_ports_lookup
             {
-                MachPortsLookup64Reply reply = new MachPortsLookup64Reply(request);
+                MachPortsLookupReply64 reply = new MachPortsLookupReply64(request);
                 reply.unpack();
 
                 header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
@@ -2805,6 +2849,69 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 4816: { // vm_region_64
+                VmRegion64Request args = new VmRegion64Request(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region_64 args=" + args);
+                }
+                if (args.flavor != VmRegion64Request.VM_REGION_BASIC_INFO_64) {
+                    throw new UnsupportedOperationException("flavor=" + args.flavor);
+                }
+
+                VmRegion64Reply reply = new VmRegion64Reply(request);
+                reply.unpack();
+
+                header.setMsgBits(true);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                MemoryMap memoryRegion = null;
+                for (MemoryMap memoryMap : emulator.getMemory().getMemoryMap()) {
+                    if (memoryMap.base >= args.address) {
+                        memoryRegion = memoryMap;
+                        break;
+                    }
+                }
+
+                if (memoryRegion == null) {
+                    header.setMsgBits(false);
+                    header.msgh_size = 0x24;
+                    header.pack();
+                    reply.retCode1 = 1;
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("vm_region_64 reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.NDR.mig_vers = 1;
+                reply.NDR.int_rep = 0;
+                reply.retCode2 = 0x110000;
+                reply.outCnt = VmRegion64Request.VM_REGION_BASIC_INFO_COUNT_64;
+                reply.address = memoryRegion.base;
+                reply.size = memoryRegion.size;
+                reply.info.protection = memoryRegion.prot;
+                reply.info.max_protection = memoryRegion.prot;
+                reply.info.inheritance = 0;
+                reply.info.shared = false;
+                reply.info.reserved = false;
+                reply.info.offset = 0;
+                reply.info.behavior = 0;
+                reply.info.user_wired_count = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region_64 reply=" + reply);
+                }
+
+                return MACH_MSG_SUCCESS;
+            }
             case 3405: { // task_info
                 TaskInfoRequest args = new TaskInfoRequest(request);
                 args.unpack();
@@ -2833,6 +2940,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+                throw new UnsupportedOperationException("flavor=" + args.flavor);
             }
             case 78: { // _dispatch_send_wakeup_runloop_thread
                 if (log.isDebugEnabled()) {
@@ -2916,6 +3024,49 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
                 if (log.isDebugEnabled()) {
                     log.debug("vm_read_overwrite reply=" + reply + ", header=" + header);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3603: { // _thread_get_state
+                ThreadStateRequest args = new ThreadStateRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state args=" + request);
+                }
+
+                ThreadStateReply64 reply = new ThreadStateReply64(request);
+                reply.unpack();
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                if (args.flavor != ThreadStateRequest.ARM_THREAD_STATE64) {
+                    reply.retCode = 4;
+                    reply.pack();
+                    if (log.isDebugEnabled()) {
+                        log.debug("_thread_get_state reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.retCode = 0;
+                reply.outCnt = ThreadStateRequest.ARM_THREAD_STATE64_COUNT;
+                for (int reg = Arm64Const.UC_ARM64_REG_X0; reg <= Arm64Const.UC_ARM64_REG_X28; reg++) {
+                    reply.state.__x[reg - Arm64Const.UC_ARM64_REG_X0] = backend.reg_read(reg).longValue();
+                }
+                reply.state.__fp = backend.reg_read(Arm64Const.UC_ARM64_REG_FP).longValue();
+                reply.state.__lr = backend.reg_read(Arm64Const.UC_ARM64_REG_LR).longValue();
+                reply.state.__sp = backend.reg_read(Arm64Const.UC_ARM64_REG_SP).longValue();
+                reply.state.__pc = backend.reg_read(Arm64Const.UC_ARM64_REG_PC).longValue();
+                reply.state.__cpsr = backend.reg_read(Arm64Const.UC_ARM64_REG_NZCV).intValue();
+                reply.state.__pad = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state reply=" + reply);
                 }
                 return MACH_MSG_SUCCESS;
             }
@@ -3169,11 +3320,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return sendto(emulator, sockfd, buf, len, flags, dest_addr, addrlen);
     }
 
-    private int connect(Emulator<?> emulator) {
+    private int connect(Emulator<?> emulator, int offset) {
         RegisterContext context = emulator.getContext();
-        int sockfd = context.getIntArg(0);
-        Pointer addr = context.getPointerArg(1);
-        int addrlen = context.getIntArg(2);
+        int sockfd = context.getIntArg(offset);
+        Pointer addr = context.getPointerArg(offset + 1);
+        int addrlen = context.getIntArg(offset + 2);
         return connect(emulator, sockfd, addr, addrlen);
     }
 

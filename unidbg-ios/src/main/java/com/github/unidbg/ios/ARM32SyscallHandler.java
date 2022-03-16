@@ -40,7 +40,7 @@ import com.github.unidbg.ios.struct.kernel.MachPortOptions;
 import com.github.unidbg.ios.struct.kernel.MachPortReply;
 import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesReply;
 import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesRequest;
-import com.github.unidbg.ios.struct.kernel.MachPortsLookupReply;
+import com.github.unidbg.ios.struct.kernel.MachPortsLookupReply32;
 import com.github.unidbg.ios.struct.kernel.MachTimebaseInfo;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelReply;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelRequest;
@@ -70,10 +70,14 @@ import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
 import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
+import com.github.unidbg.ios.struct.kernel.ThreadStateReply32;
+import com.github.unidbg.ios.struct.kernel.ThreadStateRequest;
 import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmCopyRequest;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Reply;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Request;
+import com.github.unidbg.ios.struct.kernel.VmRegionReply;
+import com.github.unidbg.ios.struct.kernel.VmRegionRequest;
 import com.github.unidbg.ios.struct.kernel.VmRemapReply;
 import com.github.unidbg.ios.struct.kernel.VmRemapRequest;
 import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
@@ -1894,6 +1898,47 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     return MACH_MSG_SUCCESS;
                 }
             }
+            case 3603: { // _thread_get_state
+                ThreadStateRequest args = new ThreadStateRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state args=" + request);
+                }
+
+                ThreadStateReply32 reply = new ThreadStateReply32(request);
+                reply.unpack();
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                if (args.flavor != ThreadStateRequest.ARM_THREAD_STATE) {
+                    reply.retCode = 4;
+                    reply.pack();
+                    if (log.isDebugEnabled()) {
+                        log.debug("_thread_get_state reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.retCode = 0;
+                reply.outCnt = ThreadStateRequest.ARM_THREAD_STATE_COUNT;
+                for (int reg = ArmConst.UC_ARM_REG_R0; reg <= ArmConst.UC_ARM_REG_R12; reg++) {
+                    reply.state.__r[reg - ArmConst.UC_ARM_REG_R0] = backend.reg_read(reg).intValue();
+                }
+                reply.state.__sp = backend.reg_read(ArmConst.UC_ARM_REG_SP).intValue();
+                reply.state.__lr = backend.reg_read(ArmConst.UC_ARM_REG_LR).intValue();
+                reply.state.__pc = backend.reg_read(ArmConst.UC_ARM_REG_PC).intValue();
+                reply.state.__cpsr = backend.reg_read(ArmConst.UC_ARM_REG_CPSR).intValue();
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             case 3612: { // _thread_info
                 ThreadInfoRequest args = new ThreadInfoRequest(request);
                 args.unpack();
@@ -2134,7 +2179,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             }
             case 3404: // mach_ports_lookup
             {
-                MachPortsLookupReply reply = new MachPortsLookupReply(request);
+                MachPortsLookupReply32 reply = new MachPortsLookupReply32(request);
                 reply.unpack();
 
                 header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
@@ -2145,7 +2190,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 header.pack();
 
                 reply.retCode = 1;
-                reply.outPort = request;
+                reply.outPort = (int) UnidbgPointer.nativeValue(request);
                 reply.ret = 0;
                 reply.mask = 0x2110000;
                 reply.cnt = 0;
@@ -2469,6 +2514,70 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 3800: { // vm_region
+                VmRegionRequest args = new VmRegionRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region args=" + args);
+                }
+
+                if (args.flavor != VmRegionRequest.VM_REGION_BASIC_INFO) {
+                    throw new UnsupportedOperationException("flavor=" + args.flavor);
+                }
+
+                VmRegionReply reply = new VmRegionReply(request);
+                reply.unpack();
+
+                header.setMsgBits(true);
+                header.msgh_size = header.size() + reply.size() - 4;
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                MemoryMap memoryRegion = null;
+                for (MemoryMap memoryMap : emulator.getMemory().getMemoryMap()) {
+                    if (memoryMap.base >= args.address) {
+                        memoryRegion = memoryMap;
+                        break;
+                    }
+                }
+
+                if (memoryRegion == null) {
+                    header.setMsgBits(false);
+                    header.msgh_size = 0x24;
+                    header.pack();
+                    reply.pad1 = 1;
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("vm_region reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.NDR.mig_vers = 1;
+                reply.NDR.int_rep = 0;
+                reply.retCode = 0x110000;
+                reply.outCnt = VmRegionRequest.VM_REGION_BASIC_INFO_COUNT;
+                reply.address = (int) memoryRegion.base;
+                reply.size = (int) memoryRegion.size;
+                reply.info.protection = memoryRegion.prot;
+                reply.info.max_protection = memoryRegion.prot;
+                reply.info.inheritance = 0;
+                reply.info.shared = false;
+                reply.info.reserved = false;
+                reply.info.offset = 0;
+                reply.info.behavior = 0;
+                reply.info.user_wired_count = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region reply=" + reply);
+                }
+
+                return MACH_MSG_SUCCESS;
+            }
             case 3405: { // task_info
                 TaskInfoRequest args = new TaskInfoRequest(request);
                 args.unpack();
@@ -2497,6 +2606,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+                throw new UnsupportedOperationException("flavor=" + args.flavor);
             }
             case 217: // host_request_notification
                 HostRequestNotificationRequest args = new HostRequestNotificationRequest(request);

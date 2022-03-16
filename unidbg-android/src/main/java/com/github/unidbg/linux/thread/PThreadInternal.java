@@ -1,24 +1,19 @@
 package com.github.unidbg.linux.thread;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
-import java.util.Arrays;
-import java.util.List;
+public abstract class PThreadInternal extends UnidbgStructure {
 
-public class PThreadInternal extends UnidbgStructure {
+    public static PThreadInternal create(Emulator<?> emulator, Pointer pointer) {
+        return emulator.is64Bit() ? new PThreadInternal64(pointer) : new PThreadInternal32(pointer);
+    }
 
-    public Pointer next;
-    public Pointer prev;
     public int tid;
 
     public PThreadInternal(Pointer p) {
         super(p);
-        unpack();
     }
 
-    @Override
-    protected List<String> getFieldOrder() {
-        return Arrays.asList("next", "prev", "tid");
-    }
 }

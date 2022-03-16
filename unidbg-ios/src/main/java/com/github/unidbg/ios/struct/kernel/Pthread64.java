@@ -1,5 +1,7 @@
 package com.github.unidbg.ios.struct.kernel;
 
+import com.github.unidbg.Emulator;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
@@ -22,34 +24,34 @@ public class Pthread64 extends Pthread {
     }
 
     public long sig; // _PTHREAD_SIG
-    public Pointer __cleanup_stack;
+    public long __cleanup_stack;
     public int childrun;
     public int lock;
     public int detached;
     public int pad0;
     public long thread_id; // 64-bit unique thread id
-    public Pointer fun; // thread start routine
-    public Pointer arg; // thread start routine argument
-    public Pointer exit_value; // thread exit value storage
-    public Pointer joiner_notify; // pthread_join notification
+    public long fun; // thread start routine
+    public long arg; // thread start routine argument
+    public long exit_value; // thread exit value storage
+    public long joiner_notify; // pthread_join notification
     public int max_tsd_key;
     public int cancel_state; // whether the thread can be cancelled
     public int cancel_error;
     public int err_no; // thread-local errno
-    public Pointer joiner;
+    public long joiner;
     public SchedParam param;
-    public TailqPthread plist; // global thread list
+    public TailqPthread64 plist; // global thread list
 
-    public Pointer stackaddr; // base of the stack
+    public long stackaddr; // base of the stack
     public long stacksize; // size of stack (page multiple and >= PTHREAD_STACK_MIN)
 
     @Override
     public void setStack(Pointer stackAddress, long stackSize) {
-        this.stackaddr = stackAddress;
+        this.stackaddr = UnidbgPointer.nativeValue(stackAddress);
         this.stacksize = stackSize;
     }
 
-    public Pointer freeaddr; // stack/thread allocation base address
+    public long freeaddr; // stack/thread allocation base address
     public long freesize; // stack/thread allocation size
     public long guardsize; // guard page size in bytes
 
@@ -64,7 +66,7 @@ public class Pthread64 extends Pthread {
     }
 
     @Override
-    public void setExitValue(Pointer pointer) {
+    public void setExitValue(int value) {
         throw new UnsupportedOperationException();
     }
 
@@ -74,5 +76,26 @@ public class Pthread64 extends Pthread {
                 "exit_value", "joiner_notify", "max_tsd_key", "cancel_state", "cancel_error", "err_no", "joiner",
                 "param", "plist", "pthread_name", "stackaddr", "stacksize", "freeaddr", "freesize", "guardsize",
                 "self", "errno", "mig_reply", "machThreadSelf");
+    }
+
+    // thread specific data
+    public long self;
+    public long errno;
+    public long mig_reply;
+    public long machThreadSelf;
+
+    @Override
+    public void setSelf(Pointer self) {
+        this.self = UnidbgPointer.nativeValue(self);
+    }
+
+    @Override
+    public void setMachThreadSelf(long machThreadSelf) {
+        this.machThreadSelf = machThreadSelf;
+    }
+
+    @Override
+    public Pointer getErrnoPointer(Emulator<?> emulator) {
+        return UnidbgPointer.pointer(emulator, errno);
     }
 }

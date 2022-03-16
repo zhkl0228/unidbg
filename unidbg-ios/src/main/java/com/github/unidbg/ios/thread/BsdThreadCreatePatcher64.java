@@ -52,8 +52,8 @@ class BsdThreadCreatePatcher64 extends Arm64Svc {
             thread = memoryBlock.getPointer();
         }
         Pthread pThread = new Pthread64(thread);
-        pThread.self = thread;
-        pThread.machThreadSelf = UnidbgPointer.pointer(emulator, DarwinSyscall.STATIC_PORT);
+        pThread.setSelf(thread);
+        pThread.setMachThreadSelf(DarwinSyscall.STATIC_PORT);
         pThread.pack();
 
         Backend backend = emulator.getBackend();

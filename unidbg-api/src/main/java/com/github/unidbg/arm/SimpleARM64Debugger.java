@@ -316,6 +316,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println("stop: stop emulation");
         System.out.println("run [arg]: run test");
         System.out.println("gc: Run System.gc()");
+        System.out.println("threads: show thread list");
 
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning()) {
             System.out.println("dump [class name]: dump objc class");

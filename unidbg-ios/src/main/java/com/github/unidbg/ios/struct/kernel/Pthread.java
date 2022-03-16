@@ -28,12 +28,6 @@ public abstract class Pthread extends UnidbgStructure {
 
     public byte[] pthread_name = new byte[MAXTHREADNAMESIZE]; // includes NUL
 
-    // thread specific data
-    public Pointer self;
-    public Pointer errno;
-    public Pointer mig_reply;
-    public Pointer machThreadSelf;
-
     public String getName() {
         return new String(pthread_name, StandardCharsets.UTF_8).trim();
     }
@@ -56,6 +50,11 @@ public abstract class Pthread extends UnidbgStructure {
 
     public abstract void setDetached(int detached);
 
-    public abstract void setExitValue(Pointer pointer);
+    public abstract void setExitValue(int value);
+
+    public abstract void setSelf(Pointer self);
+    public abstract void setMachThreadSelf(long machThreadSelf);
+
+    public abstract Pointer getErrnoPointer(Emulator<?> emulator);
 
 }
