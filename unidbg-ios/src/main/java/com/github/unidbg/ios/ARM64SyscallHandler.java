@@ -580,7 +580,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 0x1000;
     }
 
+    // see https://fergofrog.com/code/cbowser/xnu/BUILD/obj/EXPORT_HDRS/osfmk/kern/cs_blobs.h.html#_M/CS_VALID
     private static final int CS_OPS_STATUS = 0; /* return status */
+    private static final int CS_GET_TASK_ALLOW = 0x00000004; /* has get-task-allow entitlement */
+    private static final int CS_INSTALLER = 0x00000008; /* has installer entitlement */
     private static final int CS_HARD = 0x0000100; /* don't load invalid pages */
     private static final int CS_RESTRICT = 0x0000800; /* tell dyld to treat restricted */
     private static final int CS_ENFORCEMENT = 0x0001000; /* require enforcement */
@@ -588,6 +591,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private static final int CS_ENTITLEMENTS_VALIDATED = 0x0004000; /* code signature permits restricted entitlements */
     private static final int CS_DYLD_PLATFORM = 0x2000000; /* dyld used to load this is a platform binary */
     private static final int CS_PLATFORM_BINARY = 0x4000000; /* this is a platform binary */
+    private static final int CS_DEBUGGED = 0x10000000; /* process is currently or has previously been debugged and allowed to run with invalid pages */
     private static final int CS_SIGNED = 0x20000000; /* process has a signature (may have gone invalid) */
 
     private static final int CS_OPS_CDHASH = 5; /* get code directory hash */

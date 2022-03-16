@@ -85,15 +85,6 @@ public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> imple
         buffer.putInt(0xeaffffef); // b #0xffff0fa0
         byte[] __kuser_cmpxchg = buffer.array();
         memory.pointer(0xffff0fc0L).write(__kuser_cmpxchg);
-
-        if (log.isDebugEnabled()) {
-            log.debug("__kuser_memory_barrier");
-            printAssemble(System.err, 0xffff0fa0L, 4, null);
-            log.debug("__kuser_cmpxchg");
-            for (int i = 0; i < __kuser_cmpxchg.length; i += 4) {
-                printAssemble(System.err, 0xffff0fc0L + i, 4, null);
-            }
-        }
     }
 
     @Override

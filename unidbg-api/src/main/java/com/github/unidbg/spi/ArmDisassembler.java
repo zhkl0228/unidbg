@@ -12,7 +12,7 @@ import java.io.PrintStream;
 
 public interface ArmDisassembler {
 
-    Instruction[] printAssemble(PrintStream out, long address, int size, InstructionVisitor visitor);
+    Instruction[] printAssemble(PrintStream out, long address, int size, int maxLengthLibraryName, InstructionVisitor visitor);
     Instruction[] disassemble(long address, int size, long count);
     Instruction[] disassemble(long address, byte[] code, boolean thumb, long count);
 

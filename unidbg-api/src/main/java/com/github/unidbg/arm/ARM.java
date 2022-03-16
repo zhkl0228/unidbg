@@ -873,8 +873,8 @@ public class ARM {
         return ((size - 1) / align + 1) * align;
     }
 
-    static String assembleDetail(Emulator<?> emulator, Instruction ins, long address, boolean thumb) {
-        return assembleDetail(emulator, ins, address, thumb, false);
+    static String assembleDetail(Emulator<?> emulator, Instruction ins, long address, boolean thumb, int maxLengthLibraryName) {
+        return assembleDetail(emulator, ins, address, thumb, false, maxLengthLibraryName);
     }
 
     private static void appendMemoryDetails32(Emulator<?> emulator, Instruction ins, capstone.api.arm.OpInfo opInfo, boolean thumb, StringBuilder sb) {
@@ -1011,53 +1011,51 @@ public class ARM {
         appendHex(builder, hex, width, placeholder, reverse);
     }
 
-    public static void appendHex(StringBuilder builder, String hex, int width, char placeholder, boolean reverse) {
+    public static void appendHex(StringBuilder builder, String str, int width, char placeholder, boolean reverse) {
         if (reverse) {
-            builder.append(hex);
-            for (int i = 0; i < width - hex.length(); i++) {
+            builder.append(str);
+            for (int i = 0; i < width - str.length(); i++) {
                 builder.append(placeholder);
             }
         } else {
-            for (int i = 0; i < width - hex.length(); i++) {
+            for (int i = 0; i < width - str.length(); i++) {
                 builder.append(placeholder);
             }
-            builder.append(hex);
+            builder.append(str);
         }
     }
 
-    public static String assembleDetail(Emulator<?> emulator, Instruction ins, long address, boolean thumb, boolean current) {
+    public static String assembleDetail(Emulator<?> emulator, Instruction ins, long address, boolean thumb, boolean current, int maxLengthLibraryName) {
         SvcMemory svcMemory = emulator.getSvcMemory();
         MemRegion region = svcMemory.findRegion(address);
         Memory memory = emulator.getMemory();
         char space = current ? '*' : ' ';
-        StringBuilder sb = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
         Module module = region != null ? null : memory.findModuleByAddress(address);
-        String maxLengthSoName = memory.getMaxLengthLibraryName();
         if (module != null) {
-            sb.append('[');
-            appendHex(sb, module.name, maxLengthSoName.length(), ' ', true);
-            sb.append(space);
-            appendHex(sb, address - module.base + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
-            sb.append(']').append(space);
-        } else if (address >= svcMemory.getBase() && maxLengthSoName != null) { // kernel
-            sb.append('[');
-            int maxLength = maxLengthSoName.length();
+            builder.append('[');
+            appendHex(builder, module.name, maxLengthLibraryName, ' ', true);
+            builder.append(space);
+            appendHex(builder, address - module.base + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
+            builder.append(']').append(space);
+        } else if (address >= svcMemory.getBase()) { // kernel
+            builder.append('[');
             if (region == null) {
-                appendHex(sb, "0x" + Long.toHexString(address), maxLength, ' ', true);
+                appendHex(builder, "0x" + Long.toHexString(address), maxLengthLibraryName, ' ', true);
             } else {
-                appendHex(sb, region.getName().substring(0, Math.min(maxLength, region.getName().length())), maxLength, ' ', true);
+                appendHex(builder, region.getName().substring(0, Math.min(maxLengthLibraryName, region.getName().length())), maxLengthLibraryName, ' ', true);
             }
-            sb.append(space);
-            appendHex(sb, address - svcMemory.getBase() + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
-            sb.append(']').append(space);
+            builder.append(space);
+            appendHex(builder, address - svcMemory.getBase() + (thumb ? 1 : 0), Long.toHexString(memory.getMaxSizeOfLibrary()).length(), '0', false);
+            builder.append(']').append(space);
         }
-        sb.append("[");
-        appendHex(sb, Hex.encodeHexString(ins.getBytes()), 8, ' ', true);
-        sb.append("]");
-        sb.append(space);
-        appendHex(sb, ins.getAddress(), 8, '0', false);
-        sb.append(":").append(space);
-        sb.append('"').append(ins).append('"');
+        builder.append("[");
+        appendHex(builder, Hex.encodeHexString(ins.getBytes()), 8, ' ', true);
+        builder.append("]");
+        builder.append(space);
+        appendHex(builder, ins.getAddress(), 8, '0', false);
+        builder.append(":").append(space);
+        builder.append('"').append(ins).append('"');
 
         capstone.api.arm.OpInfo opInfo = null;
         capstone.api.arm64.OpInfo opInfo64 = null;
@@ -1068,13 +1066,13 @@ public class ARM {
             opInfo64 = (capstone.api.arm64.OpInfo) ins.getOperands();
         }
         if (current && (ins.getMnemonic().startsWith("ldr") || ins.getMnemonic().startsWith("str")) && opInfo != null) {
-            appendMemoryDetails32(emulator, ins, opInfo, thumb, sb);
+            appendMemoryDetails32(emulator, ins, opInfo, thumb, builder);
         }
         if (current && (ins.getMnemonic().startsWith("ldr") || ins.getMnemonic().startsWith("str")) && opInfo64 != null) {
-            appendMemoryDetails64(emulator, ins, opInfo64, sb);
+            appendMemoryDetails64(emulator, ins, opInfo64, builder);
         }
 
-        return sb.toString();
+        return builder.toString();
     }
 
     private static void appendAddrValue(StringBuilder sb, long addr, Memory memory, boolean is64Bit, int bytesRead) {
