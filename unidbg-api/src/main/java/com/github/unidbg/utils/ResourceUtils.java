@@ -58,40 +58,41 @@ public class ResourceUtils {
     private static void extractJarResource(URL url, File dir) {
         String protocol = url.getProtocol();
         if ("jar".equals(protocol)) {
-            JarURL jarURL = JarURL.create(url);
-            JarEntry foundEntry = jarURL.getJarEntry();
-            String foundName = foundEntry.getName();
+            try (JarURL jarURL = JarURL.create(url)) {
+                JarEntry foundEntry = jarURL.getJarEntry();
+                String foundName = foundEntry.getName();
 
-            try (JarFile jarFile = new JarFile(jarURL.jar)) {
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry jarEntry = entries.nextElement();
-                    String entryName = jarEntry.getName();
-                    if (entryName.equals(foundName)) {
-                        continue;
-                    }
-                    if (entryName.startsWith(foundName)) {
-                        String sub = entryName.substring(foundName.length());
-                        int check = sub.indexOf('/');
-                        if (check == -1 && !jarEntry.isDirectory()) { // sub file
-                            File out = new File(dir, sub);
-                            File crcFile = new File(dir, "crc_" + jarEntry.getCrc() + "." + sub);
-                            if (crcFile.exists()) {
-                                continue;
+                try (JarFile jarFile = new JarFile(jarURL.jar)) {
+                    Enumeration<JarEntry> entries = jarFile.entries();
+                    while (entries.hasMoreElements()) {
+                        JarEntry jarEntry = entries.nextElement();
+                        String entryName = jarEntry.getName();
+                        if (entryName.equals(foundName)) {
+                            continue;
+                        }
+                        if (entryName.startsWith(foundName)) {
+                            String sub = entryName.substring(foundName.length());
+                            int check = sub.indexOf('/');
+                            if (check == -1 && !jarEntry.isDirectory()) { // sub file
+                                File out = new File(dir, sub);
+                                File crcFile = new File(dir, "crc_" + jarEntry.getCrc() + "." + sub);
+                                if (crcFile.exists()) {
+                                    continue;
+                                }
+                                try (InputStream inputStream = jarFile.getInputStream(jarEntry);
+                                     OutputStream outputStream = new FileOutputStream(out)) {
+                                    IOUtils.copy(inputStream, outputStream);
+                                }
+                                FileUtils.touch(crcFile);
+                            } else if (check != -1 && check + 1 == sub.length() && jarEntry.isDirectory()) {
+                                File subDir = new File(dir, sub.substring(0, check));
+                                FileUtils.forceMkdir(subDir);
                             }
-                            try (InputStream inputStream = jarFile.getInputStream(jarEntry);
-                                 OutputStream outputStream = new FileOutputStream(out)) {
-                                IOUtils.copy(inputStream, outputStream);
-                            }
-                            FileUtils.touch(crcFile);
-                        } else if (check != -1 && check + 1 == sub.length() && jarEntry.isDirectory()) {
-                            File subDir = new File(dir, sub.substring(0, check));
-                            FileUtils.forceMkdir(subDir);
                         }
                     }
+                } catch (IOException e) {
+                    throw new IllegalStateException(url.toString(), e);
                 }
-            } catch (IOException e) {
-                throw new IllegalStateException(url.toString(), e);
             }
         }
     }
@@ -106,9 +107,10 @@ public class ResourceUtils {
             }
         }
         if ("jar".equals(protocol)) {
-            JarURL jarURL = JarURL.create(url);
-            JarEntry foundEntry = jarURL.getJarEntry();
-            return !foundEntry.isDirectory();
+            try (JarURL jarURL = JarURL.create(url)) {
+                JarEntry foundEntry = jarURL.getJarEntry();
+                return !foundEntry.isDirectory();
+            }
         }
         throw new UnsupportedOperationException("protocol=" + protocol + ", url=" + url);
     }

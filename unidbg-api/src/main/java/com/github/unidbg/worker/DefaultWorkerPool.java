@@ -20,7 +20,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     DefaultWorkerPool(WorkerFactory factory, int workerCount) {
         this.factory = factory;
         this.workerCount = workerCount;
-        this.workers = new LinkedBlockingQueue<>(workerCount - 1);
+        this.workers = new LinkedBlockingQueue<>(workerCount == 1 ? 1 : workerCount - 1);
 
         Thread thread = new Thread(this, "worker pool for " + factory);
         thread.start();
@@ -88,7 +88,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
             worker.destroy();
         } else {
             if (!releaseQueue.offer(worker)) {
-                worker.destroy();
+                throw new IllegalStateException("Release worker failed.");
             }
         }
     }
