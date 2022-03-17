@@ -7,6 +7,7 @@ import com.github.unidbg.file.FileSystem;
 import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.hook.InlineHook;
+import com.github.unidbg.linux.file.ByteArrayFileIO;
 import com.github.unidbg.linux.file.DirectoryFileIO;
 import com.github.unidbg.linux.file.LogCatFileIO;
 import com.github.unidbg.linux.file.SimpleFileIO;
@@ -14,14 +15,22 @@ import com.github.unidbg.linux.thread.ThreadJoin19;
 import com.github.unidbg.linux.thread.ThreadJoin23;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.ThreadJoinVisitor;
-import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileIO> {
 
@@ -102,12 +111,63 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         }
 
         String androidResource = FilenameUtils.normalize("/android/sdk" + sdk + "/" + path, true);
-        File file = ResourceUtils.extractResource(getClass(), androidResource, path);
-        if (file != null) {
-            return FileResult.fallback(createFileIO(file, path, oflags));
+        URL url = getClass().getResource(androidResource);
+        if (url != null) {
+            return FileResult.fallback(createFileIO(url, path, oflags));
         }
 
         return null;
+    }
+
+    private AndroidFileIO createFileIO(URL url, String pathname, int oflags) {
+        try {
+            URLConnection connection = url.openConnection();
+            connection.connect();
+            try (InputStream inputStream = connection.getInputStream()) {
+                if (connection.getClass().getSimpleName().equals("FileURLConnection")) {
+                    Field field = connection.getClass().getDeclaredField("file");
+                    field.setAccessible(true);
+                    File file = (File) field.get(connection);
+                    return createFileIO(file, pathname, oflags);
+                } else if (connection instanceof JarURLConnection) {
+                    JarURLConnection jarURLConnection = (JarURLConnection) connection;
+                    JarFile jarFile = jarURLConnection.getJarFile();
+                    JarEntry entry = jarURLConnection.getJarEntry();
+                    if (entry.isDirectory()) {
+                        Enumeration<JarEntry> entryEnumeration = jarFile.entries();
+                        List<DirectoryFileIO.DirectoryEntry> list = new ArrayList<>();
+                        while (entryEnumeration.hasMoreElements()) {
+                            JarEntry check = entryEnumeration.nextElement();
+                            if (entry.getName().equals(check.getName())) {
+                                continue;
+                            }
+                            if (check.getName().startsWith(entry.getName())) {
+                                boolean isDir = check.isDirectory();
+                                String sub = check.getName().substring(entry.getName().length());
+                                if (isDir) {
+                                    sub = sub.substring(0, sub.length() - 1);
+                                    if (!sub.contains("/")) {
+                                        list.add(new DirectoryFileIO.DirectoryEntry(true, sub));
+                                    }
+                                } else {
+                                    if (!sub.contains("/")) {
+                                        list.add(new DirectoryFileIO.DirectoryEntry(true, sub));
+                                    }
+                                }
+                            }
+                        }
+                        return new DirectoryFileIO(oflags, pathname, list.toArray(new DirectoryFileIO.DirectoryEntry[0]));
+                    } else {
+                        byte[] data = IOUtils.toByteArray(inputStream);
+                        return new ByteArrayFileIO(oflags, pathname, data);
+                    }
+                } else {
+                    throw new IllegalStateException(connection.getClass().getName());
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException(pathname, e);
+        }
     }
 
     private AndroidFileIO createFileIO(File file, String pathname, int oflags) {

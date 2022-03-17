@@ -405,7 +405,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
 
     private int handleEmuException(RuntimeException e, Pointer pointer, long start) {
         boolean enterDebug = log.isDebugEnabled();
-        if (enterDebug) {
+        if (enterDebug || !log.isWarnEnabled()) {
             e.printStackTrace();
             attach().debug();
         } else {
