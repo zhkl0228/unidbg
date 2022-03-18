@@ -13,6 +13,7 @@ import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixEmulator;
+import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -20,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -123,16 +123,15 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
     }
 
     private DarwinFileIO createFileIO(URL url, String pathname, int oflags) {
+        File file = ResourceUtils.toFile(url);
+        if (file != null) {
+            return createFileIO(file, pathname, oflags);
+        }
+
         try {
             URLConnection connection = url.openConnection();
-            connection.connect();
             try (InputStream inputStream = connection.getInputStream()) {
-                if (connection.getClass().getSimpleName().equals("FileURLConnection")) {
-                    Field field = connection.getClass().getDeclaredField("file");
-                    field.setAccessible(true);
-                    File file = (File) field.get(connection);
-                    return createFileIO(file, pathname, oflags);
-                } else if (connection instanceof JarURLConnection) {
+                if (connection instanceof JarURLConnection) {
                     JarURLConnection jarURLConnection = (JarURLConnection) connection;
                     JarFile jarFile = jarURLConnection.getJarFile();
                     JarEntry entry = jarURLConnection.getJarEntry();
@@ -149,13 +148,9 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
                                 String sub = check.getName().substring(entry.getName().length());
                                 if (isDir) {
                                     sub = sub.substring(0, sub.length() - 1);
-                                    if (!sub.contains("/")) {
-                                        list.add(new DirectoryFileIO.DirectoryEntry(true, sub));
-                                    }
-                                } else {
-                                    if (!sub.contains("/")) {
-                                        list.add(new DirectoryFileIO.DirectoryEntry(true, sub));
-                                    }
+                                }
+                                if (!sub.contains("/")) {
+                                    list.add(new DirectoryFileIO.DirectoryEntry(true, sub));
                                 }
                             }
                         }
