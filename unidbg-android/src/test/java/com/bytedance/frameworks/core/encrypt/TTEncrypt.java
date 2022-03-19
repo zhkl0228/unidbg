@@ -6,6 +6,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.debugger.DebuggerType;
@@ -44,7 +45,10 @@ public class TTEncrypt {
     TTEncrypt(boolean logging) {
         this.logging = logging;
 
-        emulator = AndroidEmulatorBuilder.for32Bit().setProcessName("com.qidian.dldl.official").build(); // 创建模拟器实例，要模拟32位或者64位，在这里区分
+        emulator = AndroidEmulatorBuilder.for32Bit()
+                .setProcessName("com.qidian.dldl.official")
+                .addBackendFactory(new Unicorn2Factory(true))
+                .build(); // 创建模拟器实例，要模拟32位或者64位，在这里区分
         final Memory memory = emulator.getMemory(); // 模拟器的内存操作接口
         memory.setLibraryResolver(new AndroidResolver(23)); // 设置系统类库解析
 

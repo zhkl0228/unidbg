@@ -39,3 +39,7 @@ void arm64eb_context_reg_write() {
   fprintf(stderr, "Unsupported arm64eb\n");
   abort();
 }
+void ARM64_REGS_STORAGE_SIZE_aarch64eb() {
+  fprintf(stderr, "Unsupported aarch64eb\n");
+  abort();
+}

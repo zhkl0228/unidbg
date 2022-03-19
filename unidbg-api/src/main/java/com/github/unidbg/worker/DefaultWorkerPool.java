@@ -2,6 +2,7 @@ package com.github.unidbg.worker;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.scijava.nativelib.NativeLibraryUtil;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -18,6 +19,10 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     private final int workerCount;
 
     DefaultWorkerPool(WorkerFactory factory, int workerCount) {
+        if (NativeLibraryUtil.getArchitecture() == NativeLibraryUtil.Architecture.OSX_ARM64 && workerCount > 1) { // bug fix: unicorn backend for m1
+            workerCount = 1;
+        }
+
         this.factory = factory;
         this.workerCount = workerCount;
         this.workers = new LinkedBlockingQueue<>(workerCount == 1 ? 1 : workerCount - 1);
