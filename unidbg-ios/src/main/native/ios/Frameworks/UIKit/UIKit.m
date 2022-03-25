@@ -71,12 +71,18 @@ int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSSt
 
   NSNumber *callFinishLaunchingWithOptions = dict[@"callFinishLaunchingWithOptions"];
   if(delegate && [callFinishLaunchingWithOptions boolValue]) {
-    UIApplication *application = [UIApplication sharedApplication];
-    NSDictionary *options = [NSDictionary dictionary];
-    [delegate application: application didFinishLaunchingWithOptions: options];
-    if(is_debug()) {
-      NSLog(@"UIApplicationMain didFinishLaunchingWithOptions delegate=%@", delegate);
+    UIApplication *application;
+    if(principalClassName) {
+      Class principalClass = NSClassFromString(principalClassName);
+      application = [[principalClass alloc] init];
+    } else {
+      application = [UIApplication sharedApplication];
     }
+    NSDictionary *options = [NSDictionary dictionary];
+    if(is_debug()) {
+      NSLog(@"UIApplicationMain didFinishLaunchingWithOptions delegate=%@, application=%@", delegate, application);
+    }
+    [delegate application: application didFinishLaunchingWithOptions: options];
   }
   return 0;
 }
@@ -198,9 +204,14 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 @end
 
+static UIApplication *sharedApplication;
+
 @implementation UIApplication
 
 + (UIApplication *)sharedApplication {
+    if(sharedApplication) {
+        return sharedApplication;
+    }
     static dispatch_once_t once;
     static id instance;
     dispatch_once(&once, ^{ instance = [[self alloc] init]; });
@@ -212,6 +223,7 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
         self.statusBarHidden = YES;
         self.protectedDataAvailable = YES;
     }
+    sharedApplication = self;
     return self;
 }
 
@@ -390,6 +402,39 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @end
 
 @implementation UICollectionViewCell
+@end
+
+@implementation UITableViewController
+@end
+
+@implementation LSResourceProxy
+@end
+
+@implementation LSApplicationProxy
++ (BOOL)supportsSecureCoding {
+  return YES;
+}
++ (id)applicationProxyForIdentifier:(NSString *)identifier {
+  LSApplicationProxy *proxy = [LSApplicationProxy new];
+  proxy.identifier = identifier;
+  NSLog(@"LSApplicationProxy.applicationProxyForIdentifier: %@", identifier);
+  return proxy;
+}
+- (NSDictionary *)groupContainers {
+  NSString *key = [NSString stringWithFormat: @"group.%@.shared", self.identifier];
+  id objects[] = { [NSString stringWithFormat: @"/groupContainers/%@", key] };
+  id keys[] = { key };
+  NSUInteger count = sizeof(objects) / sizeof(id);
+  NSDictionary *dictionary = [NSDictionary dictionaryWithObjects:objects
+                                                         forKeys:keys
+                                                         count:count];
+  return dictionary;
+}
+- (id)initWithCoder:(NSCoder *)coder; {
+  return self;
+}
+- (void)encodeWithCoder:(NSCoder *)coder {
+}
 @end
 
 void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque, CGFloat scale) {

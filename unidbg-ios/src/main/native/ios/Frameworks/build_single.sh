@@ -37,4 +37,4 @@ function build_UIKit() {
   mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework/
 }
 
-build_framework Accounts "Foundation"
+build_UIKit UIKit "Foundation"

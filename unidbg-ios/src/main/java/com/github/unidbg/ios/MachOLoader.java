@@ -1359,14 +1359,22 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (pointer == null) {
             throw new IllegalStateException();
         }
+        libraryOrdinal = (byte) libraryOrdinal;
 
         MachOModule targetImage;
         if (libraryOrdinal == BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE) {
             targetImage = executableModule;
         } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_SELF) {
             targetImage = module;
+        } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_FLAT_LOOKUP) {
+            for(MachOModule mm : modules.values().toArray(new MachOModule[0])) {
+                if (doBindAt(type, pointer, addend, module, mm, symbolName, false)) {
+                    return true;
+                }
+            }
+            return false;
         } else if (libraryOrdinal <= 0) {
-            throw new IllegalStateException(String.format("bad mach-o binary, unknown special library ordinal (%d) too big for symbol %s in %s", libraryOrdinal, symbolName, module.getPath()));
+            throw new IllegalStateException(String.format("bad mach-o binary, unknown special library ordinal (%d) too big for symbol %s in %s: symbolFlags=0x%x", libraryOrdinal, symbolName, module.getPath(), symbolFlags));
         } else if (libraryOrdinal <= module.ordinalList.size()) {
             String path = module.ordinalList.get(libraryOrdinal - 1);
             targetImage = this.modules.get(FilenameUtils.getName(path));
@@ -1379,7 +1387,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         } else {
             throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, module.ordinalList.size(), symbolName, module.getPath()));
         }
-
         if ("___NSArray0__".equals(symbolName)) {
             targetImage = this.modules.get("UIKit");
             if (targetImage == null) {
@@ -1389,7 +1396,12 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 throw new IllegalStateException();
             }
         }
-        Symbol symbol = targetImage.findSymbolByName(symbolName, true);
+
+        return doBindAt(type, pointer, addend, module, targetImage, symbolName, true);
+    }
+
+    private boolean doBindAt(int type, Pointer pointer, long addend, Module module, MachOModule targetImage, String symbolName, boolean withDependencies) {
+        Symbol symbol = targetImage.findSymbolByName(symbolName, withDependencies);
         if (symbol == null) {
             symbol = targetImage.getExportByName(symbolName);
             if (log.isDebugEnabled()) {
@@ -1398,7 +1410,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
         if (symbol == null) {
             if (log.isDebugEnabled()) {
-                log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", address=0x" + Long.toHexString(address - module.base) + ", upwardLibraries=" + module.upwardLibraries.values() + ", libraryOrdinal=" + libraryOrdinal + ", module=" + module.name + ", targetImage=" + targetImage);
+                log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", targetImage=" + targetImage);
             }
             long bindAt = 0;
             for (HookListener listener : hookListeners) {
@@ -1434,7 +1446,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbol.getModuleName() + ", symbolFlags=" + symbolFlags + ", addend=" + addend + ", address=0x" + Long.toHexString(address - module.base) + ", lazy=" + false + ", symbol=" + symbol + ", pointer=" + pointer + ", bindAt=0x" + Long.toHexString(bindAt) + ", libraryOrdinal=" + libraryOrdinal);
+            log.trace("doBindAt 0x=" + Long.toHexString(symbol.getValue()) + ", type=" + type + ", symbolName=" + symbol.getModuleName() + ", addend=" + addend + ", lazy=" + false + ", symbol=" + symbol + ", pointer=" + pointer + ", bindAt=0x" + Long.toHexString(bindAt));
         }
 
         Pointer newPointer = UnidbgPointer.pointer(emulator, bindAt);

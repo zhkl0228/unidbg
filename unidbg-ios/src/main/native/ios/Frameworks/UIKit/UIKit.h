@@ -228,3 +228,13 @@ id __NSArray0__;
 
 @interface UICollectionViewCell : UICollectionReusableView
 @end
+
+@interface UITableViewController : UIViewController
+@end
+
+@interface LSResourceProxy : NSObject
+@end
+
+@interface LSApplicationProxy : LSResourceProxy <NSSecureCoding>
+@property(nonatomic, copy) NSString *identifier;
+@end

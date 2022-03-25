@@ -548,7 +548,6 @@ BOOL isSystemClass(Class class) {
 
 	__unsafe_unretained Class *classes = (__unsafe_unretained Class *)malloc(sizeof(Class) * classCount);
 	objc_getClassList(classes, classCount);
-
 	int count = 0;
 	for(int i = 0; i < classCount; i++) {
 	    Class class = classes[i];
@@ -561,8 +560,21 @@ BOOL isSystemClass(Class class) {
 	        count++;
 	    }
 	}
-
 	free(classes);
+
+    unsigned int protocolCount = 0;
+	Protocol **protocols = objc_copyProtocolList(&protocolCount);
+	if(protocolCount > 0) {
+	    for(int i = 0; i < protocolCount; i++) {
+	        const char *protocolName = protocol_getName(protocols[i]);
+	        if(strcasestr(protocolName, keywords)) {
+                NSLog(@"Found proto: %s", protocolName);
+                count++;
+            }
+	    }
+	    free(protocols);
+	}
+
 	NSLog(@"Search class matches count: %d", count);
 }
 

@@ -64,6 +64,12 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
         if (cmd == F_NOCACHE) {
             return 0;
         }
+        if (cmd == F_SETLK) {
+            return 0;
+        }
+        if (cmd == F_SETLKW) {
+            return 0;
+        }
         if (cmd == F_SETPROTECTIONCLASS) {
             protectionClass = (int) arg;
             return 0;

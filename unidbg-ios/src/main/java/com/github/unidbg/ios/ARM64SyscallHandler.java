@@ -363,6 +363,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 89:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getdtablesize());
                     return;
+                case 90:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, dup2(emulator));
+                    return;
                 case 92:
                 case 406: // fcntl_NOCANCEL
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(emulator));
@@ -3334,6 +3337,32 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Pointer act = context.getPointerArg(1);
         Pointer oldact = context.getPointerArg(2);
         return sigaction(emulator, signum, act, oldact);
+    }
+
+    private int dup2(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int oldfd = context.getIntArg(0);
+        int newfd = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("dup2 oldfd=" + oldfd + ", newfd=" + newfd);
+        }
+
+        FileIO old = fdMap.get(oldfd);
+        if (old == null) {
+            emulator.getMemory().setErrno(UnixEmulator.EBADF);
+            return -1;
+        }
+
+        if (oldfd == newfd) {
+            return newfd;
+        }
+        DarwinFileIO _new = fdMap.remove(newfd);
+        if (_new != null) {
+            _new.close();
+        }
+        _new = (DarwinFileIO) old.dup2();
+        fdMap.put(newfd, _new);
+        return newfd;
     }
 
     private int fcntl(Emulator<?> emulator) {
