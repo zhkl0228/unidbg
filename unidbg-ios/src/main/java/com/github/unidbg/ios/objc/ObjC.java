@@ -28,4 +28,6 @@ public abstract class ObjC {
 
     public abstract Number msgSend(Emulator<?> emulator, Object... args);
 
+    public abstract boolean respondsToSelector(ObjcClass objcClass, String selectorName);
+
 }

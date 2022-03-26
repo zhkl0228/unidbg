@@ -18,6 +18,7 @@ class ObjcImpl extends ObjC {
     private final Symbol _objc_lookUpClass;
     private final Symbol _sel_registerName;
     private final Symbol _class_getMethodImplementation;
+    private final Symbol _class_respondsToSelector;
 
     public ObjcImpl(Emulator<?> emulator) {
         this.emulator = emulator;
@@ -54,6 +55,11 @@ class ObjcImpl extends ObjC {
         _class_getMethodImplementation = module.findSymbolByName("_class_getMethodImplementation", false);
         if (_class_getMethodImplementation == null) {
             throw new IllegalStateException("_class_getMethodImplementation is null");
+        }
+
+        _class_respondsToSelector = module.findSymbolByName("_class_respondsToSelector", false);
+        if (_class_respondsToSelector == null) {
+            throw new IllegalStateException("_class_respondsToSelector is null");
         }
     }
 
@@ -92,6 +98,13 @@ class ObjcImpl extends ObjC {
             throw new IllegalStateException(selectorName);
         }
         return pointer;
+    }
+
+    @Override
+    public boolean respondsToSelector(ObjcClass objcClass, String selectorName) {
+        Pointer selector = registerName(selectorName);
+        Number number = _class_respondsToSelector.call(emulator, objcClass, selector);
+        return number.intValue() == 1;
     }
 
     @Override

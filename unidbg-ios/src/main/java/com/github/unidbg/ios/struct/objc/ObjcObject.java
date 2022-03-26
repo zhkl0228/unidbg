@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.struct.objc;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.ios.objc.NSArray;
 import com.github.unidbg.ios.objc.NSData;
 import com.github.unidbg.ios.objc.NSString;
 import com.github.unidbg.ios.objc.ObjC;
@@ -58,17 +59,32 @@ public abstract class ObjcObject extends UnidbgStructure {
         return create(emulator, call(selectorName, args));
     }
 
+    public long callObjcLong(String selectorName, Object... args) {
+        UnidbgPointer ptr = call(selectorName, args);
+        return ptr == null ? 0 : ptr.peer;
+    }
+
+    public int callObjcInt(String selectorName, Object... args) {
+        return (int) (callObjcLong(selectorName, args) & 0xffffffffL);
+    }
+
     @SuppressWarnings("unused")
     public ObjcClass toClass() {
         return ObjcClass.create(emulator, getPointer());
     }
 
+    @SuppressWarnings("unused")
     public NSData toNSData() {
         return NSData.create(this);
     }
 
     public NSString toNSString() {
         return NSString.create(this);
+    }
+
+    @SuppressWarnings("unused")
+    public NSArray toNSArray() {
+        return NSArray.create(this);
     }
 
     public String getDescription() {

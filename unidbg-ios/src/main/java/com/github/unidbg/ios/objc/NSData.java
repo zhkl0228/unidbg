@@ -1,7 +1,6 @@
 package com.github.unidbg.ios.objc;
 
 import com.github.unidbg.ios.struct.objc.ObjcObject;
-import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 public class NSData {
@@ -17,8 +16,7 @@ public class NSData {
     }
 
     public byte[] getBytes() {
-        UnidbgPointer pointer = object.call("length");
-        int length = (int) (pointer.peer & 0x7fffffff);
+        int length = object.callObjcInt("length");
         Pointer bytes = getBytesPointer();
         return bytes.getByteArray(0, length);
     }
@@ -26,5 +24,4 @@ public class NSData {
     public Pointer getBytesPointer() {
         return object.call("bytes");
     }
-
 }
