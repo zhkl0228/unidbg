@@ -11,6 +11,8 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,6 +20,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class TaskDyldInfo extends UnidbgStructure {
+
+    private static final Log log = LogFactory.getLog(TaskDyldInfo.class);
 
     private static final String DYLD_VERSION = "324.1";
 
@@ -55,6 +59,9 @@ public class TaskDyldInfo extends UnidbgStructure {
 
         if (emulator.getSyscallHandler().isVerbose()) {
             System.out.printf("task_info TASK_DYLD_INFO called with %d modules from %s%n", modules.size(), emulator.getContext().getLRPointer());
+        }
+        if (log.isTraceEnabled()) {
+            emulator.attach().debug();
         }
 
         MachOModule libdyld = (MachOModule) emulator.getMemory().findModule("libdyld.dylib");

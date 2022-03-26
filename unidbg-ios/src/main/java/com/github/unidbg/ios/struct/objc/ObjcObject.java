@@ -2,17 +2,15 @@ package com.github.unidbg.ios.struct.objc;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.ios.objc.NSData;
+import com.github.unidbg.ios.objc.NSString;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.github.unidbg.ios.objc.Constants.NSUTF8StringEncoding;
 
 public abstract class ObjcObject extends UnidbgStructure {
 
@@ -69,15 +67,16 @@ public abstract class ObjcObject extends UnidbgStructure {
         return NSData.create(this);
     }
 
+    public NSString toNSString() {
+        return NSString.create(this);
+    }
+
     public String getDescription() {
         ObjcObject str = callObjc("description");
         if (str == null) {
             return "<description not available>";
         } else {
-            UnidbgPointer pointer = str.call("lengthOfBytesUsingEncoding:", NSUTF8StringEncoding);
-            int length = (int) (pointer.peer & 0x7fffffffL);
-            byte[] bytes = str.call("UTF8String").getByteArray(0, length);
-            return new String(bytes, StandardCharsets.UTF_8);
+            return str.toNSString().getString();
         }
     }
 
