@@ -384,6 +384,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     if (overall != null) {
                         long overallSize = overall.end - check.address;
                         backend.mem_protect(check.address, overallSize, overall.perms | prot);
+                        if (mMapListener != null) {
+                            mMapListener.onProtect(check.address, overallSize, overall.perms | prot);
+                        }
                         if (ph.mem_size > overallSize) {
                             Alignment alignment = this.mem_map(begin + overallSize, ph.mem_size - overallSize, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
                             regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
@@ -403,6 +406,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                             }
                             if (off > 0) {
                                 backend.mem_map(base, off, UnicornConst.UC_PROT_NONE);
+                                if (mMapListener != null) {
+                                    mMapListener.onMap(base, off, UnicornConst.UC_PROT_NONE);
+                                }
                                 if (memoryMap.put(base, new MemoryMap(base, (int) off, UnicornConst.UC_PROT_NONE)) != null) {
                                     log.warn("mem_map replace exists memory map base=" + Long.toHexString(base));
                                 }
@@ -700,9 +706,15 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         if (address > brk) {
             backend.mem_map(brk, address - brk, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+            if (mMapListener != null) {
+                mMapListener.onMap(brk, address - brk, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+            }
             this.brk = address;
         } else if(address < brk) {
             backend.mem_unmap(address, brk - address);
+            if (mMapListener != null) {
+                mMapListener.onUnmap(address, brk - address);
+            }
             this.brk = address;
         }
 
@@ -724,6 +736,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
             munmap(start, length);
             backend.mem_map(start, aligned, prot);
+            if (mMapListener != null) {
+                mMapListener.onMap(start, aligned, prot);
+            }
             if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
                 log.warn("mmap2 replace exists memory map: start=" + Long.toHexString(start));
             }
@@ -735,6 +750,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
             }
             backend.mem_map(addr, aligned, prot);
+            if (mMapListener != null) {
+                mMapListener.onMap(start, aligned, prot);
+            }
             if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                 log.warn("mmap2 replace exists memory map addr=" + Long.toHexString(addr));
             }
@@ -748,6 +766,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 }
                 long ret = file.mmap2(emulator, addr, aligned, prot, offset, length);
+                if (mMapListener != null) {
+                    mMapListener.onMap(addr, aligned, prot);
+                }
                 if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                     log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
                 }
@@ -763,6 +784,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     log.debug("mmap2 start=0x" + Long.toHexString(start) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 }
                 long ret = file.mmap2(emulator, start, aligned, prot, offset, length);
+                if (mMapListener != null) {
+                    mMapListener.onMap(start, aligned, prot);
+                }
                 if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
                     log.warn("mmap2 replace exists memory map start=0x" + Long.toHexString(start));
                 }

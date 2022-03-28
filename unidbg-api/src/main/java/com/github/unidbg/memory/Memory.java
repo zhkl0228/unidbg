@@ -43,4 +43,6 @@ public interface Memory extends IO, Loader, StackMemory {
 
     Collection<MemoryMap> getMemoryMap();
 
+    void setMMapListener(MMapListener listener);
+
 }
