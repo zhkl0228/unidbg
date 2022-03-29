@@ -25,3 +25,32 @@ const CFStringRef kSecAttrLabel = CFSTR("labl");
 const CFStringRef kSecAttrDescription = CFSTR("desc");
 const CFStringRef kSecAttrSynchronizable = CFSTR("sync");
 const CFStringRef kSecAttrAccessibleWhenUnlockedThisDeviceOnly = CFSTR("aku");
+const CFStringRef kSecAttrSynchronizableAny = CFSTR("syna");
+const CFStringRef kSecReturnPersistentRef = CFSTR("r_PersistentRef");
+
+typedef struct SecRandom {
+} *SecRandomRef;
+const SecRandomRef kSecRandomDefault = NULL;
+
+// Copied from CoreFoundation/CFRuntime.h.
+struct CFRuntimeBase {
+  void *opaque1;
+  void *opaque2;
+};
+
+typedef uint8_t DERByte;
+typedef size_t DERSize;
+
+typedef struct {
+	DERByte		*data;
+	DERSize		length;
+} DERItem;
+
+typedef struct SecCertificate {
+  struct CFRuntimeBase		_base;
+  CFDataRef				data;
+  DERItem				_der;			/* Entire certificate in DER form. */
+} *SecCertificateRef;
+
+SecCertificateRef SecCertificateCreateWithData(CFAllocatorRef allocator, CFDataRef data);
+int SecRandomCopyBytes(SecRandomRef rnd, size_t count, uint8_t *bytes);

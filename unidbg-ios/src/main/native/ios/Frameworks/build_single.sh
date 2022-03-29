@@ -38,3 +38,8 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
+build_framework CoreTelephony "CoreFoundation"
+build_framework Security "CoreFoundation"
+build_framework CoreData "CoreFoundation"
+build_framework SystemConfiguration "CoreFoundation"
+build_framework Intents "Foundation"

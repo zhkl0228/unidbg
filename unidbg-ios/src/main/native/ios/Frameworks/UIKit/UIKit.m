@@ -17,6 +17,9 @@ const NSOperatingSystemVersion g_systemVersion = { 7, 1, 2 };
 - (NSProcessInfoThermalState) thermalState {
   return NSProcessInfoThermalStateNominal;
 }
+- (BOOL) isLowPowerModeEnabled {
+  return YES;
+}
 @end
 
 int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSString *delegateClassName) {
@@ -161,6 +164,15 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 - (void)setFill {
 }
+- (UIColor *)colorWithAlphaComponent:(CGFloat)alpha {
+    return [UIColor new];
+}
+- (UIColor *)initWithWhite:(CGFloat)white alpha:(CGFloat)alpha {
+    return [UIColor new];
+}
+@end
+
+@implementation UIGestureRecognizer
 @end
 
 @implementation UIView
@@ -178,6 +190,17 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 - (CGPoint)convertPoint:(CGPoint)point fromView:(UIView *)view {
   return point;
+}
+- (void)setAlpha: (CGFloat) alpha {
+}
+- (void)setClipsToBounds: (BOOL)flag {
+}
+- (void)addGestureRecognizer:(UIGestureRecognizer *)gestureRecognizer {
+}
+- (void)setTintColor:(UIColor *)tintColor {
+}
+- (UIView *)snapshotViewAfterScreenUpdates:(BOOL)afterUpdates {
+  return self;
 }
 @end
 
@@ -204,6 +227,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 @end
 
+@implementation UIEvent
+@end
+
 static UIApplication *sharedApplication;
 
 @implementation UIApplication
@@ -222,6 +248,7 @@ static UIApplication *sharedApplication;
     if(self = [super init]) {
         self.statusBarHidden = YES;
         self.protectedDataAvailable = YES;
+        self.backgroundRefreshStatus = UIBackgroundRefreshStatusRestricted;
     }
     sharedApplication = self;
     return self;
@@ -261,6 +288,10 @@ static UIApplication *sharedApplication;
 - (void)registerForRemoteNotifications {
 }
 
+- (BOOL)sendAction:(SEL)action to:(id)target from:(id)sender forEvent:(UIEvent *)event {
+    return NO;
+}
+
 @end
 
 @implementation UIDevice
@@ -275,6 +306,8 @@ static UIApplication *sharedApplication;
 - (id)init {
     if(self = [super init]) {
         self.batteryMonitoringEnabled = YES;
+        self.userInterfaceIdiom = UIUserInterfaceIdiomPhone;
+        self.batteryLevel = 1.0;
     }
     return self;
 }
@@ -303,18 +336,33 @@ static UIApplication *sharedApplication;
 
 @end
 
-@implementation NSString (Number)
+@implementation NSString (Fix)
 - (unsigned int)unsignedIntValue {
     int value = [self intValue];
     return (unsigned int) value;
 }
+- (BOOL)containsString:(NSString *)str {
+    NSRange range = [self rangeOfString:str];
+    return range.location != NSNotFound;
+}
 @end
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
 @implementation NSURLSessionConfiguration (CFNetwork)
 + (NSURLSessionConfiguration *)defaultSessionConfiguration {
   return [NSURLSessionConfiguration new];
 }
++ (NSURLSessionConfiguration *)ephemeralSessionConfiguration {
+  return [NSURLSessionConfiguration new];
+}
++ (NSURLSessionConfiguration *)backgroundSessionConfigurationWithIdentifier:(NSString *)identifier {
+  return [NSURLSessionConfiguration new];
+}
+- (void) setShouldUseExtendedBackgroundIdleMode: (BOOL) flag {
+}
 @end
+#pragma clang diagnostic pop
 
 @implementation NSTimerInvocation
 + (NSTimerInvocation *)invocationWithBlock: (void (^)(NSTimer *timer))block {
@@ -344,6 +392,18 @@ static UIApplication *sharedApplication;
 }
 @end
 
+@implementation NSOperationQueue (Foundation)
+- (void) setQualityOfService: (NSQualityOfService) qualityOfService {
+}
+- (void) setUnderlyingQueue: (dispatch_queue_t) queue {
+}
+@end
+
+@implementation NSDateFormatter (Foundation)
+- (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate {
+}
+@end
+
 @implementation NSURLSession (CFNetwork)
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration {
   return [NSURLSession new];
@@ -354,7 +414,19 @@ static UIApplication *sharedApplication;
 @end
 #pragma clang diagnostic pop
 
+@implementation UINavigationItem
+@end
+
 @implementation UIViewController
+- (UIViewController *)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
+    if(self = [super init]) {
+        self.nibName = nibNameOrNil;
+        self.nibBundle = nibBundleOrNil;
+    }
+    return self;
+}
+- (void)setExtendedLayoutIncludesOpaqueBars: (BOOL)flag {
+}
 @end
 
 @implementation UIResponder
@@ -421,9 +493,16 @@ static UIApplication *sharedApplication;
   return proxy;
 }
 - (NSDictionary *)groupContainers {
-  NSString *key = [NSString stringWithFormat: @"group.%@.shared", self.identifier];
-  id objects[] = { [NSString stringWithFormat: @"/groupContainers/%@", key] };
-  id keys[] = { key };
+  NSString *shared = [NSString stringWithFormat: @"group.%@.shared", self.identifier];
+  NSString *private = [NSString stringWithFormat: @"group.%@.private", self.identifier];
+  NSString *SMB_shared = [NSString stringWithFormat: @"group.%@SMB.shared", self.identifier];
+
+  id objects[] = {
+    [NSString stringWithFormat: @"/groupContainers/%@", shared],
+    [NSString stringWithFormat: @"/groupContainers/%@", private],
+    [NSString stringWithFormat: @"/groupContainers/%@", SMB_shared]
+  };
+  id keys[] = { shared, private, SMB_shared };
   NSUInteger count = sizeof(objects) / sizeof(id);
   NSDictionary *dictionary = [NSDictionary dictionaryWithObjects:objects
                                                          forKeys:keys
@@ -449,6 +528,37 @@ UIImage *UIGraphicsGetImageFromCurrentImageContext() {
 
 void UIGraphicsEndImageContext() {
 }
+
+BOOL UIAccessibilityDarkerSystemColorsEnabled() {
+  return NO;
+}
+
+@implementation UISearchBar
+- (id)init {
+    if(self = [super init]) {
+        self.searchTextField = [UISearchTextField new];
+    }
+    return self;
+}
+@end
+
+@implementation UIControl
+@end
+
+@implementation UISearchTextField
+@end
+
+@implementation UITextField
++ (UITextField *)appearanceWhenContainedInInstancesOfClasses:(NSArray<Class<UIAppearanceContainer>> *)containerTypes {
+    return [UITextField new];
+}
+- (id)init {
+    if(self = [super init]) {
+        self.defaultTextAttributes = [NSDictionary dictionary];
+    }
+    return self;
+}
+@end
 
 __attribute__((constructor))
 void init() {

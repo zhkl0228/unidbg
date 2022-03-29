@@ -5,6 +5,7 @@ import com.dd.plist.PropertyListParser;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.ios.struct.kernel.VmRegionBasicInfo;
 import com.github.unidbg.ios.struct.kernel.VmRegionBasicInfo64;
+import com.github.unidbg.ios.struct.sysctl.TaskVmInfo64;
 import com.github.unidbg.utils.Inspector;
 import junit.framework.TestCase;
 import org.apache.commons.codec.binary.Base64;
@@ -27,6 +28,11 @@ public class PListTest extends TestCase {
         VmRegionBasicInfo vmRegionBasicInfo = new VmRegionBasicInfo(Hex.decodeHex("0100000001000000000000000000000000000000000000000000000000000000".toCharArray()));
         vmRegionBasicInfo.unpack();
         System.out.println(vmRegionBasicInfo);
+
+        byte[] data = Hex.decodeHex("00c0fa270100000009010000004000000080b504000000000080b704000000000000000000000000000000000000000000000e020000000000c01002000000000000a702000000000000a7020000000000800000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000484211020000000000404c0401000000000000d80200000001000000004f916b01000000900e81bb01000000604f916b01000000604f916b01000000d8c3d5090100000000000000000000004804d909010000003300d07ef0f76dc5d8c3d509010000000000000000000000c0c4d509010000000100000000000000e05a24f3010000002050916b01000000c035250601000000287ad00901000000304f916b0100000014ea82bb01000000c03525060100000000807b8102000000504f916b0100000054842bbc01000000".toCharArray());
+        TaskVmInfo64 vmInfo64 = new TaskVmInfo64(data);
+        vmInfo64.unpack();
+        System.out.println(vmInfo64);
     }
 
     public void testPList() throws Exception {

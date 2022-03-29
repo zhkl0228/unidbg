@@ -1773,7 +1773,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (memoryMap != null) {
             munmap(args.target_address, (int) args.size);
         }
-        int prot = memoryMap == null ? args.inheritance : memoryMap.prot;
+        int prot = memoryMap == null ? UnicornConst.UC_PROT_ALL : memoryMap.prot;
         try {
             backend.mem_map(args.target_address, args.size, prot);
             if (mMapListener != null) {

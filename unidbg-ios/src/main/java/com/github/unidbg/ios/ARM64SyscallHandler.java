@@ -70,6 +70,7 @@ import com.github.unidbg.ios.struct.kernel.TaskInfoRequest;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
 import com.github.unidbg.ios.struct.kernel.TaskThreadsReply64;
+import com.github.unidbg.ios.struct.kernel.TaskVmInfoReply64;
 import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
 import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
 import com.github.unidbg.ios.struct.kernel.ThreadStateReply64;
@@ -88,6 +89,7 @@ import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc64;
 import com.github.unidbg.ios.struct.sysctl.SockAddrDL;
 import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
+import com.github.unidbg.ios.struct.sysctl.TaskVmInfo64;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -2940,6 +2942,29 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
                     if (log.isDebugEnabled()) {
                         log.debug("task_info TASK_DYLD_INFO reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+                if (args.flavor == TaskInfoRequest.TASK_VM_INFO) {
+                    TaskVmInfoReply64 reply = new TaskVmInfoReply64(request);
+                    reply.unpack();
+
+                    header.setMsgBits(false);
+                    header.msgh_size = header.size() + reply.size();
+                    header.msgh_remote_port = header.msgh_local_port;
+                    header.msgh_local_port = 0;
+                    header.msgh_id += 100; // reply Id always equals reqId+100
+                    header.pack();
+
+                    reply.retCode = 0;
+                    reply.task_info_outCnt = UnidbgStructure.calculateSize(TaskVmInfo64.class) / 4;
+                    reply.vmInfo.virtual_size = 0x100000000L;
+                    reply.vmInfo.region_count = emulator.getMemory().getMemoryMap().size();
+                    reply.vmInfo.page_size = emulator.getPageAlign();
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("task_info TASK_VM_INFO reply=" + reply);
                     }
                     return MACH_MSG_SUCCESS;
                 }

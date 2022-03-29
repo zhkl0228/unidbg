@@ -162,7 +162,9 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         try {
             FileUtils.forceMkdir(newFile.getParentFile());
 
-            Files.move(oldFile.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            if (oldFile.exists()) {
+                Files.move(oldFile.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
 
             if (emulator.getSyscallHandler().isVerbose()) {
                 System.out.printf("rename '%s' to '%s' from %s%n", oldPath, newPath, emulator.getContext().getLRPointer());

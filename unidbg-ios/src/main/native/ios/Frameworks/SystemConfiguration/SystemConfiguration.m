@@ -109,3 +109,25 @@ CFDictionaryRef SCDynamicStoreCopyProxies(SCDynamicStoreRef store) {
   }
   return NULL;
 }
+
+SCNetworkReachabilityRef SCNetworkReachabilityCreateWithName(CFAllocatorRef allocator, const char *nodename) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  SCNetworkReachabilityRef ref = malloc(sizeof(struct SCNetworkReachability));
+  if(is_debug()) {
+    char buf[512];
+    print_lr(buf, lr);
+    fprintf(stderr, "SCNetworkReachabilityCreateWithName nodename=\"%s\", ref=%p, LR=%s", nodename, ref, buf);
+  }
+  ref->nodename = nodename;
+  return ref;
+}
+
+Boolean SCNetworkReachabilitySetDispatchQueue(SCNetworkReachabilityRef target, dispatch_queue_t queue) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  if(is_debug()) {
+    char buf[512];
+    print_lr(buf, lr);
+    fprintf(stderr, "SCNetworkReachabilitySetDispatchQueue target=%p, queue=%p, LR=%s", target, queue, buf);
+  }
+  return YES;
+}

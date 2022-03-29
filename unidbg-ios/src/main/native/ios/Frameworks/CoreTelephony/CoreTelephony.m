@@ -19,6 +19,13 @@
 @end
 
 @implementation CTTelephonyNetworkInfo
+- (id)init {
+    if(self = [super init]) {
+        self.serviceCurrentRadioAccessTechnology = [NSDictionary dictionary];
+        self.dataServiceIdentifier = @"dataServiceIdentifier";
+    }
+    return self;
+}
 - (CTCarrier *)subscriberCellularProvider {
     static dispatch_once_t once;
     static id instance;

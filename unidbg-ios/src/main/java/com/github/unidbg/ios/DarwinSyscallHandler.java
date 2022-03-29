@@ -364,7 +364,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         RegisterContext context = emulator.getContext();
         int port = context.getIntArg(0);
         if (log.isDebugEnabled()) {
-            log.debug("_semaphore_wait_trap port=" + port);
+            log.debug("_semaphore_wait_trap port=" + port + ", LR=" + context.getLRPointer());
         }
         RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
         if (threadDispatcherEnabled && runningTask != null) {

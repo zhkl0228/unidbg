@@ -482,6 +482,9 @@ public class Dyld64 extends Dyld {
                 if ("dispatch_async".equals(symbolName)) {
                     return _dispatch_async;
                 }
+                if ("objc_addLoadImageFunc".equals(symbolName)) {
+                    return __dyld_register_func_for_add_image.peer;
+                }
 
                 return dlsym(emulator, handle, "_" + symbolName);
             }
@@ -543,7 +546,7 @@ public class Dyld64 extends Dyld {
     private final Pointer __dyld_get_image_header;
     private final Pointer __dyld_get_image_vmaddr_slide;
     private final Pointer __dyld_get_image_slide;
-    private final Pointer __dyld_register_func_for_add_image;
+    private final UnidbgPointer __dyld_register_func_for_add_image;
     private final Pointer __dyld_register_func_for_remove_image;
     private final Pointer __dyld_register_thread_helpers;
     private final Pointer __dyld_dyld_register_image_state_change_handler;
