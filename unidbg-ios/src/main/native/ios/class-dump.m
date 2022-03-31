@@ -459,7 +459,10 @@ NSUInteger findClosedBracket(NSString *string) {
 				if(argCount == 0) {
 					argCount = 2;
 				}
-				
+
+				if(argCount - 2 != [methodParts count] - 1) {
+				    NSLog(@"argCount - 2 == [methodParts count] - 1: %@", result);
+				}
 				assert(argCount - 2 == [methodParts count] - 1);
 				
 				for(unsigned int j = 0; j < argCount - 2; j++) {

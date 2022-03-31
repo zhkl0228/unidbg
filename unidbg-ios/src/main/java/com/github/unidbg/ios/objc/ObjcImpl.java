@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
+import com.github.unidbg.ios.struct.objc.ObjcObject;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
@@ -121,5 +122,32 @@ class ObjcImpl extends ObjC {
     @Override
     public Number msgSend(Emulator<?> emulator, Object... args) {
         return _objc_msgSend.call(emulator, args);
+    }
+
+    private ObjcClass cNSString;
+    private ObjcClass cNSData;
+
+    @Override
+    public NSString newString(String str) {
+        if (str == null) {
+            return null;
+        }
+        if (cNSString == null) {
+            cNSString = getClass("NSString");
+        }
+        ObjcObject obj = cNSString.callObjc("stringWithUTF8String:", str);
+        return NSString.create(obj);
+    }
+
+    @Override
+    public NSData newData(byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
+        if (cNSData == null) {
+            cNSData = getClass("NSData");
+        }
+        ObjcObject obj = cNSData.callObjc("dataWithBytes:length:", bytes, bytes.length);
+        return NSData.create(obj);
     }
 }

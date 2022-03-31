@@ -1,6 +1,7 @@
 package com.github.unidbg.pointer;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.PointerArg;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
@@ -13,7 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class UnidbgStructure extends Structure {
+public abstract class UnidbgStructure extends Structure implements PointerArg {
 
     /** Placeholder pointer to help avoid auto-allocation of memory where a
      * Structure needs a valid pointer but want to avoid actually reading from it.

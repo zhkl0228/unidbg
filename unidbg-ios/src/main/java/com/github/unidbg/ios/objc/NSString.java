@@ -1,12 +1,14 @@
 package com.github.unidbg.ios.objc;
 
+import com.github.unidbg.PointerArg;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
+import com.sun.jna.Pointer;
 
 import java.nio.charset.StandardCharsets;
 
 import static com.github.unidbg.ios.objc.Constants.NSUTF8StringEncoding;
 
-public class NSString {
+public class NSString implements PointerArg {
 
     public static NSString create(ObjcObject object) {
         return object == null ? null : new NSString(object);
@@ -16,6 +18,11 @@ public class NSString {
 
     private NSString(ObjcObject object) {
         this.object = object;
+    }
+
+    @Override
+    public Pointer getPointer() {
+        return object.getPointer();
     }
 
     public String getString() {

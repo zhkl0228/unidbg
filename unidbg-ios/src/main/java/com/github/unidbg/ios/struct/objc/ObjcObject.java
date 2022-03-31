@@ -27,7 +27,7 @@ public abstract class ObjcObject extends UnidbgStructure {
 
     final Emulator<?> emulator;
 
-    ObjcObject(Emulator<?> emulator, Pointer p) {
+    protected ObjcObject(Emulator<?> emulator, Pointer p) {
         super(p);
         this.emulator = emulator;
     }

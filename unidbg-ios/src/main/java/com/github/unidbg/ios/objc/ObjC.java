@@ -30,4 +30,8 @@ public abstract class ObjC {
 
     public abstract boolean respondsToSelector(ObjcClass objcClass, String selectorName);
 
+    public abstract NSString newString(String str);
+
+    public abstract NSData newData(byte[] bytes);
+
 }

@@ -260,4 +260,14 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     public int chflags(int flags) {
         return chflags(file, flags);
     }
+
+    @Override
+    public String getPath() {
+        return path;
+    }
+
+    @Override
+    public int getxattr(Emulator<?> emulator, String name, Pointer value, int size) {
+        return getxattr(emulator, file, name, value, size);
+    }
 }

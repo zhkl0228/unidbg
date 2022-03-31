@@ -1,9 +1,10 @@
 package com.github.unidbg.ios.objc;
 
+import com.github.unidbg.PointerArg;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
 import com.sun.jna.Pointer;
 
-public class NSData {
+public class NSData implements PointerArg {
 
     public static NSData create(ObjcObject object) {
         return object == null ? null : new NSData(object);
@@ -13,6 +14,11 @@ public class NSData {
 
     private NSData(ObjcObject object) {
         this.object = object;
+    }
+
+    @Override
+    public Pointer getPointer() {
+        return object.getPointer();
     }
 
     public byte[] getBytes() {

@@ -31,23 +31,19 @@ objc_msg_function old_objc_msgSend = NULL;
 
 objc_msgSend_callback callback = NULL;
 
-uintptr_t pre_objc_msgSend(id self, SEL _cmd, va_list args) {
-  uintptr_t lr = 1;
-#if defined(__arm__)
-  __asm__(
-    "mov %[LR], r12\n"
-    :[LR]"=r"(lr)
-  );
-#elif defined(__aarch64__)
-  __asm__(
-    "mov %[LR], x12\n"
-    :[LR]"=r"(lr)
-  );
-#endif
+uintptr_t pre_objc_msgSend(id self, SEL _cmd, ...) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+
   Class class = object_getClass(self);
   bool systemClass = isSystemClass(class);
   if(callback) {
-    callback(systemClass, class ? class_getName(class) : NULL, sel_getName(_cmd), lr);
+    NSString *format = callback(systemClass, class ? class_getName(class) : NULL, sel_getName(_cmd), lr);
+    if(format) {
+      va_list args;
+      va_start(args, _cmd);
+      NSLogv(format, args);
+      va_end(args);
+    }
   } else {
     char buf[512];
     print_lr(buf, lr);

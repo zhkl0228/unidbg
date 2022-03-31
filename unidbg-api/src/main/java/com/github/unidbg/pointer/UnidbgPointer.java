@@ -3,6 +3,7 @@ package com.github.unidbg.pointer;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.InvalidMemoryAccessException;
 import com.github.unidbg.Module;
+import com.github.unidbg.PointerArg;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
@@ -19,7 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-public class UnidbgPointer extends Pointer {
+public class UnidbgPointer extends Pointer implements PointerArg {
 
     private static final Log log = LogFactory.getLog(UnidbgPointer.class);
 
@@ -514,4 +515,8 @@ public class UnidbgPointer extends Pointer {
         return (int)((peer >>> 32) + (peer & 0xffffffffL));
     }
 
+    @Override
+    public Pointer getPointer() {
+        return this;
+    }
 }

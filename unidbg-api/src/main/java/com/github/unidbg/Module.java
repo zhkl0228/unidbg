@@ -149,12 +149,9 @@ public abstract class Module {
                 list.add(new StringNumber((String) arg));
             } else if(arg instanceof byte[]) {
                 list.add(new ByteArrayNumber((byte[]) arg));
-            } else if(arg instanceof UnidbgPointer) {
-                UnidbgPointer pointer = (UnidbgPointer) arg;
-                list.add(new PointerNumber(pointer));
-            } else if(arg instanceof UnidbgStructure) {
-                UnidbgStructure structure = (UnidbgStructure) arg;
-                list.add(new PointerNumber((UnidbgPointer) structure.getPointer()));
+            } else if (arg instanceof PointerArg) {
+                PointerArg pointerArg = (PointerArg) arg;
+                list.add(new PointerNumber((UnidbgPointer) pointerArg.getPointer()));
             } else if (arg instanceof Number) {
                 list.add((Number) arg);
             } else if(arg == null) {

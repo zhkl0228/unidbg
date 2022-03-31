@@ -53,11 +53,7 @@ static void WritePropertyToFile(CFPropertyListRef propertyList) {
 }
 
 int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
-  uintptr_t lr = 1;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
   char buf[512];
   print_lr(buf, lr);
   int debug = is_debug();
@@ -75,7 +71,7 @@ int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
     fprintf(stderr, "SecItemCopyMatching kSecAttrAccount is not CFString LR=%s\n", buf);
     return ret;
   }
-  if(value && CFDictionaryGetValue(query, kSecReturnData) && CFStringCompare(limit, kSecMatchLimitOne, 0) == kCFCompareEqualTo) {
+  if(value && CFDictionaryGetValue(query, kSecReturnData) && limit && CFStringCompare(limit, kSecMatchLimitOne, 0) == kCFCompareEqualTo) {
     if(result) {
       *result = CFRetain(value);
     }

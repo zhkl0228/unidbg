@@ -1,10 +1,12 @@
 package com.github.unidbg.ios.objc;
 
+import com.github.unidbg.PointerArg;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
+import com.sun.jna.Pointer;
 
 import java.util.Iterator;
 
-public class NSArray implements Iterable<ObjcObject> {
+public class NSArray implements Iterable<ObjcObject>, PointerArg {
 
     public static NSArray create(ObjcObject object) {
         return object == null ? null : new NSArray(object);
@@ -14,6 +16,11 @@ public class NSArray implements Iterable<ObjcObject> {
 
     private NSArray(ObjcObject object) {
         this.object = object;
+    }
+
+    @Override
+    public Pointer getPointer() {
+        return object.getPointer();
     }
 
     private class NSArrayIterator implements Iterator<ObjcObject> {
