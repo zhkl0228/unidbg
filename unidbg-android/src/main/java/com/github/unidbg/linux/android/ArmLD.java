@@ -212,7 +212,7 @@ public class ArmLD extends Dlfcn {
                             int flags = context.getIntArg(1);
                             
                             if (log.isDebugEnabled()) {
-                                System.out.println("dlopen filename=" + filename + ", flags=" + flags + ", LR=" + context.getLRPointer());
+                                log.debug("dlopen filename=" + filename + ", flags=" + flags + ", LR=" + context.getLRPointer());
                             }
                             return dlopen(emulator.getMemory(), filename, emulator);
                         }
