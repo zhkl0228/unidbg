@@ -208,9 +208,18 @@ public class ArmLD extends Dlfcn {
                         public long handle(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
                             Pointer fileNamePointer = context.getPointerArg(0);
-                            String filename = fileNamePointer == null ? emulator.getMemory().findModuleByAddress(context.getLRPointer().peer).name : fileNamePointer.getString(0);
                             int flags = context.getIntArg(1);
-                            
+
+                            String filename;
+                            if (fileNamePointer == null) {
+                                Module module = emulator.getMemory().findModuleByAddress(context.getLR());
+                                if (module == null) {
+                                    throw new UnsupportedOperationException();
+                                }
+                                filename = module.name;
+                            } else {
+                                filename = fileNamePointer.getString(0);
+                            }
                             if (log.isDebugEnabled()) {
                                 log.debug("dlopen filename=" + filename + ", flags=" + flags + ", LR=" + context.getLRPointer());
                             }
