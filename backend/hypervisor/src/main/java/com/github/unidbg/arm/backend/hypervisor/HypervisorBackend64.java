@@ -7,6 +7,7 @@ import capstone.api.arm64.OpInfo;
 import capstone.api.arm64.OpValue;
 import capstone.api.arm64.Operand;
 import com.alibaba.fastjson.util.IOUtils;
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
@@ -86,6 +87,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }
             default:
+                if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                    emulator.attach().debug();
+                }
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
     }
