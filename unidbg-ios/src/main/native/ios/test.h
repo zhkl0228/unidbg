@@ -370,8 +370,7 @@ static void test_getattrlist() {
   attrlist.fileattr = 0;
   attrlist.forkattr = 0;
   int ret = getattrlist("/", &attrlist, attrbuf, sizeof(attrbuf), 0);
-  printf("test_getattrlist ret=%d, len=%d, attrbuf2=%d\n", ret, attrbuf[0], attrbuf[1]);
-  printf("test_getattrlist X_OK=%d, R_OK=%d, W_OK=%d\n", X_OK, R_OK, W_OK);
+  printf("test_getattrlist ret=%d, len=%d, attr=%d, errno=%d\n", ret, attrbuf[0], attrbuf[1], errno);
 }
 
 static void test_dirent() {

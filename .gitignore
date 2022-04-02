@@ -13,3 +13,5 @@
 /unidbg-android/target/
 /backend/*/target/
 /backend/*/*.iml
+*.i64
+*.idb

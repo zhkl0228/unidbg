@@ -1931,7 +1931,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             int ret = result.io.getattrlist(attrList, attrBuf, attrBufSize);
             if (ret != 0) {
                 log.info(msg + ", ret=" + ret);
-                if (log.isDebugEnabled()) {
+                if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
                     createBreaker(emulator).debug();
                 }
             } else {
@@ -1942,8 +1942,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return ret;
         }
 
-        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EACCES);
-        log.info(msg);
+        emulator.getMemory().setErrno(result != null ? result.errno : UnixEmulator.EEXIST);
         return -1;
     }
 
@@ -2968,7 +2967,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
-                throw new UnsupportedOperationException("flavor=" + args.flavor);
+                if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                    createBreaker(emulator).debug();
+                }
+                log.warn("task_info flavor=" + args.flavor);
+                return -1;
             }
             case 78: { // _dispatch_send_wakeup_runloop_thread
                 if (log.isDebugEnabled()) {

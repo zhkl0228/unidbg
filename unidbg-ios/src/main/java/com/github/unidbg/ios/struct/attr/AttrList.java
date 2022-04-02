@@ -15,15 +15,12 @@ public class AttrList extends UnidbgStructure {
 
     public short bitmapcount; /* number of attr. bit sets in list (should be 5) */
     public short reserved; /* (to maintain 4-byte alignment) */
-    public int commonattr; /* common attribute group */
-    public int volattr; /* Volume attribute group */
-    public int dirattr; /* directory attribute group */
-    public int fileattr; /* file attribute group */
-    public int forkattr; /* fork attribute group */
+
+    public AttributeSet attributeSet;
 
     @Override
     protected List<String> getFieldOrder() {
-        return Arrays.asList("bitmapcount", "reserved", "commonattr", "volattr", "dirattr", "fileattr", "forkattr");
+        return Arrays.asList("bitmapcount", "reserved", "attributeSet");
     }
 
 }
