@@ -1904,6 +1904,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
                     log.warn("mmap2 NOT VM_FLAGS_ANYWHERE exists memory map addr=0x" + Long.toHexString(start));
                 }
+                if (start + aligned >= mmapBaseAddress) {
+                    setMMapBaseAddress(start + aligned);
+                }
                 return start;
             }
         } catch (IOException e) {
