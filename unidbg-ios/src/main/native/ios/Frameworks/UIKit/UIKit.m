@@ -158,6 +158,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @end
 
 @implementation UIView
++ (id)appearance {
+  return nil;
+}
 - (id)initWithFrame:(CGRect)rect {
     if(self = [super init]) {
         self.frame = rect;

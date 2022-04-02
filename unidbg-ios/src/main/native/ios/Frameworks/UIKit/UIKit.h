@@ -80,7 +80,11 @@ typedef enum UIViewAutoresizing : NSUInteger {
 @interface UIResponder : NSObject
 @end
 
-@interface UIView : UIResponder
+@protocol UIAppearance
++ (id)appearance;
+@end
+
+@interface UIView : UIResponder <UIAppearance>
 @property(nonatomic) BOOL accessibilityViewIsModal;
 @property(nonatomic, retain) UIColor *backgroundColor;
 @property(nonatomic) CGRect frame;
