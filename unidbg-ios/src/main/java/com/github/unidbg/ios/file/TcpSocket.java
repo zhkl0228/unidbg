@@ -8,6 +8,7 @@ import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -143,7 +144,7 @@ public class TcpSocket extends SocketIO implements FileIO {
             Inspector.inspect(data, "addr");
         }
 
-        int sa_family = addr.getShort(0);
+        int sa_family = Short.reverseBytes(addr.getShort(0)) & 0xffff;
         if (sa_family != AF_INET) {
             throw new AbstractMethodError("sa_family=" + sa_family);
         }
