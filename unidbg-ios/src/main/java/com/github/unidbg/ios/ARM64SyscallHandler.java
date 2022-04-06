@@ -61,6 +61,7 @@ import com.github.unidbg.ios.struct.kernel.SemaphoreCreateReply;
 import com.github.unidbg.ios.struct.kernel.SemaphoreCreateRequest;
 import com.github.unidbg.ios.struct.kernel.Stat64;
 import com.github.unidbg.ios.struct.kernel.StatFS;
+import com.github.unidbg.ios.struct.kernel.TaskBasicInfoReply64V2;
 import com.github.unidbg.ios.struct.kernel.TaskDyldInfoReply;
 import com.github.unidbg.ios.struct.kernel.TaskGetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskGetExceptionPortsRequest;
@@ -102,9 +103,11 @@ import com.github.unidbg.unix.struct.TimeSpec;
 import com.github.unidbg.unix.struct.TimeVal64;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import unicorn.Arm64Const;
 import unicorn.UnicornConst;
 
@@ -565,7 +568,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     return;
                 case 0x80000000:
                     NR = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
-                    if(handleMachineDependentSyscall(emulator, NR)) {
+                    if (handleMachineDependentSyscall(emulator, NR)) {
                         return;
                     }
                 default:
@@ -1242,8 +1245,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return file.fstat(emulator, new Stat64(stat));
     }
 
-    private static final int RLIMIT_NOFILE = 8;		/* number of open files */
-    private static final int RLIMIT_POSIX_FLAG = 0x1000;	/* Set bit for strict POSIX */
+    private static final int RLIMIT_NOFILE = 8;        /* number of open files */
+    private static final int RLIMIT_POSIX_FLAG = 0x1000;    /* Set bit for strict POSIX */
 
     private long rlim_cur = 128;
     private long rlim_max = 256;
@@ -1385,7 +1388,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             }
             info.pbsi_pid = pid;
             info.pbsi_status = ProcBsdShortInfo.SRUN;
-            info.pbsi_comm = Arrays.copyOf(Arrays.copyOf(processName.getBytes(), DarwinSyscall.MAXCOMLEN-1), DarwinSyscall.MAXCOMLEN);
+            info.pbsi_comm = Arrays.copyOf(Arrays.copyOf(processName.getBytes(), DarwinSyscall.MAXCOMLEN - 1), DarwinSyscall.MAXCOMLEN);
             info.pbsi_flags = 0x24090;
             info.pbsi_uid = 0;
             info.pbsi_ruid = 0;
@@ -1836,7 +1839,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 msg = "sysctl CTL_NET action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 int family = name.getInt(0xc); // AF_INET
                 int rt = name.getInt(0x10);
-                if(action == AF_ROUTE && rt == NET_RT_IFLIST) {
+                if (action == AF_ROUTE && rt == NET_RT_IFLIST) {
                     log.debug(msg);
                     try {
                         List<DarwinUtils.NetworkIF> networkIFList = DarwinUtils.getNetworkIFs(isVerbose());
@@ -2968,6 +2971,38 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+
+                if (args.flavor == TaskInfoRequest.TASK_BASIC_INFO_64_2) {
+                    TaskBasicInfoReply64V2 reply = new TaskBasicInfoReply64V2(request);
+                    reply.unpack();
+
+                    header.setMsgBits(false);
+                    header.msgh_size = header.size() + reply.size();
+                    header.msgh_remote_port = header.msgh_local_port;
+                    header.msgh_local_port = 0;
+                    header.msgh_id += 100; // reply Id always equals reqId+100
+                    header.pack();
+
+                    reply.retCode = 0;
+                    reply.task_info_outCnt = UnidbgStructure.calculateSize(TaskBasicInfoReply64V2.class) / 4;
+                    // get usage size;
+                    reply.basicInfo.suspendCount = 0;
+                    // 1gb
+                    reply.basicInfo.virtualSize = 1 * 1024 * 1024 * 1024;
+                    // 100m
+                    reply.basicInfo.residentSize = 100 * 1024 * 1024;
+                    //
+                    reply.basicInfo.userTime = 0;
+                    reply.basicInfo.systemTime = 0;
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("task_info TASK_VM_INFO reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                // emulator.attach().debug();
                 throw new UnsupportedOperationException("flavor=" + args.flavor);
             }
             case 78: { // _dispatch_send_wakeup_runloop_thread
@@ -3430,7 +3465,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             } else {
                 log.debug(msg);
             }
-        } else if(LogFactory.getLog("com.github.unidbg.ios.malloc").isDebugEnabled()) {
+        } else if (LogFactory.getLog("com.github.unidbg.ios.malloc").isDebugEnabled()) {
             log.debug(msg);
         }
         return base;
