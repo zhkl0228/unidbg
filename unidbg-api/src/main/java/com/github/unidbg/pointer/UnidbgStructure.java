@@ -1,30 +1,25 @@
 package com.github.unidbg.pointer;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.PointerArg;
 import com.sun.jna.Memory;
-import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.codec.binary.Hex;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class UnidbgStructure extends Structure {
-
-    private static final Log log = LogFactory.getLog(UnidbgStructure.class);
+public abstract class UnidbgStructure extends Structure implements PointerArg {
 
     /** Placeholder pointer to help avoid auto-allocation of memory where a
      * Structure needs a valid pointer but want to avoid actually reading from it.
      */
-    private static final Pointer PLACEHOLDER_MEMORY = new UnidbgPointer(null) {
+    private static final Pointer PLACEHOLDER_MEMORY = new UnidbgPointer(null, null) {
         @Override
         public UnidbgPointer share(long offset, long sz) { return this; }
     };
@@ -38,16 +33,37 @@ public abstract class UnidbgStructure extends Structure {
         }
     }
 
-    protected UnidbgStructure(byte[] data) {
-        this(new UnidbgPointer(data) {
-            @Override
-            public UnidbgPointer share(long offset, long sz) {
-                if (offset == 0) {
-                    return this;
-                }
-                throw new UnsupportedOperationException("offset=0x" + Long.toHexString(offset) + ", sz=" + sz);
+    private static class ByteArrayPointer extends UnidbgPointer {
+        private final Emulator<?> emulator;
+        private final byte[] data;
+        public ByteArrayPointer(Emulator<?> emulator, byte[] data) {
+            super(emulator, data);
+            this.emulator = emulator;
+            this.data = data;
+        }
+        @Override
+        public UnidbgPointer share(long offset, long sz) {
+            if (offset == 0) {
+                return this;
             }
-        });
+            if (offset > 0 && offset + sz < data.length) {
+                if (sz == 0) {
+                    sz = data.length - offset;
+                }
+                byte[] tmp = new byte[(int) sz];
+                System.arraycopy(data, (int) offset, tmp, 0, (int) sz);
+                return new ByteArrayPointer(emulator, tmp);
+            }
+            throw new UnsupportedOperationException("offset=0x" + Long.toHexString(offset) + ", sz=" + sz);
+        }
+    }
+
+    protected UnidbgStructure(Emulator<?> emulator, byte[] data) {
+        this(new ByteArrayPointer(emulator, data));
+    }
+
+    protected UnidbgStructure(byte[] data) {
+        this(null, data);
     }
 
     protected UnidbgStructure(Pointer p) {
@@ -68,11 +84,7 @@ public abstract class UnidbgStructure extends Structure {
     @Override
     protected int getNativeSize(Class<?> nativeType, Object value) {
         if (Pointer.class.isAssignableFrom(nativeType)) {
-            Emulator<?> emulator = AbstractEmulator.getContextEmulator();
-            if (emulator == null) {
-                log.warn("getNativeSize context emulator is null");
-            }
-            return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
+            throw new UnsupportedOperationException();
         }
 
         return super.getNativeSize(nativeType, value);
@@ -81,8 +93,7 @@ public abstract class UnidbgStructure extends Structure {
     @Override
     protected int getNativeAlignment(Class<?> type, Object value, boolean isFirstElement) {
         if (Pointer.class.isAssignableFrom(type)) {
-            Emulator<?> emulator = AbstractEmulator.getContextEmulator();
-            return emulator == null ? Native.POINTER_SIZE : emulator.getPointerSize();
+            throw new UnsupportedOperationException();
         }
 
         return super.getNativeAlignment(type, value, isFirstElement);
@@ -158,7 +169,7 @@ public abstract class UnidbgStructure extends Structure {
                 contents.append(String.format("0x%01X", value));
             }
             else if (value instanceof byte[]) {
-                contents.append('"').append(new String((byte[]) value, StandardCharsets.UTF_8).trim()).append('"');
+                contents.append(Hex.encodeHexString((byte[]) value));
             }
             else {
                 contents.append(String.valueOf(value).trim());
@@ -224,5 +235,4 @@ public abstract class UnidbgStructure extends Structure {
             throw new IllegalStateException(e);
         }
     }
-
 }

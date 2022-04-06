@@ -2,9 +2,10 @@ package com.github.unidbg.hook.whale;
 
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.IHook;
+import com.github.unidbg.hook.InlineHook;
 import com.github.unidbg.hook.ReplaceCallback;
 
-public interface IWhale extends IHook {
+public interface IWhale extends IHook, InlineHook {
 
     void inlineHookFunction(long address, ReplaceCallback callback);
     void inlineHookFunction(Symbol symbol, ReplaceCallback callback);

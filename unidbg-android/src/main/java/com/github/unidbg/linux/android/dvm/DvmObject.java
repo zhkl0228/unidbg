@@ -2,7 +2,7 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.linux.android.dvm.jni.ProxyDvmObject;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
@@ -115,26 +115,32 @@ public class DvmObject<T> extends Hashable {
                         vm.addLocalObject((DvmObject<?>) arg);
                     }
                     continue;
-                } else if (arg instanceof String) {
-                    StringObject str = new StringObject(vm, (String) arg);
-                    list.add(str.hashCode());
-                    vm.addLocalObject(str);
-                    continue;
-                } else if(arg instanceof byte[]) {
-                    ByteArray array = new ByteArray(vm, (byte[]) arg);
-                    list.add(array.hashCode());
-                    vm.addLocalObject(array);
+                } else if (arg instanceof DvmAwareObject ||
+                        arg instanceof String ||
+                        arg instanceof byte[] ||
+                        arg instanceof short[] ||
+                        arg instanceof int[] ||
+                        arg instanceof float[] ||
+                        arg instanceof double[] ||
+                        arg instanceof Enum) {
+                    DvmObject<?> obj = ProxyDvmObject.createObject(vm, arg);
+                    list.add(obj.hashCode());
+                    vm.addLocalObject(obj);
                     continue;
                 }
 
                 list.add(arg);
             }
         }
-        return Module.emulateFunction(emulator, fnPtr.peer, list.toArray())[0];
+        return Module.emulateFunction(emulator, fnPtr.peer, list.toArray());
     }
 
     @Override
     public String toString() {
+        if (value instanceof Enum) {
+            return value.toString();
+        }
+
         if (objectType == null) {
             return getClass().getSimpleName() + "{" +
                     "value=" + value +

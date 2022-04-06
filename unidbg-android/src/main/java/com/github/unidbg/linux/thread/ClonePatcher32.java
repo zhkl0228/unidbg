@@ -7,6 +7,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -78,10 +79,16 @@ class ClonePatcher32 extends ArmSvc {
                     "cmp r7, #0",
                     "popeq {r0, r4-r7, pc}",
                     "pop {r0, ip}",
+
+                    "mov r7, #0",
+                    "mov r5, #0x" + Integer.toHexString(Svc.PRE_CALLBACK_SYSCALL_NUMBER),
+                    "mov r4, #0x" + Integer.toHexString(svcNumber),
+                    "svc #0",
+
                     "blx ip",
 
                     "mov r7, #0",
-                    "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                    "mov r5, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                     "mov r4, #0x" + Integer.toHexString(svcNumber),
                     "svc #0",
 
@@ -94,8 +101,15 @@ class ClonePatcher32 extends ArmSvc {
     }
 
     @Override
-    public void handleCallback(Emulator<?> emulator) {
-        super.handleCallback(emulator);
+    public void handlePreCallback(Emulator<?> emulator) {
+        if (visitor.isSaveContext()) {
+            emulator.pushContext(0x4);
+        }
+    }
+
+    @Override
+    public void handlePostCallback(Emulator<?> emulator) {
+        super.handlePostCallback(emulator);
         value_ptr.set(emulator.getContext().getIntArg(0));
     }
 }

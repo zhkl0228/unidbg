@@ -15,6 +15,9 @@ import org.apache.commons.codec.binary.Hex;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * trace memory read
@@ -24,6 +27,7 @@ import java.nio.ByteOrder;
 public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
 
     private final boolean read;
+    private final DateFormat dateFormat = new SimpleDateFormat("[HH:mm:ss SSS]");
 
     public TraceMemoryHook(boolean read) {
         this.read = read;
@@ -70,7 +74,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
         }
 
         try {
-            byte[] data = backend.mem_read(address, size);
+            byte[] data = size == 0 ? new byte[0] : backend.mem_read(address, size);
             String value;
             if (data.length == 4) {
                 value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
@@ -81,7 +85,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
             }
             Emulator<?> emulator = (Emulator<?>) user;
             if (traceReadListener == null || traceReadListener.onRead(emulator, address, data, value)) {
-                printMsg("### Memory READ at 0x", emulator, address, size, value);
+                printMsg(dateFormat.format(new Date()) + " Memory READ at 0x", emulator, address, size, value);
             }
         } catch (BackendException e) {
             throw new IllegalStateException(e);
@@ -96,10 +100,13 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
         if (redirect != null) {
             out = redirect;
         }
-        String sb = type + Long.toHexString(address) + ", data size = " + size + ", data value = " + value +
-                " pc=" + pc +
-                " lr=" + lr;
-        out.println(sb);
+        StringBuilder builder = new StringBuilder();
+        builder.append(type).append(Long.toHexString(address));
+        if (size > 0) {
+            builder.append(", data size = ").append(size).append(", data value = ").append(value);
+        }
+        builder.append(", PC=").append(pc).append(", LR=").append(lr);
+        out.println(builder.toString());
     }
 
     @Override
@@ -111,7 +118,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
         try {
             Emulator<?> emulator = (Emulator<?>) user;
             if (traceWriteListener == null || traceWriteListener.onWrite(emulator, address, size, value)) {
-                printMsg("### Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
+                printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
             }
         } catch (BackendException e) {
             throw new IllegalStateException(e);

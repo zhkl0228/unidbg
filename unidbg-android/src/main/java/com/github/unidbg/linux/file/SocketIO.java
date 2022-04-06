@@ -254,7 +254,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
     }
 
     @Override
-    public final int bind(Pointer addr, int addrlen) {
+    public int bind(Pointer addr, int addrlen) {
         if (addrlen == IPV4_ADDR_LEN) {
             return bind_ipv4(addr, addrlen);
         } else if(addrlen == IPV6_ADDR_LEN) {

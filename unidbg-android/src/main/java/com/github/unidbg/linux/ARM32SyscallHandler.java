@@ -2,10 +2,13 @@ package com.github.unidbg.linux;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.LongJumpException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.ArmSvc;
+import com.github.unidbg.arm.ThumbSvc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
@@ -26,11 +29,15 @@ import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
 import com.github.unidbg.linux.struct.Stat32;
 import com.github.unidbg.linux.struct.SysInfo32;
+import com.github.unidbg.linux.thread.KitKatThread;
+import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.PopContextException;
+import com.github.unidbg.thread.Task;
+import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.IO;
-import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -80,6 +87,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             createBreaker(emulator).brk(pc, bkpt);
             return;
         }
+        if (intno == ARMEmulator.EXCP_UDEF) {
+            createBreaker(emulator).debug();
+            return;
+        }
 
         if (intno != ARMEmulator.EXCP_SWI) {
             throw new BackendException("intno=" + intno);
@@ -89,17 +100,33 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         String syscall = null;
         Throwable exception = null;
         try {
-            if (swi == 0 && NR == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.CALLBACK_SYSCALL_NUMBER) { // callback
+            if (swi == 0 && NR == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.POST_CALLBACK_SYSCALL_NUMBER) { // postCallback
                 int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
-                    svc.handleCallback(emulator);
+                    svc.handlePostCallback(emulator);
+                    return;
+                }
+                backend.emu_stop();
+                throw new IllegalStateException("svc number: " + swi);
+            }
+            if (swi == 0 && NR == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.PRE_CALLBACK_SYSCALL_NUMBER) { // preCallback
+                int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
+                Svc svc = svcMemory.getSvc(number);
+                if (svc != null) {
+                    svc.handlePreCallback(emulator);
                     return;
                 }
                 backend.emu_stop();
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi != 0) {
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX)) {
+                    throw new PopContextException();
+                }
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX) - 1) {
+                    throw new ThreadContextSwitchException();
+                }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));
@@ -109,7 +136,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
 
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 ARM.showThumbRegs(emulator);
             }
 
@@ -119,12 +146,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
             switch (NR) {
                 case 1:
-                    int status = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-                    System.out.println("exit status=" + status);
-                    if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
-                        emulator.attach().debug();
-                    }
-                    backend.emu_stop();
+                    exit(emulator);
                     return;
                 case 2:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fork(emulator));
@@ -154,8 +176,11 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, ptrace(emulator));
                     return;
                 case  20: // getpid
-                case 224: // gettid
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, emulator.getPid());
+                    return;
+                case 224: // gettid
+                    Task task = emulator.get(Task.TASK_KEY);
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, task == null ? 0 : task.getId());
                     return;
                 case 33:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, access(emulator));
@@ -196,7 +221,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, getppid(emulator));
                     return;
                 case 67:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigaction(emulator));
+                    return;
+                case 73:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigpending(emulator));
                     return;
                 case 78:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, gettimeofday(emulator));
@@ -216,6 +244,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 94:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fchmod(backend));
                     return;
+                case 96:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, getpriority(emulator));
+                    return;
+                case 97:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, setpriority(emulator));
+                    return;
                 case 103:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, syslog(backend, emulator));
                     return;
@@ -229,7 +263,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, fsync(backend));
                     return;
                 case 120:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, clone(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, clone(emulator));
                     return;
                 case 122:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, uname(emulator));
@@ -239,7 +273,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 126:
                 case 175:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(emulator));
                     return;
                 case 132:
                     syscall = "getpgid";
@@ -265,6 +299,18 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 150:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, mlock(emulator));
                     return;
+                case 155:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_getparam(emulator));
+                    return;
+                case 156:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_setscheduler(emulator));
+                    return;
+                case 157:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_getscheduler(emulator));
+                    return;
+                case 158:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sched_yield(emulator));
+                    return;
                 case 162:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, nanosleep(emulator));
                     return;
@@ -277,6 +323,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 172:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, prctl(backend, emulator));
+                    return;
+                case 176:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigpending(emulator));
+                    return;
+                case 177:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigtimedwait(emulator));
+                    return;
+                case 178:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, rt_sigqueue(emulator));
                     return;
                 case 180:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, pread64(emulator));
@@ -348,6 +403,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 248:
                     exit_group(emulator);
                     return;
+                case 256:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, set_tid_address(emulator));
+                    return;
                 case 263:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, clock_gettime(backend, emulator));
                     return;
@@ -361,7 +419,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     return;
                 }
                 case 268:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(backend));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, tgkill(emulator));
                     return;
                 case 269:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, utimes(emulator));
@@ -403,7 +461,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, getsockopt(backend, emulator));
                     return;
                 case 322:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, openat(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, openat(emulator));
                     return;
                 case 323:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, mkdirat(emulator));
@@ -435,6 +493,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 case 356:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, eventfd2(emulator));
                     return;
+                case 352:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, fallocate(emulator));
+                    return;
                 case 358:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, dup3(emulator));
                     return;
@@ -457,6 +518,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         } catch (StopEmulatorException e) {
             backend.emu_stop();
             return;
+        } catch (LongJumpException e) {
+            backend.emu_stop();
+            throw e;
         } catch (Throwable e) {
             backend.emu_stop();
             exception = e;
@@ -491,7 +555,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return getrandom(buf, bufSize, flags);
     }
 
-    private int clone(Backend backend, Emulator<?> emulator) {
+    private int clone(Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         Pointer child_stack = context.getPointerArg(1);
         if (child_stack == null &&
@@ -502,11 +566,11 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
         int fn = context.getR5Int();
         int arg = context.getR6Int();
-        if (child_stack != null && child_stack.getInt(-4) == fn && child_stack.getInt(-8) == arg) {
+        if (child_stack != null && child_stack.getInt(0) == fn && child_stack.getInt(4) == arg) {
             // http://androidxref.com/6.0.1_r10/xref/bionic/libc/arch-arm/bionic/__bionic_clone.S#49
-            return bionic_clone(backend, emulator);
+            return bionic_clone(emulator);
         } else {
-            return pthread_clone(backend, emulator);
+            return pthread_clone(emulator);
         }
     }
 
@@ -712,21 +776,13 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
     protected int fork(Emulator<?> emulator) {
         log.info("fork");
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
         emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
         return -1;
     }
-
-    private int tgkill(Backend backend) {
-        int tgid = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        int tid = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int sig = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
-        if (log.isDebugEnabled()) {
-            log.debug("tgkill tgid=" + tgid + ", tid=" + tid + ", sig=" + sig);
-        }
-        return 0;
-    }
-
-    private int threadId;
 
     private static final int CLONE_VM = 0x00000100;
     private static final int CLONE_FS = 0x00000200;
@@ -746,9 +802,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private static final int CLONE_CHILD_SETTID = 0x01000000;
     private static final int CLONE_STOPPED = 0x02000000;
 
-    private int pthread_clone(Backend backend, Emulator<?> emulator) {
-        int flags = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        UnidbgPointer child_stack = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
+    private int pthread_clone(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int flags = context.getIntArg(0);
+        UnidbgPointer child_stack = context.getPointerArg(1);
         List<String> list = new ArrayList<>();
         if ((flags & CLONE_VM) != 0) {
             list.add("CLONE_VM");
@@ -801,16 +858,21 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         if ((flags & CLONE_STOPPED) != 0) {
             list.add("CLONE_STOPPED");
         }
-        int threadId = ++this.threadId;
+        int threadId = incrementThreadId(emulator);
 
         UnidbgPointer fn = child_stack.getPointer(0);
         child_stack = child_stack.share(4, 0);
         UnidbgPointer arg = child_stack.getPointer(0);
         child_stack = child_stack.share(4, 0);
 
-        Thread thread = new LinuxThread(child_stack, fn, arg);
-        threadMap.put(threadId, thread);
-        lastThread = threadId;
+        if (threadDispatcherEnabled) {
+            if (verbose) {
+                System.out.printf("pthread_clone fn=%s%n", fn);
+            }
+            emulator.getThreadDispatcher().addThread(new KitKatThread(threadId, emulator.getReturnAddress(), child_stack, fn, arg));
+            return threadId;
+        }
+
         log.info("pthread_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         Log log = LogFactory.getLog(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
@@ -819,14 +881,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return threadId;
     }
 
-    private int bionic_clone(Backend backend, Emulator<?> emulator) {
-        int flags = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer child_stack = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer pid = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        Pointer tls = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        Pointer ctid = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R4);
-        Pointer fn = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R5);
-        Pointer arg = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R6);
+    private int bionic_clone(Emulator<?> emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int flags = context.getR0Int();
+        Pointer child_stack = context.getR1Pointer();
+        Pointer pid = context.getR2Pointer();
+        Pointer tls = context.getR3Pointer();
+        Pointer ctid = context.getR4Pointer();
+        UnidbgPointer fn = context.getR5Pointer();
+        UnidbgPointer arg = context.getR6Pointer();
         List<String> list = new ArrayList<>();
         if ((flags & CLONE_VM) != 0) {
             list.add("CLONE_VM");
@@ -879,11 +942,20 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         if ((flags & CLONE_STOPPED) != 0) {
             list.add("CLONE_STOPPED");
         }
+        int threadId = incrementThreadId(emulator);
         if (log.isDebugEnabled()) {
             log.debug("bionic_clone child_stack=" + child_stack + ", thread_id=" + threadId + ", pid=" + pid + ", tls=" + tls + ", ctid=" + ctid + ", fn=" + fn + ", arg=" + arg + ", flags=" + list);
         }
-        emulator.getMemory().setErrno(UnixEmulator.EAGAIN);
-        throw new AbstractMethodError();
+        if (threadDispatcherEnabled) {
+            if (verbose) {
+                System.out.printf("bionic_clone fn=%s%n", fn);
+            }
+            emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid, threadId));
+            ctid.setInt(0, threadId);
+            return threadId;
+        }
+        emulator.getMemory().setErrno(UnixEmulator.ENOMEM);
+        return -UnixEmulator.ENOMEM;
     }
 
     private int flock(Backend backend) {
@@ -908,7 +980,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         int fd = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
         long offset_high = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue() & 0xffffffffL;
         long offset_low = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue() & 0xffffffffL;
-        long offset = (offset_high<<32) | offset_low;
+        long offset = (offset_high << 32) | offset_low;
         Pointer result = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
         int whence = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
         if (log.isDebugEnabled()) {
@@ -945,9 +1017,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     }
 
     private int execve(Emulator<?> emulator) {
-        Pointer filename = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer argv = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer envp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        RegisterContext context = emulator.getContext();
+        Pointer filename = context.getPointerArg(0);
+        Pointer argv = context.getPointerArg(1);
+        Pointer envp = context.getPointerArg(2);
         assert filename != null;
         List<String> args = new ArrayList<>();
         Pointer pointer;
@@ -961,6 +1034,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             envp = envp.share(4);
         }
         log.info("execve filename=" + filename.getString(0) + ", args=" + args + ", env=" + env);
+        Log log = LogFactory.getLog(AbstractEmulator.class);
+        if (log.isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
     }
@@ -1085,7 +1162,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             }
             return count;
         }
-        throw new AbstractMethodError("newselect nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout);
+        throw new AbstractMethodError("newselect nfds=" + nfds + ", readfds=null, writefds=" + writefds + ", exceptfds=null, timeout=" + timeout);
     }
 
     protected int pselect6(Emulator<?> emulator) {
@@ -1128,7 +1205,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             }
             return count;
         }
-        throw new AbstractMethodError("pselect6 nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
+        throw new AbstractMethodError("pselect6 nfds=" + nfds + ", readfds=null, writefds=" + writefds + ", exceptfds=null, timeout=" + timeout + ", LR=" + context.getLRPointer());
     }
 
     private int getpeername(Backend backend, Emulator<?> emulator) {
@@ -1167,7 +1244,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 pollfd.setShort(6, (short) 0);
             } else {
                 short revents = 0;
-                if((events & POLLOUT) != 0) {
+                if ((events & POLLOUT) != 0) {
                     revents = POLLOUT;
                 } else if ((events & POLLIN) != 0) {
                     revents = POLLIN;
@@ -1242,10 +1319,11 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         throw new UnsupportedOperationException();
     }
 
-    private int sigprocmask(Backend backend, Emulator<?> emulator) {
-        int how = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer set = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oldset = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+    private int sigprocmask(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int how = context.getIntArg(0);
+        Pointer set = context.getPointerArg(1);
+        Pointer oldset = context.getPointerArg(2);
         return sigprocmask(emulator, how, set, oldset);
     }
 
@@ -1272,32 +1350,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return -1;
     }
 
-    private int nanosleep(Emulator<?> emulator) {
-        Arm32RegisterContext context = emulator.getContext();
-        Pointer req = context.getR0Pointer();
-        Pointer rem = context.getR1Pointer();
-        int tv_sec = req.getInt(0);
-        int tv_nsec = req.getInt(4);
-        if (log.isDebugEnabled()) {
-            log.debug("nanosleep req=" + req + ", rem=" + rem + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
-        }
-        try {
-            java.lang.Thread.sleep(tv_sec * 1000L + tv_nsec / 1000000L);
-        } catch (InterruptedException ignored) {
-        }
-        return 0;
-    }
-
-    protected int kill(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int pid = context.getIntArg(0);
-        int sig = context.getIntArg(1);
-        if (log.isDebugEnabled()) {
-            log.debug("kill pid=" + pid + ", sig=" + sig);
-        }
-        throw new UnsupportedOperationException("kill pid=" + pid + ", sig=" + sig + ", LR=" + context.getLRPointer());
-    }
-
     private int setitimer(Emulator<?> emulator) {
         Arm32RegisterContext context = emulator.getContext();
         int which = context.getR0Int();
@@ -1309,12 +1361,13 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return 0;
     }
 
-    private int sigaction(Backend backend, Emulator<?> emulator) {
-        int signum = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer act = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oldact = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+    private int sigaction(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int signum = context.getIntArg(0);
+        Pointer act = context.getPointerArg(1);
+        Pointer oldact = context.getPointerArg(2);
 
-        return sigaction(signum, act, oldact);
+        return sigaction(emulator, signum, act, oldact);
     }
 
     private int recvfrom(Emulator<?> emulator) {
@@ -1620,7 +1673,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     private static final int PR_SET_DUMPABLE = 4;
     private static final int PR_SET_NAME = 15;
     private static final int PR_GET_NAME = 16;
-    private static final int BIONIC_PR_SET_VMA =              0x53564d41;
+    private static final int BIONIC_PR_SET_VMA = 0x53564d41;
     private static final int PR_SET_PTRACER = 0x59616d61;
 
     private int prctl(Backend backend, Emulator<?> emulator) {
@@ -1742,40 +1795,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return count;
     }
 
-    private static final int FUTEX_WAIT = 0;
-    private static final int FUTEX_WAKE = 1;
-
-    private int futex(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        Pointer uaddr = context.getPointerArg(0);
-        int futex_op = context.getIntArg(1);
-        int val = context.getIntArg(2);
-        int old = uaddr.getInt(0);
-        if (log.isDebugEnabled()) {
-            log.debug("futex uaddr=" + uaddr + ", _futexop=" + futex_op + ", op=" + (futex_op & 0x7f) + ", val=" + val + ", old=" + old);
-        }
-
-        switch (futex_op & 0x7f) {
-            case FUTEX_WAIT:
-                if (old != val) {
-                    throw new IllegalStateException("old=" + old + ", val=" + val);
-                }
-                java.lang.Thread.yield();
-                Pointer timeout = context.getPointerArg(3);
-                int mytype = val & 0xc000;
-                int shared = val & 0x2000;
-                if (log.isDebugEnabled()) {
-                    log.debug("futex FUTEX_WAIT mytype=" + mytype + ", shared=" + shared + ", timeout=" + timeout + ", test=" + (mytype | shared));
-                }
-                uaddr.setInt(0, mytype | shared);
-                return 0;
-            case FUTEX_WAKE:
-                return 0;
-            default:
-                throw new AbstractMethodError();
-        }
-    }
-
     private int brk(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
         long address = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
@@ -1869,11 +1888,12 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         return stat64(emulator, path, statbuf);
     }
 
-    private int openat(Backend backend, Emulator<AndroidFileIO> emulator) {
-        int dirfd = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer pathname_p = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int oflags = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
-        int mode = backend.reg_read(ArmConst.UC_ARM_REG_R3).intValue();
+    private int openat(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int dirfd = context.getIntArg(0);
+        Pointer pathname_p = context.getPointerArg(1);
+        int oflags = context.getIntArg(2);
+        int mode = context.getIntArg(3);
         String pathname = pathname_p.getString(0);
         String msg = "openat dirfd=" + dirfd + ", pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode);
         if (log.isDebugEnabled()) {
@@ -1882,14 +1902,16 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         pathname = FilenameUtils.normalize(pathname, true);
         if ("/data/misc/zoneinfo/current/tzdata".equals(pathname) || "/dev/pmsg0".equals(pathname)) {
             emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            return -UnixEmulator.ENOENT;
         }
         if (pathname.startsWith("/")) {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
                 log.info(msg);
+                return -emulator.getMemory().getLastErrno();
+            } else {
+                return fd;
             }
-            return fd;
         } else {
             if (dirfd != IO.AT_FDCWD) {
                 throw new BackendException();
@@ -1898,16 +1920,18 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
                 log.info(msg);
+                return -emulator.getMemory().getLastErrno();
+            } else {
+                return fd;
             }
-            return fd;
         }
     }
 
     private int open(Emulator<AndroidFileIO> emulator) {
-        Backend backend = emulator.getBackend();
-        Pointer pathname_p = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int oflags = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int mode = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
+        RegisterContext context = emulator.getContext();
+        Pointer pathname_p = context.getPointerArg(0);
+        int oflags = context.getIntArg(1);
+        int mode = context.getIntArg(2);
         String pathname = pathname_p.getString(0);
         String msg = "open pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", from=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
         if (log.isDebugEnabled()) {
@@ -1916,8 +1940,10 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         int fd = open(emulator, pathname, oflags);
         if (fd == -1) {
             log.info(msg);
+            return -emulator.getMemory().getLastErrno();
+        } else {
+            return fd;
         }
-        return fd;
     }
 
     private int ftruncate(Backend backend) {

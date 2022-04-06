@@ -2,6 +2,7 @@ package com.github.unidbg.hook.whale;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
+import com.github.unidbg.Svc;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -54,10 +55,45 @@ public final class Whale extends BaseHook implements IWhale {
     }
 
     @Override
+    public void replace(long functionAddress, ReplaceCallback callback) {
+        inlineHookFunction(functionAddress, callback);
+    }
+
+    @Override
+    public void replace(Symbol symbol, ReplaceCallback callback) {
+        inlineHookFunction(symbol, callback);
+    }
+
+    @Override
+    public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
+        inlineHookFunction(functionAddress, callback, enablePostCall);
+    }
+
+    @Override
+    public void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall) {
+        inlineHookFunction(symbol, callback, enablePostCall);
+    }
+
+    @Override
     public void inlineHookFunction(long address, ReplaceCallback callback, boolean enablePostCall) {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup, enablePostCall);
         WInlineHookFunction.call(emulator, UnidbgPointer.pointer(emulator, address), replace, backup);
+    }
+
+    @Override
+    public void replace(long functionAddress, Svc svc) {
+        if (svc == null) {
+            throw new NullPointerException();
+        }
+        final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer callback = emulator.getSvcMemory().registerSvc(svc);
+        WInlineHookFunction.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall);
+    }
+
+    @Override
+    public void replace(Symbol symbol, Svc svc) {
+        replace(symbol.getAddress(), svc);
     }
 
     @Override

@@ -15,17 +15,24 @@ import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,12 +56,12 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
 
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName) {
-        return resolveLibrary(libraryName, version, excludeLibs);
+        return resolveLibrary(libraryName, version, excludeLibs, getClass());
     }
 
     private static final Pattern SYSTEM_LIBRARY_FRAMEWORK_PATTERN = Pattern.compile("/System/Library/Frameworks/(\\w+).framework/Versions/[A-C]/(\\w+)");
 
-    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs) {
+    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs, Class<?> resClass) {
         if (!excludeLibs.isEmpty() && excludeLibs.contains(FilenameUtils.getName(libraryName))) {
             return null;
         }
@@ -69,7 +76,7 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         String name = "/ios/" + version + libraryName.replace('+', 'p');
-        URL url = DarwinResolver.class.getResource(name);
+        URL url = resClass.getResource(name);
         if (url != null) {
             return new URLibraryFile(url, libraryName, version, excludeLibs);
         }
@@ -107,12 +114,58 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         String iosResource = FilenameUtils.normalize("/ios/" + version + "/" + path, true);
-        File file = ResourceUtils.extractResource(DarwinResolver.class, iosResource, path);
-        if (file != null) {
-            return FileResult.fallback(createFileIO(file, path, oflags));
+        URL url = getClass().getResource(iosResource);
+        if (url != null) {
+            return FileResult.fallback(createFileIO(url, path, oflags));
         }
 
         return null;
+    }
+
+    private DarwinFileIO createFileIO(URL url, String pathname, int oflags) {
+        File file = ResourceUtils.toFile(url);
+        if (file != null) {
+            return createFileIO(file, pathname, oflags);
+        }
+
+        try {
+            URLConnection connection = url.openConnection();
+            try (InputStream inputStream = connection.getInputStream()) {
+                if (connection instanceof JarURLConnection) {
+                    JarURLConnection jarURLConnection = (JarURLConnection) connection;
+                    JarFile jarFile = jarURLConnection.getJarFile();
+                    JarEntry entry = jarURLConnection.getJarEntry();
+                    if (entry.isDirectory()) {
+                        Enumeration<JarEntry> entryEnumeration = jarFile.entries();
+                        List<DirectoryFileIO.DirectoryEntry> list = new ArrayList<>();
+                        while (entryEnumeration.hasMoreElements()) {
+                            JarEntry check = entryEnumeration.nextElement();
+                            if (entry.getName().equals(check.getName())) {
+                                continue;
+                            }
+                            if (check.getName().startsWith(entry.getName())) {
+                                boolean isDir = check.isDirectory();
+                                String sub = check.getName().substring(entry.getName().length());
+                                if (isDir) {
+                                    sub = sub.substring(0, sub.length() - 1);
+                                }
+                                if (!sub.contains("/")) {
+                                    list.add(new DirectoryFileIO.DirectoryEntry(true, sub));
+                                }
+                            }
+                        }
+                        return new DirectoryFileIO(oflags, pathname, null, list.toArray(new DirectoryFileIO.DirectoryEntry[0]));
+                    } else {
+                        byte[] data = IOUtils.toByteArray(inputStream);
+                        return new ByteArrayFileIO(oflags, pathname, data);
+                    }
+                } else {
+                    throw new IllegalStateException(connection.getClass().getName());
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException(pathname, e);
+        }
     }
 
     private byte[] _GlobalPreferences;

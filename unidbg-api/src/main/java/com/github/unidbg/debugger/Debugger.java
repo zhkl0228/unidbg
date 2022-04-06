@@ -6,7 +6,6 @@ import com.github.unidbg.arm.backend.BlockHook;
 import com.github.unidbg.arm.backend.DebugHook;
 
 import java.io.Closeable;
-import java.util.concurrent.Callable;
 
 public interface Debugger extends Breaker, DebugHook, BlockHook, Closeable {
 
@@ -20,6 +19,14 @@ public interface Debugger extends Breaker, DebugHook, BlockHook, Closeable {
      */
     BreakPoint addBreakPoint(long address);
     BreakPoint addBreakPoint(long address, BreakPointCallback callback);
+
+    void traceFunctionCall(FunctionCallListener listener);
+
+    /**
+     * use with unicorn
+     * @param module <code>null</code> means all modules.
+     */
+    void traceFunctionCall(Module module, FunctionCallListener listener);
 
     @SuppressWarnings("unused")
     void setDebugListener(DebugListener listener);

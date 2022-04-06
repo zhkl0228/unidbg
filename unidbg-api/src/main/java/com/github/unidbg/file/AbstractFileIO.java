@@ -120,14 +120,14 @@ public abstract class AbstractFileIO implements NewFileIO {
     @Override
     public final long mmap2(Emulator<?> emulator, long addr, int aligned, int prot, int offset, int length) throws IOException {
         Backend backend = emulator.getBackend();
-        byte[] data = getMmapData(offset, length);
+        byte[] data = getMmapData(addr, offset, length);
         backend.mem_map(addr, aligned, prot);
         emulator.getMemory().pointer(addr).write(data);
         return addr;
     }
 
-    protected byte[] getMmapData(int offset, int length) throws IOException {
-        throw new AbstractMethodError(getClass().getName());
+    protected byte[] getMmapData(long addr, int offset, int length) throws IOException {
+        throw new AbstractMethodError(getClass().getName() + ", addr=0x" + Long.toHexString(addr) + ", offset=" + offset + ", length=" + length);
     }
 
     @Override

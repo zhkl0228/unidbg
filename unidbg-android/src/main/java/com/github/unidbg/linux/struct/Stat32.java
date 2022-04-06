@@ -1,7 +1,7 @@
 package com.github.unidbg.linux.struct;
 
 import com.github.unidbg.file.linux.StatStructure;
-import com.github.unidbg.unix.struct.TimeSpec;
+import com.github.unidbg.unix.struct.TimeSpec32;
 import com.sun.jna.Pointer;
 
 import java.util.Arrays;
@@ -16,9 +16,9 @@ public class Stat32 extends StatStructure {
     public byte[] __pad0 = new byte[4];
     public int __st_ino;
     public byte[] __pad3 = new byte[4];
-    public TimeSpec st_atim;
-    public TimeSpec st_mtim;
-    public TimeSpec st_ctim;
+    public TimeSpec32 st_atim;
+    public TimeSpec32 st_mtim;
+    public TimeSpec32 st_ctim;
 
     @Override
     public void setSt_atim(long st_atim, long tv_nsec) {

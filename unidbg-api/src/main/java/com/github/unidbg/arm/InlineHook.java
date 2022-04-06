@@ -1,10 +1,11 @@
 package com.github.unidbg.arm;
 
-import capstone.Capstone;
+import capstone.api.Disassembler;
+import capstone.api.DisassemblerFactory;
+import capstone.api.Instruction;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.hook.HookCallback;
-import com.github.unidbg.hook.InterceptCallback;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
@@ -14,6 +15,7 @@ import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
 import unicorn.ArmConst;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -31,18 +33,16 @@ public class InlineHook {
         if (pointer == null) {
             throw new IllegalArgumentException();
         }
-        Capstone capstone = null;
-        try {
-            capstone = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
-            capstone.setDetail(Capstone.CS_OPT_ON);
+        try (Disassembler disassembler = DisassemblerFactory.createArmDisassembler(true)) {
+            disassembler.setDetail(true);
 
             byte[] code = readThumbCode(pointer);
-            Capstone.CsInsn[] insns = capstone.disasm(code, 0, 1);
+            Instruction[] insns = disassembler.disasm(code, 0, 1);
             if (insns == null || insns.length < 1) {
                 throw new IllegalArgumentException("Invalid hook address: " + pointer);
             }
-            Capstone.CsInsn insn = insns[0];
-            String asm = insn.mnemonic + " " + insn.opStr;
+            Instruction insn = insns[0];
+            String asm = insn.toString();
             if (!"push {r4, r5, r6, r7, lr}".equals(asm)) {
                 throw new IllegalArgumentException("Invalid hook address: " + pointer + ", asm: " + asm);
             }
@@ -71,10 +71,8 @@ public class InlineHook {
                     return backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                 }
             });
-        } finally {
-            if (capstone != null) {
-                capstone.close();
-            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -86,18 +84,16 @@ public class InlineHook {
         if (pointer == null) {
             throw new IllegalArgumentException();
         }
-        Capstone capstone = null;
-        try {
-            capstone = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
-            capstone.setDetail(Capstone.CS_OPT_ON);
+        try (Disassembler disassembler = DisassemblerFactory.createArmDisassembler(false)) {
+            disassembler.setDetail(true);
 
             byte[] code = pointer.getByteArray(0, 4);
-            Capstone.CsInsn[] insns = capstone.disasm(code, 0, 1);
+            Instruction[] insns = disassembler.disasm(code, 0, 1);
             if (insns == null || insns.length < 1) {
                 throw new IllegalArgumentException("Invalid hook address: " + pointer);
             }
-            Capstone.CsInsn insn = insns[0];
-            String asm = insn.mnemonic + " " + insn.opStr;
+            Instruction insn = insns[0];
+            String asm = insn.toString();
             if (!"push {r4, r5, r6, r7, r8, sb, lr}".equals(asm) && !"push {r4, r5, r6, r7, r8, sb, sl, fp, lr}".equals(asm)) {
                 throw new IllegalArgumentException("Invalid hook address: " + pointer + ", asm: " + asm);
             }
@@ -122,10 +118,8 @@ public class InlineHook {
                     return emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue();
                 }
             });
-        } finally {
-            if (capstone != null) {
-                capstone.close();
-            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -135,54 +129,6 @@ public class InlineHook {
             return pointer.getByteArray(0, 4);
         } else {
             return pointer.getByteArray(0, 2);
-        }
-    }
-
-    public static void simpleThumbIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
-        Pointer pointer = UnidbgPointer.pointer(emulator, address);
-        if (pointer == null) {
-            throw new IllegalArgumentException();
-        }
-        Capstone capstone = null;
-        try {
-            capstone = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_THUMB);
-            capstone.setDetail(Capstone.CS_OPT_ON);
-
-            byte[] code = readThumbCode(pointer);
-            Capstone.CsInsn[] insns = capstone.disasm(code, 0, 1);
-            if (insns == null || insns.length < 1) {
-                throw new IllegalArgumentException("Invalid intercept address: " + pointer);
-            }
-            Capstone.CsInsn insn = insns[0];
-            emulator.getSvcMemory().registerSvc(new ThumbIntercept(pointer, callback, insn, code.length == 4));
-        } finally {
-            if (capstone != null) {
-                capstone.close();
-            }
-        }
-    }
-
-    public static void simpleArmIntercept(Emulator<?> emulator, long address, InterceptCallback callback) {
-        Pointer pointer = UnidbgPointer.pointer(emulator, address);
-        if (pointer == null) {
-            throw new IllegalArgumentException();
-        }
-        Capstone capstone = null;
-        try {
-            capstone = new Capstone(Capstone.CS_ARCH_ARM, Capstone.CS_MODE_ARM);
-            capstone.setDetail(Capstone.CS_OPT_ON);
-
-            byte[] code = pointer.getByteArray(0, 4);
-            Capstone.CsInsn[] insns = capstone.disasm(code, 0, 1);
-            if (insns == null || insns.length < 1) {
-                throw new IllegalArgumentException("Invalid intercept address: " + pointer);
-            }
-            Capstone.CsInsn insn = insns[0];
-            emulator.getSvcMemory().registerSvc(new ArmIntercept(pointer, callback, insn));
-        } finally {
-            if (capstone != null) {
-                capstone.close();
-            }
         }
     }
 

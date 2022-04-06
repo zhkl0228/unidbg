@@ -1,6 +1,5 @@
 package com.github.unidbg.linux;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Alignment;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
@@ -14,6 +13,7 @@ import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.ElfLibraryFile;
+import com.github.unidbg.linux.thread.PThreadInternal;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryAllocBlock;
@@ -25,8 +25,8 @@ import com.github.unidbg.spi.AbstractLoader;
 import com.github.unidbg.spi.InitFunction;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
+import com.github.unidbg.thread.Task;
 import com.github.unidbg.unix.IO;
-import com.github.unidbg.unix.Thread;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
@@ -77,7 +77,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         this.environ = initializeTLS(new String[] {
                 "ANDROID_DATA=/data",
                 "ANDROID_ROOT=/system",
-                "PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin"
+                "PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin",
+                "NO_ADDR_COMPAT_LAYOUT_FIXUP=1"
         });
         this.setErrno(0);
     }
@@ -100,33 +101,11 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         return new ElfLibraryFile(file, emulator.is64Bit());
     }
 
-    @Override
-    public boolean hasThread(int threadId) {
-        return syscallHandler.threadMap.containsKey(threadId);
-    }
-
-    @Override
-    public void runLastThread(long timeout) {
-        runThread(syscallHandler.lastThread, timeout);
-    }
-
-    @Override
-    public void runThread(int threadId, long timeout) {
-        try {
-            emulator.setTimeout(timeout);
-            Thread thread = syscallHandler.threadMap.get(threadId);
-            if (thread != null) {
-                thread.runThread(emulator, __thread_entry, timeout);
-            } else {
-                throw new IllegalStateException("thread: " + threadId + " not exits");
-            }
-        } finally {
-            emulator.setTimeout(AbstractEmulator.DEFAULT_TIMEOUT);
-        }
-    }
-
     private UnidbgPointer initializeTLS(String[] envs) {
         final Pointer thread = allocateStack(0x400); // reserve space for pthread_internal_t
+        PThreadInternal pThread = PThreadInternal.create(emulator, thread);
+        pThread.tid = emulator.getPid();
+        pThread.pack();
 
         final Pointer __stack_chk_guard = allocateStack(emulator.getPointerSize());
 
@@ -405,6 +384,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     if (overall != null) {
                         long overallSize = overall.end - check.address;
                         backend.mem_protect(check.address, overallSize, overall.perms | prot);
+                        if (mMapListener != null) {
+                            mMapListener.onProtect(check.address, overallSize, overall.perms | prot);
+                        }
                         if (ph.mem_size > overallSize) {
                             Alignment alignment = this.mem_map(begin + overallSize, ph.mem_size - overallSize, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
                             regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
@@ -424,6 +406,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                             }
                             if (off > 0) {
                                 backend.mem_map(base, off, UnicornConst.UC_PROT_NONE);
+                                if (mMapListener != null) {
+                                    mMapListener.onMap(base, off, UnicornConst.UC_PROT_NONE);
+                                }
                                 if (memoryMap.put(base, new MemoryMap(base, (int) off, UnicornConst.UC_PROT_NONE)) != null) {
                                     log.warn("mem_map replace exists memory map base=" + Long.toHexString(base));
                                 }
@@ -638,13 +623,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             symbolTableSection = elfFile.getSymbolTableSection();
         } catch(Throwable ignored) {}
         LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
-                armExIdx, ehFrameHeader, symbolTableSection, elfFile, dynamicStructure);
+                armExIdx, ehFrameHeader, symbolTableSection, elfFile, dynamicStructure, libraryFile);
         if ("libc.so".equals(soName)) { // libc
-            ElfSymbol __thread_entry = module.getELFSymbolByName("__thread_entry");
-            if (__thread_entry != null) {
-                this.__thread_entry = module.base + __thread_entry.value;
-            }
-
             malloc = module.findSymbolByName("malloc");
             free = module.findSymbolByName("free");
         }
@@ -671,8 +651,6 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
         return module;
     }
-
-    private long __thread_entry;
 
     private String maxSoName;
     private long maxSizeOfSo;
@@ -728,9 +706,15 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         if (address > brk) {
             backend.mem_map(brk, address - brk, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+            if (mMapListener != null) {
+                mMapListener.onMap(brk, address - brk, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+            }
             this.brk = address;
         } else if(address < brk) {
             backend.mem_unmap(address, brk - address);
+            if (mMapListener != null) {
+                mMapListener.onUnmap(address, brk - address);
+            }
             this.brk = address;
         }
 
@@ -752,6 +736,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
             munmap(start, length);
             backend.mem_map(start, aligned, prot);
+            if (mMapListener != null) {
+                mMapListener.onMap(start, aligned, prot);
+            }
             if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
                 log.warn("mmap2 replace exists memory map: start=" + Long.toHexString(start));
             }
@@ -763,6 +750,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
             }
             backend.mem_map(addr, aligned, prot);
+            if (mMapListener != null) {
+                mMapListener.onMap(start, aligned, prot);
+            }
             if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                 log.warn("mmap2 replace exists memory map addr=" + Long.toHexString(addr));
             }
@@ -770,12 +760,15 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         }
         try {
             FileIO file;
-            if (start == 0 && fd > 0 && (file = syscallHandler.fdMap.get(fd)) != null) {
+            if (start == 0 && fd > 0 && (file = syscallHandler.getFileIO(fd)) != null) {
                 long addr = allocateMapAddress(0, aligned);
                 if (log.isDebugEnabled()) {
                     log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
                 }
                 long ret = file.mmap2(emulator, addr, aligned, prot, offset, length);
+                if (mMapListener != null) {
+                    mMapListener.onMap(addr, aligned, prot);
+                }
                 if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                     log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
                 }
@@ -784,14 +777,45 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+        try {
+            FileIO file;
+            if (fd > 0 && (file = syscallHandler.getFileIO(fd)) != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("mmap2 start=0x" + Long.toHexString(start) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                }
+                long ret = file.mmap2(emulator, start, aligned, prot, offset, length);
+                if (mMapListener != null) {
+                    mMapListener.onMap(start, aligned, prot);
+                }
+                if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
+                    log.warn("mmap2 replace exists memory map start=0x" + Long.toHexString(start));
+                }
+                return ret;
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
 
+        emulator.attach().debug();
         throw new AbstractMethodError("mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset);
     }
 
     private Pointer errno;
 
+    private int lastErrno;
+
+    @Override
+    public int getLastErrno() {
+        return lastErrno;
+    }
+
     @Override
     public void setErrno(int errno) {
+        this.lastErrno = errno;
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task != null && task.setErrno(emulator, errno)) {
+            return;
+        }
         this.errno.setInt(0, errno);
     }
 

@@ -21,6 +21,7 @@ import java.net.SocketException;
 import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class UdpSocket extends SocketIO implements FileIO {
 
@@ -193,8 +194,9 @@ public class UdpSocket extends SocketIO implements FileIO {
     private int getIFaceList(Emulator<?> emulator, long argp) {
         try {
             List<NetworkIF> list = getNetworkIFs(emulator);
-            IFConf conf = new IFConf(UnidbgPointer.pointer(emulator, argp));
-            IFReq ifReq = IFReq.createIFReq(emulator, conf.ifcu_req);
+            IFConf conf = IFConf.create(emulator, UnidbgPointer.pointer(emulator, argp));
+            Pointer ifcu_req = UnidbgPointer.pointer(emulator, conf.getIfcuReq());
+            IFReq ifReq = IFReq.createIFReq(emulator, ifcu_req);
             if (list.size() * ifReq.size() > conf.ifc_len) {
                 throw new BufferOverflowException();
             }
@@ -202,7 +204,7 @@ public class UdpSocket extends SocketIO implements FileIO {
             conf.ifc_len = list.size() * ifReq.size();
             conf.pack();
 
-            Pointer pointer = conf.ifcu_req;
+            Pointer pointer = Objects.requireNonNull(ifcu_req);
             for (NetworkIF networkIF : list) {
                 ifReq = IFReq.createIFReq(emulator, pointer);
                 ifReq.setName(networkIF.ifName);

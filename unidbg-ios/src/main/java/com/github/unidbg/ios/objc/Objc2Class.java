@@ -82,7 +82,7 @@ final class Objc2Class {
 
     Objc2Class metaClass;
 
-    final void readMetaClass(Map<Long, Objc2Class> classMap, ByteBuffer buffer, MachOModule mm) {
+    void readMetaClass(Map<Long, Objc2Class> classMap, ByteBuffer buffer, MachOModule mm) {
         metaClass = read(classMap, buffer, isa, mm);
     }
 }

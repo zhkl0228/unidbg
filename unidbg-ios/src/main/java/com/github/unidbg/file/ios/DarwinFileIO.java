@@ -23,6 +23,7 @@ public interface DarwinFileIO extends NewFileIO {
     int ATTR_CMN_OBJTYPE = 0x00000008;
     int ATTR_CMN_OBJID = 0x00000020;
     int ATTR_CMN_CRTIME = 0x00000200;
+    int ATTR_CMN_MODTIME = 0x00000400;
     int ATTR_CMN_FNDRINFO = 0x00004000;
     int ATTR_CMN_USERACCESS = 0x00200000; // (used to get the user's access mode to the file).
 
@@ -30,6 +31,8 @@ public interface DarwinFileIO extends NewFileIO {
     int W_OK = 2;
     int R_OK = 4;
 
+    int F_SETLK = 8; /* set record locking information */
+    int F_SETLKW = 9; /* F_SETLK; wait if blocked */
     int F_GETPROTECTIONCLASS =	63;	/* Get the protection class of a file from the EA, returns int */
     int F_SETPROTECTIONCLASS =	64; /* Set the protection class of a file for the EA, requires int */
 

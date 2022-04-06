@@ -2,6 +2,7 @@ package com.github.unidbg.ios.hook;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.Svc;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
@@ -67,8 +68,11 @@ public class Substrate extends BaseHook implements ISubstrate {
 
     @Override
     public Module getImageByName(String file) {
-        Number[] numbers = _MSGetImageByName.call(emulator, file);
-        long ret = numberToAddress(numbers[0]);
+        Number number = _MSGetImageByName.call(emulator, file);
+        long ret = number.longValue();
+        if (emulator.is32Bit()) {
+            ret &= 0xffffffffL;
+        }
         if (ret == 0) {
             return null;
         } else {
@@ -85,8 +89,11 @@ public class Substrate extends BaseHook implements ISubstrate {
     @Override
     public Symbol findSymbol(Module image, String name) {
         MachOModule mm = (MachOModule) image;
-        Number[] numbers = _MSFindSymbol.call(emulator, mm == null ? null : UnidbgPointer.pointer(emulator, mm.machHeader), name);
-        long ret = numberToAddress(numbers[0]);
+        Number number = _MSFindSymbol.call(emulator, mm == null ? null : UnidbgPointer.pointer(emulator, mm.machHeader), name);
+        long ret = number.longValue();
+        if (emulator.is32Bit()) {
+            ret &= 0xffffffffL;
+        }
         if (ret == 0) {
             return null;
         } else {
@@ -114,6 +121,41 @@ public class Substrate extends BaseHook implements ISubstrate {
         final Pointer backup = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
         Pointer replace = createReplacePointer(callback, backup, enablePostCall);
         _MSHookFunction.call(emulator, UnidbgPointer.pointer(emulator, address), replace, backup);
+    }
+
+    @Override
+    public void replace(long functionAddress, Svc svc) {
+        if (svc == null) {
+            throw new NullPointerException();
+        }
+        final Pointer originCall = emulator.getMemory().malloc(emulator.getPointerSize(), false).getPointer();
+        Pointer callback = emulator.getSvcMemory().registerSvc(svc);
+        _MSHookFunction.call(emulator, UnidbgPointer.pointer(emulator, functionAddress), callback, originCall);
+    }
+
+    @Override
+    public void replace(Symbol symbol, Svc svc) {
+        replace(symbol.getAddress(), svc);
+    }
+
+    @Override
+    public void replace(long functionAddress, ReplaceCallback callback) {
+        hookFunction(functionAddress, callback);
+    }
+
+    @Override
+    public void replace(Symbol symbol, ReplaceCallback callback) {
+        hookFunction(symbol, callback);
+    }
+
+    @Override
+    public void replace(long functionAddress, ReplaceCallback callback, boolean enablePostCall) {
+        hookFunction(functionAddress, callback, enablePostCall);
+    }
+
+    @Override
+    public void replace(Symbol symbol, ReplaceCallback callback, boolean enablePostCall) {
+        hookFunction(symbol, callback, enablePostCall);
     }
 
     @Override

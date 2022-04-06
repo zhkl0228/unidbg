@@ -5,12 +5,14 @@ import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinARMEmulator;
 import com.github.unidbg.ios.DarwinResolver;
+import com.github.unidbg.ios.DarwinSyscallHandler;
 import com.github.unidbg.ios.Loader;
 import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.ios.MachOModule;
@@ -73,11 +75,15 @@ public abstract class IpaLoader implements Loader {
         this.executableBundlePath = generateExecutableBundlePath();
     }
 
+    private String generateRandomSeed() {
+        return appDir + bundleIdentifier + "_" + bundleVersion;
+    }
+
     private static final String APP_DIR = "/var/containers/Bundle/Application/";
     public static final String PAYLOAD_PREFIX = "Payload";
 
     private String generateExecutableBundlePath() {
-        UUID uuid = UUID.nameUUIDFromBytes((appDir + "_Application").getBytes(StandardCharsets.UTF_8));
+        UUID uuid = UUID.nameUUIDFromBytes((generateRandomSeed() + "_Application").getBytes(StandardCharsets.UTF_8));
         return appDir.replace(PAYLOAD_PREFIX, APP_DIR + uuid.toString().toUpperCase()) + executable;
     }
 
@@ -130,6 +136,8 @@ public abstract class IpaLoader implements Loader {
         syscallHandler.addIOResolver(new IpaResolver(appDir.getPath(), ipa));
         FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getPath()));
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
+
+        ((DarwinSyscallHandler) syscallHandler).setExecutableBundlePath(executableBundlePath);
     }
 
     protected final List<BackendFactory> backendFactories = new ArrayList<>(5);
@@ -148,6 +156,10 @@ public abstract class IpaLoader implements Loader {
         }
     }
 
+    protected LibraryResolver createLibraryResolver() {
+        return new DarwinResolver();
+    }
+
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
         String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
@@ -158,7 +170,7 @@ public abstract class IpaLoader implements Loader {
         }
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(new DarwinResolver());
+        memory.setLibraryResolver(createLibraryResolver());
         return load(emulator, ipa, bundleAppDir, configurator, loads);
     }
 
@@ -172,7 +184,7 @@ public abstract class IpaLoader implements Loader {
         }
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(new DarwinResolver());
+        memory.setLibraryResolver(createLibraryResolver());
         return load(emulator, ipa, bundleAppDir, configurator, loads);
     }
 
@@ -188,7 +200,7 @@ public abstract class IpaLoader implements Loader {
             list.add("OBJC_PRINT_IVAR_SETUP=YES"); // log processing of non-fragile ivars
             list.add("OBJC_PRINT_VTABLE_SETUP=YES"); // log processing of class vtables
         }
-        UUID uuid = UUID.nameUUIDFromBytes((appDir + "_Documents").getBytes(StandardCharsets.UTF_8));
+        UUID uuid = UUID.nameUUIDFromBytes((generateRandomSeed() + "_Documents").getBytes(StandardCharsets.UTF_8));
         String homeDir = "/var/mobile/Containers/Data/Application/" + uuid.toString().toUpperCase();
         list.add("CFFIXED_USER_HOME=" + homeDir);
         FileUtils.forceMkdir(new File(rootDir, homeDir));

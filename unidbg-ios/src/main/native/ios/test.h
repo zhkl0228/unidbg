@@ -23,6 +23,7 @@
 #include <sys/param.h>
 #include <sys/ucred.h>
 #include <sys/mount.h>
+#include <dispatch/dispatch.h>
 
 #define RTM_IFINFO	0xe
 
@@ -218,6 +219,56 @@ static void test_pthread() {
   printf("pthread[%p] ret=%d\n", thread, ret);
 }
 
+typedef struct thread_context {
+  volatile int status;
+  pthread_cond_t threadCond;
+  pthread_mutex_t threadLock;
+} *t_thread_context;
+
+static void *start_routine(void *arg) {
+  t_thread_context ctx = (t_thread_context) arg;
+  ctx->status = 1;
+  pthread_cond_broadcast(&ctx->threadCond);
+  printf("test_pthread start_routine ctx=%p\n", ctx);
+  void *ret = (void *)&test_pthread;
+  while (ctx->status != 2) {
+    pthread_cond_wait(&ctx->threadCond, &ctx->threadLock);
+  }
+  printf("test_pthread start_routine arg=%p, ret=%p\n", arg, ret);
+  ctx->status = 3;
+  pthread_cond_broadcast(&ctx->threadCond);
+  return ret;
+}
+
+static void test_pthread_join() {
+  pthread_t thread = 0;
+  struct thread_context context;
+  context.status = 0;
+  pthread_cond_init(&context.threadCond, NULL);
+  pthread_mutex_init(&context.threadLock, NULL);
+  void *arg = &context;
+  pthread_attr_t threadAttr;
+  pthread_attr_init(&threadAttr);
+  pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
+  int ret = pthread_create(&thread, &threadAttr, start_routine, arg);
+  pthread_attr_destroy(&threadAttr);
+
+  while (context.status != 1) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+  printf("test_pthread first arg=%p, ret=%d, thread=%p\n", arg, ret, thread);
+  context.status = 2;
+  pthread_cond_broadcast(&context.threadCond);
+
+  while (context.status != 3) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+
+  pthread_cond_destroy(&context.threadCond);
+  pthread_mutex_destroy(&context.threadLock);
+  printf("test_pthread second arg=%p, ret=%d, thread=%p\n", arg, ret, thread);
+}
+
 static void test_file() {
   const char *file = "/tmp/test_file.txt";
   int fd = open(file, O_RDWR | O_CREAT);
@@ -371,16 +422,79 @@ static void test_getfsstat() {
 }
 
 static void test_lr() {
-  uintptr_t lr = 1;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
   char *buf = (char *) malloc(128);
   memset(buf, 0, 128);
   hex(buf, (void *)lr, 8);
   printf("test_lr lr=%p, hex=%s\n", (void *)lr, buf);
   free(buf);
+}
+
+static void test_sleep() {
+  int ret = sleep(2);
+  printf("test_sleep ret=%d\n", ret);
+}
+
+static void test_dispatch() {
+  int QOS_CLASS_UTILITY = 0x11;
+  dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0);
+  printf("Before test_dispatch queue=%p\n", queue);
+  dispatch_sync(queue, ^{
+    printf("test_dispatch dispatch_sync queue=%p\n", queue);
+  });
+  dispatch_group_t group =  dispatch_group_create();
+  dispatch_group_async(group, queue, ^{
+    printf("test_dispatch dispatch_group_async group=%p, queue=%p\n", group, queue);
+  });
+  long ret = dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+  printf("test_dispatch group=%p, queue=%p, ret=%ld\n", group, queue, ret);
+}
+
+static void test_thread_get_state() {
+  pthread_t thread = pthread_self();
+  mach_port_t port = pthread_mach_thread_np(thread);
+  arm_thread_state_t state = {0};
+  thread_state_flavor_t flavor = ARM_THREAD_STATE;
+  uint32_t count = ARM_THREAD_STATE_COUNT;
+  int ret = thread_get_state(port, flavor, (thread_state_t) &state, &count);
+  char buf[1024];
+  hex(buf, &state, sizeof(state));
+  printf("test_thread_get_state thread=%p, port=%d, buf=%s, ret=%d, ARM_THREAD_STATE_COUNT=%d, count=%d\n", thread, port, buf, ret, ARM_THREAD_STATE_COUNT, count);
+}
+
+static void test_thread_get_state64() {
+  pthread_t thread = pthread_self();
+  mach_port_t port = pthread_mach_thread_np(thread);
+  arm_thread_state64_t state = {0};
+  thread_state_flavor_t flavor = ARM_THREAD_STATE64;
+  uint32_t count = ARM_THREAD_STATE64_COUNT;
+  int ret = thread_get_state(port, flavor, (thread_state_t) &state, &count);
+  char buf[1024];
+  hex(buf, &state, sizeof(state));
+  printf("test_thread_get_state thread=%p, port=%d, buf=%s, ret=%d, ARM_THREAD_STATE64_COUNT=%d, count=%d\n", thread, port, buf, ret, ARM_THREAD_STATE64_COUNT, count);
+}
+
+static void test_vm_region() {
+  bool more = true;
+  vm_size_t size;
+  task_t task = mach_task_self();
+  for (vm_address_t address = VM_MIN_ADDRESS; more; address += size) {
+    mach_port_t object_name;
+    mach_msg_type_number_t info_count;
+#if defined __aarch64__
+    struct vm_region_basic_info_64 info;
+    info_count = VM_REGION_BASIC_INFO_COUNT_64;
+    int ret = vm_region_64(task, &address, &size, VM_REGION_BASIC_INFO_64, (vm_region_info_t)&info, &info_count, &object_name);
+#else
+    struct vm_region_basic_info info;
+    info_count = VM_REGION_BASIC_INFO_COUNT;
+    int ret = vm_region(task, &address, &size, VM_REGION_BASIC_INFO, (vm_region_info_t)&info, &info_count, &object_name);
+#endif
+    more = ret == KERN_SUCCESS;
+    char buf[1024];
+    hex(buf, &info, sizeof(info));
+    printf("test_vm_region address=0x%lx, size=0x%lx, ret=%d, info_count=%d, object_name=%d, info=%s, behavior=0x%lx\n", (size_t) address, (size_t) size, ret, info_count, object_name, buf, (size_t) ((uintptr_t) &info.behavior - (uintptr_t) &info));
+  }
 }
 
 void do_test() {
@@ -409,15 +523,17 @@ void do_test() {
   test_host_statistics();
   test_getfsstat();
   test_lr();
+  test_pthread_join();
+  test_sleep();
+  test_dispatch();
+  test_thread_get_state();
+  test_thread_get_state64();
+  test_vm_region();
 }
 
 __attribute__((constructor))
 void init() {
-  uintptr_t lr = 1;
-  __asm__(
-    "mov %[LR], lr\n"
-    :[LR]"=r"(lr)
-  );
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
   lr &= (~(0x4000-1));
   char *buf = (char *) malloc(128);
   memset(buf, 0, 128);

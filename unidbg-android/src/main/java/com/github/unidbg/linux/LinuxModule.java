@@ -9,6 +9,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
+import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
 import com.sun.jna.Pointer;
@@ -61,7 +62,7 @@ public class LinuxModule extends Module {
         LinuxModule module = new LinuxModule(base, size, name, null,
                 Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
                 Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(),
-                null, null, null, null, null) {
+                null, null, null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);
@@ -98,8 +99,8 @@ public class LinuxModule extends Module {
     LinuxModule(long base, long size, String name, SymbolLocator dynsym,
                 List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader,
-                ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure) {
-        super(name, base, size, neededLibraries, regions);
+                ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure, LibraryFile libraryFile) {
+        super(name, base, size, neededLibraries, regions, libraryFile);
 
         this.dynsym = dynsym;
         this.unresolvedSymbol = unresolvedSymbol;
@@ -181,11 +182,15 @@ public class LinuxModule extends Module {
             if (symbolTableSection != null && elfSymbol == null) {
                 elfSymbol = symbolTableSection.getELFSymbolByAddr(soaddr);
             }
+            Symbol symbol = null;
             if (elfSymbol != null) {
-                return new LinuxSymbol(this, elfSymbol);
-            } else {
-                return null;
+                symbol = new LinuxSymbol(this, elfSymbol);
             }
+            long entry = base + entryPoint;
+            if (addr >= entry && (symbol == null || entry > symbol.getAddress())) {
+                symbol = new VirtualSymbol("start", this, entry);
+            }
+            return symbol;
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -249,7 +254,7 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public Number[] callFunction(Emulator<?> emulator, long offset, Object... args) {
+    public Number callFunction(Emulator<?> emulator, long offset, Object... args) {
         return emulateFunction(emulator, base + offset, args);
     }
 

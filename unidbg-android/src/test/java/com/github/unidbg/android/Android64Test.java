@@ -1,5 +1,7 @@
 package com.github.unidbg.android;
 
+import com.alibaba.fastjson.util.IOUtils;
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
@@ -7,7 +9,6 @@ import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.file.linux.AndroidFileIO;
-import com.github.unidbg.hook.hookzz.Dobby;
 import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -19,7 +20,6 @@ import com.github.unidbg.linux.android.dvm.DvmObject;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VarArg;
 import com.github.unidbg.linux.struct.Stat64;
-import com.github.unidbg.linux.thread.ThreadJoinVisitor;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -28,14 +28,19 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 
 public class Android64Test extends AbstractJni {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
-        new Android64Test().test();
+        Android64Test test = new Android64Test();
+        test.test();
+        test.destroy();
+    }
+
+    private void destroy() {
+        IOUtils.close(emulator);
     }
 
     private final AndroidEmulator emulator;
@@ -56,24 +61,18 @@ public class Android64Test extends AbstractJni {
         final File executable = new File("unidbg-android/src/test/native/android/libs/arm64-v8a/test");
         emulator = new AndroidARM64Emulator(executable.getName(),
                 new File("target/rootfs"),
-                Arrays.asList(new HypervisorFactory(true), new Unicorn2Factory(true), new DynarmicFactory(true))) {
+                Arrays.asList(new HypervisorFactory(true), new DynarmicFactory(true), new Unicorn2Factory(true))) {
             @Override
             protected UnixSyscallHandler<AndroidFileIO> createSyscallHandler(SvcMemory svcMemory) {
                 return new MyARMSyscallHandler(svcMemory);
             }
         };
+
         Memory memory = emulator.getMemory();
+        emulator.getSyscallHandler().setEnableThreadDispatcher(true);
         AndroidResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
-        resolver.patchThread(emulator, Dobby.getInstance(emulator), new ThreadJoinVisitor() {
-            @Override
-            public boolean canJoin(Pointer start_routine, int threadId) {
-                System.out.println("canJoin start_routine=" + start_routine + ", threadId=" + threadId);
-                return true;
-            }
-        });
 
-//        emulator.traceCode();
         module = emulator.loadLibrary(executable);
 
         VM vm = emulator.createDalvikVM();
@@ -167,7 +166,10 @@ public class Android64Test extends AbstractJni {
                 0x789a, 0.12345D, true, 0x123, 0.456f, 0.789123D, (byte) 0x7f,
                 0x89abcdefL, 0.123f);
 
-//        emulator.attach().addBreakPoint(null, 0x40080648);
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
+        Logger.getLogger("com.github.unidbg.linux.AndroidSyscallHandler").setLevel(Level.INFO);
         System.err.println("exit code: " + module.callEntry(emulator) + ", backend=" + emulator.getBackend());
     }
 

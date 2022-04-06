@@ -31,23 +31,27 @@ public abstract class ArmHook extends ArmSvc {
         this.enablePostCall = enablePostCall;
     }
 
+    public ArmHook(String name, boolean enablePostCall) {
+        super(name);
+        this.enablePostCall = enablePostCall;
+    }
+
     @Override
     public final UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         byte[] code;
         if (enablePostCall) {
             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm, KeystoneMode.Arm)) {
                 KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                        "push {r4-r7, lr}",
                         "svc #0x" + Integer.toHexString(svcNumber),
                         "pop {r7}",
                         "cmp r7, #0",
-                        "popeq {r4-r7, pc}",
+                        "bxeq lr",
                         "blx r7",
                         "mov r7, #0",
-                        "mov r5, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                        "mov r5, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                         "mov r4, #0x" + Integer.toHexString(svcNumber),
                         "svc #0",
-                        "pop {r4-r7, pc}"));
+                        "bx lr"));
                 code = encoded.getMachineCode();
             }
         } else {
@@ -57,7 +61,8 @@ public abstract class ArmHook extends ArmSvc {
             buffer.putInt(0xe49df004); // pop {pc}: manipulated stack in handle
             code = buffer.array();
         }
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmHook");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "ArmHook" : name);
         pointer.write(0, code, 0, code.length);
         if (log.isDebugEnabled()) {
             log.debug("ARM hook: pointer=" + pointer);
@@ -66,8 +71,28 @@ public abstract class ArmHook extends ArmSvc {
     }
 
     @Override
+    public void handlePostCallback(Emulator<?> emulator) {
+        super.handlePostCallback(emulator);
+
+        if (regContext == null) {
+            throw new IllegalStateException();
+        } else {
+            regContext.restore();
+        }
+    }
+
+    private RegContext regContext;
+
+    @Override
     public final long handle(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
+        if (enablePostCall) {
+            regContext = RegContext.backupContext(emulator, ArmConst.UC_ARM_REG_R4,
+                    ArmConst.UC_ARM_REG_R5,
+                    ArmConst.UC_ARM_REG_R6,
+                    ArmConst.UC_ARM_REG_R7,
+                    ArmConst.UC_ARM_REG_LR);
+        }
         UnidbgPointer sp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
             HookStatus status = hook(emulator);

@@ -2,6 +2,6 @@ package com.github.unidbg.worker;
 
 public interface WorkerFactory {
 
-    Worker createWorker();
+    Worker createWorker(WorkerPool pool);
 
 }

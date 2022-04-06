@@ -10,12 +10,24 @@ import java.nio.ByteOrder;
 
 public abstract class ThumbSvc implements Svc {
 
+    public static final int SVC_MAX = 0xff;
+
     public static short assembleSvc(int svcNumber) {
-        if (svcNumber > 0 && svcNumber <= 0xff) {
+        if (svcNumber >= 0 && svcNumber < SVC_MAX - 1) {
             return (short) (0xdf00 | svcNumber);
         } else {
             throw new IllegalStateException("svcNumber=0x" + Integer.toHexString(svcNumber));
         }
+    }
+
+    private final String name;
+
+    public ThumbSvc() {
+        this(null);
+    }
+
+    public ThumbSvc(String name) {
+        this.name = name;
     }
 
     @Override
@@ -25,13 +37,22 @@ public abstract class ThumbSvc implements Svc {
         buffer.putShort(assembleSvc(svcNumber)); // svc #svcNumber
         buffer.putShort((short) 0x4770); // bx lr
         byte[] code = buffer.array();
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "ThumbSvc");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "ThumbSvc" : name);
         pointer.write(code);
         return pointer;
     }
 
     @Override
-    public void handleCallback(Emulator<?> emulator) {
+    public void handlePostCallback(Emulator<?> emulator) {
     }
 
+    @Override
+    public void handlePreCallback(Emulator<?> emulator) {
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
 }

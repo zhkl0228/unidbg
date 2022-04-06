@@ -7,7 +7,11 @@
 #include <memory>
 #include <optional>
 
+#ifdef DYNARMIC_MASTER
+#include <dynarmic/interface/A32/coprocessor.h>
+#else
 #include <dynarmic/A32/coprocessor.h>
+#endif
 
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;

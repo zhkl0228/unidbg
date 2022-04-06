@@ -2,11 +2,14 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.LongJumpException;
 import com.github.unidbg.StopEmulatorException;
 import com.github.unidbg.Svc;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.ARMEmulator;
+import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.Cpsr;
+import com.github.unidbg.arm.ThumbSvc;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
@@ -24,17 +27,20 @@ import com.github.unidbg.ios.file.TcpSocket;
 import com.github.unidbg.ios.file.UdpSocket;
 import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.ios.struct.kernel.AslServerMessageRequest;
+import com.github.unidbg.ios.struct.kernel.ClockGetTimeReply;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceReply;
 import com.github.unidbg.ios.struct.kernel.HostGetClockServiceRequest;
 import com.github.unidbg.ios.struct.kernel.HostInfoReply;
 import com.github.unidbg.ios.struct.kernel.HostInfoRequest;
+import com.github.unidbg.ios.struct.kernel.HostRequestNotificationReply;
+import com.github.unidbg.ios.struct.kernel.HostRequestNotificationRequest;
 import com.github.unidbg.ios.struct.kernel.IOServiceGetMatchingServiceRequest;
 import com.github.unidbg.ios.struct.kernel.MachMsgHeader;
 import com.github.unidbg.ios.struct.kernel.MachPortOptions;
 import com.github.unidbg.ios.struct.kernel.MachPortReply;
 import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesReply;
 import com.github.unidbg.ios.struct.kernel.MachPortSetAttributesRequest;
-import com.github.unidbg.ios.struct.kernel.MachPortsLookupReply;
+import com.github.unidbg.ios.struct.kernel.MachPortsLookupReply32;
 import com.github.unidbg.ios.struct.kernel.MachTimebaseInfo;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelReply;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelRequest;
@@ -62,23 +68,32 @@ import com.github.unidbg.ios.struct.kernel.TaskGetSpecialPortRequest;
 import com.github.unidbg.ios.struct.kernel.TaskInfoRequest;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsReply;
 import com.github.unidbg.ios.struct.kernel.TaskSetExceptionPortsRequest;
+import com.github.unidbg.ios.struct.kernel.ThreadBasicInfoReply;
+import com.github.unidbg.ios.struct.kernel.ThreadInfoRequest;
+import com.github.unidbg.ios.struct.kernel.ThreadStateReply32;
+import com.github.unidbg.ios.struct.kernel.ThreadStateRequest;
 import com.github.unidbg.ios.struct.kernel.VmCopyReply;
 import com.github.unidbg.ios.struct.kernel.VmCopyRequest;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Reply;
 import com.github.unidbg.ios.struct.kernel.VmRegionRecurse32Request;
+import com.github.unidbg.ios.struct.kernel.VmRegionReply;
+import com.github.unidbg.ios.struct.kernel.VmRegionRequest;
 import com.github.unidbg.ios.struct.kernel.VmRemapReply;
 import com.github.unidbg.ios.struct.kernel.VmRemapRequest;
 import com.github.unidbg.ios.struct.sysctl.IfMsgHeader;
 import com.github.unidbg.ios.struct.sysctl.KInfoProc32;
 import com.github.unidbg.ios.struct.sysctl.SockAddrDL;
 import com.github.unidbg.ios.struct.sysctl.TaskDyldInfo;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
+import com.github.unidbg.thread.PopContextException;
+import com.github.unidbg.thread.RunnableTask;
+import com.github.unidbg.thread.Task;
+import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.UnixEmulator;
-import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.unix.struct.TimeSpec;
 import com.github.unidbg.unix.struct.TimeVal32;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -92,6 +107,7 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.github.unidbg.ios.MachO.MAP_MY_FIXED;
 import static com.github.unidbg.ios.file.SocketIO.AF_LINK;
@@ -129,6 +145,10 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             createBreaker(emulator).brk(pc, bkpt);
             return;
         }
+        if (intno == ARMEmulator.EXCP_UDEF) {
+            createBreaker(emulator).debug();
+            return;
+        }
 
         if (intno != ARMEmulator.EXCP_SWI) {
             throw new BackendException("intno=" + intno);
@@ -138,17 +158,33 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         String syscall = null;
         Throwable exception = null;
         try {
-            if (swi == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.CALLBACK_SYSCALL_NUMBER && (backend.reg_read(ArmConst.UC_ARM_REG_R7).intValue()) == 0) { // callback
+            if (swi == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.POST_CALLBACK_SYSCALL_NUMBER && (backend.reg_read(ArmConst.UC_ARM_REG_R7).intValue()) == 0) { // postCallback
                 int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
                 Svc svc = svcMemory.getSvc(number);
                 if (svc != null) {
-                    svc.handleCallback(emulator);
+                    svc.handlePostCallback(emulator);
+                    return;
+                }
+                backend.emu_stop();
+                throw new IllegalStateException("svc number: " + swi);
+            }
+            if (swi == 0 && (backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue()) == Svc.PRE_CALLBACK_SYSCALL_NUMBER && (backend.reg_read(ArmConst.UC_ARM_REG_R7).intValue()) == 0) { // preCallback
+                int number = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
+                Svc svc = svcMemory.getSvc(number);
+                if (svc != null) {
+                    svc.handlePreCallback(emulator);
                     return;
                 }
                 backend.emu_stop();
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi != DARWIN_SWI_SYSCALL) {
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX)) {
+                    throw new PopContextException();
+                }
+                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX) - 1) {
+                    throw new ThreadContextSwitchException();
+                }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, (int) svc.handle(emulator));
@@ -158,7 +194,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi + ", NR=" + NR);
             }
 
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 ARM.showThumbRegs(emulator);
             }
 
@@ -188,6 +224,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     return;
                 case -19:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_mod_refs_trap(emulator));
+                    return;
+                case -20:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_move_member_trap(emulator));
                     return;
                 case -21:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, _kernelrpc_mach_port_insert_right_trap(emulator));
@@ -273,6 +312,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 case 34:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, chflags(emulator));
                     return;
+                case 37:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, kill(emulator));
+                    return;
                 case 39:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, getppid(emulator));
                     return;
@@ -281,6 +323,9 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     return;
                 case 48:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, sigprocmask(emulator));
+                    return;
+                case 52:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigpending(emulator));
                     return;
                 case 53:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, sigaltstack(emulator));
@@ -374,14 +419,29 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 case 302:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_mutexdrop(emulator));
                     return;
+                case 303:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvbroad(emulator));
+                    return;
                 case 305:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait());
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, psynch_cvwait(emulator));
                     return;
                 case 327:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, issetugid());
                     return;
+                case 328:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, pthread_kill(emulator));
+                    return;
                 case 329:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, pthread_sigmask(emulator));
+                    return;
+                case 330:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, sigwait(emulator));
+                    return;
+                case 331:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, disable_threadsignal(emulator));
+                    return;
+                case 334:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal(emulator));
                     return;
                 case 336:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, proc_info(emulator));
@@ -413,6 +473,12 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 case 360:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, bsdthread_create(emulator));
                     return;
+                case 361:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, bsdthread_terminate(emulator));
+                    return;
+                case 362:
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, kqueue());
+                    return;
                 case 366:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, bsdthread_register(emulator));
                     return;
@@ -426,7 +492,8 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, kevent64(emulator));
                     return;
                 case 372:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, thread_selfid());
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, thread_selfid(emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R1, 0);
                     return;
                 case 381:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, sandbox_ms(emulator));
@@ -449,7 +516,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, close_NOCANCEL(emulator));
                     return;
                 case 423:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal_nocancel());
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, semwait_signal(emulator));
                     return;
                 case 428:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, audit_session_self());
@@ -468,16 +535,33 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         } catch (StopEmulatorException e) {
             backend.emu_stop();
             return;
+        } catch (LongJumpException e) {
+            backend.emu_stop();
+            throw e;
         } catch (Throwable e) {
             backend.emu_stop();
             exception = e;
         }
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(swi) + ", PC=" + pc + ", syscall=" + syscall, exception);
+        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
 
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private int _kernelrpc_mach_port_move_member_trap(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int task = context.getIntArg(0);
+        int member = context.getIntArg(1);
+        int after = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_port_move_member_trap task=" + task + ", member=" + member + ", after=" + after);
+        }
+        return 0;
     }
 
     private int chflags(Emulator<?> emulator) {
@@ -622,14 +706,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return ret;
     }
 
-    private int swtch_pri(Emulator<?> emulator) {
-        RegisterContext context = emulator.getContext();
-        int pri = context.getIntArg(0);
-        log.info("swtch_pri pri=" + pri + ", LR=" + context.getLRPointer());
-        createBreaker(emulator).debug();
-        return 0;
-    }
-
     private boolean handleMachineDependentSyscall(Emulator<?> emulator, int NR) {
         Backend backend = emulator.getBackend();
         switch (NR) {
@@ -653,8 +729,12 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         pthread.unpack();
         UnidbgPointer tsd = pthread.getTSD();
         emulator.getBackend().reg_write(ArmConst.UC_ARM_REG_C13_C0_3, tsd.peer);
-        MachOLoader loader = (MachOLoader) emulator.getMemory();
-        loader.setErrnoPointer(pthread.getErrno());
+
+        Task task = emulator.get(Task.TASK_KEY);
+        if (task != null && task.isMainThread()) {
+            MachOLoader loader = (MachOLoader) emulator.getMemory();
+            loader.setErrnoPointer(pthread.getErrno());
+        }
 
         if (log.isDebugEnabled()) {
             String threadName = pthread.getName();
@@ -768,22 +848,14 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int bsdthread_create(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        Pointer start_routine = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        Pointer arg = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer stack = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        UnidbgPointer thread = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        int flags = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
-        if (thread == null) {
-            MemoryBlock memoryBlock = emulator.getMemory().malloc(0x100, true);
-            thread = memoryBlock.getPointer();
-        }
-        Pthread pThread = new Pthread32(thread);
-        pThread.self = thread;
-        pThread.machThreadSelf = UnidbgPointer.pointer(emulator, STATIC_PORT);
-        pThread.pack();
-        log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));
-        return (int) thread.peer;
+        Arm32RegisterContext context = emulator.getContext();
+        UnidbgPointer start_routine = context.getPointerArg(0);
+        UnidbgPointer arg = context.getPointerArg(1);
+        UnidbgPointer stack = context.getPointerArg(2);
+        UnidbgPointer thread = context.getPointerArg(3);
+        int flags = context.getR4Int();
+
+        return (int) bsdthread_create(emulator, start_routine, arg, stack, thread, flags);
     }
 
     private int _workq_open() {
@@ -798,27 +870,16 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    private int guarded_kqueue_np(Emulator<?> emulator) {
-        // TODO: implement
-        Backend backend = emulator.getBackend();
-        Pointer guard = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int guardFlags = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        log.info("guarded_kqueue_np guard=" + guard + ", guardFlags=0x" + Integer.toHexString(guardFlags));
-        return 0;
-    }
-
     private int kevent64(Emulator<?> emulator) {
-        // TODO: implement
         Arm32RegisterContext context = emulator.getContext();
-        int kq = context.getIntArg(0);
-        Pointer changelist = context.getPointerArg(1);
-        int nchanges = context.getIntArg(2);
-        Pointer eventlist = context.getPointerArg(3);
+        int kq = context.getR0Int();
+        Pointer changelist = context.getR1Pointer();
+        int nchanges = context.getR2Int();
+        Pointer eventlist = context.getR3Pointer();
         int nevents = context.getR4Int();
         int flags = context.getR5Int();
         Pointer timeout = context.getR6Pointer();
-        log.info("kevent64 kq=" + kq + ", changelist=" + changelist + ", nchanges=" + nchanges + ", eventlist=" + eventlist + ", nevents=" + nevents + ", flags=0x" + Integer.toHexString(flags) + ", timeout=" + timeout + ", LR=" + context.getLRPointer());
-        return 0;
+        return kevent64(emulator, kq, changelist, nchanges, eventlist, nevents, flags, TimeSpec.createTimeSpec(emulator, timeout));
     }
 
     private int _kernelrpc_mach_port_allocate_trap(Emulator<?> emulator) {
@@ -856,27 +917,11 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    private long _semaphore_wait_trap(Emulator<?> emulator) {
-        int port = emulator.getContext().getIntArg(0);
-        log.info("_semaphore_wait_trap port=" + port);
-        Log log = ARM32SyscallHandler.log;
-        if (!log.isDebugEnabled()) {
-            log = LogFactory.getLog(AbstractEmulator.class);
-        }
-        if (log.isDebugEnabled()) {
-            createBreaker(emulator).debug();
-        }
-        return 0;
-    }
-
-    private long _semaphore_signal_trap(Emulator<?> emulator) {
-        int port = emulator.getContext().getIntArg(0);
+    private int _semaphore_signal_trap(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int port = context.getIntArg(0);
         log.info("_semaphore_signal_trap port=" + port);
-        Log log = ARM32SyscallHandler.log;
-        if (!log.isDebugEnabled()) {
-            log = LogFactory.getLog(AbstractEmulator.class);
-        }
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
         return 0;
@@ -894,18 +939,23 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
 
     private int thread_switch(Emulator<?> emulator) {
         // TODO: implement
-        Backend backend = emulator.getBackend();
-        int thread_name = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        int option = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int option_time = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
+        RegisterContext context = emulator.getContext();
+        int thread_name = context.getIntArg(0);
+        int option = context.getIntArg(1);
+        int option_time = context.getIntArg(2);
         log.info("thread_switch thread_name=" + thread_name + ", option=" + option + ", option_time=" + option_time);
         return 0;
     }
 
-    private int psynch_cvwait() {
-        // TODO: implement
-        log.info("psynch_cvwait");
-        return 0;
+    private int psynch_cvwait(Emulator<?> emulator) {
+        if (threadDispatcherEnabled) {
+            throw new ThreadContextSwitchException();
+        }
+
+        log.info("psynch_cvwait LR=" + emulator.getContext().getLRPointer());
+        emulator.attach().debug();
+        emulator.getMemory().setErrno(UnixEmulator.EINTR);
+        return -1;
     }
 
     private int close(Emulator<?> emulator) {
@@ -1153,6 +1203,33 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
+    private int semwait_signal(Emulator<?> emulator) {
+        Arm32RegisterContext context = emulator.getContext();
+        int cond_sem = context.getR0Int();
+        int mutex_sem = context.getR1Int();
+        int timeout = context.getR2Int();
+        int relative = context.getR3Int();
+        long tv_sec = context.getR4Int() | (long) context.getR5Int() << 32;
+        int tv_nsec = context.getR6Int();
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        String msg = "semwait_signal cond_sem=" + cond_sem + ", mutex_sem=" + mutex_sem + ", timeout=" + timeout + ", relative=" + relative + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec;
+        if (threadDispatcherEnabled && runningTask != null) {
+            if (log.isDebugEnabled()) {
+                log.debug(msg);
+            }
+            return semwait_signal(emulator, runningTask, cond_sem, mutex_sem, timeout, relative, tv_sec, tv_nsec);
+        }
+        log.info(msg);
+        try {
+            Thread.sleep(tv_sec * 1000L + tv_nsec / 1000L, tv_nsec % 1000);
+            emulator.getMemory().setErrno(ETIMEDOUT);
+            return -1;
+        } catch (InterruptedException e) {
+            emulator.getMemory().setErrno(UnixEmulator.EINVAL);
+            return -1;
+        }
+    }
+
     private static final int PROC_INFO_CALL_SETCONTROL = 0x5;
     private static final int PROC_SELFSET_THREADNAME = 2;
 
@@ -1208,23 +1285,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         }
     }
 
-    private int semwait_signal_nocancel() {
-        // TODO: implement
-        log.info("semwait_signal_nocancel");
-        return 0;
-    }
-
-    private int pthread_sigmask(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        int how = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer set = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oset = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
-        if (log.isDebugEnabled()) {
-            log.debug("pthread_sigmask how=" + how + ", set=" + set + ", oset=" + oset);
-        }
-        return 0;
-    }
-
     private int sandbox_ms(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
         Pointer policyName = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
@@ -1242,19 +1302,19 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int bsdthread_register(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        UnidbgPointer thread_start = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        UnidbgPointer start_wqthread = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        int PTHREAD_SIZE = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
-        UnidbgPointer data = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R3);
-        int dataSize = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
-        int r5 = backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue();
-        long r6 = backend.reg_read(ArmConst.UC_ARM_REG_R6).intValue();
+        Arm32RegisterContext context = emulator.getContext();
+        UnidbgPointer thread_start = context.getR0Pointer();
+        UnidbgPointer start_wqthread = context.getR1Pointer();
+        int pthreadSize = context.getR2Int();
+        UnidbgPointer data = context.getR3Pointer();
+        int dataSize = context.getR4Int();
+        int r5 = context.getR5Int();
+        long r6 = context.getR6Int();
         long offset = r5 | (r6 << 32);
         if (log.isDebugEnabled()) {
-            log.debug("bsdthread_register thread_start=" + thread_start + ", start_wqthread=" + start_wqthread + ", PTHREAD_SIZE=" + PTHREAD_SIZE + ", data=" + data + ", dataSize=" + dataSize + ", offset=0x" + Long.toHexString(offset));
+            log.debug("bsdthread_register thread_start=" + thread_start + ", start_wqthread=" + start_wqthread + ", pthreadSize=" + pthreadSize + ", data=" + data + ", dataSize=" + dataSize + ", offset=0x" + Long.toHexString(offset));
         }
-        return 0;
+        return bsdthread_register(thread_start, pthreadSize);
     }
 
     private int munmap(Emulator<?> emulator) {
@@ -1473,6 +1533,14 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 action = name.getInt(4);
                 msg = "sysctl CTL_HW action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 switch (action) {
+                    case HW_CPU_FREQ:
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 1800000000);
+                        }
+                        return 0;
                     case HW_PAGESIZE:
                         log.debug(msg);
                         if (bufferSize != null) {
@@ -1736,22 +1804,17 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    // https://github.com/lunixbochs/usercorn/blob/master/go/kernel/mach/thread.go
-    private int thread_selfid() {
-        log.debug("thread_selfid");
-        return 1;
-    }
-
     // https://github.com/lunixbochs/usercorn/blob/master/go/kernel/mach/ports.go
     private int mach_msg_trap(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
-        UnidbgPointer msg = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int option = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        int send_size = backend.reg_read(ArmConst.UC_ARM_REG_R2).intValue();
-        int rcv_size = backend.reg_read(ArmConst.UC_ARM_REG_R3).intValue();
-        int rcv_name = backend.reg_read(ArmConst.UC_ARM_REG_R4).intValue();
-        int timeout = backend.reg_read(ArmConst.UC_ARM_REG_R5).intValue();
-        int notify = backend.reg_read(ArmConst.UC_ARM_REG_R6).intValue();
+        Arm32RegisterContext context = emulator.getContext();
+        UnidbgPointer msg = context.getR0Pointer();
+        int option = context.getR1Int();
+        int send_size = context.getR2Int();
+        int rcv_size = context.getR3Int();
+        int rcv_name = context.getR4Int();
+        int timeout = context.getR5Int();
+        int notify = context.getR6Int();
 
         msg.setSize(Math.max(send_size, rcv_size));
 
@@ -1835,6 +1898,117 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     return MACH_MSG_SUCCESS;
                 }
             }
+            case 3603: { // _thread_get_state
+                ThreadStateRequest args = new ThreadStateRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state args=" + request);
+                }
+
+                ThreadStateReply32 reply = new ThreadStateReply32(request);
+                reply.unpack();
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                if (args.flavor != ThreadStateRequest.ARM_THREAD_STATE) {
+                    reply.retCode = 4;
+                    reply.pack();
+                    if (log.isDebugEnabled()) {
+                        log.debug("_thread_get_state reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.retCode = 0;
+                reply.outCnt = ThreadStateRequest.ARM_THREAD_STATE_COUNT;
+                for (int reg = ArmConst.UC_ARM_REG_R0; reg <= ArmConst.UC_ARM_REG_R12; reg++) {
+                    reply.state.__r[reg - ArmConst.UC_ARM_REG_R0] = backend.reg_read(reg).intValue();
+                }
+                reply.state.__sp = backend.reg_read(ArmConst.UC_ARM_REG_SP).intValue();
+                reply.state.__lr = backend.reg_read(ArmConst.UC_ARM_REG_LR).intValue();
+                reply.state.__pc = backend.reg_read(ArmConst.UC_ARM_REG_PC).intValue();
+                reply.state.__cpsr = backend.reg_read(ArmConst.UC_ARM_REG_CPSR).intValue();
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_get_state reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 3612: { // _thread_info
+                ThreadInfoRequest args = new ThreadInfoRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_info args=" + args);
+                }
+
+                final int THREAD_BASIC_INFO = 3;
+                if (args.flavor != THREAD_BASIC_INFO) {
+                    throw new UnsupportedOperationException();
+                }
+
+                ThreadBasicInfoReply reply = new ThreadBasicInfoReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                final int THREAD_BASIC_INFO_COUNT = 10;
+                final int POLICY_TIMESHARE = 1;
+                final int TH_STATE_RUNNING = 1;
+                reply.retCode = 0;
+                reply.outCnt = THREAD_BASIC_INFO_COUNT;
+                reply.info.user_time.tv_sec = 0;
+                reply.info.user_time.tv_usec = 177546;
+                reply.info.system_time.tv_sec = 0;
+                reply.info.system_time.tv_usec = 0;
+                reply.info.cpu_usage = 343;
+                reply.info.policy = POLICY_TIMESHARE;
+                reply.info.run_state = TH_STATE_RUNNING;
+                reply.info.flags = 0;
+                reply.info.suspend_count = 0;
+                reply.info.sleep_time = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("_thread_info reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
+            case 1000: { // clock_get_time
+                ClockGetTimeReply reply = new ClockGetTimeReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                long currentTimeMillis = System.currentTimeMillis();
+                long nanoTime = System.nanoTime();
+                long tv_sec = currentTimeMillis / 1000;
+                long tv_usec = (currentTimeMillis % 1000) * 1000 + nanoTime % 1000;
+
+                reply.retCode = 0;
+                reply.tv_sec = (int) tv_sec;
+                reply.tv_nsec = (int) tv_usec;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("clock_get_time reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
+            }
             case 206: // host_get_clock_service
             {
                 HostGetClockServiceRequest args = new HostGetClockServiceRequest(request);
@@ -1876,7 +2050,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 SemaphoreCreateReply reply = new SemaphoreCreateReply(request);
                 reply.unpack();
 
-                header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
+                header.setMsgBits(true);
                 header.msgh_size = header.size() + reply.size();
                 header.msgh_remote_port = header.msgh_local_port;
                 header.msgh_local_port = 0;
@@ -1884,7 +2058,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 header.pack();
 
                 reply.body.msgh_descriptor_count = 1;
-                reply.semaphore.name = SEMAPHORE_PORT; // I just chose 14 randomly here
+                reply.semaphore.name = ThreadLocalRandom.current().nextInt() & 0x7fffffff;
                 reply.semaphore.pad1 = 0;
                 reply.semaphore.pad2 = 0;
                 reply.semaphore.disposition = 17; // meaning?
@@ -2005,7 +2179,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
             }
             case 3404: // mach_ports_lookup
             {
-                MachPortsLookupReply reply = new MachPortsLookupReply(request);
+                MachPortsLookupReply32 reply = new MachPortsLookupReply32(request);
                 reply.unpack();
 
                 header.msgh_bits = (header.msgh_bits & 0xff) | MACH_MSGH_BITS_COMPLEX;
@@ -2016,7 +2190,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 header.pack();
 
                 reply.retCode = 1;
-                reply.outPort = request;
+                reply.outPort = (int) UnidbgPointer.nativeValue(request);
                 reply.ret = 0;
                 reply.mask = 0x2110000;
                 reply.cnt = 0;
@@ -2340,6 +2514,70 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 3800: { // vm_region
+                VmRegionRequest args = new VmRegionRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region args=" + args);
+                }
+
+                if (args.flavor != VmRegionRequest.VM_REGION_BASIC_INFO) {
+                    throw new UnsupportedOperationException("flavor=" + args.flavor);
+                }
+
+                VmRegionReply reply = new VmRegionReply(request);
+                reply.unpack();
+
+                header.setMsgBits(true);
+                header.msgh_size = header.size() + reply.size() - 4;
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                MemoryMap memoryRegion = null;
+                for (MemoryMap memoryMap : emulator.getMemory().getMemoryMap()) {
+                    if (memoryMap.base >= args.address) {
+                        memoryRegion = memoryMap;
+                        break;
+                    }
+                }
+
+                if (memoryRegion == null) {
+                    header.setMsgBits(false);
+                    header.msgh_size = 0x24;
+                    header.pack();
+                    reply.pad1 = 1;
+                    reply.pack();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("vm_region reply=" + reply);
+                    }
+                    return MACH_MSG_SUCCESS;
+                }
+
+                reply.NDR.mig_vers = 1;
+                reply.NDR.int_rep = 0;
+                reply.retCode = 0x110000;
+                reply.outCnt = VmRegionRequest.VM_REGION_BASIC_INFO_COUNT;
+                reply.address = (int) memoryRegion.base;
+                reply.size = (int) memoryRegion.size;
+                reply.info.protection = memoryRegion.prot;
+                reply.info.max_protection = memoryRegion.prot;
+                reply.info.inheritance = 0;
+                reply.info.shared = false;
+                reply.info.reserved = false;
+                reply.info.offset = 0;
+                reply.info.behavior = 0;
+                reply.info.user_wired_count = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("vm_region reply=" + reply);
+                }
+
+                return MACH_MSG_SUCCESS;
+            }
             case 3405: { // task_info
                 TaskInfoRequest args = new TaskInfoRequest(request);
                 args.unpack();
@@ -2368,15 +2606,39 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                     }
                     return MACH_MSG_SUCCESS;
                 }
+                throw new UnsupportedOperationException("flavor=" + args.flavor);
             }
+            case 217: // host_request_notification
+                HostRequestNotificationRequest args = new HostRequestNotificationRequest(request);
+                args.unpack();
+                if (log.isDebugEnabled()) {
+                    log.debug("host_request_notification args=" + args);
+                }
+
+                HostRequestNotificationReply reply = new HostRequestNotificationReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.retCode = 0;
+                reply.pack();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("host_request_notification reply=" + reply);
+                }
+                return MACH_MSG_SUCCESS;
             case 216: // host_statistics
                 if (host_statistics(request, header)) {
                     return MACH_MSG_SUCCESS;
                 }
             default:
                 log.warn("mach_msg_trap header=" + header + ", size=" + header.size() + ", lr=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR));
-                Log log = LogFactory.getLog(AbstractEmulator.class);
-                if (log.isDebugEnabled()) {
+                if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
                     createBreaker(emulator).debug();
                 }
                 break;
@@ -2387,7 +2649,6 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
 
     private static final int BOOTSTRAP_PORT = 11;
     private static final int CLOCK_SERVER_PORT = 13;
-    private static final int SEMAPHORE_PORT = 14;
 
     private int task_self_trap() {
         log.debug("task_self_trap");
@@ -2585,16 +2846,12 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int sigaction(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        int signum = backend.reg_read(ArmConst.UC_ARM_REG_R0).intValue();
-        Pointer act = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
-        Pointer oldact = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R2);
+        RegisterContext context = emulator.getContext();
+        int signum = context.getIntArg(0);
+        Pointer act = context.getPointerArg(1);
+        Pointer oldact = context.getPointerArg(2);
 
-        final int sizeOfSigAction = 12;
-        if (signum == DarwinSyscall.SIGBUS) {
-            signum = UnixSyscallHandler.SIGBUS;
-        }
-        return sigaction(signum, act, oldact, sizeOfSigAction);
+        return sigaction(emulator, signum, act, oldact);
     }
 
     private int fcntl(Emulator<?> emulator) {

@@ -39,7 +39,7 @@ class Ashmem extends DriverFileIO {
     }
 
     @Override
-    protected byte[] getMmapData(int offset, int length) {
+    protected byte[] getMmapData(long addr, int offset, int length) {
         return new byte[0];
     }
 

@@ -1,23 +1,41 @@
 package com.github.unidbg.unix.struct;
 
+import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 
-import java.util.Arrays;
-import java.util.List;
+public abstract class TimeSpec extends UnidbgStructure {
 
-public class TimeSpec extends UnidbgStructure {
+    public static TimeSpec createTimeSpec(Emulator<?> emulator, Pointer ptr) {
+        if (ptr == null) {
+            return null;
+        }
+        TimeSpec timeSpec = emulator.is32Bit() ? new TimeSpec32(ptr) : new TimeSpec64(ptr);
+        timeSpec.unpack();
+        return timeSpec;
+    }
 
     public TimeSpec(Pointer p) {
         super(p);
     }
 
-    public int tv_sec; // unsigned long
-    public int tv_nsec; // long
+    public abstract long getTvSec();
+    public abstract long getTvNsec();
 
-    @Override
-    protected List<String> getFieldOrder() {
-        return Arrays.asList("tv_sec", "tv_nsec");
+    public long toMillis() {
+        return getTvSec() * 1000L + getTvNsec() / 1000000L;
     }
+
+    public void setMillis(long millis) {
+        if (millis < 0) {
+            millis = 0;
+        }
+        long tvSec = millis / 1000L;
+        long tvNsec = millis % 1000L * 1000000L;
+
+        setTv(tvSec, tvNsec);
+    }
+
+    protected abstract void setTv(long tvSec, long tvNsec);
 
 }

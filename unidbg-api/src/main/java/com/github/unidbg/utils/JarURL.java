@@ -1,5 +1,6 @@
 package com.github.unidbg.utils;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -11,11 +12,13 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-class JarURL {
+class JarURL implements AutoCloseable {
 
     static JarURL create(URL url) {
         String path = url.getPath();
@@ -32,6 +35,7 @@ class JarURL {
             throw new IllegalStateException("jarPath=" + jarPath);
         }
 
+        List<File> cleanupList = new ArrayList<>();
         while ((index = name.indexOf("!")) != -1) {
             String jarEntryName = name.substring(0, index);
             name = name.substring(index + 2);
@@ -52,25 +56,34 @@ class JarURL {
                 }
 
                 jar = File.createTempFile(FilenameUtils.getName(jarEntryName), "");
-                jar.deleteOnExit();
                 try (InputStream inputStream = jarFile.getInputStream(foundEntry);
                      OutputStream outputStream = new FileOutputStream(jar)) {
                     IOUtils.copy(inputStream, outputStream);
                 }
+                cleanupList.add(jar);
             } catch (IOException e) {
                 throw new IllegalStateException(url.toString(), e);
             }
         }
 
-        return new JarURL(jar, name);
+        return new JarURL(jar, name, cleanupList);
     }
 
     final File jar;
     final String name;
+    private final List<File> cleanupList;
 
-    private JarURL(File jar, String name) {
+    private JarURL(File jar, String name, List<File> cleanupList) {
         this.jar = jar;
         this.name = name;
+        this.cleanupList = cleanupList;
+    }
+
+    @Override
+    public void close() {
+        for (File file : cleanupList) {
+            FileUtils.deleteQuietly(file);
+        }
     }
 
     final JarEntry getJarEntry() {

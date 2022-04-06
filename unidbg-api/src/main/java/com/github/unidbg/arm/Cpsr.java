@@ -46,19 +46,19 @@ public class Cpsr {
 
     private static final int A32_BIT = 4;
 
-    boolean isA32() {
+    public boolean isA32() {
         return hasBit(value, A32_BIT);
     }
 
     private static final int THUMB_BIT = 5;
 
-    boolean isThumb() {
+    public boolean isThumb() {
         return hasBit(value, THUMB_BIT);
     }
 
     private static final int NEGATIVE_BIT = 31;
 
-    boolean isNegative() {
+    public boolean isNegative() {
         return hasBit(value, NEGATIVE_BIT);
     }
 
@@ -72,7 +72,7 @@ public class Cpsr {
 
     private static final int ZERO_BIT = 30;
 
-    boolean isZero() {
+    public boolean isZero() {
         return hasBit(value, ZERO_BIT);
     }
 
@@ -89,7 +89,7 @@ public class Cpsr {
     /**
      * 进位或借位
      */
-    boolean hasCarry() {
+    public boolean hasCarry() {
         return hasBit(value, CARRY_BIT);
     }
 
@@ -103,7 +103,7 @@ public class Cpsr {
 
     private static final int OVERFLOW_BIT = 28;
 
-    boolean isOverflow() {
+    public boolean isOverflow() {
         return hasBit(value, OVERFLOW_BIT);
     }
 
@@ -117,11 +117,11 @@ public class Cpsr {
 
     private static final int MODE_MASK = 0x1f;
 
-    int getMode() {
+    public int getMode() {
         return value & MODE_MASK;
     }
 
-    int getEL() {
+    public int getEL() {
         return (value >> 2) & 3;
     }
 

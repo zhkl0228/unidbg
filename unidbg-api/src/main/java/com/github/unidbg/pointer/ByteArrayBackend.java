@@ -168,8 +168,17 @@ class ByteArrayBackend implements Backend {
     }
 
     @Override
+    public void context_free(long context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int getPageSize() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void registerEmuCountHook(long emu_count) {
+        throw new UnsupportedOperationException();
+    }
 }

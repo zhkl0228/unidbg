@@ -10,7 +10,6 @@ import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
-import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -107,9 +106,6 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
 
     @Override
     public String getPath() {
-        if (".".equals(path)) {
-            return FilenameUtils.normalize(dir.getAbsolutePath(), true);
-        }
         return path;
     }
 

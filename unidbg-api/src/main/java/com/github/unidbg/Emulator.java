@@ -13,11 +13,11 @@ import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.serialize.Serializable;
-import com.github.unidbg.spi.Disassembler;
+import com.github.unidbg.spi.ArmDisassembler;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.SyscallHandler;
-import com.github.unidbg.spi.ValuePair;
+import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.unwind.Unwinder;
 
 import java.io.Closeable;
@@ -29,7 +29,7 @@ import java.net.URL;
  * Created by zhkl0228 on 2017/5/2.
  */
 
-public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, ValuePair, Serializable {
+public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassembler, Serializable {
 
     int getPointerSize();
 
@@ -62,24 +62,16 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     TraceHook traceCode(long begin, long end);
     TraceHook traceCode(long begin, long end, TraceCodeListener listener);
 
-    @Deprecated
-    void runAsm(String...asm);
-
-    Number[] eFunc(long begin, Number... arguments);
-
-    void eInit(long begin, Number... arguments);
+    Number eFunc(long begin, Number... arguments);
 
     Number eEntry(long begin, long sp);
 
-    void eThread(long fn, long arg, long sp);
-
     /**
-     * emulate block
-     * @param begin start address
-     * @param until stop address
+     * emulate signal handler
+     * @param sig signal number
+     * @return <code>true</code> means called handler function.
      */
-    @Deprecated
-    void eBlock(long begin, long until);
+    boolean emulateSignal(int sig);
 
     /**
      * 是否正在运行
@@ -130,5 +122,15 @@ public interface Emulator<T extends NewFileIO> extends Closeable, Disassembler, 
     <V extends RegisterContext> V getContext();
 
     Unwinder getUnwinder();
+
+    void pushContext(int off);
+    int popContext();
+
+    ThreadDispatcher getThreadDispatcher();
+
+    long getReturnAddress();
+
+    void set(String key, Object value);
+    <V> V get(String key);
 
 }

@@ -83,9 +83,7 @@ public abstract class CDObjectiveCProcessor {
                 }
             }
         }
-        if (bestSymbol != null &&
-                objc2Method != null &&
-                (objc2Method.imp <= targetAddress) && (bestSymbol.getAddress() < module.base + objc2Method.imp)) {
+        if (bestSymbol != null && objc2Method != null && bestSymbol.getAddress() < module.base + objc2Method.imp) {
             bestSymbol = null;
         }
         if (bestSymbol != null) {

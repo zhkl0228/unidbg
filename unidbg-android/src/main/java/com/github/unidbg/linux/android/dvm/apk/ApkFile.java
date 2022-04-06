@@ -3,6 +3,7 @@ package com.github.unidbg.linux.android.dvm.apk;
 import net.dongliu.apk.parser.bean.ApkMeta;
 import net.dongliu.apk.parser.bean.ApkSigner;
 import net.dongliu.apk.parser.bean.CertificateMeta;
+import net.dongliu.apk.parser.exception.ParserException;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,6 +96,8 @@ class ApkFile implements Apk {
         try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
             apkMeta = apkFile.getApkMeta();
             return apkMeta.getPackageName();
+        } catch (ParserException e) { // Manifest file not found
+            return null;
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

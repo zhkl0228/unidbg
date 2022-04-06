@@ -3,7 +3,6 @@ package com.github.unidbg.linux.android.dvm.apk;
 import net.dongliu.apk.parser.bean.ApkMeta;
 import net.dongliu.apk.parser.bean.ApkSigner;
 import net.dongliu.apk.parser.bean.CertificateMeta;
-import net.dongliu.apk.parser.exception.ParserException;
 import net.dongliu.apk.parser.parser.ApkMetaTranslator;
 import net.dongliu.apk.parser.parser.BinaryXmlParser;
 import net.dongliu.apk.parser.parser.CertificateParser;
@@ -35,13 +34,13 @@ class ApkDir implements Apk {
     @Override
     public long getVersionCode() {
         parseManifest();
-        return apkMeta.getVersionCode();
+        return apkMeta == null ? 0L : apkMeta.getVersionCode();
     }
 
     @Override
     public String getVersionName() {
         parseManifest();
-        return apkMeta.getVersionName();
+        return apkMeta == null ? null : apkMeta.getVersionName();
     }
 
     @Override
@@ -143,7 +142,7 @@ class ApkDir implements Apk {
     @Override
     public String getPackageName() {
         parseManifest();
-        return apkMeta.getPackageName();
+        return apkMeta == null ? null : apkMeta.getPackageName();
     }
 
     @Override
@@ -167,13 +166,12 @@ class ApkDir implements Apk {
         XmlStreamer xmlStreamer = new CompositeXmlStreamer(xmlTranslator, apkTranslator);
 
         byte[] data = getFileData(AndroidConstants.MANIFEST_FILE);
-        if (data == null) {
-            throw new ParserException("Manifest file not found");
+        if (data != null) {
+            transBinaryXml(data, xmlStreamer, resourceTable, preferredLocale);
+            this.manifestXml = xmlTranslator.getXml();
+            this.apkMeta = apkTranslator.getApkMeta();
+            manifestParsed = true;
         }
-        transBinaryXml(data, xmlStreamer, resourceTable, preferredLocale);
-        this.manifestXml = xmlTranslator.getXml();
-        this.apkMeta = apkTranslator.getApkMeta();
-        manifestParsed = true;
     }
 
     private void transBinaryXml(byte[] data, XmlStreamer xmlStreamer, ResourceTable resourceTable, Locale preferredLocale) {

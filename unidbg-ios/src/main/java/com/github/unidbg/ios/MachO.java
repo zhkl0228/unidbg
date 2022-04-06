@@ -95,8 +95,8 @@ public interface MachO {
 
     int F_GETPATH = 50; /* return the full path of the fd */
 
-    int BIND_SPECIAL_DYLIB_SELF = 0;
-    int BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE = -1;
-    int BIND_SPECIAL_DYLIB_FLAT_LOOKUP = -2;
+    byte BIND_SPECIAL_DYLIB_SELF = 0;
+    byte BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE = -1;
+    byte BIND_SPECIAL_DYLIB_FLAT_LOOKUP = -2;
 
 }

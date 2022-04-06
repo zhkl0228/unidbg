@@ -20,19 +20,19 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libnative-lib.so"));
 
         emulator.traceCode();
-        Number[] numbers = module.callFunction(emulator, 0x7e0 + 1);
-        System.out.println("eFunc length is: " + numbers[0].intValue());
+        Number number = module.callFunction(emulator, 0x7e0 + 1);
+        System.out.println("eFunc length is: " + number.intValue());
 
         emulator.traceCode();
-        numbers = module.callFunction(emulator, 0x7e0 + 1);
-        System.out.println("eFunc length is: " + numbers[0].intValue());
+        number = module.callFunction(emulator, 0x7e0 + 1);
+        System.out.println("eFunc length is: " + number.intValue());
     }
 
     public void testCallTest() {
         Module module = emulator.loadLibrary(new File("src/test/resources/example_binaries/libnative-lib.so"));
 
-        Number[] numbers = module.callFunction(emulator, "_Z4testv");
-        System.out.println("String length is: " + numbers[0].intValue());
+        Number number = module.callFunction(emulator, "_Z4testv");
+        System.out.println("String length is: " + number.intValue());
     }
 
     @Override

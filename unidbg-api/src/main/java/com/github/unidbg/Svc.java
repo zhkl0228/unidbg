@@ -5,12 +5,16 @@ import com.github.unidbg.pointer.UnidbgPointer;
 
 public interface Svc {
 
-    int CALLBACK_SYSCALL_NUMBER = 0x8888;
+    int PRE_CALLBACK_SYSCALL_NUMBER = 0x8866;
+    int POST_CALLBACK_SYSCALL_NUMBER = 0x8888;
 
     UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber);
 
     long handle(Emulator<?> emulator);
 
-    void handleCallback(Emulator<?> emulator);
+    void handlePreCallback(Emulator<?> emulator);
+    void handlePostCallback(Emulator<?> emulator);
+
+    String getName();
 
 }

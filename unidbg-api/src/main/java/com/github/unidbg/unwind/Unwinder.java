@@ -4,7 +4,9 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.AbstractARMDebugger;
+import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.zhkl0228.demumble.DemanglerFactory;
 import com.github.zhkl0228.demumble.GccDemangler;
@@ -49,24 +51,31 @@ public abstract class Unwinder {
     }
 
     private void printFrameElement(String maxLengthSoName, Memory memory, UnidbgPointer ip) {
-        Module module = AbstractARMDebugger.findModuleByAddress(emulator, ip.peer);
+        final int maxLength = maxLengthSoName.length();
+        SvcMemory svcMemory = emulator.getSvcMemory();
+        MemRegion region = svcMemory.findRegion(ip.peer);
+        Module module = region != null ? null : AbstractARMDebugger.findModuleByAddress(emulator, ip.peer);
         StringBuilder sb = new StringBuilder();
         String format = getBaseFormat();
         if (module != null) {
             sb.append(String.format(format, module.base)).append(String.format(format, ip.peer));
-            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", module.name));
+            sb.append(String.format("[%" + maxLength + "s]", module.name));
             sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - module.base));
 
             Symbol symbol = module.findClosestSymbolByAddress(ip.peer, false);
             if (symbol != null && ip.peer - symbol.getAddress() <= SYMBOL_SIZE) {
                 GccDemangler demangler = DemanglerFactory.createDemangler();
-                sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(ip.peer - symbol.getAddress()));
+                sb.append(" ").append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(ip.peer - (symbol.getAddress() & ~1)));
             }
         } else {
             sb.append(String.format(format, 0)).append(String.format(format, ip.peer));
-            sb.append(String.format("[%" + maxLengthSoName.length() + "s]", "0x" + Long.toHexString(ip.peer)));
-            if (ip.peer >= 0xfffe0000L) {
-                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - 0xfffe0000L));
+            if (region == null) {
+                sb.append(String.format("[%" + maxLength + "s]", "0x" + Long.toHexString(ip.peer)));
+            } else {
+                sb.append(String.format("[%" + maxLength + "s]", region.getName().substring(0, Math.min(maxLength, region.getName().length()))));
+            }
+            if (ip.peer >= svcMemory.getBase()) {
+                sb.append(String.format("[0x%0" + Long.toHexString(memory.getMaxSizeOfLibrary()).length() + "x]", ip.peer - svcMemory.getBase()));
             }
         }
         System.out.println(sb);

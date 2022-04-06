@@ -4,7 +4,7 @@ import com.github.unidbg.pointer.UnidbgPointer;
 
 public class PointerNumber extends Number {
 
-    public final UnidbgPointer value;
+    private final UnidbgPointer value;
 
     public PointerNumber(UnidbgPointer value) {
         this.value = value;
@@ -28,5 +28,10 @@ public class PointerNumber extends Number {
     @Override
     public double doubleValue() {
         throw new AbstractMethodError();
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
     }
 }

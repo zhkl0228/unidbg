@@ -8,8 +8,10 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.debugger.DebugRunnable;
 import com.github.unidbg.debugger.Debugger;
+import com.github.unidbg.debugger.FunctionCallListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.RunnableTask;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -19,12 +21,20 @@ import org.apache.commons.codec.binary.Hex;
 import unicorn.Arm64Const;
 
 import java.util.Scanner;
-import java.util.concurrent.Callable;
 
 class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
     SimpleARM64Debugger(Emulator<?> emulator) {
         super(emulator);
+    }
+
+    @Override
+    public void traceFunctionCall(Module module, FunctionCallListener listener) {
+        Backend backend = emulator.getBackend();
+        TraceFunctionCall hook = new TraceFunctionCall64(emulator, listener);
+        long begin = module == null ? 1 : module.base;
+        long end = module == null ? 0 : module.base + module.size;
+        backend.hook_add_new(hook, begin, end, emulator);
     }
 
     @Override
@@ -34,7 +44,8 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
 
         try {
             if (address != -1) {
-                System.out.println("debugger break at: 0x" + Long.toHexString(address));
+                RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+                System.out.println("debugger break at: 0x" + Long.toHexString(address) + (runningTask == null ? "" : (" @ " + runningTask)));
                 emulator.showRegs();
             }
             if (address > 0) {
@@ -47,6 +58,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         Scanner scanner = new Scanner(System.in);
         String line;
         while ((line = scanner.nextLine()) != null) {
+            line = line.trim();
             try {
                 if ("help".equals(line)) {
                     showHelp(address);
@@ -303,6 +315,8 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         System.out.println("d(0x): show disassemble at specify address");
         System.out.println("stop: stop emulation");
         System.out.println("run [arg]: run test");
+        System.out.println("gc: Run System.gc()");
+        System.out.println("threads: show thread list");
 
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning()) {
             System.out.println("dump [class name]: dump objc class");

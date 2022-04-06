@@ -8,7 +8,7 @@ import com.sun.jna.Pointer;
 public class MemoryAllocBlock implements MemoryBlock {
 
     public static MemoryBlock malloc(Emulator<?> emulator, Symbol malloc, Symbol free, int length) {
-        Number number = malloc.call(emulator, length)[0];
+        Number number = malloc.call(emulator, length);
         long address = emulator.is64Bit() ? number.longValue() : number.intValue() & 0xffffffffL;
         final UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
         return new MemoryAllocBlock(pointer, emulator, free);

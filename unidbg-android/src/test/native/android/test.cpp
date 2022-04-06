@@ -25,19 +25,87 @@
 
 static int sdk_int = 0;
 
+typedef struct thread_context {
+  int status;
+  pthread_cond_t threadCond;
+  pthread_mutex_t threadLock;
+} *t_thread_context;
+
 static void *start_routine(void *arg) {
+  t_thread_context ctx = (t_thread_context) arg;
+  ctx->status = 1;
+  pthread_cond_broadcast(&ctx->threadCond);
+  printf("test_pthread start_routine ctx=%p\n", ctx);
   void *ret = &sdk_int;
+  while (ctx->status != 2) {
+    pthread_cond_wait(&ctx->threadCond, &ctx->threadLock);
+  }
   printf("test_pthread start_routine arg=%p, ret=%p\n", arg, ret);
+  ctx->status = 3;
+  pthread_cond_broadcast(&ctx->threadCond);
   return ret;
 }
 
 static void test_pthread() {
   pthread_t thread = 0;
-  void *arg = &thread;
-  int ret = pthread_create(&thread, NULL, start_routine, arg);
-  void *value = NULL;
-  int join_ret = pthread_join(thread, &value);
-  printf("test_pthread arg=%p, ret=%d, thread=0x%lx, join_ret=%d, value=%p\n", arg, ret, thread, join_ret, value);
+  struct thread_context context;
+  context.status = 0;
+  pthread_cond_init(&context.threadCond, NULL);
+  pthread_mutex_init(&context.threadLock, NULL);
+  void *arg = &context;
+  pthread_attr_t threadAttr;
+  pthread_attr_init(&threadAttr);
+  pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
+  int ret = pthread_create(&thread, &threadAttr, start_routine, arg);
+  pthread_attr_destroy(&threadAttr);
+
+  while (context.status != 1) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+  printf("test_pthread first arg=%p, ret=%d, thread=0x%lx\n", arg, ret, thread);
+  context.status = 2;
+  pthread_cond_broadcast(&context.threadCond);
+
+  while (context.status != 3) {
+    pthread_cond_wait(&context.threadCond, &context.threadLock);
+  }
+
+  pthread_cond_destroy(&context.threadCond);
+  pthread_mutex_destroy(&context.threadLock);
+  printf("test_pthread second arg=%p, ret=%d, thread=0x%lx\n", arg, ret, thread);
+}
+
+static void sig_alrm(int signo) {
+    printf("after sigwait, catch SIGALRM, signo=%d\n", signo);
+    fflush(stdout);
+    return;
+}
+
+static void sig_init(int signo) {
+    printf("catch SIGINT, signo=%d\n", signo);
+    fflush(stdout);
+    return;
+}
+
+static void test_sigwait() {
+  sigset_t set;
+  int sig;
+  sigemptyset(&set);
+  sigaddset(&set, SIGALRM);
+  char buf[16384];
+  hex(buf, &set, sizeof(set));
+
+  pthread_sigmask(SIG_SETMASK, &set, NULL); // 阻塞 SIGALRM 信号
+  signal(SIGALRM, sig_alrm);
+  signal(SIGINT, sig_init);
+  sigwait(&set, &sig); // sigwait只是从未决队列中删除该信号，并不改变信号掩码。也就是，当sigwait函数返回，它监听的信号依旧被阻塞。
+  if(sig == SIGALRM) {
+    printf("sigwait, receive signal SIGALRM\n");
+  }
+  sigdelset(&set, SIGALRM);
+  pthread_sigmask(SIG_SETMASK, &set, NULL);
+
+  printf("test_sigwait set=%s\n", buf);
 }
 
 #define INFINITY_LIFE_TIME      0xFFFFFFFFU
@@ -254,6 +322,10 @@ static void test_signal() {
     sigaddset(&set, SIGRTMIN);         //添加34号信号
     sigprocmask(SIG_SETMASK, &set, &oset);     //将这个集合设置为这个进程的阻塞信号集
 
+    char buf[1000];
+    hex(buf, &set, sizeof(set));
+    printf("test_signal set=%s\n", buf);
+
     //绑定信号
     signal(SIGINT, signal_handler);
     signal(SIGRTMIN, signal_handler);
@@ -261,13 +333,14 @@ static void test_signal() {
     sigprocmask(SIG_SETMASK, &oset, NULL); //解除绑定
 }
 
-static void handler(int signo, siginfo_t *resdata, void *unknowp) {
-    printf("signo=%d\n", signo);
-    printf("return data: %d\n", resdata->si_value.sival_int);
+static void handler(int signo, siginfo_t *info, void *ucontext) {
+    printf("signo=%d, info=%p, ucontext=%p\n", signo, info, ucontext);
+    printf("return data: %d, si_signo=%d\n", info->si_value.sival_int, info->si_signo);
 }
 
 static void test_signalaction() {
     pid_t pid = fork();
+    printf("test_signalaction pid=%d\n", pid);
     if(pid == -1) {
         perror("create fork");
         return;
@@ -283,7 +356,6 @@ static void test_signalaction() {
         struct sigaction act;
         //初始化sa_mask
         sigemptyset(&act.sa_mask);
-        act.sa_handler = signal_handler;
         act.sa_sigaction = handler;
         //一旦使用了sa_sigaction属性，那么必须设置sa_flags属性的值为SA_SIGINFO
         act.sa_flags = SA_SIGINFO;
@@ -291,6 +363,12 @@ static void test_signalaction() {
         //注册信号
         sigaction(SIGINT, &act, NULL);
         sigaction(SIGRTMIN, &act, NULL);
+
+        //发送信号
+        kill(0, SIGINT);
+        printf("send signal: %d success!\n", SIGINT);
+        raise(SIGRTMIN);
+        printf("raise signal: %d success!\n", SIGRTMIN);
     }
 }
 
@@ -430,6 +508,7 @@ int main() {
   if(sdk_int > 19) {
     test_signal();
     test_signalaction();
+    test_sigwait();
   }
   test_backtrace();
   test_statfs();

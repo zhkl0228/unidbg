@@ -26,6 +26,12 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
         }
     }
 
+    @Override
+    public final boolean handleInterpreterFallback(long pc, int num_instructions) {
+        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_UDEF, 0);
+        return false;
+    }
+
     private static final int EXCEPTION_BREAKPOINT = 8;
 
     @Override
@@ -185,18 +191,22 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
     }
 
     @Override
-    public void context_restore(long context) {
-        throw new UnsupportedOperationException();
+    public long context_alloc() {
+        return dynarmic.context_alloc();
+    }
+
+    @Override
+    public void context_free(long context) {
+        Dynarmic.free(context);
     }
 
     @Override
     public void context_save(long context) {
-        throw new UnsupportedOperationException();
+        dynarmic.context_save(context);
     }
 
     @Override
-    public long context_alloc() {
-        throw new UnsupportedOperationException();
+    public void context_restore(long context) {
+        dynarmic.context_restore(context);
     }
-
 }

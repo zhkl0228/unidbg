@@ -1,5 +1,6 @@
 package com.github.unidbg.ios.struct;
 
+import com.github.unidbg.ios.kevent.KEvent64;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
 

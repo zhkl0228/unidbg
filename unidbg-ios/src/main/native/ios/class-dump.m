@@ -10,6 +10,18 @@
 #include <objc/runtime.h>
 #include <dlfcn.h>
 
+static bool matchesSuper(Class class, const char *keywords) {
+  if(class) {
+    const char *className = class_getName(class);
+    if(strcmp(className, keywords) == 0) {
+      return true;
+    }
+    return matchesSuper(class_getSuperclass(class), keywords);
+  } else {
+    return false;
+  }
+}
+
 @implementation ClassDump
 
 NSUInteger findClosedBracket(NSString *string) {
@@ -263,21 +275,21 @@ NSUInteger findClosedBracket(NSString *string) {
 	return [typeString componentsJoinedByString:@""];
 }
 
-+(NSString *) class_dump_class: (Class) clazz {
++(NSString *) class_dump_class: (Class) class {
 	NSMutableString *result = [NSMutableString new];
 	
-	const char *className = class_getName(clazz);
+	const char *className = class_getName(class);
 	
 	[result appendFormat:@"@interface %s", className];
 	
-	Class superclass = class_getSuperclass(clazz);
+	Class superclass = class_getSuperclass(class);
 	if(superclass) {
 		const char *superClassName = class_getName(superclass);
 		[result appendFormat:@" : %s", superClassName];
 	}
 	
 	unsigned int protocolCount;
-	Protocol *__unsafe_unretained *protocols = class_copyProtocolList(clazz, &protocolCount);
+	Protocol *__unsafe_unretained *protocols = class_copyProtocolList(class, &protocolCount);
 	
 	if(protocols) {
 		if(protocolCount > 0) {
@@ -293,7 +305,7 @@ NSUInteger findClosedBracket(NSString *string) {
 	}
 	
 	unsigned int ivarCount;
-	Ivar *ivars = class_copyIvarList(clazz, &ivarCount);
+	Ivar *ivars = class_copyIvarList(class, &ivarCount);
 	
 	if(ivars) {
 		if(ivarCount > 0) {
@@ -317,7 +329,7 @@ NSUInteger findClosedBracket(NSString *string) {
 	[result appendString:@"\n\n"];
 	
 	unsigned int propertyCount;
-	objc_property_t *properties = class_copyPropertyList(clazz, &propertyCount);
+	objc_property_t *properties = class_copyPropertyList(class, &propertyCount);
 	
 	if(properties) {
 		for(unsigned int i = 0; i < propertyCount; i++) {
@@ -422,7 +434,7 @@ NSUInteger findClosedBracket(NSString *string) {
 	
 	for(int m = 0; m < 2; m++) {
 		unsigned int methodCount;
-		Method *methods = class_copyMethodList(m? clazz: objc_getMetaClass(className), &methodCount);
+		Method *methods = class_copyMethodList(m? class: objc_getMetaClass(className), &methodCount);
 		
 		if(methods) {
 			for(unsigned int i = 0; i < methodCount; i++) {
@@ -447,7 +459,10 @@ NSUInteger findClosedBracket(NSString *string) {
 				if(argCount == 0) {
 					argCount = 2;
 				}
-				
+
+				if(argCount - 2 != [methodParts count] - 1) {
+				    NSLog(@"argCount - 2 == [methodParts count] - 1: %@", result);
+				}
 				assert(argCount - 2 == [methodParts count] - 1);
 				
 				for(unsigned int j = 0; j < argCount - 2; j++) {
@@ -460,8 +475,12 @@ NSUInteger findClosedBracket(NSString *string) {
 					}
 					[result appendFormat:@":(%@)arg%d", argType, j];
 				}
-				
-				[result appendString:@";\n"];
+
+				if([methodParts count] > 2) {
+				    [result appendFormat:@"; // %s\n", methodName];
+				} else {
+				    [result appendString:@";\n"];
+				}
 			}
 			
 			free(methods);
@@ -475,9 +494,9 @@ NSUInteger findClosedBracket(NSString *string) {
 	return result;
 }
 
-BOOL isSystemClass(Class clazz) {
+BOOL isSystemClass(Class class) {
 #if 0
-	const char *name = class_getName(clazz);
+	const char *name = class_getName(class);
 	
 	const char *cmp_name = name;
 	
@@ -490,7 +509,7 @@ BOOL isSystemClass(Class clazz) {
 	}
 #endif
 	
-	void *address = (__bridge void *)clazz;
+	void *address = (__bridge void *)class;
 	
 	if(!address) {
 		return NO;
@@ -511,9 +530,9 @@ BOOL isSystemClass(Class clazz) {
 }
 
 +(NSString *) my_dump_class: (const char *) name {
-    Class clazz = objc_getClass(name);
-    if(clazz) {
-        return [ClassDump class_dump_class: clazz];
+    Class class = objc_getClass(name);
+    if(class) {
+        return [ClassDump class_dump_class: class];
     }
     return nil;
 }
@@ -532,17 +551,33 @@ BOOL isSystemClass(Class clazz) {
 
 	__unsafe_unretained Class *classes = (__unsafe_unretained Class *)malloc(sizeof(Class) * classCount);
 	objc_getClassList(classes, classCount);
-
 	int count = 0;
 	for(int i = 0; i < classCount; i++) {
-	    const char *className = class_getName(classes[i]);
+	    Class class = classes[i];
+	    const char *className = class_getName(class);
 	    if(strcasestr(className, keywords)) {
 	        NSLog(@"Found class: %s", className);
 	        count++;
+	    } else if(matchesSuper(class_getSuperclass(class), keywords)) {
+	        NSLog(@"Found super: %s", className);
+	        count++;
 	    }
 	}
-
 	free(classes);
+
+    unsigned int protocolCount = 0;
+	Protocol **protocols = objc_copyProtocolList(&protocolCount);
+	if(protocolCount > 0) {
+	    for(int i = 0; i < protocolCount; i++) {
+	        const char *protocolName = protocol_getName(protocols[i]);
+	        if(strcasestr(protocolName, keywords)) {
+                NSLog(@"Found proto: %s", protocolName);
+                count++;
+            }
+	    }
+	    free(protocols);
+	}
+
 	NSLog(@"Search class matches count: %d", count);
 }
 

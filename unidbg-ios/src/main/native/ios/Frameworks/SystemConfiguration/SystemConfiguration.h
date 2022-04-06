@@ -19,7 +19,9 @@ const SCNetworkReachabilityFlags defaultReachabilityFlags = kSCNetworkReachabili
 
 Boolean SCNetworkReachabilityGetFlags(void *target, SCNetworkReachabilityFlags *flags);
 
-typedef void *SCNetworkReachabilityRef;
+typedef struct SCNetworkReachability {
+  const char *nodename;
+} *SCNetworkReachabilityRef;
 
 /*!
 	@typedef SCNetworkReachabilityCallBack
@@ -73,3 +75,6 @@ Boolean SCNetworkReachabilityScheduleWithRunLoop(SCNetworkReachabilityRef target
 typedef void *SCDynamicStoreRef;
 
 CFDictionaryRef SCDynamicStoreCopyProxies(SCDynamicStoreRef store);
+
+SCNetworkReachabilityRef SCNetworkReachabilityCreateWithName(CFAllocatorRef allocator, const char *nodename);
+Boolean SCNetworkReachabilitySetDispatchQueue(SCNetworkReachabilityRef target, dispatch_queue_t queue);

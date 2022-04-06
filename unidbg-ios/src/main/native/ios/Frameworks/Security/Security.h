@@ -12,6 +12,7 @@ const CFStringRef kSecAttrAccount = CFSTR("acct");
 const CFStringRef kSecAttrAccessibleAlwaysThisDeviceOnly = CFSTR("dku");
 const CFStringRef kSecAttrAccessible = CFSTR("pdmn");
 const CFStringRef kSecReturnData = CFSTR("r_Data");
+const CFStringRef kSecMatchLimitAll = CFSTR("m_LimitAll");
 const CFStringRef kSecMatchLimitOne = CFSTR("m_LimitOne");
 const CFStringRef kSecMatchLimit = CFSTR("m_Limit");
 const CFStringRef kSecValueData = CFSTR("v_Data");
@@ -22,3 +23,34 @@ const CFStringRef kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly = CFSTR("cku"
 const CFStringRef kSecAttrGeneric = CFSTR("gena");
 const CFStringRef kSecAttrLabel = CFSTR("labl");
 const CFStringRef kSecAttrDescription = CFSTR("desc");
+const CFStringRef kSecAttrSynchronizable = CFSTR("sync");
+const CFStringRef kSecAttrAccessibleWhenUnlockedThisDeviceOnly = CFSTR("aku");
+const CFStringRef kSecAttrSynchronizableAny = CFSTR("syna");
+const CFStringRef kSecReturnPersistentRef = CFSTR("r_PersistentRef");
+
+typedef struct SecRandom {
+} *SecRandomRef;
+const SecRandomRef kSecRandomDefault = NULL;
+
+// Copied from CoreFoundation/CFRuntime.h.
+struct CFRuntimeBase {
+  void *opaque1;
+  void *opaque2;
+};
+
+typedef uint8_t DERByte;
+typedef size_t DERSize;
+
+typedef struct {
+	DERByte		*data;
+	DERSize		length;
+} DERItem;
+
+typedef struct SecCertificate {
+  struct CFRuntimeBase		_base;
+  CFDataRef				data;
+  DERItem				_der;			/* Entire certificate in DER form. */
+} *SecCertificateRef;
+
+SecCertificateRef SecCertificateCreateWithData(CFAllocatorRef allocator, CFDataRef data);
+int SecRandomCopyBytes(SecRandomRef rnd, size_t count, uint8_t *bytes);

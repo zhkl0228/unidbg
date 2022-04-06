@@ -34,7 +34,8 @@ public abstract class BaseHook implements IHook {
                 return callback.onCall(emulator, new Arm64HookContext(context, emulator.<EditableArm64RegisterContext>getContext()), backup.getLong(0));
             }
             @Override
-            public void handleCallback(Emulator<?> emulator) {
+            public void handlePostCallback(Emulator<?> emulator) {
+                super.handlePostCallback(emulator);
                 EditableArm64RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm64HookContext(context, registerContext));
             }
@@ -45,7 +46,8 @@ public abstract class BaseHook implements IHook {
                 return callback.onCall(emulator, new Arm32HookContext(context, emulator.<EditableArm32RegisterContext>getContext()), backup.getInt(0) & 0xffffffffL);
             }
             @Override
-            public void handleCallback(Emulator<?> emulator) {
+            public void handlePostCallback(Emulator<?> emulator) {
+                super.handlePostCallback(emulator);
                 EditableArm32RegisterContext registerContext = emulator.getContext();
                 callback.postCall(emulator, new Arm32HookContext(context, registerContext));
             }
@@ -61,18 +63,6 @@ public abstract class BaseHook implements IHook {
         }
 
         return emulator.createURLibraryFile(url, lib);
-    }
-
-    protected final long numberToAddress(Number number) {
-        return numberToAddress(emulator, number);
-    }
-
-    public static long numberToAddress(Emulator<?> emulator, Number number) {
-        if (emulator.is64Bit()) {
-            return number.longValue();
-        } else {
-            return number.intValue() & 0xffffffffL;
-        }
     }
 
     @Override

@@ -62,4 +62,8 @@ public interface DarwinSyscall {
     int CPU_TYPE_ARM64 = 0x100000c;
     int CPU_SUBTYPE_ARM64_ALL = 0;
 
+    int STATIC_PORT = 0x88;
+
+    int ETIMEDOUT = 60; /* Operation timed out */
+
 }

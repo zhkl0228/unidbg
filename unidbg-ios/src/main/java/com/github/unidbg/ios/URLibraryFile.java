@@ -41,7 +41,7 @@ public class URLibraryFile implements LibraryFile {
         if (version == null) {
             return null;
         }
-        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs);
+        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs, DarwinResolver.class);
     }
 
     @Override
@@ -50,6 +50,19 @@ public class URLibraryFile implements LibraryFile {
             return Utils.mapBuffer(new File(url.getPath()));
         } else {
             return ByteBuffer.wrap(IOUtils.toByteArray(url));
+        }
+    }
+
+    @Override
+    public long getFileSize() {
+        if ("file".equalsIgnoreCase(url.getProtocol())) {
+            return new File(url.getPath()).length();
+        } else {
+            try {
+                return IOUtils.toByteArray(url).length;
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 

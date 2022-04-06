@@ -5,7 +5,6 @@
 // Diagnostics
 #define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
 #define HV_REG_SP HV_SYS_REG_SP_EL0
-#define REG_VBAR_EL1 0xf0000000LL
 
 #define PAGE_TABLE_ADDRESS_SPACE_BITS 36
 #define PAGE_BITS 14 // 16k
@@ -78,3 +77,11 @@ static inline uint32_t syn_get_ec(uint32_t syn) {
 #define PSR_I_BIT	0x00000080
 #define PSR_A_BIT	0x00000100
 #define PSR_D_BIT	0x00000200
+
+typedef struct cpu_context {
+  struct vcpu_context ctx;
+  uint64_t sp;
+  uint64_t cpacr;
+  uint64_t tpidr;
+  uint64_t tpidrro;
+} *t_cpu_context;

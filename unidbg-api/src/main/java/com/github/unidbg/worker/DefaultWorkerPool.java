@@ -1,8 +1,8 @@
 package com.github.unidbg.worker;
 
-import com.alibaba.fastjson.util.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.scijava.nativelib.NativeLibraryUtil;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,9 +19,13 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     private final int workerCount;
 
     DefaultWorkerPool(WorkerFactory factory, int workerCount) {
+        if (NativeLibraryUtil.getArchitecture() == NativeLibraryUtil.Architecture.OSX_ARM64 && workerCount > 1) { // bug fix: unicorn backend for m1
+            workerCount = 1;
+        }
+
         this.factory = factory;
         this.workerCount = workerCount;
-        this.workers = new LinkedBlockingQueue<>(workerCount - 1);
+        this.workers = new LinkedBlockingQueue<>(workerCount == 1 ? 1 : workerCount - 1);
 
         Thread thread = new Thread(this, "worker pool for " + factory);
         thread.start();
@@ -41,7 +45,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
                 }
 
                 if (created < workerCount) {
-                    workers.put(factory.createWorker());
+                    workers.put(factory.createWorker(this));
                     created++;
                 }
             } catch (InterruptedException e) {
@@ -57,7 +61,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     private static void closeWorkers(BlockingQueue<Worker> queue) {
         Worker worker;
         while ((worker = queue.poll()) != null) {
-            com.alibaba.fastjson.util.IOUtils.close(worker);
+            worker.destroy();
         }
     }
 
@@ -86,9 +90,11 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     @Override
     public void release(Worker worker) {
         if (stopped) {
-            IOUtils.close(worker);
+            worker.destroy();
         } else {
-            releaseQueue.offer(worker);
+            if (!releaseQueue.offer(worker)) {
+                throw new IllegalStateException("Release worker failed.");
+            }
         }
     }
 

@@ -109,7 +109,7 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     }
 
     @Override
-    protected byte[] getMmapData(int offset, int length) throws IOException {
+    protected byte[] getMmapData(long addr, int offset, int length) throws IOException {
         RandomAccessFile randomAccessFile = checkOpenFile();
         randomAccessFile.seek(offset);
         int remaining = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
@@ -259,5 +259,15 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     @Override
     public int chflags(int flags) {
         return chflags(file, flags);
+    }
+
+    @Override
+    public String getPath() {
+        return path;
+    }
+
+    @Override
+    public int getxattr(Emulator<?> emulator, String name, Pointer value, int size) {
+        return getxattr(emulator, file, name, value, size);
     }
 }

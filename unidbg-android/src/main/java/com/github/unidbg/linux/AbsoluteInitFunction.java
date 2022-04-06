@@ -52,7 +52,7 @@ class AbsoluteInitFunction extends InitFunction {
         }
         long start = System.currentTimeMillis();
 
-        emulator.eInit(address);
+        emulator.eFunc(address);
         if (AbsoluteInitFunction.log.isDebugEnabled()) {
             System.err.println("[" + libName + "]CallInitFunction: " + pointer + ", offset=" + (System.currentTimeMillis() - start) + "ms");
         }

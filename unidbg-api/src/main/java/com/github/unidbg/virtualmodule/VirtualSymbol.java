@@ -16,7 +16,7 @@ public final class VirtualSymbol extends Symbol {
     }
 
     @Override
-    public Number[] call(Emulator<?> emulator, Object... args) {
+    public Number call(Emulator<?> emulator, Object... args) {
         return Module.emulateFunction(emulator, address, args);
     }
 

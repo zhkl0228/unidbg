@@ -38,6 +38,11 @@ public class IpaLibraryFile implements LibraryFile {
     }
 
     @Override
+    public long getFileSize() {
+        return data.length;
+    }
+
+    @Override
     public String getName() {
         return executable;
     }

@@ -3,7 +3,7 @@ package com.github.unidbg.arm.backend;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorBackend64;
-import com.sun.jna.NativeLoader;
+import org.scijava.nativelib.NativeLoader;
 
 import java.io.IOException;
 
@@ -11,9 +11,7 @@ public class HypervisorFactory extends BackendFactory {
 
     static {
         try {
-            if (NativeLoader.isAppleSilicon()) {
-                org.scijava.nativelib.NativeLoader.loadLibrary("hypervisor");
-            }
+            NativeLoader.loadLibrary("hypervisor");
         } catch (IOException ignored) {
         }
     }

@@ -7,6 +7,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -75,18 +76,24 @@ class ClonePatcher64 extends Arm64Svc {
                     "stp x29, x30, [sp]",
                     "svc #0x" + Integer.toHexString(svcNumber),
 
-                    "ldr x7, [sp]",
+                    "ldr x13, [sp]",
                     "add sp, sp, #0x8",
-                    "cmp x7, #0",
-                    "b.eq #0x38",
+                    "cmp x13, #0",
+                    "b.eq #0x48",
 
-                    "ldp x0, x7, [sp]",
+                    "ldp x0, x13, [sp]",
                     "add sp, sp, #0x10",
-                    "blr x7",
 
                     "mov x8, #0",
-                    "mov x4, #0x" + Integer.toHexString(svcNumber),
-                    "mov x16, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                    "mov x12, #0x" + Integer.toHexString(svcNumber),
+                    "mov x16, #0x" + Integer.toHexString(Svc.PRE_CALLBACK_SYSCALL_NUMBER),
+                    "svc #0",
+
+                    "blr x13",
+
+                    "mov x8, #0",
+                    "mov x12, #0x" + Integer.toHexString(svcNumber),
+                    "mov x16, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                     "svc #0",
 
                     "ldr x0, [sp]",
@@ -103,8 +110,15 @@ class ClonePatcher64 extends Arm64Svc {
     }
 
     @Override
-    public void handleCallback(Emulator<?> emulator) {
-        super.handleCallback(emulator);
+    public void handlePreCallback(Emulator<?> emulator) {
+        if (visitor.isSaveContext()) {
+            emulator.pushContext(0x4);
+        }
+    }
+
+    @Override
+    public void handlePostCallback(Emulator<?> emulator) {
+        super.handlePostCallback(emulator);
         value_ptr.set(emulator.getContext().getLongArg(0));
     }
 }

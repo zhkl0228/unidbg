@@ -35,8 +35,7 @@ class ArmVarArg64 extends ArmVarArg {
                 }
                 case 'J': {
                     UnidbgPointer ptr = getArg(offset++);
-                    assert ptr != null;
-                    args.add(ptr.toUIntPeer());
+                    args.add(ptr == null ? 0L : ptr.peer);
                     break;
                 }
                 default:

@@ -292,9 +292,9 @@ public class ArmExIdx {
             case ARM_EXIDX_CMD_REG_POP: {
                 final List<String> list;
                 if (log.isDebugEnabled()) {
-                    list = null;
-                } else {
                     list = new ArrayList<>(16);
+                } else {
+                    list = null;
                 }
                 for (int m = 0; m < 16; m++) {
                     if ((edata.data & (1 << m)) != 0) {

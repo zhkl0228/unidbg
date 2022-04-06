@@ -19,7 +19,7 @@ class JValueList extends VaList {
             switch (shorty.getType()) {
                 case 'L':
                     UnidbgPointer ptr = (UnidbgPointer) pointer.getPointer(0);
-                    args.add((int) ptr.toUIntPeer());
+                    args.add(ptr == null ? 0 : (int) ptr.toUIntPeer());
                     break;
                 case 'B': {
                     byte val = pointer.getByte(0);

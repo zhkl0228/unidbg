@@ -33,11 +33,6 @@ public class DynarmicBackend32 extends DynarmicBackend {
     }
 
     @Override
-    public boolean handleInterpreterFallback(long pc, int num_instructions) {
-        throw new AbstractMethodError();
-    }
-
-    @Override
     public Number reg_read(int regId) throws BackendException {
         try {
             switch (regId) {

@@ -12,8 +12,8 @@ public class DyldImageInfo64 extends UnidbgStructure {
         super(p);
     }
 
-    public Pointer imageLoadAddress; /* base address image is mapped into */
-    public Pointer imageFilePath; /* path dyld used to load the image */
+    public long imageLoadAddress; /* base address image is mapped into */
+    public long imageFilePath; /* path dyld used to load the image */
     public long imageFileModDate; /* time_t of image file */
 
     @Override

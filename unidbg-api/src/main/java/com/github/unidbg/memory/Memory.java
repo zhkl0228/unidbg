@@ -39,6 +39,10 @@ public interface Memory extends IO, Loader, StackMemory {
      */
     void setErrno(int errno);
 
+    int getLastErrno();
+
     Collection<MemoryMap> getMemoryMap();
+
+    void setMMapListener(MMapListener listener);
 
 }

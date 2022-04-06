@@ -10,8 +10,24 @@ import java.nio.ByteOrder;
 
 public abstract class ArmSvc implements Svc {
 
+    public static final int SVC_MAX = 0xffffff;
+
     public static int assembleSvc(int svcNumber) {
-        return 0xef000000 | svcNumber;
+        if (svcNumber >= 0 && svcNumber < SVC_MAX - 1) {
+            return 0xef000000 | svcNumber;
+        } else {
+            throw new IllegalStateException("svcNumber=0x" + Integer.toHexString(svcNumber));
+        }
+    }
+
+    private final String name;
+
+    public ArmSvc() {
+        this(null);
+    }
+
+    public ArmSvc(String name) {
+        this.name = name;
     }
 
     @Override
@@ -21,13 +37,22 @@ public abstract class ArmSvc implements Svc {
         buffer.putInt(assembleSvc(svcNumber)); // svc #svcNumber
         buffer.putInt(0xe12fff1e); // bx lr
         byte[] code = buffer.array();
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "ArmSvc");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "ArmSvc" : name);
         pointer.write(code);
         return pointer;
     }
 
     @Override
-    public void handleCallback(Emulator<?> emulator) {
+    public void handlePostCallback(Emulator<?> emulator) {
     }
 
+    @Override
+    public void handlePreCallback(Emulator<?> emulator) {
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
 }

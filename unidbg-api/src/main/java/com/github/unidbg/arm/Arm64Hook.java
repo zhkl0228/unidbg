@@ -31,28 +31,29 @@ public abstract class Arm64Hook extends Arm64Svc {
         this.enablePostCall = enablePostCall;
     }
 
+    public Arm64Hook(String name, boolean enablePostCall) {
+        super(name);
+        this.enablePostCall = enablePostCall;
+    }
+
     @Override
     public final UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         byte[] code;
         if (enablePostCall) {
             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
                 KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
-                        "sub sp, sp, #0x10",
-                        "stp x29, x30, [sp]",
                         "svc #0x" + Integer.toHexString(svcNumber),
 
-                        "ldr x7, [sp]",
+                        "ldr x13, [sp]",
                         "add sp, sp, #0x8",
-                        "cmp x7, #0",
+                        "cmp x13, #0",
                         "b.eq #0x30",
-                        "blr x7",
+                        "blr x13",
                         "mov x8, #0",
-                        "mov x4, #0x" + Integer.toHexString(svcNumber),
-                        "mov x16, #0x" + Integer.toHexString(Svc.CALLBACK_SYSCALL_NUMBER),
+                        "mov x12, #0x" + Integer.toHexString(svcNumber),
+                        "mov x16, #0x" + Integer.toHexString(Svc.POST_CALLBACK_SYSCALL_NUMBER),
                         "svc #0",
 
-                        "ldp x29, x30, [sp]",
-                        "add sp, sp, #0x10",
                         "ret"));
                 code = encoded.getMachineCode();
             }
@@ -64,7 +65,8 @@ public abstract class Arm64Hook extends Arm64Svc {
             buffer.putInt(0xd61f0220); // br x17: manipulated stack in handle
             code = buffer.array();
         }
-        UnidbgPointer pointer = svcMemory.allocate(code.length, "Arm64Hook");
+        String name = getName();
+        UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "Arm64Hook" : name);
         pointer.write(0, code, 0, code.length);
         if (log.isDebugEnabled()) {
             log.debug("ARM64 hook: pointer=" + pointer);
@@ -73,8 +75,25 @@ public abstract class Arm64Hook extends Arm64Svc {
     }
 
     @Override
+    public void handlePostCallback(Emulator<?> emulator) {
+        super.handlePostCallback(emulator);
+
+        if (regContext == null) {
+            throw new IllegalStateException();
+        } else {
+            regContext.restore();
+        }
+    }
+
+    private RegContext regContext;
+
+    @Override
     public final long handle(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
+        if (enablePostCall) {
+            regContext = RegContext.backupContext(emulator, Arm64Const.UC_ARM64_REG_X29,
+                    Arm64Const.UC_ARM64_REG_X30);
+        }
         UnidbgPointer sp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
             HookStatus status = hook(emulator);

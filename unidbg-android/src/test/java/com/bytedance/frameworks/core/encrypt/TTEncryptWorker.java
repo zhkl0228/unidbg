@@ -7,18 +7,17 @@ import com.github.unidbg.worker.WorkerFactory;
 import com.github.unidbg.worker.WorkerPool;
 import com.github.unidbg.worker.WorkerPoolFactory;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class TTEncryptWorker implements Worker {
+public class TTEncryptWorker extends Worker {
 
     public static void main(String[] args) throws InterruptedException {
         final WorkerPool pool = WorkerPoolFactory.create(new WorkerFactory() {
             @Override
-            public Worker createWorker() {
-                return new TTEncryptWorker();
+            public Worker createWorker(WorkerPool pool) {
+                return new TTEncryptWorker(pool);
             }
         }, Runtime.getRuntime().availableProcessors());
 
@@ -30,35 +29,36 @@ public class TTEncryptWorker implements Worker {
                 @Override
                 public void run() {
                     long start = System.currentTimeMillis();
-                    TTEncryptWorker worker = pool.borrow(1, TimeUnit.MINUTES);
-                    if (worker != null) {
-                        try {
+                    try (TTEncryptWorker worker = pool.borrow(1, TimeUnit.MINUTES)) {
+                        if (worker != null) {
                             long currentTimeMillis = System.currentTimeMillis();
                             byte[] data = worker.doWork();
                             Inspector.inspect(data, name + ": " + (System.currentTimeMillis() - start) + "ms" + ", " + (System.currentTimeMillis() - currentTimeMillis) + "ms");
-                        } finally {
-                            pool.release(worker);
+                        } else {
+                            System.err.println("Borrow failed");
                         }
-                    } else {
-                        System.err.println("Borrow failed");
                     }
                 }
             });
         }
         executorService.shutdown();
-        executorService.awaitTermination(10, TimeUnit.MINUTES);
+        if (!executorService.awaitTermination(10, TimeUnit.MINUTES)) {
+            throw new IllegalStateException();
+        }
         IOUtils.close(pool);
     }
 
     private final TTEncrypt ttEncrypt;
 
-    public TTEncryptWorker() {
+    public TTEncryptWorker(WorkerPool pool) {
+        super(pool);
+
         ttEncrypt = new TTEncrypt(false);
         System.err.println("Create: " + ttEncrypt);
     }
 
     @Override
-    public void close() throws IOException {
+    public void destroy() {
         ttEncrypt.destroy();
         System.err.println("Destroy: " + ttEncrypt);
     }

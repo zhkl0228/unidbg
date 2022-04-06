@@ -3,7 +3,6 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.arm.AbstractARM64Emulator;
 import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.HookStatus;
@@ -15,7 +14,7 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.InitFunction;
-import com.github.unidbg.unix.struct.DlInfo;
+import com.github.unidbg.unix.struct.DlInfo64;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -138,18 +137,18 @@ public class Dyld64 extends Dyld {
                             "stp x29, x30, [sp]",
                             "svc #0x" + Integer.toHexString(svcNumber),
 
-                            "ldr x7, [sp]",
+                            "ldr x13, [sp]",
                             "add sp, sp, #0x8", // manipulated stack in __dyld_register_func_for_add_image
-                            "cmp x7, #0",
+                            "cmp x13, #0",
                             "b.eq #0x38",
-                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "adr lr, #-0xf", // jump to ldr x13, [sp]
                             "bic lr, lr, #0x1",
 
                             "ldr x0, [sp]",
                             "add sp, sp, #0x8",
                             "ldr x1, [sp]",
                             "add sp, sp, #0x8",
-                            "br x7", // call (headerType *mh, unsigned long	vmaddr_slide)
+                            "br x13", // call (headerType *mh, unsigned long	vmaddr_slide)
 
                             "ldr x0, [sp]", // with return address
                             "add sp, sp, #0x8",
@@ -223,11 +222,11 @@ public class Dyld64 extends Dyld {
                             "stp x29, x30, [sp]",
                             "svc #0x" + Integer.toHexString(svcNumber),
 
-                            "ldr x7, [sp]",
+                            "ldr x13, [sp]",
                             "add sp, sp, #0x8", // manipulated stack in dyld_image_state_change_handler
-                            "cmp x7, #0",
+                            "cmp x13, #0",
                             "b.eq #0x40",
-                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "adr lr, #-0xf", // jump to ldr x13, [sp]
                             "bic lr, lr, #0x1",
 
                             "ldr x0, [sp]",
@@ -236,7 +235,7 @@ public class Dyld64 extends Dyld {
                             "add sp, sp, #0x8",
                             "ldr x2, [sp]",
                             "add sp, sp, #0x8",
-                            "br x7", // call (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
+                            "br x13", // call (*dyld_image_state_change_handler)(enum dyld_image_states state, uint32_t infoCount, const struct dyld_image_info info[])
 
                             "ldr x0, [sp]", // with return address
                             "add sp, sp, #0x8",
@@ -364,13 +363,13 @@ public class Dyld64 extends Dyld {
                             "stp x29, x30, [sp]",
                             "svc #0x" + Integer.toHexString(svcNumber),
 
-                            "ldr x7, [sp]",
+                            "ldr x13, [sp]",
                             "add sp, sp, #0x8", // manipulated stack in dlopen
-                            "cmp x7, #0",
+                            "cmp x13, #0",
                             "b.eq #0x28",
-                            "adr lr, #-0xf", // jump to ldr x7, [sp]
+                            "adr lr, #-0xf", // jump to ldr x13, [sp]
                             "bic lr, lr, #0x1",
-                            "br x7", // call init array
+                            "br x13", // call init array
 
                             "ldr x0, [sp]", // with return address
                             "add sp, sp, #0x8",
@@ -483,6 +482,9 @@ public class Dyld64 extends Dyld {
                 if ("dispatch_async".equals(symbolName)) {
                     return _dispatch_async;
                 }
+                if ("objc_addLoadImageFunc".equals(symbolName)) {
+                    return __dyld_register_func_for_add_image.peer;
+                }
 
                 return dlsym(emulator, handle, "_" + symbolName);
             }
@@ -503,12 +505,12 @@ public class Dyld64 extends Dyld {
 
                 Symbol symbol = module.findClosestSymbolByAddress(addr, true);
 
-                DlInfo dlInfo = new DlInfo(info);
-                dlInfo.dli_fname = module.createPathMemory(svcMemory);
-                dlInfo.dli_fbase = UnidbgPointer.pointer(emulator, module.machHeader);
+                DlInfo64 dlInfo = new DlInfo64(info);
+                dlInfo.dli_fname = UnidbgPointer.nativeValue(module.createPathMemory(svcMemory));
+                dlInfo.dli_fbase = module.machHeader;
                 if (symbol != null) {
-                    dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
-                    dlInfo.dli_saddr = UnidbgPointer.pointer(emulator, symbol.getAddress());
+                    dlInfo.dli_sname = UnidbgPointer.nativeValue(symbol.createNameMemory(svcMemory));
+                    dlInfo.dli_saddr = symbol.getAddress();
                 }
                 dlInfo.pack();
                 return 1;
@@ -528,6 +530,15 @@ public class Dyld64 extends Dyld {
                 return canLoad ? 1 : 0;
             }
         });
+        __dyld_fork_child = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                if (log.isDebugEnabled()) {
+                    log.debug("_dyld_fork_child");
+                }
+                return 0;
+            }
+        });
     }
 
     private final Pointer __dyld_image_count;
@@ -535,7 +546,7 @@ public class Dyld64 extends Dyld {
     private final Pointer __dyld_get_image_header;
     private final Pointer __dyld_get_image_vmaddr_slide;
     private final Pointer __dyld_get_image_slide;
-    private final Pointer __dyld_register_func_for_add_image;
+    private final UnidbgPointer __dyld_register_func_for_add_image;
     private final Pointer __dyld_register_func_for_remove_image;
     private final Pointer __dyld_register_thread_helpers;
     private final Pointer __dyld_dyld_register_image_state_change_handler;
@@ -543,6 +554,7 @@ public class Dyld64 extends Dyld {
     private final Pointer __dyld__NSGetExecutablePath;
     private final Pointer __dyld_fast_stub_entry;
     private final Pointer __dyld_find_unwind_sections;
+    private final Pointer __dyld_fork_child;
 
     @Override
     final int _stub_binding_helper() {
@@ -615,6 +627,9 @@ public class Dyld64 extends Dyld {
                 return 1;
             case "__dyld_dyld_register_image_state_change_handler":
                 address.setPointer(0, __dyld_dyld_register_image_state_change_handler);
+                return 1;
+            case "__dyld_fork_child":
+                address.setPointer(0, __dyld_fork_child);
                 return 1;
             default:
                 log.info("_dyld_func_lookup name=" + name + ", address=" + address);
@@ -715,7 +730,7 @@ public class Dyld64 extends Dyld {
                         public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
                             emulator.attach().debug();
-                            emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_LR, AbstractARM64Emulator.LR);
+                            emulator.getBackend().reg_write(Arm64Const.UC_ARM64_REG_LR, emulator.getReturnAddress());
                             return 0;
                         }
                     }).peer;

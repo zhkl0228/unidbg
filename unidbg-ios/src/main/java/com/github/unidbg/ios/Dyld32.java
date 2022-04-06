@@ -3,7 +3,6 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import com.github.unidbg.arm.AbstractARMEmulator;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.ArmSvc;
 import com.github.unidbg.arm.HookStatus;
@@ -16,7 +15,7 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.InitFunction;
-import com.github.unidbg.unix.struct.DlInfo;
+import com.github.unidbg.unix.struct.DlInfo32;
 import com.sun.jna.Pointer;
 import keystone.Keystone;
 import keystone.KeystoneArchitecture;
@@ -380,12 +379,12 @@ public class Dyld32 extends Dyld {
 
                 Symbol symbol = module.findClosestSymbolByAddress(addr, true);
 
-                DlInfo dlInfo = new DlInfo(info);
-                dlInfo.dli_fname = module.createPathMemory(svcMemory);
-                dlInfo.dli_fbase = UnidbgPointer.pointer(emulator, module.machHeader);
+                DlInfo32 dlInfo = new DlInfo32(info);
+                dlInfo.dli_fname = (int) UnidbgPointer.nativeValue(module.createPathMemory(svcMemory));
+                dlInfo.dli_fbase = (int) module.machHeader;
                 if (symbol != null) {
-                    dlInfo.dli_sname = symbol.createNameMemory(svcMemory);
-                    dlInfo.dli_saddr = UnidbgPointer.pointer(emulator, symbol.getAddress());
+                    dlInfo.dli_sname = (int) UnidbgPointer.nativeValue(symbol.createNameMemory(svcMemory));
+                    dlInfo.dli_saddr = (int) symbol.getAddress();
                 }
                 dlInfo.pack();
                 return 1;
@@ -606,7 +605,7 @@ public class Dyld32 extends Dyld {
                         public long handle(Emulator<?> emulator) {
                             System.err.println("abort");
                             emulator.attach().debug();
-                            emulator.getBackend().reg_write(ArmConst.UC_ARM_REG_LR, AbstractARMEmulator.LR);
+                            emulator.getBackend().reg_write(ArmConst.UC_ARM_REG_LR, emulator.getReturnAddress());
                             return 0;
                         }
                     }).peer;
