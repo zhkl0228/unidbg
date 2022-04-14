@@ -599,7 +599,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Pointer addr = context.getPointerArg(2);
         int length = context.getIntArg(3);
         if (log.isDebugEnabled()) {
-            log.debug("csops pid=" + pid + ", op=" + op + ", addr=" + addr + ", length=" + length);
+            log.debug("csops pid=" + pid + ", op=" + op + ", addr=" + addr + ", length=" + length + ", LR=" + context.getLRPointer());
         }
         if (op == CS_OPS_STATUS) {
             addr.setInt(0, CS_HARD | CS_RESTRICT | CS_ENFORCEMENT | CS_REQUIRE_LV | CS_ENTITLEMENTS_VALIDATED | CS_DYLD_PLATFORM | CS_PLATFORM_BINARY | CS_SIGNED);
