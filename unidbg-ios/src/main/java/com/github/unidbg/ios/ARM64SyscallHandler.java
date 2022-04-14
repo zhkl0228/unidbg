@@ -610,6 +610,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 cdhash[i] = (byte) (i + 0x10);
             }
             addr.write(0, cdhash, 0, length);
+            if (log.isTraceEnabled()) {
+                emulator.attach().debug();
+            }
             return 0;
         } else {
             log.info("csops pid=" + pid + ", op=" + op + ", addr=" + addr + ", length=" + length);
