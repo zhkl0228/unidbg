@@ -94,8 +94,15 @@ typedef enum UIViewAutoresizing : NSUInteger {
     UIViewAutoresizingNone
 } UIViewAutoresizing;
 
+typedef enum UIUserInterfaceLevel : NSInteger {
+    UIUserInterfaceLevelUnspecified,
+    UIUserInterfaceLevelBase,
+    UIUserInterfaceLevelElevated
+} UIUserInterfaceLevel;
+
 @interface UITraitCollection : NSObject
 @property(nonatomic) UIUserInterfaceStyle userInterfaceStyle;
+@property(nonatomic) UIUserInterfaceLevel userInterfaceLevel;
 @end
 
 @interface UIColor : NSObject

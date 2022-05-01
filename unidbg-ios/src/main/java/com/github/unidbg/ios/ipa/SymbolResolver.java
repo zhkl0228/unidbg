@@ -63,7 +63,7 @@ public class SymbolResolver implements HookListener {
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
-        /*if (symbolName.contains("dispatch_sync")) {
+        /*if (symbolName.contains("dispatch_block_create")) {
             System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
         }*/
         if ("_dispatch_sync".equals(symbolName) && "libdispatch.dylib".equals(libraryName)) {
@@ -71,6 +71,9 @@ public class SymbolResolver implements HookListener {
         }
         if ("_dispatch_group_async".equals(symbolName)) {
             if (_dispatch_group_async == null) {
+                if (old_dispatch_sync == 0L) {
+                    throw new IllegalStateException();
+                }
                 if (emulator.is64Bit()) {
                     _dispatch_group_async = svcMemory.registerSvc(new Arm64Hook() {
                         @Override
@@ -163,7 +166,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_dispatch_block_create".equals(symbolName) && emulator.is64Bit()) {
             if (_dispatch_block_create == null) {
-                _dispatch_block_create = svcMemory.registerSvc(new Arm64Svc() {
+                _dispatch_block_create = svcMemory.registerSvc(new Arm64Svc("dispatch_block_create") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -178,7 +181,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_dispatch_assert_queue$V2".equals(symbolName) && emulator.is64Bit()) {
             if (_dispatch_assert_queue$V2 == null) {
-                _dispatch_assert_queue$V2 = svcMemory.registerSvc(new Arm64Svc() {
+                _dispatch_assert_queue$V2 = svcMemory.registerSvc(new Arm64Svc("dispatch_assert_queue$V2") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -191,7 +194,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_qos_class_self".equals(symbolName) && emulator.is64Bit()) {
             if (_qos_class_self == null) {
-                _qos_class_self = svcMemory.registerSvc(new Arm64Svc() {
+                _qos_class_self = svcMemory.registerSvc(new Arm64Svc("qos_class_self") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         log.info("_qos_class_self");
@@ -203,7 +206,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_pthread_set_qos_class_self_np".equals(symbolName) && emulator.is64Bit()) {
             if (_pthread_set_qos_class_self_np == null) {
-                _pthread_set_qos_class_self_np = svcMemory.registerSvc(new Arm64Svc() {
+                _pthread_set_qos_class_self_np = svcMemory.registerSvc(new Arm64Svc("pthread_set_qos_class_self_np") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -220,7 +223,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_pthread_attr_set_qos_class_np".equals(symbolName) && emulator.is64Bit()) {
             if (_pthread_attr_set_qos_class_np == null) {
-                _pthread_attr_set_qos_class_np = svcMemory.registerSvc(new Arm64Svc() {
+                _pthread_attr_set_qos_class_np = svcMemory.registerSvc(new Arm64Svc("pthread_attr_set_qos_class_np") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -238,7 +241,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_clock_gettime".equals(symbolName) && emulator.is64Bit()) {
             if (_clock_gettime == null) {
-                _clock_gettime = svcMemory.registerSvc(new Arm64Svc() {
+                _clock_gettime = svcMemory.registerSvc(new Arm64Svc("clock_gettime") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -266,7 +269,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("___chkstk_darwin".equals(symbolName) && emulator.is64Bit()) {
             if (___chkstk_darwin == null) {
-                ___chkstk_darwin = svcMemory.registerSvc(new Arm64Svc() {
+                ___chkstk_darwin = svcMemory.registerSvc(new Arm64Svc("chkstk_darwin") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         return emulator.getContext().getLongArg(0);
@@ -277,7 +280,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_dispatch_queue_attr_make_with_qos_class".equals(symbolName) && emulator.is64Bit()) {
             if (dispatch_queue_attr_make_with_qos_class == null) {
-                dispatch_queue_attr_make_with_qos_class = svcMemory.registerSvc(new Arm64Svc() {
+                dispatch_queue_attr_make_with_qos_class = svcMemory.registerSvc(new Arm64Svc("dispatch_queue_attr_make_with_qos_class") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -291,7 +294,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_dispatch_queue_attr_make_initially_inactive".equals(symbolName) && emulator.is64Bit()) {
             if (dispatch_queue_attr_make_initially_inactive == null) {
-                dispatch_queue_attr_make_initially_inactive = svcMemory.registerSvc(new Arm64Svc() {
+                dispatch_queue_attr_make_initially_inactive = svcMemory.registerSvc(new Arm64Svc("dispatch_queue_attr_make_initially_inactive") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -305,7 +308,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("__dispatch_source_type_memorypressure".equals(symbolName) && emulator.is64Bit()) {
             if (dispatch_source_type_memorypressure_init == null) {
-                dispatch_source_type_memorypressure_init = svcMemory.registerSvc(new Arm64Svc() {
+                dispatch_source_type_memorypressure_init = svcMemory.registerSvc(new Arm64Svc("dispatch_source_type_memorypressure") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         System.out.println("dispatch_source_type_memorypressure_init");
@@ -331,7 +334,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_objc_unsafeClaimAutoreleasedReturnValue".equals(symbolName)) {
             if (_objc_unsafeClaimAutoreleasedReturnValue == null) {
-                _objc_unsafeClaimAutoreleasedReturnValue = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
+                _objc_unsafeClaimAutoreleasedReturnValue = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc("objc_unsafeClaimAutoreleasedReturnValue") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -349,7 +352,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_os_unfair_lock_lock".equals(symbolName)) {
             if (_os_unfair_lock_lock == null) {
-                _os_unfair_lock_lock = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
+                _os_unfair_lock_lock = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc("os_unfair_lock_lock") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         return 0;
@@ -365,7 +368,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_os_unfair_lock_unlock".equals(symbolName)) {
             if (_os_unfair_lock_unlock == null) {
-                _os_unfair_lock_unlock = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
+                _os_unfair_lock_unlock = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc("os_unfair_lock_unlock") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         return 0;
@@ -381,7 +384,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("__tlv_bootstrap".equals(symbolName)) {
             if (__tlv_bootstrap == null) {
-                __tlv_bootstrap = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
+                __tlv_bootstrap = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc("tlv_bootstrap") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
@@ -406,7 +409,7 @@ public class SymbolResolver implements HookListener {
         }
         if ("_objc_readClassPair".equals(symbolName)) {
             if (_objc_readClassPair == null) {
-                _objc_readClassPair = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc() {
+                _objc_readClassPair = svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Svc("objc_readClassPair") {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         throw new UnsupportedOperationException();

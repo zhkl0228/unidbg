@@ -2185,13 +2185,23 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         // TODO: implement
         RegisterContext context = emulator.getContext();
         log.info("_workq_open LR=" + context.getLRPointer());
+        if (LogFactory.getLog(AbstractEmulator.class).isTraceEnabled()) {
+            createBreaker(emulator).debug();
+        }
         return 0;
     }
 
     private int _workq_kernreturn(Emulator<?> emulator) {
         // TODO: implement
         RegisterContext context = emulator.getContext();
-        log.info("_workq_kernreturn LR=" + context.getLRPointer());
+        int options = context.getIntArg(0);
+        Pointer item = context.getPointerArg(1);
+        int arg2 = context.getIntArg(2);
+        int arg3 = context.getIntArg(3);
+        log.info("_workq_kernreturn options=0x" + Integer.toHexString(options) + ", item=" + item + ", arg2=" + arg2 + ", arg3=0x" + Integer.toHexString(arg3) + ", LR=" + context.getLRPointer());
+        if (LogFactory.getLog(AbstractEmulator.class).isTraceEnabled()) {
+            createBreaker(emulator).debug();
+        }
         return 0;
     }
 

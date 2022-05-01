@@ -114,6 +114,7 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 - (id)init {
     if(self = [super init]) {
         self.userInterfaceStyle = UIUserInterfaceStyleLight;
+        self.userInterfaceLevel = UIUserInterfaceLevelBase;
     }
     return self;
 }

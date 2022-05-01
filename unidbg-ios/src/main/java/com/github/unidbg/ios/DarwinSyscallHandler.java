@@ -366,12 +366,15 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (log.isDebugEnabled()) {
             log.debug("_semaphore_wait_trap port=" + port + ", LR=" + context.getLRPointer());
         }
+        if (log.isDebugEnabled()) {
+            createBreaker(emulator).debug();
+        }
         RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
         if (threadDispatcherEnabled && runningTask != null) {
             runningTask.setWaiter(new SemWaiter(port, semaphoreMap));
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
-        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
         return 0;
@@ -681,6 +684,9 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
 
                 if (verbose) {
                     System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
+                }
+                if (log.isDebugEnabled()) {
+                    createBreaker(emulator).debug();
                 }
 
                 emulator.getThreadDispatcher().addThread(new BsdThread(emulator, threadId, thread_start, thread, start_routine, arg, stackSize));
