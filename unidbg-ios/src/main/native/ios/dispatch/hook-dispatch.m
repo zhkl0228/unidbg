@@ -12,24 +12,11 @@ struct perform_state {
   volatile bool finished;
 };
 
-#define DISPATCH_OBJECT_SUSPEND_INTERVAL 2
-
-static void *main_queue_perform(void *arg) {
-  dispatch_queue_t dq = dispatch_get_main_queue();
-  while(true) {
-    if(!_dispatch_runloop_root_queue_perform_4CF(dq)) {
-      usleep(100);
-    }
-  }
-}
-
 static void *dispatch_queue_perform(void *arg) {
   struct perform_state *state = (struct perform_state *) arg;
   dispatch_queue_t dq = state->dq;
-  int *ip = (int *) ((char *)dq + 0x30);
-  int do_suspend_cnt = *ip;
 
-  while(do_suspend_cnt != DISPATCH_OBJECT_SUSPEND_INTERVAL && _dispatch_runloop_root_queue_perform_4CF(dq)) {
+  while(_dispatch_runloop_root_queue_perform_4CF(dq)) {
   }
 
   state->finished = true;
@@ -61,6 +48,7 @@ void new_dispatch_sync(dispatch_queue_t dq, void (^work)(void)) {
 }
 
 void new_dispatch_async(dispatch_queue_t dq, void (^work)(void)) {
+  dq = dispatch_queue_create(NULL, NULL);
   struct perform_state state;
   state.dq = dq;
   state.finished = false;
@@ -78,13 +66,12 @@ void new_dispatch_async(dispatch_queue_t dq, void (^work)(void)) {
 
   pthread_cond_destroy(&state.cond);
   pthread_mutex_destroy(&state.lock);
+  dispatch_release(dq);
 }
 
 __attribute__((constructor))
 static void init() {
-  pthread_t thread = NULL;
-  int ret = pthread_create(&thread, NULL, main_queue_perform, NULL);
-  printf("Patch dispatch: dispatch_sync=%p, dispatch_async=%p, ret=%d, thread=%p.\n", &dispatch_sync, &dispatch_async, ret, thread);
+  printf("Patch dispatch: dispatch_sync=%p, dispatch_async=%p.\n", &dispatch_sync, &dispatch_async);
   MSHookFunction((void*)&dispatch_async, (void*)new_dispatch_async, (void**)&old_dispatch_async);
   // MSHookFunction((void*)&dispatch_sync, (void*)new_dispatch_sync, (void**)&old_dispatch_sync);
 }

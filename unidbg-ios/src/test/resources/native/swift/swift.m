@@ -28,16 +28,20 @@ int main(int argc, char *argv[]) {
   label = dispatch_queue_get_label(global_queue);
   printf("Before global_queue=%p, label=%s, current=%p\n", global_queue, label, current);
   dispatch_sync(global_queue, ^{
-    printf("dispatch_sync1 global_queue=%p\n", global_queue);
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_sync1 global_queue=%p, current=%p\n", global_queue, current);
   });
   dispatch_async(global_queue, ^{
-    printf("dispatch_async1 global_queue=%p\n", global_queue);
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_async1 global_queue=%p, current=%p\n", global_queue, current);
   });
   dispatch_async(global_queue, ^{
-    printf("dispatch_async2 global_queue=%p\n", global_queue);
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_async2 global_queue=%p, current=%p\n", global_queue, current);
   });
   dispatch_sync(global_queue, ^{
-    printf("dispatch_sync2 global_queue=%p\n", global_queue);
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_sync2 global_queue=%p, current=%p\n", global_queue, current);
   });
 
   dispatch_queue_t main_queue = dispatch_get_main_queue();
@@ -46,10 +50,12 @@ int main(int argc, char *argv[]) {
   current = dispatch_get_current_queue();
   printf("Before main_queue=%p, label=%s, current=%p\n", main_queue, label, current);
   dispatch_async(main_queue, ^{
-    printf("dispatch_async main_queue=%p\n", main_queue);
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_async main_queue=%p, current=%p\n", main_queue, current);
   });
   dispatch_sync(main_queue, ^{
-    printf("dispatch_sync main_queue=%p\n", main_queue);
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_sync main_queue=%p, current=%p\n", main_queue, current);
   });
 
   NSString *version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
