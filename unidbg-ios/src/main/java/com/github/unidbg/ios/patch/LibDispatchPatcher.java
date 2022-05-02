@@ -24,6 +24,36 @@ public class LibDispatchPatcher extends ModulePatcher {
 
     @Override
     protected void patch64(Emulator<?> emulator, Module module) {
+        {
+            Pointer pointer = UnidbgPointer.pointer(emulator, module.base + 0x9908); // dispatch_barrier_sync_f
+            assert pointer != null;
+            int code = pointer.getInt(0);
+            if (code != 0xf9402008) {
+                throw new IllegalStateException("code=0x" + Integer.toHexString(code));
+            }
+            pointer.setInt(0, 0xd2800008); // movz x8, #0
+        }
+
+        {
+            Pointer pointer = UnidbgPointer.pointer(emulator, module.base + 0x72e0); // dispatch_sync_f
+            assert pointer != null;
+            int code = pointer.getInt(0);
+            if (code != 0xf9402008) {
+                throw new IllegalStateException("code=0x" + Integer.toHexString(code));
+            }
+            pointer.setInt(0, 0xd2800008); // movz x8, #0
+        }
+
+        {
+            Pointer pointer = UnidbgPointer.pointer(emulator, module.base + 0x9928); // dispatch_barrier_sync_f
+            assert pointer != null;
+            int code = pointer.getInt(0);
+            if (code != 0x350000ea) {
+                throw new IllegalStateException("code=0x" + Integer.toHexString(code));
+            }
+            pointer.setInt(0, 0x5280000a); // movz w10, #0
+        }
+
         Pointer pointer = UnidbgPointer.pointer(emulator, module.base + 0xa830); // _dispatch_runloop_root_queue_perform_4CF
         assert pointer != null;
         int code = pointer.getInt(0);

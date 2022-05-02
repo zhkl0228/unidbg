@@ -32,8 +32,8 @@ public class SwiftTest {
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/swift_test"));
         HookDispatcherLoader.load(emulator);
         long start = System.currentTimeMillis();
-        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         int ret = module.callEntry(emulator);
         System.err.println("testSwift backend=" + emulator.getBackend() + ", ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }
