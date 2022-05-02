@@ -260,7 +260,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mach_msg_trap(emulator));
                     return;
                 case -33: // _semaphore_signal_trap
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _semaphore_signal_trap(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _os_semaphore_signal(emulator));
                     return;
                 case -36: // _semaphore_wait_trap
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _semaphore_wait_trap(emulator));
@@ -885,9 +885,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    private long _semaphore_signal_trap(Emulator<?> emulator) {
-        int port = emulator.getContext().getIntArg(0);
-        log.info("_semaphore_signal_trap port=" + port);
+    private long _os_semaphore_signal(Emulator<?> emulator) {
+        int semaphore = emulator.getContext().getIntArg(0);
+        if (log.isDebugEnabled()) {
+            log.debug("_os_semaphore_signal semaphore=" + semaphore);
+        }
+        if (semaphore != 0) {
+            semaphoreMap.put(semaphore, Boolean.TRUE);
+        }
         Log log = ARM64SyscallHandler.log;
         if (!log.isDebugEnabled()) {
             log = LogFactory.getLog(AbstractEmulator.class);
@@ -2182,9 +2187,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int _workq_open(Emulator<?> emulator) {
-        // TODO: implement
         RegisterContext context = emulator.getContext();
-        log.info("_workq_open LR=" + context.getLRPointer());
+        if (log.isDebugEnabled()) {
+            log.debug("_workq_open LR=" + context.getLRPointer());
+        }
         if (LogFactory.getLog(AbstractEmulator.class).isTraceEnabled()) {
             createBreaker(emulator).debug();
         }
@@ -2192,13 +2198,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int _workq_kernreturn(Emulator<?> emulator) {
-        // TODO: implement
         RegisterContext context = emulator.getContext();
         int options = context.getIntArg(0);
         Pointer item = context.getPointerArg(1);
         int arg2 = context.getIntArg(2);
         int arg3 = context.getIntArg(3);
-        log.info("_workq_kernreturn options=0x" + Integer.toHexString(options) + ", item=" + item + ", arg2=" + arg2 + ", arg3=0x" + Integer.toHexString(arg3) + ", LR=" + context.getLRPointer());
+        if (log.isDebugEnabled()) {
+            log.debug("_workq_kernreturn options=0x" + Integer.toHexString(options) + ", item=" + item + ", arg2=" + arg2 + ", arg3=0x" + Integer.toHexString(arg3) + ", LR=" + context.getLRPointer());
+        }
         if (LogFactory.getLog(AbstractEmulator.class).isTraceEnabled()) {
             createBreaker(emulator).debug();
         }

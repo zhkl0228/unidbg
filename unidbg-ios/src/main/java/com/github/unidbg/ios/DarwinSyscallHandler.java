@@ -380,7 +380,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         return 0;
     }
 
-    private final Map<Integer, Boolean> semaphoreMap = new HashMap<>();
+    protected final Map<Integer, Boolean> semaphoreMap = new HashMap<>();
 
     protected int semwait_signal(Emulator<?> emulator, RunnableTask runningTask, int cond_sem, int mutex_sem, int timeout, int relative,
                                  long tv_sec, int tv_nsec) {

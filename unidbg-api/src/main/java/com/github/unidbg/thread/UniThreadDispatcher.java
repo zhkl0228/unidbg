@@ -186,8 +186,10 @@ public class UniThreadDispatcher implements ThreadDispatcher {
                         } catch(PopContextException e) {
                             this.runningTask.popContext(emulator);
                         }
-                    } else if (log.isDebugEnabled()) {
-                        log.debug("Skip dispatch task=" + task);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Skip dispatch task=" + task);
+                        }
                     }
                 }
 

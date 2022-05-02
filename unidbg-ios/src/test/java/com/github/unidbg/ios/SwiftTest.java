@@ -7,6 +7,7 @@ import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.ipa.SymbolResolver;
+import com.github.unidbg.ios.thread.HookDispatcherLoader;
 import com.github.unidbg.memory.Memory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -29,6 +30,7 @@ public class SwiftTest {
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
 
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/swift_test"));
+        HookDispatcherLoader.load(emulator);
         long start = System.currentTimeMillis();
         Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);

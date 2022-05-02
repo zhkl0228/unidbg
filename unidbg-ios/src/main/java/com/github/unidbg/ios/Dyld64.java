@@ -433,29 +433,6 @@ public class Dyld64 extends Dyld {
             }
         }).peer;
 
-        _dispatch_after = svcMemory.registerSvc(new Arm64Svc("dispatch_after") {
-            @Override
-            public long handle(Emulator<?> emulator) {
-                RegisterContext context = emulator.getContext();
-                long when = context.getLongArg(0);
-                Pointer queue = context.getPointerArg(1);
-                Pointer block = context.getPointerArg(2);
-                System.out.println("dispatch_after when=" + when + ", queue=" + queue + ", block=" + block);
-                return 0;
-            }
-        }).peer;
-
-        _dispatch_async = svcMemory.registerSvc(new Arm64Svc("dispatch_async") {
-            @Override
-            public long handle(Emulator<?> emulator) {
-                RegisterContext context = emulator.getContext();
-                Pointer queue = context.getPointerArg(0);
-                Pointer block = context.getPointerArg(1);
-                System.out.println("dispatch_async queue=" + queue + ", block=" + block);
-                return 0;
-            }
-        }).peer;
-
         __dyld_dlsym = svcMemory.registerSvc(new Arm64Svc("dyld_dlsym") {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -475,12 +452,6 @@ public class Dyld64 extends Dyld {
                 }
                 if ("_availability_version_check".equals(symbolName)) {
                     return __availability_version_check;
-                }
-                if ("dispatch_after".equals(symbolName)) {
-                    return _dispatch_after;
-                }
-                if ("dispatch_async".equals(symbolName)) {
-                    return _dispatch_async;
                 }
                 if ("objc_addLoadImageFunc".equals(symbolName)) {
                     return __dyld_register_func_for_add_image.peer;
@@ -569,7 +540,6 @@ public class Dyld64 extends Dyld {
     private final long _os_trace_redirect_func;
     private final long sandbox_check;
     private final long __availability_version_check;
-    private final long _dispatch_after, _dispatch_async;
 
     @Override
     final int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address) {
