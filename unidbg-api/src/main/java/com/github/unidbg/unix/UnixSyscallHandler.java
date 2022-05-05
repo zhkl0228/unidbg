@@ -267,7 +267,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             return -1;
         }
         int read = file.read(emulator.getBackend(), buffer, count);
-        if (verbose) {
+        if (verbose && !file.isStdIO()) {
             System.out.printf("Read %d bytes from '%s'%n", read, file);
         }
         return read;
@@ -527,7 +527,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             return -1;
         }
         int write = file.write(data);
-        if (verbose) {
+        if (verbose && !file.isStdIO()) {
             System.out.printf("Write %d bytes to '%s'%n", write, file);
         }
         return write;

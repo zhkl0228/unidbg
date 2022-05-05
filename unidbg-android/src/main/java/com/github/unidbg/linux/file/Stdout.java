@@ -29,6 +29,8 @@ public class Stdout extends SimpleFileIO {
         if (log.isDebugEnabled()) {
             setDebugStream(err ? System.err : System.out);
         }
+
+        stdio = true;
     }
 
     @Override

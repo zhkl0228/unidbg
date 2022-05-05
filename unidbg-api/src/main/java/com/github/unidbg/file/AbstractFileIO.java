@@ -169,4 +169,12 @@ public abstract class AbstractFileIO implements NewFileIO {
     public boolean canRead() {
         return true;
     }
+
+    protected boolean stdio;
+
+    @Override
+    public boolean isStdIO() {
+        return stdio;
+    }
+
 }

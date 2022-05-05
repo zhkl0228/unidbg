@@ -55,4 +55,6 @@ public interface FileIO {
     int recvfrom(Backend backend, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen);
 
     String getPath();
+
+    boolean isStdIO();
 }

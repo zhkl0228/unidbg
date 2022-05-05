@@ -17,6 +17,8 @@ public class Stdin extends BaseDarwinFileIO implements DarwinFileIO {
 
     public Stdin(int oflags) {
         super(oflags);
+
+        stdio = true;
     }
 
     @Override

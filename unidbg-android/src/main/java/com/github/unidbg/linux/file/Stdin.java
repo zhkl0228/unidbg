@@ -14,6 +14,8 @@ public class Stdin extends BaseAndroidFileIO implements AndroidFileIO {
 
     public Stdin(int oflags) {
         super(oflags);
+
+        stdio = true;
     }
 
     @Override
