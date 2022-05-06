@@ -1,6 +1,8 @@
 package com.github.unidbg.ios.ipa;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.Module;
+import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.ArmHook;
@@ -72,7 +74,9 @@ public class SymbolResolver implements HookListener {
         if ("_dispatch_group_async".equals(symbolName)) {
             if (_dispatch_group_async == null) {
                 if (old_dispatch_sync == 0L) {
-                    throw new IllegalStateException();
+                    Module dispatch = emulator.getMemory().findModule("libdispatch.dylib");
+                    Symbol symbol = dispatch.findSymbolByName("_dispatch_sync", false);
+                    old_dispatch_sync = symbol.getAddress();
                 }
                 if (emulator.is64Bit()) {
                     _dispatch_group_async = svcMemory.registerSvc(new Arm64Hook() {
