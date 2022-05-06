@@ -138,6 +138,11 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
             protected void searchClass(String keywords) {
                 AbstractARM64Emulator.this.searchClass(keywords);
             }
+
+            @Override
+            protected void dumpGPBProtobufMsg(String className) {
+                AbstractARM64Emulator.this.dumpGPBProtobufMsg(className);
+            }
         };
     }
 

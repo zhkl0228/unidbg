@@ -321,6 +321,7 @@ class SimpleARM64Debugger extends AbstractARMDebugger implements Debugger {
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning()) {
             System.out.println("dump [class name]: dump objc class");
             System.out.println("search [keywords]: search objc classes");
+            System.out.println("gpb [class name]: dump GPB protobuf msg def");
         }
 
         Module module = emulator.getMemory().findModuleByAddress(address);

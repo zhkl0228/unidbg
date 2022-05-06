@@ -542,6 +542,13 @@ public abstract class AbstractARMDebugger implements Debugger {
                 return false;
             }
         }
+        if (emulator.getFamily() == Family.iOS && !emulator.isRunning() && line.startsWith("gpb ")) {
+            String className = line.substring(4).trim();
+            if (className.length() > 0) {
+                dumpGPBProtobufMsg(className);
+                return false;
+            }
+        }
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning() && line.startsWith("search ")) {
             String keywords = line.substring(7).trim();
             if (keywords.length() > 0) {
@@ -900,6 +907,10 @@ public abstract class AbstractARMDebugger implements Debugger {
 
         showHelp(address);
         return false;
+    }
+
+    protected void dumpGPBProtobufMsg(String className) {
+        throw new UnsupportedOperationException();
     }
 
     protected void searchClass(String keywords) {

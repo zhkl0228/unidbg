@@ -480,6 +480,10 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         throw new UnsupportedOperationException("searchClass keywords=" + keywords);
     }
 
+    protected void dumpGPBProtobufMsg(String className) {
+        throw new UnsupportedOperationException("dumpGPBProtobufMsg className=" + className);
+    }
+
     @Override
     public final void serialize(DataOutput out) throws IOException {
         out.writeUTF(getClass().getName());
