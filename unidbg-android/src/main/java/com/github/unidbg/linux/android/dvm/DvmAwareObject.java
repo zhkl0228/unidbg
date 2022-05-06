@@ -1,9 +1,9 @@
 package com.github.unidbg.linux.android.dvm;
 
-import com.github.unidbg.Emulator;
+import com.github.unidbg.AndroidEmulator;
 
 public interface DvmAwareObject {
 
-    void initializeDvm(Emulator<?> emulator, VM vm, DvmObject<?> object);
+    void initializeDvm(AndroidEmulator emulator, VM vm, DvmObject<?> object);
 
 }

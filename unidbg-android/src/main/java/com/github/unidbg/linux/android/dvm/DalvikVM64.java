@@ -1,5 +1,6 @@
 package com.github.unidbg.linux.android.dvm;
 
+import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.backend.BackendException;
@@ -35,7 +36,7 @@ public class DalvikVM64 extends BaseVM implements VM {
     private final UnidbgPointer _JavaVM;
     private final UnidbgPointer _JNIEnv;
 
-    public DalvikVM64(Emulator<?> emulator, File apkFile) {
+    public DalvikVM64(AndroidEmulator emulator, File apkFile) {
         super(emulator, apkFile);
 
         final SvcMemory svcMemory = emulator.getSvcMemory();
