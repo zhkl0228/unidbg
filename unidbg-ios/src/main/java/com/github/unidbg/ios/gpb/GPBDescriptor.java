@@ -2,6 +2,7 @@ package com.github.unidbg.ios.gpb;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.ios.objc.NSArray;
+import com.github.unidbg.ios.objc.NSString;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * https://github.com/martinloesethjensen/FilesInFirebase/blob/master/pods/Protobuf/objectivec/GPBDescriptor.h
+ * https://github.com/protocolbuffers/protobuf/blob/main/objectivec/GPBDescriptor.h
  */
 public class GPBDescriptor {
 
@@ -35,6 +36,13 @@ public class GPBDescriptor {
 
     private String buildMsgDef() {
         StringBuilder builder = new StringBuilder();
+
+        ObjcObject file = descriptor.callObjc("file");
+        String _package = file.callObjc("package").toNSString().getString();
+        ObjcObject obj = file.callObjc("objcPrefix");
+        NSString nsString = obj == null ? null : obj.toNSString();
+        String objcPrefix = nsString == null ? null : nsString.getString();
+        builder.append("// package=").append(_package).append(", objcPrefix=").append(objcPrefix).append("\n");
 
         String name = descriptor.callObjc("name").toNSString().getString();
         builder.append("message ").append(name).append(" {\n");

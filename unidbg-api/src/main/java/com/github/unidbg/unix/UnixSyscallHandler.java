@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -269,6 +270,15 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         int read = file.read(emulator.getBackend(), buffer, count);
         if (verbose && !file.isStdIO()) {
             System.out.printf("Read %d bytes from '%s'%n", read, file);
+        }
+        if (fileListener != null) {
+            byte[] bytes;
+            if (read <= 0) {
+                bytes = new byte[0];
+            } else {
+                bytes = buffer.getByteArray(0, read);
+            }
+            fileListener.onRead(emulator, String.valueOf(file), bytes);
         }
         return read;
     }
@@ -529,6 +539,15 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         int write = file.write(data);
         if (verbose && !file.isStdIO()) {
             System.out.printf("Write %d bytes to '%s'%n", write, file);
+        }
+        if (fileListener != null) {
+            byte[] bytes;
+            if (write <= 0) {
+                bytes = new byte[0];
+            } else {
+                bytes = Arrays.copyOf(data, write);
+            }
+            fileListener.onWrite(emulator, String.valueOf(file), bytes);
         }
         return write;
     }
