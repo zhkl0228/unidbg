@@ -6,9 +6,12 @@ import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.hook.DispatchAsyncCallback;
+import com.github.unidbg.hook.HookLoader;
 import com.github.unidbg.ios.ipa.SymbolResolver;
-import com.github.unidbg.ios.thread.HookDispatcherLoader;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.pointer.UnidbgPointer;
+import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -21,7 +24,7 @@ public class SwiftTest {
         DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.for64Bit();
         builder.addBackendFactory(new HypervisorFactory(true));
         builder.addBackendFactory(new DynarmicFactory(true));
-        Emulator<DarwinFileIO> emulator = builder.build();
+        final Emulator<DarwinFileIO> emulator = builder.build();
 
         Memory memory = emulator.getMemory();
         memory.addHookListener(new SymbolResolver(emulator));
@@ -30,7 +33,13 @@ public class SwiftTest {
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
 
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/swift_test"));
-        HookDispatcherLoader.load(emulator);
+        HookLoader.load(emulator).hookDispatchAsync(new DispatchAsyncCallback() {
+            @Override
+            public boolean canDispatch(Pointer dq, Pointer fun) {
+                System.out.println("canDispatch dq=" + dq + ", fun=" + fun);
+                return UnidbgPointer.nativeValue(fun) != 0x100004a24L;
+            }
+        });
         long start = System.currentTimeMillis();
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);

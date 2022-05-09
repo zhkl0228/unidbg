@@ -25,6 +25,7 @@ public class HookLoader extends BaseHook {
     }
 
     private final Symbol _hook_objc_msgSend;
+    private final Symbol _hook_dispatch_async;
 
     private HookLoader(Emulator<?> emulator) {
         super(emulator, "libhook");
@@ -33,13 +34,18 @@ public class HookLoader extends BaseHook {
         if (_hook_objc_msgSend == null) {
             throw new IllegalStateException("find _hook_objc_msgSend failed");
         }
+
+        _hook_dispatch_async = module.findSymbolByName("_hook_dispatch_async", false);
+        if (_hook_dispatch_async == null) {
+            throw new IllegalStateException("find _hook_dispatch_async failed");
+        }
     }
 
     private boolean objcMsgSendHooked;
 
     public synchronized void hookObjcMsgSend(final MsgSendCallback callback) {
         if (objcMsgSendHooked) {
-            throw new IllegalStateException("objc_msgSend already hooked");
+            throw new IllegalStateException("objc_msgSend already hooked.");
         }
 
         SvcMemory svcMemory = emulator.getSvcMemory();
@@ -56,6 +62,40 @@ public class HookLoader extends BaseHook {
         });
         _hook_objc_msgSend.call(emulator, pointer);
         objcMsgSendHooked = true;
+    }
+
+    private boolean dispatchAsyncHooked;
+
+    public synchronized void hookDispatchAsync(final DispatchAsyncCallback callback) {
+        if (dispatchAsyncHooked) {
+            throw new IllegalStateException("dispatch_async already hooked.");
+        }
+        if (emulator.is32Bit()) {
+            throw new UnsupportedOperationException();
+        }
+
+        SvcMemory svcMemory = emulator.getSvcMemory();
+        Pointer pointer = callback == null ? null : svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                return dispatch_callback(emulator, callback);
+            }
+        });
+        _hook_dispatch_async.call(emulator, pointer);
+
+        dispatchAsyncHooked = true;
+    }
+
+    private long dispatch_callback(Emulator<?> emulator, DispatchAsyncCallback callback) {
+        RegisterContext context = emulator.getContext();
+        Pointer dq = context.getPointerArg(0);
+        Pointer block = context.getPointerArg(1);
+        Pointer fun = block.getPointer(0x10);
+        boolean dispatch = callback.canDispatch(dq, fun);
+        if (!dispatch) {
+            System.out.println("Skip dispatch_async dq=" + dq + ", fun=" + fun);
+        }
+        return dispatch ? 1 : 0;
     }
 
     private long objc_msgSend_callback(Emulator<?> emulator, MsgSendCallback callback) {
