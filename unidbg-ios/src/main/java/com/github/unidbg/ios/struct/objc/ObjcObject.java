@@ -44,6 +44,11 @@ public abstract class ObjcObject extends UnidbgStructure {
 
     public abstract UnidbgPointer getIsa(Emulator<?> emulator);
 
+    public void setInstanceVariable(String name, Object value) {
+        ObjC objc = ObjC.getInstance(emulator);
+        objc.setInstanceVariable(emulator, this, name, value);
+    }
+
     public UnidbgPointer call(String selectorName, Object... args) {
         ObjC objc = ObjC.getInstance(emulator);
         Pointer selector = objc.registerName(selectorName);

@@ -220,13 +220,12 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private void onWatchpoint(long esr, long address) {
         boolean write = ((esr >> 6) & 1) == 1;
         int status = (int) (esr & 0x3f);
-        boolean isWrite = ((esr >> 6) & 1) != 0;
         if (log.isDebugEnabled()) {
             log.debug("onWatchpoint write=" + write + ", address=0x" + Long.toHexString(address) + ", status=0x" + Integer.toHexString(status));
         }
         for (int i = 0; i < watchpoints.length; i++) {
-            if (watchpoints[i] != null && watchpoints[i].contains(address, isWrite)) {
-                watchpoints[i].onHit(this, address, isWrite);
+            if (watchpoints[i] != null && watchpoints[i].contains(address, write)) {
+                watchpoints[i].onHit(this, address, write);
                 installRestoreWatchpoint(i, watchpoints[i]);
                 return;
             }

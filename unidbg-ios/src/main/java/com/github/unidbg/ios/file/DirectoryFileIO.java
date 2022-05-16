@@ -142,6 +142,11 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
     }
 
     @Override
+    public int removexattr(String name) {
+        return removexattr(dir, name);
+    }
+
+    @Override
     public int setxattr(String name, byte[] data) {
         return setxattr(dir, name, data);
     }

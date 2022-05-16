@@ -8,6 +8,9 @@ import com.github.unidbg.ios.struct.objc.ObjcObject;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 class ObjcImpl extends ObjC {
 
     private final Emulator<?> emulator;
@@ -20,6 +23,7 @@ class ObjcImpl extends ObjC {
     private final Symbol _sel_registerName;
     private final Symbol _class_getMethodImplementation;
     private final Symbol _class_respondsToSelector;
+    private final Symbol _object_setInstanceVariable;
 
     public ObjcImpl(Emulator<?> emulator) {
         this.emulator = emulator;
@@ -62,6 +66,31 @@ class ObjcImpl extends ObjC {
         if (_class_respondsToSelector == null) {
             throw new IllegalStateException("_class_respondsToSelector is null");
         }
+
+        _object_setInstanceVariable = module.findSymbolByName("_object_setInstanceVariable", false);
+        if (_object_setInstanceVariable == null) {
+            throw new IllegalStateException("_object_setInstanceVariable is null");
+        }
+    }
+
+    @Override
+    public void setInstanceVariable(Emulator<?> emulator, ObjcObject obj, String name, Object value) {
+        if (value instanceof Float) {
+            float f = (Float) value;
+            ByteBuffer buffer = ByteBuffer.allocate(8);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.putFloat(f);
+            buffer.flip();
+            value = buffer.getLong();
+        } else if (value instanceof Double) {
+            double d = (Double) value;
+            ByteBuffer buffer = ByteBuffer.allocate(8);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.putDouble(d);
+            buffer.flip();
+            value = buffer.getLong();
+        }
+        _object_setInstanceVariable.call(emulator, obj, name, value);
     }
 
     @Override

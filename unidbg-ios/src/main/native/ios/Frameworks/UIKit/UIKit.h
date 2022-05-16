@@ -100,9 +100,16 @@ typedef enum UIUserInterfaceLevel : NSInteger {
     UIUserInterfaceLevelElevated
 } UIUserInterfaceLevel;
 
+typedef enum UIAccessibilityContrast : NSInteger {
+    UIAccessibilityContrastUnspecified,
+    UIAccessibilityContrastNormal,
+    UIAccessibilityContrastHigh
+} UIAccessibilityContrast;
+
 @interface UITraitCollection : NSObject
 @property(nonatomic) UIUserInterfaceStyle userInterfaceStyle;
 @property(nonatomic) UIUserInterfaceLevel userInterfaceLevel;
+@property(nonatomic) UIAccessibilityContrast accessibilityContrast;
 @end
 
 @interface UIColor : NSObject
@@ -251,6 +258,10 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 @interface NSString (Fix)
 - (unsigned int)unsignedIntValue;
 - (BOOL)containsString:(NSString *)str;
+@end
+
+@interface NSCalendar (Fix)
++ (NSCalendar *)calendarWithIdentifier:(NSCalendarIdentifier)calendarIdentifierConstant;
 @end
 
 @interface NSURLSessionConfiguration (CFNetwork)

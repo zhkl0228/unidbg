@@ -444,6 +444,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 237:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fsetxattr(emulator));
                     return;
+                case 238:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, removexattr(emulator));
+                    return;
                 case 240:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, listxattr(emulator));
                     return;
@@ -2010,6 +2013,30 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return ret;
         } else {
             log.info("getxattr path=" + pathname + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));
+            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
+            return -1;
+        }
+    }
+
+    private long removexattr(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer path = context.getPointerArg(0);
+        Pointer name = context.getPointerArg(1);
+        int options = context.getIntArg(2);
+        String pathname = path.getString(0);
+        FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
+            int ret = result.io.removexattr(name.getString(0));
+            if (ret == -1) {
+                log.info("removexattr path=" + pathname + ", name=" + name.getString(0) + ", options=0x" + Integer.toHexString(options));
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("removexattr path=" + pathname + ", name=" + name.getString(0) + ", options=0x" + Integer.toHexString(options));
+                }
+            }
+            return ret;
+        } else {
+            log.info("removexattr path=" + pathname + ", name=" + name.getString(0) + ", options=0x" + Integer.toHexString(options));
             emulator.getMemory().setErrno(UnixEmulator.ENOENT);
             return -1;
         }

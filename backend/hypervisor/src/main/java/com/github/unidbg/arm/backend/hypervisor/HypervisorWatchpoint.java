@@ -25,6 +25,8 @@ class HypervisorWatchpoint {
         if (isWrite ^ this.isWrite) {
             return false;
         }
+        long begin = this.begin;
+        begin &= ~0xf;
         return address >= begin && address < end;
     }
 

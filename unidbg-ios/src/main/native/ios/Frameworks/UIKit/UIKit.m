@@ -115,6 +115,7 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
     if(self = [super init]) {
         self.userInterfaceStyle = UIUserInterfaceStyleLight;
         self.userInterfaceLevel = UIUserInterfaceLevelBase;
+        self.accessibilityContrast = UIAccessibilityContrastNormal;
     }
     return self;
 }
@@ -350,6 +351,12 @@ static UIApplication *sharedApplication;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
+@implementation NSCalendar (Fix)
++ (NSCalendar *)calendarWithIdentifier:(NSCalendarIdentifier)calendarIdentifierConstant {
+    return [[NSCalendar alloc] initWithCalendarIdentifier: calendarIdentifierConstant];
+}
+@end
+
 @implementation NSURLSessionConfiguration (CFNetwork)
 + (NSURLSessionConfiguration *)defaultSessionConfiguration {
   return [NSURLSessionConfiguration new];

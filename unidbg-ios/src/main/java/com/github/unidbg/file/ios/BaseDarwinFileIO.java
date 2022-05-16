@@ -261,6 +261,11 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
     }
 
     @Override
+    public int removexattr(String name) {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    @Override
     public int setxattr(String name, byte[] data) {
         throw new UnsupportedOperationException(getClass().getName());
     }
@@ -395,6 +400,24 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
                 attr.xattr = new HashMap<>();
             }
             attr.xattr.put(name, data);
+            File file = createAttrFile(dest);
+            FileUtils.writeStringToFile(file, JSON.toJSONString(attr), StandardCharsets.UTF_8);
+            return 0;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected final int removexattr(File dest, String name) {
+        try {
+            DarwinFileAttr attr = loadAttr(dest);
+            if (attr == null) {
+                attr = new DarwinFileAttr();
+            }
+            if (attr.xattr == null) {
+                attr.xattr = new HashMap<>();
+            }
+            attr.xattr.remove(name);
             File file = createAttrFile(dest);
             FileUtils.writeStringToFile(file, JSON.toJSONString(attr), StandardCharsets.UTF_8);
             return 0;

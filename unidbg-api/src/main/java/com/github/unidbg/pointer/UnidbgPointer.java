@@ -176,10 +176,10 @@ public class UnidbgPointer extends Pointer implements PointerArg {
             data = new byte[length];
             System.arraycopy(buf, index, data, 0, length);
         }
-        long addr = peer + offset;
-        backend.mem_write(addr, data);
+        long address = peer + offset;
+        backend.mem_write(address, data);
         if (listener != null) {
-            listener.onSystemWrite(addr, data);
+            listener.onSystemWrite(address, data);
         }
     }
 

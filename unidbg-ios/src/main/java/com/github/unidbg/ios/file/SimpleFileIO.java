@@ -242,6 +242,11 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     }
 
     @Override
+    public int removexattr(String name) {
+        return removexattr(file, name);
+    }
+
+    @Override
     public int setxattr(String name, byte[] data) {
         return setxattr(file, name, data);
     }

@@ -38,4 +38,3 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework CoreTelephony "CoreFoundation"
