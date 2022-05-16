@@ -39,6 +39,12 @@ class HypervisorWatchpoint {
     }
 
     public void install(Hypervisor hypervisor) {
-        hypervisor.install_watchpoint(n, begin, end, isWrite);
+        long dbgwcr = 0x25;
+        if (isWrite) {
+            dbgwcr |= 0b10 << 3;
+        } else {
+            dbgwcr |= 0b01 << 3;
+        }
+        hypervisor.install_watchpoint(n, begin, dbgwcr);
     }
 }
