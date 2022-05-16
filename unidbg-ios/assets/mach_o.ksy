@@ -117,6 +117,9 @@ enums:
     0x2F      : version_min_tvos
     0x30      : version_min_watchos
     0x32      : build_version
+    0x80000033: dyld_exports_trie
+    0x80000034: dyld_chained_fixups
+    0x80000035: dyld_fileset_entry
 types:
   macho_flags:
     params:
@@ -284,6 +287,9 @@ types:
             'load_command_type::dylib_code_sign_drs'     : linkedit_data_command
             'load_command_type::linker_optimization_hint': linkedit_data_command
             'load_command_type::segment_split_info'      : linkedit_data_command
+            'load_command_type::dyld_exports_trie'       : linkedit_data_command
+            'load_command_type::dyld_chained_fixups'     : linkedit_data_command
+            'load_command_type::dyld_fileset_entry'      : linkedit_data_command
             'load_command_type::code_signature'          : code_signature_command
             'load_command_type::encryption_info_64'      : encryption_info_command
             'load_command_type::encryption_info'         : encryption_info_command

@@ -3,14 +3,13 @@
 package io.kaitai;
 
 import io.kaitai.struct.ByteBufferKaitaiStream;
-import io.kaitai.struct.KaitaiStream;
 import io.kaitai.struct.KaitaiStruct;
-
+import io.kaitai.struct.KaitaiStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.nio.charset.Charset;
 
 public class MachO extends KaitaiStruct {
     public static MachO fromFile(String fileName) throws IOException {
@@ -144,12 +143,15 @@ public class MachO extends KaitaiStruct {
         REEXPORT_DYLIB(0x8000001fL),
         DYLD_INFO_ONLY(0x80000022L),
         LOAD_UPWARD_DYLIB(0x80000023L),
-        MAIN(0x80000028L);
+        MAIN(0x80000028L),
+        DYLD_EXPORTS_TRIE(0x80000033L),
+        DYLD_CHAINED_FIXUPS(0x80000034L),
+        DYLD_FILESET_ENTRY(0x80000035L);
 
         private final long id;
         LoadCommandType(long id) { this.id = id; }
         public long id() { return id; }
-        private static final Map<Long, LoadCommandType> byId = new HashMap<Long, LoadCommandType>(51);
+        private static final Map<Long, LoadCommandType> byId = new HashMap<Long, LoadCommandType>(54);
         static {
             for (LoadCommandType e : LoadCommandType.values())
                 byId.put(e.id(), e);
@@ -180,7 +182,7 @@ public class MachO extends KaitaiStruct {
             this.header = new MachHeader(this._io, this, _root);
         }
         if ( ((magic() != MagicType.FAT_BE) && (magic() != MagicType.FAT_LE)) ) {
-            loadCommands = new ArrayList<LoadCommand>(((Number) (header().ncmds())).intValue());
+            this.loadCommands = new ArrayList<LoadCommand>();
             for (int i = 0; i < header().ncmds(); i++) {
                 this.loadCommands.add(new LoadCommand(this._io, this, _root));
             }
@@ -207,7 +209,7 @@ public class MachO extends KaitaiStruct {
         }
         private void _read() {
             this.pathOffset = this._io.readU4le();
-            this.path = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("utf-8"));
+            this.path = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("utf-8"));
         }
         private long pathOffset;
         private String path;
@@ -501,7 +503,7 @@ public class MachO extends KaitaiStruct {
                     return this.ident;
                 long _pos = this._io.pos();
                 this._io.seek((identOffset() - 8));
-                this.ident = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("utf-8"));
+                this.ident = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("utf-8"));
                 this._io.seek(_pos);
                 return this.ident;
             }
@@ -511,7 +513,7 @@ public class MachO extends KaitaiStruct {
                     return this.teamId;
                 long _pos = this._io.pos();
                 this._io.seek((teamIdOffset() - 8));
-                this.teamId = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("utf-8"));
+                this.teamId = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("utf-8"));
                 this._io.seek(_pos);
                 return this.teamId;
             }
@@ -521,7 +523,7 @@ public class MachO extends KaitaiStruct {
                     return this.hashes;
                 long _pos = this._io.pos();
                 this._io.seek(((hashOffset() - 8) - (hashSize() * nSpecialSlots())));
-                hashes = new ArrayList<byte[]>(((Number) ((nSpecialSlots() + nCodeSlots()))).intValue());
+                this.hashes = new ArrayList<byte[]>();
                 for (int i = 0; i < (nSpecialSlots() + nCodeSlots()); i++) {
                     this.hashes.add(this._io.readBytes(hashSize()));
                 }
@@ -617,7 +619,7 @@ public class MachO extends KaitaiStruct {
             }
             private void _read() {
                 this.count = this._io.readU4be();
-                blobs = new ArrayList<BlobIndex>(((Number) (count())).intValue());
+                this.blobs = new ArrayList<BlobIndex>();
                 for (int i = 0; i < count(); i++) {
                     this.blobs.add(new BlobIndex(this._io, this, _root));
                 }
@@ -1264,7 +1266,7 @@ public class MachO extends KaitaiStruct {
             }
             private void _read() {
                 this.count = this._io.readU4be();
-                items = new ArrayList<RequirementsBlobIndex>(((Number) (count())).intValue());
+                this.items = new ArrayList<RequirementsBlobIndex>();
                 for (int i = 0; i < count(); i++) {
                     this.items.add(new RequirementsBlobIndex(this._io, this, _root));
                 }
@@ -1421,7 +1423,7 @@ public class MachO extends KaitaiStruct {
             this.minos = new Version(this._io, this, _root);
             this.sdk = new Version(this._io, this, _root);
             this.ntools = this._io.readU4le();
-            buildToolVersions = new ArrayList<BuildToolVersion>(((Number) (ntools())).intValue());
+            this.buildToolVersions = new ArrayList<BuildToolVersion>();
             for (int i = 0; i < ntools(); i++) {
                 this.buildToolVersions.add(new BuildToolVersion(this._io, this, _root));
             }
@@ -1819,7 +1821,7 @@ public class MachO extends KaitaiStruct {
         }
         private void _read() {
             this.nfatArch = this._io.readU4be();
-            fatArchs = new ArrayList<FatArch>(((Number) (nfatArch())).intValue());
+            this.fatArchs = new ArrayList<FatArch>();
             for (int i = 0; i < nfatArch(); i++) {
                 this.fatArchs.add(new FatArch(this._io, this, _root));
             }
@@ -1937,9 +1939,9 @@ public class MachO extends KaitaiStruct {
         }
         private void _read() {
             this.numStrings = this._io.readU4le();
-            strings = new ArrayList<String>(((Number) (numStrings())).intValue());
+            this.strings = new ArrayList<String>();
             for (int i = 0; i < numStrings(); i++) {
-                this.strings.add(new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("utf-8")));
+                this.strings.add(new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("utf-8")));
             }
         }
         private long numStrings;
@@ -1980,7 +1982,7 @@ public class MachO extends KaitaiStruct {
             this.initprot = new VmProt(this._io, this, _root);
             this.nsects = this._io.readU4le();
             this.flags = this._io.readU4le();
-            sections = new ArrayList<Section64>(((Number) (nsects())).intValue());
+            this.sections = new ArrayList<Section64>();
             for (int i = 0; i < nsects(); i++) {
                 this.sections.add(new Section64(this._io, this, _root));
             }
@@ -2348,7 +2350,7 @@ public class MachO extends KaitaiStruct {
                     {
                         int i = 0;
                         while (!this._io.isEof()) {
-                            this.strings.add(new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("ascii")));
+                            this.strings.add(new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("ascii")));
                             i++;
                         }
                     }
@@ -2675,7 +2677,7 @@ public class MachO extends KaitaiStruct {
             KaitaiStream io = _root._io();
             long _pos = io.pos();
             io.seek(indirectSymOff());
-            indirectSymbols = new ArrayList<Long>(((Number) (nIndirectSyms())).intValue());
+            this.indirectSymbols = new ArrayList<Long>();
             for (int i = 0; i < nIndirectSyms(); i++) {
                 this.indirectSymbols.add(io.readU4le());
             }
@@ -3082,7 +3084,7 @@ public class MachO extends KaitaiStruct {
                     this.skip = new Uleb128(this._io, this, _root);
                 }
                 if (opcode() == MachO.DyldInfoCommand.BindOpcode.SET_SYMBOL_TRAILING_FLAGS_IMMEDIATE) {
-                    this.symbol = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+                    this.symbol = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("ascii"));
                 }
             }
             private BindOpcode opcode;
@@ -3249,7 +3251,7 @@ public class MachO extends KaitaiStruct {
             private void _read() {
                 this.terminalSize = new Uleb128(this._io, this, _root);
                 this.childrenCount = this._io.readU1();
-                children = new ArrayList<Child>(((Number) (childrenCount())).intValue());
+                this.children = new ArrayList<Child>();
                 for (int i = 0; i < childrenCount(); i++) {
                     this.children.add(new Child(this._io, this, _root));
                 }
@@ -3275,7 +3277,7 @@ public class MachO extends KaitaiStruct {
                     _read();
                 }
                 private void _read() {
-                    this.name = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+                    this.name = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("ascii"));
                     this.nodeOffset = new Uleb128(this._io, this, _root);
                 }
                 private ExportNode value;
@@ -3563,7 +3565,7 @@ public class MachO extends KaitaiStruct {
             this.timestamp = this._io.readU4le();
             this.currentVersion = this._io.readU4le();
             this.compatibilityVersion = this._io.readU4le();
-            this.name = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("utf-8"));
+            this.name = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("utf-8"));
         }
         private long nameOffset;
         private long timestamp;
@@ -3609,7 +3611,7 @@ public class MachO extends KaitaiStruct {
             this.initprot = new VmProt(this._io, this, _root);
             this.nsects = this._io.readU4le();
             this.flags = this._io.readU4le();
-            sections = new ArrayList<Section>(((Number) (nsects())).intValue());
+            this.sections = new ArrayList<Section>();
             for (int i = 0; i < nsects(); i++) {
                 this.sections.add(new Section(this._io, this, _root));
             }
@@ -3719,7 +3721,7 @@ public class MachO extends KaitaiStruct {
         }
         private void _read() {
             this.length = this._io.readU4le();
-            this.value = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("UTF-8"));
+            this.value = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("UTF-8"));
         }
         private long length;
         private String value;
@@ -3820,6 +3822,12 @@ public class MachO extends KaitaiStruct {
                         this._raw_body = this._io.readBytes((size() - 8));
                         KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
                         this.body = new DylinkerCommand(_io__raw_body, this, _root);
+                        break;
+                    }
+                    case DYLD_CHAINED_FIXUPS: {
+                        this._raw_body = this._io.readBytes((size() - 8));
+                        KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
+                        this.body = new LinkeditDataCommand(_io__raw_body, this, _root);
                         break;
                     }
                     case LOAD_DYLINKER: {
@@ -3978,6 +3986,18 @@ public class MachO extends KaitaiStruct {
                         this.body = new DylibCommand(_io__raw_body, this, _root);
                         break;
                     }
+                    case DYLD_EXPORTS_TRIE: {
+                        this._raw_body = this._io.readBytes((size() - 8));
+                        KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
+                        this.body = new LinkeditDataCommand(_io__raw_body, this, _root);
+                        break;
+                    }
+                    case DYLD_FILESET_ENTRY: {
+                        this._raw_body = this._io.readBytes((size() - 8));
+                        KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
+                        this.body = new LinkeditDataCommand(_io__raw_body, this, _root);
+                        break;
+                    }
                     case LAZY_LOAD_DYLIB: {
                         this._raw_body = this._io.readBytes((size() - 8));
                         KaitaiStream _io__raw_body = new ByteBufferKaitaiStream(_raw_body);
@@ -4099,7 +4119,7 @@ public class MachO extends KaitaiStruct {
                     String _it;
                     int i = 0;
                     do {
-                        _it = new String(this._io.readBytesTerm(0, false, true, true), Charset.forName("ascii"));
+                        _it = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("ascii"));
                         this.items.add(_it);
                         i++;
                     } while (!(_it.equals("")));
@@ -4184,7 +4204,7 @@ public class MachO extends KaitaiStruct {
             KaitaiStream io = _root._io();
             long _pos = io.pos();
             io.seek(symOff());
-            symbols = new ArrayList<Nlist>(((Number) (nSyms())).intValue());
+            this.symbols = new ArrayList<Nlist>();
             for (int i = 0; i < nSyms(); i++) {
                 this.symbols.add(new Nlist(io, this, _root));
             }

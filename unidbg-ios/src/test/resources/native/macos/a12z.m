@@ -29,5 +29,13 @@ int main(int argc, char *argv[]) {
   int ret = test_ldadd(&v);
   printf("Test v=0x%x, ret=0x%x\n", v, ret);
 
+  char vc;
+  short vs;
+  int vi;
+  long vl;
+  float vf;
+  double vd;
+  printf("Memory test: vc[%p]=0x%x, vs[%p]=0x%x, vi[%p]=0x%x, vl[%p]=0x%lx, vf[%p]=%f, vd[%p]=%lf\n", &vc, vc, &vs, vs, &vi, vi, &vl, vl, &vf, vf, &vd, vd);
+
   return 0;
 }

@@ -488,6 +488,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ROUTINES_64:
                 case LOAD_WEAK_DYLIB:
                 case BUILD_VERSION:
+                case DYLD_CHAINED_FIXUPS:
+                case DYLD_EXPORTS_TRIE:
                     break;
                 case SUB_CLIENT:
                     MachO.SubCommand subCommand = (MachO.SubCommand) command.body();
@@ -1171,7 +1173,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             boolean ret = true;
             for (MachO.LoadCommand command : module.machO.loadCommands()) {
                 switch (command.type()) {
-                    case SEGMENT:
+                    case SEGMENT: {
                         MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
                         for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
                             long type = section.flags() & SECTION_TYPE;
@@ -1236,8 +1238,73 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                             }
                         }
                         break;
-                    case SEGMENT_64:
-                        throw new UnsupportedOperationException("bindIndirectSymbolPointers SEGMENT_64");
+                    }
+                    case SEGMENT_64: {
+                        MachO.SegmentCommand64 segmentCommand = (MachO.SegmentCommand64) command.body();
+                        for (MachO.SegmentCommand64.Section64 section : segmentCommand.sections()) {
+                            long type = section.flags() & SECTION_TYPE;
+                            long elementCount = section.size() / emulator.getPointerSize();
+
+                            if (type != S_NON_LAZY_SYMBOL_POINTERS && type != S_LAZY_SYMBOL_POINTERS) {
+                                continue;
+                            }
+
+                            long ptrToBind = section.addr();
+                            int indirectTableOffset = (int) section.reserved1();
+                            for (int i = 0; i < elementCount; i++, ptrToBind += emulator.getPointerSize()) {
+                                long symbolIndex = indirectTable.get(indirectTableOffset + i);
+                                if (symbolIndex == INDIRECT_SYMBOL_ABS) {
+                                    continue; // do nothing since already has absolute address
+                                }
+                                if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
+                                    UnidbgPointer pointer = UnidbgPointer.pointer(emulator, ptrToBind + module.base);
+                                    if (pointer == null) {
+                                        throw new IllegalStateException("pointer is null");
+                                    }
+                                    Pointer newPointer = pointer.getPointer(0);
+                                    if (newPointer == null) {
+                                        newPointer = UnidbgPointer.pointer(emulator, module.base);
+                                    } else {
+                                        newPointer = newPointer.share(module.base);
+                                    }
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("bindIndirectSymbolPointers pointer=" + pointer + ", newPointer=" + newPointer);
+                                    }
+                                    pointer.setPointer(0, newPointer);
+                                    continue;
+                                }
+
+                                MachOSymbol symbol = module.getSymbolByIndex((int) symbolIndex);
+                                if (symbol == null) {
+                                    log.warn("bindIndirectSymbolPointers symbol is null");
+                                    ret = false;
+                                    continue;
+                                }
+
+                                boolean isWeakRef = (symbol.nlist.desc() & N_WEAK_REF) != 0;
+                                long address = resolveSymbol(module, symbol);
+
+                                UnidbgPointer pointer = UnidbgPointer.pointer(emulator, ptrToBind + module.base);
+                                if (pointer == null) {
+                                    throw new IllegalStateException("pointer is null");
+                                }
+                                if (address == 0L) {
+                                    if (isWeakRef) {
+                                        log.info("bindIndirectSymbolPointers symbol=" + symbol + ", isWeakRef=true");
+                                        pointer.setPointer(0, null);
+                                    } else {
+                                        log.warn("bindIndirectSymbolPointers failed symbol=" + symbol);
+                                    }
+                                } else {
+                                    pointer.setPointer(0, UnidbgPointer.pointer(emulator, address));
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", symbol=" + symbol + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
                 }
             }
 

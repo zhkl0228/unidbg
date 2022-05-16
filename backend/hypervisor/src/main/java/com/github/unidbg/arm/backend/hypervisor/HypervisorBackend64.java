@@ -280,7 +280,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
         OpInfo opInfo = (OpInfo) insn.getOperands();
         if (opInfo.isUpdateFlags() || opInfo.isWriteBack() || !insn.getMnemonic().startsWith("ldr") || vaddr < _COMM_PAGE64_BASE_ADDRESS) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("insn=" + insn + ", vaddr=0x" + Long.toHexString(vaddr));
         }
         Operand[] op = opInfo.getOperands();
         int offset = (int) (vaddr - _COMM_PAGE64_BASE_ADDRESS);
