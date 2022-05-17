@@ -223,14 +223,19 @@ public class HypervisorBackend64 extends HypervisorBackend {
         if (log.isDebugEnabled()) {
             log.debug("onWatchpoint write=" + write + ", address=0x" + Long.toHexString(address) + ", status=0x" + Integer.toHexString(status));
         }
+        boolean hit = false;
         for (int i = 0; i < watchpoints.length; i++) {
             if (watchpoints[i] != null && watchpoints[i].contains(address, write)) {
-                watchpoints[i].onHit(this, address, write);
-                installRestoreWatchpoint(i, watchpoints[i]);
-                return;
+                hit = true;
+                if (watchpoints[i].onHit(this, address, write)) {
+                    installRestoreWatchpoint(i, watchpoints[i]);
+                    return;
+                }
             }
         }
-        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+        if (!hit) {
+            interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+        }
     }
 
     private void installRestoreWatchpoint(int n, final HypervisorWatchpoint watchpoint) {

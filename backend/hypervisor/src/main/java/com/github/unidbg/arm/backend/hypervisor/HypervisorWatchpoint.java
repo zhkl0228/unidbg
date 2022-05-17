@@ -84,13 +84,16 @@ class HypervisorWatchpoint {
         return address >= dbgwvr && address < (dbgwvr + bytes);
     }
 
-    public void onHit(Backend backend, long address, boolean isWrite) {
+    public boolean onHit(Backend backend, long address, boolean isWrite) {
         if (address >= begin && address < end) {
             if (isWrite) {
                 ((WriteHook) callback).hook(backend, address, 0, 0, user_data);
             } else {
                 ((ReadHook) callback).hook(backend, address, 0, user_data);
             }
+            return true;
+        } else {
+            return false;
         }
     }
 
