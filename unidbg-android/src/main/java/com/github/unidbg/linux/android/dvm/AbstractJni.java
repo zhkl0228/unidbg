@@ -18,24 +18,20 @@ import net.dongliu.apk.parser.bean.CertificateMeta;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public abstract class AbstractJni implements Jni {
 
@@ -111,6 +107,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature) {
+        switch (signature){
+            case "android/content/pm/PackageManager->GET_SIGNATURES:I":{
+                return 0x40;
+            }
+        }
         throw new UnsupportedOperationException(signature);
     }
 
@@ -368,6 +369,25 @@ public abstract class AbstractJni implements Jni {
             case "java/util/Set->iterator()Ljava/util/Iterator;":
                 Set<?> set = (Set<?>) dvmObject.getValue();
                 return vm.resolveClass("java/util/Iterator").newObject(set.iterator());
+            case "java/util/UUID->toString()Ljava/lang/String;": {
+                UUID uuid = (UUID) dvmObject.getValue();
+                return new StringObject(vm, uuid.toString());
+            }
+            case "java/lang/CharSequence->toString()Ljava/lang/String;": {
+                return new StringObject(vm, dvmObject.value.toString());
+            }
+            case "java/lang/String->toLowerCase()Ljava/lang/String;":{
+                return new StringObject(vm, dvmObject.value.toString().toLowerCase());
+            }
+            case "android/content/pm/PackageManager->getApplicationInfo(Ljava/lang/String;I)Landroid/content/pm/ApplicationInfo;":
+                StringObject packageName = vaList.getObjectArg(0);
+                if(packageName.value.equals(vm.getPackageName())){
+                    return new ApplicationInfo(vm);
+                }
+            case "java/lang/String->trim()Ljava/lang/String;":{
+                StringObject stringObject = (StringObject) dvmObject;
+                return new StringObject(vm, stringObject.value.trim());
+            }
         }
 
         throw new UnsupportedOperationException(signature);
@@ -380,6 +400,14 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        switch (signature){
+            case "android/app/ActivityThread->currentPackageName()Ljava/lang/String;": {
+                String packageName = vm.getPackageName();
+                if(packageName != null){
+                    return new StringObject(vm, packageName);
+                }
+            }
+        }
         throw new UnsupportedOperationException(signature);
     }
 
@@ -407,18 +435,45 @@ public abstract class AbstractJni implements Jni {
                 StringObject type = vaList.getObjectArg(0);
                 assert type != null;
                 try {
-                    return vm.resolveClass("java/security/cert/CertificateFactory").newObject(CertificateFactory.getInstance(type.value));
+                    return dvmClass.newObject(CertificateFactory.getInstance(type.value));
                 } catch (CertificateException e) {
                     throw new IllegalStateException(e);
+                }
+            }
+            case "java/security/KeyFactory->getInstance(Ljava/lang/String;)Ljava/security/KeyFactory;":{
+                StringObject algorithm = vaList.getObjectArg(0);
+                assert algorithm != null;
+                try {
+                    return dvmClass.newObject(KeyFactory.getInstance(algorithm.value));
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+            }
+            case "javax/crypto/Cipher->getInstance(Ljava/lang/String;)Ljavax/crypto/Cipher;":{
+                StringObject transformation = vaList.getObjectArg(0);
+                assert transformation != null;
+                try {
+                    return dvmClass.newObject(Cipher.getInstance(transformation.value));
+                } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    e.printStackTrace();
                 }
             }
             case "java/security/MessageDigest->getInstance(Ljava/lang/String;)Ljava/security/MessageDigest;": {
                 StringObject type = vaList.getObjectArg(0);
                 assert type != null;
                 try {
-                    return vm.resolveClass("java/security/MessageDigest").newObject(MessageDigest.getInstance(type.value));
+                    return dvmClass.newObject(MessageDigest.getInstance(type.value));
                 } catch (NoSuchAlgorithmException e) {
                     throw new IllegalStateException(e);
+                }
+            }
+            case "java/util/UUID->randomUUID()Ljava/util/UUID;":{
+                return dvmClass.newObject(UUID.randomUUID());
+            }
+            case "android/app/ActivityThread->currentPackageName()Ljava/lang/String;": {
+                String packageName = vm.getPackageName();
+                if(packageName != null){
+                    return new StringObject(vm, packageName);
                 }
             }
         }
@@ -537,6 +592,11 @@ public abstract class AbstractJni implements Jni {
                 if (iterator instanceof Iterator) {
                     return ((Iterator<?>) iterator).hasNext();
                 }
+            case "java/lang/String->startsWith(Ljava/lang/String;)Z":{
+                StringObject stringObject = (StringObject) dvmObject.getValue();
+                StringObject prefix = vaList.getObjectArg(0);
+                return stringObject.value.startsWith(prefix.value);
+            }
         }
 
         throw new UnsupportedOperationException(signature);
@@ -549,6 +609,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public int getIntField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
+        switch (signature){
+            case "android/content/pm/PackageInfo->versionCode:I":{
+                return (int) vm.getVersionCode();
+            }
+        };
         throw new UnsupportedOperationException(signature);
     }
 
@@ -685,6 +750,22 @@ public abstract class AbstractJni implements Jni {
                     throw new IllegalStateException(e);
                 }
             }
+            case "javax/crypto/spec/SecretKeySpec-><init>([BLjava/lang/String;)V":{
+                byte[] key = (byte[]) vaList.getObjectArg(0).value;
+                StringObject algorithm = vaList.getObjectArg(1);
+                assert algorithm != null;
+                SecretKeySpec secretKeySpec = new SecretKeySpec(key, algorithm.value);
+                return dvmClass.newObject(secretKeySpec);
+            }
+            case "java/lang/Integer-><init>(I)V": {
+                int i = vaList.getIntArg(0);
+                return DvmInteger.valueOf(vm, i);
+            }
+            case "java/lang/Boolean-><init>(Z)V":{
+                boolean b;
+                b = vaList.getIntArg(0) != 0;
+                return DvmBoolean.valueOf(vm, b);
+            }
         }
 
         throw new UnsupportedOperationException(signature);
@@ -773,8 +854,10 @@ public abstract class AbstractJni implements Jni {
             case "android/content/Context->getApplicationInfo()Landroid/content/pm/ApplicationInfo;":
             case "android/app/Activity->getApplicationInfo()Landroid/content/pm/ApplicationInfo;":
                 return new ApplicationInfo(vm);
-            case "android/content/Context->getPackageName()Ljava/lang/String;":
-            case "android/app/Activity->getPackageName()Ljava/lang/String;": {
+            case "android/app/Application->getPackageName()Ljava/lang/String;":
+            case "android/content/ContextWrapper->getPackageName()Ljava/lang/String;":
+            case "android/app/Activity->getPackageName()Ljava/lang/String;":
+            case "android/content/Context->getPackageName()Ljava/lang/String;": {
                 String packageName = vm.getPackageName();
                 if (packageName != null) {
                     return new StringObject(vm, packageName);
@@ -877,6 +960,20 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        switch (signature){
+            case "javax/crypto/Cipher->init(ILjava/security/Key;)V":{
+                Cipher cipher = (Cipher) dvmObject.getValue();
+                int opmode = vaList.getIntArg(0);
+                Key key = (Key) vaList.getObjectArg(1).getValue();
+                assert key != null;
+                try {
+                    cipher.init(opmode, key);
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+        }
         throw new UnsupportedOperationException(signature);
     }
 
