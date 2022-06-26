@@ -261,7 +261,6 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (log.isDebugEnabled()) {
             log.debug("read fd=" + fd + ", buffer=" + buffer + ", count=" + count + ", from=" + emulator.getContext().getLRPointer());
         }
-
         FileIO file = fdMap.get(fd);
         if (file == null) {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
@@ -278,7 +277,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             } else {
                 bytes = buffer.getByteArray(0, read);
             }
-            fileListener.onRead(emulator, String.valueOf(file), bytes);
+            fileListener.onRead(emulator, String.valueOf(file), buffer, bytes);
         }
         return read;
     }
@@ -547,7 +546,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             } else {
                 bytes = Arrays.copyOf(data, write);
             }
-            fileListener.onWrite(emulator, String.valueOf(file), bytes);
+            fileListener.onWrite(emulator, String.valueOf(file), buffer, bytes);
         }
         return write;
     }
