@@ -685,7 +685,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
                 if (verbose) {
                     System.out.printf("bsdthread_create start_routine=%s, stack=%s, thread=%s%n", start_routine, stack, thread);
                 }
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     createBreaker(emulator).debug();
                 }
 

@@ -26,12 +26,23 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public abstract class AbstractJni implements Jni {
 
@@ -107,10 +118,8 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public int getStaticIntField(BaseVM vm, DvmClass dvmClass, String signature) {
-        switch (signature){
-            case "android/content/pm/PackageManager->GET_SIGNATURES:I":{
-                return 0x40;
-            }
+        if ("android/content/pm/PackageManager->GET_SIGNATURES:I".equals(signature)) {
+            return 0x40;
         }
         throw new UnsupportedOperationException(signature);
     }
@@ -376,13 +385,15 @@ public abstract class AbstractJni implements Jni {
             case "java/lang/CharSequence->toString()Ljava/lang/String;": {
                 return new StringObject(vm, dvmObject.value.toString());
             }
-            case "java/lang/String->toLowerCase()Ljava/lang/String;":{
+            case "java/lang/String->toLowerCase()Ljava/lang/String;": {
                 return new StringObject(vm, dvmObject.value.toString().toLowerCase());
             }
             case "android/content/pm/PackageManager->getApplicationInfo(Ljava/lang/String;I)Landroid/content/pm/ApplicationInfo;":
                 StringObject packageName = vaList.getObjectArg(0);
                 if(packageName.value.equals(vm.getPackageName())){
                     return new ApplicationInfo(vm);
+                } else {
+                    throw new UnsupportedOperationException(signature);
                 }
             case "java/lang/String->trim()Ljava/lang/String;":{
                 StringObject stringObject = (StringObject) dvmObject;
@@ -400,12 +411,10 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public DvmObject<?> callStaticObjectMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
-        switch (signature){
-            case "android/app/ActivityThread->currentPackageName()Ljava/lang/String;": {
-                String packageName = vm.getPackageName();
-                if(packageName != null){
-                    return new StringObject(vm, packageName);
-                }
+        if ("android/app/ActivityThread->currentPackageName()Ljava/lang/String;".equals(signature)) {
+            String packageName = vm.getPackageName();
+            if (packageName != null) {
+                return new StringObject(vm, packageName);
             }
         }
         throw new UnsupportedOperationException(signature);
@@ -446,7 +455,7 @@ public abstract class AbstractJni implements Jni {
                 try {
                     return dvmClass.newObject(KeyFactory.getInstance(algorithm.value));
                 } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
+                    throw new IllegalStateException(e);
                 }
             }
             case "javax/crypto/Cipher->getInstance(Ljava/lang/String;)Ljavax/crypto/Cipher;":{
@@ -455,7 +464,7 @@ public abstract class AbstractJni implements Jni {
                 try {
                     return dvmClass.newObject(Cipher.getInstance(transformation.value));
                 } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-                    e.printStackTrace();
+                    throw new IllegalStateException(e);
                 }
             }
             case "java/security/MessageDigest->getInstance(Ljava/lang/String;)Ljava/security/MessageDigest;": {
@@ -475,6 +484,7 @@ public abstract class AbstractJni implements Jni {
                 if(packageName != null){
                     return new StringObject(vm, packageName);
                 }
+                break;
             }
         }
 
@@ -609,11 +619,9 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public int getIntField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
-        switch (signature){
-            case "android/content/pm/PackageInfo->versionCode:I":{
-                return (int) vm.getVersionCode();
-            }
-        };
+        if ("android/content/pm/PackageInfo->versionCode:I".equals(signature)) {
+            return (int) vm.getVersionCode();
+        }
         throw new UnsupportedOperationException(signature);
     }
 
@@ -960,19 +968,17 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
-        switch (signature){
-            case "javax/crypto/Cipher->init(ILjava/security/Key;)V":{
-                Cipher cipher = (Cipher) dvmObject.getValue();
-                int opmode = vaList.getIntArg(0);
-                Key key = (Key) vaList.getObjectArg(1).getValue();
-                assert key != null;
-                try {
-                    cipher.init(opmode, key);
-                } catch (InvalidKeyException e) {
-                    e.printStackTrace();
-                }
-                return;
+        if ("javax/crypto/Cipher->init(ILjava/security/Key;)V".equals(signature)) {
+            Cipher cipher = (Cipher) dvmObject.getValue();
+            int opmode = vaList.getIntArg(0);
+            Key key = (Key) vaList.getObjectArg(1).getValue();
+            assert key != null;
+            try {
+                cipher.init(opmode, key);
+            } catch (InvalidKeyException e) {
+                throw new IllegalStateException(e);
             }
+            return;
         }
         throw new UnsupportedOperationException(signature);
     }

@@ -318,13 +318,13 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         System.gc();
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heap = memoryMXBean.getHeapMemoryUsage();
-        MemoryUsage nonheap = memoryMXBean.getNonHeapMemoryUsage();
+        MemoryUsage nonHeap = memoryMXBean.getNonHeapMemoryUsage();
         Map<Integer, ObjRef> map = new HashMap<>(globalObjectMap);
         for (Integer key : classMap.keySet()) {
             map.remove(key);
         }
         System.err.println("globalObjectSize=" + globalObjectMap.size() + ", localObjectSize=" + localObjectMap.size() + ", weakGlobalObjectSize=" + weakGlobalObjectMap.size() + ", classSize=" + classMap.size() + ", globalObjectSize=" + map.size());
-        System.err.println("heap: " + memoryUsage(heap) + ", nonheap: " + memoryUsage(nonheap));
+        System.err.println("heap: " + memoryUsage(heap) + ", nonHeap: " + memoryUsage(nonHeap));
     }
 
     private String toMB(long memory) {
