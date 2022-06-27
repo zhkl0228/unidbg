@@ -182,10 +182,13 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         long currentTimeMillis = System.currentTimeMillis();
         long tv_sec = currentTimeMillis / 1000;
         long tv_usec = (currentTimeMillis % 1000) * 1000;
-        TimeVal32 timeVal = new TimeVal32(tv);
-        timeVal.tv_sec = (int) tv_sec;
-        timeVal.tv_usec = (int) tv_usec;
-        timeVal.pack();
+        
+        if (tv != null) {
+            TimeVal32 timeVal = new TimeVal32(tv);
+            timeVal.tv_sec = (int) tv_sec;
+            timeVal.tv_usec = (int) tv_usec;
+            timeVal.pack();
+        }
 
         if (tz != null) {
             Calendar calendar = Calendar.getInstance();
