@@ -226,6 +226,7 @@ typedef enum UIDeviceBatteryState : NSInteger {
 @end
 
 id __NSArray0__;
+id __NSDictionary0__;
 
 @interface UICollectionReusableView : UIView
 @end

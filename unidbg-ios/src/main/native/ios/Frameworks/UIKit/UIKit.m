@@ -411,4 +411,5 @@ void UIGraphicsEndImageContext() {
 __attribute__((constructor))
 void init() {
   __NSArray0__ = [NSArray array];
+  __NSDictionary0__ = [NSDictionary dictionary];
 }

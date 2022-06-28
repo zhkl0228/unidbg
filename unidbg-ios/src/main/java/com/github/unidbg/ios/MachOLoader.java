@@ -1389,6 +1389,15 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 throw new IllegalStateException();
             }
         }
+        if ("___NSDictionary0__".equals(symbolName)) {
+            targetImage = this.modules.get("UIKit");
+            if (targetImage == null) {
+                targetImage = this.modules.get("AppKit");
+            }
+            if (targetImage == null) {
+                throw new IllegalStateException();
+            }
+        }
         Symbol symbol = targetImage.findSymbolByName(symbolName, true);
         if (symbol == null) {
             symbol = targetImage.getExportByName(symbolName);

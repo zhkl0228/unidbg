@@ -114,7 +114,7 @@ import static com.github.unidbg.ios.file.SocketIO.AF_LINK;
 import static com.github.unidbg.ios.file.SocketIO.AF_ROUTE;
 
 /**
- * http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h
+ * <a href="http://androidxref.com/4.4.4_r1/xref/external/kernel-headers/original/asm-arm/unistd.h">...</a>
  */
 public class ARM64SyscallHandler extends DarwinSyscallHandler {
 
@@ -477,7 +477,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal(emulator));
                     return;
                 case 336:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator, 0));
                     return;
                 case 338:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, stat64(emulator, 0));
@@ -489,7 +489,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator, 0));
                     return;
                 case 344:
-                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getdirentries64(emulator));
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getdirentries64(emulator, 0));
                     return;
                 case 345:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, statfs64(emulator));
@@ -801,8 +801,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             case 202:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, sysctl(emulator, 1));
                 return true;
+            case 336:
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, proc_info(emulator, 1));
+                return true;
             case 338:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, stat64(emulator, 1));
+                return true;
+            case 344:
+                backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getdirentries64(emulator, 1));
                 return true;
             case 347:
                 backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getfsstat64(emulator, 1));
@@ -1034,12 +1040,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    private int getdirentries64(Emulator<?> emulator) {
+    private int getdirentries64(Emulator<?> emulator, int index) {
         RegisterContext context = emulator.getContext();
-        int fd = context.getIntArg(0);
-        UnidbgPointer buf = context.getPointerArg(1);
-        int bufSize = context.getIntArg(2);
-        Pointer basep = context.getPointerArg(3);
+        int fd = context.getIntArg(index);
+        UnidbgPointer buf = context.getPointerArg(index + 1);
+        int bufSize = context.getIntArg(index + 2);
+        Pointer basep = context.getPointerArg(index + 3);
         if (log.isDebugEnabled()) {
             log.debug("getdirentries64 fd=" + fd + ", buf=" + buf + ", bufSize=" + bufSize + ", basep=" + basep + ", LR=" + context.getLRPointer());
         }
@@ -1309,14 +1315,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     private static final int PROC_PIDPATHINFO = 11;
     private static final int PROC_PIDT_SHORTBSDINFO = 13;
 
-    private int proc_info(Emulator<?> emulator) {
+    private int proc_info(Emulator<?> emulator, int index) {
         RegisterContext context = emulator.getContext();
-        int callNum = context.getIntArg(0);
-        int pid = context.getIntArg(1);
-        int flavor = context.getIntArg(2);
-        long arg = context.getLongArg(3);
-        Pointer buffer = context.getPointerArg(4);
-        int bufferSize = context.getIntArg(5);
+        int callNum = context.getIntArg(index);
+        int pid = context.getIntArg(index + 1);
+        int flavor = context.getIntArg(index + 2);
+        long arg = context.getLongArg(index + 3);
+        Pointer buffer = context.getPointerArg(index + 4);
+        int bufferSize = context.getIntArg(index + 5);
 
         String msg = "proc_info callNum=" + callNum + ", pid=" + pid + ", flavor=" + flavor + ", arg=" + arg + ", buffer=" + buffer + ", bufferSize=" + bufferSize;
         if (PROC_INFO_CALL_SETCONTROL == callNum && PROC_SELFSET_THREADNAME == flavor) {
