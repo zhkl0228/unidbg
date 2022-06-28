@@ -68,6 +68,18 @@ public abstract class AbstractJni implements Jni {
                 return new StringObject(vm, SystemService.KEYGUARD_SERVICE);
             case "android/content/Context->ACTIVITY_SERVICE:Ljava/lang/String;":
                 return new StringObject(vm, SystemService.ACTIVITY_SERVICE);
+            case "android/content/Context->LOCATION_SERVICE:Ljava/lang/String;":
+                return new StringObject(vm, SystemService.LOCATION_SERVICE);
+            case "android/content/Context->WINDOW_SERVICE:Ljava/lang/String;":
+                return new StringObject(vm, SystemService.WINDOW_SERVICE);
+            case "android/content/Context->SENSOR_SERVICE:Ljava/lang/String;":
+                return new StringObject(vm, SystemService.SENSOR_SERVICE);
+            case "android/content/Context->UI_MODE_SERVICE:Ljava/lang/String;":
+                return new StringObject(vm, SystemService.UI_MODE_SERVICE);
+            case "android/content/Context->DISPLAY_SERVICE:Ljava/lang/String;":
+                return new StringObject(vm, SystemService.DISPLAY_SERVICE);
+            case "android/content/Context->AUDIO_SERVICE:Ljava/lang/String;":
+                return new StringObject(vm, SystemService.AUDIO_SERVICE);
             case "java/lang/Void->TYPE:Ljava/lang/Class;":
                 return vm.resolveClass("java/lang/Void");
             case "java/lang/Boolean->TYPE:Ljava/lang/Class;":
