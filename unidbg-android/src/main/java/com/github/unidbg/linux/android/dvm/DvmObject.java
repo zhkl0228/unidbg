@@ -153,11 +153,9 @@ public class DvmObject<T> extends Hashable {
     protected MemoryBlock memoryBlock;
 
     protected final UnidbgPointer allocateMemoryBlock(Emulator<?> emulator, int length) {
-        if (memoryBlock != null) {
-            throw new IllegalStateException("Already allocated array memory");
+        if (memoryBlock == null) {
+            memoryBlock = emulator.getMemory().malloc(length, true);
         }
-
-        memoryBlock = emulator.getMemory().malloc(length, true);
         return memoryBlock.getPointer();
     }
 
