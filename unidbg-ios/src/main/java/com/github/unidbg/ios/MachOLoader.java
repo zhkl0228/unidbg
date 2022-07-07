@@ -17,6 +17,7 @@ import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.file.FileIO;
+import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
@@ -92,13 +93,17 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         setStackPoint(stackBase);
         initializeTSD(envs);
-
-        addModuleListener(new LibDispatchPatcher());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void setLibraryResolver(LibraryResolver libraryResolver) {
-        syscallHandler.addIOResolver((DarwinResolver) libraryResolver);
+        if (libraryResolver instanceof IOResolver) {
+            syscallHandler.addIOResolver((IOResolver<DarwinFileIO>) libraryResolver);
+        }
+        if (libraryResolver instanceof DarwinResolver) {
+            addModuleListener(new LibDispatchPatcher());
+        }
         super.setLibraryResolver(libraryResolver);
 
         /*
@@ -231,12 +236,19 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
                 MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
                 if (loaded != null) {
+                    if (library.upward) {
+                        export.upwardLibraries.put(FilenameUtils.getBaseName(neededLibrary), loaded);
+                    }
                     continue;
                 }
-                LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.<String>emptySet());
+                LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.singletonList(FilenameUtils.getPath(libraryFile.getPath())));
                 if (neededLibraryFile != null) {
                     MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.<String>emptySet());
                     needed.addReferenceCount();
+
+                    if (library.upward) {
+                        export.upwardLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
+                    }
                 } else if (!library.weak) {
                     log.info(export.getPath() + " load dependency " + neededLibrary + " failed");
                 }
@@ -496,9 +508,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     String name = subCommand.name().value();
                     MachOModule module = (MachOModule) findModule(name);
                     if (module == null) {
-                        throw new IllegalStateException("Find sub client failed: " + name);
+                        log.debug("Find sub client failed: " + name);
+                    } else {
+                        subModule = module;
                     }
-                    subModule = module;
                     break;
                 case RPATH:
                     MachO.RpathCommand rpathCommand = (MachO.RpathCommand) command.body();
@@ -695,7 +708,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         Map<String, Module> upwardLibraries = new LinkedHashMap<>();
         final List<NeedLibrary> lazyLoadNeededList;
         if (loadNeeded) {
-            lazyLoadNeededList = Collections.emptyList();
+            lazyLoadNeededList = new ArrayList<>();
             for (NeedLibrary library : neededList) {
                 String neededLibrary = library.path;
                 if (log.isDebugEnabled()) {
@@ -708,15 +721,15 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     neededLibraries.put(FilenameUtils.getBaseName(loaded.name), loaded);
                     continue;
                 }
+                if (library.upward) {
+                    lazyLoadNeededList.add(library);
+                    continue;
+                }
                 LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, rpathSet);
                 if (neededLibraryFile != null) {
                     MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, rpathSet);
                     needed.addReferenceCount();
-                    if (library.upward) {
-                        upwardLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
-                    } else {
-                        neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
-                    }
+                    neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
                 } else if(!library.weak) {
                     log.info(dyId + " load dependency " + neededLibrary + " failed: rpath=" + rpathSet);
                 }

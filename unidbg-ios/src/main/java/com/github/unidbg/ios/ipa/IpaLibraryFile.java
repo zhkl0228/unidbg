@@ -63,7 +63,7 @@ public class IpaLibraryFile implements LibraryFile {
             log.debug("Try resolve library soName=" + soName + ", path=" + path);
         }
         if (path.contains("@")) {
-            log.warn("Try resolve library soName=" + soName + ", path=" + path);
+            log.warn("Try resolve library soName=" + soName + ", path=" + path, new Exception());
             return null;
         }
         if (!loadList.isEmpty() && !loadList.contains(FilenameUtils.getName(path))) {

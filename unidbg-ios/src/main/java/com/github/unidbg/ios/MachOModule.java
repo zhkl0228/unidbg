@@ -616,7 +616,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             findSet.addAll(exportModules.values());
             findSet.addAll(upwardLibraries.values());
             findSet.addAll(neededLibraries.values());
-            findSet.addAll(loader.getLoadedModules());
+//            findSet.addAll(loader.getLoadedModules());
             for (Module module : findSet) {
                 symbol = module.findSymbolByName(name, false);
                 if (symbol != null) {

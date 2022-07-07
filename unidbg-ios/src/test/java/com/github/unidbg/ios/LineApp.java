@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.DispatchAsyncCallback;
@@ -12,6 +13,7 @@ import com.github.unidbg.ios.ipa.IpaLoader;
 import com.github.unidbg.ios.ipa.IpaLoader64;
 import com.github.unidbg.ios.ipa.LoadedIpa;
 import com.github.unidbg.ios.objc.ObjC;
+import com.github.unidbg.ios.simulator.CoreSimulatorResolver;
 import com.github.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
@@ -48,6 +50,10 @@ public class LineApp implements EmulatorConfigurator, HookListener, DispatchAsyn
 
     protected IpaLoader createLoader(File ipa, File rootDir) {
         IpaLoader loader = new IpaLoader64(ipa, rootDir) {
+            @Override
+            protected LibraryResolver createLibraryResolver() {
+                return new CoreSimulatorResolver(new File("/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot"));
+            }
         };
         loader.addBackendFactory(new HypervisorFactory(true));
         return loader;
