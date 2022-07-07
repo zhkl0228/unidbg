@@ -1041,7 +1041,14 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             long address = resolveSymbol(module, symbol);
 
             if (address == 0L) {
-                log.warn("bindExternalRelocations failed symbol=" + symbol + ", isWeakRef=" + isWeakRef);
+                if (isWeakRef) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("bindExternalRelocations failed symbol=" + symbol + ", isWeakRef=true");
+                    }
+                    pointer.setPointer(0, null);
+                } else {
+                    log.warn("bindExternalRelocations failed symbol=" + symbol + ", isWeakRef=false");
+                }
                 ret = false;
             } else {
                 pointer.setPointer(0, UnidbgPointer.pointer(emulator, address));
@@ -1053,8 +1060,28 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return ret;
     }
 
-    private long resolveSymbol(Module module, Symbol symbol) {
-        Symbol replace = module.findSymbolByName(symbol.getName(), true);
+    private long resolveSymbol(MachOModule module, MachOSymbol symbol) {
+        int libraryOrdinal = symbol.getLibraryOrdinal();
+        Symbol replace = null;
+        if (libraryOrdinal == BIND_SPECIAL_DYLIB_SELF) {
+            replace = module.findSymbolByName(symbol.getName(), false);
+        } else if (libraryOrdinal <= module.ordinalList.size()) {
+            String path = module.ordinalList.get(libraryOrdinal - 1);
+            MachOModule targetImage = this.modules.get(FilenameUtils.getName(path));
+            if (targetImage != null) {
+                replace = targetImage.findSymbolByName(symbol.getName(), false);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("resolveSymbol libraryOrdinal=" + libraryOrdinal + ", path=" + path);
+                }
+            }
+        } else {
+            throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, module.ordinalList.size(), symbol.getName(), module.getPath()));
+        }
+
+        if (replace == null) {
+            replace = module.findSymbolByName(symbol.getName(), true);
+        }
         long address = replace == null ? 0L : replace.getAddress();
         for (HookListener listener : hookListeners) {
             long hook = listener.hook(emulator.getSvcMemory(), replace == null ? module.name : replace.getModuleName(), symbol.getName(), address);
@@ -1161,11 +1188,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         List<Long> indirectTable = dysymtabCommand.indirectSymbols();
-        Log log = LogFactory.getLog("com.github.unidbg.ios." + module.name);
-        if (!log.isDebugEnabled()) {
-            log = MachOLoader.log;
-        }
-
         MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
         if (dyldInfoCommand == null) {
             bindLocalRelocations(module);
@@ -1176,71 +1198,16 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     case SEGMENT: {
                         MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
                         for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
-                            long type = section.flags() & SECTION_TYPE;
-                            long elementCount = section.size() / emulator.getPointerSize();
-
-                            if (type != S_NON_LAZY_SYMBOL_POINTERS && type != S_LAZY_SYMBOL_POINTERS) {
-                                continue;
-                            }
-
-                            long ptrToBind = section.addr();
-                            int indirectTableOffset = (int) section.reserved1();
-                            for (int i = 0; i < elementCount; i++, ptrToBind += emulator.getPointerSize()) {
-                                long symbolIndex = indirectTable.get(indirectTableOffset + i);
-                                if (symbolIndex == INDIRECT_SYMBOL_ABS) {
-                                    continue; // do nothing since already has absolute address
-                                }
-                                if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
-                                    UnidbgPointer pointer = UnidbgPointer.pointer(emulator, ptrToBind + module.base);
-                                    if (pointer == null) {
-                                        throw new IllegalStateException("pointer is null");
-                                    }
-                                    Pointer newPointer = pointer.getPointer(0);
-                                    if (newPointer == null) {
-                                        newPointer = UnidbgPointer.pointer(emulator, module.base);
-                                    } else {
-                                        newPointer = newPointer.share(module.base);
-                                    }
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("bindIndirectSymbolPointers pointer=" + pointer + ", newPointer=" + newPointer);
-                                    }
-                                    pointer.setPointer(0, newPointer);
-                                    continue;
-                                }
-
-                                MachOSymbol symbol = module.getSymbolByIndex((int) symbolIndex);
-                                if (symbol == null) {
-                                    log.warn("bindIndirectSymbolPointers symbol is null");
-                                    ret = false;
-                                    continue;
-                                }
-
-                                boolean isWeakRef = (symbol.nlist.desc() & N_WEAK_REF) != 0;
-                                long address = resolveSymbol(module, symbol);
-
-                                UnidbgPointer pointer = UnidbgPointer.pointer(emulator, ptrToBind + module.base);
-                                if (pointer == null) {
-                                    throw new IllegalStateException("pointer is null");
-                                }
-                                if (address == 0L) {
-                                    if (isWeakRef) {
-                                        log.info("bindIndirectSymbolPointers symbol=" + symbol + ", isWeakRef=true");
-                                        pointer.setPointer(0, null);
-                                    } else {
-                                        log.warn("bindIndirectSymbolPointers failed symbol=" + symbol);
-                                    }
-                                } else {
-                                    pointer.setPointer(0, UnidbgPointer.pointer(emulator, address));
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", symbol=" + symbol + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
-                                    }
-                                }
-                            }
+                            ret = processSection(module, indirectTable, ret, section.flags(), section.size(), section.addr(), section.reserved1());
                         }
                         break;
                     }
                     case SEGMENT_64: {
-                        throw new UnsupportedOperationException("bindIndirectSymbolPointers SEGMENT_64");
+                        MachO.SegmentCommand64 segmentCommand = (MachO.SegmentCommand64) command.body();
+                        for (MachO.SegmentCommand64.Section64 section : segmentCommand.sections()) {
+                            ret = processSection(module, indirectTable, ret, section.flags(), section.size(), section.addr(), section.reserved1());
+                        }
+                        break;
                     }
                 }
             }
@@ -1252,9 +1219,81 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 ByteBuffer buffer = module.buffer.duplicate();
                 buffer.limit((int) (dyldInfoCommand.bindOff() + dyldInfoCommand.bindSize()));
                 buffer.position((int) dyldInfoCommand.bindOff());
+
+                Log log = LogFactory.getLog("com.github.unidbg.ios." + module.name);
+                if (!log.isDebugEnabled()) {
+                    log = MachOLoader.log;
+                }
                 module.allSymbolBound = eachBind(log, buffer.slice(), module);
             }
         }
+    }
+
+    private boolean processSection(MachOModule module, List<Long> indirectTable, boolean allSymbolBound, long flags, long size, long addr, long reserved1) {
+        Log log = LogFactory.getLog("com.github.unidbg.ios." + module.name);
+        if (!log.isDebugEnabled()) {
+            log = MachOLoader.log;
+        }
+
+        long type = flags & SECTION_TYPE;
+        long elementCount = size / emulator.getPointerSize();
+
+        if (type != S_NON_LAZY_SYMBOL_POINTERS && type != S_LAZY_SYMBOL_POINTERS) {
+            return allSymbolBound;
+        }
+
+        long ptrToBind = addr;
+        int indirectTableOffset = (int) reserved1;
+        for (int i = 0; i < elementCount; i++, ptrToBind += emulator.getPointerSize()) {
+            long symbolIndex = indirectTable.get(indirectTableOffset + i);
+            if (symbolIndex == INDIRECT_SYMBOL_ABS) {
+                continue; // do nothing since already has absolute address
+            }
+            if (symbolIndex == INDIRECT_SYMBOL_LOCAL) {
+                UnidbgPointer pointer = UnidbgPointer.pointer(emulator, ptrToBind + module.base);
+                if (pointer == null) {
+                    throw new IllegalStateException("pointer is null");
+                }
+                Pointer newPointer = pointer.getPointer(0);
+                if (newPointer == null) {
+                    newPointer = UnidbgPointer.pointer(emulator, module.base);
+                } else {
+                    newPointer = newPointer.share(module.base);
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("bindIndirectSymbolPointers pointer=" + pointer + ", newPointer=" + newPointer);
+                }
+                pointer.setPointer(0, newPointer);
+                continue;
+            }
+
+            MachOSymbol symbol = module.getSymbolByIndex((int) symbolIndex);
+            if (symbol == null) {
+                log.warn("bindIndirectSymbolPointers symbol is null");
+                allSymbolBound = false;
+                continue;
+            }
+
+            boolean isWeakRef = (symbol.nlist.desc() & N_WEAK_REF) != 0;
+            long address = resolveSymbol(module, symbol);
+
+            UnidbgPointer pointer = UnidbgPointer.pointer(emulator, ptrToBind + module.base);
+            if (pointer == null) {
+                throw new IllegalStateException("pointer is null");
+            }
+            if (address == 0L) {
+                if (log.isDebugEnabled()) {
+                    log.debug("bindIndirectSymbolPointers symbol=" + symbol + ", isWeakRef=" + isWeakRef);
+                }
+                pointer.setPointer(0, null);
+            } else {
+                pointer.setPointer(0, UnidbgPointer.pointer(emulator, address));
+                if (log.isDebugEnabled()) {
+                    log.debug("bindIndirectSymbolPointers symbolIndex=0x" + Long.toHexString(symbolIndex) + ", symbol=" + symbol + ", ptrToBind=0x" + Long.toHexString(ptrToBind));
+                }
+            }
+        }
+        return allSymbolBound;
     }
 
     private boolean eachBind(Log log, ByteBuffer buffer, MachOModule module) {
@@ -1406,12 +1445,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     private boolean doBindAt(int type, Pointer pointer, long addend, Module module, MachOModule targetImage, String symbolName, boolean withDependencies) {
         Symbol symbol = targetImage.findSymbolByName(symbolName, withDependencies);
-        if (symbol == null) {
-            symbol = targetImage.getExportByName(symbolName);
-            if (log.isDebugEnabled()) {
-                log.debug("doBindAt use export symbol: " + symbol);
-            }
-        }
         if (symbol == null) {
             if (log.isDebugEnabled()) {
                 log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", targetImage=" + targetImage);

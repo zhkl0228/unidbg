@@ -9,8 +9,13 @@ import java.util.Map;
 
 final class Objc2Class {
 
+    @SuppressWarnings("unused")
     static Objc2Class read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item, MachOModule mm) {
         if (item == 0) {
+            return null;
+        }
+
+        if ((item & 0x8000000000000000L) != 0) {
             return null;
         }
 
@@ -29,7 +34,7 @@ final class Objc2Class {
         long reserved2 = buffer.getLong();
         long reserved3 = buffer.getLong();
         boolean isSwiftClass = (data & 1) != 0;
-        data &= ~1;
+        data &= ~3;
         if (data == 0) {
             throw new IllegalStateException("Invalid objc2class data");
         }

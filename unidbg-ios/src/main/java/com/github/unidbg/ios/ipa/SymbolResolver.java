@@ -50,6 +50,7 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer _dispatch_block_create;
     private UnidbgPointer _dispatch_get_global_queue;
     private UnidbgPointer _dispatch_group_async;
+    private UnidbgPointer _objc_opt_self;
 
     public SymbolResolver(Emulator<DarwinFileIO> emulator) {
         this.emulator = emulator;
@@ -109,6 +110,19 @@ public class SymbolResolver implements HookListener {
                 }
             }
             return _dispatch_group_async.peer;
+        }
+        if ("_objc_opt_self".equals(symbolName)) {
+            if (_objc_opt_self == null) {
+                _objc_opt_self = svcMemory.registerSvc(new Arm64Svc("_objc_opt_self") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        Pointer self = context.getPointerArg(0);
+                        return UnidbgPointer.nativeValue(self);
+                    }
+                });
+            }
+            return _objc_opt_self.peer;
         }
         if ("_dispatch_get_global_queue".equals(symbolName)) {
             if (_dispatch_get_global_queue == null) {

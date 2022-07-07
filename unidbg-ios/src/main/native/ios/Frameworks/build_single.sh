@@ -37,13 +37,4 @@ function build_UIKit() {
   mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework/
 }
 
-build_framework AppTrackingTransparency "Foundation"
-build_framework AuthenticationServices "Foundation"
-build_framework BackgroundTasks "Foundation"
-build_framework Combine "Foundation"
-build_framework CryptoKit "Foundation"
-build_framework MetricKit "Foundation"
-build_framework NaturalLanguage "Foundation"
-build_framework SoundAnalysis "Foundation"
-build_framework SwiftUI "Foundation"
-build_framework WidgetKit "Foundation"
+build_framework UniformTypeIdentifiers "Foundation"

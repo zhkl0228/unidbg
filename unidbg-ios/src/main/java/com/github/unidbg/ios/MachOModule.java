@@ -75,10 +75,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Map<String, ExportSymbol> exportSymbols;
 
-    public Symbol getExportByName(String exportName) {
-        return exportSymbols.get(exportName);
-    }
-
     private final Segment[] segments;
 
     @Override
@@ -86,6 +82,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         if (segments == null) {
             throw new UnsupportedOperationException();
         }
+        address &= ~0x7fff000000000000L;
+
         for (Segment ph : segments) {
             if (address >= ph.virtual_address && address < (ph.virtual_address + ph.mem_size)) {
                 long relativeOffset = address - ph.virtual_address;
@@ -99,7 +97,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 return (int) ret;
             }
         }
-        throw new IllegalStateException("Cannot find segment for address " + Long.toHexString(address));
+        throw new IllegalStateException("Cannot find segment for address: 0x" + Long.toHexString(address));
     }
 
     private final List<InitFunction> allInitFunctionList = new ArrayList<>();
@@ -603,6 +601,12 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private Symbol findSymbolByNameInternal(String name, boolean withDependencies) {
         Symbol symbol = symbolMap.get(name);
+        if (symbol == null) {
+            ExportSymbol es = exportSymbols.get(name);
+            if (es != null && !es.isReExport()) {
+                symbol = es;
+            }
+        }
         if (symbol != null) {
             return symbol;
         }
@@ -912,9 +916,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private long bindAt(int type, Pointer pointer, MachOModule targetImage, String symbolName, boolean withDependencies) {
         Symbol symbol = targetImage.findSymbolByName(symbolName, withDependencies);
-        if (symbol == null) {
-            symbol = targetImage.getExportByName(symbolName);
-        }
         if (symbol == null) {
             long bindAt = 0;
             for (HookListener listener : hookListeners) {
