@@ -236,11 +236,12 @@ public class DvmClass extends DvmObject<Class<?>> {
         if (fnPtr == null && index == -1) {
             index = method.length();
         }
-        String symbolName = "";
-        symbolName += "Java_";
-        symbolName += MangleForJni(getClassName());
-        symbolName += "_";
-        symbolName += MangleForJni(method.substring(0, index));
+        StringBuilder builder = new StringBuilder();
+        builder.append("Java_");
+        mangleForJni(builder, getClassName());
+        builder.append("_");
+        mangleForJni(builder, method.substring(0, index));
+        String symbolName = builder.toString();
         if (fnPtr == null) {
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
@@ -259,26 +260,23 @@ public class DvmClass extends DvmObject<Class<?>> {
         return fnPtr;
     }
 
-    static String MangleForJni(String s){
-        StringBuilder result = new StringBuilder();
-
-        char[] c=s.toCharArray();
-        for(char ch:c){
-            if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
-                result.append(ch);
-            } else if (ch == '.' || ch == '/') {
-                result.append("_");
-            } else if (ch == '_') {
-                result.append("_1");
-            } else if (ch == ';') {
-                result.append("_2");
-            } else if (ch == '[') {
-                result.append("_3");
+    private static void mangleForJni(StringBuilder builder, String name) {
+        char[] chars = name.toCharArray();
+        for (char c : chars) {
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+                builder.append(c);
+            } else if (c == '.' || c == '/') {
+                builder.append("_");
+            } else if (c == '_') {
+                builder.append("_1");
+            } else if (c == ';') {
+                builder.append("_2");
+            } else if (c == '[') {
+                builder.append("_3");
             } else {
-                result.append(String.format("_0%04x", ch & 0x0000FFFF));
+                builder.append(String.format("_0%04x", c & 0xffff));
             }
         }
-        return result.toString();
     }
     
     public void callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
