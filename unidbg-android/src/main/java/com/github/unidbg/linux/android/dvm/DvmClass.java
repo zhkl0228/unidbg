@@ -236,7 +236,11 @@ public class DvmClass extends DvmObject<Class<?>> {
         if (fnPtr == null && index == -1) {
             index = method.length();
         }
-        String symbolName = "Java_" + getClassName().replace("_", "_1").replace('/', '_').replace("$", "_00024") + "_" + method.substring(0, index).replace("_", "_1");
+        String symbolName = "";
+        symbolName += "Java_";
+        symbolName += MangleForJni(getClassName());
+        symbolName += "_";
+        symbolName += MangleForJni(method.substring(0, index));
         if (fnPtr == null) {
             for (Module module : emulator.getMemory().getLoadedModules()) {
                 Symbol symbol = module.findSymbolByName(symbolName, false);
@@ -255,6 +259,28 @@ public class DvmClass extends DvmObject<Class<?>> {
         return fnPtr;
     }
 
+    static String MangleForJni(String s){
+        StringBuilder result = new StringBuilder();
+
+        char[] c=s.toCharArray();
+        for(char ch:c){
+            if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
+                result.append(ch);
+            } else if (ch == '.' || ch == '/') {
+                result.append("_");
+            } else if (ch == '_') {
+                result.append("_1");
+            } else if (ch == ';') {
+                result.append("_2");
+            } else if (ch == '[') {
+                result.append("_3");
+            } else {
+                result.append(String.format("_0%04x", ch & 0x0000FFFF));
+            }
+        }
+        return result.toString();
+    }
+    
     public void callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
         try {
             callJniMethod(emulator, vm, this, this, method, args);
