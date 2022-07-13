@@ -10,22 +10,17 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 public class URLibraryFile implements LibraryFile {
 
     private final URL url;
     private final String path;
-    private final String version;
-    private final List<String> excludeLibs;
-    private final boolean override;
+    private final DarwinResolver resolver;
 
-    public URLibraryFile(URL url, String path, String version, List<String> excludeLibs, boolean override) {
+    public URLibraryFile(URL url, String path, DarwinResolver resolver) {
         this.url = url;
         this.path = path;
-        this.version = version;
-        this.excludeLibs = excludeLibs;
-        this.override = override;
+        this.resolver = resolver;
     }
 
     @Override
@@ -40,10 +35,10 @@ public class URLibraryFile implements LibraryFile {
 
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String dylibName) {
-        if (version == null) {
+        if (resolver == null) {
             return null;
         }
-        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs, DarwinResolver.class, override);
+        return resolver.resolveLibrary(dylibName, resolver.getClass());
     }
 
     @Override

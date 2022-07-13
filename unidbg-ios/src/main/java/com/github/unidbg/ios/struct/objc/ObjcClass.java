@@ -34,7 +34,7 @@ public abstract class ObjcClass extends ObjcObject implements ObjcConstants {
 
     private ClassRW data() {
         UnidbgPointer pointer = getDataPointer(emulator);
-        long address = pointer.peer & ~CLASS_FAST_FLAG_MASK;
+        long address = pointer.peer & FAST_DATA_MASK;
         ClassRW classRW = emulator.is64Bit() ? new ClassRW64(UnidbgPointer.pointer(emulator, address)) : new ClassRW32(UnidbgPointer.pointer(emulator, address));
         classRW.unpack();
         return classRW;
@@ -42,7 +42,7 @@ public abstract class ObjcClass extends ObjcObject implements ObjcConstants {
 
     private ClassRO ro() {
         UnidbgPointer pointer = getDataPointer(emulator);
-        long address = pointer.peer & ~CLASS_FAST_FLAG_MASK;
+        long address = pointer.peer & FAST_DATA_MASK;
         ClassRO classRO = emulator.is64Bit() ? new ClassRO64(UnidbgPointer.pointer(emulator, address)) : new ClassRO32(UnidbgPointer.pointer(emulator, address));
         classRO.unpack();
         return classRO;

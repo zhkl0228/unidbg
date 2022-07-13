@@ -2,7 +2,6 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.hook.DispatchAsyncCallback;
@@ -13,7 +12,6 @@ import com.github.unidbg.ios.ipa.IpaLoader;
 import com.github.unidbg.ios.ipa.IpaLoader64;
 import com.github.unidbg.ios.ipa.LoadedIpa;
 import com.github.unidbg.ios.objc.ObjC;
-import com.github.unidbg.ios.simulator.CoreSimulatorResolver;
 import com.github.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
@@ -56,7 +54,7 @@ public class LineApp implements EmulatorConfigurator, HookListener, DispatchAsyn
             }*/
         };
         loader.addBackendFactory(new HypervisorFactory(true));
-        loader.setOverrideResolver();
+        loader.useOverrideResolver();
         return loader;
     }
 

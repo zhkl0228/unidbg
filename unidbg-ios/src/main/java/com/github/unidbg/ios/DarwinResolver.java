@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 
 public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO> {
 
-    static final String LIB_VERSION = "7.1";
+    private static final String LIB_VERSION = "7.1";
     private static final String OVERRIDE_VERSION = "override";
 
     private final String version;
@@ -67,12 +67,12 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
 
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName) {
-        return resolveLibrary(libraryName, version, excludeLibs, getClass(), override);
+        return resolveLibrary(libraryName, getClass());
     }
 
     private static final Pattern SYSTEM_LIBRARY_FRAMEWORK_PATTERN = Pattern.compile("/System/Library/Frameworks/(\\w+).framework/Versions/[A-C]/(\\w+)");
 
-    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs, Class<?> resClass, boolean override) {
+    LibraryFile resolveLibrary(String libraryName, Class<?> resClass) {
         if (!excludeLibs.isEmpty() && excludeLibs.contains(FilenameUtils.getName(libraryName))) {
             return null;
         }
@@ -90,14 +90,14 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
             String name = "/ios/" + OVERRIDE_VERSION + libraryName.replace('+', 'p');
             URL url = resClass.getResource(name);
             if (url != null) {
-                return new URLibraryFile(url, libraryName, version, excludeLibs, true);
+                return new URLibraryFile(url, libraryName, this);
             }
         }
 
         String name = "/ios/" + version + libraryName.replace('+', 'p');
         URL url = resClass.getResource(name);
         if (url != null) {
-            return new URLibraryFile(url, libraryName, version, excludeLibs, override);
+            return new URLibraryFile(url, libraryName, this);
         }
         return null;
     }

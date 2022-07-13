@@ -23,7 +23,6 @@ import unicorn.UnicornConst;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Collections;
 
 public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
 
@@ -93,7 +92,7 @@ public class DarwinARM64Emulator extends AbstractARM64Emulator<DarwinFileIO> {
 
     @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, "/vendor/lib/" + libName, null, Collections.<String>emptyList(), false);
+        return new URLibraryFile(url, "/vendor/lib/" + libName, null);
     }
 
     @Override

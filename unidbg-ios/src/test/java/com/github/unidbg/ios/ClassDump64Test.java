@@ -25,7 +25,7 @@ public class ClassDump64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @Override
     protected LibraryResolver createLibraryResolver() {
-        return new DarwinResolver();
+        return new DarwinResolver().setOverride();
     }
 
     @Override

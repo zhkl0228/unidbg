@@ -19,7 +19,6 @@ import com.sun.jna.Pointer;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Collections;
 
 public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
 
@@ -84,7 +83,7 @@ public class DarwinARMEmulator extends AbstractARMEmulator<DarwinFileIO> {
 
     @Override
     public LibraryFile createURLibraryFile(URL url, String libName) {
-        return new URLibraryFile(url, "/vendor/lib/" + libName, null, Collections.<String>emptyList(), false);
+        return new URLibraryFile(url, "/vendor/lib/" + libName, null);
     }
 
     @Override

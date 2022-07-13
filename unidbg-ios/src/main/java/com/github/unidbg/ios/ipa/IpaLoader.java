@@ -166,7 +166,7 @@ public abstract class IpaLoader implements Loader {
 
     private boolean overrideResolver;
 
-    public void setOverrideResolver() {
+    public void useOverrideResolver() {
         this.overrideResolver = true;
     }
 

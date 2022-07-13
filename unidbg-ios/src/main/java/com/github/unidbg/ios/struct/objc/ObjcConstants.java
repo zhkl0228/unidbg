@@ -13,7 +13,6 @@ interface ObjcConstants {
     int RO_FUTURE = (1<<30); // // class is unrealized future class - must never be set by compiler
     int RW_REALIZED = (1<<31); // class is realized - must never be set by compiler
 
-    // Flags may be stored in low bits of rw->data_NEVER_USE for fastest access
-    int CLASS_FAST_FLAG_MASK = 3;
+    long FAST_DATA_MASK = 0x00007ffffffffff8L;
 
 }
