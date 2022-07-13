@@ -9,6 +9,9 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_android_JniTest_testJni
   (JNIEnv *env, jclass clazz, jstring str, jlong l1, jint i, jdouble d1, jboolean b, jshort s, jfloat f1, jdouble d2, jbyte bs, jlong l2, jfloat f2) {
   const char *bytes = (*env)->GetStringUTFChars(env, str, NULL);
   printf("testJni str=%s, l1=0x%llx, i=0x%x, d1=%f, b=%d, s=0x%x, f1=%f, d2=%f, bs=0x%x, l2=0x%llx, f2=%f\n", bytes, l1, i, d1, b, s, f1, d2, bs, l2, f2);
+  const char *ap = (*env)->GetStringUTFChars(env, str, NULL);
+  const char *bp = (*env)->GetStringUTFChars(env, str, NULL);
+  printf("testJni bytes=%p, ap=%p, bp=%p\n", bytes, ap, bp);
   (*env)->ReleaseStringUTFChars(env, str, bytes);
 }
 
