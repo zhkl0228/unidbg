@@ -157,7 +157,17 @@ public abstract class IpaLoader implements Loader {
     }
 
     protected LibraryResolver createLibraryResolver() {
-        return new DarwinResolver();
+        DarwinResolver resolver = new DarwinResolver();
+        if (overrideResolver) {
+            resolver.setOverride();
+        }
+        return resolver;
+    }
+
+    private boolean overrideResolver;
+
+    public void setOverrideResolver() {
+        this.overrideResolver = true;
     }
 
     LoadedIpa load32(EmulatorConfigurator configurator, String... loads) throws IOException {
@@ -188,18 +198,32 @@ public abstract class IpaLoader implements Loader {
         return load(emulator, ipa, bundleAppDir, configurator, loads);
     }
 
-    protected String[] getEnvs(File rootDir) throws IOException {
-        List<String> list = new ArrayList<>();
-        list.add("PrintExceptionThrow=YES"); // log backtrace of every objc_exception_throw()
+    public static void addEnv(List<String> list) {
+        list.add("OBJC_DISABLE_PREOPTIMIZATION=YES"); // disable preoptimization courtesy of dyld shared cache
+        list.add("OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES"); // disable safety checks for +initialize after fork
         if (log.isDebugEnabled()) {
             list.add("OBJC_HELP=YES"); // describe available environment variables
-//            list.add("OBJC_PRINT_OPTIONS=YES"); // list which options are set
+            list.add("OBJC_PRINT_OPTIONS=YES"); // list which options are set
             list.add("OBJC_PRINT_CLASS_SETUP=YES"); // log progress of class and category setup
-//            list.add("OBJC_PRINT_INITIALIZE_METHODS=YES"); // log calls to class +initialize methods
+            list.add("OBJC_PRINT_INITIALIZE_METHODS=YES"); // log calls to class +initialize methods
             list.add("OBJC_PRINT_PROTOCOL_SETUP=YES"); // log progress of protocol setup
             list.add("OBJC_PRINT_IVAR_SETUP=YES"); // log processing of non-fragile ivars
             list.add("OBJC_PRINT_VTABLE_SETUP=YES"); // log processing of class vtables
+
+            list.add("OBJC_PRINT_IMAGES=YES"); // log image and library names as they are loaded
+            list.add("OBJC_PRINT_IMAGE_TIMES=YES"); // measure duration of image loading steps
+            list.add("OBJC_PRINT_LOAD_METHODS=YES"); // log calls to class and category +load methods
+            list.add("OBJC_PRINT_RESOLVED_METHODS=YES"); // log methods created by +resolveClassMethod: and +resolveInstanceMethod:
+            list.add("OBJC_PRINT_PREOPTIMIZATION=YES"); // log preoptimization courtesy of dyld shared cache
+            list.add("OBJC_PRINT_EXCEPTIONS=YES"); // log exception handling
+            list.add("OBJC_DEBUG_FRAGILE_SUPERCLASSES=YES"); // warn about subclasses that may have been broken by subsequent changes to superclasses
         }
+    }
+
+    protected String[] getEnvs(File rootDir) throws IOException {
+        List<String> list = new ArrayList<>();
+        list.add("OBJC_PRINT_EXCEPTION_THROW=YES"); // log backtrace of every objc_exception_throw()
+        addEnv(list);
         UUID uuid = UUID.nameUUIDFromBytes((generateRandomSeed() + "_Documents").getBytes(StandardCharsets.UTF_8));
         String homeDir = "/var/mobile/Containers/Data/Application/" + uuid.toString().toUpperCase();
         list.add("CFFIXED_USER_HOME=" + homeDir);

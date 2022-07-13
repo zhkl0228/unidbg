@@ -75,10 +75,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Map<String, ExportSymbol> exportSymbols;
 
-    public Symbol getExportByName(String exportName) {
-        return exportSymbols.get(exportName);
-    }
-
     private final Segment[] segments;
 
     @Override
@@ -86,6 +82,8 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         if (segments == null) {
             throw new UnsupportedOperationException();
         }
+        address &= ~0x7fff000000000000L;
+
         for (Segment ph : segments) {
             if (address >= ph.virtual_address && address < (ph.virtual_address + ph.mem_size)) {
                 long relativeOffset = address - ph.virtual_address;
@@ -99,7 +97,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 return (int) ret;
             }
         }
-        throw new IllegalStateException("Cannot find segment for address " + Long.toHexString(address));
+        throw new IllegalStateException("Cannot find segment for address: 0x" + Long.toHexString(address));
     }
 
     private final List<InitFunction> allInitFunctionList = new ArrayList<>();
@@ -199,6 +197,34 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 }
             }
         }
+    }
+
+    public boolean hasObjC() {
+        for (MachO.LoadCommand command : machO.loadCommands()) {
+            switch (command.type()) {
+                case SEGMENT:
+                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    if ("__DATA".equals(segmentCommand.segname())) {
+                        for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                            if ("__objc_imageinfo".equals(section.sectName())) {
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+                case SEGMENT_64:
+                    MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    if ("__DATA".equals(segmentCommand64.segname())) {
+                        for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
+                            if ("__objc_imageinfo".equals(section.sectName())) {
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -603,6 +629,12 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private Symbol findSymbolByNameInternal(String name, boolean withDependencies) {
         Symbol symbol = symbolMap.get(name);
+        if (symbol == null) {
+            ExportSymbol es = exportSymbols.get(name);
+            if (es != null && !es.isReExport()) {
+                symbol = es;
+            }
+        }
         if (symbol != null) {
             return symbol;
         }
@@ -612,7 +644,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             findSet.addAll(exportModules.values());
             findSet.addAll(upwardLibraries.values());
             findSet.addAll(neededLibraries.values());
-            findSet.addAll(loader.getLoadedModules());
+//            findSet.addAll(loader.getLoadedModules());
             for (Module module : findSet) {
                 symbol = module.findSymbolByName(name, false);
                 if (symbol != null) {
@@ -695,7 +727,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         try {
             if (!fast && objectiveCProcessor == null && objcSections != null && !objcSections.isEmpty()) {
-                objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this, emulator);
+                try {
+                    objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this, emulator);
+                } catch(RuntimeException e) {
+                    log.debug("create CDObjectiveC2Processor failed.", e);
+                }
             }
             if (!fast && objectiveCProcessor != null) {
                 if (executable) {
@@ -739,6 +775,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final Set<UnidbgPointer> boundCallSet = new HashSet<>();
     final Set<UnidbgPointer> dependentsInitializedCallSet = new HashSet<>();
     final Set<UnidbgPointer> initializedCallSet = new HashSet<>();
+
+    boolean objcNotifyMapped;
+    boolean objcNotifyInit;
 
     @Override
     public String getPath() {
@@ -912,9 +951,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private long bindAt(int type, Pointer pointer, MachOModule targetImage, String symbolName, boolean withDependencies) {
         Symbol symbol = targetImage.findSymbolByName(symbolName, withDependencies);
-        if (symbol == null) {
-            symbol = targetImage.getExportByName(symbolName);
-        }
         if (symbol == null) {
             long bindAt = 0;
             for (HookListener listener : hookListeners) {

@@ -11,7 +11,6 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.hook.HookListener;
-import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.ElfLibraryFile;
 import com.github.unidbg.linux.thread.PThreadInternal;
 import com.github.unidbg.memory.MemRegion;
@@ -85,7 +84,6 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     @Override
     public void setLibraryResolver(LibraryResolver libraryResolver) {
-        syscallHandler.addIOResolver((AndroidResolver) libraryResolver);
         super.setLibraryResolver(libraryResolver);
 
         /*

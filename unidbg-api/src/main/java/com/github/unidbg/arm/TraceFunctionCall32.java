@@ -97,7 +97,7 @@ class TraceFunctionCall32 extends TraceFunctionCall {
                     functionAddress = operand.getValue().getImm();
                     break;
                 case Arm_const.ARM_OP_REG:
-                    functionAddress = context.getIntByReg(operand.getValue().getReg());
+                    functionAddress = context.getIntByReg(operand.getValue().getUnicornReg());
                     break;
                 default:
                     throw new UnsupportedOperationException("type=" + operand.getType());

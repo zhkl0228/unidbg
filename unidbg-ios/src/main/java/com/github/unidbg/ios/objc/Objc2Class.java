@@ -9,6 +9,7 @@ import java.util.Map;
 
 final class Objc2Class {
 
+    @SuppressWarnings("unused")
     static Objc2Class read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item, MachOModule mm) {
         if (item == 0) {
             return null;

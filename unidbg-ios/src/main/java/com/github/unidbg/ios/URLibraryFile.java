@@ -18,12 +18,14 @@ public class URLibraryFile implements LibraryFile {
     private final String path;
     private final String version;
     private final List<String> excludeLibs;
+    private final boolean override;
 
-    public URLibraryFile(URL url, String path, String version, List<String> excludeLibs) {
+    public URLibraryFile(URL url, String path, String version, List<String> excludeLibs, boolean override) {
         this.url = url;
         this.path = path;
         this.version = version;
         this.excludeLibs = excludeLibs;
+        this.override = override;
     }
 
     @Override
@@ -41,7 +43,7 @@ public class URLibraryFile implements LibraryFile {
         if (version == null) {
             return null;
         }
-        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs, DarwinResolver.class);
+        return DarwinResolver.resolveLibrary(dylibName, version, excludeLibs, DarwinResolver.class, override);
     }
 
     @Override

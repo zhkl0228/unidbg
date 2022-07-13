@@ -66,4 +66,9 @@ public interface DarwinSyscall {
 
     int ETIMEDOUT = 60; /* Operation timed out */
 
+    long nanoTime = System.nanoTime();
+    int CLOCK_REALTIME = 0;
+    int CLOCK_MONOTONIC_RAW = 4;
+    int CLOCK_MONOTONIC = 6;
+
 }

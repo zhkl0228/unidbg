@@ -17,8 +17,6 @@ import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unwind.Unwinder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
 import java.net.URL;
@@ -32,8 +30,6 @@ import java.util.Collection;
  */
 
 public class AndroidARMEmulator extends AbstractARMEmulator<AndroidFileIO> implements AndroidEmulator {
-
-    private static final Log log = LogFactory.getLog(AndroidARMEmulator.class);
 
     protected AndroidARMEmulator(String processName, File rootDir, Collection<BackendFactory> backendFactories) {
         super(processName, rootDir, Family.Android32, backendFactories);

@@ -32,6 +32,10 @@ public class MachOSymbol extends Symbol implements com.github.unidbg.ios.MachO {
         return nlist.value() + (isThumb ? 1 : 0);
     }
 
+    public int getLibraryOrdinal() {
+        return (nlist.desc() >> 8) & 0xff;
+    }
+
     @Override
     public boolean isUndef() {
         return false;
