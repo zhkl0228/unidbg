@@ -199,34 +199,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
-    public boolean hasObjC() {
-        for (MachO.LoadCommand command : machO.loadCommands()) {
-            switch (command.type()) {
-                case SEGMENT:
-                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
-                    if ("__DATA".equals(segmentCommand.segname())) {
-                        for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
-                            if ("__objc_imageinfo".equals(section.sectName())) {
-                                return true;
-                            }
-                        }
-                    }
-                    break;
-                case SEGMENT_64:
-                    MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
-                    if ("__DATA".equals(segmentCommand64.segname())) {
-                        for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
-                            if ("__objc_imageinfo".equals(section.sectName())) {
-                                return true;
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
-        return false;
-    }
-
     @Override
     public int callEntry(Emulator<?> emulator, String... args) {
         if (entryPoint <= 0) {

@@ -1777,10 +1777,19 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         Module.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
                 }
-                if (_objcNotifyMapped != null && !module.objcNotifyMapped && module.hasObjC()) {
+                if (_objcNotifyMapped != null && !module.objcNotifyMapped) {
                     SvcMemory svcMemory = emulator.getSvcMemory();
-                    Module.emulateFunction(emulator, _objcNotifyMapped.peer, 1, module.createPathMemory(svcMemory), module.machHeader);
-                    module.objcNotifyMapped = true;
+                    MemoryBlock block = malloc(emulator.getPointerSize() * 2, true);
+                    try {
+                        Pointer paths = block.getPointer();
+                        Pointer mh = paths.share(emulator.getPointerSize());
+                        paths.setPointer(0, module.createPathMemory(svcMemory));
+                        mh.setPointer(0, UnidbgPointer.pointer(emulator, module.machHeader));
+                        Module.emulateFunction(emulator, _objcNotifyMapped.peer, 1, paths, mh);
+                        module.objcNotifyMapped = true;
+                    } finally {
+                        block.free();
+                    }
                 }
                 if (_objcNotifyInit != null && !module.objcNotifyInit && module.objcNotifyMapped) {
                     SvcMemory svcMemory = emulator.getSvcMemory();

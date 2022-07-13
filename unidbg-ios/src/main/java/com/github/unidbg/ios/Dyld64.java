@@ -906,11 +906,7 @@ public class Dyld64 extends Dyld {
                             loader._objcNotifyMapped = mapped;
                             loader._objcNotifyInit = init;
                             for (MachOModule mm : loader.modules.values()) {
-                                if (mm.isVirtual()) {
-                                    continue;
-                                }
-
-                                if (mm.hasObjC()) {
+                                if (!mm.isVirtual()) {
                                     list.add(mm);
                                 }
                             }
