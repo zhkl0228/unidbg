@@ -890,7 +890,7 @@ public class ARM {
             mem = op[1].getValue().getMem();
 
             if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.getDisp();
             }
@@ -899,7 +899,7 @@ public class ARM {
             OpShift shift;
             if (mem.getIndex() > 0 && mem.getScale() == 1 && mem.getLshift() == 0 && mem.getDisp() == 0 &&
                     (shift = op[1].getShift()) != null) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
                 long base_value = base == null ? 0L : base.peer;
                 UnidbgPointer index = UnidbgPointer.register(emulator, mem.getIndex());
                 int index_value = index == null ? 0 : (int) index.peer;
@@ -918,12 +918,12 @@ public class ARM {
                 op[2].getType() == Arm_const.ARM_OP_IMM) {
             mem = op[1].getValue().getMem();
             if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
                 addr = base == null ? 0L : base.peer;
             }
         }
         if (addr != -1) {
-            if (mem.getBase() == Arm_const.ARM_REG_PC) {
+            if (mem.getUnicornBaseReg() == Arm_const.ARM_REG_PC) {
                 addr += (thumb ? 4 : 8);
             }
             int bytesRead = 4;
@@ -944,10 +944,10 @@ public class ARM {
                 op[2].getType() == Arm_const.ARM_OP_MEM) {
             mem = op[2].getValue().getMem();
             if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getBase());
+                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.getDisp();
-                if (mem.getBase() == Arm_const.ARM_REG_PC) {
+                if (mem.getUnicornBaseReg() == Arm_const.ARM_REG_PC) {
                     addr += (thumb ? 4 : 8);
                 }
                 appendAddrValue(sb, addr, memory, emulator.is64Bit(), 4);

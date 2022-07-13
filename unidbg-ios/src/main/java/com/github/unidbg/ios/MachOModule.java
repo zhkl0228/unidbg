@@ -199,6 +199,34 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
+    public boolean hasObjC() {
+        for (MachO.LoadCommand command : machO.loadCommands()) {
+            switch (command.type()) {
+                case SEGMENT:
+                    MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
+                    if ("__DATA".equals(segmentCommand.segname())) {
+                        for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
+                            if ("__objc_imageinfo".equals(section.sectName())) {
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+                case SEGMENT_64:
+                    MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
+                    if ("__DATA".equals(segmentCommand64.segname())) {
+                        for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
+                            if ("__objc_imageinfo".equals(section.sectName())) {
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        return false;
+    }
+
     @Override
     public int callEntry(Emulator<?> emulator, String... args) {
         if (entryPoint <= 0) {
@@ -699,7 +727,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         try {
             if (!fast && objectiveCProcessor == null && objcSections != null && !objcSections.isEmpty()) {
-                objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this, emulator);
+                try {
+                    objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this, emulator);
+                } catch(RuntimeException e) {
+                    log.debug("create CDObjectiveC2Processor failed.", e);
+                }
             }
             if (!fast && objectiveCProcessor != null) {
                 if (executable) {
@@ -743,6 +775,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final Set<UnidbgPointer> boundCallSet = new HashSet<>();
     final Set<UnidbgPointer> dependentsInitializedCallSet = new HashSet<>();
     final Set<UnidbgPointer> initializedCallSet = new HashSet<>();
+
+    boolean objcNotifyMapped;
+    boolean objcNotifyInit;
 
     @Override
     public String getPath() {

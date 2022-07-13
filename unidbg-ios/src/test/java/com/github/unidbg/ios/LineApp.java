@@ -50,12 +50,13 @@ public class LineApp implements EmulatorConfigurator, HookListener, DispatchAsyn
 
     protected IpaLoader createLoader(File ipa, File rootDir) {
         IpaLoader loader = new IpaLoader64(ipa, rootDir) {
-            @Override
+            /*@Override
             protected LibraryResolver createLibraryResolver() {
                 return new CoreSimulatorResolver(new File("/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot"));
-            }
+            }*/
         };
         loader.addBackendFactory(new HypervisorFactory(true));
+        loader.setOverrideResolver();
         return loader;
     }
 
@@ -77,7 +78,7 @@ public class LineApp implements EmulatorConfigurator, HookListener, DispatchAsyn
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
         emulator.getSyscallHandler().setVerbose(false);
         emulator.getMemory().addHookListener(this);
-        emulator.attach().addBreakPoint(0x00000001000BEE6CL);
+        emulator.attach().addBreakPoint(0x10b0ec050L);
     }
 
     @Override

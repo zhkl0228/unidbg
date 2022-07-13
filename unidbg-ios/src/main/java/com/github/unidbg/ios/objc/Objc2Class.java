@@ -15,10 +15,6 @@ final class Objc2Class {
             return null;
         }
 
-        if ((item & 0x8000000000000000L) != 0) {
-            return null;
-        }
-
         if (classMap.containsKey(item)) {
             return classMap.get(item);
         }
@@ -34,7 +30,7 @@ final class Objc2Class {
         long reserved2 = buffer.getLong();
         long reserved3 = buffer.getLong();
         boolean isSwiftClass = (data & 1) != 0;
-        data &= ~3;
+        data &= ~1;
         if (data == 0) {
             throw new IllegalStateException("Invalid objc2class data");
         }

@@ -1,5 +1,6 @@
 package com.github.unidbg.linux.android;
 
+import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.file.FileResult;
@@ -14,6 +15,7 @@ import com.github.unidbg.linux.file.SimpleFileIO;
 import com.github.unidbg.linux.thread.ThreadJoin19;
 import com.github.unidbg.linux.thread.ThreadJoin23;
 import com.github.unidbg.spi.LibraryFile;
+import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.ThreadJoinVisitor;
 import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -172,4 +174,12 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
 
         return null;
     }
+
+    @Override
+    public void onSetToLoader(Emulator<?> emulator) {
+        AndroidEmulator androidEmulator = (AndroidEmulator) emulator;
+        SyscallHandler<AndroidFileIO> syscallHandler = androidEmulator.getSyscallHandler();
+        syscallHandler.addIOResolver(this);
+    }
+
 }

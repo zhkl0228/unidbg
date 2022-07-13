@@ -21,7 +21,6 @@ import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.hook.HookListener;
-import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.patch.LibDyldPatcher;
 import com.github.unidbg.ios.struct.kernel.Pthread;
 import com.github.unidbg.ios.struct.kernel.Pthread32;
@@ -35,6 +34,7 @@ import com.github.unidbg.memory.MemoryAllocBlock;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryBlockImpl;
 import com.github.unidbg.memory.MemoryMap;
+import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.AbstractLoader;
@@ -100,9 +100,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     public void setLibraryResolver(LibraryResolver libraryResolver) {
         if (libraryResolver instanceof IOResolver) {
             syscallHandler.addIOResolver((IOResolver<DarwinFileIO>) libraryResolver);
-        }
-        if (libraryResolver instanceof DarwinResolver) {
-            addModuleListener(new LibDispatchPatcher());
         }
         super.setLibraryResolver(libraryResolver);
 
@@ -177,8 +174,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         vars.setPointer(3L * emulator.getPointerSize(), _NSGetEnviron);
         vars.setPointer(4L * emulator.getPointerSize(), _NSGetProgname);
 
-        addModuleListener(new LibDyldPatcher(_NSGetArgc, _NSGetArgv, _NSGetEnviron, _NSGetProgname));
-
         final Pointer thread = allocateStack(UnidbgStructure.calculateSize(emulator.is64Bit() ? Pthread64.class : Pthread32.class)); // reserve space for pthread_internal_t
         Pthread pthread = Pthread.create(emulator, thread);
 
@@ -202,6 +197,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (log.isDebugEnabled()) {
             log.debug("initializeTSD tsd=" + tsd + ", thread=" + thread + ", environ=" + environ + ", vars=" + vars + ", sp=0x" + Long.toHexString(getStackPoint()) + ", errno=" + errno);
         }
+
+        addModuleListener(new LibDyldPatcher(_NSGetArgc, _NSGetArgv, _NSGetEnviron, _NSGetProgname));
     }
 
     public final void onExecutableLoaded(String executable) {
@@ -241,7 +238,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     }
                     continue;
                 }
-                LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.singletonList(FilenameUtils.getPath(libraryFile.getPath())));
+                LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.singletonList(FilenameUtils.getFullPath(libraryFile.getPath())));
                 if (neededLibraryFile != null) {
                     MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.<String>emptySet());
                     needed.addReferenceCount();
@@ -362,7 +359,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if (checkBootstrap && !isExecutable && executableModule == null) {
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
-            loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION, Collections.<String>emptyList()), false, false);
+            loadInternal(new URLibraryFile(url, "unidbg_bootstrap", DarwinResolver.LIB_VERSION, Collections.<String>emptyList(), false), false, false);
         }
 
         long start = System.currentTimeMillis();
@@ -682,6 +679,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         Map<String, Module> exportModules = new LinkedHashMap<>();
 
+        if (rpathSet.isEmpty()) {
+            rpathSet.add(FilenameUtils.getFullPath(dylibPath));
+        }
         for (MachO.DylibCommand dylibCommand : exportDylibs) {
             String neededLibrary = dylibCommand.name();
             if (log.isDebugEnabled()) {
@@ -1627,7 +1627,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         for (MachOModule export : modules.values()) {
             if (!export.lazyLoadNeededList.isEmpty()) {
-                log.info("Export module resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
+                log.info("dlopen " + path + " resolve needed library failed: " + export.name + ", neededList=" + export.lazyLoadNeededList);
             }
         }
         for (MachOModule m : modules.values()) {
@@ -1705,6 +1705,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     final List<UnidbgPointer> addImageCallbacks = new ArrayList<>();
     final List<UnidbgPointer> boundHandlers = new ArrayList<>();
     final List<UnidbgPointer> initializedHandlers = new ArrayList<>();
+    UnidbgPointer _objcNotifyMapped;
+    UnidbgPointer _objcNotifyInit;
 
     private UnidbgStructure createDyldImageInfo(MachOModule module) {
         if (emulator.is64Bit()) {
@@ -1774,6 +1776,16 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         }
                         Module.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
+                }
+                if (_objcNotifyMapped != null && !module.objcNotifyMapped && module.hasObjC()) {
+                    SvcMemory svcMemory = emulator.getSvcMemory();
+                    Module.emulateFunction(emulator, _objcNotifyMapped.peer, 1, module.createPathMemory(svcMemory), module.machHeader);
+                    module.objcNotifyMapped = true;
+                }
+                if (_objcNotifyInit != null && !module.objcNotifyInit && module.objcNotifyMapped) {
+                    SvcMemory svcMemory = emulator.getSvcMemory();
+                    Module.emulateFunction(emulator, _objcNotifyInit.peer, module.createPathMemory(svcMemory), module.machHeader);
+                    module.objcNotifyInit = true;
                 }
                 break;
             default:

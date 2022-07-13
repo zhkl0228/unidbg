@@ -37,4 +37,4 @@ function build_UIKit() {
   mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework/
 }
 
-build_framework UniformTypeIdentifiers "Foundation"
+build_framework ModelIO "Foundation"

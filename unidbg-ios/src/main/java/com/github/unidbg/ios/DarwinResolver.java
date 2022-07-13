@@ -11,6 +11,9 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.file.ByteArrayFileIO;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
+import com.github.unidbg.ios.patch.LibDispatchPatcher;
+import com.github.unidbg.ios.patch.NewObjcPatcher;
+import com.github.unidbg.memory.Memory;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.ResourceUtils;
@@ -39,6 +42,7 @@ import java.util.regex.Pattern;
 public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO> {
 
     static final String LIB_VERSION = "7.1";
+    private static final String OVERRIDE_VERSION = "override";
 
     private final String version;
 
@@ -54,14 +58,21 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         Collections.addAll(this.excludeLibs, excludeLibs);
     }
 
+    private boolean override;
+
+    public DarwinResolver setOverride() {
+        this.override = true;
+        return this;
+    }
+
     @Override
     public LibraryFile resolveLibrary(Emulator<?> emulator, String libraryName) {
-        return resolveLibrary(libraryName, version, excludeLibs, getClass());
+        return resolveLibrary(libraryName, version, excludeLibs, getClass(), override);
     }
 
     private static final Pattern SYSTEM_LIBRARY_FRAMEWORK_PATTERN = Pattern.compile("/System/Library/Frameworks/(\\w+).framework/Versions/[A-C]/(\\w+)");
 
-    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs, Class<?> resClass) {
+    static LibraryFile resolveLibrary(String libraryName, String version, List<String> excludeLibs, Class<?> resClass, boolean override) {
         if (!excludeLibs.isEmpty() && excludeLibs.contains(FilenameUtils.getName(libraryName))) {
             return null;
         }
@@ -75,10 +86,18 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
             }
         }
 
+        if (override) {
+            String name = "/ios/" + OVERRIDE_VERSION + libraryName.replace('+', 'p');
+            URL url = resClass.getResource(name);
+            if (url != null) {
+                return new URLibraryFile(url, libraryName, version, excludeLibs, true);
+            }
+        }
+
         String name = "/ios/" + version + libraryName.replace('+', 'p');
         URL url = resClass.getResource(name);
         if (url != null) {
-            return new URLibraryFile(url, libraryName, version, excludeLibs);
+            return new URLibraryFile(url, libraryName, version, excludeLibs, override);
         }
         return null;
     }
@@ -176,6 +195,15 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         }
 
         return null;
+    }
+
+    @Override
+    public void onSetToLoader(Emulator<?> emulator) {
+        Memory memory = emulator.getMemory();
+        memory.addModuleListener(new LibDispatchPatcher());
+        if (override) {
+            memory.addModuleListener(new NewObjcPatcher());
+        }
     }
 
 }

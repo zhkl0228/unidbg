@@ -41,4 +41,8 @@ public class CoreSimulatorResolver implements LibraryResolver, IOResolver<Darwin
         return null;
     }
 
+    @Override
+    public void onSetToLoader(Emulator<?> emulator) {
+    }
+
 }

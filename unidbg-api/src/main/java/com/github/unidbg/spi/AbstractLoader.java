@@ -258,6 +258,8 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public void setLibraryResolver(LibraryResolver libraryResolver) {
+        libraryResolver.onSetToLoader(emulator);
+
         this.libraryResolver = libraryResolver;
     }
 
