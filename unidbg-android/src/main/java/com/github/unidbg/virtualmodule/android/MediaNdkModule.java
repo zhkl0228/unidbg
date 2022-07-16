@@ -13,7 +13,6 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
@@ -84,7 +83,7 @@ public class MediaNdkModule extends VirtualModule<VM> {
     public static final byte[] WIDE_VINE_UUID = {(byte) 0xed, (byte) 0xef, (byte) 0x8b, (byte) 0xa9,0x79, (byte) 0xd6,0x4a,
             (byte) 0xce, (byte) 0xa3, (byte) 0xc8,0x27, (byte) 0xdc, (byte) 0xd5,0x1d,0x21, (byte) 0xed};
 
-    private static long createByUUID(Emulator<?> emulator) {
+    private long createByUUID(Emulator<?> emulator) {
         if (log.isDebugEnabled()) {
             log.debug("call createByUUID");
         }
@@ -98,7 +97,7 @@ public class MediaNdkModule extends VirtualModule<VM> {
     }
 
 
-    private static long getPropertyByteArray(Emulator<?> emulator){
+    private long getPropertyByteArray(Emulator<?> emulator){
         RegisterContext context = emulator.getContext();
         Pointer propertyNamePtr = context.getPointerArg(1);
         Pointer propertyValuePtr = context.getPointerArg(2);
@@ -115,27 +114,37 @@ public class MediaNdkModule extends VirtualModule<VM> {
         throw new UnsupportedOperationException("getPropertyByteArray");
     }
 
-    private static long getPropertyString(Emulator<?> emulator){
+    private MemoryBlock vendorPropertyBlock;
+
+    private long getPropertyString(Emulator<?> emulator){
         RegisterContext context = emulator.getContext();
         Pointer propertyNamePtr = context.getPointerArg(1);
         Pointer propertyValuePtr = context.getPointerArg(2);
         String propertyName = propertyNamePtr.getString(0);
-        if(propertyName.equals("vendor")){
-            String input = "Google";
-            MemoryBlock memoryBlock = emulator.getMemory().malloc(input.length(), true);
-            memoryBlock.getPointer().write(input.getBytes(StandardCharsets.UTF_8));
+        if ("vendor".equals(propertyName)) {
+            final String value = "Google";
+            if (vendorPropertyBlock == null) {
+                vendorPropertyBlock = emulator.getMemory().malloc(value.length(), true);
+            }
+            vendorPropertyBlock.getPointer().setString(0, value);
 
-            propertyValuePtr.setPointer(0, memoryBlock.getPointer());
-            propertyValuePtr.setLong(emulator.getPointerSize(), input.length());
-
+            propertyValuePtr.setPointer(0, vendorPropertyBlock.getPointer());
+            if (emulator.is32Bit()) {
+                propertyValuePtr.setInt(4, value.length());
+            } else {
+                propertyValuePtr.setLong(8, value.length());
+            }
             return 0;
         }
-        throw new UnsupportedOperationException("getPropertyString");
+        throw new UnsupportedOperationException("getPropertyString: " + propertyName);
     }
 
-    private static long release(){
+    private long release(){
+        if (vendorPropertyBlock != null) {
+            vendorPropertyBlock.free();
+            vendorPropertyBlock = null;
+        }
         return 0;
     }
-
 
 }
