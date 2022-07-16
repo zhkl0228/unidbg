@@ -13,6 +13,7 @@ import com.sun.jna.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
@@ -51,6 +52,18 @@ public class MediaNdkModule extends VirtualModule<VM> {
             @Override
             public long handle(Emulator<?> emulator) {
                 return getPropertyByteArray(emulator);
+            }
+        }));
+
+        symbols.put("AMediaDrm_getPropertyString", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                return getPropertyString(emulator);
+            }
+        } : new ArmSvc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                return getPropertyString(emulator);
             }
         }));
 
@@ -100,6 +113,24 @@ public class MediaNdkModule extends VirtualModule<VM> {
             return 0;
         }
         throw new UnsupportedOperationException("getPropertyByteArray");
+    }
+
+    private static long getPropertyString(Emulator<?> emulator){
+        RegisterContext context = emulator.getContext();
+        Pointer propertyNamePtr = context.getPointerArg(1);
+        Pointer propertyValuePtr = context.getPointerArg(2);
+        String propertyName = propertyNamePtr.getString(0);
+        if(propertyName.equals("vendor")){
+            String input = "Google";
+            MemoryBlock memoryBlock = emulator.getMemory().malloc(input.length(), true);
+            memoryBlock.getPointer().write(input.getBytes(StandardCharsets.UTF_8));
+
+            propertyValuePtr.setPointer(0, memoryBlock.getPointer());
+            propertyValuePtr.setLong(emulator.getPointerSize(), input.length());
+
+            return 0;
+        }
+        throw new UnsupportedOperationException("getPropertyString");
     }
 
     private static long release(){
