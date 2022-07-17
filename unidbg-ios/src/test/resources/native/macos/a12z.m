@@ -3,6 +3,26 @@
 #include <mach-o/dyld_images.h>
 #include <Foundation/Foundation.h>
 
+@interface TestObjc : NSObject
+-(void) test;
+@end
+
+@implementation TestObjc
++(void) load {
+  NSLog(@"TestObjc.load");
+}
++(void) initialize {
+  NSLog(@"TestObjc.initialize");
+}
+-(id) init {
+  NSLog(@"TestObjc.init");
+  return [super init];
+}
+-(void) test {
+  NSLog(@"%@ test", self);
+}
+@end
+
 __attribute__((naked))
 int test_ldadd(int *p) {
   __asm__ volatile(
@@ -74,5 +94,11 @@ int main(int argc, char *argv[]) {
 
   NSLog(@"a12z _dyld_objc_notify_register=%p, map_images=%p", &_dyld_objc_notify_register, &map_images);
   // _dyld_objc_notify_register(&map_images, load_images, unmap_image);
+
+  TestObjc *test = [TestObjc new];
+  [test test];
+
+  NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile: @"/System/Library/CoreServices/SystemVersion.plist"];
+  NSLog(@"dict=%@", dict);
   return 0;
 }

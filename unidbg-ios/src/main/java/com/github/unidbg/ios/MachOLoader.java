@@ -34,7 +34,6 @@ import com.github.unidbg.memory.MemoryAllocBlock;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryBlockImpl;
 import com.github.unidbg.memory.MemoryMap;
-import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.AbstractLoader;
@@ -255,6 +254,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         for (MachOModule m : modules.values()) {
             processBind(m);
+
+            m.callObjcNotifyMapped(_objcNotifyMapped);
         }
 
         notifySingle(Dyld.dyld_image_state_bound, module);
@@ -267,6 +268,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     continue;
                 }
                 if (m.allSymbolBound || forceCallInit) {
+                    if (m.objcNotifyMapped && !m.objcNotifyInit) {
+                        continue;
+                    }
                     m.doInitialization(emulator);
                 }
             }
@@ -1777,25 +1781,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         Module.emulateFunction(emulator, handler.peer, state, 1, info);
                     }
                 }
-                if (_objcNotifyMapped != null && !module.objcNotifyMapped) {
-                    SvcMemory svcMemory = emulator.getSvcMemory();
-                    MemoryBlock block = malloc(emulator.getPointerSize() * 2, true);
-                    try {
-                        Pointer paths = block.getPointer();
-                        Pointer mh = paths.share(emulator.getPointerSize());
-                        paths.setPointer(0, module.createPathMemory(svcMemory));
-                        mh.setPointer(0, UnidbgPointer.pointer(emulator, module.machHeader));
-                        Module.emulateFunction(emulator, _objcNotifyMapped.peer, 1, paths, mh);
-                        module.objcNotifyMapped = true;
-                    } finally {
-                        block.free();
-                    }
-                }
-                if (_objcNotifyInit != null && !module.objcNotifyInit && module.objcNotifyMapped) {
-                    SvcMemory svcMemory = emulator.getSvcMemory();
-                    Module.emulateFunction(emulator, _objcNotifyInit.peer, module.createPathMemory(svcMemory), module.machHeader);
-                    module.objcNotifyInit = true;
-                }
+                module.callObjcNotifyInit(_objcNotifyInit);
                 break;
             default:
                 throw new UnsupportedOperationException("state=" + state);

@@ -862,6 +862,7 @@ public class Dyld64 extends Dyld {
                     __dyld_objc_notify_register = svcMemory.registerSvc(new Arm64Svc("dyld_objc_notify_register") {
                         private MemoryBlock block;
                         private final List<MachOModule> list = new ArrayList<>(10);
+                        private final boolean objcNotifyInit = log.isDebugEnabled();
                         @Override
                         public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
@@ -871,6 +872,15 @@ public class Dyld64 extends Dyld {
                                         "svc #0x" + Integer.toHexString(svcNumber),
 
                                         "blr x13", // call (*_dyld_objc_notify_mapped)(unsigned count, const char* const paths[], const struct mach_header* const mh[]);
+
+                                        "ldr x13, [sp]",
+                                        "add sp, sp, #0x8", // manipulated stack in dyld_objc_notify_register
+                                        "cmp x13, #0",
+                                        "b.eq #0x30",
+                                        "adr lr, #-0x10", // jump to ldr x13, [sp]
+                                        "ldp x0, x1, [sp]",
+                                        "add sp, sp, #0x10",
+                                        "br x13", // call _dyld_objc_notify_init
 
                                         "mov x8, #0",
                                         "mov x12, #0x" + Integer.toHexString(svcNumber),
@@ -899,6 +909,10 @@ public class Dyld64 extends Dyld {
                             UnidbgPointer mapped = context.getPointerArg(0);
                             UnidbgPointer init = context.getPointerArg(1);
                             UnidbgPointer unmapped = context.getPointerArg(2);
+                            if (mapped == null || init == null) {
+                                throw new IllegalStateException();
+                            }
+
                             if (log.isDebugEnabled()) {
                                 log.debug("__dyld_objc_notify_register mapped=" + mapped + ", init=" + init + ", unmapped=" + unmapped);
                             }
@@ -911,6 +925,26 @@ public class Dyld64 extends Dyld {
                                 }
                             }
                             Collections.reverse(list);
+
+                            Pointer pointer = context.getStackPointer();
+                            try {
+                                pointer = pointer.share(-8); // NULL-terminated
+                                pointer.setLong(0, 0);
+
+                                if (objcNotifyInit) {
+                                    for (MachOModule mm : list) {
+                                        // typedef void (*_dyld_objc_notify_init)(const char* path, const struct mach_header* mh);
+                                        pointer = pointer.share(-8);
+                                        pointer.setLong(0, mm.machHeader);
+                                        pointer = pointer.share(-8);
+                                        pointer.setPointer(0, mm.createPathMemory(svcMemory));
+                                        pointer = pointer.share(-8); // _dyld_objc_notify_init
+                                        pointer.setPointer(0, init);
+                                    }
+                                }
+                            } finally {
+                                context.setStackPointer(pointer);
+                            }
 
                             block = emulator.getMemory().malloc(16 * list.size(), true);
                             UnidbgPointer paths = block.getPointer();
@@ -935,6 +969,7 @@ public class Dyld64 extends Dyld {
                             }
                             for (MachOModule mm : list) {
                                 mm.objcNotifyMapped = true;
+                                mm.objcNotifyInit = objcNotifyInit;
                             }
                             list.clear();
                             block.free();

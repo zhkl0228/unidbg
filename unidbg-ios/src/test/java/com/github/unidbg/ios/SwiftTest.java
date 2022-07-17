@@ -28,7 +28,7 @@ public class SwiftTest {
 
         Memory memory = emulator.getMemory();
         memory.addHookListener(new SymbolResolver(emulator));
-        memory.setLibraryResolver(new DarwinResolver());
+        memory.setLibraryResolver(new DarwinResolver().setOverride());
         emulator.getSyscallHandler().setVerbose(false);
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
 
