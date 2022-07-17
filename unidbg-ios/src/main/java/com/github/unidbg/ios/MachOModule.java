@@ -80,12 +80,29 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Segment[] segments;
 
+    private static final long ARM64E_MASK = 0x7ffffffffffL;
+
+    private long offset2Virtual(long address) {
+        for (Segment ph : segments) {
+            if (address >= ph.offset && address < (ph.offset + ph.mem_size)) {
+                return address + ph.virtual_address - ph.offset;
+            }
+        }
+        throw new UnsupportedOperationException("offset2Virtual address=0x" + Long.toHexString(address));
+    }
+
     @Override
     public final int virtualMemoryAddressToFileOffset(long address) {
         if (segments == null) {
             throw new UnsupportedOperationException();
         }
-        address &= ~0x7fff000000000000L;
+        boolean isPACCodePointer = (address & (1L << 63)) != 0;
+        address &= ARM64E_MASK;
+
+        if (isPACCodePointer) {
+            long lower32Mask = -1L >>> 32;
+            address = offset2Virtual(lower32Mask & address);
+        }
 
         for (Segment ph : segments) {
             if (address >= ph.virtual_address && address < (ph.virtual_address + ph.mem_size)) {
