@@ -2,25 +2,25 @@ package com.github.unidbg.ios;
 
 final class Segment {
 
-    final long virtual_address;
-    final long mem_size;
-    final long offset;
-    final long file_size;
+    final long vmAddr;
+    final long vmSize;
+    final long fileOffset;
+    final long fileSize;
 
-    Segment(long virtual_address, long mem_size, long offset, long file_size) {
-        this.virtual_address = virtual_address;
-        this.mem_size = mem_size;
-        this.offset = offset;
-        this.file_size = file_size;
+    Segment(long vmAddr, long vmSize, long fileOffset, long fileSize) {
+        this.vmAddr = vmAddr;
+        this.vmSize = vmSize;
+        this.fileOffset = fileOffset;
+        this.fileSize = fileSize;
     }
 
     @Override
     public String toString() {
         return "Segment{" +
-                "virtual_address=" + virtual_address +
-                ", mem_size=" + mem_size +
-                ", offset=" + offset +
-                ", file_size=" + file_size +
+                "vmAddr=0x" + Long.toHexString(vmAddr) +
+                ", vmSize=0x" + Long.toHexString(vmSize) +
+                ", offset=" + fileOffset +
+                ", fileSize=0x" + Long.toHexString(fileSize) +
                 '}';
     }
 

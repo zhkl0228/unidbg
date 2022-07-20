@@ -51,11 +51,17 @@ final class Objc2Category {
                 ownerClassName = objcClass.getName();
             }
         } else {
-            objc2Class = Objc2Class.read(classMap, buffer, clazz, mm);
-            if (objc2Class == null) {
-                ownerClassName = "???";
+            boolean valid = mm.validAddress(clazz);
+            if (valid) {
+                objc2Class = Objc2Class.read(classMap, buffer, clazz, mm);
+                if (objc2Class == null) {
+                    ownerClassName = "???";
+                } else {
+                    ownerClassName = objc2Class.name;
+                }
             } else {
-                ownerClassName = objc2Class.name;
+                objc2Class = null;
+                ownerClassName = "<DEREK BUG Categories!>";
             }
         }
         String cName = ownerClassName + ' ' + '(' + categoryName + ')';

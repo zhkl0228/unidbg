@@ -370,6 +370,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         long size = 0;
         String dyId = libraryFile.getName();
         MachO.DyldInfoCommand dyldInfoCommand = null;
+        MachO.LinkeditDataCommand chainedFixups = null;
         MachOModule subModule = null;
         boolean finalSegment = false;
         Set<String> rpathSet = new LinkedHashSet<>(2);
@@ -388,6 +389,12 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                         throw new IllegalStateException("dyldInfoCommand=" + dyldInfoCommand);
                     }
                     dyldInfoCommand = (MachO.DyldInfoCommand) command.body();
+                    break;
+                case DYLD_CHAINED_FIXUPS:
+                    if (chainedFixups != null) {
+                        throw new IllegalStateException("chainedFixups=" + chainedFixups);
+                    }
+                    chainedFixups = (MachO.LinkeditDataCommand) command.body();
                     break;
                 case SEGMENT: {
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
@@ -501,7 +508,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 case ROUTINES_64:
                 case LOAD_WEAK_DYLIB:
                 case BUILD_VERSION:
-                case DYLD_CHAINED_FIXUPS:
                 case DYLD_EXPORTS_TRIE:
                     break;
                 case SUB_CLIENT:
@@ -560,6 +566,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
                     long begin = loadBase + segmentCommand.vmaddr();
                     if ("__PAGEZERO".equals(segmentCommand.segname())) {
+                        segments.add(new Segment(segmentCommand.vmaddr(), segmentCommand.vmsize(), segmentCommand.fileoff(), segmentCommand.filesize()));
                         regions.add(new MemRegion(begin, begin + segmentCommand.vmsize(), 0, libraryFile, segmentCommand.vmaddr()));
                         break;
                     }
@@ -593,6 +600,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
                     long begin = loadBase + segmentCommand64.vmaddr();
                     if ("__PAGEZERO".equals(segmentCommand64.segname())) {
+                        segments.add(new Segment(segmentCommand64.vmaddr(), segmentCommand64.vmsize(), segmentCommand64.fileoff(), segmentCommand64.filesize()));
                         regions.add(new MemRegion(begin, begin + segmentCommand64.vmsize(), 0, libraryFile, segmentCommand64.vmaddr()));
                         break;
                     }
@@ -749,9 +757,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         final long loadSize = size;
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
-                dyldInfoCommand, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
+                dyldInfoCommand, chainedFixups, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
                 fEHFrameSection, fUnwindInfoSection, objcSections, segments.toArray(new Segment[0]), libraryFile);
-        processRebase(log, module);
         if (isExecutable) {
             setExecuteModule(module);
         }
@@ -784,6 +791,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
             }
         }
+        processRebase(log, module);
 
         if ("libsystem_malloc.dylib".equals(dyId)) {
             malloc = module.findSymbolByName("_malloc");
@@ -872,17 +880,254 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
     }
 
-    private void processRebase(Log log, MachOModule module) {
-        MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
+    private void processRebase(Log log, MachOModule mm) {
+        MachO.DyldInfoCommand dyldInfoCommand = mm.dyldInfoCommand;
         if (dyldInfoCommand == null) {
+            MachO.LinkeditDataCommand chainedFixups = mm.chainedFixups;
+            if (chainedFixups == null) {
+                throw new IllegalStateException();
+            }
+            ByteBuffer buffer = mm.buffer.duplicate();
+            buffer.limit((int) (chainedFixups.dataOff() + chainedFixups.dataSize()));
+            buffer.position((int) chainedFixups.dataOff()); // dyld_chained_fixups_header
+            try (ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(buffer.slice())) {
+                fixupAllChainedFixups(io, mm, chainedFixups);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             return;
         }
 
         if (dyldInfoCommand.rebaseSize() > 0) {
-            ByteBuffer buffer = module.buffer.duplicate();
+            ByteBuffer buffer = mm.buffer.duplicate();
             buffer.limit((int) (dyldInfoCommand.rebaseOff() + dyldInfoCommand.rebaseSize()));
             buffer.position((int) dyldInfoCommand.rebaseOff());
-            rebase(log, buffer.slice(), module);
+            rebase(log, buffer.slice(), mm);
+        }
+    }
+
+    private void fixupAllChainedFixups(ByteBufferKaitaiStream io, MachOModule mm, MachO.LinkeditDataCommand chainedFixups) {
+        long fixups_version = io.readU4le();
+        long starts_offset = io.readU4le(); // offset of dyld_chained_starts_in_image in chain_data
+        long imports_offset = io.readU4le(); // offset of imports table in chain_data
+        long symbols_offset = io.readU4le(); // offset of symbol strings in chain_data
+        int imports_count = (int) io.readU4le(); // number of imported symbol names
+        int imports_format = (int) io.readU4le(); // DYLD_CHAINED_IMPORT*
+        long symbols_format = io.readU4le(); // 0 => uncompressed, 1 => zlib compressed
+        if (fixups_version != 0) {
+            throw new IllegalStateException("chained fixups, unknown header version");
+        }
+        if (starts_offset >= io.size()) {
+            throw new IllegalStateException("chained fixups, starts_offset exceeds LC_DYLD_CHAINED_FIXUPS size");
+        }
+        if (imports_offset >= io.size()) {
+            throw new IllegalStateException("chained fixups, imports_offset exceeds LC_DYLD_CHAINED_FIXUPS size");
+        }
+
+        ByteBuffer buffer = mm.buffer.duplicate();
+        buffer.limit((int) (chainedFixups.dataOff() + chainedFixups.dataSize()));
+        buffer.position((int) (chainedFixups.dataOff() + symbols_offset)); // symbolsPool
+        try (ByteBufferKaitaiStream symbolsPool = new ByteBufferKaitaiStream(buffer.slice())) {
+            long formatEntrySize;
+            /*
+             * http://localhost:8080/source/xref/dyld/common/MachOAnalyzer.cpp#2814
+             * http://localhost:8080/source/xref/dyld/common/MachOAnalyzer.cpp#5778
+             */
+            List<FixupChains.BindTarget> bindTargets = new ArrayList<>(imports_count);
+            switch (imports_format) {
+                case FixupChains.DYLD_CHAINED_IMPORT:
+                    /*
+                     * struct dyld_chained_import {
+                     *     uint32_t    lib_ordinal :  8,
+                     *                 weak_import :  1,
+                     *                 name_offset : 23;
+                     * };
+                     */
+                    throw new UnsupportedOperationException("DYLD_CHAINED_IMPORT");
+                case FixupChains.DYLD_CHAINED_IMPORT_ADDEND:
+                    /*
+                     * struct dyld_chained_import_addend {
+                     *     uint32_t    lib_ordinal :  8,
+                     *                 weak_import :  1,
+                     *                 name_offset : 23;
+                     *     int32_t     addend;
+                     * };
+                     */
+                    throw new UnsupportedOperationException("DYLD_CHAINED_IMPORT_ADDEND");
+                case FixupChains.DYLD_CHAINED_IMPORT_ADDEND64:
+                    /*
+                     * struct dyld_chained_import_addend64 {
+                     *     uint64_t    lib_ordinal : 16,
+                     *                 weak_import :  1,
+                     *                 reserved    : 15,
+                     *                 name_offset : 32;
+                     *     uint64_t    addend;
+                     * };
+                     */
+                    formatEntrySize = 16;
+                    io.seek(imports_offset);
+                    for (int i = 0; i < imports_count; i++) {
+                        long raw64 = io.readU8le();
+                        int lib_ordinal = (int) (raw64 & 0xffff);
+                        raw64 >>>= 16;
+                        boolean weak_import = (raw64 & 1) != 0;
+                        int name_offset = (int) (raw64 >>> 16);
+                        long addend = io.readU8le();
+                        if (lib_ordinal > 0xfff0) {
+                            lib_ordinal = (short) lib_ordinal;
+                        }
+                        bindTargets.add(new FixupChains.dyld_chained_import_addend64(lib_ordinal, weak_import, name_offset, addend));
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException("chained fixups, unknown imports_format");
+            }
+            if (FixupChains.greaterThanAddOrOverflow(imports_offset, (formatEntrySize * imports_count), symbols_offset)) {
+                throw new IllegalStateException("chained fixups, imports array overlaps symbols");
+            }
+            if (symbols_format != 0) {
+                throw new IllegalStateException("chained fixups, symbols_format unknown");
+            }
+
+            io.seek(starts_offset); // dyld_chained_starts_in_image
+            int seg_count = (int) io.readU4le();
+            if (seg_count != mm.segments.length) {
+                if (seg_count > mm.segments.length) {
+                    throw new IllegalStateException("chained fixups, seg_count exceeds number of segments");
+                }
+
+                // We can have fewer segments than the count, so long as those we are missing have no relocs
+                int numNoRelocSegments = 0;
+                int numExtraSegments = mm.segments.length - seg_count;
+                for (Segment segment : mm.segments) {
+                    if (segment.vmSize == 0) {
+                        ++numNoRelocSegments;
+                    }
+                }
+                if (numNoRelocSegments != numExtraSegments) {
+                    throw new IllegalStateException("chained fixups, seg_count does not match number of segments");
+                }
+            }
+            long[] seg_info_offset = new long[seg_count];
+            for (int i = 0; i < seg_count; i++) {
+                seg_info_offset[i] = io.readU4le();
+            }
+            int pointer_format_for_all = -1;
+            long maxValidPointerSeen = 0;
+            for (int i = 0; i < seg_info_offset.length; i++) {
+                long offset = seg_info_offset[i];
+                if (offset == 0) {
+                    continue;
+                }
+                io.seek(starts_offset + offset); // dyld_chained_starts_in_segment
+                long size = io.readU4le(); // size of this (amount kernel needs to copy)
+                if (offset + size > imports_offset) { // endOfStarts
+                    throw new IllegalStateException(String.format("chained fixups, dyld_chained_starts_in_segment for segment #%d overruns imports table", i));
+                }
+                int page_size = io.readU2le(); // 0x1000 or 0x4000
+                if ((page_size != 0x1000) && (page_size != 0x4000)) {
+                    throw new IllegalStateException(String.format("chained fixups, page_size not 4KB or 16KB in segment #%d", i));
+                }
+                int pointer_format = io.readU2le(); // DYLD_CHAINED_PTR_*
+                if (pointer_format > 12) {
+                    throw new IllegalStateException(String.format("chained fixups, unknown pointer_format in segment #%d", i));
+                }
+                if (pointer_format_for_all == -1) {
+                    pointer_format_for_all = pointer_format;
+                }
+                if (pointer_format != pointer_format_for_all) {
+                    throw new IllegalStateException(String.format("chained fixups, pointer_format not same for all segments %d and %d", pointer_format, pointer_format_for_all));
+                }
+                long segment_offset = io.readU8le(); // offset in memory to start of segment
+                if (segment_offset != (mm.segments[i].vmAddr - mm.machHeader)) {
+                    throw new IllegalStateException(String.format("chained fixups, segment_offset does not match vmaddr from LC_SEGMENT in segment #%d", i));
+                }
+                long max_valid_pointer = io.readU4le(); // for 32-bit OS, any value beyond this is not a pointer
+                if (max_valid_pointer != 0) {
+                    if (maxValidPointerSeen == 0) {
+                        // record max_valid_pointer values seen
+                        maxValidPointerSeen = max_valid_pointer;
+                    } else if (maxValidPointerSeen != max_valid_pointer) {
+                        throw new IllegalStateException("chained fixups, different max_valid_pointer values seen in different segments");
+                    }
+                }
+                int page_count = io.readU2le(); // how many pages are in array
+                if (page_count == 0) {
+                    continue;
+                }
+                for (long pageIndex = 0; pageIndex < page_count; pageIndex++) {
+                    int offsetInPage = io.readU2le(); // each entry is offset in each page of first element in chain or DYLD_CHAINED_PTR_START_NONE if no fixups on page
+                    if (offsetInPage == FixupChains.DYLD_CHAINED_PTR_START_NONE) {
+                        continue;
+                    }
+                    if ((offsetInPage & FixupChains.DYLD_CHAINED_PTR_START_MULTI) != 0) {
+                        throw new UnsupportedOperationException("DYLD_CHAINED_PTR_START_MULTI");
+                    } else if (offsetInPage > page_size) {
+                        throw new IllegalStateException(String.format("chained fixups, in segment #%d page_start[%d]=0x%04X exceeds page size", i, pageIndex, offsetInPage));
+                    }
+
+                    // one chain per page
+                    Pointer pageContentStart = UnidbgPointer.pointer(emulator, mm.machHeader + segment_offset + (pageIndex * page_size));
+                    assert pageContentStart != null;
+                    Pointer chain = pageContentStart.share(offsetInPage);
+                    walkChain(mm, chain, pointer_format, bindTargets, symbolsPool);
+                }
+            }
+
+            if (imports_count != 0) {
+                int maxBindOrdinal = 0;
+                switch (pointer_format_for_all) {
+                    case FixupChains.DYLD_CHAINED_PTR_32:
+                        maxBindOrdinal = 0x0fffff; // 20-bits
+                        break;
+                    case FixupChains.DYLD_CHAINED_PTR_ARM64E:
+                    case FixupChains.DYLD_CHAINED_PTR_ARM64E_USERLAND:
+                    case FixupChains.DYLD_CHAINED_PTR_ARM64E_OFFSET:
+                        maxBindOrdinal = 0x00ffff; // 16-bits
+                        break;
+                    case FixupChains.DYLD_CHAINED_PTR_64:
+                    case FixupChains.DYLD_CHAINED_PTR_64_OFFSET:
+                    case FixupChains.DYLD_CHAINED_PTR_ARM64E_USERLAND24:
+                        maxBindOrdinal = 0xFFFFFF; // 24 bits
+                        break;
+                }
+                if (imports_count >= maxBindOrdinal) {
+                    throw new IllegalStateException(String.format("chained fixups, imports_count (%d) exceeds max of %d", imports_count, maxBindOrdinal));
+                }
+            }
+            if (maxValidPointerSeen != 0) {
+                Segment segment = mm.segments[mm.segments.length - 1];
+                long lastSegmentLastVMAddr = segment.vmAddr + segment.vmSize;
+                if (maxValidPointerSeen < lastSegmentLastVMAddr) {
+                    throw new IllegalStateException("chained fixups, max_valid_pointer too small for image");
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * <a href="http://localhost:8080/source/xref/dyld/common/MachOLoaded.cpp#1308">参考实现</a>
+     */
+    private void walkChain(MachOModule mm, Pointer chain, int pointer_format, List<FixupChains.BindTarget> bindTargets, ByteBufferKaitaiStream symbolsPool) {
+        boolean chainEnd = false;
+        while (!chainEnd) {
+            long raw64 = chain.getLong(0);
+            FixupChains.handleChain(emulator, mm, hookListeners, pointer_format, chain, raw64, bindTargets, symbolsPool);
+            switch (pointer_format) {
+                case FixupChains.DYLD_CHAINED_PTR_64:
+                case FixupChains.DYLD_CHAINED_PTR_64_OFFSET:
+                    int next = (int) ((raw64 >> 51) & 0xfff);
+                    if (next == 0) {
+                        chainEnd = true;
+                    } else {
+                        chain = chain.share(next * 4);
+                    }
+                    break;
+                default:
+                    throw new UnsupportedOperationException("pointer_format=" + pointer_format);
+            }
         }
     }
 

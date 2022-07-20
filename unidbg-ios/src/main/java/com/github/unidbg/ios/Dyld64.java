@@ -830,6 +830,11 @@ public class Dyld64 extends Dyld {
                     __dyld_get_objc_selector = svcMemory.registerSvc(new Arm64Svc("dyld_get_objc_selector") {
                         @Override
                         public long handle(Emulator<?> emulator) {
+                            EditableArm64RegisterContext context = emulator.getContext();
+                            long selName = context.getLongArg(0);
+                            if (log.isDebugEnabled()) {
+                                log.debug("dyld_get_objc_selector selName=0x" + Long.toHexString(selName));
+                            }
                             return 0;
                         }
                     }).peer;

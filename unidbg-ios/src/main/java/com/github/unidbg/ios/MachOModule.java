@@ -46,7 +46,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     final Emulator<?> emulator;
     final MachO machO;
-    private final MachO.SymtabCommand symtabCommand;
+    final MachO.SymtabCommand symtabCommand;
     final MachO.DysymtabCommand dysymtabCommand;
     final ByteBuffer buffer;
     final List<NeedLibrary> lazyLoadNeededList;
@@ -54,6 +54,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final Map<String, Module> exportModules;
     private final String path;
     final MachO.DyldInfoCommand dyldInfoCommand;
+    final MachO.LinkeditDataCommand chainedFixups;
 
     final List<InitFunction> routines;
     final List<InitFunction> initFunctionList;
@@ -78,17 +79,27 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Map<String, ExportSymbol> exportSymbols;
 
-    private final Segment[] segments;
+    final Segment[] segments;
 
     private static final long ARM64E_MASK = 0x7ffffffffffL;
 
     private long offset2Virtual(long address) {
         for (Segment ph : segments) {
-            if (address >= ph.offset && address < (ph.offset + ph.mem_size)) {
-                return address + ph.virtual_address - ph.offset;
+            if (address >= ph.fileOffset && address < (ph.fileOffset + ph.vmSize)) {
+                return address + ph.vmAddr - ph.fileOffset;
             }
         }
         throw new UnsupportedOperationException("offset2Virtual address=0x" + Long.toHexString(address));
+    }
+
+    public final boolean validAddress(long address) {
+        address &= ARM64E_MASK;
+        for (Segment ph : segments) {
+            if (address >= ph.vmAddr && address < (ph.vmAddr + ph.vmSize)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -96,7 +107,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         if (segments == null) {
             throw new UnsupportedOperationException();
         }
-        boolean isPACCodePointer = (address & (1L << 63)) != 0;
+        boolean isPACCodePointer = (address & (3L << 62)) != 0;
         address &= ARM64E_MASK;
 
         if (isPACCodePointer) {
@@ -105,12 +116,12 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
 
         for (Segment ph : segments) {
-            if (address >= ph.virtual_address && address < (ph.virtual_address + ph.mem_size)) {
-                long relativeOffset = address - ph.virtual_address;
-                if (relativeOffset >= ph.file_size)
-                    throw new IllegalStateException("Can not convert virtual memory address " + Long.toHexString(address) + " to file offset -" + " found segment " + ph
+            if (address >= ph.vmAddr && address < (ph.vmAddr + ph.vmSize)) {
+                long relativeOffset = address - ph.vmAddr;
+                if (relativeOffset >= ph.fileSize)
+                    throw new IllegalStateException("Can not convert virtual memory address 0x" + Long.toHexString(address) + " to file offset -" + " found segment " + ph
                             + " but address maps to memory outside file range");
-                long ret = ph.offset + relativeOffset;
+                long ret = ph.fileOffset + relativeOffset;
                 if ((ret >> 33L) != 0) {
                     throw new IllegalStateException("ret=0x" + Long.toHexString(ret));
                 }
@@ -125,7 +136,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
-                String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, UnidbgPointer envp, UnidbgPointer apple, UnidbgPointer vars,
+                String path, Emulator<?> emulator, MachO.DyldInfoCommand dyldInfoCommand, MachO.LinkeditDataCommand chainedFixups, UnidbgPointer envp, UnidbgPointer apple, UnidbgPointer vars,
                 long machHeader, boolean executable, MachOLoader loader, List<HookListener> hookListeners, List<String> ordinalList,
                 Section fEHFrameSection, Section fUnwindInfoSection,
                 Map<String, MachO.SegmentCommand64.Section64> objcSections,
@@ -141,6 +152,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.exportModules = exportModules;
         this.path = path;
         this.dyldInfoCommand = dyldInfoCommand;
+        this.chainedFixups = chainedFixups;
         this.envp = envp;
         this.apple = apple;
         this.vars = vars;
@@ -220,6 +232,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public boolean hasWeakDefines() {
+        return machO != null && (machO.header().flags() & com.github.unidbg.ios.MachO.MH_WEAK_DEFINES) != 0;
     }
 
     @Override
@@ -802,7 +818,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 Collections.<NeedLibrary>emptyList(),
                 Collections.<String, Module>emptyMap(),
                 Collections.<String, Module>emptyMap(),
-                name, emulator, null, null, null, null, 0L, false, null,
+                name, emulator, null, null, null, null, null, 0L, false, null,
                 Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {

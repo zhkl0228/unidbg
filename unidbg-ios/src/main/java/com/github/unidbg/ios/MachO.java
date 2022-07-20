@@ -98,5 +98,8 @@ public interface MachO {
     byte BIND_SPECIAL_DYLIB_SELF = 0;
     byte BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE = -1;
     byte BIND_SPECIAL_DYLIB_FLAT_LOOKUP = -2;
+    byte BIND_SPECIAL_DYLIB_WEAK_LOOKUP = -3;
+
+    int MH_WEAK_DEFINES = 0x8000; /* the final linked image contains external weak symbols */
 
 }
