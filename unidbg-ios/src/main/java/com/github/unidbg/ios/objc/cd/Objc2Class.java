@@ -1,4 +1,4 @@
-package com.github.unidbg.ios.objc;
+package com.github.unidbg.ios.objc.cd;
 
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.ios.MachOModule;

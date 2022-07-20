@@ -8,8 +8,9 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.Utils;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.hook.HookListener;
-import com.github.unidbg.ios.objc.CDObjectiveC2Processor;
-import com.github.unidbg.ios.objc.CDObjectiveCProcessor;
+import com.github.unidbg.ios.objc.ObjectiveCProcessor;
+import com.github.unidbg.ios.objc.cd.CDObjectiveC2Processor;
+import com.github.unidbg.ios.objc.cd.CDObjectiveCProcessor;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
@@ -663,7 +664,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         return null;
     }
 
-    private CDObjectiveCProcessor objectiveCProcessor;
+    private ObjectiveCProcessor objectiveCProcessor;
 
     @Override
     public Symbol findClosestSymbolByAddress(long addr, boolean fast) {

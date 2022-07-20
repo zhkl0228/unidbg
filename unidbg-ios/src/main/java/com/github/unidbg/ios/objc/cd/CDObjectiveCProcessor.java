@@ -1,15 +1,16 @@
-package com.github.unidbg.ios.objc;
+package com.github.unidbg.ios.objc.cd;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.ios.ExportSymbol;
 import com.github.unidbg.ios.MachOModule;
+import com.github.unidbg.ios.objc.ObjectiveCProcessor;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class CDObjectiveCProcessor {
+public abstract class CDObjectiveCProcessor implements ObjectiveCProcessor {
 
     final ByteBuffer buffer;
     final Emulator<?> emulator;
@@ -23,6 +24,7 @@ public abstract class CDObjectiveCProcessor {
         this.emulator = emulator;
     }
 
+    @Override
     public Symbol findObjcSymbol(Symbol bestSymbol, long targetAddress, MachOModule module) {
         String className = null;
         Objc2Method objc2Method = null;
