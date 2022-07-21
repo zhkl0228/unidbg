@@ -1,4 +1,4 @@
-package com.github.unidbg.ios.objc.cd;
+package com.github.unidbg.ios.objc.processor;
 
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.ios.MachOModule;
@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
-final class Objc2Class {
+final class Objc2Class implements ObjcClass {
 
     private static final long FAST_DATA_MASK = 0x7ffffffffff8L;
 
@@ -62,13 +62,13 @@ final class Objc2Class {
     }
 
     private final long isa;
-    private final long superclass;
-    private final long cache;
-    private final long vtable;
-    private final boolean isSwiftClass;
-    private final int flags;
-    final String name;
-    final List<Objc2Method> methods;
+    final long superclass;
+    final long cache;
+    final long vtable;
+    final boolean isSwiftClass;
+    final int flags;
+    private final String name;
+    private final List<Objc2Method> methods;
 
     private Objc2Class(long isa, long superclass, long cache, long vtable, boolean isSwiftClass, int flags, String name, List<Objc2Method> methods) {
         this.isa = isa;
@@ -86,9 +86,24 @@ final class Objc2Class {
         return name;
     }
 
-    Objc2Class metaClass;
+    private ObjcClass metaClass;
 
     void readMetaClass(Map<Long, Objc2Class> classMap, ByteBuffer buffer, MachOModule mm) {
         metaClass = read(classMap, buffer, isa, mm);
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public ObjcClass getMeta() {
+        return metaClass;
+    }
+
+    @Override
+    public ObjcMethod[] getMethods() {
+        return methods.toArray(new ObjcMethod[0]);
     }
 }

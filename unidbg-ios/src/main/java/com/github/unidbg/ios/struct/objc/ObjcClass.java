@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * objc_class
  */
-public abstract class ObjcClass extends ObjcObject implements ObjcConstants {
+public abstract class ObjcClass extends ObjcObject implements ObjcConstants, com.github.unidbg.ios.objc.processor.ObjcClass {
 
     public static ObjcClass create(Emulator<?> emulator, Pointer pointer) {
         ObjcClass objcClass = emulator.is64Bit() ? new ObjcClass64(emulator, pointer) : new ObjcClass32(emulator, pointer);
@@ -52,6 +52,7 @@ public abstract class ObjcClass extends ObjcObject implements ObjcConstants {
         return (data().ro(emulator).flags & RO_META) != 0;
     }
 
+    @Override
     public ObjcClass getMeta() {
         if (isMetaClass()) {
             return this;
@@ -68,6 +69,7 @@ public abstract class ObjcClass extends ObjcObject implements ObjcConstants {
         return (data().flags & RO_FUTURE) != 0;
     }
 
+    @Override
     public String getName() {
         if (isRealized()  ||  isFuture()) {
             return data().ro(emulator).getNamePointer(emulator).getString(0);

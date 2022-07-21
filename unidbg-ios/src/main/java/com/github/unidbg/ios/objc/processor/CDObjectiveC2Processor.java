@@ -1,4 +1,4 @@
-package com.github.unidbg.ios.objc.cd;
+package com.github.unidbg.ios.objc.processor;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.ios.MachOModule;
@@ -10,13 +10,11 @@ import java.util.Map;
 
 public class CDObjectiveC2Processor extends CDObjectiveCProcessor {
 
-    private final MachOModule module;
-    private final Map<String, MachO.SegmentCommand64.Section64> objcSections;
+    final ByteBuffer buffer;
 
-    public CDObjectiveC2Processor(ByteBuffer buffer, Map<String, MachO.SegmentCommand64.Section64> objcSections, MachOModule module, Emulator<?> emulator) {
-        super(buffer, emulator);
-        this.objcSections = objcSections;
-        this.module = module;
+    public CDObjectiveC2Processor(MachOModule module, Emulator<?> emulator, ByteBuffer buffer) {
+        super(emulator, module);
+        this.buffer = buffer;
 
         load();
     }

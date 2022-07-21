@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.struct.objc;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.ios.objc.processor.ObjcMethod;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
@@ -24,5 +25,10 @@ public class ObjcClass64 extends ObjcClass {
     @Override
     protected UnidbgPointer getDataPointer(Emulator<?> emulator) {
         return UnidbgPointer.pointer(emulator, data);
+    }
+
+    @Override
+    public ObjcMethod[] getMethods() {
+        throw new UnsupportedOperationException();
     }
 }

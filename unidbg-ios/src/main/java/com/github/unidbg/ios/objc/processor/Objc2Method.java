@@ -1,4 +1,4 @@
-package com.github.unidbg.ios.objc.cd;
+package com.github.unidbg.ios.objc.processor;
 
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.ios.MachOModule;
@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-final class Objc2Method {
+final class Objc2Method implements ObjcMethod {
 
     private static class Method {
         private final int name;
@@ -93,6 +93,16 @@ final class Objc2Method {
         this.name = name;
         this.types = types;
         this.imp = imp;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public long getImp() {
+        return imp;
     }
 
     @Override

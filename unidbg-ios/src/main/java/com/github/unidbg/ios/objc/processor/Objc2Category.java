@@ -1,4 +1,4 @@
-package com.github.unidbg.ios.objc.cd;
+package com.github.unidbg.ios.objc.processor;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.debugger.ida.Utils;
@@ -12,6 +12,7 @@ import java.util.Map;
 
 final class Objc2Category {
 
+    @SuppressWarnings("unused")
     static Objc2Category read(Map<Long, Objc2Class> classMap, ByteBuffer buffer, long item, MachOModule mm, Emulator<?> emulator) {
         int pos = mm.virtualMemoryAddressToFileOffset(item);
         buffer.position(pos);
@@ -57,7 +58,7 @@ final class Objc2Category {
                 if (objc2Class == null) {
                     ownerClassName = "???";
                 } else {
-                    ownerClassName = objc2Class.name;
+                    ownerClassName = objc2Class.getName();
                 }
             } else {
                 objc2Class = null;

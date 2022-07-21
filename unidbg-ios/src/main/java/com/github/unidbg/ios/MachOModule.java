@@ -9,8 +9,8 @@ import com.github.unidbg.Utils;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.objc.ObjectiveCProcessor;
-import com.github.unidbg.ios.objc.cd.CDObjectiveC2Processor;
-import com.github.unidbg.ios.objc.cd.CDObjectiveCProcessor;
+import com.github.unidbg.ios.objc.processor.CDObjectiveC2Processor;
+import com.github.unidbg.ios.objc.processor.UniObjectiveProcessor;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
@@ -76,7 +76,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final Section fEHFrameSection;
     private final Section fUnwindInfoSection;
-    private final Map<String, MachO.SegmentCommand64.Section64> objcSections;
+    public final Map<String, MachO.SegmentCommand64.Section64> objcSections;
 
     private final Map<String, ExportSymbol> exportSymbols;
 
@@ -96,6 +96,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     public final boolean validAddress(long address) {
         address &= ARM64E_MASK;
         for (Segment ph : segments) {
+            if (ph.fileSize == 0) {
+                continue;
+            }
             if (address >= ph.vmAddr && address < (ph.vmAddr + ph.vmSize)) {
                 return true;
             }
@@ -732,7 +735,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         try {
             if (!fast && objectiveCProcessor == null && objcSections != null && !objcSections.isEmpty()) {
-                objectiveCProcessor = new CDObjectiveC2Processor(buffer, objcSections, this, emulator);
+                objectiveCProcessor = new CDObjectiveC2Processor(this, emulator, buffer);
             }
             if (!fast && objectiveCProcessor != null) {
                 if (executable) {
