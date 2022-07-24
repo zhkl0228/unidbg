@@ -13,6 +13,7 @@ import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
 import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.patch.NewObjcPatcher;
+import com.github.unidbg.ios.patch.OldObjcPatcher;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.unix.UnixEmulator;
@@ -203,6 +204,8 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
         memory.addModuleListener(new LibDispatchPatcher());
         if (override) {
             memory.addModuleListener(new NewObjcPatcher());
+        } else {
+            memory.addHookListener(new OldObjcPatcher());
         }
     }
 

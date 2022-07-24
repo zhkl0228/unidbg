@@ -27,7 +27,9 @@ import unicorn.ArmConst;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Dyld32 extends Dyld {
@@ -156,7 +158,9 @@ public class Dyld32 extends Dyld {
                     if (callback != null && !loader.addImageCallbacks.contains(callback)) {
                         loader.addImageCallbacks.add(callback);
 
-                        for (Module md : loader.getLoadedModulesNoVirtual()) {
+                        List<Module> modules = loader.getLoadedModulesNoVirtual();
+                        Collections.reverse(modules);
+                        for (Module md : modules) {
                             Log log = LogFactory.getLog("com.github.unidbg.ios." + md.name);
                             MachOModule mm = (MachOModule) md;
                             if (mm.executable) {

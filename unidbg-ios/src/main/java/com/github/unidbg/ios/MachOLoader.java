@@ -202,7 +202,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     public final void onExecutableLoaded(String executable) {
         if (callInitFunction) {
-            for (MachOModule m : modules.values()) {
+            for (MachOModule m : modules.values().toArray(new MachOModule[0])) {
                 boolean needCallInit = m.allSymbolBound || isPayloadModule(m) || m.getPath().equals(executable);
                 if (needCallInit) {
                     m.doInitialization(emulator);
@@ -1852,10 +1852,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if ("/usr/lib/libSystem.dylib".equals(path)) {
             path = "/usr/lib/libSystem.B.dylib";
         }
-        MachOModule loaded = modules.get(FilenameUtils.getName(path));
-        if (loaded != null) {
-            loaded.addReferenceCount();
-            return loaded;
+        MachOModule loadedModule = modules.get(FilenameUtils.getName(path));
+        if (loadedModule != null) {
+            loadedModule.addReferenceCount();
+            return loadedModule;
         }
 
         for (Module module : getLoadedModules()) {
@@ -1873,6 +1873,39 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         MachOModule module = loadInternalPhase(libraryFile, true, false, Collections.<String>emptyList());
+
+        for (MachOModule export : modules.values().toArray(new MachOModule[0])) {
+            for (NeedLibrary library : export.lazyLoadNeededList.toArray(new NeedLibrary[0])) {
+                String neededLibrary = library.path;
+                if (log.isDebugEnabled()) {
+                    log.debug(export.getPath() + " need dependency " + neededLibrary);
+                }
+
+                MachOModule loaded = modules.get(FilenameUtils.getName(neededLibrary));
+                if (loaded != null) {
+                    if (library.upward) {
+                        export.upwardLibraries.put(FilenameUtils.getBaseName(neededLibrary), loaded);
+                    }
+                    continue;
+                }
+                try {
+                    LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.singletonList(FilenameUtils.getFullPath(libraryFile.getPath())));
+                    if (neededLibraryFile != null) {
+                        MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.<String>emptySet());
+                        needed.addReferenceCount();
+
+                        if (library.upward) {
+                            export.upwardLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
+                        }
+                    } else if (!library.weak) {
+                        log.info(export.getPath() + " load dependency " + neededLibrary + " failed");
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            export.lazyLoadNeededList.clear();
+        }
 
         for (MachOModule export : modules.values()) {
             if (!export.lazyLoadNeededList.isEmpty()) {
@@ -1931,7 +1964,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return new ArrayList<Module>(modules.values());
     }
 
-    final Collection<Module> getLoadedModulesNoVirtual() {
+    final List<Module> getLoadedModulesNoVirtual() {
         List<Module> list = new ArrayList<>(modules.size());
         for (MachOModule mm : modules.values()) {
             if (!mm.isVirtual()) {

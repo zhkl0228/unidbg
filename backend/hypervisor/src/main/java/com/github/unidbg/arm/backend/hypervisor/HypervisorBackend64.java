@@ -113,6 +113,22 @@ public class HypervisorBackend64 extends HypervisorBackend {
     }
 
     @Override
+    public void handleUnknownException(int ec, long esr, long far, long virtualAddress) {
+        switch (ec) {
+            case EC_DATAABORT:
+                boolean isWrite = ((esr >> 6) & 1) != 0;
+                if (eventMemHookNotifier != null) {
+                    eventMemHookNotifier.notifyMemUnmapped(isWrite, virtualAddress);
+                }
+                break;
+            case EC_INSNABORT:
+            default:
+                log.warn("handleUnknownException ec=0x" + Integer.toHexString(ec) + ", virtualAddress=0x" + Long.toHexString(virtualAddress) + ", esr=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far));
+                break;
+        }
+    }
+
+    @Override
     public boolean handleException(long esr, long far, final long elr, long spsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {

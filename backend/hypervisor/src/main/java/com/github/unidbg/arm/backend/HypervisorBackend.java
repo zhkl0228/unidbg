@@ -133,8 +133,37 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         throw new UnsupportedOperationException();
     }
 
+    protected class EventMemHookNotifier {
+        private final EventMemHook callback;
+        private final int type;
+        private final Object user;
+
+        public EventMemHookNotifier(EventMemHook callback, int type, Object user) {
+            this.callback = callback;
+            this.type = type;
+            this.user = user;
+        }
+        public void notifyMemUnmapped(boolean isWrite, long address) {
+            if (isWrite) {
+                if ((type & UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED) != 0) {
+                    callback.hook(HypervisorBackend.this, address, 0, 0L, user, EventMemHook.UnmappedType.Write);
+                }
+            } else {
+                if ((type & UnicornConst.UC_HOOK_MEM_READ_UNMAPPED) != 0) {
+                    callback.hook(HypervisorBackend.this, address, 0, 0L, user, EventMemHook.UnmappedType.Read);
+                }
+            }
+        }
+    }
+
+    protected EventMemHookNotifier eventMemHookNotifier;
+
     @Override
     public void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException {
+        if (eventMemHookNotifier != null) {
+            throw new IllegalStateException();
+        }
+        eventMemHookNotifier = new EventMemHookNotifier(callback, type, user_data);
     }
 
     protected InterruptHookNotifier interruptHookNotifier;

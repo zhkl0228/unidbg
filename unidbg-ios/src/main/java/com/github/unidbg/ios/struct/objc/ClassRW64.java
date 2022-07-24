@@ -22,7 +22,7 @@ public class ClassRW64 extends ClassRW {
 
     @Override
     public ClassRO ro(Emulator<?> emulator) {
-        ClassRO ro = new ClassRO64(UnidbgPointer.pointer(emulator, this.ro));
+        ClassRO ro = new ClassRO64(UnidbgPointer.pointer(emulator, this.ro & FAST_DATA_MASK));
         ro.unpack();
         return ro;
     }

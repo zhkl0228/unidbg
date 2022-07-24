@@ -188,12 +188,15 @@ public class Dyld64 extends Dyld {
                     if (callback != null && !loader.addImageCallbacks.contains(callback)) {
                         loader.addImageCallbacks.add(callback);
 
-                        for (Module md : loader.getLoadedModulesNoVirtual()) {
+                        List<Module> modules = loader.getLoadedModulesNoVirtual();
+                        Collections.reverse(modules);
+                        for (Module md : modules) {
                             Log log = LogFactory.getLog("com.github.unidbg.ios." + md.name);
                             MachOModule mm = (MachOModule) md;
                             if (mm.executable) {
                                 continue;
                             }
+                            mm.addImageCallSet.add(callback);
 
                             // (headerType *mh, unsigned long	vmaddr_slide)
                             pointer = pointer.share(-8);
@@ -713,6 +716,7 @@ public class Dyld64 extends Dyld {
     private long __dyld_for_each_objc_class;
     private long __dyld_for_each_objc_protocol;
     private long _os_unfair_recursive_lock_lock_with_options;
+    private long _os_unfair_recursive_lock_tryunlock4objc;
     private long _os_unfair_recursive_lock_unlock;
     private long _os_unfair_lock_lock_with_options;
     private long _os_unfair_lock_unlock;
@@ -1018,6 +1022,20 @@ public class Dyld64 extends Dyld {
                     }).peer;
                 }
                 return _os_unfair_lock_unlock;
+            }
+            if ("_os_unfair_recursive_lock_tryunlock4objc".equals(symbolName)) {
+                if (_os_unfair_recursive_lock_tryunlock4objc == 0) {
+                    _os_unfair_recursive_lock_tryunlock4objc = svcMemory.registerSvc(new Arm64Svc("os_unfair_recursive_lock_tryunlock4objc") {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("os_unfair_recursive_lock_tryunlock4objc");
+                            }
+                            return 1;
+                        }
+                    }).peer;
+                }
+                return _os_unfair_recursive_lock_tryunlock4objc;
             }
             if ("_os_unfair_recursive_lock_lock_with_options".equals(symbolName)) {
                 if (_os_unfair_recursive_lock_lock_with_options == 0) {

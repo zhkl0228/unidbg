@@ -21,6 +21,7 @@ typedef struct hypervisor {
 } *t_hypervisor;
 
 static jmethodID handleException = NULL;
+static jmethodID handleUnknownException = NULL;
 
 static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
     uint64_t idx = vaddr >> PAGE_BITS;
@@ -70,7 +71,8 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
     }
     default:
       uint64_t pc = 0;
-      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &pc));
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
+      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, pc));
       uint64_t cpsr = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
       uint64_t sp = 0;
@@ -79,7 +81,8 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ESR_EL1, &esr));
       uint64_t far = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_FAR_EL1, &far));
-      fprintf(stderr, "Unexpected VM exception: 0x%llx, EC 0x%x, VirtAddr 0x%llx, IPA 0x%llx, ELR_EL1 0x%llx, SPSR_EL1 0x%llx, SP_EL0 0x%llx, ESR_EL1 0x%llx, FAR_EL1 0x%llx\n",
+      env->CallVoidMethod(hypervisor->callback, handleUnknownException, ec, esr, far, cpu->vcpu_exit->exception.virtual_address);
+      fprintf(stderr, "Unexpected VM exception: 0x%llx, EC 0x%x, VirtAddr 0x%llx, IPA 0x%llx, PC 0x%llx, SPSR_EL1 0x%llx, SP_EL0 0x%llx, ESR_EL1 0x%llx, FAR_EL1 0x%llx\n",
                           syndrome,
                           ec,
                           cpu->vcpu_exit->exception.virtual_address,
@@ -1049,6 +1052,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_ERR;
   }
   handleException = env->GetMethodID(cHypervisorCallback, "handleException", "(JJJJ)Z");
+  handleUnknownException = env->GetMethodID(cHypervisorCallback, "handleUnknownException", "(IJJJ)V");
 
   return JNI_VERSION_1_6;
 }

@@ -1,6 +1,7 @@
 package com.github.unidbg.ios.objc.processor;
 
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.debugger.ida.Utils;
 import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
@@ -48,8 +49,12 @@ final class Objc2Category {
                     ownerClassName = symbolName;
                 }
             } else {
-                ObjcClass objcClass = ObjcClass.create(emulator, owner);
-                ownerClassName = objcClass.getName();
+                try {
+                    ObjcClass objcClass = ObjcClass.create(emulator, owner);
+                    ownerClassName = objcClass.getName();
+                } catch (BackendException e) {
+                    throw new IllegalStateException(e);
+                }
             }
         } else {
             boolean valid = mm.validAddress(clazz);

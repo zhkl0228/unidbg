@@ -96,7 +96,8 @@ final class FixupChains {
                     return null;
                 }
                 if (targetImage == null) {
-                    throw new IllegalStateException("libraryOrdinal=" + libraryOrdinal + ", symbolName=" + symbolName);
+                    log.info("resolveSymbol libraryOrdinal=" + libraryOrdinal + ", symbolName=" + symbolName);
+                    return null;
                 }
                 return targetImage.findSymbolByName(symbolName, false);
             } else {
