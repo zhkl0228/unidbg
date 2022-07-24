@@ -71,11 +71,19 @@ public abstract class ObjcClass extends ObjcObject implements ObjcConstants, com
 
     @Override
     public String getName() {
+        ClassRO ro;
         if (isRealized()  ||  isFuture()) {
-            return data().ro(emulator).getNamePointer(emulator).getString(0);
+            ClassRW data = data();
+            ro = data.ro(emulator);
         } else {
-            return ro().getNamePointer(emulator).getString(0);
+            ro = ro();
         }
+        Pointer pointer = ro.getNamePointer(emulator);
+        if (pointer == null) {
+            ClassRW data = data();
+            throw new IllegalStateException("data=" + data);
+        }
+        return pointer.getString(0);
     }
 
 }

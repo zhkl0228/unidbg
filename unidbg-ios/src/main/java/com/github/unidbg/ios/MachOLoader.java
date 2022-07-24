@@ -1735,7 +1735,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             return false;
         }
 
-        long bindAt = symbol.getAddress();
+        long bindAt = symbol.getAddress() + addend;
         for (HookListener listener : hookListeners) {
             long hook = listener.hook(emulator.getSvcMemory(), symbol.getModuleName(), symbol.getName(), bindAt);
             if (hook > 0) {
@@ -1749,11 +1749,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         Pointer newPointer = UnidbgPointer.pointer(emulator, bindAt);
-        if (newPointer == null) {
-            newPointer = UnidbgPointer.pointer(emulator, addend);
-        } else {
-            newPointer = newPointer.share(addend);
-        }
         switch (type) {
             case BIND_TYPE_POINTER:
                 pointer.setPointer(0, newPointer);

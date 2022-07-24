@@ -556,7 +556,7 @@ BOOL isSystemClass(Class class) {
 	    Class class = classes[i];
 	    const char *className = class_getName(class);
 	    if(strcasestr(className, keywords)) {
-	        NSLog(@"Found class: %s", className);
+	        NSLog(@"Found class: %s => %p", className, class);
 	        count++;
 	    } else if(matchesSuper(class_getSuperclass(class), keywords)) {
 	        NSLog(@"Found super: %s", className);

@@ -118,10 +118,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
             case EC_DATAABORT:
                 boolean isWrite = ((esr >> 6) & 1) != 0;
                 if (eventMemHookNotifier != null) {
-                    eventMemHookNotifier.notifyMemUnmapped(isWrite, virtualAddress);
+                    eventMemHookNotifier.notifyDataAbort(isWrite, virtualAddress);
                 }
                 break;
             case EC_INSNABORT:
+                if (eventMemHookNotifier != null) {
+                    eventMemHookNotifier.notifyInsnAbort(virtualAddress);
+                }
+                break;
             default:
                 log.warn("handleUnknownException ec=0x" + Integer.toHexString(ec) + ", virtualAddress=0x" + Long.toHexString(virtualAddress) + ", esr=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far));
                 break;

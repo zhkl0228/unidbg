@@ -385,6 +385,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, gettimeofday(emulator));
                     return;
                 case 121:
+                case 412: // __writev_nocancel
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, writev(emulator));
                     return;
                 case 128:

@@ -10,6 +10,7 @@ import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
+import com.github.unidbg.ios.struct.SystemVersion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.SvcMemory;
@@ -494,6 +495,17 @@ public class Dyld64 extends Dyld {
                 return 1;
             }
         });
+        __dyld_dlclose = svcMemory.registerSvc(new Arm64Svc("dyld_dlclose") {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                long handler = context.getLongArg(0);
+                if (log.isDebugEnabled()) {
+                    log.debug("__dyld_dlclose handler=0x" + Long.toHexString(handler));
+                }
+                return 0;
+            }
+        });
         __dyld_dlopen_preflight = svcMemory.registerSvc(new Arm64Svc("dyld_dlopen_preflight") {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -549,6 +561,7 @@ public class Dyld64 extends Dyld {
     private final Pointer __dyld_dlopen;
     private final Pointer __dyld_dlsym;
     private final Pointer __dyld_dladdr;
+    private final Pointer __dyld_dlclose;
     private final Pointer __dyld_dlopen_preflight;
     private final Pointer __dyld_shared_cache_some_image_overridden;
     private final long _os_trace_redirect_func;
@@ -590,6 +603,9 @@ public class Dyld64 extends Dyld {
                 return 1;
             case "__dyld_dladdr":
                 address.setPointer(0, __dyld_dladdr);
+                return 1;
+            case "__dyld_dlclose":
+                address.setPointer(0, __dyld_dlclose);
                 return 1;
             case "__dyld_dlsym":
                 address.setPointer(0, __dyld_dlsym);
@@ -653,7 +669,8 @@ public class Dyld64 extends Dyld {
 
                 if (ret == 0) {
                     this.error.setString(0, "Resolve library " + path + " failed");
-                    if ("/usr/sbin/aslmanager".equals(path)) {
+                    if ("/usr/sbin/aslmanager".equals(path) ||
+                            "/System/Library/PrivateFrameworks/Librarian.framework/Librarian".equals(path)) {
                         return 0;
                     }
                     log.info("dlopen failed: " + path);
@@ -725,8 +742,31 @@ public class Dyld64 extends Dyld {
     private long _abort_with_reason;
     private long __dyld_is_memory_immutable;
 
+    private long _os_system_version_get_current_version;
+
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        if ("libswiftCore.dylib".equals(libraryName)) {
+            if ("_os_system_version_get_current_version".equals(symbolName)) {
+                if (_os_system_version_get_current_version == 0) {
+                    _os_system_version_get_current_version = svcMemory.registerSvc(new Arm64Svc("os_system_version_get_current_version") {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer pointer = context.getPointerArg(0);
+                            // 7.1.0
+                            SystemVersion systemVersion = new SystemVersion(pointer);
+                            systemVersion.major = 7;
+                            systemVersion.minor = 1;
+                            systemVersion.patch = 0;
+                            systemVersion.pack();
+                            return 0;
+                        }
+                    }).peer;
+                }
+                return _os_system_version_get_current_version;
+            }
+        }
         if ("libobjc.A.dylib".equals(libraryName)) {
             if ("__dyld_is_memory_immutable".equals(symbolName)) {
                 if (__dyld_is_memory_immutable == 0) {
@@ -871,7 +911,7 @@ public class Dyld64 extends Dyld {
                     __dyld_objc_notify_register = svcMemory.registerSvc(new Arm64Svc("dyld_objc_notify_register") {
                         private MemoryBlock block;
                         private final List<MachOModule> list = new ArrayList<>(10);
-                        private final boolean objcNotifyInit = log.isDebugEnabled();
+                        private final boolean objcNotifyInit = false;
                         @Override
                         public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
                             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
