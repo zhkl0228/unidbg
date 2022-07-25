@@ -29,7 +29,7 @@ public class ClassRW64 extends ClassRW {
             assert pointer != null;
             ro = pointer.getLong(0);
         }
-        ClassRO classRO = new ClassRO64(UnidbgPointer.pointer(emulator, ro));
+        ClassRO classRO = new ClassRO64(UnidbgPointer.pointer(emulator, ro & FAST_DATA_MASK));
         classRO.unpack();
         return classRO;
     }

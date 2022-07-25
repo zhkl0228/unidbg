@@ -83,3 +83,5 @@ void CFURLRequestSetHTTPRequestBody(
   CFDataRef				httpBody);
 
 CFDataRef CFURLRequestCopyHTTPRequestBody(CFURLRequestRef request);
+
+void CFURLRequestSetTimeoutInterval(CFMutableURLRequestRef request, double timeoutInterval);

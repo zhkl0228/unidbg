@@ -35,3 +35,6 @@
     return YES;
 }
 @end
+
+@implementation NSManagedObject
+@end

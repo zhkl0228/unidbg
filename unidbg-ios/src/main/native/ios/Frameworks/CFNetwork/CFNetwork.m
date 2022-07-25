@@ -107,7 +107,9 @@ void CFURLRequestSetMultipleHTTPHeaderFields(
     print_lr(buf, lr);
     fprintf(stderr, "CFURLRequestSetMultipleHTTPHeaderFields request=%p, LR=%s\n", mutableHTTPRequest, buf);
   }
-  mutableHTTPRequest->multipleHeaderFields = CFRetain(headerFields);
+  if(headerFields) {
+    mutableHTTPRequest->multipleHeaderFields = CFRetain(headerFields);
+  }
 }
 
 void CFURLRequestSetHTTPRequestMethod(
@@ -146,6 +148,9 @@ void CFURLRequestSetHTTPRequestBody(
   CFMutableURLRequestRef   mutableHTTPRequest,
   CFDataRef				httpBody) {
   mutableHTTPRequest->httpBody = CFRetain(httpBody);
+}
+
+void CFURLRequestSetTimeoutInterval(CFMutableURLRequestRef request, double timeoutInterval) {
 }
 
 void _CFURLProtocolRegisterFoundationBridge(void *impl, Boolean preferCFURLProtocol) {

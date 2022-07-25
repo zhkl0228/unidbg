@@ -24,3 +24,6 @@ NSString *const NSSQLiteStoreType = @"NSSQLiteStoreType";
 - (__kindof NSPersistentStore *)addPersistentStoreWithType:(NSString *)storeType configuration:(NSString *)configuration URL:(NSURL *)storeURL options:(NSDictionary *)options error:(NSError **)error;
 - (BOOL)removePersistentStore:(NSPersistentStore *)store error:(NSError **)error;
 @end
+
+@interface NSManagedObject : NSObject
+@end

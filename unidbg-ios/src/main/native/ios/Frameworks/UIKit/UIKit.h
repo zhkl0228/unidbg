@@ -29,6 +29,7 @@ const NSNotificationName UIAccessibilityDarkerSystemColorsStatusDidChangeNotific
 const NSNotificationName UIContentSizeCategoryDidChangeNotification = @"UIContentSizeCategoryDidChangeNotification";
 const NSNotificationName UIDeviceBatteryLevelDidChangeNotification = @"UIDeviceBatteryLevelDidChangeNotification";
 const NSNotificationName UIKeyboardWillChangeFrameNotification = @"UIKeyboardWillChangeFrameNotification";
+const NSNotificationName UIKeyboardDidChangeFrameNotification = @"UIKeyboardDidChangeFrameNotification";
 
 NSString *const NSExtensionHostDidEnterBackgroundNotification = @"NSExtensionHostDidEnterBackgroundNotification";
 NSString *const NSExtensionHostDidBecomeActiveNotification = @"NSExtensionHostDidBecomeActiveNotification";
@@ -45,11 +46,13 @@ const UIScrollViewDecelerationRate UIScrollViewDecelerationRateFast = 0.0;
 typedef CGFloat UIWindowLevel;
 const UIWindowLevel UIWindowLevelNormal = 0.0;
 const UIWindowLevel UIWindowLevelStatusBar = 0.0;
+const UIWindowLevel UIWindowLevelAlert = 0.0;
 
 typedef double NSTimeInterval;
 const NSTimeInterval UIApplicationBackgroundFetchIntervalMinimum = 0.0;
 
-const size_t UIBackgroundTaskInvalid = 0;
+typedef NSUInteger UIBackgroundTaskIdentifier;
+const UIBackgroundTaskIdentifier UIBackgroundTaskInvalid = 0;
 
 typedef NSString *UIFontTextStyle;
 const UIFontTextStyle UIFontTextStyleSubheadline = @"UIFontTextStyleSubheadline";
@@ -131,6 +134,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @interface UIGestureRecognizer : NSObject
 @end
 
+@interface CALayer : NSObject
+@end
+
 @interface UIView : UIResponder
 @property(nonatomic) BOOL accessibilityViewIsModal;
 @property(nonatomic, retain) UIColor *backgroundColor;
@@ -138,6 +144,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @property(nonatomic, getter=isHidden) BOOL hidden;
 @property(nonatomic, readonly) UIView *superview;
 @property(nonatomic) UIViewAutoresizing autoresizingMask;
+@property(nonatomic, readonly, strong) CALayer *layer;
 - (id)initWithFrame:(CGRect)rect;
 - (void)setAccessibilityViewIsModal:(BOOL)flag;
 - (void)setOverrideUserInterfaceStyle:(UIUserInterfaceStyle)style;
@@ -165,6 +172,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @interface UIWindow : UIView
 @property(nonatomic) UIWindowLevel windowLevel;
 @property(nonatomic, strong) UIViewController *rootViewController;
+@property(nonatomic, getter=isUserInteractionEnabled) BOOL userInteractionEnabled;
 - (void)makeKeyAndVisible;
 @end
 
@@ -214,6 +222,8 @@ typedef enum UIBackgroundRefreshStatus : NSInteger {
 - (void)registerForRemoteNotifications;
 
 - (BOOL)sendAction:(SEL)action to:(id)target from:(id)sender forEvent:(UIEvent *)event;
+
+- (UIBackgroundTaskIdentifier)beginBackgroundTaskWithName:(NSString *)taskName expirationHandler:(void (^)(void))handler;
 
 @end
 

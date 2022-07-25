@@ -151,6 +151,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 + (UIColor *)blackColor {
     return [UIColor new];
 }
++ (UIColor *)colorNamed:(NSString *)name inBundle:(NSBundle *)bundle compatibleWithTraitCollection:(UITraitCollection *)traitCollection {
+    return [UIColor new];
+}
 - (UIColor *)initWithDynamicProvider:(UIColor * (^)(UITraitCollection *traitCollection))dynamicProvider {
     return dynamicProvider([UITraitCollection new]);
 }
@@ -175,6 +178,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @end
 
 @implementation UIGestureRecognizer
+@end
+
+@implementation CALayer
 @end
 
 @implementation UIView
@@ -292,6 +298,10 @@ static UIApplication *sharedApplication;
 
 - (BOOL)sendAction:(SEL)action to:(id)target from:(id)sender forEvent:(UIEvent *)event {
     return NO;
+}
+
+- (UIBackgroundTaskIdentifier)beginBackgroundTaskWithName:(NSString *)taskName expirationHandler:(void (^)(void))handler {
+    return UIBackgroundTaskInvalid;
 }
 
 @end
@@ -450,8 +460,10 @@ static UIApplication *sharedApplication;
   return image;
 }
 + (UIImage *)imageNamed:(NSString *)name {
-  UIImage *image = [UIImage new];
-  return image;
+  return nil;
+}
++ (UIImage *)imageNamed:(NSString *)name inBundle:(NSBundle *)bundle compatibleWithTraitCollection:(UITraitCollection *)traitCollection {
+  return nil;
 }
 - (UIImage *)resizableImageWithCapInsets:(UIEdgeInsets)capInsets {
   return self;
