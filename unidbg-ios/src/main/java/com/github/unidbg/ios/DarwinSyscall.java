@@ -53,6 +53,7 @@ public interface DarwinSyscall {
     int HW_CPU_TYPE = 105;
     int HW_CPU_SUBTYPE = 106;
     int HW_CPU_FAMILY = 108;
+    int HW_CPU_MAX = 0x8000;
 
     int KERN_PROC_PID = 1; /* by process id */
 

@@ -22,8 +22,15 @@ public class ClassRW64 extends ClassRW {
 
     @Override
     public ClassRO ro(Emulator<?> emulator) {
-        ClassRO ro = new ClassRO64(UnidbgPointer.pointer(emulator, this.ro & FAST_DATA_MASK));
-        ro.unpack();
-        return ro;
+        long ro = this.ro;
+        boolean newObjc = (ro & 1) != 0;
+        if (newObjc) { // override objc runtime
+            Pointer pointer = UnidbgPointer.pointer(emulator, ro & FAST_DATA_MASK);
+            assert pointer != null;
+            ro = pointer.getLong(0);
+        }
+        ClassRO classRO = new ClassRO64(UnidbgPointer.pointer(emulator, ro));
+        classRO.unpack();
+        return classRO;
     }
 }

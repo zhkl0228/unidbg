@@ -1632,6 +1632,16 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         bufferSize.setLong(0, 8);
                         return 0;
                     }
+                    if ("hw.physicalcpu_max".equals(sub) ||
+                            "hw.logicalcpu_max".equals(sub)) {
+                        buffer.setInt(0, CTL_HW);
+                        buffer.setInt(4, HW_CPU_MAX);
+                        bufferSize.setLong(0, 8);
+                        return 0;
+                    }
+                    if ("sysctl.proc_native".equals(sub)) {
+                        return -1;
+                    }
                     if (log.isDebugEnabled()) {
                         createBreaker(emulator).debug();
                     }
@@ -1835,6 +1845,14 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         }
                         if (buffer != null) {
                             buffer.setInt(0, 1800000000);
+                        }
+                        return 0;
+                    case HW_CPU_MAX:
+                        if (bufferSize != null) {
+                            bufferSize.setLong(0, 4);
+                        }
+                        if (buffer != null) {
+                            buffer.setInt(0, 2);
                         }
                         return 0;
                 }
@@ -3257,7 +3275,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         RegisterContext context = emulator.getContext();
         Pointer nstack = context.getPointerArg(0);
         Pointer ostack = context.getPointerArg(1);
-        log.info("sigaltstack nstack=" + nstack + ", ostack=" + ostack);
+        if (log.isDebugEnabled()) {
+            log.debug("sigaltstack nstack=" + nstack + ", ostack=" + ostack);
+        }
         return 0;
     }
 

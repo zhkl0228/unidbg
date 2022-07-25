@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -321,12 +322,18 @@ public class Dyld64 extends Dyld {
             public long handle(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();
                 Pointer buf = context.getPointerArg(0);
-                int bufSize = context.getIntArg(1);
+                Pointer bufSize = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
                     log.debug("__dyld__NSGetExecutablePath buf=" + buf + ", bufSize=" + bufSize);
                 }
-                buf.setString(0, emulator.getProcessName());
-                return 0;
+                byte[] str = emulator.getProcessName().getBytes(StandardCharsets.UTF_8);
+                byte[] data = Arrays.copyOf(str, str.length + 1);
+                if (bufSize.getInt(0) >= data.length) {
+                    buf.write(0, data, 0, data.length);
+                    return 0;
+                }
+                bufSize.setInt(0, data.length);
+                return -1;
             }
         });
         __dyld_fast_stub_entry = svcMemory.registerSvc(new Arm64Svc("dyld_fast_stub_entry") {

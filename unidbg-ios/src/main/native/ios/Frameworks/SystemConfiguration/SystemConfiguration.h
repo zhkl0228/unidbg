@@ -2,7 +2,13 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <Foundation/Foundation.h>
 #import "../frameworks.h"
+
+@interface __SCNetworkReachability : NSObject
+@property(nonatomic) const char *nodename;
+-(id)initWithNodeName: (const char *) nodename;
+@end
 
 const CFStringRef kCNNetworkInfoKeySSID = CFSTR("SSID");
 const CFStringRef kCNNetworkInfoKeyBSSID = CFSTR("BSSID");
@@ -19,9 +25,7 @@ const SCNetworkReachabilityFlags defaultReachabilityFlags = kSCNetworkReachabili
 
 Boolean SCNetworkReachabilityGetFlags(void *target, SCNetworkReachabilityFlags *flags);
 
-typedef struct SCNetworkReachability {
-  const char *nodename;
-} *SCNetworkReachabilityRef;
+typedef __SCNetworkReachability *SCNetworkReachabilityRef;
 
 /*!
 	@typedef SCNetworkReachabilityCallBack
@@ -78,3 +82,4 @@ CFDictionaryRef SCDynamicStoreCopyProxies(SCDynamicStoreRef store);
 
 SCNetworkReachabilityRef SCNetworkReachabilityCreateWithName(CFAllocatorRef allocator, const char *nodename);
 Boolean SCNetworkReachabilitySetDispatchQueue(SCNetworkReachabilityRef target, dispatch_queue_t queue);
+Boolean SCNetworkReachabilityUnscheduleFromRunLoop(SCNetworkReachabilityRef target, CFRunLoopRef runLoop, CFStringRef runLoopMode);
