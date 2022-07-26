@@ -100,5 +100,8 @@ int main(int argc, char *argv[]) {
 
   NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile: @"/System/Library/CoreServices/SystemVersion.plist"];
   NSLog(@"dict=%@", dict);
+
+  NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
+  NSLog(@"standardUserDefaults=%@", standardUserDefaults);
   return 0;
 }

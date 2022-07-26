@@ -267,7 +267,7 @@ SecCertificateRef SecCertificateCreateWithData(CFAllocatorRef allocator, CFDataR
   free(hex);
 
   CFIndex size = sizeof(struct SecCertificate);
-  SecCertificateRef result = (SecCertificateRef) _CFRuntimeCreateInstance(allocator, SecCertificateGetTypeID(), size - sizeof(struct CFRuntimeBase), 0);
+  SecCertificateRef result = (SecCertificateRef) _CFRuntimeCreateInstance(allocator, SecCertificateGetTypeID(), size - sizeof(CFRuntimeBase), 0);
   result->data = CFDataCreateCopy(kCFAllocatorDefault, data);
   result->_der.data = (DERByte *) CFDataGetBytePtr(result->data);
   result->_der.length = CFDataGetLength(result->data);

@@ -1377,6 +1377,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Pointer buffer = context.getPointerArg(4);
         int bufferSize = context.getIntArg(5);
 
+        String executable = executableBundlePath;
+        if (executable == null) {
+            executable = emulator.getProcessName();
+        }
         String msg = "proc_info callNum=" + callNum + ", pid=" + pid + ", flavor=" + flavor + ", arg=" + arg + ", buffer=" + buffer + ", bufferSize=" + bufferSize;
         if (PROC_INFO_CALL_SETCONTROL == callNum && PROC_SELFSET_THREADNAME == flavor) {
             String threadName = buffer.getString(0);
@@ -1409,8 +1413,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 log.debug(msg + ", info=" + info);
             }
             return info.size();
-        } else if (PROC_INFO_CALL_PIDINFO == callNum && PROC_PIDPATHINFO == flavor && executableBundlePath != null) {
-            byte[] data = executableBundlePath.getBytes(StandardCharsets.UTF_8);
+        } else if (PROC_INFO_CALL_PIDINFO == callNum && PROC_PIDPATHINFO == flavor && executable != null) {
+            byte[] data = executable.getBytes(StandardCharsets.UTF_8);
             if (bufferSize < data.length + 1) {
                 throw new UnsupportedOperationException();
             }

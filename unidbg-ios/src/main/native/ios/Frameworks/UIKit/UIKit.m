@@ -580,6 +580,9 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled() {
 }
 @end
 
+@implementation BRQuery
+@end
+
 __attribute__((constructor))
 void init() {
   __NSArray0__ = [NSArray array];

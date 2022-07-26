@@ -1698,7 +1698,15 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         } else {
             throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, module.ordinalList.size(), symbolName, module.getPath()));
         }
-        if ("___NSArray0__".equals(symbolName)) {
+
+        targetImage = fakeTargetImage(targetImage, symbolName);
+        return doBindAt(type, pointer, addend, module, targetImage, symbolName, true);
+    }
+
+    final MachOModule fakeTargetImage(MachOModule targetImage, String symbolName) {
+        if ("___NSArray0__".equals(symbolName) ||
+                "___kCFBooleanFalse".equals(symbolName) ||
+                "___kCFBooleanTrue".equals(symbolName)) {
             targetImage = this.modules.get("UIKit");
             if (targetImage == null) {
                 targetImage = this.modules.get("AppKit");
@@ -1707,8 +1715,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 throw new IllegalStateException();
             }
         }
-
-        return doBindAt(type, pointer, addend, module, targetImage, symbolName, true);
+        return targetImage;
     }
 
     private boolean doBindAt(int type, Pointer pointer, long addend, Module module, MachOModule targetImage, String symbolName, boolean withDependencies) {

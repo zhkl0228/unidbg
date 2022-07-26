@@ -287,7 +287,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
                 RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
                 if (threadDispatcherEnabled && runningTask != null) {
                     if (timeSpec == null) {
-                        runningTask.setWaiter(new FutexIndefinitelyWaiter(uaddr, val));
+                        runningTask.setWaiter(emulator, new FutexIndefinitelyWaiter(uaddr, val));
                         throw new ThreadContextSwitchException();
                     } else {
                         throw new ThreadContextSwitchException().setReturnValue(-ETIMEDOUT);
@@ -719,7 +719,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
         }
         RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
         if (threadDispatcherEnabled && runningTask != null) {
-            runningTask.setWaiter(new NanoSleepWaiter(emulator, rem, timeSpec));
+            runningTask.setWaiter(emulator, new NanoSleepWaiter(emulator, rem, timeSpec));
             throw new ThreadContextSwitchException().setReturnValue(0);
         } else {
             try {

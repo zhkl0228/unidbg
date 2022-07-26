@@ -333,6 +333,12 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 @end
 
 id __NSArray0__;
+struct __CFBoolean __kCFBooleanFalse = {
+    INIT_CFRUNTIME_BASE()
+};
+struct __CFBoolean __kCFBooleanTrue = {
+    INIT_CFRUNTIME_BASE()
+};
 
 @interface UICollectionReusableView : UIView
 @end
@@ -371,4 +377,7 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled();
 
 @interface UISearchBar : UIView
 @property(nonatomic, retain) UISearchTextField *searchTextField;
+@end
+
+@interface BRQuery : NSObject
 @end

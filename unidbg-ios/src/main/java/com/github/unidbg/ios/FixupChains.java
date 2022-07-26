@@ -92,6 +92,7 @@ final class FixupChains {
                 }
                 String path = mm.ordinalList.get(libraryOrdinal - 1);
                 MachOModule targetImage = loader.modules.get(FilenameUtils.getName(path));
+                targetImage = loader.fakeTargetImage(targetImage, symbolName);
                 if (targetImage == null && weak) {
                     return null;
                 }

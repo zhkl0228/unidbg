@@ -23,8 +23,13 @@ public abstract class BaseTask implements RunnableTask {
     private Waiter waiter;
 
     @Override
-    public void setWaiter(Waiter waiter) {
+    public void setWaiter(Emulator<?> emulator, Waiter waiter) {
         this.waiter = waiter;
+
+        if (waiter != null &&
+                log.isTraceEnabled()) {
+            emulator.attach().debug();
+        }
     }
 
     @Override
@@ -94,7 +99,7 @@ public abstract class BaseTask implements RunnableTask {
         Waiter waiter = getWaiter();
         if (waiter != null) {
             waiter.onContinueRun(emulator);
-            setWaiter(null);
+            setWaiter(emulator, null);
         }
         return emulator.emulate(pc, until);
     }

@@ -32,12 +32,6 @@ typedef struct SecRandom {
 } *SecRandomRef;
 const SecRandomRef kSecRandomDefault = NULL;
 
-// Copied from CoreFoundation/CFRuntime.h.
-struct CFRuntimeBase {
-  void *opaque1;
-  void *opaque2;
-};
-
 typedef uint8_t DERByte;
 typedef size_t DERSize;
 
@@ -47,7 +41,7 @@ typedef struct {
 } DERItem;
 
 typedef struct SecCertificate {
-  struct CFRuntimeBase		_base;
+  CFRuntimeBase		_base;
   CFDataRef				data;
   DERItem				_der;			/* Entire certificate in DER form. */
 } *SecCertificateRef;

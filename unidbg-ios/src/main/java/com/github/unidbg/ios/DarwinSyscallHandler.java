@@ -371,7 +371,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         }
         RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
         if (threadDispatcherEnabled && runningTask != null) {
-            runningTask.setWaiter(new SemWaiter(port, semaphoreMap));
+            runningTask.setWaiter(emulator, new SemWaiter(port, semaphoreMap));
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
         if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
@@ -386,7 +386,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
                                  long tv_sec, int tv_nsec) {
         if (timeout == 1 && relative == 1 && (tv_sec > 0 || tv_nsec > 0)) {
             if (threadDispatcherEnabled) {
-                runningTask.setWaiter(new SemWaiter(cond_sem, semaphoreMap, tv_sec, tv_nsec));
+                runningTask.setWaiter(emulator, new SemWaiter(cond_sem, semaphoreMap, tv_sec, tv_nsec));
                 throw new ThreadContextSwitchException().setReturnValue(0);
             }
 
@@ -403,7 +403,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             createBreaker(emulator).debug();
             throw new UnsupportedOperationException("semwait_signal cond_sem=" + cond_sem + ", mutex_sem=" + mutex_sem + ", timeout=" + timeout + ", relative=" + relative + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
         }
-        runningTask.setWaiter(new SemWaiter(cond_sem, semaphoreMap));
+        runningTask.setWaiter(emulator, new SemWaiter(cond_sem, semaphoreMap));
         throw new ThreadContextSwitchException().setReturnValue(0);
     }
 
@@ -607,7 +607,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         }
         RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
         if (runningTask != null) {
-            runningTask.setWaiter(new KEventWaiter(event, eventlist, nevents));
+            runningTask.setWaiter(emulator, new KEventWaiter(event, eventlist, nevents));
             throw new ThreadContextSwitchException();
         }
         if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {

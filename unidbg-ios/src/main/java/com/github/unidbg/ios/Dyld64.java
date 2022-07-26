@@ -677,7 +677,8 @@ public class Dyld64 extends Dyld {
                 if (ret == 0) {
                     this.error.setString(0, "Resolve library " + path + " failed");
                     if ("/usr/sbin/aslmanager".equals(path) ||
-                            "/System/Library/PrivateFrameworks/Librarian.framework/Librarian".equals(path)) {
+                            "/System/Library/PrivateFrameworks/Librarian.framework/Librarian".equals(path) ||
+                            "/System/Library/PrivateFrameworks/CloudDocs.framework/CloudDocs".equals(path)) {
                         return 0;
                     }
                     log.info("dlopen failed: " + path);
@@ -750,9 +751,195 @@ public class Dyld64 extends Dyld {
     private long __dyld_is_memory_immutable;
 
     private long _os_system_version_get_current_version;
+    private long _dyld_get_active_platform;
+    private long __os_log_set_nscf_formatter;
+    private long _dyld_has_inserted_or_interposing_libraries;
+    private long __pthread_setspecific_static;
+    private long _os_log_shim_enabled;
+    private long _os_unfair_lock_assert_owner;
+    private long _os_unfair_lock_assert_not_owner;
+    private long _os_log_create;
+    private long _os_log_type_enabled;
+    private long _xpc_copy_entitlement_for_self;
+    private long _xpc_connection_activate;
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        if ("_xpc_connection_activate".equals(symbolName)) {
+            if (_xpc_connection_activate == 0) {
+                _xpc_connection_activate = svcMemory.registerSvc(new Arm64Svc("xpc_connection_activate") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _xpc_connection_activate;
+        }
+        if ("_xpc_copy_entitlement_for_self".equals(symbolName)) {
+            if (_xpc_copy_entitlement_for_self == 0) {
+                _xpc_copy_entitlement_for_self = svcMemory.registerSvc(new Arm64Svc("xpc_copy_entitlement_for_self") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _xpc_copy_entitlement_for_self;
+        }
+        if ("_os_log_type_enabled".equals(symbolName)) {
+            if (_os_log_type_enabled == 0) {
+                _os_log_type_enabled = svcMemory.registerSvc(new Arm64Svc("os_log_type_enabled") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _os_log_type_enabled;
+        }
+        if ("_os_log_create".equals(symbolName)) {
+            if (_os_log_create == 0) {
+                _os_log_create = svcMemory.registerSvc(new Arm64Svc("os_log_create") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _os_log_create;
+        }
+        if ("_os_unfair_lock_assert_not_owner".equals(symbolName)) {
+            if (_os_unfair_lock_assert_not_owner == 0) {
+                _os_unfair_lock_assert_not_owner = svcMemory.registerSvc(new Arm64Svc("os_unfair_lock_assert_not_owner") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _os_unfair_lock_assert_not_owner;
+        }
+        if ("_os_unfair_lock_assert_owner".equals(symbolName)) {
+            if (_os_unfair_lock_assert_owner == 0) {
+                _os_unfair_lock_assert_owner= svcMemory.registerSvc(new Arm64Svc("os_unfair_lock_assert_owner") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _os_unfair_lock_assert_owner;
+        }
+        if ("_os_log_shim_enabled".equals(symbolName)) {
+            if (_os_log_shim_enabled == 0) {
+                _os_log_shim_enabled = svcMemory.registerSvc(new Arm64Svc("os_log_shim_enabled") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _os_log_shim_enabled;
+        }
+        if ("__pthread_setspecific_static".equals(symbolName)) {
+            if (__pthread_setspecific_static == 0) {
+                __pthread_setspecific_static = svcMemory.registerSvc(new Arm64Svc("pthread_setspecific_static") {
+                    private final long tsd[] = new long[128];
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        int key = context.getIntArg(0);
+                        long value = context.getLongArg(1);
+                        tsd[key] = value;
+                        return 0;
+                    }
+                }).peer;
+            }
+            return __pthread_setspecific_static;
+        }
+        if ("_dyld_has_inserted_or_interposing_libraries".equals(symbolName)) {
+            if (_dyld_has_inserted_or_interposing_libraries == 0) {
+                _dyld_has_inserted_or_interposing_libraries = svcMemory.registerSvc(new Arm64Svc("dyld_has_inserted_or_interposing_libraries") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _dyld_has_inserted_or_interposing_libraries;
+        }
+        if ("__os_log_set_nscf_formatter".equals(symbolName)) {
+            if (__os_log_set_nscf_formatter == 0) {
+                __os_log_set_nscf_formatter = svcMemory.registerSvc(new Arm64Svc("os_log_set_nscf_formatter") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return __os_log_set_nscf_formatter;
+        }
+        if ("_dyld_get_active_platform".equals(symbolName)) {
+            if (_dyld_get_active_platform == 0) {
+                _dyld_get_active_platform = svcMemory.registerSvc(new Arm64Svc("dyld_get_active_platform") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 2; // PLATFORM_IOS
+                    }
+                }).peer;
+            }
+            return _dyld_get_active_platform;
+        }
+        if ("_os_unfair_lock_unlock".equals(symbolName)) {
+            if (_os_unfair_lock_unlock == 0) {
+                _os_unfair_lock_unlock = svcMemory.registerSvc(new Arm64Svc("os_unfair_lock_unlock") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        Pointer lock = context.getPointerArg(0);
+                        if (log.isDebugEnabled()) {
+                            log.debug("_os_unfair_lock_unlock lock=" + lock + ", LR=" + context.getLRPointer());
+                        }
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _os_unfair_lock_unlock;
+        }
+        if ("_os_unfair_lock_lock_with_options".equals(symbolName)) {
+            if (_os_unfair_lock_lock_with_options == 0) {
+                _os_unfair_lock_lock_with_options = svcMemory.registerSvc(new Arm64Svc("os_unfair_lock_lock_with_options") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        Pointer lock = context.getPointerArg(0);
+                        int options = context.getIntArg(1);
+                        if (log.isDebugEnabled()) {
+                            log.debug("_os_unfair_lock_lock_with_options lock=" + lock + ", options=0x" + Integer.toHexString(options));
+                        }
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _os_unfair_lock_lock_with_options;
+        }
+        if ("_dyld_program_sdk_at_least".equals(symbolName)) {
+            if (_dyld_program_sdk_at_least == 0) {
+                _dyld_program_sdk_at_least = svcMemory.registerSvc(new Arm64Svc("_dyld_program_sdk_at_least") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        long version = context.getLongArg(0);
+                        if (log.isDebugEnabled()) {
+                            log.debug("_dyld_program_sdk_at_least version=0x" + Long.toHexString(version));
+                        }
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _dyld_program_sdk_at_least;
+        }
         if ("libswiftCore.dylib".equals(libraryName)) {
             if ("_os_system_version_get_current_version".equals(symbolName)) {
                 if (_os_system_version_get_current_version == 0) {
@@ -774,24 +961,24 @@ public class Dyld64 extends Dyld {
                 return _os_system_version_get_current_version;
             }
         }
-        if ("libobjc.A.dylib".equals(libraryName)) {
-            if ("__dyld_is_memory_immutable".equals(symbolName)) {
-                if (__dyld_is_memory_immutable == 0) {
-                    __dyld_is_memory_immutable = svcMemory.registerSvc(new Arm64Svc("dyld_is_memory_immutable") {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            UnidbgPointer addr = context.getPointerArg(0);
-                            long length = context.getIntArg(1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("dyld_is_memory_immutable addr=" + addr + ", length=" + length);
-                            }
-                            return 0;
+        if ("__dyld_is_memory_immutable".equals(symbolName)) {
+            if (__dyld_is_memory_immutable == 0) {
+                __dyld_is_memory_immutable = svcMemory.registerSvc(new Arm64Svc("dyld_is_memory_immutable") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        UnidbgPointer addr = context.getPointerArg(0);
+                        long length = context.getIntArg(1);
+                        if (log.isDebugEnabled()) {
+                            log.debug("dyld_is_memory_immutable addr=" + addr + ", length=" + length);
                         }
-                    }).peer;
-                }
-                return __dyld_is_memory_immutable;
+                        return 0;
+                    }
+                }).peer;
             }
+            return __dyld_is_memory_immutable;
+        }
+        if ("libobjc.A.dylib".equals(libraryName)) {
             if ("_abort_with_reason".equals(symbolName)) {
                 if (_abort_with_reason == 0) {
                     _abort_with_reason = svcMemory.registerSvc(new Arm64Svc("abort_with_reason") {
@@ -1054,22 +1241,6 @@ public class Dyld64 extends Dyld {
                 }
                 return _clock_gettime_nsec_np;
             }
-            if ("_os_unfair_lock_unlock".equals(symbolName)) {
-                if (_os_unfair_lock_unlock == 0) {
-                    _os_unfair_lock_unlock = svcMemory.registerSvc(new Arm64Svc("os_unfair_lock_unlock") {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            Pointer lock = context.getPointerArg(0);
-                            if (log.isDebugEnabled()) {
-                                log.debug("_os_unfair_lock_unlock lock=" + lock + ", LR=" + context.getLRPointer());
-                            }
-                            return 0;
-                        }
-                    }).peer;
-                }
-                return _os_unfair_lock_unlock;
-            }
             if ("_os_unfair_recursive_lock_tryunlock4objc".equals(symbolName)) {
                 if (_os_unfair_recursive_lock_tryunlock4objc == 0) {
                     _os_unfair_recursive_lock_tryunlock4objc = svcMemory.registerSvc(new Arm64Svc("os_unfair_recursive_lock_tryunlock4objc") {
@@ -1112,23 +1283,6 @@ public class Dyld64 extends Dyld {
                 }
                 return _os_unfair_recursive_lock_unlock;
             }
-            if ("_os_unfair_lock_lock_with_options".equals(symbolName)) {
-                if (_os_unfair_lock_lock_with_options == 0) {
-                    _os_unfair_lock_lock_with_options = svcMemory.registerSvc(new Arm64Svc("os_unfair_lock_lock_with_options") {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            Pointer lock = context.getPointerArg(0);
-                            int options = context.getIntArg(1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("_os_unfair_lock_lock_with_options lock=" + lock + ", options=0x" + Integer.toHexString(options));
-                            }
-                            return 0;
-                        }
-                    }).peer;
-                }
-                return _os_unfair_lock_lock_with_options;
-            }
             if ("__os_feature_enabled_simple_impl".equals(symbolName)) {
                 if (__os_feature_enabled_simple_impl == 0) {
                     __os_feature_enabled_simple_impl = svcMemory.registerSvc(new Arm64Svc("os_feature_enabled_simple_impl") {
@@ -1146,22 +1300,6 @@ public class Dyld64 extends Dyld {
                     }).peer;
                 }
                 return __os_feature_enabled_simple_impl;
-            }
-            if ("_dyld_program_sdk_at_least".equals(symbolName)) {
-                if (_dyld_program_sdk_at_least == 0) {
-                    _dyld_program_sdk_at_least = svcMemory.registerSvc(new Arm64Svc("_dyld_program_sdk_at_least") {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            long version = context.getLongArg(0);
-                            if (log.isDebugEnabled()) {
-                                log.debug("_dyld_program_sdk_at_least version=0x" + Long.toHexString(version));
-                            }
-                            return 0;
-                        }
-                    }).peer;
-                }
-                return _dyld_program_sdk_at_least;
             }
         }
         if ("libsystem_c.dylib".equals(libraryName)) {

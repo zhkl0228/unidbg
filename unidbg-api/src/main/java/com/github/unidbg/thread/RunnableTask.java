@@ -15,7 +15,7 @@ public interface RunnableTask {
 
     void destroy(Emulator<?> emulator);
 
-    void setWaiter(Waiter waiter);
+    void setWaiter(Emulator<?> emulator, Waiter waiter);
 
     Waiter getWaiter();
 
