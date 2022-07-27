@@ -128,11 +128,6 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         }
     }
 
-    @Override
-    public void hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
-        throw new UnsupportedOperationException();
-    }
-
     protected class EventMemHookNotifier {
         private final EventMemHook callback;
         private final int type;

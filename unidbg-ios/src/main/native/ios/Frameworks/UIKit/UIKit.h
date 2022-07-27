@@ -333,12 +333,6 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 @end
 
 id __NSArray0__;
-struct __CFBoolean __kCFBooleanFalse = {
-    INIT_CFRUNTIME_BASE()
-};
-struct __CFBoolean __kCFBooleanTrue = {
-    INIT_CFRUNTIME_BASE()
-};
 
 @interface UICollectionReusableView : UIView
 @end
@@ -380,4 +374,26 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled();
 @end
 
 @interface BRQuery : NSObject
+@end
+
+@interface NSConstantIntegerNumber : NSNumber {
+    const char *_encoding;
+    int64_t  _value;
+}
+- (const char *)objCType;
+- (bool)boolValue;
+- (BOOL)charValue;
+- (int)intValue;
+- (double)doubleValue;
+- (float)floatValue;
+- (long long)integerValue;
+- (long long)longLongValue;
+- (long long)longValue;
+- (short)shortValue;
+- (unsigned char)unsignedCharValue;
+- (unsigned int)unsignedIntValue;
+- (unsigned long long)unsignedIntegerValue;
+- (unsigned long long)unsignedLongLongValue;
+- (unsigned long long)unsignedLongValue;
+- (unsigned short)unsignedShortValue;
 @end

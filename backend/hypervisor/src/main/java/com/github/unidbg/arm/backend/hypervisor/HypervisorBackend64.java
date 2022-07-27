@@ -11,9 +11,11 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.BackendException;
+import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.arm.backend.DebugHook;
 import com.github.unidbg.arm.backend.HypervisorBackend;
 import com.github.unidbg.arm.backend.ReadHook;
+import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
@@ -89,6 +91,11 @@ public class HypervisorBackend64 extends HypervisorBackend {
         if (thumb) {
             throw new IllegalStateException();
         }
+        for (HypervisorBreakPoint breakpoint : breakpoints) {
+            if (breakpoint != null && breakpoint.address == address) {
+                return breakpoint;
+            }
+        }
         for (int i = 0; i < breakpoints.length; i++) {
             if (breakpoints[i] == null) {
                 hypervisor.install_hw_breakpoint(i, address);
@@ -133,10 +140,10 @@ public class HypervisorBackend64 extends HypervisorBackend {
     }
 
     @Override
-    public boolean handleException(long esr, long far, final long elr, long spsr) {
+    public boolean handleException(long esr, long far, final long elr, long cpsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", spsr=0x" + Long.toHexString(spsr));
+            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", cpsr=0x" + Long.toHexString(cpsr));
         }
         while (!visitorStack.isEmpty()) {
             visitorStack.pop().onException();
@@ -153,7 +160,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return true;
             }
             case EC_SOFTWARESTEP: {
-                onSoftwareStep(esr, elr, spsr);
+                onSoftwareStep(esr, elr, cpsr);
                 return true;
             }
             case EC_BREAKPOINT: {
@@ -278,10 +285,51 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
     }
 
-    private void onSoftwareStep(long esr, long elr, long spsr) {
+    private class CodeHookNotifier implements UnHook {
+        private final CodeHook callback;
+        private final long begin;
+        private final long end;
+        private final Object user;
+        public CodeHookNotifier(CodeHook callback, long begin, long end, Object user) {
+            this.callback = callback;
+            this.begin = begin;
+            this.end = end;
+            this.user = user;
+        }
+        public void onSoftwareStep(long address) {
+            if (begin >= end ||
+                    (address >= begin && address < end)) {
+                callback.hook(HypervisorBackend64.this, address, 4, user);
+            }
+        }
+        @Override
+        public void unhook() {
+            codeHookNotifier = null;
+        }
+    }
+
+    private CodeHookNotifier codeHookNotifier;
+
+    @Override
+    public void hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
+        if (codeHookNotifier != null) {
+            throw new IllegalStateException();
+        }
+        codeHookNotifier = new CodeHookNotifier(callback, begin, end, user_data);
+        hypervisor.enable_single_step(true);
+        callback.onAttach(codeHookNotifier);
+    }
+
+    private void onSoftwareStep(long esr, long address, long spsr) {
+        if (codeHookNotifier != null) {
+            codeHookNotifier.onSoftwareStep(address);
+            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+            return;
+        }
+
         if (--singleStep == 0) {
             if (debugCallback != null) {
-                debugCallback.onBreak(this, elr, INS_SIZE, debugUserData);
+                debugCallback.onBreak(this, address, INS_SIZE, debugUserData);
             } else {
                 int status = (int) (esr & 0x3f);
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);

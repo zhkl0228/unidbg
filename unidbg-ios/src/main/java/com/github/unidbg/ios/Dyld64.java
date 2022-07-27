@@ -762,9 +762,33 @@ public class Dyld64 extends Dyld {
     private long _os_log_type_enabled;
     private long _xpc_copy_entitlement_for_self;
     private long _xpc_connection_activate;
+    private long __CFNotificationCenterRegisterDependentNotificationList;
+    private long __CFLogvEx3;
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        if ("__CFLogvEx3".equals(symbolName)) {
+            if (__CFLogvEx3 == 0) {
+                __CFLogvEx3 = svcMemory.registerSvc(new Arm64Svc("CFLogvEx3") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return __CFLogvEx3;
+        }
+        if ("__CFNotificationCenterRegisterDependentNotificationList".equals(symbolName)) {
+            if (__CFNotificationCenterRegisterDependentNotificationList == 0) {
+                __CFNotificationCenterRegisterDependentNotificationList = svcMemory.registerSvc(new Arm64Svc("CFNotificationCenterRegisterDependentNotificationList") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return __CFNotificationCenterRegisterDependentNotificationList;
+        }
         if ("_xpc_connection_activate".equals(symbolName)) {
             if (_xpc_connection_activate == 0) {
                 _xpc_connection_activate = svcMemory.registerSvc(new Arm64Svc("xpc_connection_activate") {

@@ -583,6 +583,59 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled() {
 @implementation BRQuery
 @end
 
+@implementation NSConstantIntegerNumber
+- (const char *)objCType {
+  return self->_encoding;
+}
+- (bool)boolValue {
+  return self->_value == 1 ? YES : NO;
+}
+- (BOOL)charValue {
+  return (BOOL) self->_value;
+}
+- (int)intValue {
+  return (int) self->_value;
+}
+- (long long)integerValue {
+  return (long long) self->_value;
+}
+- (long long)longLongValue {
+  return (long long) self->_value;
+}
+- (long long)longValue {
+  return (long long) self->_value;
+}
+- (short)shortValue {
+  return (short) self->_value;
+}
+- (unsigned char)unsignedCharValue {
+  return (unsigned char) self->_value;
+}
+- (unsigned int)unsignedIntValue {
+  return (unsigned int) self->_value;
+}
+- (unsigned long long)unsignedIntegerValue {
+  return (unsigned long long) self->_value;
+}
+- (unsigned long long)unsignedLongLongValue {
+  return (unsigned long long) self->_value;
+}
+- (unsigned long long)unsignedLongValue {
+  return (unsigned long long) self->_value;
+}
+- (unsigned short)unsignedShortValue {
+  return (unsigned short) self->_value;
+}
+- (double)doubleValue {
+  [self doesNotRecognizeSelector:_cmd];
+  return 0.0;
+}
+- (float)floatValue {
+  [self doesNotRecognizeSelector:_cmd];
+  return 0.0;
+}
+@end
+
 __attribute__((constructor))
 void init() {
   __NSArray0__ = [NSArray array];

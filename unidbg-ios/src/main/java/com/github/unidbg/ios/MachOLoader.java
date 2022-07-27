@@ -1337,7 +1337,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             String path = module.ordinalList.get(libraryOrdinal - 1);
             MachOModule targetImage = this.modules.get(FilenameUtils.getName(path));
             if (targetImage != null) {
-                replace = targetImage.findSymbolByName(symbol.getName(), false);
+                replace = findSymbolInternal(targetImage, symbol.getName());
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("resolveSymbol libraryOrdinal=" + libraryOrdinal + ", path=" + path);
@@ -1449,6 +1449,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             return;
         }
         module.indirectSymbolBound = true;
+
+        if (module.chainedFixups != null) {
+            return;
+        }
 
         MachO.DysymtabCommand dysymtabCommand = module.dysymtabCommand;
         if (dysymtabCommand == null) { // virtual module
@@ -1705,8 +1709,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     final MachOModule fakeTargetImage(MachOModule targetImage, String symbolName) {
         if ("___NSArray0__".equals(symbolName) ||
-                "___kCFBooleanFalse".equals(symbolName) ||
-                "___kCFBooleanTrue".equals(symbolName)) {
+                "_OBJC_CLASS_$_NSConstantIntegerNumber".equals(symbolName)) {
             targetImage = this.modules.get("UIKit");
             if (targetImage == null) {
                 targetImage = this.modules.get("AppKit");
@@ -1716,6 +1719,24 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             }
         }
         return targetImage;
+    }
+
+    final Symbol findSymbolInternal(MachOModule targetImage, String symbolName) {
+        if ("CoreFoundation".equals(targetImage.name)) {
+            if ("___kCFBooleanFalse".equals(symbolName) ||
+                    "___kCFBooleanTrue".equals(symbolName)) {
+                Symbol symbol = targetImage.findSymbolByName(symbolName.substring(2), false);
+                if (symbol == null) {
+                    throw new IllegalStateException();
+                }
+                long address = symbol.getAddress();
+                Pointer pointer = UnidbgPointer.pointer(emulator, address);
+                assert pointer != null;
+                long value = pointer.getLong(0);
+                return new ExportSymbol(symbolName, value, targetImage, 0, com.github.unidbg.ios.MachO.EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
+            }
+        }
+        return targetImage.findSymbolByName(symbolName, false);
     }
 
     private boolean doBindAt(int type, Pointer pointer, long addend, Module module, MachOModule targetImage, String symbolName, boolean withDependencies) {

@@ -561,6 +561,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 399:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, close_NOCANCEL(emulator));
                     return;
+                case 423:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, semwait_signal(emulator));
+                    return;
                 case 428:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, audit_session_self());
                     return;

@@ -100,7 +100,7 @@ final class FixupChains {
                     log.info("resolveSymbol libraryOrdinal=" + libraryOrdinal + ", symbolName=" + symbolName);
                     return null;
                 }
-                return targetImage.findSymbolByName(symbolName, false);
+                return loader.findSymbolInternal(targetImage, symbolName);
             } else {
                 switch (libraryOrdinal) {
                     case BIND_SPECIAL_DYLIB_SELF:

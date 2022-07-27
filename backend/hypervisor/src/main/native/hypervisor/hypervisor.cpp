@@ -107,6 +107,7 @@ static int cpu_loop(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) 
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_REG_SP, hypervisor->sp));
     HYP_ASSERT_SUCCESS(hv_vcpu_run(cpu->vcpu));
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_REG_SP, &hypervisor->sp));
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDRRO_EL0, &hypervisor->tpidrro));
 
     switch(cpu->vcpu_exit->reason) {
       case HV_EXIT_REASON_EXCEPTION: {
