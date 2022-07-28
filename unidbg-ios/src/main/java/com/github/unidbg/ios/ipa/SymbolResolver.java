@@ -47,6 +47,7 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer _pthread_set_qos_class_self_np;
     private UnidbgPointer _qos_class_self;
     private UnidbgPointer _dispatch_assert_queue$V2;
+    private UnidbgPointer _dispatch_assert_queue_not$V2;
     private UnidbgPointer _dispatch_block_create;
     private UnidbgPointer _dispatch_get_global_queue;
     private UnidbgPointer _dispatch_group_async;
@@ -195,6 +196,19 @@ public class SymbolResolver implements HookListener {
                 });
             }
             return _dispatch_assert_queue$V2.peer;
+        }
+        if ("_dispatch_assert_queue_not$V2".equals(symbolName)) {
+            if (_dispatch_assert_queue_not$V2 == null) {
+                _dispatch_assert_queue_not$V2 = svcMemory.registerSvc(new Arm64Svc("dispatch_assert_queue_not$V2") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        log.info("_dispatch_assert_queue_not$V2 queue=" + context.getPointerArg(0));
+                        return 0;
+                    }
+                });
+            }
+            return _dispatch_assert_queue_not$V2.peer;
         }
         if ("_qos_class_self".equals(symbolName) && emulator.is64Bit()) {
             if (_qos_class_self == null) {

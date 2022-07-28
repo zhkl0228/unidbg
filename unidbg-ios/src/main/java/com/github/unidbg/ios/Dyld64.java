@@ -764,9 +764,21 @@ public class Dyld64 extends Dyld {
     private long _xpc_connection_activate;
     private long __CFNotificationCenterRegisterDependentNotificationList;
     private long __CFLogvEx3;
+    private long _voucher_copy;
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        if ("_voucher_copy".equals(symbolName)) {
+            if (_voucher_copy == 0) {
+                _voucher_copy = svcMemory.registerSvc(new Arm64Svc("voucher_copy") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        return 0;
+                    }
+                }).peer;
+            }
+            return _voucher_copy;
+        }
         if ("__CFLogvEx3".equals(symbolName)) {
             if (__CFLogvEx3 == 0) {
                 __CFLogvEx3 = svcMemory.registerSvc(new Arm64Svc("CFLogvEx3") {

@@ -14,6 +14,9 @@ import java.util.List;
 public abstract class ObjcClass extends ObjcObject implements ObjcConstants, com.github.unidbg.ios.objc.processor.ObjcClass {
 
     public static ObjcClass create(Emulator<?> emulator, Pointer pointer) {
+        if (pointer == null) {
+            return null;
+        }
         ObjcClass objcClass = emulator.is64Bit() ? new ObjcClass64(emulator, pointer) : new ObjcClass32(emulator, pointer);
         objcClass.unpack();
         return objcClass;

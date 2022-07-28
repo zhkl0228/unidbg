@@ -29,7 +29,13 @@ CFMutableURLRequestRef CFURLRequestCreateMutable(
 CFStringRef CFURLRequestCopyHTTPHeaderFieldValue(
   CFURLRequestRef   request,
   CFStringRef	   headerField) {
+  if(!request->headerFields || !headerField) {
+    return NULL;
+  }
   CFStringRef value = CFDictionaryGetValue(request->headerFields, headerField);
+  if(!value) {
+    return NULL;
+  }
   return CFStringCreateCopy(kCFAllocatorDefault, value);
 }
 

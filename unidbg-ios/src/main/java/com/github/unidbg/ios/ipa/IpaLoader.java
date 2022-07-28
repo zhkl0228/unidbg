@@ -201,6 +201,8 @@ public abstract class IpaLoader implements Loader {
     public static void addEnv(List<String> list) {
         list.add("OBJC_DISABLE_PREOPTIMIZATION=YES"); // disable preoptimization courtesy of dyld shared cache
         list.add("OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES"); // disable safety checks for +initialize after fork
+        list.add("OBJC_DISABLE_TAGGED_POINTERS=YES");
+        list.add("OBJC_DISABLE_TAG_OBFUSCATION=YES");
         if (log.isDebugEnabled()) {
             list.add("OBJC_HELP=YES"); // describe available environment variables
             list.add("OBJC_PRINT_OPTIONS=YES"); // list which options are set
