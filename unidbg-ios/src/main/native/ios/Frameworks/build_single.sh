@@ -38,6 +38,5 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework CoreData "CoreFoundation"
-build_framework CFNetwork "CoreFoundation"
-build_framework Security "CoreFoundation"
+build_framework Network "Foundation"
+build_framework CoreTelephony "CoreFoundation"

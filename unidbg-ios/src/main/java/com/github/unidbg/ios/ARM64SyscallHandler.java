@@ -1859,7 +1859,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                             bufferSize.setLong(0, 4);
                         }
                         if (buffer != null) {
-                            buffer.setInt(0, 2);
+                            buffer.setInt(0, getHwNcpu());
                         }
                         return 0;
                 }
@@ -2183,11 +2183,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int _kernelrpc_mach_vm_allocate_trap(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        int target = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).intValue();
-        Pointer address = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X1);
-        long size = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).longValue();
-        int flags = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
+        RegisterContext context = emulator.getContext();
+        int target = context.getIntArg(0);
+        Pointer address = context.getPointerArg(1);
+        long size = context.getLongArg(2);
+        int flags = context.getIntArg(3);
         int tag = flags >> 24;
         boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
         if (!anywhere) {

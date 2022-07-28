@@ -2,6 +2,7 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.file.FileResult;
 import com.github.unidbg.file.ios.DarwinFileIO;
@@ -73,13 +74,18 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
     protected final void exit(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int status = context.getIntArg(0);
+        emulator.attach().debug();
         System.exit(status);
     }
 
     protected int fork(Emulator<?> emulator) {
         log.info("fork");
-        emulator.getMemory().setErrno(UnixEmulator.ENOSYS);
-        return -1;
+        if (emulator.is64Bit()) {
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+        } else {
+            Cpsr.getArm(emulator.getBackend()).setCarry(true);
+        }
+        return UnixEmulator.ENOSYS;
     }
 
     protected final int open_NOCANCEL(Emulator<DarwinFileIO> emulator, int offset) {

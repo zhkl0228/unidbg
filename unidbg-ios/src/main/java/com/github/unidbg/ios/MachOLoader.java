@@ -268,9 +268,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     continue;
                 }
                 if (m.allSymbolBound || forceCallInit) {
-                    if (m.objcNotifyMapped && !m.objcNotifyInit) {
-                        continue;
-                    }
+                    m.callObjcNotifyInit(_objcNotifyInit);
                     m.doInitialization(emulator);
                 }
             }
@@ -743,7 +741,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     needed.addReferenceCount();
                     neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
                 } else if(!library.weak) {
-                    log.info(dyId + " load dependency " + neededLibrary + " failed: rpath=" + rpathSet);
+                    log.info("Module \"" + dyId + "\" load dependency " + neededLibrary + " failed: rpath=" + rpathSet);
                 }
             }
         } else {
@@ -1709,7 +1707,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     final MachOModule fakeTargetImage(MachOModule targetImage, String symbolName) {
         if ("___NSArray0__".equals(symbolName) ||
-                "_OBJC_CLASS_$_NSConstantIntegerNumber".equals(symbolName)) {
+                "_OBJC_CLASS_$_NSConstantIntegerNumber".equals(symbolName) ||
+                "_NSProcessInfoPowerStateDidChangeNotification".equals(symbolName) ||
+                "_NSExtensionHostDidEnterBackgroundNotification".equals(symbolName) ||
+                "_NSExtensionHostDidBecomeActiveNotification".equals(symbolName)) {
             targetImage = this.modules.get("UIKit");
             if (targetImage == null) {
                 targetImage = this.modules.get("AppKit");
@@ -2137,7 +2138,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (memoryMap != null) {
             munmap(args.target_address, (int) args.size);
         }
-        int prot = memoryMap == null ? UnicornConst.UC_PROT_ALL : memoryMap.prot;
+        int prot = UnicornConst.UC_PROT_ALL;
         try {
             backend.mem_map(args.target_address, args.size, prot);
             if (mMapListener != null) {

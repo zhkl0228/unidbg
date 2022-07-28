@@ -765,9 +765,24 @@ public class Dyld64 extends Dyld {
     private long __CFNotificationCenterRegisterDependentNotificationList;
     private long __CFLogvEx3;
     private long _voucher_copy;
+    private long _dyld_image_header_containing_address;
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        if ("_dyld_image_header_containing_address".equals(symbolName)) {
+            if (_dyld_image_header_containing_address == 0) {
+                _dyld_image_header_containing_address = svcMemory.registerSvc(new Arm64Svc("dyld_image_header_containing_address") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        long address = context.getLongArg(0);
+                        MachOModule mm = (MachOModule) emulator.getMemory().findModuleByAddress(address);
+                        return mm == null ? 0L : mm.machHeader;
+                    }
+                }).peer;
+            }
+            return _dyld_image_header_containing_address;
+        }
         if ("_voucher_copy".equals(symbolName)) {
             if (_voucher_copy == 0) {
                 _voucher_copy = svcMemory.registerSvc(new Arm64Svc("voucher_copy") {

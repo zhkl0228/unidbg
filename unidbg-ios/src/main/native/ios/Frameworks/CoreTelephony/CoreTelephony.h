@@ -29,6 +29,7 @@ NSString * _Nonnull const CTRadioAccessTechnologyDidChangeNotification = @"CTRad
 @property(copy, nullable) NSString *dataServiceIdentifier;
 @property(nonatomic, copy, nullable) void (^subscriberCellularProviderDidUpdateNotifier)(CTCarrier * _Nonnull);
 @property(nonatomic, copy, nullable) void (^serviceSubscriberCellularProvidersDidUpdateNotifier)(NSString * _Nonnull);
+@property(readonly, retain, nullable) NSDictionary<NSString *,CTCarrier *> *serviceSubscriberCellularProviders;
 - (CTCarrier * _Nullable)subscriberCellularProvider;
 - (NSString * _Nullable)currentRadioAccessTechnology;
 @end

@@ -5,7 +5,6 @@ import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
-import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
@@ -156,12 +155,8 @@ public abstract class IpaLoader implements Loader {
         }
     }
 
-    protected LibraryResolver createLibraryResolver() {
-        DarwinResolver resolver = new DarwinResolver();
-        if (overrideResolver) {
-            resolver.setOverride();
-        }
-        return resolver;
+    protected DarwinResolver createLibraryResolver() {
+        return new DarwinResolver();
     }
 
     private boolean overrideResolver;
@@ -194,7 +189,11 @@ public abstract class IpaLoader implements Loader {
         }
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(createLibraryResolver());
+        DarwinResolver resolver = createLibraryResolver();
+        if (overrideResolver) {
+            resolver.setOverride();
+        }
+        memory.setLibraryResolver(resolver);
         return load(emulator, ipa, bundleAppDir, configurator, loads);
     }
 
