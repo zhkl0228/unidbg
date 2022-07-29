@@ -138,14 +138,14 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
             this.type = type;
             this.user = user;
         }
-        public void notifyDataAbort(boolean isWrite, long address) {
+        public void notifyDataAbort(boolean isWrite, int size, long address) {
             if (isWrite) {
                 if ((type & UnicornConst.UC_HOOK_MEM_WRITE_UNMAPPED) != 0) {
-                    callback.hook(HypervisorBackend.this, address, 0, 0L, user, EventMemHook.UnmappedType.Write);
+                    callback.hook(HypervisorBackend.this, address, size, 0L, user, EventMemHook.UnmappedType.Write);
                 }
             } else {
                 if ((type & UnicornConst.UC_HOOK_MEM_READ_UNMAPPED) != 0) {
-                    callback.hook(HypervisorBackend.this, address, 0, 0L, user, EventMemHook.UnmappedType.Read);
+                    callback.hook(HypervisorBackend.this, address, size, 0L, user, EventMemHook.UnmappedType.Read);
                 }
             }
         }

@@ -10,7 +10,6 @@ import com.github.unidbg.arm.ARM;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.objc.ObjectiveCProcessor;
 import com.github.unidbg.ios.objc.processor.CDObjectiveC2Processor;
-import com.github.unidbg.ios.objc.processor.UniObjectiveProcessor;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
@@ -135,7 +134,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         throw new IllegalStateException("Cannot find segment for address: 0x" + Long.toHexString(address));
     }
 
-    private final List<InitFunction> allInitFunctionList = new ArrayList<>();
+    private final List<InitFunction> allInitFunctionList;
 
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
@@ -173,8 +172,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.log = LogFactory.getLog("com.github.unidbg.ios." + name);
         this.routines = machO == null ? Collections.<InitFunction>emptyList() : parseRoutines(machO);
         this.initFunctionList = machO == null ? Collections.<InitFunction>emptyList() : parseInitFunction(machO, buffer.duplicate(), name, emulator);
-        this.allInitFunctionList.addAll(routines);
-        this.allInitFunctionList.addAll(initFunctionList);
+        List<InitFunction> allInitFunctionList = new ArrayList<>(routines.size() + initFunctionList.size());
+        allInitFunctionList.addAll(routines);
+        allInitFunctionList.addAll(initFunctionList);
+        this.allInitFunctionList = Collections.unmodifiableList(allInitFunctionList);
 
         if (machO == null) {
             exportSymbols = Collections.emptyMap();

@@ -1,6 +1,5 @@
 package com.github.unidbg.arm;
 
-import capstone.Arm64_const;
 import capstone.api.Instruction;
 import capstone.api.arm64.OpInfo;
 import capstone.api.arm64.Operand;
@@ -51,11 +50,11 @@ class TraceFunctionCall64 extends TraceFunctionCall {
             Operand operand = operands.getOperands()[0];
             final long functionAddress;
             switch (operand.getType()) {
-                case Arm64_const.ARM64_OP_IMM:
+                case capstone.Arm64_const.ARM64_OP_IMM:
                     functionAddress = operand.getValue().getImm();
                     break;
-                case Arm64_const.ARM64_OP_REG:
-                    functionAddress = context.getLongByReg(operand.getValue().getUnicornReg());
+                case capstone.Arm64_const.ARM64_OP_REG:
+                    functionAddress = context.getLongByReg(instruction.mapToUnicornReg(operand.getValue().getReg()));
                     break;
                 default:
                     throw new UnsupportedOperationException("type=" + operand.getType());

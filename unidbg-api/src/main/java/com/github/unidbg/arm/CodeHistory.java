@@ -1,6 +1,5 @@
 package com.github.unidbg.arm;
 
-import capstone.Capstone;
 import capstone.api.Instruction;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;

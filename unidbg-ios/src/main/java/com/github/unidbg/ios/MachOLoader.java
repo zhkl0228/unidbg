@@ -179,7 +179,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         /* 0xa4必须固定，否则初始化objc会失败 */
         final UnidbgPointer tsd = pthread.getTSD(); // tsd size
         assert tsd != null;
-        tsd.setPointer(__TSD_THREAD_SELF * emulator.getPointerSize(), thread);
+        tsd.setPointer(__TSD_THREAD_SELF, thread);
         tsd.setPointer(__TSD_ERRNO * emulator.getPointerSize(), errno);
         tsd.setPointer(__TSD_MIG_REPLY * emulator.getPointerSize(), null);
 
@@ -741,6 +741,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     needed.addReferenceCount();
                     neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
                 } else if(!library.weak) {
+                    if ("/usr/lib/libnetwork.dylib".equals(neededLibrary)) {
+                        continue;
+                    }
                     log.info("Module \"" + dyId + "\" load dependency " + neededLibrary + " failed: rpath=" + rpathSet);
                 }
             }

@@ -28,15 +28,16 @@ public class HexTest extends TestCase {
     }
 
     public void testDisassembler() throws Exception {
-        Disassembler disassembler = DisassemblerFactory.createArm64Disassembler();
-        disassembler.setDetail(true);
-        byte[] code = Hex.decodeHex("017544bd".toCharArray());
-        Instruction instruction = disassembler.disasm(code, 0)[0];
-        assertNotNull(instruction);
-        RegsAccess regsAccess = instruction.regsAccess();
-        assertNotNull(regsAccess);
-        System.out.println("regsRead=" + Arrays.toString(regsAccess.getRegsRead()));
-        System.out.println("regsWrite=" + Arrays.toString(regsAccess.getRegsWrite()));
+        try (Disassembler disassembler = DisassemblerFactory.createArm64Disassembler()) {
+            disassembler.setDetail(true);
+            byte[] code = Hex.decodeHex("017544bd".toCharArray());
+            Instruction instruction = disassembler.disasm(code, 0)[0];
+            assertNotNull(instruction);
+            RegsAccess regsAccess = instruction.regsAccess();
+            assertNotNull(regsAccess);
+            System.out.println("regsRead=" + Arrays.toString(regsAccess.getRegsRead()));
+            System.out.println("regsWrite=" + Arrays.toString(regsAccess.getRegsWrite()));
+        }
     }
 
     public void testStream() throws Exception {

@@ -30,7 +30,7 @@ public class A12ZTest {
 
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/a12z_osx"));
         long start = System.currentTimeMillis();
-        emulator.traceRead(0xfbffffda0L, 0xfbffffda0L + 0x8);
+        emulator.traceRead(0xfbffffd30L, 0xfbffffd30L + 0x8);
         int ret = module.callEntry(emulator);
         System.err.println("testA12Z backend=" + emulator.getBackend() + ", ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
     }

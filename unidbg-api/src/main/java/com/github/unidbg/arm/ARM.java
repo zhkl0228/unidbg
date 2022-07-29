@@ -1,7 +1,5 @@
 package com.github.unidbg.arm;
 
-import capstone.Arm64_const;
-import capstone.Arm_const;
 import capstone.api.Instruction;
 import capstone.api.OpShift;
 import capstone.api.arm.MemType;
@@ -885,12 +883,12 @@ public class ARM {
 
         // ldr rx, [pc, #0xab] or ldr.w rx, [pc, #0xcd] based capstone.setDetail(Capstone.CS_OPT_ON);
         if (op.length == 2 &&
-                op[0].getType() == Arm_const.ARM_OP_REG &&
-                op[1].getType() == Arm_const.ARM_OP_MEM) {
+                op[0].getType() == capstone.Arm_const.ARM_OP_REG &&
+                op[1].getType() == capstone.Arm_const.ARM_OP_MEM) {
             mem = op[1].getValue().getMem();
 
             if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
+                UnidbgPointer base = UnidbgPointer.register(emulator, ins.mapToUnicornReg(mem.getBase()));
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.getDisp();
             }
@@ -899,13 +897,13 @@ public class ARM {
             OpShift shift;
             if (mem.getIndex() > 0 && mem.getScale() == 1 && mem.getLshift() == 0 && mem.getDisp() == 0 &&
                     (shift = op[1].getShift()) != null) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
+                UnidbgPointer base = UnidbgPointer.register(emulator, ins.mapToUnicornReg(mem.getBase()));
                 long base_value = base == null ? 0L : base.peer;
-                UnidbgPointer index = UnidbgPointer.register(emulator, mem.getIndex());
+                UnidbgPointer index = UnidbgPointer.register(emulator, ins.mapToUnicornReg(mem.getIndex()));
                 int index_value = index == null ? 0 : (int) index.peer;
-                if (shift.getType() == Arm_const.ARM_OP_IMM) {
+                if (shift.getType() == capstone.Arm_const.ARM_OP_IMM) {
                     addr = base_value + ((long) index_value << shift.getValue());
-                } else if (shift.getType() == Arm_const.ARM_OP_INVALID) {
+                } else if (shift.getType() == capstone.Arm_const.ARM_OP_INVALID) {
                     addr = base_value + index_value;
                 }
             }
@@ -913,17 +911,17 @@ public class ARM {
 
         // ldrb r0, [r1], #1
         if (op.length == 3 &&
-                op[0].getType() == Arm_const.ARM_OP_REG &&
-                op[1].getType() == Arm_const.ARM_OP_MEM &&
-                op[2].getType() == Arm_const.ARM_OP_IMM) {
+                op[0].getType() == capstone.Arm_const.ARM_OP_REG &&
+                op[1].getType() == capstone.Arm_const.ARM_OP_MEM &&
+                op[2].getType() == capstone.Arm_const.ARM_OP_IMM) {
             mem = op[1].getValue().getMem();
             if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
+                UnidbgPointer base = UnidbgPointer.register(emulator, ins.mapToUnicornReg(mem.getBase()));
                 addr = base == null ? 0L : base.peer;
             }
         }
         if (addr != -1) {
-            if (mem.getUnicornBaseReg() == Arm_const.ARM_REG_PC) {
+            if (ins.mapToUnicornReg(mem.getBase()) == ArmConst.UC_ARM_REG_PC) {
                 addr += (thumb ? 4 : 8);
             }
             int bytesRead = 4;
@@ -939,15 +937,16 @@ public class ARM {
 
         // ldrd r2, r1, [r5, #4]
         if ("ldrd".equals(ins.getMnemonic()) && op.length == 3 &&
-                op[0].getType() == Arm_const.ARM_OP_REG &&
-                op[1].getType() == Arm_const.ARM_OP_REG &&
-                op[2].getType() == Arm_const.ARM_OP_MEM) {
+                op[0].getType() == capstone.Arm_const.ARM_OP_REG &&
+                op[1].getType() == capstone.Arm_const.ARM_OP_REG &&
+                op[2].getType() == capstone.Arm_const.ARM_OP_MEM) {
             mem = op[2].getValue().getMem();
             if (mem.getIndex() == 0 && mem.getScale() == 1 && mem.getLshift() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
+                int regId = ins.mapToUnicornReg(mem.getBase());
+                UnidbgPointer base = UnidbgPointer.register(emulator, regId);
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.getDisp();
-                if (mem.getUnicornBaseReg() == Arm_const.ARM_REG_PC) {
+                if (regId == ArmConst.UC_ARM_REG_PC) {
                     addr += (thumb ? 4 : 8);
                 }
                 appendAddrValue(sb, addr, memory, emulator.is64Bit(), 4);
@@ -965,15 +964,16 @@ public class ARM {
 
         // str w9, [sp, #0xab] based capstone.setDetail(Capstone.CS_OPT_ON);
         if (op.length == 2 &&
-                op[0].getType() == Arm64_const.ARM64_OP_REG &&
-                op[1].getType() == Arm64_const.ARM64_OP_MEM) {
-            if (op[0].getValue().getUnicornReg() >= Arm64Const.UC_ARM64_REG_W0 && op[0].getValue().getUnicornReg() <= Arm64Const.UC_ARM64_REG_W30) {
+                op[0].getType() == capstone.Arm64_const.ARM64_OP_REG &&
+                op[1].getType() == capstone.Arm64_const.ARM64_OP_MEM) {
+            int regId = ins.mapToUnicornReg(op[0].getValue().getReg());
+            if (regId >= Arm64Const.UC_ARM64_REG_W0 && regId <= Arm64Const.UC_ARM64_REG_W30) {
                 bytesRead = 4;
             }
             mem = op[1].getValue().getMem();
 
             if (mem.getIndex() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
+                UnidbgPointer base = UnidbgPointer.register(emulator, ins.mapToUnicornReg(mem.getBase()));
                 long base_value = base == null ? 0L : base.peer;
                 addr = base_value + mem.getDisp();
             }
@@ -981,15 +981,16 @@ public class ARM {
 
         // ldrb r0, [r1], #1
         if (op.length == 3 &&
-                op[0].getType() == Arm64_const.ARM64_OP_REG &&
-                op[1].getType() == Arm64_const.ARM64_OP_MEM &&
-                op[2].getType() == Arm64_const.ARM64_OP_IMM) {
-            if (op[0].getValue().getUnicornReg() >= Arm64Const.UC_ARM64_REG_W0 && op[0].getValue().getUnicornReg() <= Arm64Const.UC_ARM64_REG_W30) {
+                op[0].getType() == capstone.Arm64_const.ARM64_OP_REG &&
+                op[1].getType() == capstone.Arm64_const.ARM64_OP_MEM &&
+                op[2].getType() == capstone.Arm64_const.ARM64_OP_IMM) {
+            int regId = ins.mapToUnicornReg(op[0].getValue().getReg());
+            if (regId >= Arm64Const.UC_ARM64_REG_W0 && regId <= Arm64Const.UC_ARM64_REG_W30) {
                 bytesRead = 4;
             }
             mem = op[1].getValue().getMem();
             if (mem.getIndex() == 0) {
-                UnidbgPointer base = UnidbgPointer.register(emulator, mem.getUnicornBaseReg());
+                UnidbgPointer base = UnidbgPointer.register(emulator, ins.mapToUnicornReg(mem.getBase()));
                 addr = base == null ? 0L : base.peer;
                 addr += mem.getDisp();
             }
