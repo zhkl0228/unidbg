@@ -623,8 +623,8 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
                 armExIdx, ehFrameHeader, symbolTableSection, elfFile, dynamicStructure, libraryFile);
         if ("libc.so".equals(soName)) { // libc
-            malloc = module.findSymbolByName("malloc");
-            free = module.findSymbolByName("free");
+            malloc = module.findSymbolByName("malloc", false);
+            free = module.findSymbolByName("free", false);
         }
 
         modules.put(soName, module);

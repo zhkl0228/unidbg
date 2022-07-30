@@ -795,8 +795,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         processRebase(log, module);
 
         if ("libsystem_malloc.dylib".equals(dyId)) {
-            malloc = module.findSymbolByName("_malloc");
-            free = module.findSymbolByName("_free");
+            malloc = module.findSymbolByName("_malloc", false);
+            free = module.findSymbolByName("_free", false);
         } else if ("Foundation".equals(dyId)) {
             Symbol _NSSetLogCStringFunction = module.findSymbolByName("__NSSetLogCStringFunction", false);
             if (_NSSetLogCStringFunction == null) {
@@ -1675,7 +1675,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             targetImage = module;
         } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_FLAT_LOOKUP) {
             for(MachOModule mm : modules.values().toArray(new MachOModule[0])) {
-                if (doBindAt(type, pointer, addend, module, mm, symbolName, false)) {
+                if (doBindAt(type, pointer, addend, module, mm, symbolName)) {
                     return true;
                 }
             }
@@ -1696,7 +1696,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         targetImage = fakeTargetImage(targetImage, symbolName);
-        return doBindAt(type, pointer, addend, module, targetImage, symbolName, true);
+        return doBindAt(type, pointer, addend, module, targetImage, symbolName);
     }
 
     final MachOModule fakeTargetImage(MachOModule targetImage, String symbolName) {
@@ -1734,8 +1734,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         return targetImage.findSymbolByName(symbolName, false);
     }
 
-    private boolean doBindAt(int type, Pointer pointer, long addend, Module module, MachOModule targetImage, String symbolName, boolean withDependencies) {
-        Symbol symbol = targetImage.findSymbolByName(symbolName, withDependencies);
+    private boolean doBindAt(int type, Pointer pointer, long addend, Module module, MachOModule targetImage, String symbolName) {
+        Symbol symbol = targetImage.findSymbolByName(symbolName, false);
         if (symbol == null) {
             if (log.isDebugEnabled()) {
                 log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", targetImage=" + targetImage);

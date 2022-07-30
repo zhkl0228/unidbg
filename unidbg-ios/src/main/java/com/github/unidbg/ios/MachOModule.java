@@ -943,7 +943,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             targetImage = this;
         } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_FLAT_LOOKUP) {
             for(MachOModule mm : loader.modules.values().toArray(new MachOModule[0])) {
-                long at = bindAt(type, pointer, mm, symbolName, false);
+                long at = bindAt(type, pointer, mm, symbolName);
                 if (at != 0) {
                     return at;
                 }
@@ -965,11 +965,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             symbolName = "_dispatch_queue_create";
         }
 
-        return bindAt(type, pointer, targetImage, symbolName, true);
+        return bindAt(type, pointer, targetImage, symbolName);
     }
 
-    private long bindAt(int type, Pointer pointer, MachOModule targetImage, String symbolName, boolean withDependencies) {
-        Symbol symbol = targetImage.findSymbolByName(symbolName, withDependencies);
+    private long bindAt(int type, Pointer pointer, MachOModule targetImage, String symbolName) {
+        Symbol symbol = targetImage.findSymbolByName(symbolName, false);
         if (symbol == null) {
             long bindAt = 0;
             for (HookListener listener : hookListeners) {
@@ -991,9 +991,6 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                         throw new IllegalStateException("bad bind type " + type);
                 }
                 return bindAt;
-            }
-            if (withDependencies) {
-                log.info("bindAt type=" + type + ", symbolName=" + symbolName + ", upwardLibraries=" + this.upwardLibraries.values() + ", module=" + this.name + ", targetImage=" + targetImage);
             }
             return 0;
         }
