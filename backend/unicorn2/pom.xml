@@ -5,18 +5,18 @@
     <parent>
         <groupId>com.github.zhkl0228</groupId>
         <artifactId>unidbg-parent</artifactId>
-        <version>0.9.7</version>
+        <version>0.9.8-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>unidbg-unicorn2</artifactId>
-    <version>0.9.7</version>
+    <version>0.9.8-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-api</artifactId>
-            <version>0.9.7</version>
+            <version>0.9.8-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
