@@ -4,7 +4,6 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.InitFunctionListener;
 import com.github.unidbg.spi.LibraryFile;
 
@@ -66,7 +65,7 @@ public abstract class Module {
 
     public abstract Symbol findSymbolByName(String name, boolean withDependencies);
 
-    public abstract Symbol findClosestSymbolByAddress(long addr, boolean fast);
+    public abstract Symbol findClosestSymbolByAddress(long address, boolean fast);
 
     protected final Symbol findDependencySymbolByName(String name) {
         for (Module module : neededLibraries.values()) {

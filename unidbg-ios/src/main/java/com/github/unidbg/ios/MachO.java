@@ -20,6 +20,7 @@ public interface MachO {
     int N_TYPE = 0x0e;
     int N_STAB = 0xe0;
     int N_UNDF = 0; /* undefined, n_sect == NO_SECT */
+    int N_EXT = 0x1; /* external symbol bit, set for external symbols */
     int N_ABS = 0x2; /* absolute, n_sect == NO_SECT */
     int N_SECT = 0xe; /* defined in section number n_sect */
     int N_INDR = 0xa; /* indirect */

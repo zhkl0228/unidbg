@@ -47,7 +47,11 @@ public class MachOSymbol extends Symbol implements com.github.unidbg.ios.MachO {
 
     @Override
     public boolean isUndef() {
-        return false;
+        return type == N_UNDF;
+    }
+
+    public boolean isExternalSymbol() {
+        return (nlist.type() & N_EXT) != 0;
     }
 
     @Override

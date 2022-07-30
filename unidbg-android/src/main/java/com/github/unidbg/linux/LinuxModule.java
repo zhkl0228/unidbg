@@ -172,9 +172,9 @@ public class LinuxModule extends Module {
     }
 
     @Override
-    public Symbol findClosestSymbolByAddress(long addr, boolean fast) {
+    public Symbol findClosestSymbolByAddress(long address, boolean fast) {
         try {
-            long soaddr = addr - base;
+            long soaddr = address - base;
             if (soaddr <= 0) {
                 return null;
             }
@@ -187,7 +187,7 @@ public class LinuxModule extends Module {
                 symbol = new LinuxSymbol(this, elfSymbol);
             }
             long entry = base + entryPoint;
-            if (addr >= entry && (symbol == null || entry > symbol.getAddress())) {
+            if (address >= entry && (symbol == null || entry > symbol.getAddress())) {
                 symbol = new VirtualSymbol("start", this, entry);
             }
             return symbol;

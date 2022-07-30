@@ -24,7 +24,11 @@ class Unicorn2Backend extends AbstractBackend implements Backend {
         this.emulator = emulator;
         this.is64Bit = is64Bit;
         try {
-            this.unicorn = new Unicorn(is64Bit ? UnicornConst.UC_ARCH_ARM64 : UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM);
+            if (is64Bit) {
+                this.unicorn = new Unicorn(UnicornConst.UC_ARCH_ARM64, UnicornConst.UC_MODE_ARM);
+            } else {
+                this.unicorn = new Unicorn(UnicornConst.UC_ARCH_ARM, UnicornConst.UC_MODE_ARM);
+            }
         } catch (UnicornException e) {
             throw new BackendException(e);
         }

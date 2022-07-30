@@ -53,6 +53,17 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_nativ
     throwException(env, err);
     return 0;
   } else {
+    if(arch == UC_ARCH_ARM64) {
+      err = uc_ctl_set_cpu_model(eng, UC_CPU_ARM64_A72);
+    } else {
+      err = uc_ctl_set_cpu_model(eng, UC_CPU_ARM_CORTEX_A15);
+    }
+    if (err != UC_ERR_OK) {
+      fprintf(stderr, "set uc_ctl_set_cpu_model failed: err=%d\n", err);
+      uc_close(eng);
+      throwException(env, err);
+      return 0;
+    }
     t_unicorn unicorn = malloc(sizeof(struct unicorn));
     memset(unicorn, 0, sizeof(struct unicorn));
     unicorn->bps_map = kh_init(64);

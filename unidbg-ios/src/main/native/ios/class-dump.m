@@ -559,7 +559,7 @@ BOOL isSystemClass(Class class) {
 	        NSLog(@"Found class: %s => %p", className, class);
 	        count++;
 	    } else if(matchesSuper(class_getSuperclass(class), keywords)) {
-	        NSLog(@"Found super: %s", className);
+	        NSLog(@"Found super: %s => %p", className, class);
 	        count++;
 	    }
 	}
@@ -571,7 +571,7 @@ BOOL isSystemClass(Class class) {
 	    for(int i = 0; i < protocolCount; i++) {
 	        const char *protocolName = protocol_getName(protocols[i]);
 	        if(strcasestr(protocolName, keywords)) {
-                NSLog(@"Found proto: %s", protocolName);
+                NSLog(@"Found proto: %s => %p", protocolName, protocols[i]);
                 count++;
             }
 	    }

@@ -1342,9 +1342,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             throw new IllegalStateException(String.format("bad mach-o binary, library ordinal (%d) too big (max %d) for symbol %s in %s", libraryOrdinal, module.ordinalList.size(), symbol.getName(), module.getPath()));
         }
 
-        if (replace == null) {
-            replace = module.findSymbolByName(symbol.getName(), true);
-        }
         long address = replace == null ? 0L : replace.getAddress();
         for (HookListener listener : hookListeners) {
             long hook = listener.hook(emulator.getSvcMemory(), replace == null ? module.name : replace.getModuleName(), symbol.getName(), address);

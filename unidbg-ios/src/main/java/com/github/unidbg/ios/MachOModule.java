@@ -65,11 +65,12 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     boolean lazyPointerProcessed;
 
     private final Map<String, Symbol> symbolMap = new HashMap<>();
+    final Map<String, MachOSymbol> otherSymbols = new HashMap<>();
 
     private final Log log;
 
     final boolean executable;
-    private final MachOLoader loader;
+    final MachOLoader loader;
     private final List<HookListener> hookListeners;
     final List<String> ordinalList;
 
@@ -199,6 +200,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     boolean isThumb = (nlist.desc() & N_ARM_THUMB_DEF) != 0;
                     strBuffer.position((int) nlist.un());
                     String symbolName = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
+                    MachOSymbol symbol = new MachOSymbol(this, nlist, symbolName);
                     if ((type == N_SECT || type == N_ABS) && (nlist.type() & N_STAB) == 0) {
                         ExportSymbol exportSymbol = null;
                         if (exportSymbols.isEmpty() || (exportSymbol = exportSymbols.remove(symbolName)) != null) {
@@ -206,14 +208,17 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                                 log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", type=0x" + Long.toHexString(nlist.type()) + ", isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", value=0x" + Long.toHexString(nlist.value()));
                             }
 
-                            MachOSymbol symbol = new MachOSymbol(this, nlist, symbolName);
                             if (exportSymbol != null && symbol.getAddress() == exportSymbol.getOtherWithBase()) {
                                 if (log.isDebugEnabled()) {
                                     log.debug("nlist un=0x" + Long.toHexString(nlist.un()) + ", symbolName=" + symbolName + ", value=0x" + Long.toHexString(nlist.value()) + ", address=0x" + Long.toHexString(exportSymbol.getValue()) + ", other=0x" + Long.toHexString(exportSymbol.getOtherWithBase()));
                                 }
-                                symbolMap.put(symbolName, exportSymbol);
+                                if (symbolMap.put(symbolName, exportSymbol) != null) {
+                                    log.warn("Replace exist symbol: " + symbolName);
+                                }
                             } else {
-                                symbolMap.put(symbolName, symbol);
+                                if (symbolMap.put(symbolName, symbol) != null) {
+                                    log.warn("Replace exist symbol: " + symbolName);
+                                }
                             }
                         } else {
                             if (log.isDebugEnabled()) {
@@ -227,10 +232,15 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                             if (log.isDebugEnabled()) {
                                 log.debug("nlist indirect symbolName=" + symbolName + ", indirectSymbol=" + indirectSymbol);
                             }
-                            symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol));
+                            if (symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol)) != null) {
+                                log.warn("Replace exist symbol: " + symbolName);
+                            }
                         }
-                    } else if (log.isDebugEnabled()) {
-                        log.debug("nlist isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", type=" + type + ", symbolName=" + symbolName);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("nlist isWeakDef=" + isWeakDef + ", isThumb=" + isThumb + ", type=" + type + ", symbolName=" + symbolName);
+                        }
+                        otherSymbols.put(symbolName, symbol);
                     }
                 }
             } catch (IOException e) {
@@ -606,18 +616,9 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
-    private final Set<String> failedSymbols = new HashSet<>();
-
     @Override
     public Symbol findSymbolByName(String name, boolean withDependencies) {
-        if (withDependencies && failedSymbols.contains(name)) {
-            return null;
-        }
         Symbol symbol = findSymbolByNameInternal(name, withDependencies);
-        if (withDependencies && symbol == null) {
-            failedSymbols.add(name);
-        }
-
         if (symbol != null) {
             if (symbol instanceof IndirectSymbol) {
                 IndirectSymbol indirectSymbol = (IndirectSymbol) symbol;
