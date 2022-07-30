@@ -78,7 +78,7 @@ public abstract class IpaLoader implements Loader {
         return appDir + bundleIdentifier + "_" + bundleVersion;
     }
 
-    private static final String APP_DIR = "/var/containers/Bundle/Application/";
+    public static final String APP_DIR = "/var/containers/Bundle/Application/";
     public static final String PAYLOAD_PREFIX = "Payload";
 
     private String generateExecutableBundlePath() {

@@ -38,5 +38,4 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework Network "Foundation"
-build_framework CoreTelephony "CoreFoundation"
+build_framework CoreNFC "CoreFoundation"

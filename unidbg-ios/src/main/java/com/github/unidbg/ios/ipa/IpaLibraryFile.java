@@ -70,7 +70,11 @@ public class IpaLibraryFile implements LibraryFile {
             return null;
         }
         byte[] libData = IpaLoader.loadZip(ipa, path);
-        return libData == null ? null : new IpaLibraryFile(appDir, ipa, soName, bundleAppDir, libData, loadList);
+        if (libData != null) {
+            return new IpaLibraryFile(appDir, ipa, soName, bundleAppDir, libData, loadList);
+        } else {
+            return null;
+        }
     }
 
     @Override

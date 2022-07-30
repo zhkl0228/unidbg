@@ -11,6 +11,7 @@ import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.file.ByteArrayFileIO;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.SimpleFileIO;
+import com.github.unidbg.ios.ipa.IpaLoader;
 import com.github.unidbg.ios.patch.LibDispatchPatcher;
 import com.github.unidbg.ios.patch.NewObjcPatcher;
 import com.github.unidbg.ios.patch.OldObjcPatcher;
@@ -74,6 +75,14 @@ public class DarwinResolver implements LibraryResolver, IOResolver<DarwinFileIO>
     private static final Pattern SYSTEM_LIBRARY_FRAMEWORK_PATTERN = Pattern.compile("/System/Library/Frameworks/(\\w+).framework/Versions/[A-C]/(\\w+)");
 
     LibraryFile resolveLibrary(String libraryName, Class<?> resClass) {
+        if (libraryName.contains("@")) {
+            return null;
+        }
+        if (libraryName.startsWith(IpaLoader.APP_DIR)) {
+            return null;
+        }
+
+        libraryName = FilenameUtils.normalize(libraryName, true);
         if (!excludeLibs.isEmpty() && excludeLibs.contains(FilenameUtils.getName(libraryName))) {
             return null;
         }
