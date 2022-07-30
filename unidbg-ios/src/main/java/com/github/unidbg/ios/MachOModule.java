@@ -636,8 +636,21 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         Symbol symbol = symbolMap.get(name);
         if (symbol == null) {
             ExportSymbol es = exportSymbols.get(name);
-            if (es != null && !es.isReExport()) {
-                symbol = es;
+            if (es != null) {
+                if (es.isReExport()) {
+                    int ordinal = (int) es.getOther();
+                    if (ordinal <= ordinalList.size()) {
+                        String path = ordinalList.get(ordinal - 1);
+                        MachOModule reexportedFrom = loader.modules.get(FilenameUtils.getName(path));
+                        if (reexportedFrom != null) {
+                            symbol = reexportedFrom.findSymbolByName(name, false);
+                        }
+                    } else {
+                        throw new IllegalStateException("ordinal=" + ordinal);
+                    }
+                } else {
+                    symbol = es;
+                }
             }
         }
         if (symbol != null) {

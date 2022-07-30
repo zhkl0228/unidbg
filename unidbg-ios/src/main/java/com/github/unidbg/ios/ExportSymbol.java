@@ -69,4 +69,9 @@ public class ExportSymbol extends Symbol implements MachO {
     public String getModuleName() {
         return module.name;
     }
+
+    public long getOther() {
+        return other;
+    }
+
 }

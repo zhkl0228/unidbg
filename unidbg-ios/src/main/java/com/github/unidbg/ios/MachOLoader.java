@@ -755,12 +755,6 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             log.debug("load dyId=" + dyId + ", base=0x" + Long.toHexString(loadBase) + ", neededLibraries=" + neededLibraries + ", upwardLibraries=" + upwardLibraries);
         }
 
-        if ("libc++.1.dylib".equals(dyId)) {
-            MachOModule cxxAbi = modules.get("libc++abi.dylib");
-            if (cxxAbi != null) {
-                exportModules.put("libc++abi.dylib", cxxAbi);
-            }
-        }
         final long loadSize = size;
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
@@ -892,7 +886,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (dyldInfoCommand == null) {
             MachO.LinkeditDataCommand chainedFixups = mm.chainedFixups;
             if (chainedFixups == null) {
-                throw new IllegalStateException();
+                return;
             }
             ByteBuffer buffer = mm.buffer.duplicate();
             buffer.limit((int) (chainedFixups.dataOff() + chainedFixups.dataSize()));
