@@ -333,7 +333,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private CodeHookNotifier codeHookNotifier;
 
     /**
-     * The local exclusive monitor gets cleared on every exception return,that is, on execution of the ERET instruction.
+     * The local exclusive monitor gets cleared on every exception return, that is, on execution of the ERET instruction.
      *
      * from: <a href="https://xen-devel.narkive.com/wQw4F6GV/xen-arm-software-step-armv8-pc-stuck-on-instruction">...</a>
      * LDAXR sets the 'exclusive monitor' and STXR only succeeds if the exclusive
