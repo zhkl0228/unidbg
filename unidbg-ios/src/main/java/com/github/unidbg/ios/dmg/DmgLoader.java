@@ -1,16 +1,14 @@
 package com.github.unidbg.ios.dmg;
 
 import com.dd.plist.NSDictionary;
-import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.backend.BackendFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
+import com.github.unidbg.ios.BaseLoader;
 import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinResolver;
-import com.github.unidbg.ios.Loader;
 import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.ios.ipa.EmulatorConfigurator;
@@ -32,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public abstract class DmgLoader implements Loader {
+public abstract class DmgLoader extends BaseLoader {
 
     private static final Log log = LogFactory.getLog(DmgLoader.class);
 
@@ -82,31 +80,10 @@ public abstract class DmgLoader implements Loader {
         return executable.getAbsolutePath();
     }
 
-    private static String parseExecutable(NSDictionary info) throws IOException {
-        NSString bundleExecutable = (NSString) info.get("CFBundleExecutable");
-        return bundleExecutable.getContent();
-    }
-
-    private static String parseVersion(NSDictionary info) throws IOException {
-        NSString bundleVersion = (NSString) info.get("CFBundleVersion");
-        return bundleVersion.getContent();
-    }
-
-    private static String parseCFBundleIdentifier(NSDictionary info) throws IOException {
-        NSString bundleIdentifier = (NSString) info.get("CFBundleIdentifier");
-        return bundleIdentifier.getContent();
-    }
-
     protected void config(final Emulator<DarwinFileIO> emulator, File dmgDir) {
         SyscallHandler<DarwinFileIO> syscallHandler = emulator.getSyscallHandler();
         syscallHandler.addIOResolver(new DmgResolver(dmgDir));
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
-    }
-
-    protected final List<BackendFactory> backendFactories = new ArrayList<>(5);
-
-    public void addBackendFactory(BackendFactory backendFactory) {
-        this.backendFactories.add(backendFactory);
     }
 
     protected Emulator<DarwinFileIO> createEmulator(File rootDir) throws IOException {
@@ -124,22 +101,18 @@ public abstract class DmgLoader implements Loader {
         }
         config(emulator, dmgDir);
         Memory memory = emulator.getMemory();
-        memory.setLibraryResolver(new DarwinResolver());
+        DarwinResolver resolver = createLibraryResolver();
+        if (overrideResolver) {
+            resolver.setOverride();
+        }
+        memory.setLibraryResolver(resolver);
         return load(emulator, bundleAppDir, configurator, loads);
     }
 
     protected String[] getEnvs(File rootDir) throws IOException {
         List<String> list = new ArrayList<>();
-        list.add("PrintExceptionThrow=YES"); // log backtrace of every objc_exception_throw()
-        if (log.isDebugEnabled()) {
-            list.add("OBJC_HELP=YES"); // describe available environment variables
-//            list.add("OBJC_PRINT_OPTIONS=YES"); // list which options are set
-            list.add("OBJC_PRINT_CLASS_SETUP=YES"); // log progress of class and category setup
-//            list.add("OBJC_PRINT_INITIALIZE_METHODS=YES"); // log calls to class +initialize methods
-            list.add("OBJC_PRINT_PROTOCOL_SETUP=YES"); // log progress of protocol setup
-            list.add("OBJC_PRINT_IVAR_SETUP=YES"); // log processing of non-fragile ivars
-            list.add("OBJC_PRINT_VTABLE_SETUP=YES"); // log processing of class vtables
-        }
+        list.add("OBJC_PRINT_EXCEPTION_THROW=YES"); // log backtrace of every objc_exception_throw()
+        addEnv(list);
         UUID uuid = UUID.nameUUIDFromBytes((bundleIdentifier + "_Documents").getBytes(StandardCharsets.UTF_8));
         String homeDir = "/var/mobile/Containers/Data/Application/" + uuid.toString().toUpperCase();
         list.add("CFFIXED_USER_HOME=" + homeDir);
@@ -147,17 +120,11 @@ public abstract class DmgLoader implements Loader {
         return list.toArray(new String[0]);
     }
 
-    private boolean forceCallInit;
-
-    @SuppressWarnings("unused")
-    public void setForceCallInit(boolean forceCallInit) {
-        this.forceCallInit = forceCallInit;
-    }
-
-    private LoadedDmg load(Emulator<DarwinFileIO> emulator, String bundleAppDir, EmulatorConfigurator configurator, String... loads) throws IOException {
+    private LoadedDmg load(Emulator<DarwinFileIO> emulator, String bundleAppDir, EmulatorConfigurator configurator, String... loads) {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setLoader(this);
-        Module module = loader.load(new DmgLibraryFile(executable, bundleAppDir, new File(executableBundlePath), loads), forceCallInit);
+        File executableFile = new File(executableBundlePath);
+        Module module = loader.load(new DmgLibraryFile(executableFile.getParent(), executable, bundleAppDir, executableFile, loads), forceCallInit);
         if (configurator != null) {
             configurator.onExecutableLoaded(emulator, (MachOModule) module);
         }

@@ -17,17 +17,19 @@ public class DmgLibraryFile implements LibraryFile {
 
     private static final Log log = LogFactory.getLog(DmgLibraryFile.class);
 
+    private final String appDir;
     private final String executable;
     private final File file;
     private final String bundleAppDir;
 
-    DmgLibraryFile(String executable, String bundleAppDir, File file, String... loads) {
-        this(executable, bundleAppDir, file, Arrays.asList(loads));
+    DmgLibraryFile(String appDir, String executable, String bundleAppDir, File file, String... loads) {
+        this(appDir, executable, bundleAppDir, file, Arrays.asList(loads));
     }
 
     private final List<String> loadList;
 
-    private DmgLibraryFile(String executable, String bundleAppDir, File file, List<String> loadList) {
+    private DmgLibraryFile(String appDir, String executable, String bundleAppDir, File file, List<String> loadList) {
+        this.appDir = appDir;
         this.executable = executable;
         this.file = file;
         this.bundleAppDir = bundleAppDir;
@@ -55,7 +57,7 @@ public class DmgLibraryFile implements LibraryFile {
             return null;
         }
 
-        String path = soName.replace("@executable_path", file.getParentFile().getPath());
+        String path = soName.replace("@executable_path", appDir);
         if (log.isDebugEnabled()) {
             log.debug("Try resolve library soName=" + soName + ", path=" + path);
         }
@@ -70,7 +72,7 @@ public class DmgLibraryFile implements LibraryFile {
         if (!file.exists() || !file.isFile()) {
             return null;
         } else {
-            return new DmgLibraryFile(soName, bundleAppDir, file, loadList);
+            return new DmgLibraryFile(appDir, soName, bundleAppDir, file, loadList);
         }
     }
 
