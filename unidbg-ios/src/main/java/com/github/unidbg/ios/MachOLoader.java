@@ -274,7 +274,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             }
         }
 
-        for (MachOModule m : modules.values()) {
+        for (MachOModule m : modules.values().toArray(new MachOModule[0])) {
             notifySingle(Dyld.dyld_image_state_initialized, m);
         }
 

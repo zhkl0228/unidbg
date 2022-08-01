@@ -36,6 +36,14 @@ public class KEvent64 extends UnidbgStructure {
         return Arrays.asList("ident", "filter", "flags", "fflags", "data", "udata", "ext");
     }
 
+    public boolean isEnabled() {
+        return (flags & KEvent.EV_ENABLE) != 0;
+    }
+
+    public boolean isDisabled() {
+        return (flags & KEvent.EV_DISABLE) != 0;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(ident, filter);

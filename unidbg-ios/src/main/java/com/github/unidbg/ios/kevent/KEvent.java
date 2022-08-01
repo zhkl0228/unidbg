@@ -18,6 +18,7 @@ public class KEvent extends BaseDarwinFileIO {
     private static final short EVFILT_SIGNAL = (-6); /* attached to struct proc */
     private static final short EVFILT_MACHPORT = (-8); /* Mach portsets */
     private static final short EVFILT_USER = (-10); /* User events */
+    private static final short EVFILT_VM = (-12); /* Virtual memory events */
 
     private final Map<Integer, KEvent64> registerMap = new HashMap<>();
     final List<KEvent64> pendingEventList = new ArrayList<>();
@@ -28,8 +29,8 @@ public class KEvent extends BaseDarwinFileIO {
 
     private static final int EV_ADD = 0x0001; /* add event to kq (implies enable) */
     private static final int EV_DELETE = 0x0002; /* delete event from kq */
-    private static final int EV_ENABLE = 0x0004; /* enable event */
-    private static final int EV_DISABLE = 0x0008; /* disable event (not reported) */
+    public static final int EV_ENABLE = 0x0004; /* enable event */
+    public static final int EV_DISABLE = 0x0008; /* disable event (not reported) */
     private static final int EV_RECEIPT = 0x0040; /* force EV_ERROR on success, data == 0 */
 
     /*
@@ -66,6 +67,7 @@ public class KEvent extends BaseDarwinFileIO {
                 }
                 break;
             }
+            case EVFILT_VM:
             case EVFILT_MACHPORT: {
                 if ((kev.flags & EV_ADD) != 0) {
                     registerMap.put(kev.hashCode(), kev);
@@ -73,10 +75,7 @@ public class KEvent extends BaseDarwinFileIO {
                 if ((kev.flags & EV_DELETE) != 0) {
                     throw new UnsupportedOperationException();
                 }
-                if ((kev.flags & EV_ENABLE) != 0) {
-                    throw new UnsupportedOperationException();
-                }
-                if ((kev.flags & EV_DISABLE) != 0) {
+                if (kev.isEnabled() == kev.isDisabled()) {
                     throw new UnsupportedOperationException();
                 }
                 break;

@@ -217,6 +217,28 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 }
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }
+            case EC_SYSTEMREGISTERTRAP: {
+                /*
+                 *  Direction: Indicates the direction of the trapped instruction.
+                 *  0b0	Write access, including MSR instructions.
+                 *  0b1	Read access, including MRS instructions.
+                 */
+                boolean isRead = (esr & 1) != 0;
+                int CRm = (int) ((esr >>> 1) & 0xf);
+                int Rt = (int) ((esr >>> 5) & 0x1f); // The Rt value from the issued instruction, the general-purpose register used for the transfer.
+                int CRn = (int) ((esr >>> 10) & 0xf);
+                int Op1 = ((int) (esr >>> 14) & 0x7);
+                int Op2 = ((int) (esr >>> 17) & 0x7);
+                int Op0 = ((int) (esr >>> 20) & 0x3);
+                if (isRead) {
+                    if (CRm == 0 && CRn == 14 && Op1 == 3 && Op2 == 1 && Op0 == 3) { // CNTPCT_EL0
+                        hypervisor.reg_write64(Rt, 0);
+                        hypervisor.reg_set_elr_el1(elr + 4);
+                        return true;
+                    }
+                }
+                throw new UnsupportedOperationException("EC_SYSTEMREGISTERTRAP");
+            }
             default:
                 log.warn("handleException ec=0x" + Integer.toHexString(ec));
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
