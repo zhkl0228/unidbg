@@ -75,7 +75,7 @@ public class KEvent extends BaseDarwinFileIO {
                 if ((kev.flags & EV_DELETE) != 0) {
                     throw new UnsupportedOperationException();
                 }
-                if (kev.isEnabled() == kev.isDisabled()) {
+                if (kev.isEnabled() && kev.isDisabled()) {
                     throw new UnsupportedOperationException();
                 }
                 break;

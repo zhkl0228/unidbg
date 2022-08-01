@@ -3,28 +3,32 @@
 @implementation NSResponder
 @end
 
+const NSApplication *NSApp = nil;
+
 @implementation NSApplication
 @synthesize delegate;
-+ (NSApplication *)sharedApplication {
-  static NSApplication *_instance = nil;
++ (id)sharedApplication {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    _instance = [[self alloc] init];
-    // Class delegateClass = NSClassFromString(@"AppDelegate");
-    // _instance.delegate = [[delegateClass alloc] init];
+    NSApp = [[self alloc] init];
+    Class delegateClass = NSClassFromString(@"AppDelegate");
+    NSApp.delegate = [[delegateClass alloc] init];
   });
-  return _instance;
+  return NSApp;
 }
 - (void)run {
-  NSLog(@"Starts the main event loop: delegate=%@", self.delegate);
-  NSNotification *notification = [NSNotification notificationWithName: NSApplicationDidFinishLaunchingNotification object: self];
-  [self.delegate applicationDidFinishLaunching: notification];
+  NSLog(@"Run application=%@, delegate=%@", self, self.delegate);
+  [self.delegate applicationWillFinishLaunching: [NSNotification notificationWithName: NSApplicationWillFinishLaunchingNotification object: self]];
+  [self.delegate applicationWillBecomeActive: [NSNotification notificationWithName: NSApplicationWillBecomeActiveNotification object: self]];
+  [self.delegate applicationDidBecomeActive: [NSNotification notificationWithName: NSApplicationDidBecomeActiveNotification object: self]];
+  [self.delegate applicationDidFinishLaunching: [NSNotification notificationWithName: NSApplicationDidFinishLaunchingNotification object: self]];
 }
 @end
 
 @implementation NSBundle (AppKit)
 - (BOOL)loadNibNamed:(NSNibName)nibName owner:(id)owner topLevelObjects:(NSArray **)topLevelObjects {
-  return NO;
+  NSLog(@"loadNibNamed bundle=%@, nib=%@, owner=%@", self, nibName, owner);
+  return YES;
 }
 @end
 
@@ -33,9 +37,6 @@ int NSApplicationMain(int argc, const char **argv) {
   return 0;
 }
 
-const NSApplication *NSApp;
-
 __attribute__((constructor))
 void init() {
-  NSApp = [NSApplication sharedApplication];
 }

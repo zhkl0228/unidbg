@@ -20,7 +20,6 @@ import com.github.unidbg.ios.hook.Substrate;
 import com.github.unidbg.ios.ipa.EmulatorConfigurator;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
-import com.github.unidbg.ios.struct.objc.ObjcObject;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -30,8 +29,7 @@ import java.io.File;
 public class DmgLoaderTest implements EmulatorConfigurator, ModuleListener {
 
     public void testLoader() throws Exception {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.DEBUG);
-
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         long start = System.currentTimeMillis();
         File dmg = new File(FileUtils.getUserDirectory(), "Downloads/WeChat.app");
         DmgLoader ipaLoader = new DmgLoader64(dmg, new File("target/rootfs/dmg"));
@@ -61,10 +59,6 @@ public class DmgLoaderTest implements EmulatorConfigurator, ModuleListener {
                 thread.join();
 
                 System.out.println("offset=" + (System.currentTimeMillis() - start) + "ms");
-
-                final ObjC objc = ObjC.getInstance(emulator);
-                ObjcClass cMMServiceCenter = objc.getClass("MMServiceCenter");
-                ObjcObject serviceCenter = cMMServiceCenter.callObjc("defaultCenter");
                 return null;
             }
         });
@@ -101,6 +95,7 @@ public class DmgLoaderTest implements EmulatorConfigurator, ModuleListener {
     @Override
     public void configure(Emulator<DarwinFileIO> emulator, String executableBundlePath, File rootDir, String bundleIdentifier) {
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
+        emulator.getSyscallHandler().setVerbose(false);
         emulator.getMemory().addModuleListener(this);
     }
 
