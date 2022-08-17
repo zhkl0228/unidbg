@@ -615,9 +615,9 @@ public abstract class AbstractJni implements Jni {
                     return ((Iterator<?>) iterator).hasNext();
                 }
             case "java/lang/String->startsWith(Ljava/lang/String;)Z":{
-                StringObject stringObject = (StringObject) dvmObject.getValue();
+                String str = (String) dvmObject.getValue();
                 StringObject prefix = vaList.getObjectArg(0);
-                return stringObject.value.startsWith(prefix.value);
+                return str.startsWith(prefix.value);
             }
         }
 
