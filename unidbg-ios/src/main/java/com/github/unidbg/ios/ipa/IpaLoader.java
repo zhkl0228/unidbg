@@ -57,6 +57,10 @@ public abstract class IpaLoader extends BaseLoader {
 
     protected final String executableBundlePath;
 
+    IpaLoader(Class<?> callingClass, File rootDir) {
+        this(new File(callingClass.getProtectionDomain().getCodeSource().getLocation().getPath()), rootDir);
+    }
+
     IpaLoader(File ipa, File rootDir) {
         this.ipa = ipa;
         this.rootDir = rootDir;

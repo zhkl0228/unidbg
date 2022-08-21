@@ -91,7 +91,8 @@ public class HookLoader extends BaseHook {
         Pointer dq = context.getPointerArg(0);
         Pointer block = context.getPointerArg(1);
         Pointer fun = block.getPointer(0x10);
-        boolean dispatch = callback.canDispatch(dq, fun);
+        boolean is_barrier_async = context.getIntArg(2) != 0;
+        boolean dispatch = callback.canDispatch(dq, fun, is_barrier_async);
         if (!dispatch) {
             System.out.println("Skip dispatch_async dq=" + dq + ", fun=" + fun);
         }
