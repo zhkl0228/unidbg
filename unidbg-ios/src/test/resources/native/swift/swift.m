@@ -64,6 +64,14 @@ int main(int argc, char *argv[]) {
 
   [library hello];
 
+  dispatch_barrier_sync(main_queue, ^{
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_barrier_sync global_queue=%p, current=%p\n", global_queue, current);
+  });
+  dispatch_barrier_async(main_queue, ^{
+    dispatch_queue_t current = dispatch_get_current_queue();
+    printf("dispatch_barrier_async global_queue=%p, current=%p\n", global_queue, current);
+  });
   return 0;
 }
 #pragma clang diagnostic pop

@@ -37,7 +37,7 @@ public class SwiftTest {
             @Override
             public boolean canDispatch(Pointer dq, Pointer fun) {
                 System.out.println("canDispatch dq=" + dq + ", fun=" + fun);
-                return UnidbgPointer.nativeValue(fun) != 0x100004a24L;
+                return true;
             }
         });
         long start = System.currentTimeMillis();
