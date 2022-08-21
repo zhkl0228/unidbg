@@ -1565,7 +1565,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         log.debug("sysctl CTL_UNSPEC action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", sub=" + sub + ", set1=" + set1);
                     }
                     if ("unidbg.debug".equals(sub)) {
-                        return LogFactory.getLog("com.github.unidbg.ios.debug").isDebugEnabled() ? 1 : 0;
+                        return verbose || LogFactory.getLog("com.github.unidbg.ios.debug").isDebugEnabled() ? 1 : 0;
                     }
                     if ("kern.ostype".equals(sub)) {
                         buffer.setInt(0, CTL_KERN);

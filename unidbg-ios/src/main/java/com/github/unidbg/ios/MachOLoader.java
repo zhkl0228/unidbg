@@ -1731,11 +1731,26 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 return new ExportSymbol(symbolName, value, targetImage, 0, com.github.unidbg.ios.MachO.EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
             }
         }
-        return targetImage.findSymbolByName(symbolName, false);
+        Symbol symbol = targetImage.findSymbolByName(symbolName, false);
+        if (symbol != null) {
+            return symbol;
+        }
+        if ("CFNetwork".equals(targetImage.name)) {
+            MachOModule foundation = modules.get("Foundation");
+            if (foundation != null) {
+                symbol = findSymbolInternal(foundation, symbolName);
+                if (symbol != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Redirect symbol=" + symbol);
+                    }
+                }
+            }
+        }
+        return symbol;
     }
 
     private boolean doBindAt(int type, Pointer pointer, long addend, Module module, MachOModule targetImage, String symbolName) {
-        Symbol symbol = targetImage.findSymbolByName(symbolName, false);
+        Symbol symbol = this.findSymbolInternal(targetImage, symbolName);
         if (symbol == null) {
             if (log.isDebugEnabled()) {
                 log.info("doBindAt type=" + type + ", symbolName=" + symbolName + ", targetImage=" + targetImage);

@@ -969,7 +969,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     private long bindAt(int type, Pointer pointer, MachOModule targetImage, String symbolName) {
-        Symbol symbol = targetImage.findSymbolByName(symbolName, false);
+        Symbol symbol = loader.findSymbolInternal(targetImage, symbolName);
         if (symbol == null) {
             long bindAt = 0;
             for (HookListener listener : hookListeners) {
