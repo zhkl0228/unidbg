@@ -1701,6 +1701,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     final MachOModule fakeTargetImage(MachOModule targetImage, String symbolName) {
         if ("___NSArray0__".equals(symbolName) ||
+                "___NSDictionary0__".equals(symbolName) ||
                 "_OBJC_CLASS_$_NSConstantIntegerNumber".equals(symbolName) ||
                 "_NSProcessInfoPowerStateDidChangeNotification".equals(symbolName) ||
                 "_NSExtensionHostDidEnterBackgroundNotification".equals(symbolName) ||

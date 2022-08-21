@@ -333,6 +333,7 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 @end
 
 id __NSArray0__;
+id __NSDictionary0__;
 
 @interface UICollectionReusableView : UIView
 @end
