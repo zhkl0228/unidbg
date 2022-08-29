@@ -214,6 +214,8 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
     if(self = [super init]) {
         self.statusBarHidden = YES;
         self.protectedDataAvailable = YES;
+        self.statusBarStyle = UIStatusBarStyleDefault;
+        self.userInterfaceLayoutDirection = UIUserInterfaceLayoutDirectionLeftToRight;
     }
     return self;
 }

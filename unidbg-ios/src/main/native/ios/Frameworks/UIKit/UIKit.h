@@ -117,10 +117,16 @@ typedef enum UIStatusBarStyle : NSInteger {
     UIStatusBarStyleDefault,
 } UIStatusBarStyle;
 
+typedef enum UIUserInterfaceLayoutDirection : NSInteger {
+    UIUserInterfaceLayoutDirectionLeftToRight,
+    UIUserInterfaceLayoutDirectionRightToLeft
+} UIUserInterfaceLayoutDirection;
+
 @interface UIApplication : NSObject
 
 @property(nonatomic, getter=isStatusBarHidden) BOOL statusBarHidden;
 @property(nonatomic) UIStatusBarStyle statusBarStyle;
+@property(nonatomic) UIUserInterfaceLayoutDirection userInterfaceLayoutDirection;
 @property(nonatomic, getter=isIgnoringInteractionEvents) BOOL ignoringInteractionEvents;
 @property(nonatomic, getter=isProtectedDataAvailable) BOOL protectedDataAvailable;
 @property(nonatomic) NSInteger applicationIconBadgeNumber;
