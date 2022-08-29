@@ -312,7 +312,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     }
 
     private LinuxModule loadInternal(LibraryFile libraryFile) throws IOException {
-        final ElfFile elfFile = ElfFile.fromBytes(libraryFile.mapBuffer());
+        final ElfFile elfFile = ElfFile.fromBuffer(libraryFile.mapBuffer());
 
         if (emulator.is32Bit() && elfFile.objectSize != ElfFile.CLASS_32) {
             throw new ElfException("Must be 32-bit");
