@@ -137,7 +137,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @interface CALayer : NSObject
 @end
 
-@interface UIView : UIResponder
+@interface UIView <UIAppearance> : UIResponder
 @property(nonatomic) BOOL accessibilityViewIsModal;
 @property(nonatomic, retain) UIColor *backgroundColor;
 @property(nonatomic) CGRect frame;
@@ -191,6 +191,11 @@ typedef enum UIBackgroundRefreshStatus : NSInteger {
     UIBackgroundRefreshStatusAvailable
 } UIBackgroundRefreshStatus;
 
+typedef enum UIUserInterfaceLayoutDirection : NSInteger {
+    UIUserInterfaceLayoutDirectionLeftToRight,
+    UIUserInterfaceLayoutDirectionRightToLeft
+} UIUserInterfaceLayoutDirection;
+
 @interface UIEvent : NSObject
 @end
 
@@ -202,6 +207,7 @@ typedef enum UIBackgroundRefreshStatus : NSInteger {
 @property(nonatomic, getter=isProtectedDataAvailable) BOOL protectedDataAvailable;
 @property(nonatomic) NSInteger applicationIconBadgeNumber;
 @property(nonatomic) UIBackgroundRefreshStatus backgroundRefreshStatus;
+@property(nonatomic) UIUserInterfaceLayoutDirection userInterfaceLayoutDirection;
 
 + (UIApplication *)sharedApplication;
 
@@ -358,6 +364,7 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled();
 
 @protocol UIAppearance
 + (id)appearanceWhenContainedInInstancesOfClasses:(NSArray<Class<UIAppearanceContainer>> *)containerTypes;
++ (id)appearance;
 @end
 
 @interface UIControl : UIView

@@ -11,6 +11,10 @@ public class TaskInfoRequest extends UnidbgStructure {
     public static final int TASK_BASIC_INFO_32 = 4; /* basic information */
     public static final int TASK_BASIC_INFO_64 = 5; /* 64-bit capable basic info */
     public static final int TASK_DYLD_INFO = 17;
+
+    /* Don't use this, use MACH_TASK_BASIC_INFO instead */
+    /* Compatibility for old 32-bit mach_vm_*_t */
+    public static final int TASK_BASIC_INFO_64_2 = 18; /* 64-bit capable basic info */
     public static final int TASK_VM_INFO = 22;
 
     public TaskInfoRequest(Pointer p) {

@@ -46,7 +46,7 @@ public class DarwinThread extends ThreadTask {
     }
 
     @Override
-    public String toString() {
+    public String toThreadString() {
         return "DarwinThread start_routine=" + start_routine + ", arg=" + arg;
     }
 

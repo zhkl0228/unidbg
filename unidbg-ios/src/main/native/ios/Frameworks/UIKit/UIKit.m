@@ -184,6 +184,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @end
 
 @implementation UIView
++ (id)appearance {
+  return nil;
+}
 - (id)initWithFrame:(CGRect)rect {
     if(self = [super init]) {
         self.frame = rect;
@@ -257,6 +260,7 @@ static UIApplication *sharedApplication;
         self.statusBarHidden = YES;
         self.protectedDataAvailable = YES;
         self.backgroundRefreshStatus = UIBackgroundRefreshStatusRestricted;
+        self.userInterfaceLayoutDirection = UIUserInterfaceLayoutDirectionLeftToRight;
     }
     sharedApplication = self;
     return self;
@@ -569,6 +573,9 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled() {
 @end
 
 @implementation UITextField
++ (id)appearance {
+  return nil;
+}
 + (UITextField *)appearanceWhenContainedInInstancesOfClasses:(NSArray<Class<UIAppearanceContainer>> *)containerTypes {
     return [UITextField new];
 }

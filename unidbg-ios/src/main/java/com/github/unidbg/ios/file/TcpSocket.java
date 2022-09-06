@@ -143,7 +143,7 @@ public class TcpSocket extends SocketIO implements FileIO {
             Inspector.inspect(data, "addr");
         }
 
-        int sa_family = addr.getShort(0);
+        int sa_family = Short.reverseBytes(addr.getShort(0)) & 0xffff;
         if (sa_family != AF_INET) {
             throw new AbstractMethodError("sa_family=" + sa_family);
         }

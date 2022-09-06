@@ -76,7 +76,9 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
         try {
             byte[] data = size == 0 ? new byte[0] : backend.mem_read(address, size);
             String value;
-            if (data.length == 4) {
+            if (data.length == 2) {
+                value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xffffL);
+            } else if (data.length == 4) {
                 value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
             } else if (data.length == 8) {
                 value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getLong());
@@ -106,7 +108,7 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
             builder.append(", data size = ").append(size).append(", data value = ").append(value);
         }
         builder.append(", PC=").append(pc).append(", LR=").append(lr);
-        out.println(builder.toString());
+        out.println(builder);
     }
 
     @Override

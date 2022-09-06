@@ -197,7 +197,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return true;
             }
             case EC_WATCHPOINT: {
-                onWatchpoint(esr, far);
+                onWatchpoint(esr, far, elr);
                 return true;
             }
             case EC_DATAABORT: {
@@ -280,7 +280,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         throw new UnsupportedOperationException("Max WRPs: " + watchpoints.length);
     }
 
-    private void onWatchpoint(long esr, long address) {
+    private void onWatchpoint(long esr, long address, long elr) {
         boolean write = ((esr >> 6) & 1) == 1;
         int status = (int) (esr & 0x3f);
         /*
@@ -298,7 +298,10 @@ public class HypervisorBackend64 extends HypervisorBackend {
         for (int i = 0; i < watchpoints.length; i++) {
             if (watchpoints[i] != null && watchpoints[i].contains(address, write)) {
                 hit = true;
-                if (watchpoints[i].onHit(this, address, write)) {
+                Pointer pc = UnidbgPointer.pointer(emulator, elr);
+                assert pc != null;
+                byte[] code = pc.getByteArray(0, 4);
+                if (watchpoints[i].onHit(this, address, write, createDisassembler(), code, elr)) {
                     installRestoreWatchpoint(i, watchpoints[i]);
                     return;
                 }
@@ -356,8 +359,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     /**
      * The local exclusive monitor gets cleared on every exception return, that is, on execution of the ERET instruction.
-     *
-     * from: <a href="https://xen-devel.narkive.com/wQw4F6GV/xen-arm-software-step-armv8-pc-stuck-on-instruction">...</a>
+     * <p>
+     * from: <a href="https://xen-devel.narkive.com/wQw4F6GV/xen-arm-software-step-armv8-pc-stuck-on-instruction">xen-arm-software-step-armv8-pc-stuck-on-instruction</a>
      * LDAXR sets the 'exclusive monitor' and STXR only succeeds if the exclusive
      * monitor is still set. If another CPU accesses the memory protected by the
      * exclusive monitor, the monitor is cleared. This is how the spinlock code knows

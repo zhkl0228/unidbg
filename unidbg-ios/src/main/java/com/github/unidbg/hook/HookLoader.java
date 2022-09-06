@@ -97,7 +97,7 @@ public class HookLoader extends BaseHook {
         Pointer block = context.getPointerArg(1);
         Pointer fun = block.getPointer(0x10);
         boolean is_barrier_async = context.getIntArg(2) != 0;
-        boolean dispatch = callback.canDispatch(dq, fun, is_barrier_async);
+        boolean dispatch = callback.canDispatch(emulator, dq, fun, is_barrier_async);
         if (!dispatch && (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled())) {
             System.err.println("Skip dispatch_async dq=" + dq + ", fun=" + fun);
         }

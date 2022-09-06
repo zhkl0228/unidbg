@@ -1986,6 +1986,12 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             if (module.machHeader == handle) {
                 return module.findSymbolByName(symbolName, false);
             }
+            if (handle == Dyld.RTLD_NEXT) {
+                Symbol symbol = module.findSymbolByName(symbolName, false);
+                if (symbol != null) {
+                    return symbol;
+                }
+            }
         }
         if (handle == Dyld.RTLD_DEFAULT) {
             for (Module module : modules.values()) {

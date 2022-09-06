@@ -21,7 +21,7 @@ public class SignalFunction extends MainTask {
     }
 
     @Override
-    public String toString() {
+    public String toThreadString() {
         return "SignalFunction sa_handler=" + action.getSaHandler() + ", signum=" + signum;
     }
 

@@ -43,7 +43,7 @@ public class MarshmallowThread extends ThreadTask {
     }
 
     @Override
-    public String toString() {
+    public String toThreadString() {
         return "MarshmallowThread fn=" + fn + ", arg=" + thread;
     }
 

@@ -189,4 +189,13 @@ public abstract class BaseTask implements RunnableTask {
         }
         return call;
     }
+
+    @Override
+    public final String toString() {
+        return getStatus() + "|" + toThreadString();
+    }
+
+    protected abstract String getStatus();
+    protected abstract String toThreadString();
+
 }

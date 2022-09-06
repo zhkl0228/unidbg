@@ -70,4 +70,16 @@ abstract class AbstractTask extends BaseTask implements Task {
     public boolean setErrno(Emulator<?> emulator, int errno) {
         return false;
     }
+
+    @Override
+    protected final String getStatus() {
+        if (isFinish()) {
+            return "Finished";
+        } else if (canDispatch()) {
+            return "Runnable";
+        } else {
+            return "Paused";
+        }
+    }
+
 }

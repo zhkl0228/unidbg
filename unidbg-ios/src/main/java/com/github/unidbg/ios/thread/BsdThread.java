@@ -73,7 +73,7 @@ public class BsdThread extends ThreadTask {
     }
 
     @Override
-    public String toString() {
+    public String toThreadString() {
         return "BsdThread fun=" + fun + ", arg=" + arg + ", stack=" + stack;
     }
 }

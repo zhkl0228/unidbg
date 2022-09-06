@@ -35,7 +35,7 @@ public class KitKatThread extends ThreadTask {
     }
 
     @Override
-    public String toString() {
+    public String toThreadString() {
         return "KitKatThread fn=" + fn + ", arg=" + arg + ", child_stack=" + child_stack;
     }
 

@@ -10,4 +10,9 @@ public abstract class AbstractSignalTask extends BaseTask implements com.github.
         this.signum = signum;
     }
 
+    @Override
+    protected final String getStatus() {
+        return "Signal: " + signum;
+    }
+
 }

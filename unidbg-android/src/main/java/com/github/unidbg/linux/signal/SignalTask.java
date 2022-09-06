@@ -77,7 +77,7 @@ public class SignalTask extends AbstractSignalTask {
     }
 
     @Override
-    public String toString() {
+    public String toThreadString() {
         return "SignalTask sa_handler=" + action.getSaHandler() + ", stack=" + stack + ", signum=" + signum;
     }
 

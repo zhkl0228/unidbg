@@ -1,8 +1,11 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
+import capstone.api.Disassembler;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.ReadHook;
 import com.github.unidbg.arm.backend.WriteHook;
+import com.github.unidbg.arm.backend.hypervisor.arm64.MemorySizeDetector;
+import com.github.unidbg.arm.backend.hypervisor.arm64.SimpleMemorySizeDetector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -19,7 +22,7 @@ class HypervisorWatchpoint {
 
     private final long dbgwcr, dbgwvr, bytes;
 
-    public HypervisorWatchpoint(Object callback, long begin, long end, Object user_data, int n, boolean isWrite) {
+    HypervisorWatchpoint(Object callback, long begin, long end, Object user_data, int n, boolean isWrite) {
         if (begin >= end) {
             throw new IllegalArgumentException("begin=0x" + Long.toHexString(begin) + ", end=" + Long.toHexString(end));
         }
@@ -77,19 +80,21 @@ class HypervisorWatchpoint {
         throw new UnsupportedOperationException("begin=0x" + Long.toHexString(begin) + ", end=0x" + Long.toHexString(end));
     }
 
-    public boolean contains(long address, boolean isWrite) {
+    final boolean contains(long address, boolean isWrite) {
         if (isWrite ^ this.isWrite) {
             return false;
         }
         return address >= dbgwvr && address < (dbgwvr + bytes);
     }
 
-    public boolean onHit(Backend backend, long address, boolean isWrite) {
+    final boolean onHit(Backend backend, long address, boolean isWrite, Disassembler disassembler, byte[] code, long pc) {
+        MemorySizeDetector memorySizeDetector = new SimpleMemorySizeDetector();
         if (address >= begin && address < end) {
             if (isWrite) {
                 ((WriteHook) callback).hook(backend, address, 0, 0, user_data);
             } else {
-                ((ReadHook) callback).hook(backend, address, 0, user_data);
+                int size = memorySizeDetector.detectReadSize(disassembler, code, pc);
+                ((ReadHook) callback).hook(backend, address, size, user_data);
             }
             return true;
         } else {
@@ -97,7 +102,7 @@ class HypervisorWatchpoint {
         }
     }
 
-    public void install(Hypervisor hypervisor) {
+    final void install(Hypervisor hypervisor) {
         hypervisor.install_watchpoint(n, dbgwvr, dbgwcr);
     }
 }

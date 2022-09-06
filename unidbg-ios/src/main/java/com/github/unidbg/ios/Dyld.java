@@ -32,7 +32,9 @@ public abstract class Dyld extends Dlfcn {
     static final int dyld_image_state_terminated = 60; // Only single notification for this
 
     static final int RTLD_FIRST = 0x100; /* Mac OS X 10.5 and later */
+    static final int RTLD_NEXT = (-1); /* Search subsequent objects. */
     static final int RTLD_DEFAULT = (-2); /* Use default search algorithm. */
+    static final int RTLD_SELF = (-3); /* Search this and subsequent objects (Mac OS X 10.5 and later) */
     static final int RTLD_MAIN_ONLY = (-5); /* Search main executable only (Mac OS X 10.5 and later) */
 
     static final int ASL_OPT_STDERR = 0x00000001;
