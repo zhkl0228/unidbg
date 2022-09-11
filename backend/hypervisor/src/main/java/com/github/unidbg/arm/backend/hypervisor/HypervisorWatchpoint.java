@@ -89,7 +89,7 @@ class HypervisorWatchpoint {
 
     final boolean onHit(Backend backend, long address, boolean isWrite, Disassembler disassembler, byte[] code, long pc) {
         MemorySizeDetector memorySizeDetector = new SimpleMemorySizeDetector();
-        if (address >= begin && address < end) {
+        if (address >= begin && address <= end) {
             if (isWrite) {
                 ((WriteHook) callback).hook(backend, address, 0, 0, user_data);
             } else {

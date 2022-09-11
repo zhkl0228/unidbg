@@ -46,7 +46,6 @@ import unicorn.UnicornConst;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -54,6 +53,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -576,7 +576,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     if (!traceFile.exists() && !traceFile.createNewFile()) {
                         throw new IllegalStateException("createNewFile: " + traceFile);
                     }
-                    traceReadRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                    traceReadRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                     traceReadRedirectStream.printf("[%s]Start traceRead%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                     traceRead.setRedirect(traceReadRedirectStream);
                     System.out.printf("Set trace all memory read success with trace file: %s.%n", traceFile);
@@ -587,7 +587,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                         if (!traceFile.exists() && !traceFile.createNewFile()) {
                             throw new IllegalStateException("createNewFile: " + traceFile);
                         }
-                        traceReadRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                        traceReadRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                         traceReadRedirectStream.printf("[%s]Start traceRead: 0x%x-0x%x%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), begin, end);
                         traceRead.setRedirect(traceReadRedirectStream);
                         System.out.printf("Set trace 0x%x->0x%x memory read success with trace file: %s.%n", begin, end, traceFile.getAbsolutePath());
@@ -603,7 +603,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (!traceFile.exists() && !traceFile.createNewFile()) {
                     throw new IllegalStateException("createNewFile: " + traceFile);
                 }
-                traceReadRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                traceReadRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                 traceReadRedirectStream.printf("[%s]Start traceRead%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                 traceRead.setRedirect(traceReadRedirectStream);
                 System.out.printf("Set trace all memory read success with trace file: %s.%n", traceFile.getAbsolutePath());
@@ -630,7 +630,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     if (!traceFile.exists() && !traceFile.createNewFile()) {
                         throw new IllegalStateException("createNewFile: " + traceFile);
                     }
-                    traceWriteRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                    traceWriteRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                     traceWriteRedirectStream.printf("[%s]Start traceWrite%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                     traceWrite.setRedirect(traceWriteRedirectStream);
                     System.out.printf("Set trace all memory write success with trace file: %s.%n", traceFile);
@@ -641,7 +641,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                         if (!traceFile.exists() && !traceFile.createNewFile()) {
                             throw new IllegalStateException("createNewFile: " + traceFile);
                         }
-                        traceWriteRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                        traceWriteRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                         traceWriteRedirectStream.printf("[%s]Start traceWrite: 0x%x-0x%x%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), begin, end);
                         traceWrite.setRedirect(traceWriteRedirectStream);
                         System.out.printf("Set trace 0x%x->0x%x memory write success with trace file: %s.%n", begin, end, traceFile.getAbsolutePath());
@@ -657,7 +657,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (!traceFile.exists() && !traceFile.createNewFile()) {
                     throw new IllegalStateException("createNewFile: " + traceFile);
                 }
-                traceWriteRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                traceWriteRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                 traceWriteRedirectStream.printf("[%s]Start traceWrite%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                 traceWrite.setRedirect(traceWriteRedirectStream);
                 System.out.printf("Set trace all memory write success with trace file: %s.%n", traceFile.getAbsolutePath());
@@ -685,7 +685,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     if (!traceFile.exists() && !traceFile.createNewFile()) {
                         throw new IllegalStateException("createNewFile: " + traceFile);
                     }
-                    traceHookRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                    traceHookRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                     traceHookRedirectStream.printf("[%s]Start traceCode%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                     System.out.printf("Set trace all instructions success with trace file: %s.%n", traceFile.getAbsolutePath());
                 } else {
@@ -695,7 +695,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                         if (!traceFile.exists() && !traceFile.createNewFile()) {
                             throw new IllegalStateException("createNewFile: " + traceFile);
                         }
-                        traceHookRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(traceFile)), true);
+                        traceHookRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                         traceHookRedirectStream.printf("[%s]Start traceCode: 0x%x-0x%x%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), begin, end);
                         System.out.printf("Set trace 0x%x->0x%x instructions success with trace file: %s.%n", begin, end, traceFile.getAbsolutePath());
                     } else {
@@ -722,7 +722,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                             if (!outFile.exists() && !outFile.createNewFile()) {
                                 throw new IllegalStateException("createNewFile: " + outFile);
                             }
-                            traceHookRedirectStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(outFile)), true);
+                            traceHookRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(outFile.toPath())), true);
                             traceHookRedirectStream.printf("[%s]Start trace %s%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), module == null ? "all" : module);
                             traceFile = outFile;
                         } catch (IOException e) {
@@ -937,8 +937,11 @@ public abstract class AbstractARMDebugger implements Debugger {
                 sb.append(demangler.demangle(symbol.getName())).append(" + 0x").append(Long.toHexString(address - (symbol.getAddress() & ~1))).append("\n");
             }
         }
-        long nextAddr = address;
-        for (CodeHistory history : Collections.singletonList(new CodeHistory(address, size, ARM.isThumb(emulator.getBackend())))) {
+        long nextAddr = address - size;
+        for (CodeHistory history : Arrays.asList(
+                new CodeHistory(address - size, size, thumb),
+                new CodeHistory(address, size, thumb))
+        ) {
             Instruction ins = history.disassemble(emulator);
             if (ins == null) {
                 nextAddr += size;

@@ -152,13 +152,15 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
     }
 
+    private long lastHitPointAddress;
+
     @Override
     public boolean handleException(long esr, long far, final long elr, long cpsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", cpsr=0x" + Long.toHexString(cpsr));
         }
-        while (!visitorStack.isEmpty()) {
+        while (lastHitPointAddress != elr && !visitorStack.isEmpty()) {
             visitorStack.pop().onException();
         }
         switch (ec) {
@@ -177,6 +179,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return true;
             }
             case EC_BREAKPOINT: {
+                lastHitPointAddress = elr;
                 onBreakpoint(esr, elr);
                 for (int i = 0; i < breakpoints.length; i++) {
                     HypervisorBreakPoint bp = breakpoints[i];
@@ -197,6 +200,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return true;
             }
             case EC_WATCHPOINT: {
+                lastHitPointAddress = elr;
                 onWatchpoint(esr, far, elr);
                 return true;
             }
@@ -295,14 +299,21 @@ public class HypervisorBackend64 extends HypervisorBackend {
             log.debug("onWatchpoint write=" + write + ", address=0x" + Long.toHexString(address) + ", cm=" + cm + ", wpt=" + wpt + ", wptv=" + wptv + ", status=0x" + Integer.toHexString(status));
         }
         boolean hit = false;
-        for (int i = 0; i < watchpoints.length; i++) {
-            if (watchpoints[i] != null && watchpoints[i].contains(address, write)) {
+        for (int n = 0; n < watchpoints.length; n++) {
+            if (watchpoints[n] != null && watchpoints[n].contains(address, write)) {
                 hit = true;
                 Pointer pc = UnidbgPointer.pointer(emulator, elr);
                 assert pc != null;
                 byte[] code = pc.getByteArray(0, 4);
-                if (watchpoints[i].onHit(this, address, write, createDisassembler(), code, elr)) {
-                    installRestoreWatchpoint(i, watchpoints[i]);
+                if (watchpoints[n].onHit(this, address, write, createDisassembler(), code, elr)) {
+                    hypervisor.disable_watchpoint(n);
+                    visitorStack.push(new ExceptionVisitor(n) {
+                        @Override
+                        public void onException() {
+                            watchpoints[super.n].install(hypervisor);
+                        }
+                    });
+                    step();
                     return;
                 }
             }
@@ -310,17 +321,6 @@ public class HypervisorBackend64 extends HypervisorBackend {
         if (!hit) {
             interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
         }
-    }
-
-    private void installRestoreWatchpoint(int n, final HypervisorWatchpoint watchpoint) {
-        hypervisor.disable_watchpoint(n);
-        visitorStack.push(new ExceptionVisitor(n) {
-            @Override
-            public void onException() {
-                watchpoint.install(hypervisor);
-            }
-        });
-        step();
     }
 
     private void onBreakpoint(long esr, long elr) {

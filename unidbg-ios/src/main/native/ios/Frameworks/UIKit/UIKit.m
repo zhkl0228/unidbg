@@ -241,6 +241,12 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @implementation UIEvent
 @end
 
+@implementation UIScene
+@end
+
+@implementation UIWindowScene
+@end
+
 static UIApplication *sharedApplication;
 
 @implementation UIApplication
@@ -261,6 +267,7 @@ static UIApplication *sharedApplication;
         self.protectedDataAvailable = YES;
         self.backgroundRefreshStatus = UIBackgroundRefreshStatusRestricted;
         self.userInterfaceLayoutDirection = UIUserInterfaceLayoutDirectionLeftToRight;
+        self.connectedScenes = nil;
     }
     sharedApplication = self;
     return self;

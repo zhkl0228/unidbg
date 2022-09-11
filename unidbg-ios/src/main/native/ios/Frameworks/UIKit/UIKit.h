@@ -131,6 +131,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @interface UIResponder : NSObject
 @end
 
+@interface UIScene : UIResponder
+@end
+
+@interface UIWindowScene : UIScene
+@end
+
 @interface UIGestureRecognizer : NSObject
 @end
 
@@ -173,6 +179,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @property(nonatomic) UIWindowLevel windowLevel;
 @property(nonatomic, strong) UIViewController *rootViewController;
 @property(nonatomic, getter=isUserInteractionEnabled) BOOL userInteractionEnabled;
+@property(nonatomic, retain) UIWindowScene *windowScene;
 - (void)makeKeyAndVisible;
 @end
 
@@ -208,6 +215,7 @@ typedef enum UIUserInterfaceLayoutDirection : NSInteger {
 @property(nonatomic) NSInteger applicationIconBadgeNumber;
 @property(nonatomic) UIBackgroundRefreshStatus backgroundRefreshStatus;
 @property(nonatomic) UIUserInterfaceLayoutDirection userInterfaceLayoutDirection;
+@property(nonatomic, retain) NSSet<UIScene *> *connectedScenes;
 
 + (UIApplication *)sharedApplication;
 

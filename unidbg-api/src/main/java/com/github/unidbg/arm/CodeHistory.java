@@ -3,6 +3,7 @@ package com.github.unidbg.arm;
 import capstone.api.Instruction;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.arm.backend.BackendException;
 
 public class CodeHistory {
 
@@ -16,13 +17,20 @@ public class CodeHistory {
     }
 
     Instruction disassemble(Emulator<?> emulator) {
-        Backend backend = emulator.getBackend();
-        byte[] code = backend.mem_read(address, size);
-        Instruction[] insns = emulator.disassemble(address, code, thumb, 1);
-        if (insns.length == 0) {
+        if (size <= 1) {
             return null;
-        } else {
-            return insns[0];
+        }
+        Backend backend = emulator.getBackend();
+        try {
+            byte[] code = backend.mem_read(address, size);
+            Instruction[] insns = emulator.disassemble(address, code, thumb, 1);
+            if (insns.length == 0) {
+                return null;
+            } else {
+                return insns[0];
+            }
+        } catch(BackendException e) {
+            return null;
         }
     }
 
