@@ -2,13 +2,14 @@ package com.github.unidbg.arm.backend.hypervisor;
 
 abstract class ExceptionVisitor {
 
-    public abstract void onException(Hypervisor hypervisor);
+    public abstract boolean onException(Hypervisor hypervisor, int ec, long address);
 
     static ExceptionVisitor breakRestorerVisitor(final BreakRestorer breakRestorer) {
         return new ExceptionVisitor() {
             @Override
-            public void onException(Hypervisor hypervisor) {
+            public boolean onException(Hypervisor hypervisor, int ec, long address) {
                 breakRestorer.install(hypervisor);
+                return false;
             }
         };
     }

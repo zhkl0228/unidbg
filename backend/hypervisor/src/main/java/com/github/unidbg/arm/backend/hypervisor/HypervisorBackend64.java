@@ -29,6 +29,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 public class HypervisorBackend64 extends HypervisorBackend {
@@ -161,7 +163,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", cpsr=0x" + Long.toHexString(cpsr));
         }
         while (lastHitPointAddress != elr && !visitorStack.isEmpty()) {
-            visitorStack.pop().onException(hypervisor);
+            if (visitorStack.pop().onException(hypervisor, ec, elr)) {
+                return true;
+            }
         }
         switch (ec) {
             case EC_AA64_SVC: {
@@ -328,7 +332,93 @@ public class HypervisorBackend64 extends HypervisorBackend {
             this.end = end;
             this.user = user;
         }
-        public void onSoftwareStep(long address) {
+        private long lastLoadExclusiveAddress;
+        private int loadExclusiveCount;
+        private final List<Long> loadExclusiveRegionAddressList = new ArrayList<>();
+        private void resetRegionInfo() {
+            lastLoadExclusiveAddress = 0;
+            loadExclusiveCount = 0;
+            loadExclusiveRegionAddressList.clear();
+        }
+        private boolean isLoadExclusiveCode(int asm) {
+            if ((asm & 0xbffffc00) == 0x885ffc00) { // ldaxr
+                return true;
+            }
+            return (asm & 0xbffffc00) == 0x885f7c00; // ldxr
+        }
+        public void onSoftwareStep(long spsr, long address) {
+            UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
+            assert pointer != null;
+            int asm = pointer.getInt(0);
+            if (isLoadExclusiveCode(asm)) {
+                if (lastLoadExclusiveAddress == address) {
+                    loadExclusiveCount++;
+                } else {
+                    loadExclusiveCount = 0;
+                }
+                lastLoadExclusiveAddress = address;
+            } else {
+                if (lastLoadExclusiveAddress == 0) {
+                    resetRegionInfo();
+                }
+            }
+            if (lastLoadExclusiveAddress != 0) {
+                if (!loadExclusiveRegionAddressList.contains(address)) {
+                    loadExclusiveRegionAddressList.add(address);
+                }
+            }
+            if (loadExclusiveCount >= 2 && address == lastLoadExclusiveAddress) {
+                long foundAddress = 0;
+                StringBuilder builder = new StringBuilder();
+                for (long pc : loadExclusiveRegionAddressList) {
+                    Pointer ptr = UnidbgPointer.pointer(emulator, pc);
+                    assert ptr != null;
+                    byte[] code = ptr.getByteArray(0, 4);
+                    Instruction instruction = createDisassembler().disasm(code, pc, 1)[0];
+                    switch (instruction.getMnemonic()) {
+                        case "stxr":
+                        case "stlxr":
+                            foundAddress = pc;
+                            break;
+                    }
+                    builder.append(String.format("0x%x: %s%n", instruction.getAddress(), instruction));
+                }
+                if (foundAddress == 0) {
+                    log.info("CodeHookNotifier.onSoftwareStep: \n" + builder);
+                } else {
+                    resetRegionInfo();
+                    final long breakAddress = foundAddress + 4;
+                    for (int i = 0; i < breakpoints.length; i++) {
+                        if (breakpoints[i] == null) {
+                            final int n = i;
+                            visitorStack.push(new ExceptionVisitor() {
+                                @Override
+                                public boolean onException(Hypervisor hypervisor, int ec, long address) {
+                                    if (ec == EC_BREAKPOINT) {
+                                        notifyCallback(address);
+                                    }
+                                    breakpoints[n] = null;
+                                    hypervisor.disable_hw_breakpoint(n);
+                                    hypervisor.enable_single_step(true);
+                                    return true;
+                                }
+                            });
+                            notifyCallback(address);
+                            HypervisorBreakPoint bp = new HypervisorBreakPoint(n, breakAddress, null);
+                            bp.install(hypervisor);
+                            breakpoints[n] = bp;
+                            hypervisor.enable_single_step(false);
+                            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+                            return;
+                        }
+                    }
+                    log.warn("No more BKPs: " + breakpoints.length);
+                }
+            }
+            notifyCallback(address);
+            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+        }
+        private void notifyCallback(long address) {
             if (begin >= end ||
                     (address >= begin && address < end)) {
                 callback.hook(HypervisorBackend64.this, address, 4, user);
@@ -365,11 +455,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     private void onSoftwareStep(long esr, long address, long spsr) {
         if (codeHookNotifier != null) {
-            codeHookNotifier.onSoftwareStep(address);
-            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+            codeHookNotifier.onSoftwareStep(spsr, address);
             return;
         }
 
+        if (singleStep <= 0) {
+            hypervisor.enable_single_step(false);
+            return;
+        }
         if (--singleStep == 0) {
             if (debugCallback != null) {
                 debugCallback.onBreak(this, address, INS_SIZE, debugUserData);
@@ -377,10 +470,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 int status = (int) (esr & 0x3f);
                 interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
             }
-        } else if (singleStep > 0) {
-            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
         } else {
-            hypervisor.enable_single_step(false);
+            hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
         }
     }
 
