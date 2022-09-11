@@ -9,7 +9,7 @@ import com.github.unidbg.arm.backend.hypervisor.arm64.SimpleMemorySizeDetector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-class HypervisorWatchpoint {
+class HypervisorWatchpoint implements BreakRestorer {
 
     private static final Log log = LogFactory.getLog(HypervisorWatchpoint.class);
 
@@ -102,7 +102,8 @@ class HypervisorWatchpoint {
         }
     }
 
-    final void install(Hypervisor hypervisor) {
+    @Override
+    public final void install(Hypervisor hypervisor) {
         hypervisor.install_watchpoint(n, dbgwvr, dbgwcr);
     }
 }

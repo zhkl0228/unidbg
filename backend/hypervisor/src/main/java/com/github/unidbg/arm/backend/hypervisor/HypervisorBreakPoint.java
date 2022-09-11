@@ -3,12 +3,14 @@ package com.github.unidbg.arm.backend.hypervisor;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 
-class HypervisorBreakPoint implements BreakPoint {
+class HypervisorBreakPoint implements BreakPoint, BreakRestorer {
 
+    private final int n;
     protected final long address;
     private final BreakPointCallback callback;
 
-    public HypervisorBreakPoint(long address, BreakPointCallback callback) {
+    public HypervisorBreakPoint(int n, long address, BreakPointCallback callback) {
+        this.n = n;
         this.address = address;
         this.callback = callback;
     }
@@ -33,6 +35,11 @@ class HypervisorBreakPoint implements BreakPoint {
     @Override
     public final boolean isThumb() {
         return false;
+    }
+
+    @Override
+    public void install(Hypervisor hypervisor) {
+        hypervisor.install_hw_breakpoint(n, address);
     }
 
 }
