@@ -840,7 +840,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
-    private boolean handleIndirect(Emulator<DarwinFileIO> emulator, int indirectNR) {
+    protected boolean handleIndirect(Emulator<DarwinFileIO> emulator, int indirectNR) {
         Backend backend = emulator.getBackend();
         switch (indirectNR) {
             case 3:

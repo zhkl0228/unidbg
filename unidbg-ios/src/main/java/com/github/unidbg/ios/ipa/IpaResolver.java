@@ -15,7 +15,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -86,6 +88,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
 
     private DarwinFileIO createDirectoryFileIO(String dirEntry, String pathname, int oflags) throws IOException {
         List<DirectoryFileIO.DirectoryEntry> list = new ArrayList<>();
+        Set<String> dirSet = new HashSet<>();
         try (JarFile jarFile = new JarFile(ipa)) {
             Enumeration<JarEntry> enumeration = jarFile.entries();
             while (enumeration.hasMoreElements()) {
@@ -95,8 +98,14 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
                     int index = subName.indexOf('/');
                     if (index == -1) { // file
                         list.add(new DirectoryFileIO.DirectoryEntry(true, subName));
-                    } else if(subName.indexOf('/', index + 1) == -1) { // dir
-                        list.add(new DirectoryFileIO.DirectoryEntry(false, subName.substring(0, index)));
+                    } else {
+                        int endIndex = subName.indexOf('/', index + 1);
+                        if (endIndex == -1 || endIndex == subName.length() - 1) { // dir
+                            String dir = subName.substring(0, index);
+                            if (dirSet.add(dir)) {
+                                list.add(new DirectoryFileIO.DirectoryEntry(false, dir));
+                            }
+                        }
                     }
                 }
             }

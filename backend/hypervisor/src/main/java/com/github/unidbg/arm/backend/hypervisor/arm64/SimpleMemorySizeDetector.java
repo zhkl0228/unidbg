@@ -20,6 +20,8 @@ public class SimpleMemorySizeDetector implements MemorySizeDetector {
             case "ldursh":
                 size = 2;
                 break;
+            case "ldr":
+            case "ldxr":
             case "ldur":
                 if (insn.getOpStr().startsWith("w")) {
                     size = 4;

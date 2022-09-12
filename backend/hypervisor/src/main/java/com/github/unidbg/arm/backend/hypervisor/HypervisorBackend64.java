@@ -85,7 +85,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     @Override
     public void setSingleStep(int singleStep) {
         this.singleStep = singleStep;
-        hypervisor.enable_single_step(true);
+        step();
     }
 
     @Override
@@ -162,9 +162,12 @@ public class HypervisorBackend64 extends HypervisorBackend {
         if (log.isDebugEnabled()) {
             log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", cpsr=0x" + Long.toHexString(cpsr));
         }
-        while (lastHitPointAddress != elr && !visitorStack.isEmpty()) {
-            if (visitorStack.pop().onException(hypervisor, ec, elr)) {
-                return true;
+        if (lastHitPointAddress != elr &&
+                (ec == EC_SOFTWARESTEP || ec == EC_BREAKPOINT)) {
+            while (!visitorStack.isEmpty()) {
+                if (visitorStack.pop().onException(hypervisor, ec, elr)) {
+                    return true;
+                }
             }
         }
         switch (ec) {
@@ -281,7 +284,15 @@ public class HypervisorBackend64 extends HypervisorBackend {
         throw new UnsupportedOperationException("Max WRPs: " + watchpoints.length);
     }
 
+    private long lastWatchpointAddress;
+    private long lastWatchpointDataAddress;
+
     private void onWatchpoint(long esr, long address, long elr) {
+        boolean repeatWatchpoint = lastWatchpointAddress == elr && lastWatchpointDataAddress == address;
+        if (!repeatWatchpoint) {
+            lastWatchpointAddress = elr;
+            lastWatchpointDataAddress = address;
+        }
         boolean write = ((esr >> 6) & 1) == 1;
         int status = (int) (esr & 0x3f);
         /*
@@ -295,9 +306,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
         if (log.isDebugEnabled()) {
             log.debug("onWatchpoint write=" + write + ", address=0x" + Long.toHexString(address) + ", cm=" + cm + ", wpt=" + wpt + ", wptv=" + wptv + ", status=0x" + Integer.toHexString(status));
         }
+        HypervisorWatchpoint hitWp = null;
         for (int n = 0; n < watchpoints.length; n++) {
             HypervisorWatchpoint watchpoint = watchpoints[n];
             if (watchpoint != null && watchpoint.contains(address, write)) {
+                hitWp = watchpoint;
+                if (repeatWatchpoint) {
+                    break;
+                }
                 Pointer pc = UnidbgPointer.pointer(emulator, elr);
                 assert pc != null;
                 byte[] code = pc.getByteArray(0, 4);
@@ -309,7 +325,37 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 }
             }
         }
-        interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+        if (hitWp == null) {
+            interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+        } else {
+            if (repeatWatchpoint) {
+                if (exclusiveMonitorEscaper != null) {
+                    interruptHookNotifier.notifyCallSVC(this, ARMEmulator.EXCP_BKPT, status);
+                } else {
+                    exclusiveMonitorEscaper = new ExclusiveMonitorEscaper(new WatchpointExclusiveMonitorEscaper(hitWp));
+                }
+            } else {
+                hypervisor.disable_watchpoint(hitWp.n);
+                visitorStack.push(ExceptionVisitor.breakRestorerVisitor(hitWp));
+                step();
+            }
+        }
+    }
+
+    private class WatchpointExclusiveMonitorEscaper implements ExclusiveMonitorCallback {
+        private final HypervisorWatchpoint wp;
+        WatchpointExclusiveMonitorEscaper(HypervisorWatchpoint wp) {
+            this.wp = wp;
+            hypervisor.disable_watchpoint(wp.n);
+        }
+        @Override
+        public void notifyCallback(long address) {
+        }
+        @Override
+        public void onEscapeSuccess() {
+            wp.install(hypervisor);
+            exclusiveMonitorEscaper = null;
+        }
     }
 
     private void onBreakpoint(long esr, long elr) {
@@ -321,24 +367,35 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
     }
 
-    private class CodeHookNotifier implements UnHook {
-        private final CodeHook callback;
-        private final long begin;
-        private final long end;
-        private final Object user;
-        public CodeHookNotifier(CodeHook callback, long begin, long end, Object user) {
+    private interface ExclusiveMonitorCallback {
+        void notifyCallback(long address);
+        void onEscapeSuccess();
+    }
+
+    /**
+     * The local exclusive monitor gets cleared on every exception return, that is, on execution of the ERET instruction.
+     * <p>
+     * from: <a href="https://xen-devel.narkive.com/wQw4F6GV/xen-arm-software-step-armv8-pc-stuck-on-instruction">xen-arm-software-step-armv8-pc-stuck-on-instruction</a>
+     * LDAXR sets the 'exclusive monitor' and STXR only succeeds if the exclusive
+     * monitor is still set. If another CPU accesses the memory protected by the
+     * exclusive monitor, the monitor is cleared. This is how the spinlock code knows
+     * it has to re-read its value and try to take the lock again.
+     * Changing exception level also clears the exclusive monitor, so taking
+     * single-step exception between a LDAXR/STXR pair means the loop has to be retried.
+     */
+    private class ExclusiveMonitorEscaper {
+        private final ExclusiveMonitorCallback callback;
+        ExclusiveMonitorEscaper(ExclusiveMonitorCallback callback) {
             this.callback = callback;
-            this.begin = begin;
-            this.end = end;
-            this.user = user;
+            step();
         }
-        private long lastLoadExclusiveAddress;
+        private long loadExclusiveAddress;
         private int loadExclusiveCount;
-        private final List<Long> loadExclusiveRegionAddressList = new ArrayList<>();
+        private final List<Long> exclusiveRegionAddressList = new ArrayList<>();
         private void resetRegionInfo() {
-            lastLoadExclusiveAddress = 0;
+            loadExclusiveAddress = 0;
             loadExclusiveCount = 0;
-            loadExclusiveRegionAddressList.clear();
+            exclusiveRegionAddressList.clear();
         }
         private boolean isLoadExclusiveCode(int asm) {
             if ((asm & 0xbffffc00) == 0x885ffc00) { // ldaxr
@@ -346,31 +403,29 @@ public class HypervisorBackend64 extends HypervisorBackend {
             }
             return (asm & 0xbffffc00) == 0x885f7c00; // ldxr
         }
-        public void onSoftwareStep(long spsr, long address) {
+        final void onSoftwareStep(long spsr, long address) {
             UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
             assert pointer != null;
             int asm = pointer.getInt(0);
             if (isLoadExclusiveCode(asm)) {
-                if (lastLoadExclusiveAddress == address) {
+                if (loadExclusiveAddress == address) {
                     loadExclusiveCount++;
                 } else {
                     loadExclusiveCount = 0;
                 }
-                lastLoadExclusiveAddress = address;
+                loadExclusiveAddress = address;
             } else {
-                if (lastLoadExclusiveAddress == 0) {
+                if (loadExclusiveAddress == 0) {
                     resetRegionInfo();
                 }
             }
-            if (lastLoadExclusiveAddress != 0) {
-                if (!loadExclusiveRegionAddressList.contains(address)) {
-                    loadExclusiveRegionAddressList.add(address);
-                }
+            if (loadExclusiveCount >= 2 && !exclusiveRegionAddressList.contains(address)) {
+                exclusiveRegionAddressList.add(address);
             }
-            if (loadExclusiveCount >= 2 && address == lastLoadExclusiveAddress) {
+            if (loadExclusiveCount >= 4 && address == loadExclusiveAddress) {
                 long foundAddress = 0;
                 StringBuilder builder = new StringBuilder();
-                for (long pc : loadExclusiveRegionAddressList) {
+                for (long pc : exclusiveRegionAddressList) {
                     Pointer ptr = UnidbgPointer.pointer(emulator, pc);
                     assert ptr != null;
                     byte[] code = ptr.getByteArray(0, 4);
@@ -395,15 +450,16 @@ public class HypervisorBackend64 extends HypervisorBackend {
                                 @Override
                                 public boolean onException(Hypervisor hypervisor, int ec, long address) {
                                     if (ec == EC_BREAKPOINT) {
-                                        notifyCallback(address);
+                                        callback.notifyCallback(address);
                                     }
                                     breakpoints[n] = null;
                                     hypervisor.disable_hw_breakpoint(n);
-                                    hypervisor.enable_single_step(true);
+                                    callback.onEscapeSuccess();
+                                    step();
                                     return true;
                                 }
                             });
-                            notifyCallback(address);
+                            callback.notifyCallback(address);
                             HypervisorBreakPoint bp = new HypervisorBreakPoint(n, breakAddress, null);
                             bp.install(hypervisor);
                             breakpoints[n] = bp;
@@ -415,10 +471,28 @@ public class HypervisorBackend64 extends HypervisorBackend {
                     log.warn("No more BKPs: " + breakpoints.length);
                 }
             }
-            notifyCallback(address);
+            callback.notifyCallback(address);
             hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
         }
-        private void notifyCallback(long address) {
+    }
+
+    private class CodeHookNotifier implements UnHook, ExclusiveMonitorCallback {
+        private final CodeHook callback;
+        private final long begin;
+        private final long end;
+        private final Object user;
+        public CodeHookNotifier(CodeHook callback, long begin, long end, Object user) {
+            this.callback = callback;
+            this.begin = begin;
+            this.end = end;
+            this.user = user;
+        }
+        @Override
+        public void onEscapeSuccess() {
+            step();
+        }
+        @Override
+        public void notifyCallback(long address) {
             if (begin >= end ||
                     (address >= begin && address < end)) {
                 callback.hook(HypervisorBackend64.this, address, 4, user);
@@ -426,36 +500,25 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
         @Override
         public void unhook() {
-            codeHookNotifier = null;
+            exclusiveMonitorEscaper = null;
         }
     }
 
-    private CodeHookNotifier codeHookNotifier;
+    private ExclusiveMonitorEscaper exclusiveMonitorEscaper;
 
-    /**
-     * The local exclusive monitor gets cleared on every exception return, that is, on execution of the ERET instruction.
-     * <p>
-     * from: <a href="https://xen-devel.narkive.com/wQw4F6GV/xen-arm-software-step-armv8-pc-stuck-on-instruction">xen-arm-software-step-armv8-pc-stuck-on-instruction</a>
-     * LDAXR sets the 'exclusive monitor' and STXR only succeeds if the exclusive
-     * monitor is still set. If another CPU accesses the memory protected by the
-     * exclusive monitor, the monitor is cleared. This is how the spinlock code knows
-     * it has to re-read its value and try to take the lock again.
-     * Changing exception level also clears the exclusive monitor, so taking
-     * single-step exception between a LDAXR/STXR pair means the loop has to be retried.
-     */
     @Override
     public void hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
-        if (codeHookNotifier != null) {
+        if (exclusiveMonitorEscaper != null) {
             throw new IllegalStateException();
         }
-        codeHookNotifier = new CodeHookNotifier(callback, begin, end, user_data);
-        hypervisor.enable_single_step(true);
+        CodeHookNotifier codeHookNotifier = new CodeHookNotifier(callback, begin, end, user_data);
+        this.exclusiveMonitorEscaper = new ExclusiveMonitorEscaper(codeHookNotifier);
         callback.onAttach(codeHookNotifier);
     }
 
     private void onSoftwareStep(long esr, long address, long spsr) {
-        if (codeHookNotifier != null) {
-            codeHookNotifier.onSoftwareStep(spsr, address);
+        if (exclusiveMonitorEscaper != null) {
+            exclusiveMonitorEscaper.onSoftwareStep(spsr, address);
             return;
         }
 

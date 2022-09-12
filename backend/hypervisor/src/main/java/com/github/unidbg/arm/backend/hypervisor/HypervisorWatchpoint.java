@@ -17,7 +17,7 @@ class HypervisorWatchpoint implements BreakRestorer {
     private final long begin;
     private final long end;
     private final Object user_data;
-    private final int n;
+    final int n;
     private final boolean isWrite;
 
     private final long dbgwcr, dbgwvr, bytes;
