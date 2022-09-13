@@ -74,7 +74,9 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
     protected final void exit(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int status = context.getIntArg(0);
-        emulator.attach().debug();
+        if (status != 0) {
+            emulator.attach().debug();
+        }
         System.exit(status);
     }
 

@@ -88,6 +88,8 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
 
     private DarwinFileIO createDirectoryFileIO(String dirEntry, String pathname, int oflags) throws IOException {
         List<DirectoryFileIO.DirectoryEntry> list = new ArrayList<>();
+        list.add(new DirectoryFileIO.DirectoryEntry(false, "."));
+        list.add(new DirectoryFileIO.DirectoryEntry(false, ".."));
         Set<String> dirSet = new HashSet<>();
         try (JarFile jarFile = new JarFile(ipa)) {
             Enumeration<JarEntry> enumeration = jarFile.entries();
@@ -95,6 +97,9 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
                 JarEntry entry = enumeration.nextElement();
                 if (entry.getName().startsWith(dirEntry)) {
                     String subName = entry.getName().substring(dirEntry.length());
+                    if (subName.isEmpty()) {
+                        continue;
+                    }
                     int index = subName.indexOf('/');
                     if (index == -1) { // file
                         list.add(new DirectoryFileIO.DirectoryEntry(true, subName));
