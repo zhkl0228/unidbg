@@ -50,6 +50,7 @@ public interface DarwinSyscall {
     int HW_PAGESIZE = 7; /* int: software page size */
     int HW_CPU_FREQ =	15; /* int: CPU Frequency */
     int HW_MEMSIZE =	24;		/* uint64_t: physical ram size */
+    int HW_AVAILCPU = 25;		/* int: number of available CPUs */
     int HW_CPU_TYPE = 105;
     int HW_CPU_SUBTYPE = 106;
     int HW_CPU_FAMILY = 108;

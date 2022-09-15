@@ -1883,6 +1883,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         }
                         return 0;
                     case HW_CPU_MAX:
+                    case HW_AVAILCPU:
                         if (bufferSize != null) {
                             bufferSize.setLong(0, 4);
                         }

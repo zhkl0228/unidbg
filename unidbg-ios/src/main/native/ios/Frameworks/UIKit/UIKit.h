@@ -165,12 +165,16 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @interface UINavigationItem : NSObject
 @end
 
+@protocol UIViewControllerTransitionCoordinator
+@end
+
 @interface UIViewController : UIResponder
 @property(nonatomic, copy) NSString *title;
 @property(nonatomic, strong) UIView *view;
 @property(nonatomic, copy) NSString *nibName;
 @property(nonatomic, strong) NSBundle *nibBundle;
 @property(nonatomic, strong) UINavigationItem *navigationItem;
+@property(nonatomic, readonly) id<UIViewControllerTransitionCoordinator> transitionCoordinator;
 - (UIViewController *)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil;
 - (void)setExtendedLayoutIncludesOpaqueBars: (BOOL)flag;
 @end
