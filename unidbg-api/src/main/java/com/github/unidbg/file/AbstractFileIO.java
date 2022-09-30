@@ -4,10 +4,14 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
 public abstract class AbstractFileIO implements NewFileIO {
+
+    private static final Log log = LogFactory.getLog(AbstractFileIO.class);
 
     private static final int F_GETFD = 1; /* get file descriptor flags */
     private static final int F_SETFD = 2; /* set file descriptor flags */
@@ -54,6 +58,9 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int ioctl(Emulator<?> emulator, long request, long argp) {
+        if (log.isTraceEnabled()) {
+            emulator.attach().debug();
+        }
         throw new AbstractMethodError(getClass().getName() + ": request=0x" + Long.toHexString(request) + ", argp=0x" + Long.toHexString(argp));
     }
 

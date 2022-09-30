@@ -9,7 +9,7 @@ public class MemoryMap implements Serializable {
 
     public final long base;
     public final long size;
-    public final int prot;
+    public int prot;
 
     public MemoryMap(long base, long size, int prot) {
         this.base = base;

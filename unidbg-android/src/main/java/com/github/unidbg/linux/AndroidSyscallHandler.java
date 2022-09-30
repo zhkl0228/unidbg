@@ -680,7 +680,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             return -UnixEmulator.EINVAL;
         }
         SigAction action = sigActionMap.get(sig);
-        if (emulator.getThreadDispatcher().sendSignal(tid, sig, action == null ? null : new SignalTask(sig, action))) {
+        if (emulator.getThreadDispatcher().sendSignal(tid, sig, action == null || action.getSaHandler() == 0L ? null : new SignalTask(sig, action))) {
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;

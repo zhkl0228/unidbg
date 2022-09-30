@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.memory.MemRegion;
+import com.github.unidbg.memory.Memory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.UnicornConst;
@@ -17,20 +18,20 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
 
     private static final Log log = LogFactory.getLog(MapsFileIO.class);
 
-    public MapsFileIO(int oflags, String path, Collection<Module> modules) {
-        super(oflags, path, getMapsData(modules, null));
+    public MapsFileIO(Emulator<?> emulator, int oflags, String path, Collection<Module> modules) {
+        super(oflags, path, getMapsData(emulator, modules, null));
     }
 
     @SuppressWarnings("unused")
-    protected MapsFileIO(int oflags, String path, Collection<Module> modules, String additionContent) {
-        this(oflags, path, getMapsData(modules, additionContent));
+    protected MapsFileIO(Emulator<?> emulator, int oflags, String path, Collection<Module> modules, String additionContent) {
+        this(emulator, oflags, path, getMapsData(emulator, modules, additionContent));
     }
 
-    protected MapsFileIO(int oflags, String path, byte[] bytes) {
+    protected MapsFileIO(Emulator<?> emulator, int oflags, String path, byte[] bytes) {
         super(oflags, path, bytes);
     }
 
-    protected static byte[] getMapsData(Collection<Module> modules, String additionContent) {
+    protected static byte[] getMapsData(Emulator<?> emulator, Collection<Module> modules, String additionContent) {
         List<MemRegion> list = new ArrayList<>(modules.size());
         for (Module module : modules) {
             list.addAll(module.getRegions());
@@ -63,6 +64,9 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
             builder.append(memRegion.getName());
             builder.append('\n');
         }
+        long stackSize = (long) Memory.STACK_SIZE_OF_PAGE * emulator.getPageAlign();
+        builder.append(String.format("%08x-%08x", Memory.STACK_BASE - stackSize, Memory.STACK_BASE));
+        builder.append(" rw-p 00000000 00:00 0          [stack]\n");
         if (additionContent != null) {
             builder.append(additionContent).append('\n');
         }

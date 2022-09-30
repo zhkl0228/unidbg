@@ -150,6 +150,8 @@ public class LinuxModule extends Module {
         return unresolvedSymbol;
     }
 
+    final Map<String, ModuleSymbol> resolvedSymbols = new HashMap<>();
+
     @Override
     public Symbol findSymbolByName(String name, boolean withDependencies) {
         try {

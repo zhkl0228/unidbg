@@ -26,6 +26,7 @@ import com.github.unidbg.linux.file.NetLinkSocket;
 import com.github.unidbg.linux.file.SocketIO;
 import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
+import com.github.unidbg.linux.struct.RLimit64;
 import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.memory.Memory;
@@ -48,7 +49,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * http://androidxref.com/6.0.0_r5/xref/external/kernel-headers/original/uapi/asm-generic/unistd.h
+ * <a href="http://androidxref.com/6.0.0_r5/xref/external/kernel-headers/original/uapi/asm-generic/unistd.h">unistd</a>
  */
 public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
@@ -301,6 +302,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 case 226:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, mprotect(backend, emulator));
                     return;
+                case 227:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, msync(emulator));
+                    return;
                 case 93:
                     exit(emulator);
                     return;
@@ -315,6 +319,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 131:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, tgkill(emulator));
+                    return;
+                case 163:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getrlimit64(emulator));
                     return;
                 case 198:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator));
@@ -369,10 +376,41 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         }
 
         log.warn("handleInterrupt intno=" + intno + ", NR=" + NR + ", svcNumber=0x" + Integer.toHexString(swi) + ", PC=" + pc + ", LR=" + UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR) + ", syscall=" + syscall, exception);
-
+        if (log.isDebugEnabled()) {
+            emulator.attach().debug();
+        }
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private static final int RLIMIT_STACK = 3; /* max stack size */
+
+    private long getrlimit64(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int resource = context.getIntArg(0);
+        Pointer ptr = context.getPointerArg(1);
+        if (resource == RLIMIT_STACK) {
+            RLimit64 rlimit64 = new RLimit64(ptr);
+            long size = (long) Memory.STACK_SIZE_OF_PAGE * emulator.getPageAlign();
+            rlimit64.rlim_cur = size;
+            rlimit64.rlim_max = size;
+            rlimit64.pack();
+            return 0;
+        } else {
+            throw new UnsupportedOperationException("getrlimit64 resource=" + resource + ", rlimit64=" + ptr);
+        }
+    }
+
+    private long msync(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer addr = context.getPointerArg(0);
+        int len = context.getIntArg(1);
+        int flags = context.getIntArg(2);
+        if (log.isDebugEnabled()) {
+            log.debug("msync addr=" + addr + ", len=" + len + ", flags=0x" + Integer.toHexString(flags));
+        }
+        return 0;
     }
 
     private long fdatasync(Emulator<AndroidFileIO> emulator) {
@@ -1206,11 +1244,14 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         int fd = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
         int offset = backend.reg_read(Arm64Const.UC_ARM64_REG_X5).intValue() << MMAP2_SHIFT;
 
-        boolean warning = length >= 0x10000000;
+        boolean warning = length > 0x10000000;
         if (log.isDebugEnabled() || warning) {
             String msg = "mmap start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset;
             if (warning) {
                 log.warn(msg);
+                if (log.isTraceEnabled()) {
+                    emulator.attach().debug();
+                }
             } else {
                 log.debug(msg);
             }

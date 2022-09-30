@@ -204,9 +204,13 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
             return -1;
         }
 
-        backend.mem_protect(address, length, prot);
         if (mMapListener != null) {
-            mMapListener.onProtect(address, length, prot);
+            prot = mMapListener.onProtect(address, length, prot);
+        }
+        backend.mem_protect(address, length, prot);
+        MemoryMap map = memoryMap.get(address);
+        if (map != null && map.size == length) {
+            map.prot = prot;
         }
         return 0;
     }

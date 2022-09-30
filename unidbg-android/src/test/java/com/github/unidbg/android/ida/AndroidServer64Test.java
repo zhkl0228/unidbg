@@ -47,7 +47,7 @@ public class AndroidServer64Test implements IOResolver<AndroidFileIO> {
     public FileResult<AndroidFileIO> resolve(Emulator<AndroidFileIO> emulator, String pathname, int oflags) {
         final int attachPid = emulator.getPid() - 1;
         if (("/proc/" + attachPid + "/maps").equals(pathname)) {
-            return FileResult.<AndroidFileIO>success(new MapsFileIO(oflags, pathname, emulator.getMemory().getLoadedModules()));
+            return FileResult.<AndroidFileIO>success(new MapsFileIO(emulator, oflags, pathname, emulator.getMemory().getLoadedModules()));
         }
         if (("/proc/" + attachPid + "/cmdline").equals(pathname)) {
             return FileResult.<AndroidFileIO>success(new ByteArrayFileIO(oflags, pathname, ("/system/bin/" + executable.getName()).getBytes()));

@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import net.fornwall.jelf.ElfSymbol;
 
@@ -52,7 +53,6 @@ public class ModuleSymbol {
                                 return new ModuleSymbol(soName, WEAK_BASE, elfSymbol, relocationAddr, module.name, hook);
                             }
                         }
-
                         return new ModuleSymbol(soName, module.base, elfSymbol, relocationAddr, module.name, offset);
                 }
             }
@@ -91,18 +91,27 @@ public class ModuleSymbol {
         return null;
     }
 
-    void relocation(Emulator<?> emulator) {
+    void relocation(Emulator<?> emulator, LinuxModule module, ElfSymbol symbol) {
+        final long value;
+        if (load_base == WEAK_BASE) {
+            value = offset;
+        } else {
+            value = module.base + (symbol == null ? 0 : symbol.value) + offset;
+        }
+        relocationAddr.setPointer(0, UnidbgPointer.pointer(emulator, value));
+    }
+
+    void relocation(Emulator<?> emulator, LinuxModule owner) throws IOException {
+        if (symbol != null) {
+            owner.resolvedSymbols.put(symbol.getName(), this);
+        }
         final long value;
         if (load_base == WEAK_BASE) {
             value = offset;
         } else {
             value = load_base + (symbol == null ? 0 : symbol.value) + offset;
         }
-        if (emulator.is64Bit()) {
-            relocationAddr.setLong(0, value);
-        } else {
-            relocationAddr.setInt(0, (int) value);
-        }
+        relocationAddr.setPointer(0, UnidbgPointer.pointer(emulator, value));
     }
 
     public ElfSymbol getSymbol() {
