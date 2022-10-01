@@ -96,17 +96,17 @@ public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFile
                         if (tagIndex != -1 && bodyIndex != -1) {
                             byteArrayOutputStream.reset();
 
-                            int level = body[11] & 0xff;
+                            int value = body[11] & 0xff;
                             String tag = new String(body, 12, tagIndex - 12);
                             String text = new String(body, tagIndex + 1, bodyIndex - tagIndex - 1);
-                            LogCatLevel value = LogCatLevel.valueOf(level);
+                            LogCatLevel level = LogCatLevel.valueOf(value);
 
                             LinuxFileSystem fileSystem = (LinuxFileSystem) emulator.getFileSystem();
                             LogCatHandler handler = fileSystem.getLogCatHandler();
                             if (handler != null) {
-                                handler.handleLog(type, value, tag, text);
-                            } else if(emulator.getSyscallHandler().isVerbose()) {
-                                System.err.printf("[%s]%s/%s: %s%n", type, value, tag, text);
+                                handler.handleLog(type, level, tag, text);
+                            } else {
+                                System.err.printf("[%s]%s/%s: %s%n", type, level, tag, text);
                             }
                         }
                     } catch (IOException e) {
