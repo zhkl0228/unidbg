@@ -582,7 +582,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         List<InitFunction> initFunctionList = new ArrayList<>();
         int preInitArraySize = dynamicStructure.getPreInitArraySize();
-        boolean executable = preInitArraySize > 0;
+        boolean executable = elfFile.file_type == ElfFile.FT_EXEC || preInitArraySize > 0;
         if (executable) {
             int count = preInitArraySize / emulator.getPointerSize();
             if (count > 0) {

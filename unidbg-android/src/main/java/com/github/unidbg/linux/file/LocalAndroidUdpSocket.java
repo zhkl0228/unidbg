@@ -105,7 +105,7 @@ public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFile
                             LogCatHandler handler = fileSystem.getLogCatHandler();
                             if (handler != null) {
                                 handler.handleLog(type, value, tag, text);
-                            } else {
+                            } else if(emulator.getSyscallHandler().isVerbose()) {
                                 System.err.printf("[%s]%s/%s: %s%n", type, value, tag, text);
                             }
                         }
