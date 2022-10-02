@@ -401,6 +401,12 @@ public class HypervisorBackend64 extends HypervisorBackend {
             if ((asm & 0xbffffc00) == 0x885ffc00) { // ldaxr
                 return true;
             }
+            if ((asm & 0xfffffc00) == 0x485ffc00) { // ldaxrh
+                return true;
+            }
+            if ((asm & 0xfffffc00) == 0x485f7c00) { // 0x40808dbc: ldxrh w5, [x1]
+                return true;
+            }
             return (asm & 0xbffffc00) == 0x885f7c00; // ldxr
         }
         final void onSoftwareStep(long spsr, long address) {
@@ -433,6 +439,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
                     switch (instruction.getMnemonic()) {
                         case "stxr":
                         case "stlxr":
+                        case "stxrh":
+                        case "stlxrh":
                             foundAddress = pc;
                             break;
                     }

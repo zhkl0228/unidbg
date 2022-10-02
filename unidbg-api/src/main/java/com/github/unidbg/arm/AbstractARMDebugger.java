@@ -682,8 +682,8 @@ public abstract class AbstractARMDebugger implements Debugger {
                 }
                 if (begin >= end) {
                     File traceFile = new File("target/traceCode.txt");
-                    if (!traceFile.exists() && !traceFile.createNewFile()) {
-                        throw new IllegalStateException("createNewFile: " + traceFile);
+                    if (!traceFile.exists() && (!traceFile.getParentFile().exists() || !traceFile.createNewFile())) {
+                        throw new IllegalStateException("createNewFile: " + traceFile.getAbsolutePath());
                     }
                     traceHookRedirectStream = new PrintStream(new BufferedOutputStream(Files.newOutputStream(traceFile.toPath())), true);
                     traceHookRedirectStream.printf("[%s]Start traceCode%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
