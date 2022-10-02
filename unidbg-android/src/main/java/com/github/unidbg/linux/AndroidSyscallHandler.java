@@ -18,6 +18,7 @@ import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.linux.thread.FutexIndefinitelyWaiter;
+import com.github.unidbg.linux.thread.FutexNanoSleepWaiter;
 import com.github.unidbg.linux.thread.FutexWaiter;
 import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.linux.thread.NanoSleepWaiter;
@@ -271,7 +272,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
     private static final int FUTEX_REQUEUE = 3;
     private static final int FUTEX_CMP_REQUEUE = 4;
 
-    private static final int ETIMEDOUT = 110;
+    public static final int ETIMEDOUT = 110;
 
     protected int futex(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
@@ -304,7 +305,8 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
                         runningTask.setWaiter(emulator, new FutexIndefinitelyWaiter(uaddr, val));
                         throw new ThreadContextSwitchException();
                     } else {
-                        throw new ThreadContextSwitchException().setReturnValue(-ETIMEDOUT);
+                        runningTask.setWaiter(emulator, new FutexNanoSleepWaiter(uaddr, val, timeSpec));
+                        throw new ThreadContextSwitchException();
                     }
                 }
                 if (threadDispatcherEnabled && emulator.getThreadDispatcher().getTaskCount() > 1) {
