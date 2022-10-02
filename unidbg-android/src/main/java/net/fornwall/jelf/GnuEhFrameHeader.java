@@ -71,7 +71,7 @@ public class GnuEhFrameHeader {
 
     private final ElfParser parser;
 
-    GnuEhFrameHeader(final ElfParser parser, final long offset, int size) {
+    GnuEhFrameHeader(final ElfParser parser, final long offset, int size, long virtual_address) {
         super();
         this.parser = parser;
         parser.seek(offset);
@@ -82,6 +82,7 @@ public class GnuEhFrameHeader {
             throw new IllegalStateException("version is: " + version);
         }
 
+        long delta = virtual_address - offset;
         int eh_frame_ptr_enc = parser.readUnsignedByte(); off.pos++;
         int fde_count_enc = parser.readUnsignedByte(); off.pos++;
         int table_enc = parser.readUnsignedByte(); off.pos++;
@@ -89,11 +90,11 @@ public class GnuEhFrameHeader {
         long fde_count = readEncodedPointer(parser, fde_count_enc, off, true);
         entries = new TableEntry[(int) fde_count];
         for (int i = 0; i < fde_count; i++) {
-            long location = readEncodedPointer(parser, table_enc, off, true);
+            long location = readEncodedPointer(parser, table_enc, off, true) + delta;
             long address = readEncodedPointer(parser, table_enc, off, true);
             entries[i] = new TableEntry(location, address);
             if (log.isDebugEnabled()) {
-                log.debug("Table entry: eh_frame_ptr=0x" + Long.toHexString(eh_frame_ptr) + ", location=0x" + Long.toHexString(location) + ", address=0x" + Long.toHexString(address) + ", size=" + size);
+                log.debug("Table entry: eh_frame_ptr=0x" + Long.toHexString(eh_frame_ptr) + ", virtual_address=0x" + Long.toHexString(virtual_address) + ", location=0x" + Long.toHexString(location) + ", address=0x" + Long.toHexString(address) + ", size=" + size);
             }
         }
 
@@ -219,7 +220,7 @@ public class GnuEhFrameHeader {
         if (log.isDebugEnabled()) {
             log.debug("dwarf_step entry=" + entry + ", fun=0x" + Long.toHexString(fun) + ", fde=" + fde + ", module=" + module);
         }
-        dwarf_loc_t loc = fde == null ? null : dwarf_get_loc(fde, fun);
+        dwarf_loc_t loc = fde == null ? null : dwarf_get_loc(emulator, fde, fun);
         if (loc != null) {
             UnidbgPointer vsp;
             switch (loc.cfa_rule.type) {
@@ -400,7 +401,7 @@ public class GnuEhFrameHeader {
     private static final int DW_LOC_EXPRESSION = 5;
     private static final int DW_LOC_VAL_EXPRESSION = 6;
 
-    private static dwarf_loc_t dwarf_get_loc(FDE fde, final long pc) {
+    private static dwarf_loc_t dwarf_get_loc(Emulator<?> emulator, FDE fde, final long pc) {
         long cur_pc = fde.pc_start;
         dwarf_loc_t loc;
         long[] operands = new long[2];
@@ -533,7 +534,7 @@ public class GnuEhFrameHeader {
                             loc.cfa_rule.values[0] = operands[0];
                             loc.cfa_rule.values[1] = operands[1];
                             if (log.isDebugEnabled()) {
-                                log.debug("DW_CFA_def_cfa: r" + operands[0] + " ofs " + operands[1]);
+                                log.debug("DW_CFA_def_cfa: " + (emulator.is32Bit() ? "r" : "x") + operands[0] + " ofs " + operands[1]);
                             }
                             break;
                         case 0x0d: // DW_CFA_def_cfa_register

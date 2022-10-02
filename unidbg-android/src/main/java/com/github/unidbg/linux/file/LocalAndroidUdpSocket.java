@@ -52,7 +52,9 @@ public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFile
                         int tid = buffer.getShort() & 0xffff;
                         int tv_sec = buffer.getInt();
                         int tv_nsec = buffer.getInt();
-                        log.debug("handle id=" + id + ", tid=" + tid + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
+                        if (log.isDebugEnabled()) {
+                            log.debug("handle id=" + id + ", tid=" + tid + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
+                        }
 
                         String type;
                         switch (id) {
