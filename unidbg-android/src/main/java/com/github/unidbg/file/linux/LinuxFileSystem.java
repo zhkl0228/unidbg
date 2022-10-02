@@ -28,8 +28,9 @@ public class LinuxFileSystem extends BaseFileSystem<AndroidFileIO> implements Fi
         if ("/dev/tty".equals(pathname)) {
             return FileResult.<AndroidFileIO>success(new NullFileIO(pathname));
         }
-        if ("/proc/self/maps".equals(pathname) || ("/proc/" + emulator.getPid() + "/maps").equals(pathname)) {
-            return FileResult.<AndroidFileIO>success(new MapsFileIO(oflags, pathname, emulator.getMemory().getLoadedModules()));
+        if ("/proc/self/maps".equals(pathname) || ("/proc/" + emulator.getPid() + "/maps").equals(pathname) ||
+                ("/proc/self/task/" + emulator.getPid() + "/maps").equals(pathname)) {
+            return FileResult.<AndroidFileIO>success(new MapsFileIO(emulator, oflags, pathname, emulator.getMemory().getLoadedModules()));
         }
 
         return super.open(pathname, oflags);

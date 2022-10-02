@@ -14,18 +14,18 @@ import com.github.unidbg.linux.file.PipedWriteFileIO;
 import com.github.unidbg.linux.signal.SigAction;
 import com.github.unidbg.linux.signal.SignalFunction;
 import com.github.unidbg.linux.signal.SignalTask;
-import com.github.unidbg.linux.thread.NanoSleepWaiter;
-import com.github.unidbg.signal.UnixSigSet;
 import com.github.unidbg.linux.struct.StatFS;
 import com.github.unidbg.linux.struct.StatFS32;
 import com.github.unidbg.linux.struct.StatFS64;
 import com.github.unidbg.linux.thread.FutexIndefinitelyWaiter;
+import com.github.unidbg.linux.thread.FutexNanoSleepWaiter;
 import com.github.unidbg.linux.thread.FutexWaiter;
 import com.github.unidbg.linux.thread.MarshmallowThread;
-import com.github.unidbg.memory.Memory;
+import com.github.unidbg.linux.thread.NanoSleepWaiter;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.signal.SigSet;
 import com.github.unidbg.signal.SignalOps;
+import com.github.unidbg.signal.UnixSigSet;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.RunnableTask;
@@ -44,6 +44,7 @@ import net.dongliu.apk.parser.utils.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -125,6 +126,19 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             log.debug("sched_setscheduler pid=" + pid + ", policy=" + policy + ", param=" + param);
         }
         return 0;
+    }
+
+    protected int getcwd(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        UnidbgPointer buf = context.getPointerArg(0);
+        int size = context.getIntArg(1);
+        File workDir = emulator.getFileSystem().createWorkDir();
+        String path = workDir.getPath();
+        if (log.isDebugEnabled()) {
+            log.debug("getcwd buf=" + buf + ", size=" + size + ", path=" + path);
+        }
+        buf.setString(0, ".");
+        return (int) buf.peer;
     }
 
     private static final int SCHED_OTHER = 0;
@@ -254,8 +268,11 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
     private static final int MUTEX_TYPE_MASK = 0xc000;
     private static final int FUTEX_WAIT = 0;
     private static final int FUTEX_WAKE = 1;
+    private static final int FUTEX_FD = 2;
+    private static final int FUTEX_REQUEUE = 3;
+    private static final int FUTEX_CMP_REQUEUE = 4;
 
-    private static final int ETIMEDOUT = 110;
+    public static final int ETIMEDOUT = 110;
 
     protected int futex(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
@@ -273,9 +290,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
         switch (cmd) {
             case FUTEX_WAIT:
                 if (old != val) {
-                    Memory memory = emulator.getMemory();
-                    memory.setErrno(UnixEmulator.EAGAIN);
-                    return -1;
+                    return -UnixEmulator.EAGAIN;
                 }
                 Pointer timeout = context.getPointerArg(3);
                 TimeSpec timeSpec = timeout == null ? null : TimeSpec.createTimeSpec(emulator, timeout);
@@ -290,7 +305,8 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
                         runningTask.setWaiter(emulator, new FutexIndefinitelyWaiter(uaddr, val));
                         throw new ThreadContextSwitchException();
                     } else {
-                        throw new ThreadContextSwitchException().setReturnValue(-ETIMEDOUT);
+                        runningTask.setWaiter(emulator, new FutexNanoSleepWaiter(uaddr, val, timeSpec));
+                        throw new ThreadContextSwitchException();
                     }
                 }
                 if (threadDispatcherEnabled && emulator.getThreadDispatcher().getTaskCount() > 1) {
@@ -323,7 +339,15 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
                     throw new ThreadContextSwitchException().setReturnValue(1);
                 }
                 return 0;
+            case FUTEX_CMP_REQUEUE:
+                if (log.isDebugEnabled()) {
+                    log.debug("futex FUTEX_CMP_REQUEUE val=0x" + Integer.toHexString(val) + ", old=" + old + ", task=" + task);
+                }
+                return 0;
             default:
+                if (log.isDebugEnabled()) {
+                    emulator.attach().debug();
+                }
                 throw new AbstractMethodError("futex_op=0x" + Integer.toHexString(futex_op));
         }
     }
@@ -680,7 +704,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             return -UnixEmulator.EINVAL;
         }
         SigAction action = sigActionMap.get(sig);
-        if (emulator.getThreadDispatcher().sendSignal(tid, sig, action == null ? null : new SignalTask(sig, action))) {
+        if (emulator.getThreadDispatcher().sendSignal(tid, sig, action == null || action.getSaHandler() == 0L ? null : new SignalTask(sig, action))) {
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
         return 0;

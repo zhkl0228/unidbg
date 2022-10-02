@@ -694,8 +694,10 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
-
-  HYP_ASSERT_SUCCESS(hv_vm_protect(address, size, perms));
+  if(hv_vm_protect(address, size, perms) != HV_SUCCESS) {
+    fprintf(stderr, "hv_vm_protect failed address=%p, size=0x%lx, perms=0x%x\n", (void*) address, size, perms);
+    return 3;
+  }
 
   t_hypervisor hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;

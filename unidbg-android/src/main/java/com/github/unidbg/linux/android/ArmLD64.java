@@ -136,7 +136,7 @@ public class ArmLD64 extends Dlfcn {
 
                                 for (LinuxModule module : list) {
                                     dl_phdr_info64 info = new dl_phdr_info64(ptr);
-                                    UnidbgPointer dlpi_addr = UnidbgPointer.pointer(emulator, module.base);
+                                    UnidbgPointer dlpi_addr = UnidbgPointer.pointer(emulator, module.virtualBase);
                                     assert dlpi_addr != null;
                                     info.dlpi_addr = dlpi_addr.peer;
                                     ElfDynamicStructure dynamicStructure = module.dynamicStructure;

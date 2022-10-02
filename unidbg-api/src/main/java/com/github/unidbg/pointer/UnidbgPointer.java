@@ -481,14 +481,21 @@ public class UnidbgPointer extends Pointer implements PointerArg {
         if (memoryMap == null) {
             sb.append("unidbg");
         } else {
+            boolean none = true;
             if ((memoryMap.prot & UnicornConst.UC_PROT_READ) != 0) {
                 sb.append('R');
+                none = false;
             }
             if ((memoryMap.prot & UnicornConst.UC_PROT_WRITE) != 0) {
                 sb.append('W');
+                none = false;
             }
             if ((memoryMap.prot & UnicornConst.UC_PROT_EXEC) != 0) {
                 sb.append('X');
+                none = false;
+            }
+            if (none) {
+                sb.append('N');
             }
         }
         sb.append("@0x");

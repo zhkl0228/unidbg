@@ -565,7 +565,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     long begin = loadBase + segmentCommand.vmaddr();
                     if ("__PAGEZERO".equals(segmentCommand.segname())) {
                         segments.add(new Segment(segmentCommand.vmaddr(), segmentCommand.vmsize(), segmentCommand.fileoff(), segmentCommand.filesize()));
-                        regions.add(new MemRegion(begin, begin + segmentCommand.vmsize(), 0, libraryFile, segmentCommand.vmaddr()));
+                        regions.add(new MemRegion(begin, begin, begin + segmentCommand.vmsize(), 0, libraryFile, segmentCommand.vmaddr()));
                         break;
                     }
 
@@ -577,7 +577,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     }
 
                     if (segmentCommand.vmsize() == 0) {
-                        regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand.vmaddr()));
+                        regions.add(new MemRegion(begin, begin, begin, 0, libraryFile, segmentCommand.vmaddr()));
                         break;
                     }
                     int prot = get_segment_protection(segmentCommand.initprot());
@@ -591,7 +591,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     Alignment alignment = this.mem_map(begin, segmentCommand.vmsize(), prot, dyId, emulator.getPageAlign());
                     write_mem((int) segmentCommand.fileoff(), (int) segmentCommand.filesize(), begin, buffer);
 
-                    regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand.vmaddr()));
+                    regions.add(new MemRegion(begin, alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand.vmaddr()));
                     break;
                 }
                 case SEGMENT_64: {
@@ -599,7 +599,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     long begin = loadBase + segmentCommand64.vmaddr();
                     if ("__PAGEZERO".equals(segmentCommand64.segname())) {
                         segments.add(new Segment(segmentCommand64.vmaddr(), segmentCommand64.vmsize(), segmentCommand64.fileoff(), segmentCommand64.filesize()));
-                        regions.add(new MemRegion(begin, begin + segmentCommand64.vmsize(), 0, libraryFile, segmentCommand64.vmaddr()));
+                        regions.add(new MemRegion(begin, begin, begin + segmentCommand64.vmsize(), 0, libraryFile, segmentCommand64.vmaddr()));
                         break;
                     }
 
@@ -624,7 +624,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     }
 
                     if (segmentCommand64.vmsize() == 0) {
-                        regions.add(new MemRegion(begin, begin, 0, libraryFile, segmentCommand64.vmaddr()));
+                        regions.add(new MemRegion(begin, begin, begin, 0, libraryFile, segmentCommand64.vmaddr()));
                         break;
                     }
                     int prot = get_segment_protection(segmentCommand64.initprot());
@@ -641,7 +641,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     }
                     write_mem((int) segmentCommand64.fileoff(), (int) segmentCommand64.filesize(), begin, buffer);
 
-                    regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand64.vmaddr()));
+                    regions.add(new MemRegion(begin, alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand64.vmaddr()));
                     break;
                 }
                 case LOAD_DYLIB:

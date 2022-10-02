@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +43,7 @@ public abstract class Module {
     }
 
     public final List<MemRegion> getRegions() {
-        return regions;
+        return Collections.unmodifiableList(regions);
     }
 
     public abstract Number callFunction(Emulator<?> emulator, long offset, Object... args);

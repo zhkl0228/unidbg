@@ -158,7 +158,7 @@ public class ElfSegment {
 			ehFrameHeader = new MemoizedObject<GnuEhFrameHeader>() {
 				@Override
 				protected GnuEhFrameHeader computeValue() throws ElfException, IOException {
-					return new GnuEhFrameHeader(parser, elfFile.virtualMemoryAddrToFileOffset(virtual_address), (int) mem_size);
+					return new GnuEhFrameHeader(parser, elfFile.virtualMemoryAddrToFileOffset(virtual_address), (int) mem_size, virtual_address);
 				}
 			};
 			break;

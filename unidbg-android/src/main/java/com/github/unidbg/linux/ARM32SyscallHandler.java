@@ -46,13 +46,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.ArmConst;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * http://androidxref.com/6.0.0_r5/xref/bionic/libc/kernel/uapi/asm-arm/asm/unistd.h
+ * <a href="http://androidxref.com/6.0.0_r5/xref/bionic/libc/kernel/uapi/asm-arm/asm/unistd.h">unistd</a>
  */
 public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
@@ -337,7 +336,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, pread64(emulator));
                     return;
                 case 183:
-                    backend.reg_write(ArmConst.UC_ARM_REG_R0, getcwd(backend, emulator));
+                    backend.reg_write(ArmConst.UC_ARM_REG_R0, getcwd(emulator));
                     return;
                 case 186:
                     backend.reg_write(ArmConst.UC_ARM_REG_R0, sigaltstack(emulator));
@@ -1626,18 +1625,6 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         domainname.setString(0, "localdomain");
 
         return 0;
-    }
-
-    private int getcwd(Backend backend, Emulator<?> emulator) {
-        UnidbgPointer buf = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
-        int size = backend.reg_read(ArmConst.UC_ARM_REG_R1).intValue();
-        File workDir = emulator.getFileSystem().createWorkDir();
-        String path = workDir.getAbsolutePath();
-        if (log.isDebugEnabled()) {
-            log.debug("getcwd buf=" + buf + ", size=" + size + ", path=" + path);
-        }
-        buf.setString(0, ".");
-        return (int) buf.peer;
     }
 
     private void exit_group(Emulator<?> emulator) {
