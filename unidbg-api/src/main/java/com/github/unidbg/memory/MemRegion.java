@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 
 public class MemRegion implements Comparable<MemRegion> {
 
+    public final long virtualAddress;
     public final long begin;
     public final long end;
     public final int perms;
@@ -15,7 +16,7 @@ public class MemRegion implements Comparable<MemRegion> {
     public final long offset;
 
     public static MemRegion create(long begin, int size, int perms, final String name) {
-        return new MemRegion(begin, begin + size, perms, new LibraryFile() {
+        return new MemRegion(begin, begin, begin + size, perms, new LibraryFile() {
             @Override
             public String getName() {
                 return name;
@@ -43,7 +44,8 @@ public class MemRegion implements Comparable<MemRegion> {
         }, 0);
     }
 
-    public MemRegion(long begin, long end, int perms, LibraryFile libraryFile, long offset) {
+    public MemRegion(long virtualAddress, long begin, long end, int perms, LibraryFile libraryFile, long offset) {
+        this.virtualAddress = virtualAddress;
         this.begin = begin;
         this.end = end;
         this.perms = perms;

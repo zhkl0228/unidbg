@@ -123,7 +123,7 @@ public class ArmLD extends Dlfcn {
 
                                 for (LinuxModule module : list) {
                                     dl_phdr_info32 info = new dl_phdr_info32(ptr);
-                                    UnidbgPointer dlpi_addr = UnidbgPointer.pointer(emulator, module.base);
+                                    UnidbgPointer dlpi_addr = UnidbgPointer.pointer(emulator, module.virtualBase);
                                     assert dlpi_addr != null;
                                     info.dlpi_addr = (int) dlpi_addr.toUIntPeer();
                                     ElfDynamicStructure dynamicStructure = module.dynamicStructure;

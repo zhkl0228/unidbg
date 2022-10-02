@@ -5,6 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.file.FileIO;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.MemoryMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.UnicornConst;
@@ -24,10 +25,10 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
 
     @SuppressWarnings("unused")
     protected MapsFileIO(Emulator<?> emulator, int oflags, String path, Collection<Module> modules, String additionContent) {
-        this(emulator, oflags, path, getMapsData(emulator, modules, additionContent));
+        this(oflags, path, getMapsData(emulator, modules, additionContent));
     }
 
-    protected MapsFileIO(Emulator<?> emulator, int oflags, String path, byte[] bytes) {
+    protected MapsFileIO(int oflags, String path, byte[] bytes) {
         super(oflags, path, bytes);
     }
 
@@ -37,36 +38,32 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
             list.addAll(module.getRegions());
         }
         Collections.sort(list);
-        StringBuilder builder = new StringBuilder();
+        List<MapItem> items = new ArrayList<>();
         for (MemRegion memRegion : list) {
-            builder.append(String.format("%08x-%08x", memRegion.begin, memRegion.end)).append(' ');
-            if ((memRegion.perms & UnicornConst.UC_PROT_READ) != 0) {
-                builder.append('r');
-            } else {
-                builder.append('-');
-            }
-            if ((memRegion.perms & UnicornConst.UC_PROT_WRITE) != 0) {
-                builder.append('w');
-            } else {
-                builder.append('-');
-            }
-            if ((memRegion.perms & UnicornConst.UC_PROT_EXEC) != 0) {
-                builder.append('x');
-            } else {
-                builder.append('-');
-            }
-            builder.append("p ");
-            builder.append(String.format("%08x", memRegion.offset));
-            builder.append(" b3:19 0");
-            for (int i = 0; i < 10; i++) {
-                builder.append(' ');
-            }
-            builder.append(memRegion.getName());
-            builder.append('\n');
+            items.add(new MapItem(memRegion.virtualAddress, memRegion.end, memRegion.perms, 0, "b3:19", memRegion.getName()));
         }
         long stackSize = (long) Memory.STACK_SIZE_OF_PAGE * emulator.getPageAlign();
-        builder.append(String.format("%08x-%08x", Memory.STACK_BASE - stackSize, Memory.STACK_BASE));
-        builder.append(" rw-p 00000000 00:00 0          [stack]\n");
+        items.add(new MapItem(Memory.STACK_BASE - stackSize, Memory.STACK_BASE, UnicornConst.UC_PROT_WRITE | UnicornConst.UC_PROT_READ, 0, "00:00", "[stack]"));
+
+        List<MapItem> mapItems = new ArrayList<>();
+        for (MemoryMap memoryMap : emulator.getMemory().getMemoryMap()) {
+            boolean contains = false;
+            for (MapItem item : items) {
+                if (Math.max(memoryMap.base, item.start) <= Math.min(memoryMap.base + memoryMap.size, item.end)) {
+                    contains = true;
+                    break;
+                }
+            }
+            if (!contains) {
+                mapItems.add(new MapItem(memoryMap.base, memoryMap.base + memoryMap.size, memoryMap.prot, 0, "00:00", "anonymous"));
+            }
+        }
+        items.addAll(mapItems);
+
+        StringBuilder builder = new StringBuilder();
+        for (MapItem item : items) {
+            builder.append(item);
+        }
         if (additionContent != null) {
             builder.append(additionContent).append('\n');
         }
@@ -75,6 +72,52 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
         }
 
         return builder.toString().getBytes();
+    }
+
+    private static class MapItem {
+        private final long start;
+        private final long end;
+        private final int perms;
+        private final int offset;
+        private final String device;
+        private final String label;
+        public MapItem(long start, long end, int perms, int offset, String device, String label) {
+            this.start = start;
+            this.end = end;
+            this.perms = perms;
+            this.offset = offset;
+            this.device = device;
+            this.label = label;
+        }
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append(String.format("%08x-%08x", start, end)).append(' ');
+            if ((perms & UnicornConst.UC_PROT_READ) != 0) {
+                builder.append('r');
+            } else {
+                builder.append('-');
+            }
+            if ((perms & UnicornConst.UC_PROT_WRITE) != 0) {
+                builder.append('w');
+            } else {
+                builder.append('-');
+            }
+            if ((perms & UnicornConst.UC_PROT_EXEC) != 0) {
+                builder.append('x');
+            } else {
+                builder.append('-');
+            }
+            builder.append("p ");
+            builder.append(String.format("%08x", offset));
+            builder.append(" ").append(device).append(" 0");
+            for (int i = 0; i < 10; i++) {
+                builder.append(' ');
+            }
+            builder.append(label);
+            builder.append('\n');
+            return builder.toString();
+        }
     }
 
     @Override

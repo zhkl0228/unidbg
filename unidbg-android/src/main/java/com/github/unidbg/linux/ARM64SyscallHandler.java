@@ -1379,7 +1379,12 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
             int fd = open(emulator, pathname, oflags);
             if (fd == -1) {
-                log.info(msg);
+                if (log.isTraceEnabled()) {
+                    emulator.attach().debug();
+                }
+                if (verbose) {
+                    log.info(msg);
+                }
                 return -emulator.getMemory().getLastErrno();
             } else {
                 return fd;

@@ -355,6 +355,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         final long baseAlign = Math.max(emulator.getPageAlign(), align);
         final long load_base = ((mmapBaseAddress - 1) / baseAlign + 1) * baseAlign;
+        long load_virtual_address = 0;
         long size = ARM.align(0, bound_high, baseAlign).size;
         setMMapBaseAddress(load_base + size);
 
@@ -372,6 +373,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     }
 
                     final long begin = load_base + ph.virtual_address;
+                    if (load_virtual_address == 0) {
+                        load_virtual_address = begin;
+                    }
 
                     Alignment check = ARM.align(begin, ph.mem_size, Math.max(emulator.getPageAlign(), ph.alignment));
                     final int regionSize = regions.size();
@@ -389,7 +393,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                         backend.mem_protect(check.address, overallSize, perms);
                         if (ph.mem_size > overallSize) {
                             Alignment alignment = this.mem_map(begin + overallSize, ph.mem_size - overallSize, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
-                            regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
+                            regions.add(new MemRegion(begin, alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
                             if (lastAlignment != null) {
                                 throw new UnsupportedOperationException();
                             }
@@ -397,7 +401,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                         }
                     } else {
                         Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
-                        regions.add(new MemRegion(alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
+                        regions.add(new MemRegion(begin, alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
                         if (lastAlignment != null) {
                             long base = lastAlignment.address + lastAlignment.size;
                             long off = alignment.address - base;
@@ -624,7 +628,10 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         try {
             symbolTableSection = elfFile.getSymbolTableSection();
         } catch(Throwable ignored) {}
-        LinuxModule module = new LinuxModule(load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
+        if (load_virtual_address == 0) {
+            throw new IllegalStateException("load_virtual_address");
+        }
+        LinuxModule module = new LinuxModule(load_virtual_address, load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
                 armExIdx, ehFrameHeader, symbolTableSection, elfFile, dynamicStructure, libraryFile);
         for (ModuleSymbol symbol : resolvedSymbols) {
             symbol.relocation(emulator, module);

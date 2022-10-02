@@ -59,7 +59,7 @@ public class LinuxModule extends Module {
             log.debug("createVirtualModule first=0x" + Long.toHexString(first.peer) + ", last=0x" + Long.toHexString(last.peer) + ", base=0x" + Long.toHexString(base) + ", size=0x" + Long.toHexString(size));
         }
 
-        LinuxModule module = new LinuxModule(base, size, name, null,
+        LinuxModule module = new LinuxModule(base, base, size, name, null,
                 Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
                 Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(),
                 null, null, null, null, null, null) {
@@ -95,13 +95,15 @@ public class LinuxModule extends Module {
     private final ElfSection symbolTableSection;
     public final ElfFile elfFile;
     public final ElfDynamicStructure dynamicStructure;
+    public final long virtualBase;
 
-    LinuxModule(long base, long size, String name, SymbolLocator dynsym,
+    LinuxModule(long virtualBase, long base, long size, String name, SymbolLocator dynsym,
                 List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader,
                 ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure, LibraryFile libraryFile) {
         super(name, base, size, neededLibraries, regions, libraryFile);
 
+        this.virtualBase = virtualBase;
         this.dynsym = dynsym;
         this.unresolvedSymbol = unresolvedSymbol;
         this.initFunctionList = initFunctionList;
