@@ -2357,14 +2357,50 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _SetStaticObjectField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                UnidbgPointer value = context.getPointerArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticObjectField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmObject<?> dvmObject = value == null ? null : getObject(value.toIntPeer());
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    dvmField.setStaticObjectField(dvmObject);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticObjectField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, dvmObject, context.getLRPointer());
+                    }
+                }
+                return 0;
             }
         });
 
         Pointer _SetStaticBooleanField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer clazz = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                int value = context.getIntArg(3);
+                if (log.isDebugEnabled()) {
+                    log.debug("SetStaticBooleanField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                }
+                DvmClass dvmClass = classMap.get(clazz.toIntPeer());
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException("dvmClass=" + dvmClass);
+                } else {
+                    boolean flag = BaseVM.valueOf(value);
+                    dvmField.setStaticBooleanField(flag);
+                    if (verbose) {
+                        System.out.printf("JNIEnv->SetStaticBooleanField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, flag, context.getLRPointer());
+                    }
+                }
+                return 0;
             }
         });
 
