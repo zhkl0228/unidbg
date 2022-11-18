@@ -243,6 +243,8 @@ typedef enum UIUserInterfaceLayoutDirection : NSInteger {
 
 - (UIBackgroundTaskIdentifier)beginBackgroundTaskWithName:(NSString *)taskName expirationHandler:(void (^)(void))handler;
 
+- (BOOL)canOpenURL:(NSURL *)url;
+
 @end
 
 @protocol UIApplicationDelegate<NSObject>
@@ -332,6 +334,8 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 @interface NSURLSession (CFNetwork)
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration;
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue;
+- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url;
+- (void)finishTasksAndInvalidate;
 @end
 
 @interface UIScreen : NSObject

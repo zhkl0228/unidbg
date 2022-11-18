@@ -315,6 +315,10 @@ static UIApplication *sharedApplication;
     return UIBackgroundTaskInvalid;
 }
 
+- (BOOL)canOpenURL:(NSURL *)url {
+    return NO;
+}
+
 @end
 
 @implementation UIDevice
@@ -439,6 +443,11 @@ static UIApplication *sharedApplication;
 }
 + (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue {
   return [NSURLSession new];
+}
+- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url {
+  return nil;
+}
+- (void)finishTasksAndInvalidate {
 }
 @end
 #pragma clang diagnostic pop

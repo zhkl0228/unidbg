@@ -248,8 +248,8 @@ public abstract class AbstractARMDebugger implements Debugger {
         try {
             if (breakMnemonic != null) {
                 CodeHistory history = new CodeHistory(address, size, ARM.isThumb(backend));
-                Instruction ins = history.disassemble(emulator);
-                if (ins != null && breakMnemonic.equals(ins.getMnemonic())) {
+                Instruction[] instructions = history.disassemble(emulator);
+                if (instructions.length > 0 && breakMnemonic.equals(instructions[0].getMnemonic())) {
                     breakMnemonic = null;
                     backend.setFastDebug(true);
                     cancelTrace();
@@ -942,23 +942,21 @@ public abstract class AbstractARMDebugger implements Debugger {
                 new CodeHistory(address - size, size, thumb),
                 new CodeHistory(address, size, thumb))
         ) {
-            Instruction ins = history.disassemble(emulator);
-            if (ins == null) {
-                nextAddr += size;
-                continue;
-            }
-            if (history.address == address) {
-                sb.append("=> *");
-                on = true;
-            } else {
-                sb.append("    ");
-                if (on) {
-                    next = history.address;
-                    on = false;
+            Instruction[] instructions = history.disassemble(emulator);
+            for (Instruction ins : instructions) {
+                if (ins.getAddress() == address) {
+                    sb.append("=> *");
+                    on = true;
+                } else {
+                    sb.append("    ");
+                    if (on) {
+                        next = ins.getAddress();
+                        on = false;
+                    }
                 }
+                sb.append(ARM.assembleDetail(emulator, ins, ins.getAddress(), history.thumb, on, maxLength)).append('\n');
+                nextAddr += ins.getBytes().length;
             }
-            sb.append(ARM.assembleDetail(emulator, ins, history.address, history.thumb, on, maxLength)).append('\n');
-            nextAddr += ins.getBytes().length;
         }
         Instruction[] insns = emulator.disassemble(nextAddr, 4 * 15, 15);
         for (Instruction ins : insns) {

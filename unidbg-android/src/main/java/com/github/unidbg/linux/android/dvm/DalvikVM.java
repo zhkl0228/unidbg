@@ -3791,7 +3791,7 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
-        UnidbgPointer _GetEnv = svcMemory.registerSvc(new ArmSvc() {
+        UnidbgPointer _GetEnv = svcMemory.registerSvc(new ArmSvc("_GetEnv") {
             @Override
             public long handle(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();

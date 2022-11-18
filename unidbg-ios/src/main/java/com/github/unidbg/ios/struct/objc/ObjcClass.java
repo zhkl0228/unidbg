@@ -26,6 +26,11 @@ public abstract class ObjcClass extends ObjcObject implements ObjcConstants, com
         super(emulator, p);
     }
 
+    @SuppressWarnings("unused")
+    public ObjcObject newObjc() {
+        return callObjc("new");
+    }
+
     @Override
     protected List<String> getFieldOrder() {
         List<String> fields = new ArrayList<>(super.getFieldOrder());
