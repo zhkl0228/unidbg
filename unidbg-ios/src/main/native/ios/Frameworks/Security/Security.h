@@ -28,6 +28,14 @@ const CFStringRef kSecAttrAccessibleWhenUnlockedThisDeviceOnly = CFSTR("aku");
 const CFStringRef kSecAttrSynchronizableAny = CFSTR("syna");
 const CFStringRef kSecReturnPersistentRef = CFSTR("r_PersistentRef");
 
+const CFStringRef kSecAttrKeyClass = CFSTR("kSecAttrKeyClass");
+const CFStringRef kSecAttrKeyClassPublic = CFSTR("kSecAttrKeyClassPublic");
+const CFStringRef kSecAttrKeyType = CFSTR("kSecAttrKeyType");
+const CFStringRef kSecAttrKeyTypeRSA = CFSTR("kSecAttrKeyTypeRSA");
+const CFStringRef kSecAttrKeyTypeEC = CFSTR("kSecAttrKeyTypeEC");
+const CFStringRef kSecAttrKeyTypeECSECPrimeRandom = CFSTR("kSecAttrKeyTypeECSECPrimeRandom");
+const CFStringRef kSecAttrKeySizeInBits = CFSTR("kSecAttrKeySizeInBits");
+
 typedef struct SecRandom {
 } *SecRandomRef;
 const SecRandomRef kSecRandomDefault = NULL;

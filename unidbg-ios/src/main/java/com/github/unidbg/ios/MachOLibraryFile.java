@@ -10,9 +10,9 @@ import java.nio.ByteBuffer;
 
 public class MachOLibraryFile implements LibraryFile {
 
-    private final File file;
+    protected final File file;
 
-    MachOLibraryFile(File file) {
+    protected MachOLibraryFile(File file) {
         this.file = file;
     }
 

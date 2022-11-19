@@ -76,4 +76,6 @@ public abstract class BaseLoader implements Loader {
         this.forceCallInit = forceCallInit;
     }
 
+    public static final String APP_DIR = "/var/containers/Bundle/Application/";
+
 }

@@ -361,7 +361,11 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
         if (checkBootstrap && !isExecutable && executableModule == null) {
             URL url = getClass().getResource(objcRuntime ? "/ios/bootstrap_objc" : "/ios/bootstrap");
-            loadInternal(new URLibraryFile(url, "unidbg_bootstrap", null), false, false);
+            String path = "unidbg_bootstrap";
+            if (libraryFile instanceof DarwinLibraryFile) {
+                path = ((DarwinLibraryFile) libraryFile).resolveBootstrapPath();
+            }
+            loadInternal(new URLibraryFile(url, path, null), false, false);
         }
 
         long start = System.currentTimeMillis();
