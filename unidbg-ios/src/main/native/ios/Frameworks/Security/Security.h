@@ -1,5 +1,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 #import "../frameworks.h"
+#import "../cf.h"
 
 #define errSecSuccess                                0;       /* No error. */
 #define errSecUnimplemented                          -4;      /* Function or operation not implemented. */

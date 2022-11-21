@@ -1,7 +1,7 @@
 #import "Security.h"
 #import <CoreFoundation/CoreFoundation.h>
 #import <stdio.h>
-#include <pthread.h>
+#import <pthread.h>
 
 static CFStringRef path = CFSTR("Documents/__ignore.unidbg_keychain.plist");
 static CFMutableDictionaryRef plist = NULL;
