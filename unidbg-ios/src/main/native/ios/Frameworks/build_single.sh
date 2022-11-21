@@ -25,10 +25,10 @@ function build_CoreGraphics() {
   mv "$1"/"$1" ../../../resources/ios/7.1/System/Library/Frameworks/"$1".framework/
 }
 function build_UIKit() {
-  xcrun -sdk iphoneos clang -o "$1"/"$1" "$1"/"$1".m -shared -lobjc -m32 -arch armv7 -miphoneos-version-min=7.1 -framework "$2" \
+  xcrun -sdk iphoneos clang -o "$1"/"$1" "$1"/"$1".m UIKit/CFNetwork.m -shared -lobjc -m32 -arch armv7 -miphoneos-version-min=7.1 -framework "$2" \
   -framework CoreGraphics -framework AdSupport -framework CoreTelephony && \
   mv "$1"/"$1" "$1"/"$1"32 && \
-  xcrun -sdk iphoneos clang -o "$1"/"$1" "$1"/"$1".m -shared -lobjc -m64 -arch arm64 -miphoneos-version-min=7.1 -framework "$2" \
+  xcrun -sdk iphoneos clang -o "$1"/"$1" "$1"/"$1".m UIKit/CFNetwork.m -shared -lobjc -m64 -arch arm64 -miphoneos-version-min=7.1 -framework "$2" \
   -framework CoreGraphics -framework AdSupport -framework CoreTelephony && \
   mv "$1"/"$1" "$1"/"$1"64 && \
   lipo -create "$1"/"$1"32 "$1"/"$1"64 -output "$1"/"$1" && \
@@ -38,3 +38,4 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
+build_framework CFNetwork "CoreFoundation"

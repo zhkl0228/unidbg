@@ -331,13 +331,6 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 - (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate;
 @end
 
-@interface NSURLSession (CFNetwork)
-+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration;
-+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue;
-- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url;
-- (void)finishTasksAndInvalidate;
-@end
-
 @interface UIScreen : NSObject
 @property(nonatomic, readonly, getter=isCaptured) BOOL captured;
 + (UIScreen *)mainScreen;

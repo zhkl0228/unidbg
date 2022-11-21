@@ -129,7 +129,7 @@ void CFURLRequestSetHTTPRequestMethod(
   if(is_debug()) {
     char buf[512];
     print_lr(buf, lr);
-    fprintf(stderr, "CFURLRequestSetHTTPRequestMethod request=%p, LR=%s\n", mutableHTTPRequest, buf);
+    fprintf(stderr, "CFURLRequestSetHTTPRequestMethod request=%p, method=%s, LR=%s\n", mutableHTTPRequest, CFStringGetCStringPtr(httpMethod, kCFStringEncodingUTF8), buf);
   }
   mutableHTTPRequest->httpMethod = CFRetain(httpMethod);
 }
@@ -153,6 +153,14 @@ void CFURLRequestSetCachePolicy(
 void CFURLRequestSetHTTPRequestBody(
   CFMutableURLRequestRef   mutableHTTPRequest,
   CFDataRef				httpBody) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  if(is_debug()) {
+    char buf[512];
+    print_lr(buf, lr);
+    char *memory = cfdata_hex(httpBody);
+    fprintf(stderr, "CFURLRequestSetHTTPRequestBody request=%p, body=%s, LR=%s\n", mutableHTTPRequest, memory, buf);
+    if(memory) { free(memory); }
+  }
   mutableHTTPRequest->httpBody = CFRetain(httpBody);
 }
 

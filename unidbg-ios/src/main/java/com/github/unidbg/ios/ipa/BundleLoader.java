@@ -11,7 +11,7 @@ import com.github.unidbg.ios.DarwinARM64Emulator;
 import com.github.unidbg.ios.DarwinResolver;
 import com.github.unidbg.ios.MachOLoader;
 import com.github.unidbg.ios.MachOModule;
-import com.github.unidbg.memory.Memory;
+import com.github.unidbg.spi.SyscallHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,6 +29,8 @@ import java.util.UUID;
 public class BundleLoader extends BaseLoader {
 
     private static final Log log = LogFactory.getLog(BundleLoader.class);
+
+    public static final String APP_NAME = "UniDbg";
 
     private final File frameworkDir;
     protected final File rootDir;
@@ -49,7 +51,7 @@ public class BundleLoader extends BaseLoader {
     private String generateExecutableBundlePath(String bundleIdentifier, String bundleVersion) {
         String seed = generateRandomSeed(bundleIdentifier, bundleVersion);
         UUID uuid = UUID.nameUUIDFromBytes((seed + "_Application").getBytes(StandardCharsets.UTF_8));
-        return APP_DIR + uuid.toString().toUpperCase() + "/" + BundleLibraryFile.APP_NAME + ".app";
+        return APP_DIR + uuid.toString().toUpperCase() + "/" + APP_NAME + ".app";
     }
 
     public LoadedBundle load(String name, EmulatorConfigurator configurator) {
@@ -71,8 +73,9 @@ public class BundleLoader extends BaseLoader {
                  SAXException e) {
             throw new IllegalStateException("load " + name + " failed", e);
         }
-        String executableBundlePath = generateExecutableBundlePath(bundleIdentifier, bundleVersion);
 
+        String executableBundleDir = generateExecutableBundlePath(bundleIdentifier, bundleVersion);
+        String executableBundlePath = executableBundleDir + "/" + APP_NAME;
 //        String bundleAppDir = new File(executableBundlePath).getParentFile().getParentFile().getPath();
         File rootDir = new File(this.rootDir, bundleVersion);
         try {
@@ -90,7 +93,7 @@ public class BundleLoader extends BaseLoader {
                 resolver.setOverride();
             }
             memory.setLibraryResolver(resolver);
-            Module module = load(emulator, configurator, new File(bundleDir, executable), executableBundlePath);
+            Module module = load(emulator, configurator, new File(bundleDir, executable), executableBundleDir);
             return new LoadedBundle(emulator, module, bundleIdentifier, bundleVersion);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -99,13 +102,17 @@ public class BundleLoader extends BaseLoader {
 
     protected void config(final Emulator<DarwinFileIO> emulator, String executableBundlePath, File rootDir) throws IOException {
         File executable = new File(executableBundlePath);
-//        SyscallHandler<DarwinFileIO> syscallHandler = emulator.getSyscallHandler();
+        SyscallHandler<DarwinFileIO> syscallHandler = emulator.getSyscallHandler();
         File appDir = executable.getParentFile();
-//        syscallHandler.addIOResolver(new IpaResolver(appDir.getPath(), ipa));
+        syscallHandler.addIOResolver(new BundleResolver(appDir.getPath(), getBundleIdentifier()));
         FileUtils.forceMkdir(new File(rootDir, appDir.getParentFile().getPath()));
         emulator.getMemory().addHookListener(new SymbolResolver(emulator));
 
 //        ((DarwinSyscallHandler) syscallHandler).setExecutableBundlePath(executableBundlePath);
+    }
+
+    protected String getBundleIdentifier() {
+        return getClass().getPackage().getName();
     }
 
     protected String[] getEnvs(File rootDir, String seed) throws IOException {
@@ -115,14 +122,14 @@ public class BundleLoader extends BaseLoader {
         UUID uuid = UUID.nameUUIDFromBytes((seed + "_Documents").getBytes(StandardCharsets.UTF_8));
         String homeDir = "/var/mobile/Containers/Data/Application/" + uuid.toString().toUpperCase();
         list.add("CFFIXED_USER_HOME=" + homeDir);
-        FileUtils.forceMkdir(new File(rootDir, homeDir));
+        FileUtils.forceMkdir(new File(rootDir, homeDir + "/Documents"));
         return list.toArray(new String[0]);
     }
 
-    private Module load(Emulator<DarwinFileIO> emulator, EmulatorConfigurator configurator, File executable, String executableBundlePath) throws IOException {
+    private Module load(Emulator<DarwinFileIO> emulator, EmulatorConfigurator configurator, File executable, String executableBundleDir) throws IOException {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setLoader(this);
-        Module module = loader.load(new BundleLibraryFile(executable, executableBundlePath), forceCallInit);
+        Module module = loader.load(new BundleLibraryFile(executable, executableBundleDir), forceCallInit);
         if (configurator != null) {
             configurator.onExecutableLoaded(emulator, (MachOModule) module);
         }

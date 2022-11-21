@@ -2,6 +2,7 @@
 #import <dlfcn.h>
 #import <stdio.h>
 #import <sys/sysctl.h>
+#import <CoreFoundation/CoreFoundation.h>
 
 static void print_lr(char *buf, uintptr_t lr) {
   Dl_info info;
@@ -24,6 +25,26 @@ static void print_lr(char *buf, uintptr_t lr) {
     sprintf(buf, "[%s]%p", name, (void *) offset);
   } else {
     sprintf(buf, "%p", (void *) lr);
+  }
+}
+
+static void hex(char *buf, void *ptr, size_t size) {
+  const char *data = (const char *) ptr;
+  int idx = 0;
+  for(int i = 0; i < size; i++) {
+    idx += sprintf(&buf[idx], "%02x", data[i] & 0xff);
+  }
+}
+
+static char *cfdata_hex(CFDataRef data) {
+  if(data) {
+    const UInt8 *ptr = CFDataGetBytePtr(data);
+    size_t size = (size_t) CFDataGetLength(data);
+    char *buf = malloc(size * 2 + 1);
+    hex(buf, (void *)ptr, size);
+    return buf;
+  } else {
+    return NULL;
   }
 }
 

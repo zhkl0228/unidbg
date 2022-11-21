@@ -7,23 +7,21 @@ import java.io.File;
 
 public class BundleLibraryFile extends MachOLibraryFile implements DarwinLibraryFile {
 
-    public static final String APP_NAME = "UniDbg";
+    private final String executableBundleDir;
 
-    private final String executableBundlePath;
-
-    BundleLibraryFile(File file, String executableBundlePath) {
+    BundleLibraryFile(File file, String executableBundleDir) {
         super(file);
-        this.executableBundlePath = executableBundlePath;
+        this.executableBundleDir = executableBundleDir;
     }
 
     @Override
     public String resolveBootstrapPath() {
-        return executableBundlePath + "/" + APP_NAME;
+        return executableBundleDir + "/" + BundleLoader.APP_NAME;
     }
 
     @Override
     public String getPath() {
-        return this.executableBundlePath + "/Frameworks/" + file.getName() + ".framework/" + file.getName();
+        return this.executableBundleDir + "/Frameworks/" + file.getName() + ".framework/" + file.getName();
     }
 
 }

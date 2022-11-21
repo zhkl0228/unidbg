@@ -32,7 +32,19 @@ objc_msg_function old_objc_msgSend = NULL;
 objc_msgSend_callback callback = NULL;
 
 uintptr_t pre_objc_msgSend(id self, SEL _cmd, ...) {
-  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  uintptr_t lr = 1;
+  #ifdef __aarch64__
+  __asm__(
+    "mov %[LR], x12\n"
+    :[LR]"=r"(lr)
+  );
+  lr -= 4;
+  #else
+  __asm__(
+    "mov %[LR], r12\n"
+    :[LR]"=r"(lr)
+  );
+  #endif
 
   Class class = object_getClass(self);
   bool systemClass = isSystemClass(class);

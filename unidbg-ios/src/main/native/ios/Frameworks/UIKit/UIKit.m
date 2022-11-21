@@ -436,20 +436,6 @@ static UIApplication *sharedApplication;
 - (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate {
 }
 @end
-
-@implementation NSURLSession (CFNetwork)
-+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration {
-  return [NSURLSession new];
-}
-+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(id)delegate delegateQueue:(NSOperationQueue *)queue {
-  return [NSURLSession new];
-}
-- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url {
-  return nil;
-}
-- (void)finishTasksAndInvalidate {
-}
-@end
 #pragma clang diagnostic pop
 
 @implementation UINavigationItem

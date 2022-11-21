@@ -52,7 +52,11 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
         this(oflags, path, dir, createEntries(dir));
     }
 
-    public DirectoryFileIO(int oflags, String path, File dir, DirectoryEntry...entries) {
+    public DirectoryFileIO(int oflags, String path, DirectoryEntry... entries) {
+        this(oflags, path, null, entries);
+    }
+
+    public DirectoryFileIO(int oflags, String path, File dir, DirectoryEntry... entries) {
         super(oflags);
 
         this.path = path;
@@ -138,36 +142,57 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
 
     @Override
     public int listxattr(Pointer namebuf, int size, int options) {
+        if (dir == null) {
+            throw new UnsupportedOperationException("path=" + path + ", options=0x" + Integer.toHexString(options));
+        }
         return listxattr(dir, namebuf, size);
     }
 
     @Override
     public int removexattr(String name) {
+        if (dir == null) {
+            throw new UnsupportedOperationException("path=" + path + ", name=" + name);
+        }
         return removexattr(dir, name);
     }
 
     @Override
     public int setxattr(String name, byte[] data) {
+        if (dir == null) {
+            throw new UnsupportedOperationException("path=" + path + ", name=" + name);
+        }
         return setxattr(dir, name, data);
     }
 
     @Override
     public int getxattr(Emulator<?> emulator, String name, Pointer value, int size) {
+        if (dir == null) {
+            throw new UnsupportedOperationException("path=" + path + ", name=" + name);
+        }
         return getxattr(emulator, dir, name, value, size);
     }
 
     @Override
     public int chmod(int mode) {
+        if (dir == null) {
+            throw new UnsupportedOperationException("path=" + path + ", mode=0x" + Integer.toHexString(mode));
+        }
         return chmod(dir, mode);
     }
 
     @Override
     public int chown(int uid, int gid) {
+        if (dir == null) {
+            throw new UnsupportedOperationException("path=" + path + ", uid=" + uid + ", gid=" + gid);
+        }
         return chown(dir, uid, gid);
     }
 
     @Override
     public int chflags(int flags) {
+        if (dir == null) {
+            throw new UnsupportedOperationException("path=" + path + ", flags=0x" + Integer.toHexString(flags));
+        }
         return chflags(dir, flags);
     }
 }
