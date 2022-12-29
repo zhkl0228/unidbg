@@ -2,23 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <fmt/format.h>
 #include "arm_dynarmic_cp15.h"
 
 using Callback = Dynarmic::A32::Coprocessor::Callback;
 using CallbackOrAccessOneWord = Dynarmic::A32::Coprocessor::CallbackOrAccessOneWord;
 using CallbackOrAccessTwoWords = Dynarmic::A32::Coprocessor::CallbackOrAccessTwoWords;
-
-template <>
-struct fmt::formatter<Dynarmic::A32::CoprocReg> {
-    constexpr auto parse(format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    template <typename FormatContext>
-    auto format(const Dynarmic::A32::CoprocReg& reg, FormatContext& ctx) {
-        return format_to(ctx.out(), "cp{}", static_cast<size_t>(reg));
-    }
-};
 
 static u32 dummy_value;
 
@@ -61,7 +49,7 @@ CallbackOrAccessOneWord DynarmicCP15::CompileSendOneWord(bool two, unsigned opc1
 
 CallbackOrAccessTwoWords DynarmicCP15::CompileSendTwoWords(bool two, unsigned opc, CoprocReg CRm) {
     printf("CompileSendTwoWords two=%d, opc=%u, CRm=%d\n", two, opc, CRm);
-    return {};
+    return std::monostate{};
 }
 
 CallbackOrAccessOneWord DynarmicCP15::CompileGetOneWord(bool two, unsigned opc1, CoprocReg CRn,
@@ -84,8 +72,8 @@ CallbackOrAccessTwoWords DynarmicCP15::CompileGetTwoWords(bool two, unsigned opc
     printf("CompileGetTwoWords two=%d, opc=%u, CRm=%d\n", two, opc, CRm);
     if (!two && opc == 0 && CRm == CoprocReg::C14) {
         // CNTPCT
-        const auto callback = static_cast<u64 (*)(Dynarmic::A32::Jit*, void*, u32, u32)>(
-            [](Dynarmic::A32::Jit*, void* arg, u32, u32) -> u64 {
+        const auto callback = static_cast<u64 (*)(void*, u32, u32)>(
+            [](void* arg, u32, u32) -> u64 {
                 return 0x10000000000;
             });
         return Dynarmic::A32::Coprocessor::Callback{callback, nullptr};

@@ -223,14 +223,20 @@ public:
         env->CallBooleanMethod(callback, handleInterpreterFallback, pc, num_instructions);
         cpu->HaltExecution();
         cachedJVM->DetachCurrentThread();
-        fprintf(stderr, "Unicorn fallback @ 0x%x for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
+        std::optional<std::uint32_t> code = MemoryReadCode(pc);
+        if(code) {
+            fprintf(stderr, "Unicorn fallback @ 0x%x for %lu instructions (instr = 0x%08X)", pc, num_instructions, *code);
+        }
         abort();
     }
 
     void ExceptionRaised(u32 pc, Dynarmic::A32::Exception exception) override {
         bool isBkpt = exception == Dynarmic::A32::Exception::Breakpoint;
         if(!isBkpt) {
-            printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+            std::optional<std::uint32_t> code = MemoryReadCode(pc);
+            if(code) {
+                printf("ExceptionRaised[%s->%s:%d]: pc=0x%x, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, *code);
+            }
         }
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
@@ -284,7 +290,7 @@ public:
         return false;
     }
 
-    u32 MemoryReadCode(u64 vaddr) override {
+    std::optional<std::uint32_t> MemoryReadCode(u64 vaddr) override {
         u32 code = MemoryRead32(vaddr);
 //        printf("MemoryReadCode[%s->%s:%d]: vaddr=0x%llx, code=0x%08x\n", __FILE__, __func__, __LINE__, vaddr, code);
         return code;
@@ -437,7 +443,10 @@ public:
         env->CallBooleanMethod(callback, handleInterpreterFallback, pc, num_instructions);
         cpu->HaltExecution();
         cachedJVM->DetachCurrentThread();
-        fprintf(stderr, "Unicorn fallback @ 0x%llx for %lu instructions (instr = 0x%08X)", pc, num_instructions, MemoryReadCode(pc));
+        std::optional<std::uint32_t> code = MemoryReadCode(pc);
+        if(code) {
+            fprintf(stderr, "Unicorn fallback @ 0x%llx for %lu instructions (instr = 0x%08X)", pc, num_instructions, *code);
+        }
         abort();
     }
 
@@ -457,7 +466,10 @@ public:
         }
         cpu->SetPC(pc);
         if(!isBrk) {
-            printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, MemoryReadCode(pc));
+            std::optional<std::uint32_t> code = MemoryReadCode(pc);
+            if(code) {
+                printf("ExceptionRaised[%s->%s:%d]: pc=0x%llx, exception=%d, code=0x%08X\n", __FILE__, __func__, __LINE__, pc, exception, *code);
+            }
         }
         JNIEnv *env;
         cachedJVM->AttachCurrentThread((void **)&env, NULL);
