@@ -425,6 +425,15 @@ static UIApplication *sharedApplication;
 }
 @end
 
+@implementation NSError (Foundation)
++ (id (^)(NSError *, NSErrorUserInfoKey))userInfoValueProviderForDomain:(NSErrorDomain)errorDomain {
+  return nil;
+}
++ (void)setUserInfoValueProviderForDomain:(NSErrorDomain)errorDomain
+                                 provider:(id (^)(NSError *err, NSErrorUserInfoKey userInfoKey))provider {
+}
+@end
+
 @implementation NSOperationQueue (Foundation)
 - (void) setQualityOfService: (NSQualityOfService) qualityOfService {
 }

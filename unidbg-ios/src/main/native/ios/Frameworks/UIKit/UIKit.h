@@ -322,6 +322,12 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 - (void) callWithInvocation: (NSTimerInvocation *) invocation;
 @end
 
+@interface NSError (Foundation)
++ (id (^)(NSError *, NSErrorUserInfoKey))userInfoValueProviderForDomain:(NSErrorDomain)errorDomain;
++ (void)setUserInfoValueProviderForDomain:(NSErrorDomain)errorDomain
+                                 provider:(id (^)(NSError *err, NSErrorUserInfoKey userInfoKey))provider;
+@end
+
 @interface NSOperationQueue (Foundation)
 - (void) setQualityOfService: (NSQualityOfService) qualityOfService;
 - (void) setUnderlyingQueue: (dispatch_queue_t) queue;

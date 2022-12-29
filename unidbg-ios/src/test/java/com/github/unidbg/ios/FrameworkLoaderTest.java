@@ -70,8 +70,8 @@ public class FrameworkLoaderTest implements EmulatorConfigurator, DispatchAsyncC
                 NSString sdkId = cApproov.callObjc("getSDKID").toNSString();
                 NSString deviceID = cApproov.callObjc("getDeviceID").toNSString();
                 System.out.println("sdkId=" + sdkId.getString() + ", deviceID=" + deviceID.getString());
-                hookLoader.hookObjcMsgSend(FrameworkLoaderTest.this);
 
+                hookLoader.hookObjcMsgSend(FrameworkLoaderTest.this);
                 Logger.getLogger(UniThreadDispatcher.class).setLevel(Level.TRACE);
                 Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.DEBUG);
                 ObjcObject result = cApproov.callObjc("fetchApproovTokenAndWait:", objc.newString("api.papara.com"));

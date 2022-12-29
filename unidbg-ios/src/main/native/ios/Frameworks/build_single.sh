@@ -38,4 +38,4 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework CFNetwork "CoreFoundation"
+build_framework Speech "Foundation"
