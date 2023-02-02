@@ -40,6 +40,7 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer __dispatch_source_type_memorypressure;
     private UnidbgPointer dispatch_source_type_memorypressure_init;
     private UnidbgPointer dispatch_queue_attr_make_with_qos_class;
+    private UnidbgPointer dispatch_queue_attr_make_with_autorelease_frequency;
     private UnidbgPointer dispatch_queue_attr_make_initially_inactive;
     private UnidbgPointer ___chkstk_darwin;
     private UnidbgPointer _clock_gettime;
@@ -309,6 +310,19 @@ public class SymbolResolver implements HookListener {
                 });
             }
             return dispatch_queue_attr_make_with_qos_class.peer;
+        }
+        if ("_dispatch_queue_attr_make_with_autorelease_frequency".equals(symbolName) && emulator.is64Bit()) {
+            if (dispatch_queue_attr_make_with_autorelease_frequency == null) {
+                dispatch_queue_attr_make_with_autorelease_frequency = svcMemory.registerSvc(new Arm64Svc("dispatch_queue_attr_make_with_autorelease_frequency") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        UnidbgPointer attr = context.getPointerArg(0);
+                        return attr == null ? 0 : attr.peer;
+                    }
+                });
+            }
+            return dispatch_queue_attr_make_with_autorelease_frequency.peer;
         }
         if ("_dispatch_queue_attr_make_initially_inactive".equals(symbolName) && emulator.is64Bit()) {
             if (dispatch_queue_attr_make_initially_inactive == null) {

@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <optional>
-#include <catch2/catch.hpp>
 
 #ifdef DYNARMIC_MASTER
 #include <dynarmic/interface/A32/a32.h>
