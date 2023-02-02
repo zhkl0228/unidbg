@@ -5,6 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
+import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
@@ -24,6 +25,7 @@ class ObjcImpl extends ObjC {
     private final Symbol _class_getMethodImplementation;
     private final Symbol _class_respondsToSelector;
     private final Symbol _object_setInstanceVariable;
+    private final Symbol _object_getInstanceVariable;
 
     public ObjcImpl(Emulator<?> emulator) {
         this.emulator = emulator;
@@ -71,6 +73,10 @@ class ObjcImpl extends ObjC {
         if (_object_setInstanceVariable == null) {
             throw new IllegalStateException("_object_setInstanceVariable is null");
         }
+        _object_getInstanceVariable = module.findSymbolByName("_object_getInstanceVariable", false);
+        if (_object_getInstanceVariable == null) {
+            throw new IllegalStateException("_object_getInstanceVariable is null");
+        }
     }
 
     @Override
@@ -91,6 +97,21 @@ class ObjcImpl extends ObjC {
             value = buffer.getLong();
         }
         _object_setInstanceVariable.call(emulator, obj, name, value);
+    }
+
+    @Override
+    public UnidbgPointer getInstanceVariable(Emulator<?> emulator, ObjcObject obj, String name) {
+        MemoryBlock block = null;
+        try {
+            block = emulator.getMemory().malloc(16, true);
+            UnidbgPointer pointer = block.getPointer();
+            _object_getInstanceVariable.call(emulator, obj, name, pointer);
+            return pointer.getPointer(0);
+        } finally {
+            if (block != null) {
+                block.free();
+            }
+        }
     }
 
     @Override

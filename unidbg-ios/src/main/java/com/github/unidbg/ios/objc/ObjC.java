@@ -31,6 +31,8 @@ public abstract class ObjC {
 
     public abstract void setInstanceVariable(Emulator<?> emulator, ObjcObject obj, String name, Object value);
 
+    public abstract UnidbgPointer getInstanceVariable(Emulator<?> emulator, ObjcObject obj, String name);
+
     public abstract boolean respondsToSelector(ObjcClass objcClass, String selectorName);
 
     public abstract NSString newString(String str);
