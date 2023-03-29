@@ -185,6 +185,14 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_emu_1s
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    ctl_remove_cache
+ * Signature: (JJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_ctl_1remove_1cache
+  (JNIEnv *, jclass, jlong, jlong, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    context_alloc
  * Signature: (J)J
  */

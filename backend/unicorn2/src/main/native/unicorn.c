@@ -552,6 +552,22 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_reg_1w
    (*env)->ReleaseByteArrayElements(env, value, array, JNI_ABORT);
 }
 
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    ctl_remove_cache
+ * Signature: (JJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_ctl_1remove_1cache
+  (JNIEnv *env, jclass cls, jlong handle, jlong begin, jlong end) {
+  t_unicorn unicorn = (t_unicorn) handle;
+  uc_engine *eng = unicorn->uc;
+
+   uc_err err = uc_ctl_remove_cache(eng, (uint64_t)begin, (uint64_t)end);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}
+
 static void cb_debugger(uc_engine *eng, uint64_t address, uint32_t size, void *user_data) {
     struct new_hook *nh = (struct new_hook *) user_data;
     JNIEnv *env;

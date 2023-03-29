@@ -14,7 +14,7 @@ import unicorn.UnicornException;
 
 import java.util.Map;
 
-class Unicorn2Backend extends AbstractBackend implements Backend {
+public class Unicorn2Backend extends AbstractBackend implements Backend {
 
     private final Emulator<?> emulator;
     private final boolean is64Bit;
@@ -436,6 +436,14 @@ class Unicorn2Backend extends AbstractBackend implements Backend {
             throw new IllegalArgumentException();
         } else {
             unHook = unicorn.registerEmuCountHook(emu_count);
+        }
+    }
+
+    public void ctl_remove_cache(long begin, long end){
+        try {
+            unicorn.ctl_remove_cache(begin, end);
+        } catch (UnicornException e) {
+            throw new BackendException(e);
         }
     }
 }

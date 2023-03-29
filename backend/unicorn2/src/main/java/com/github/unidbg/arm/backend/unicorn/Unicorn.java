@@ -326,6 +326,15 @@ public class Unicorn {
     private static native void emu_stop(long handle) throws UnicornException;
 
     /**
+     * remove cache
+     */
+    public void ctl_remove_cache(long begin, long end) throws UnicornException {
+        ctl_remove_cache(nativeHandle, begin, end);
+    }
+
+    private static native void ctl_remove_cache(long handle, long begin, long end) throws UnicornException;
+
+    /**
      * Allocate a region that can be used with uc_context_{save,restore} to perform
      * quick save/rollback of the CPU context, which includes registers and some
      * internal metadata. Contexts may not be shared across engine instances with
