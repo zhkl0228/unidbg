@@ -297,6 +297,13 @@ public class DalvikVM extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteLocalRef object=" + object);
                 }
+                ObjRef ref = object == null ? null : localObjectMap.remove(object.toIntPeer());
+                if (ref != null) {
+                    ref.obj.onDeleteRef();
+                }
+                if (verbose) {
+                    System.out.printf("JNIEnv->DeleteLocalRef(%s) was called from %s%n", ref, context.getLRPointer());
+                }
                 return 0;
             }
         });
