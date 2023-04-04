@@ -142,7 +142,7 @@ public class ElfSegment {
 				protected PtLoadData computeValue() throws ElfException {
 					parser.seek(ElfSegment.this.offset);
 					ByteBuffer buffer = parser.readBuffer((int) file_size);
-					return new PtLoadData(buffer);
+					return new PtLoadData(buffer, file_size);
 				}
 			};
 			break;

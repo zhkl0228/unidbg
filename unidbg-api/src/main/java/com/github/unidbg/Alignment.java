@@ -10,4 +10,7 @@ public class Alignment {
         this.size = size;
     }
 
+    public long begin;
+    public long dataSize;
+
 }
