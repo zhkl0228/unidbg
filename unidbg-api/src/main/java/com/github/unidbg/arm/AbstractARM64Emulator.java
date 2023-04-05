@@ -88,6 +88,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
     }
 
     private Disassembler arm64DisassemblerCache;
+    private final Map<Long, Instruction[]> disassembleCache = new HashMap<>();
 
     private synchronized Disassembler createArm64Disassembler() {
         if (arm64DisassemblerCache == null) {
@@ -151,6 +152,7 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         syscallHandler.destroy();
 
         IOUtils.close(arm64DisassemblerCache);
+        disassembleCache.clear();
     }
 
     @Override
@@ -185,7 +187,28 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
 
     @Override
     public Instruction[] printAssemble(PrintStream out, long address, int size, int maxLengthLibraryName, InstructionVisitor visitor) {
-        Instruction[] insns = disassemble(address, size, 0);
+        Instruction[] insns = disassembleCache.get(address);
+        byte[] currentCode = backend.mem_read(address, size);
+        boolean needUpdateCache = false;
+        if (insns != null) {
+            byte[] cachedCode = new byte[size];
+            int offset = 0;
+            for (Instruction insn : insns) {
+                byte[] insnBytes = insn.getBytes();
+                System.arraycopy(insnBytes, 0, cachedCode, offset, insnBytes.length);
+                offset += insnBytes.length;
+            }
+
+            if (!Arrays.equals(currentCode, cachedCode)) {
+                needUpdateCache = true;
+            }
+        } else {
+            needUpdateCache = true;
+        }
+        if (needUpdateCache) {
+            insns = disassemble(address, currentCode, false, 0);
+            disassembleCache.put(address, insns);
+        }
         printAssemble(out, insns, address, maxLengthLibraryName, visitor);
         return insns;
     }
