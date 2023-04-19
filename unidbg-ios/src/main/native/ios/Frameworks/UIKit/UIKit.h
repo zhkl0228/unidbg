@@ -322,6 +322,10 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 - (void) callWithInvocation: (NSTimerInvocation *) invocation;
 @end
 
+@interface NSIndexPath (Foundation)
++ (id)indexPathForRow:(NSInteger)row inSection:(NSInteger)section;
+@end
+
 @interface NSError (Foundation)
 + (id (^)(NSError *, NSErrorUserInfoKey))userInfoValueProviderForDomain:(NSErrorDomain)errorDomain;
 + (void)setUserInfoValueProviderForDomain:(NSErrorDomain)errorDomain

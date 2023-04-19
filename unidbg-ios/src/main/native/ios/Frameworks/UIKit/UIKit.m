@@ -425,6 +425,12 @@ static UIApplication *sharedApplication;
 }
 @end
 
+@implementation NSIndexPath (Foundation)
++ (id)indexPathForRow:(NSInteger)row inSection:(NSInteger)section {
+  return nil;
+}
+@end
+
 @implementation NSError (Foundation)
 + (id (^)(NSError *, NSErrorUserInfoKey))userInfoValueProviderForDomain:(NSErrorDomain)errorDomain {
   return nil;
