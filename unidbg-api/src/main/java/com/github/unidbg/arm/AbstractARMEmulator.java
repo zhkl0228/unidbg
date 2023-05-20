@@ -214,7 +214,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
             needUpdateCache = true;
         }
         if (needUpdateCache) {
-            insns = disassemble(address, currentCode, false, 0);
+            insns = disassemble(address, size,  0);
             disassembleCache.put(address, insns);
         }
         printAssemble(out, insns, address, ARM.isThumb(backend), maxLengthLibraryName, visitor);
