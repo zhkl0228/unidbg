@@ -1169,7 +1169,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         RegisterContext context = emulator.getContext();
         int clk_id = context.getIntArg(0) & 0x7;
         Pointer tp = context.getPointerArg(1);
-        long offset = clk_id == CLOCK_REALTIME ? System.currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;
+        long offset = clk_id == CLOCK_REALTIME ? currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;
         long tv_sec = offset / 1000000000L;
         long tv_nsec = offset % 1000000000L;
         if (log.isDebugEnabled()) {

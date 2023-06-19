@@ -836,7 +836,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 KeystoneEncoded encoded = keystone.assemble(assembly);
                 byte[] code = encoded.getMachineCode();
                 address &= (~1);
-                if (code.length != nextAddress - address) {
+                if (code.length != (nextAddress & ~1) - address) {
                     System.err.println("patch code failed: nextAddress=0x" + Long.toHexString(nextAddress) + ", codeSize=" + code.length);
                     return false;
                 }
