@@ -21,4 +21,5 @@ RUN mkdir -p /git
 # Then you can copy so file to outside of container
 # docker cp <containerId>:/git/unidbg/backend/dynarmic/src/main/resources/natives/linux_64 ~/Downloads/
 
+WORKDIR /git/unidbg/backend/dynarmic/src/main/native/
 ENTRYPOINT [ "/git/unidbg/backend/dynarmic/src/main/native/linux_build.sh" ]
