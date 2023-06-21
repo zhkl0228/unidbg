@@ -32,7 +32,8 @@ class AndroidARM64Unwinder extends SimpleARM64Unwinder {
             MemoizedObject<GnuEhFrameHeader> ehFrameHeader = module == null ? null : module.ehFrameHeader;
             if (ehFrameHeader != null) {
                 long fun = this.context.ip - module.base;
-                Frame ret = ehFrameHeader.getValue().dwarf_step(emulator, this, module, fun, context);
+                GnuEhFrameHeader frameHeader = ehFrameHeader.getValue();
+                Frame ret = frameHeader == null ? null : frameHeader.dwarf_step(emulator, this, module, fun, context);
                 if (ret != null) {
                     return ret;
                 }
