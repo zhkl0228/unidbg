@@ -131,7 +131,8 @@ public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, Androi
 
     @Override
     public int fstat(Emulator<?> emulator, com.github.unidbg.file.linux.StatStructure stat) {
-//        throw new UnsupportedOperationException(path);
+        stat.st_blksize = emulator.getPageAlign();
+        stat.pack();
         return 0;
     }
 
