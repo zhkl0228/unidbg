@@ -39,6 +39,7 @@ import net.fornwall.jelf.ElfSegment;
 import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.GnuEhFrameHeader;
 import net.fornwall.jelf.MemoizedObject;
+import net.fornwall.jelf.PtLoadData;
 import net.fornwall.jelf.SymbolLocator;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
@@ -379,7 +380,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
                     Alignment check = ARM.align(begin, ph.mem_size, Math.max(emulator.getPageAlign(), ph.alignment));
                     final int regionSize = regions.size();
-                    MemRegion last = regionSize <= 0 ? null : regions.get(regionSize - 1);
+                    MemRegion last = regionSize == 0 ? null : regions.get(regionSize - 1);
                     MemRegion overall = null;
                     if (last != null && check.address >= last.begin && check.address < last.end) {
                         overall = last;
@@ -394,10 +395,11 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                         if (ph.mem_size > overallSize) {
                             Alignment alignment = this.mem_map(begin + overallSize, ph.mem_size - overallSize, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
                             regions.add(new MemRegion(begin, alignment.address, alignment.address + alignment.size, prot, libraryFile, ph.virtual_address));
-                            if (lastAlignment != null) {
+                            if (lastAlignment != null && lastAlignment.begin + lastAlignment.dataSize > begin) {
                                 throw new UnsupportedOperationException();
                             }
                             lastAlignment = alignment;
+                            lastAlignment.begin = begin;
                         }
                     } else {
                         Alignment alignment = this.mem_map(begin, ph.mem_size, prot, libraryFile.getName(), Math.max(emulator.getPageAlign(), ph.alignment));
@@ -419,9 +421,14 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                             }
                         }
                         lastAlignment = alignment;
+                        lastAlignment.begin = begin;
                     }
 
-                    ph.getPtLoadData().writeTo(pointer(begin));
+                    PtLoadData loadData = ph.getPtLoadData();
+                    loadData.writeTo(pointer(begin));
+                    if (lastAlignment != null) {
+                        lastAlignment.dataSize = loadData.getDataSize();
+                    }
                     break;
                 case ElfSegment.PT_DYNAMIC:
                     dynamicStructure = ph.getDynamicStructure();

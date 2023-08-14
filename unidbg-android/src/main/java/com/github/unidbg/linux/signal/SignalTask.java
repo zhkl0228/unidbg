@@ -83,7 +83,7 @@ public class SignalTask extends AbstractSignalTask {
 
     @Override
     public String toThreadString() {
-        return "SignalTask sa_handler=" + action.getSaHandler() + ", stack=" + stack + ", signum=" + signum;
+        return "SignalTask sa_handler=0x" + Long.toHexString(action.getSaHandler()) + ", stack=" + stack + ", signum=" + signum;
     }
 
     private MemoryBlock infoBlock;

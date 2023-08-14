@@ -3,7 +3,6 @@ package com.github.unidbg.linux.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.linux.IOConstants;
-import com.github.unidbg.file.linux.StatStructure;
 import com.sun.jna.Pointer;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -31,10 +30,5 @@ public class RandomFileIO extends DriverFileIO {
 
     protected void randBytes(byte[] bytes) {
         ThreadLocalRandom.current().nextBytes(bytes);
-    }
-
-    @Override
-    public int fstat(Emulator<?> emulator, StatStructure stat) {
-        return 0;
     }
 }

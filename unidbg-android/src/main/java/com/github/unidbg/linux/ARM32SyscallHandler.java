@@ -950,11 +950,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 System.out.printf("bionic_clone fn=%s%n", fn);
             }
             emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid, threadId));
-            ctid.setInt(0, threadId);
-            return threadId;
         }
-        emulator.getMemory().setErrno(UnixEmulator.ENOMEM);
-        return -UnixEmulator.ENOMEM;
+        ctid.setInt(0, threadId);
+        return threadId;
     }
 
     private int flock(Backend backend) {
@@ -1820,6 +1818,9 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             String msg = "mmap2 start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=0x" + Integer.toHexString(prot) + ", flags=0x" + Integer.toHexString(flags) + ", fd=" + fd + ", offset=" + offset + ", from=" + UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_LR);
             if (warning) {
                 log.warn(msg);
+                if (log.isDebugEnabled()) {
+                    emulator.attach().debug();
+                }
             } else {
                 log.debug(msg);
             }

@@ -38,8 +38,11 @@ import java.io.File;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
@@ -89,6 +92,7 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     }
 
     private Disassembler armDisassemblerCache, thumbDisassemblerCache;
+    private final Map<Long, Instruction[]> disassembleCache = new HashMap<>();
 
     private synchronized Disassembler createThumbCapstone() {
         if (thumbDisassemblerCache == null) {
@@ -153,9 +157,10 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
     @Override
     protected void closeInternal() {
         syscallHandler.destroy();
-
+        
         IOUtils.close(thumbDisassemblerCache);
         IOUtils.close(armDisassemblerCache);
+        disassembleCache.clear();
     }
 
     @Override
@@ -190,7 +195,28 @@ public abstract class AbstractARMEmulator<T extends NewFileIO> extends AbstractE
 
     @Override
     public Instruction[] printAssemble(PrintStream out, long address, int size, int maxLengthLibraryName, InstructionVisitor visitor) {
-        Instruction[] insns = disassemble(address, size, 0);
+        Instruction[] insns = disassembleCache.get(address);
+        byte[] currentCode = backend.mem_read(address, size);
+        boolean needUpdateCache = false;
+        if (insns != null) {
+            byte[] cachedCode = new byte[size];
+            int offset = 0;
+            for (Instruction insn : insns) {
+                byte[] insnBytes = insn.getBytes();
+                System.arraycopy(insnBytes, 0, cachedCode, offset, insnBytes.length);
+                offset += insnBytes.length;
+            }
+
+            if (!Arrays.equals(currentCode, cachedCode)) {
+                needUpdateCache = true;
+            }
+        } else {
+            needUpdateCache = true;
+        }
+        if (needUpdateCache) {
+            insns = disassemble(address, size,  0);
+            disassembleCache.put(address, insns);
+        }
         printAssemble(out, insns, address, ARM.isThumb(backend), maxLengthLibraryName, visitor);
         return insns;
     }

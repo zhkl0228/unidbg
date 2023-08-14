@@ -76,9 +76,7 @@ public class GPBDescriptor {
                         if (required == optional) {
                             throw new IllegalStateException("fieldName=" + fieldName + ", fieldType=" + fieldTypeValue + ", required=" + required);
                         }
-                        if (optional == 0) {
-                            builder.append("required ");
-                        } else {
+                        if (optional != 0) {
                             builder.append("optional ");
                         }
                         break;

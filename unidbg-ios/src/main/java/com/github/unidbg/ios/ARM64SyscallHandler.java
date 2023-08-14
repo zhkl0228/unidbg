@@ -273,6 +273,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case -41: // _xpc_mach_port_guard
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_port_guard_trap(emulator));
                     return;
+                case -47:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, kern_invalid());
+                    return;
                 case -59: // swtch_pri
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, swtch_pri(emulator));
                     return;
@@ -602,6 +605,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private long kern_invalid() {
+        return 0x4; // KERN_INVALID_ARGUMENT
     }
 
     private long getrusage(Emulator<DarwinFileIO> emulator) {
@@ -1130,11 +1137,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         UnidbgPointer buf = context.getPointerArg(index + 1);
         int bufSize = context.getIntArg(index + 2);
         Pointer basep = context.getPointerArg(index + 3);
-        if (log.isDebugEnabled()) {
-            log.debug("getdirentries64 fd=" + fd + ", buf=" + buf + ", bufSize=" + bufSize + ", basep=" + basep + ", LR=" + context.getLRPointer());
-        }
 
         DarwinFileIO io = fdMap.get(fd);
+        if (log.isDebugEnabled()) {
+            log.debug("getdirentries64 fd=" + fd + ", buf=" + buf + ", bufSize=" + bufSize + ", basep=" + basep + ", io=" + io + ", LR=" + context.getLRPointer());
+        }
+
         if (io == null) {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
@@ -1282,8 +1290,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return file.fstat(emulator, new Stat64(stat));
     }
 
-    private static final int RLIMIT_NOFILE = 8;		/* number of open files */
-    private static final int RLIMIT_POSIX_FLAG = 0x1000;	/* Set bit for strict POSIX */
+    private static final int RLIMIT_NOFILE = 8;        /* number of open files */
+    private static final int RLIMIT_POSIX_FLAG = 0x1000;    /* Set bit for strict POSIX */
 
     private long rlim_cur = 128;
     private long rlim_max = 256;
@@ -2311,7 +2319,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         final MachMsgHeader header = new MachMsgHeader(msg);
         header.unpack();
         if (log.isDebugEnabled()) {
-            log.debug("mach_msg_trap msg=" + msg + ", option=0x" + Integer.toHexString(option) + ", send_size=" + send_size + ", rcv_size=" + rcv_size + ", rcv_name=" + rcv_name + ", timeout=" + timeout + ", notify=" + notify + ", header=" + header);
+            log.debug("mach_msg_trap msg=" + msg + ", option=0x" + Integer.toHexString(option) + ", send_size=" + send_size + ", rcv_size=" + rcv_size + ", rcv_name=" + rcv_name + ", timeout=" + timeout + ", notify=" + notify + ", LR=" + context.getLRPointer() + ", header=" + header);
         }
 
         final UnidbgPointer request = (UnidbgPointer) msg.share(header.size());

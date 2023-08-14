@@ -639,11 +639,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 System.out.printf("bionic_clone fn=%s%n", fn);
             }
             emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid, threadId));
-            ctid.setInt(0, threadId);
-            return threadId;
         }
-        emulator.getMemory().setErrno(UnixEmulator.ENOMEM);
-        return -UnixEmulator.ENOMEM;
+        ctid.setInt(0, threadId);
+        return threadId;
     }
 
     private int flock(Emulator<?> emulator) {
@@ -1169,7 +1167,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         RegisterContext context = emulator.getContext();
         int clk_id = context.getIntArg(0) & 0x7;
         Pointer tp = context.getPointerArg(1);
-        long offset = clk_id == CLOCK_REALTIME ? System.currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;
+        long offset = clk_id == CLOCK_REALTIME ? currentTimeMillis() * 1000000L : System.nanoTime() - nanoTime;
         long tv_sec = offset / 1000000000L;
         long tv_nsec = offset % 1000000000L;
         if (log.isDebugEnabled()) {

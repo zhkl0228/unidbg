@@ -7,9 +7,15 @@ import java.nio.ByteBuffer;
 public class PtLoadData {
 
     private final ByteBuffer buffer;
+    private final long dataSize;
 
-    PtLoadData(ByteBuffer buffer) {
+    PtLoadData(ByteBuffer buffer, long dataSize) {
         this.buffer = buffer;
+        this.dataSize = dataSize;
+    }
+
+    public long getDataSize() {
+        return dataSize;
     }
 
     public void writeTo(final Pointer ptr) {
