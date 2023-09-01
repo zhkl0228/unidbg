@@ -9,6 +9,8 @@ public class Hypervisor implements Closeable {
 
     private static final Log log = LogFactory.getLog(Hypervisor.class);
 
+    public static native void testVcpu();
+
     public static final long REG_VBAR_EL1 = 0xf0000000L;
     public static final long PSTATE$SS = 1 << 21;
 

@@ -130,6 +130,19 @@ static int cpu_loop(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) 
   return 0;
 }
 
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    testVcpu
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_testVcpu
+  (JNIEnv *, jclass) {
+  t_hypervisor_cpu cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
+  HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, NULL));
+  t_vcpus vcpu = lookupVcpu(cpu->vcpu);
+  printf("do test cpu=%llu, vcpu=%p\n", cpu->vcpu, vcpu);
+}
+
 static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor) {
   t_hypervisor_cpu cpu = (t_hypervisor_cpu) pthread_getspecific(hypervisor->cpu_key);
   if(cpu) {

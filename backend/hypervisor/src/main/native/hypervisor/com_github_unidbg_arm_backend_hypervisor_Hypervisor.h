@@ -13,6 +13,14 @@ extern "C" {
 #define com_github_unidbg_arm_backend_hypervisor_Hypervisor_PSTATE_00024SS 2097152LL
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    testVcpu
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_testVcpu
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    getPageSize
  * Signature: ()I
  */
