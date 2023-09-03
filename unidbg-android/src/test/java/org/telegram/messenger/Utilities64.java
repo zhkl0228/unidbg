@@ -1,11 +1,13 @@
 package org.telegram.messenger;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.arm.backend.KvmFactory;
+import com.github.unidbg.arm.backend.hypervisor.HypervisorBackend64;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
@@ -18,6 +20,8 @@ import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.android.AndroidModule;
 import com.github.unidbg.virtualmodule.android.JniGraphics;
 import junit.framework.TestCase;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,14 +85,11 @@ public class Utilities64 extends TestCase {
     }
 
     public static void main(String[] args) throws Exception {
+        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
+        Logger.getLogger(HypervisorBackend64.class).setLevel(Level.INFO);
         final Utilities64 test = new Utilities64();
 
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                test.pbkdf2();
-            }
-        });
+        Thread thread = new Thread(test::pbkdf2);
         thread.start();
         thread.join();
 

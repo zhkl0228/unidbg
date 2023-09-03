@@ -305,6 +305,7 @@ static UIApplication *sharedApplication;
 }
 
 - (void)registerForRemoteNotifications {
+    NSLog(@"registerForRemoteNotifications delegate=%@", delegate);
 }
 
 - (BOOL)sendAction:(SEL)action to:(id)target from:(id)sender forEvent:(UIEvent *)event {
@@ -449,6 +450,11 @@ static UIApplication *sharedApplication;
 
 @implementation NSDateFormatter (Foundation)
 - (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate {
+}
+@end
+@implementation NSKeyedArchiver (Foundation)
+- (id)initRequiringSecureCoding:(BOOL)requiresSecureCoding {
+    return nil;
 }
 @end
 #pragma clang diagnostic pop

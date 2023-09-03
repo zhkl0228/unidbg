@@ -51,13 +51,81 @@ final class FixupChains {
 
     static void handleChain(Emulator<?> emulator, MachOModule mm, List<HookListener> hookListeners, int pointer_format, Pointer chain, long raw64, List<BindTarget> bindTargets, ByteBufferKaitaiStream symbolsPool) {
         switch (pointer_format) {
+            case DYLD_CHAINED_PTR_ARM64E:
+            case DYLD_CHAINED_PTR_ARM64E_USERLAND24: {
+                long dyld_chained_ptr_arm64e_auth_bind = chain.getLong(8);
+                long dyld_chained_ptr_arm64e_rebase = chain.getLong(16);
+                long dyld_chained_ptr_arm64e_bind = chain.getLong(24);
+                long dyld_chained_ptr_arm64e_bind24 = chain.getLong(32);
+                long dyld_chained_ptr_arm64e_auth_bind24 = chain.getLong(40);
+                boolean authRebase_auth = (raw64 >>> 63) != 0;
+                long newValue = -1;
+                if (authRebase_auth) {
+                    boolean authBind_bind = (dyld_chained_ptr_arm64e_auth_bind >>> 62) != 0;
+                    if (authBind_bind) {
+                        int authBind24_ordinal = (int) (dyld_chained_ptr_arm64e_auth_bind24 & 0xffffff);
+                        int authBind_ordinal = (int) (dyld_chained_ptr_arm64e_auth_bind & 0xffff);
+                        int bindOrdinal = (pointer_format == DYLD_CHAINED_PTR_ARM64E_USERLAND24) ? authBind24_ordinal : authBind_ordinal;
+                        if ( bindOrdinal >= bindTargets.size() ) {
+                            log.warn(String.format("out of range bind ordinal %d (max %d): pointer_format=%d", bindOrdinal, bindTargets.size(), pointer_format));
+                            break;
+                        } else {
+                            // authenticated bind
+                            /*BindTarget bindTarget = bindTargets.get(bindOrdinal);
+                            newValue = (void*)(bindTargets[bindOrdinal]);
+                            if (newValue != 0)  // Don't sign missing weak imports
+                                newValue = (void*)fixupLoc->arm64e.signPointer(fixupLoc, (uintptr_t)newValue);*/
+                            log.warn("Unsupported authenticated bind: bindOrdinal=" + bindOrdinal);
+                            break;
+                        }
+                    } else {
+                        log.warn("Unsupported authenticated rebase");
+                        break;
+                    }
+                } else {
+                    boolean bind_bind = (dyld_chained_ptr_arm64e_bind >>> 62) != 0;
+                    if (bind_bind) {
+                        int bind24_ordinal = (int) (dyld_chained_ptr_arm64e_bind24 & 0xffffff);
+                        int bind_ordinal = (int) (dyld_chained_ptr_arm64e_bind & 0xffff);
+                        int bindOrdinal = (pointer_format == DYLD_CHAINED_PTR_ARM64E_USERLAND24) ? bind24_ordinal : bind_ordinal;
+                        if (bindOrdinal >= bindTargets.size()) {
+                            log.warn(String.format("out of range bind ordinal %d (max %d): pointer_format=%d", bindOrdinal, bindTargets.size(), pointer_format));
+                            break;
+                        } else {
+                            BindTarget bindTarget = bindTargets.get(bindOrdinal);
+                            long addend19 = (dyld_chained_ptr_arm64e_bind >>> 32) & 0x7ffff;
+                            if ((addend19 & 0x40000) != 0) {
+                                addend19 |= 0xfffffffffffc0000L;
+                            }
+                            newValue = bindTarget.bind(emulator, mm, hookListeners, symbolsPool) + addend19;
+                            chain.setLong(0, newValue);
+                            break;
+                        }
+                    } else {
+                        if (pointer_format == DYLD_CHAINED_PTR_ARM64E) {
+                            long target = dyld_chained_ptr_arm64e_rebase & 0xfffffffffL;
+                            long high8 = (dyld_chained_ptr_arm64e_rebase >>> 36) & 0xff;
+
+                            // plain rebase (old format target is vmaddr, new format target is offset)
+                            long unpackedTarget = (high8 << 56) | target;
+                            chain.setLong(0, unpackedTarget);
+                            break;
+                        } else {
+                            log.warn("Unsupported DYLD_CHAINED_PTR_ARM64E");
+                        }
+                    }
+                }
+                throw new UnsupportedOperationException("DYLD_CHAINED_PTR_ARM64E dyld_chained_ptr_arm64e_auth_rebase=0x" + Long.toHexString(raw64) +
+                        ", dyld_chained_ptr_arm64e_auth_bind=0x" + Long.toHexString(dyld_chained_ptr_arm64e_auth_bind) +
+                        ", newValue=0x" + Long.toHexString(newValue));
+            }
             case DYLD_CHAINED_PTR_64:
             case DYLD_CHAINED_PTR_64_OFFSET:
                 long newValue;
                 boolean bind = (raw64 >>> 63) != 0;
                 if (bind) {
                     int ordinal = (int) (raw64 & 0xffffff);
-                    long addend = (raw64 >> 24) & 0xff;
+                    long addend = (raw64 >>> 24) & 0xff;
                     if (ordinal >= bindTargets.size()) {
                         throw new IllegalStateException(String.format("out of range bind ordinal %d (max %d)", ordinal, bindTargets.size()));
                     } else {
@@ -67,7 +135,7 @@ final class FixupChains {
                     }
                 } else {
                     long target = raw64 & 0xfffffffffL;
-                    long high8 = (raw64 >> 36) & 0xff;
+                    long high8 = (raw64 >>> 36) & 0xff;
 
                     // plain rebase (old format target is vmaddr, new format target is offset)
                     long unpackedTarget = (high8 << 56) | target;
@@ -104,11 +172,11 @@ final class FixupChains {
             } else {
                 switch (libraryOrdinal) {
                     case BIND_SPECIAL_DYLIB_SELF:
-                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_SELF");
+                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_SELF: symbolName=" + symbolName);
                     case BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE:
-                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE");
+                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE: symbolName=" + symbolName);
                     case BIND_SPECIAL_DYLIB_FLAT_LOOKUP:
-                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_FLAT_LOOKUP");
+                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_FLAT_LOOKUP: symbolName=" + symbolName);
                     case BIND_SPECIAL_DYLIB_WEAK_LOOKUP:
                         Symbol symbol = null;
                         for (MachOModule module : loader.modules.values().toArray(new MachOModule[0])) {
@@ -125,9 +193,9 @@ final class FixupChains {
                         if (symbol != null) {
                             return symbol;
                         }
-                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_WEAK_LOOKUP");
+                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName=" + symbolName);
                     default:
-                        throw new UnsupportedOperationException("unknown-ordinal");
+                        throw new UnsupportedOperationException("unknown-ordinal: symbolName=" + symbolName);
                 }
             }
         }

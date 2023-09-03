@@ -949,7 +949,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                      * };
                      */
                     throw new UnsupportedOperationException("DYLD_CHAINED_IMPORT");
-                case FixupChains.DYLD_CHAINED_IMPORT_ADDEND:
+                case FixupChains.DYLD_CHAINED_IMPORT_ADDEND: {
                     /*
                      * struct dyld_chained_import_addend {
                      *     uint32_t    lib_ordinal :  8,
@@ -958,7 +958,22 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                      *     int32_t     addend;
                      * };
                      */
-                    throw new UnsupportedOperationException("DYLD_CHAINED_IMPORT_ADDEND");
+                    formatEntrySize = 8;
+                    io.seek(imports_offset);
+                    for (int i = 0; i < imports_count; i++) {
+                        long raw32 = io.readU4le();
+                        int lib_ordinal = (int) (raw32 & 0xff);
+                        raw32 >>>= 8;
+                        boolean weak_import = (raw32 & 1) != 0;
+                        int name_offset = (int) (raw32 >>> 1);
+                        long addend = io.readU4le();
+                        if (lib_ordinal > 0xf0) {
+                            lib_ordinal = (byte) lib_ordinal;
+                        }
+                        bindTargets.add(new FixupChains.dyld_chained_import_addend64(lib_ordinal, weak_import, name_offset, addend));
+                    }
+                    break;
+                }
                 case FixupChains.DYLD_CHAINED_IMPORT_ADDEND64:
                     /*
                      * struct dyld_chained_import_addend64 {
@@ -1121,6 +1136,16 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             long raw64 = chain.getLong(0);
             FixupChains.handleChain(emulator, mm, hookListeners, pointer_format, chain, raw64, bindTargets, symbolsPool);
             switch (pointer_format) {
+                case FixupChains.DYLD_CHAINED_PTR_ARM64E: {
+                    long dyld_chained_ptr_arm64e_rebase = chain.getLong(16);
+                    int next = (int) ((dyld_chained_ptr_arm64e_rebase >> 51) & 0x7ff);
+                    if (next == 0) {
+                        chainEnd = true;
+                    } else {
+                        chain = chain.share(next * 8);
+                    }
+                    break;
+                }
                 case FixupChains.DYLD_CHAINED_PTR_64:
                 case FixupChains.DYLD_CHAINED_PTR_64_OFFSET:
                     int next = (int) ((raw64 >> 51) & 0xfff);
@@ -1670,7 +1695,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (pointer == null) {
             throw new IllegalStateException();
         }
-        libraryOrdinal = (byte) libraryOrdinal;
+//        libraryOrdinal = (byte) libraryOrdinal;
 
         MachOModule targetImage;
         if (libraryOrdinal == BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE) {

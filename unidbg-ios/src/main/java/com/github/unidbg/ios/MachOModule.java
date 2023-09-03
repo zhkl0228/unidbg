@@ -930,7 +930,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     private long bindAt(Emulator<?> emulator, int libraryOrdinal, int type, long address, String symbolName) {
-        libraryOrdinal = (byte) libraryOrdinal;
+//        libraryOrdinal = (byte) libraryOrdinal;
         Pointer pointer = UnidbgPointer.pointer(emulator, address);
         if (pointer == null) {
             throw new IllegalStateException();

@@ -341,6 +341,10 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 - (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate;
 @end
 
+@interface NSKeyedArchiver (Foundation)
+- (id)initRequiringSecureCoding:(BOOL)requiresSecureCoding;
+@end
+
 @interface UIScreen : NSObject
 @property(nonatomic, readonly, getter=isCaptured) BOOL captured;
 + (UIScreen *)mainScreen;
