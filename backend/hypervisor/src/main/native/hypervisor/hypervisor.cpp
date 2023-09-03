@@ -140,7 +140,8 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor_cpu cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
   HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, NULL));
   t_vcpus vcpu = lookupVcpu(cpu->vcpu);
-  printf("do test cpu=%llu, vcpu=%p\n", cpu->vcpu, vcpu);
+  uint64_t offset = (uint64_t) (&vcpu->HV_SYS_REG_HCR_EL2) - (uint64_t) vcpu;
+  printf("do test cpu=%llu, vcpu=%p, HV_SYS_REG_HCR_EL2=0x%llx\n", cpu->vcpu, vcpu, offset);
 }
 
 static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor) {

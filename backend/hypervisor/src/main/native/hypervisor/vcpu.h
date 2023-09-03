@@ -219,6 +219,9 @@ typedef struct vcpus {
   uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;
   uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;
   char _pad1[0x98];
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_13_5_1
+  uint64_t unknown_13_5_1; // since 13.5.1
+#endif
   uint64_t HV_SYS_REG_HCR_EL2;
   char _pad2[0x28];
 } *t_vcpus;
@@ -271,6 +274,7 @@ static t_vcpus lookupVcpu(hv_vcpu_t vcpu) {
           if(cpu->context == _hv_vcpu_get_context(vcpu)) {
             return cpu;
           } else {
+            // Check _hv_vcpu_get_context in IDA
             fprintf(stderr, "Verify _vcpus failed: vcpus=%p, sizeof(struct vcpus)=%lu, vcpu=%llu\n", vcpus, sizeof(struct vcpus), vcpu);
             abort();
           }
