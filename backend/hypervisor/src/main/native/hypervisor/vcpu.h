@@ -219,12 +219,26 @@ typedef struct vcpus {
   uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;
   uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;
   char _pad1[0x98];
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_13_5_1
-  uint64_t unknown_13_5_1; // since 13.5.1
-#endif
   uint64_t HV_SYS_REG_HCR_EL2;
   char _pad2[0x28];
 } *t_vcpus;
+
+typedef struct vcpus_v1351 {
+  t_vcpu_context context;
+  uint64_t HV_SYS_REG_ID_AA64DFR0_EL1;
+  uint64_t HV_SYS_REG_ID_AA64DFR1_EL1;
+  uint64_t HV_SYS_REG_ID_AA64ISAR0_EL1;
+  uint64_t HV_SYS_REG_ID_AA64ISAR1_EL1;
+  uint64_t HV_SYS_REG_ID_AA64MMFR0_EL1;
+  uint64_t HV_SYS_REG_ID_AA64MMFR1_EL1;
+  uint64_t HV_SYS_REG_ID_AA64MMFR2_EL1;
+  uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;
+  uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;
+  char _pad1[0x98];
+  uint64_t unknown_13_5_1; // since 13.5.1
+  uint64_t HV_SYS_REG_HCR_EL2;
+  char _pad2[0x28];
+} *t_vcpus_v1351;
 
 #define HCR_EL2$DC 12
 
@@ -234,7 +248,17 @@ extern "C" hv_return_t _hv_vcpu_get_ext_reg(hv_vcpu_t vcpu, bool error, uint64_t
 
 extern "C" hv_return_t _hv_vcpu_set_control_field(hv_vcpu_t vcpu, int index, uint64_t value);
 
-static t_vcpus lookupVcpu(hv_vcpu_t vcpu) {
+void set_HV_SYS_REG_HCR_EL2(void *vcpu, uint64_t value) {
+  if (@available(macOS 13.5.1, *)) {
+    t_vcpus_v1351 cpu = (t_vcpus_v1351) vcpu;
+    cpu->HV_SYS_REG_HCR_EL2 = value;
+  } else {
+    t_vcpus cpu = (t_vcpus) vcpu;
+    cpu->HV_SYS_REG_HCR_EL2 = value;
+  }
+}
+
+static void *lookupVcpu(hv_vcpu_t vcpu) {
   const struct mach_header *header = 0;
   intptr_t slide = 0;
   for (uint32_t i = 0, count = _dyld_image_count(); i < count; i++) {
@@ -269,8 +293,16 @@ static t_vcpus lookupVcpu(hv_vcpu_t vcpu) {
         uint32_t strtab_offset = symtab->n_un.n_strx;
         char *symbol_name = strtab + strtab_offset;
         if(strcmp(symbol_name, "_vcpus") == 0) {
-          t_vcpus vcpus = (t_vcpus) (symtab->n_value + slide);
-          t_vcpus cpu = vcpus + vcpu;
+          void *vcpus = (void *) (symtab->n_value + slide);
+          void *_cpu;
+          if (@available(macOS 13.5.1, *)) {
+            t_vcpus_v1351 _vcpus = (t_vcpus_v1351) vcpus;
+            _cpu = _vcpus + vcpu;
+          } else {
+            t_vcpus _vcpus = (t_vcpus) vcpus;
+            _cpu = _vcpus + vcpu;
+          }
+          t_vcpus cpu = (t_vcpus) _cpu;
           if(cpu->context == _hv_vcpu_get_context(vcpu)) {
             return cpu;
           } else {
