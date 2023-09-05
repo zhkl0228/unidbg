@@ -38,4 +38,4 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework CarPlay "Foundation"
+build_framework CoreMedia "CoreFoundation"

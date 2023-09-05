@@ -291,6 +291,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case -93: // mk_timer_arm
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _mk_timer_arm(emulator));
                     return;
+                case -94: // mk_timer_cancel
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _mk_timer_cancel(emulator));
+                    return;
                 case 1:
                     exit(emulator);
                     return;
@@ -799,6 +802,16 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         long time = context.getLongArg(1);
         if (log.isDebugEnabled()) {
             log.debug("_mk_timer_arm port=" + port + ", time=" + time);
+        }
+        return 0;
+    }
+
+    private long _mk_timer_cancel(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int name = context.getIntArg(0);
+        Pointer result_time = context.getPointerArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("_mk_timer_cancel name=" + name + ", result_time=" + result_time);
         }
         return 0;
     }
