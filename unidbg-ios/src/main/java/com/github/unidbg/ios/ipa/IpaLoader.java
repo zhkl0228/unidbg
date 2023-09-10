@@ -169,7 +169,7 @@ public abstract class IpaLoader extends BaseLoader {
         return new LoadedIpa(emulator, module, bundleIdentifier, bundleVersion);
     }
 
-    private static final Pattern PATTERN = Pattern.compile("^(Payload/\\w+\\.app/)");
+    private static final Pattern PATTERN = Pattern.compile("^(Payload/[\\w一-龥]+\\.app/)"); // 支持中文
 
     private static String parseApp(File ipa) throws IOException {
         try (JarFile file = new JarFile(ipa)) {

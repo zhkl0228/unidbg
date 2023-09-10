@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
+import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
@@ -122,6 +123,18 @@ public class JarEntryFileIO extends BaseDarwinFileIO {
         stat.st_gid = 0;
         stat.setLastModification(System.currentTimeMillis());
         stat.pack();
+        return 0;
+    }
+
+    @Override
+    public int listxattr(Pointer namebuf, int size, int options) {
+        return 0;
+    }
+
+    @Override
+    public int fstatfs(StatFS statFS) {
+        statFS.f_iosize = (int) entry.getSize();
+        statFS.pack();
         return 0;
     }
 

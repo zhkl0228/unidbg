@@ -51,7 +51,7 @@ public class DriverFileIO extends BaseDarwinFileIO implements NewFileIO, DarwinF
 
     @Override
     public int fstat(Emulator<?> emulator, StatStructure stat) {
-        throw new UnsupportedOperationException();
+        return 0;
     }
 
     @Override

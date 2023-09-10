@@ -78,6 +78,12 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
         if (cmd == F_GETPROTECTIONCLASS) {
             return protectionClass;
         }
+        if(cmd == F_SINGLE_WRITER) {
+            return 0;
+        }
+        if (cmd == F_PREALLOCATE) {
+            return 0;
+        }
 
         return super.fcntl(emulator, cmd, arg);
     }

@@ -100,7 +100,16 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (log.isDebugEnabled()) {
             log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", fd=" + fd + ", LR=" + context.getLRPointer());
         }
-        return fd;
+        if (fd == -1) {
+            if (emulator.is64Bit()) {
+                Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            } else {
+                Cpsr.getArm(emulator.getBackend()).setCarry(true);
+            }
+            return emulator.getMemory().getLastErrno();
+        } else {
+            return fd;
+        }
     }
 
     protected int getfsstat64(Emulator<DarwinFileIO> emulator, int off) {
@@ -197,6 +206,33 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         return -1;
     }
 
+    protected final int flistxattr(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        UnidbgPointer namebuf = context.getPointerArg(1);
+        int size = context.getIntArg(2);
+        int options = context.getIntArg(3);
+        DarwinFileIO io = fdMap.get(fd);
+        if (namebuf != null) {
+            namebuf.setSize(size);
+        }
+        if (io != null) {
+            int ret = io.listxattr(namebuf, size, options);
+            if (ret == -1) {
+                log.info("flistxattr fd=" + fd + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("flistxattr fd=" + fd + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+                }
+            }
+            return ret;
+        } else {
+            log.info("flistxattr fd=" + fd + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
+            return -1;
+        }
+    }
+
     protected final int listxattr(Emulator<DarwinFileIO> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer path = context.getPointerArg(0);
@@ -214,7 +250,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
                 log.info("listxattr path=" + pathname + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
             } else {
                 if (log.isDebugEnabled()) {
-                    log.info("listxattr path=" + pathname + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+                    log.debug("listxattr path=" + pathname + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
                 }
             }
             return ret;
@@ -223,6 +259,105 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             emulator.getMemory().setErrno(UnixEmulator.ENOENT);
             return -1;
         }
+    }
+
+    protected final int fchmodx_np(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int fsowner = context.getIntArg(1);
+        int fsgrp = context.getIntArg(2);
+        int fsmode = context.getIntArg(3);
+        int fsacl = context.getIntArg(4);
+        DarwinFileIO io = fdMap.get(fd);
+        log.debug("fchmodx_np fd=" + fd + ", fsowner=" + fsowner + ", fsgrp=" + fsgrp + ", fsmode=0x" + Integer.toHexString(fsmode) + ", fsacl=" + fsacl + ", io=" + io);
+        if (io != null) {
+            int ret = io.chmod(fsmode);
+            if (ret == -1) {
+                log.info("fchmodx_np fd=" + fd + ", fsmode=0x" + Integer.toHexString(fsmode));
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("fchmodx_np fd=" + fd + ", fsmode=0x" + Integer.toHexString(fsmode));
+                }
+            }
+            return ret;
+        } else {
+            log.info("fchmodx_np fd=" + fd + ", fsmode=0x" + Integer.toHexString(fsmode));
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
+        }
+    }
+
+    protected final int chmodx_np(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer path = context.getPointerArg(0);
+        int fsowner = context.getIntArg(1);
+        int fsgrp = context.getIntArg(2);
+        int fsmode = context.getIntArg(3);
+        int fsacl = context.getIntArg(4);
+        String pathname = path.getString(0);
+        log.debug("chmodx_np pathname=" + pathname + ", fsowner=" + fsowner + ", fsgrp=" + fsgrp + ", fsmode=0x" + Integer.toHexString(fsmode) + ", fsacl=" + fsacl);
+        FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
+        if (result.isSuccess()) {
+            int ret = result.io.chmod(fsmode);
+            if (ret == -1) {
+                log.info("chmodx_np path=" + pathname + ", fsmode=0x" + Integer.toHexString(fsmode));
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("chmodx_np path=" + pathname + ", fsmode=0x" + Integer.toHexString(fsmode));
+                }
+            }
+            return ret;
+        } else {
+            log.info("chmodx_np path=" + pathname + ", fsmode=0x" + Integer.toHexString(fsmode));
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
+        }
+    }
+
+    protected int fchmod(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int mode = context.getIntArg(1) & 0xffff;
+        DarwinFileIO io = fdMap.get(fd);
+        if (io != null) {
+            int ret = io.chmod(mode);
+            if (ret == -1) {
+                log.info("fchmod fd=" + fd + ", mode=0x" + Integer.toHexString(mode));
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("fchmod fd=" + fd + ", mode=0x" + Integer.toHexString(mode));
+                }
+            }
+            return ret;
+        } else {
+            log.info("fchmod fd=" + fd + ", mode=0x" + Integer.toHexString(mode));
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
+        }
+    }
+
+    protected final int select(int nfds, Pointer checkfds, Pointer clearfds, boolean checkRead) {
+        int count = 0;
+        for (int i = 0; i < nfds; i++) {
+            int mask = checkfds.getInt(i / 32);
+            if (((mask >> i) & 1) == 1) {
+                DarwinFileIO io = fdMap.get(i);
+                if (!checkRead || io.canRead()) {
+                    count++;
+                } else {
+                    mask &= ~(1 << i);
+                    checkfds.setInt(i / 32, mask);
+                }
+            }
+        }
+        if (count > 0) {
+            if (clearfds != null) {
+                for (int i = 0; i < nfds; i++) {
+                    clearfds.setInt(i / 32, 0);
+                }
+            }
+        }
+        return count;
     }
 
     protected final int chmod(Emulator<DarwinFileIO> emulator) {
@@ -243,8 +378,8 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             return ret;
         } else {
             log.info("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
-            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
         }
     }
 

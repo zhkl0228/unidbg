@@ -11,6 +11,7 @@ const CFStringRef kSecClass = CFSTR("class");
 const CFStringRef kSecAttrService = CFSTR("svce");
 const CFStringRef kSecAttrAccount = CFSTR("acct");
 const CFStringRef kSecAttrAccessibleAlwaysThisDeviceOnly = CFSTR("dku");
+const CFStringRef kSecAttrAccessibleAlways = CFSTR("kSecAttrAccessibleAlways");
 const CFStringRef kSecAttrAccessible = CFSTR("pdmn");
 const CFStringRef kSecReturnData = CFSTR("r_Data");
 const CFStringRef kSecMatchLimitAll = CFSTR("m_LimitAll");

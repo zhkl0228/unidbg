@@ -8,6 +8,7 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.IOConstants;
 import com.github.unidbg.file.ios.StatStructure;
+import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
@@ -239,6 +240,13 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
     @Override
     public int listxattr(Pointer namebuf, int size, int options) {
         return listxattr(file, namebuf, size);
+    }
+
+    @Override
+    public int fstatfs(StatFS statFS) {
+        statFS.f_iosize = (int) file.length();
+        statFS.pack();
+        return 0;
     }
 
     @Override

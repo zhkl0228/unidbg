@@ -8,8 +8,10 @@ import com.sun.jna.Pointer;
 
 public interface DarwinFileIO extends NewFileIO {
 
+    int F_PREALLOCATE = 42; /* Preallocate storage */
     int F_NOCACHE = 48; /* turn data caching off/on for this fd */
     int F_GETPATH = 50; /* return the full path of the fd */
+    int F_SINGLE_WRITER = 76; /* file being written to a by single writer... if throttling enabled, writes */
 
     /*
      * Vnode types.  VNON means no type.

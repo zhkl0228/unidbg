@@ -115,6 +115,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.unidbg.file.ios.DarwinFileIO.XATTR_CREATE;
 import static com.github.unidbg.file.ios.DarwinFileIO.XATTR_REPLACE;
@@ -330,6 +331,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 34:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, chflags(emulator));
                     return;
+                case 35:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fchflags(emulator));
+                    return;
                 case 37:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, kill(emulator));
                     return;
@@ -380,6 +384,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 406: // fcntl_NOCANCEL
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fcntl(emulator));
                     return;
+                case 93:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, newselect(emulator));
+                    return;
                 case 95:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fsync(emulator));
                     return;
@@ -399,8 +406,17 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 412: // __writev_nocancel
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, writev(emulator));
                     return;
+                case 123:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fchown(emulator));
+                    return;
+                case 124:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fchmod(emulator));
+                    return;
                 case 128:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, rename(emulator));
+                    return;
+                case 131:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, flock(emulator));
                     return;
                 case 133:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, sendto(emulator));
@@ -413,6 +429,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     return;
                 case 138:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, utimes(emulator, 0));
+                    return;
+                case 139:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, futimes(emulator));
                     return;
                 case 159:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, unmount(emulator));
@@ -462,8 +481,17 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case 240:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, listxattr(emulator));
                     return;
+                case 241:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, flistxattr(emulator));
+                    return;
                 case 266:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, shm_open(emulator));
+                    return;
+                case 282:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, chmodx_np(emulator));
+                    return;
+                case 283:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fchmodx_np(emulator));
                     return;
                 case 286:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, pthread_getugid_np(emulator));
@@ -518,6 +546,15 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     return;
                 case 340:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, lstat(emulator, 0));
+                    return;
+                case 341:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, statx_np(emulator));
+                    return;
+                case 342:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, lstatx_np(emulator));
+                    return;
+                case 343:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, fstatx_np(emulator));
                     return;
                 case 344:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, getdirentries64(emulator, 0));
@@ -608,6 +645,117 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
+    }
+
+    private long newselect(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int nfds = context.getIntArg(0);
+        Pointer readfds = context.getPointerArg(1);
+        Pointer writefds = context.getPointerArg(2);
+        Pointer exceptfds = context.getPointerArg(3);
+        Pointer timeout = context.getPointerArg(4);
+        int size = (nfds - 1) / 8 + 1;
+        if (log.isDebugEnabled()) {
+            log.debug("newselect nfds=" + nfds + ", readfds=" + readfds + ", writefds=" + writefds + ", exceptfds=" + exceptfds + ", timeout=" + timeout);
+            if (readfds != null) {
+                byte[] data = readfds.getByteArray(0, size);
+                Inspector.inspect(data, "readfds");
+            }
+            if (writefds != null) {
+                byte[] data = writefds.getByteArray(0, size);
+                Inspector.inspect(data, "writefds");
+            }
+        }
+        if (exceptfds != null) {
+            emulator.getMemory().setErrno(UnixEmulator.ENOMEM);
+            return -1;
+        }
+        if (writefds != null) {
+            int count = select(nfds, writefds, readfds, false);
+            if (count > 0) {
+                return count;
+            }
+        }
+        if (readfds != null) {
+            int count = select(nfds, readfds, writefds, true);
+            if (count == 0) {
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+            return count;
+        }
+        throw new AbstractMethodError("newselect nfds=" + nfds + ", readfds=null, writefds=" + writefds + ", exceptfds=null, timeout=" + timeout);
+    }
+
+    private long fstatx_np(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        Pointer sb = context.getPointerArg(1);
+        Pointer fsacl = context.getPointerArg(2);
+        Pointer fsacl_size = context.getPointerArg(3);
+        DarwinFileIO io = fdMap.get(fd);
+        if (io != null) {
+            fsacl_size.setLong(0, 0);
+            io.fstat(emulator, new Stat64(sb));
+            log.debug("fstatx_np fd=" + fd + ", sb=" + sb + ", fsacl=" + fsacl + ", fsacl_size=" + fsacl_size + ", io=" + io);
+            return 0;
+        }
+
+        int errno = UnixEmulator.ENOENT;
+        if (verbose) {
+            System.out.printf("File fstatx_np '%s' errno is %d from %s%n", fd, errno, emulator.getContext().getLRPointer());
+        }
+        Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+        return errno;
+    }
+
+    private long lstatx_np(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer obj = context.getPointerArg(0);
+        Pointer sb = context.getPointerArg(1);
+        Pointer fsacl = context.getPointerArg(2);
+        Pointer fsacl_size = context.getPointerArg(3);
+        String path = obj.getString(0);
+        FileResult<DarwinFileIO> result = resolve(emulator, path, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
+            fsacl_size.setLong(0, 0);
+            result.io.fstat(emulator, new Stat64(sb));
+            log.debug("lstatx_np path=" + path + ", sb=" + sb + ", fsacl=" + fsacl + ", fsacl_size=" + fsacl_size + ", result=" + result.io);
+            return 0;
+        }
+
+        int errno = result != null ? result.errno : UnixEmulator.ENOENT;
+        if (verbose) {
+            System.out.printf("File lstatx_np '%s' errno is %d from %s%n", path, errno, emulator.getContext().getLRPointer());
+        }
+        Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+        return errno;
+    }
+
+    private long statx_np(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer obj = context.getPointerArg(0);
+        Pointer sb = context.getPointerArg(1);
+        Pointer fsacl = context.getPointerArg(2);
+        Pointer fsacl_size = context.getPointerArg(3);
+        String path = obj.getString(0);
+        FileResult<DarwinFileIO> result = resolve(emulator, path, IOConstants.O_RDONLY);
+        if (result != null && result.isSuccess()) {
+            fsacl_size.setLong(0, 0);
+            result.io.fstat(emulator, new Stat64(sb));
+            log.debug("statx_np path=" + path + ", sb=" + sb + ", fsacl=" + fsacl + ", fsacl_size=" + fsacl_size + ", result=" + result.io);
+            return 0;
+        }
+
+        int errno = result != null ? result.errno : UnixEmulator.ENOENT;
+        if (verbose) {
+            System.out.printf("File statx '%s' errno is %d from %s%n", path, errno, emulator.getContext().getLRPointer());
+        }
+        Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+        return errno;
     }
 
     private long kern_invalid() {
@@ -715,6 +863,29 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         return 0;
     }
 
+    private long fchown(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int uid = context.getIntArg(1);
+        int gid = context.getIntArg(2);
+        DarwinFileIO io = fdMap.get(fd);
+        if (io != null) {
+            int ret = io.chown(uid, gid);
+            if (ret == -1) {
+                log.info("fchown fd=" + fd + ", uid=" + uid + ", gid=" + gid);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("fchown fd=" + fd + ", uid=" + uid + ", gid=" + gid);
+                }
+            }
+            return ret;
+        } else {
+            log.info("fchown fd=" + fd + ", uid=" + uid + ", gid=" + gid);
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
+        }
+    }
+
     private long chown(Emulator<DarwinFileIO> emulator) {
         RegisterContext context = emulator.getContext();
         Pointer path = context.getPointerArg(0);
@@ -734,8 +905,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return ret;
         } else {
             log.info("chown path=" + pathname + ", uid=" + uid + ", gid=" + gid);
-            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
         }
     }
 
@@ -856,6 +1027,16 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         String pathname = path.getString(0);
         if (log.isDebugEnabled()) {
             log.debug("utimes pathname=" + pathname + ", times=" + times);
+        }
+        return 0;
+    }
+
+    private long futimes(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        Pointer times = context.getPointerArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("futimes fd=" + fd + ", times=" + times);
         }
         return 0;
     }
@@ -1127,7 +1308,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int fd = context.getIntArg(0);
         int length = context.getIntArg(1);
         if (log.isDebugEnabled()) {
-            log.debug("ftruncate fd=" + fd + ", length=" + length);
+            log.debug("ftruncate fd=" + fd + ", length=" + length + ", LR=" + context.getLRPointer());
         }
         FileIO file = fdMap.get(fd);
         if (file == null) {
@@ -1165,12 +1346,22 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
     }
 
+    private long flock(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int operation = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("flock fd=" + fd + ", operation=" + operation);
+        }
+        return 0;
+    }
+
     private int fstatfs64(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int fd = context.getIntArg(0);
         Pointer buf = context.getPointerArg(1);
         if (log.isDebugEnabled()) {
-            log.debug("fstatfs64 fd=" + fd + ", buf=" + buf);
+            log.debug("fstatfs64 fd=" + fd + ", buf=" + buf + ", LR=" + context.getLRPointer());
         }
         DarwinFileIO io = fdMap.get(fd);
         if (io != null) {
@@ -1181,6 +1372,28 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
         emulator.getMemory().setErrno(UnixEmulator.EACCES);
         return -1;
+    }
+
+    private long fchflags(Emulator<DarwinFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int flags = context.getIntArg(1);
+        DarwinFileIO io = fdMap.get(fd);
+        if (io != null) {
+            int ret = io.chflags(flags);
+            if (ret == -1) {
+                log.info("fchflags fd=" + io + ", flags=0x" + Integer.toHexString(flags));
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("fchflags fd=" + io + ", flags=0x" + Integer.toHexString(flags));
+                }
+            }
+            return ret;
+        } else {
+            log.info("fchflags fd=" + io + ", flags=0x" + Integer.toHexString(flags));
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
+        }
     }
 
     private long chflags(Emulator<DarwinFileIO> emulator) {
@@ -1201,8 +1414,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return ret;
         } else {
             log.info("chflags pathname=" + pathname + ", flags=0x" + Integer.toHexString(flags));
-            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
         }
     }
 
@@ -3479,7 +3692,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         Pointer buffer = context.getPointerArg(offset + 1);
         int count = context.getIntArg(offset + 2);
         if (log.isDebugEnabled()) {
-            log.debug("read_NOCANCEL fd=" + fd + ", buffer=" + buffer + ", count=" + count);
+            log.debug("read_NOCANCEL fd=" + fd + ", buffer=" + buffer + ", count=" + count + ", LR=" + context.getLRPointer());
         }
         return read(emulator, fd, buffer, count);
     }
