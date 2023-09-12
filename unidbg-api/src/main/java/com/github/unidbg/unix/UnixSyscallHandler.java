@@ -115,8 +115,6 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         if (result != null && result.isSuccess()) {
             emulator.getMemory().setErrno(0);
             return result;
-        } else {
-            failResult = result;
         }
 
         Family family = emulator.getFamily();

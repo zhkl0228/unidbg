@@ -72,6 +72,8 @@ int UIApplicationMain(int argc, char *argv[], NSString *principalClassName, NSSt
     [carrier setCarrierName: [_carrierName retain]];
   }
 
+  NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
+  [userDefault setBool: YES forKey: @"NSFileCoordinatorDoesNothing"];
   NSNumber *callFinishLaunchingWithOptions = dict[@"callFinishLaunchingWithOptions"];
   if(delegate && [callFinishLaunchingWithOptions boolValue]) {
     UIApplication *application;

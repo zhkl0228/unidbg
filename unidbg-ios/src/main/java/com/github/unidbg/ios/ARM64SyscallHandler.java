@@ -1459,11 +1459,11 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
 
         int errno = result != null ? result.errno : UnixEmulator.ENOENT;
-        emulator.getMemory().setErrno(errno);
         if (verbose) {
             System.out.printf("File stat '%s' errno is %d from %s%n", pathname, errno, emulator.getContext().getLRPointer());
         }
-        return -1;
+        Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+        return errno;
     }
 
     private int write_NOCANCEL(Emulator<?> emulator) {
@@ -2357,8 +2357,8 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return ret;
         } else {
             log.info("setxattr path=" + pathname + ", name=" + name.getString(0) + ", value=" + value + ", size=" + size + ", position=" + position + ", options=0x" + Integer.toHexString(options));
-            emulator.getMemory().setErrno(UnixEmulator.ENOENT);
-            return -1;
+            Cpsr.getArm64(emulator.getBackend()).setCarry(true);
+            return UnixEmulator.ENOENT;
         }
     }
 

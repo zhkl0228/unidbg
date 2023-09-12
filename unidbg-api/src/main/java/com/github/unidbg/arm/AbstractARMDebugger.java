@@ -452,7 +452,7 @@ public abstract class AbstractARMDebugger implements Debugger {
     private PrintStream traceWriteRedirectStream;
 
     final boolean handleCommon(Backend backend, String line, long address, int size, long nextAddress, DebugRunnable<?> runnable) throws Exception {
-        if ("exit".equals(line) || "quit".equals(line)) { // continue
+        if ("exit".equals(line) || "quit".equals(line) || "q".equals(line)) { // continue
             return true;
         }
         if ("gc".equals(line)) {
