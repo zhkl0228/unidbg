@@ -123,6 +123,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)setFill;
 - (UIColor *)colorWithAlphaComponent:(CGFloat)alpha;
 - (UIColor *)initWithWhite:(CGFloat)white alpha:(CGFloat)alpha;
+- (UIColor *)initWithRed:(CGFloat)red green:(CGFloat)green blue:(CGFloat)blue alpha:(CGFloat)alpha;
 @end
 
 @interface UIImageAsset : NSObject

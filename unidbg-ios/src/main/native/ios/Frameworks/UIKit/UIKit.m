@@ -177,6 +177,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 - (UIColor *)initWithWhite:(CGFloat)white alpha:(CGFloat)alpha {
     return [UIColor new];
 }
+- (UIColor *)initWithRed:(CGFloat)red green:(CGFloat)green blue:(CGFloat)blue alpha:(CGFloat)alpha {
+    return [UIColor new];
+}
 @end
 
 @implementation UIGestureRecognizer
