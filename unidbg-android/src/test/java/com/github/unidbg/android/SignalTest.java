@@ -19,11 +19,10 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 
 public class SignalTest {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger(AndroidSyscallHandler.class).setLevel(Level.INFO);

@@ -133,7 +133,7 @@ public class Utilities64 extends TestCase {
             cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", password,
                     salt,
                     dst, 100000);
-            Inspector.inspect(dst.getValue(), "[" + Thread.currentThread().getName() + "]pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
+            Inspector.inspect(dst.getValue(), String.format("[%s]pbkdf2 offset=%sms, backend=%s", Thread.currentThread().getName(), System.currentTimeMillis() - start, emulator.getBackend()));
         }
     }
 
