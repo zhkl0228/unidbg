@@ -231,6 +231,14 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_testSa
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_testSampleArm64
   (JNIEnv *, jclass);
 
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    removeCache
+ * Signature: (JJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_removeCache
+  (JNIEnv *, jclass, jlong, jlong, jlong);
+
 #ifdef __cplusplus
 }
 #endif

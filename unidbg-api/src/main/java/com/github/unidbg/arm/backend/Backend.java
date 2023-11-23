@@ -32,6 +32,8 @@ public interface Backend {
     void setSingleStep(int singleStep);
     void setFastDebug(boolean fastDebug);
 
+    void removeJitCodeCache(long begin, long end) throws BackendException;
+
     void hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException;
 
     void debugger_add(DebugHook callback, long begin, long end, Object user_data) throws BackendException;

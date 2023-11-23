@@ -207,6 +207,11 @@ class Unicorn2Backend extends AbstractBackend implements Backend {
     }
 
     @Override
+    public void removeJitCodeCache(long begin, long end) throws BackendException {
+        unicorn.removeJitCodeCache(begin, end);
+    }
+
+    @Override
     public void hook_add_new(final CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
             final Unicorn.UnHook unHook = unicorn.hook_add_new(new com.github.unidbg.arm.backend.unicorn.CodeHook() {

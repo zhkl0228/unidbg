@@ -6,6 +6,7 @@ import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.TraceFunctionCall;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.debugger.FunctionCallListener;
@@ -66,6 +67,8 @@ public class Signal64Test {
             }
         });
         emulator.traceCode(module.base, module.base + module.size);
+        Backend backend = emulator.getBackend();
+        backend.removeJitCodeCache(module.base, module.base + module.size);
     }
 
     private void test() {

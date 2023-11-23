@@ -103,6 +103,11 @@ class ByteArrayBackend implements Backend {
     }
 
     @Override
+    public void removeJitCodeCache(long begin, long end) throws BackendException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void hook_add_new(CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         throw new UnsupportedOperationException();
     }

@@ -178,6 +178,23 @@ static void cb_hookmem_new(uc_engine *eng, uc_mem_type type,
 
 /*
  * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    removeCache
+ * Signature: (JJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_removeCache
+  (JNIEnv *env, jclass cls, jlong handle, jlong arg1, jlong arg2) {
+  t_unicorn unicorn = (t_unicorn) handle;
+  uc_engine *eng = unicorn->uc;
+  uint64_t begin = (uint64_t) arg1;
+  uint64_t end = (uint64_t) arg2;
+  uc_err err = uc_ctl_remove_cache(eng, begin, end);
+  if (err != UC_ERR_OK) {
+    throwException(env, err);
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
  * Method:    registerHook
  * Signature: (JIJJLcom/github/unidbg/arm/backend/unicorn/Unicorn/NewHook;)J
  */

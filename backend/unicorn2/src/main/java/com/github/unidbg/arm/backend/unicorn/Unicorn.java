@@ -376,6 +376,12 @@ public class Unicorn {
     public static native void testSampleArm();
     public static native void testSampleArm64();
 
+    public final void removeJitCodeCache(long begin, long end) {
+        removeCache(nativeHandle, begin, end);
+    }
+
+    private static native void removeCache(long handle, long begin, long end);
+
     public UnHook hook_add_new(BlockHook callback, long begin, long end, Object user_data) throws UnicornException {
         NewHook hook = new NewHook(callback, user_data);
         long handle = registerHook(nativeHandle, UnicornConst.UC_HOOK_BLOCK, begin, end, hook);
