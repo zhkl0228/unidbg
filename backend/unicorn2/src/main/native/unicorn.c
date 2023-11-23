@@ -54,7 +54,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_nativ
     return 0;
   } else {
     if(arch == UC_ARCH_ARM64) {
-      err = uc_ctl_set_cpu_model(eng, UC_CPU_ARM64_A72);
+      err = uc_ctl_set_cpu_model(eng, UC_CPU_ARM64_MAX);
     } else {
       err = uc_ctl_set_cpu_model(eng, UC_CPU_ARM_CORTEX_A15);
     }
