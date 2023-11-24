@@ -537,21 +537,21 @@ public abstract class AbstractARMDebugger implements Debugger {
         }
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning() && line.startsWith("dump ")) {
             String className = line.substring(5).trim();
-            if (className.length() > 0) {
+            if (!className.isEmpty()) {
                 dumpClass(className);
                 return false;
             }
         }
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning() && line.startsWith("gpb ")) {
             String className = line.substring(4).trim();
-            if (className.length() > 0) {
+            if (!className.isEmpty()) {
                 dumpGPBProtobufMsg(className);
                 return false;
             }
         }
         if (emulator.getFamily() == Family.iOS && !emulator.isRunning() && line.startsWith("search ")) {
             String keywords = line.substring(7).trim();
-            if (keywords.length() > 0) {
+            if (!keywords.isEmpty()) {
                 searchClass(keywords);
                 return false;
             }
@@ -608,7 +608,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 traceRead.setRedirect(traceReadRedirectStream);
                 System.out.printf("Set trace all memory read success with trace file: %s.%n", traceFile.getAbsolutePath());
             }
-            emulator.getBackend().hook_add_new((ReadHook) traceRead, begin, end, emulator);
+            backend.hook_add_new((ReadHook) traceRead, begin, end, emulator);
             return false;
         }
         if (line.startsWith("traceWrite")) { // start trace memory write
@@ -662,7 +662,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 traceWrite.setRedirect(traceWriteRedirectStream);
                 System.out.printf("Set trace all memory write success with trace file: %s.%n", traceFile.getAbsolutePath());
             }
-            emulator.getBackend().hook_add_new((WriteHook) traceWrite, begin, end, emulator);
+            backend.hook_add_new((WriteHook) traceWrite, begin, end, emulator);
             return false;
         }
         if (line.startsWith("trace")) { // start trace instructions
@@ -712,7 +712,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                     }
                 }
                 File traceFile = null;
-                if (redirect != null && redirect.trim().length() > 0) {
+                if (redirect != null && !redirect.trim().isEmpty()) {
                     Module check = memory.findModule(redirect);
                     if (check != null) {
                         module = check;
@@ -739,7 +739,7 @@ public abstract class AbstractARMDebugger implements Debugger {
             if (traceHookRedirectStream != null) {
                 traceHook.setRedirect(traceHookRedirectStream);
             }
-            emulator.getBackend().hook_add_new(traceHook, begin, end, emulator);
+            backend.hook_add_new(traceHook, begin, end, emulator);
             return false;
         }
         if (line.startsWith("vm")) {
@@ -1018,7 +1018,7 @@ public abstract class AbstractARMDebugger implements Debugger {
                 if (name.length() > maxLength) {
                     name = name.substring(name.length() - maxLength);
                 }
-                module = new Module(name, region.begin, region.end - region.begin, Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(), null) {
+                module = new Module(name, region.begin, region.end - region.begin, Collections.emptyMap(), Collections.emptyList(), null) {
                     @Override
                     public Number callFunction(Emulator<?> emulator, long offset, Object... args) {
                         throw new UnsupportedOperationException();

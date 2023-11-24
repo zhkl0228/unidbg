@@ -76,12 +76,14 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
         try {
             byte[] data = size == 0 ? new byte[0] : backend.mem_read(address, size);
             String value;
-            if (data.length == 2) {
-                value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xffffL);
+            if (data.length == 1) {
+                value = String.format("0x%02x", ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).get() & 0xffL);
+            } else if (data.length == 2) {
+                value = String.format("0x%04x", ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xffffL);
             } else if (data.length == 4) {
-                value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
+                value = String.format("0x%08x", ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL);
             } else if (data.length == 8) {
-                value = "0x" + Long.toHexString(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getLong());
+                value = String.format("0x%016x", ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getLong());
             } else {
                 value = "0x" + Hex.encodeHexString(data);
             }
@@ -120,7 +122,23 @@ public class TraceMemoryHook implements ReadHook, WriteHook, TraceHook {
         try {
             Emulator<?> emulator = (Emulator<?>) user;
             if (traceWriteListener == null || traceWriteListener.onWrite(emulator, address, size, value)) {
-                printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
+                switch (size) {
+                    case 1:
+                        printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, String.format("0x%02x", value & 0xff));
+                        break;
+                    case 2:
+                        printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, String.format("0x%04x", value & 0xffff));
+                        break;
+                    case 4:
+                        printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, String.format("0x%08x", value & 0xffffffffL));
+                        break;
+                    case 8:
+                        printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, String.format("0x%016x", value));
+                        break;
+                    default:
+                        printMsg(dateFormat.format(new Date()) + " Memory WRITE at 0x", emulator, address, size, "0x" + Long.toHexString(value));
+                        break;
+                }
             }
         } catch (BackendException e) {
             throw new IllegalStateException(e);
