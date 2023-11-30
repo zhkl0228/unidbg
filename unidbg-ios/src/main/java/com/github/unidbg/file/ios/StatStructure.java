@@ -5,6 +5,10 @@ import com.sun.jna.Pointer;
 
 public abstract class StatStructure extends UnidbgStructure {
 
+    protected StatStructure(byte[] data) {
+        super(data);
+    }
+
     public StatStructure(Pointer p) {
         super(p);
     }

@@ -5,6 +5,7 @@ import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.file.ios.StatStructure;
 import com.github.unidbg.ios.struct.kernel.StatFS;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.IO;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.IOUtils;
@@ -26,6 +27,19 @@ public class JarEntryFileIO extends BaseDarwinFileIO {
         this.path = path;
         this.jarFile = jarFile;
         this.entry = entry;
+    }
+
+    @Override
+    public int fcntl(Emulator<?> emulator, int cmd, long arg) {
+        if (cmd == F_GETPATH) {
+            UnidbgPointer pointer = UnidbgPointer.pointer(emulator, arg);
+            if (pointer != null) {
+                pointer.setString(0, getPath());
+            }
+            return 0;
+        }
+
+        return super.fcntl(emulator, cmd, arg);
     }
 
     private int pos;

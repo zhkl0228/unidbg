@@ -9,6 +9,10 @@ import java.util.List;
 
 public class Stat64 extends StatStructure {
 
+    public Stat64(byte[] data) {
+        super(data);
+    }
+
     public Stat64(Pointer p) {
         super(p);
         unpack();

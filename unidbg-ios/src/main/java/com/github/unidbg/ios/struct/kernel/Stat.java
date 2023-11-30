@@ -10,6 +10,10 @@ import java.util.List;
 
 public final class Stat extends StatStructure {
 
+    public Stat(byte[] data) {
+        super(data);
+    }
+
     public Stat(Pointer p) {
         super(p);
         setAlignType(Structure.ALIGN_NONE);
