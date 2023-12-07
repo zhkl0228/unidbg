@@ -514,7 +514,11 @@ static void destroy_hypervisor_cpu(void *data) {
 
 __attribute__((constructor))
 static void init() {
-  HYP_ASSERT_SUCCESS(hv_vm_create(NULL));
+  hv_return_t ret = hv_vm_create(NULL);
+  if(HV_SUCCESS != ret) {
+    fprintf(stderr, "Follow instructions: https://github.com/zhkl0228/unidbg/blob/master/backend/hypervisor/README.md\n");
+  }
+  HYP_ASSERT_SUCCESS(ret);
 }
 
 __attribute__((destructor))
