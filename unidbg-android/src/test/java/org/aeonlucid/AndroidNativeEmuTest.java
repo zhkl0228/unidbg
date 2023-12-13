@@ -25,7 +25,7 @@ public class AndroidNativeEmuTest extends EmulatorTest<AndroidEmulator> {
 
         emulator.traceCode();
         number = module.callFunction(emulator, 0x7e0 + 1);
-        System.out.println("eFunc length is: " + number.intValue());
+        System.out.println("eFunc length is: " + number.intValue() + ", backend=" + emulator.getBackend());
     }
 
     public void testCallTest() {
