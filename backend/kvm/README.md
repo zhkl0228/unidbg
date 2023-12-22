@@ -15,6 +15,6 @@ Tested on [CentOS-7-aarch64](https://mirrors.bfsu.edu.cn/centos-altarch/7.9.2009
    ` 0x6: make Image modules dtbs `<br>
    ` 0x7: make modules_install `<br>
    ` 0x8: cp arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb /boot/ `<br>
-   ` 0x9: /usr/bin/cp -f arch/arm64/boot/dts/overlays/*.dtb* /boot/overlays/ `<br>
+   ` 0x9: cp -f arch/arm64/boot/dts/overlays/*.dtb* /boot/overlays/ `<br>
    ` 0xa: cp arch/arm64/boot/Image /boot/kernel8.img `<br>
    ` 0xb: reboot `<br>

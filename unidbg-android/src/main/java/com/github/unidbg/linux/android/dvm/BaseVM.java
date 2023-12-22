@@ -118,8 +118,8 @@ public abstract class BaseVM implements VM, DvmClassFactory {
                 dvmClass = this.createClass(this, className, superClass, interfaceClasses);
             }
             classMap.put(hash, dvmClass);
-            addGlobalObject(dvmClass);
         }
+        addGlobalObject(dvmClass);
         return dvmClass;
     }
 

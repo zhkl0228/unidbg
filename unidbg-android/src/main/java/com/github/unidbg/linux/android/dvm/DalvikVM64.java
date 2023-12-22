@@ -264,6 +264,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("NewGlobalRef object=" + object + ", dvmObject=" + dvmObject);
                 }
+                if (dvmObject == null) {
+                    throw new IllegalStateException("LR=" + context.getLRPointer());
+                }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewGlobalRef(%s) was called from %s%n", dvmObject, context.getLRPointer());
                 }
@@ -448,6 +451,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer clazz = context.getPointerArg(2);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                if (clazz == null) {
+                    throw new IllegalStateException("LR=" + context.getLRPointer());
+                }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (dvmObject == null || dvmClass == null) {
                     throw new BackendException();
@@ -2867,7 +2873,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + context.getLRPointer());
                 }
                 if (verbose) {
-                    System.out.printf("JNIEnv->GetStringUTFChars(\"%s\") was called from %s%n", string, context.getLRPointer());
+                    System.out.printf("JNIEnv->GetStringUTFChars(\"%s\") was called from %s%n", value, context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
                 UnidbgPointer pointer = string.allocateMemoryBlock(emulator, data.length);

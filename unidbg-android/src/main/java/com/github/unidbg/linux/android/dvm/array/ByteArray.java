@@ -4,6 +4,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
+import org.apache.commons.codec.binary.Hex;
 
 public class ByteArray extends BaseArray<byte[]> implements PrimitiveArray<byte[]> {
 
@@ -46,6 +47,15 @@ public class ByteArray extends BaseArray<byte[]> implements PrimitiveArray<byte[
             case VM.JNI_ABORT:
                 this.freeMemoryBlock(elems);
                 break;
+        }
+    }
+
+    @Override
+    public String toString() {
+        if (value != null && value.length <= 64) {
+            return "[B@0x" + Hex.encodeHexString(value);
+        } else {
+            return super.toString();
         }
     }
 }

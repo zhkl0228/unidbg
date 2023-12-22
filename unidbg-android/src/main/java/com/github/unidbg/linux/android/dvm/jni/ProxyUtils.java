@@ -80,6 +80,9 @@ class ProxyUtils {
             return null;
         }
         Object obj = dvmObject.getValue();
+        if (obj == null) {
+            throw new UnsupportedOperationException("dvmObject=" + dvmObject);
+        }
         if (obj instanceof DvmObject) {
             return unpack((DvmObject<?>) obj);
         } else {
