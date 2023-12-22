@@ -25,6 +25,7 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Dlfcn;
 import com.github.unidbg.thread.MainTask;
 import com.github.unidbg.thread.PopContextException;
+import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.thread.ThreadDispatcher;
 import com.github.unidbg.thread.UniThreadDispatcher;
@@ -32,8 +33,8 @@ import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
@@ -57,7 +58,7 @@ import java.util.Stack;
 
 public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<T>, MemoryWriteListener {
 
-    private static final Log log = LogFactory.getLog(AbstractEmulator.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
 
     public static final long DEFAULT_TIMEOUT = 0;
 
@@ -365,16 +366,13 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             start = System.currentTimeMillis();
             running = true;
             if (log.isDebugEnabled()) {
-                exitHook = new Thread() {
-                    @Override
-                    public void run() {
-                        backend.emu_stop();
-                        Debugger debugger = attach();
-                        if (!debugger.isDebugging()) {
-                            debugger.debug();
-                        }
+                exitHook = new Thread(() -> {
+                    backend.emu_stop();
+                    Debugger debugger = attach();
+                    if (!debugger.isDebugging()) {
+                        debugger.debug();
                     }
-                };
+                });
                 Runtime.getRuntime().addShutdownHook(exitHook);
             }
             backend.emu_start(begin, until, 0, 0);
@@ -388,7 +386,7 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
         } catch (ThreadContextSwitchException e) {
             e.syncReturnValue(this);
             if (log.isTraceEnabled()) {
-                e.printStackTrace();
+                e.printStackTrace(System.out);
             }
             return null;
         } catch (PopContextException e) {
@@ -401,23 +399,23 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
             }
             running = false;
 
-            if (log.isDebugEnabled()) {
-                log.debug("emulate " + pointer + " finished sp=" + getStackPointer() + ", offset=" + (System.currentTimeMillis() - start) + "ms");
-            }
+            log.debug("emulate {} finished sp={}, offset={}ms", pointer, getStackPointer(), System.currentTimeMillis() - start);
         }
     }
 
     private int handleEmuException(RuntimeException e, Pointer pointer, long start) {
         boolean enterDebug = log.isDebugEnabled();
         if (enterDebug || !log.isWarnEnabled()) {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
             attach().debug();
         } else {
             String msg = e.getMessage();
             if (msg == null) {
                 msg = e.getClass().getName();
             }
-            log.warn("emulate " + pointer + " exception sp=" + getStackPointer() + ", msg=" + msg + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+            RunnableTask runningTask = threadDispatcher.getRunningTask();
+            log.warn("emulate {} exception sp={}, msg={}, offset={}ms{}", pointer, getStackPointer(), msg, System.currentTimeMillis() - start,
+                    runningTask == null ? "" : (" @ " + runningTask));
         }
         return -1;
     }

@@ -636,7 +636,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         int threadId = incrementThreadId(emulator);
         if (threadDispatcherEnabled) {
             if (verbose) {
-                System.out.printf("bionic_clone fn=%s%n", fn);
+                System.out.printf("bionic_clone fn=%s, LR=%s%n", fn, context.getLRPointer());
             }
             emulator.getThreadDispatcher().addThread(new MarshmallowThread(emulator, fn, arg, ctid, threadId));
         }

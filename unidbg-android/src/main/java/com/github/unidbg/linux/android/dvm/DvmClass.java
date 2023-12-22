@@ -325,15 +325,16 @@ public class DvmClass extends DvmObject<Class<?>> {
             return true;
         }
 
-        if (superClass != null && dvmClass == superClass) {
-            return true;
-        }
         for (DvmClass dc : interfaceClasses) {
             if (dc == dvmClass) {
                 return true;
             }
         }
-        return false;
+        if (superClass != null) {
+            return superClass.isInstance(dvmClass);
+        } else {
+            return false;
+        }
     }
 
     private JniFunction jni;

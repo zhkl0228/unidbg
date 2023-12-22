@@ -1,7 +1,7 @@
 package net.fornwall.jelf;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,22 +11,21 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section
- * 
+ * <a href="http://www.sco.com/developers/gabi/latest/ch5.dynamic.html#dynamic_section">dynamic.html</a>
  * "If an object file participates in dynamic linking, its program header table will have an element of type PT_DYNAMIC. This ``segment'' contains the .dynamic
  * section. A special symbol, _DYNAMIC, labels the section, which contains an array of the following structures."
- * 
+ *
  * <pre>
  * typedef struct { Elf32_Sword d_tag; union { Elf32_Word d_val; Elf32_Addr d_ptr; } d_un; } Elf32_Dyn;
  * extern Elf32_Dyn _DYNAMIC[];
- * 
+ *
  * typedef struct { Elf64_Sxword d_tag; union { Elf64_Xword d_val; Elf64_Addr d_ptr; } d_un; } Elf64_Dyn;
  * extern Elf64_Dyn _DYNAMIC[];
  * </pre>
- * 
+ *
  * <pre>
  * http://www.sco.com/developers/gabi/latest/ch5.dynamic.html:
- * 
+ *
  * Name	        		Value		d_un		Executable	Shared Object
  * ----------------------------------------------------------------------
  * DT_NULL	    		0			ignored		mandatory	mandatory
@@ -71,7 +70,7 @@ import java.util.List;
  */
 public class ElfDynamicStructure {
 
-	private static final Log log = LogFactory.getLog(ElfDynamicStructure.class);
+	private static final Logger log = LoggerFactory.getLogger(ElfDynamicStructure.class);
 
 	private static final int DT_NULL = 0;
 	private static final int DT_NEEDED = 1;
@@ -115,6 +114,7 @@ public class ElfDynamicStructure {
 	private static final int DT_ANDROID_RELSZ = 0x60000010;
 	private static final int DT_ANDROID_RELA = 0x60000011;
 	private static final int DT_ANDROID_RELASZ = 0x60000012;
+	private static final int SHT_ARM_EXIDX = 0x70000001; /* Exception index table. */
 
 	/** Some values of {@link #DT_FLAGS_1}. */
 	public static final int DF_1_NOW = 0x00000001; /* Set RTLD_NOW for this object. */
@@ -152,6 +152,8 @@ public class ElfDynamicStructure {
 
     private MemoizedObject<ElfRelocation>[] rel, pltRel;
     private MemoizedObject<AndroidRelocation> androidRelocation;
+
+	private long armExIdx;
 
 	ElfDynamicStructure(final ElfFile elfFile, final ElfParser parser, long offset, int size) throws IOException {
 		parser.seek(offset);
@@ -239,6 +241,10 @@ public class ElfDynamicStructure {
 				break;
 			case DT_ANDROID_REL:
 				androidRelOffset = d_val_or_ptr;
+				break;
+			case SHT_ARM_EXIDX:
+				armExIdx = d_val_or_ptr;
+				log.debug("armExIdx=0x{}", Long.toHexString(armExIdx));
 				break;
 			case DT_VERSYM:
 			case DT_RELACOUNT:

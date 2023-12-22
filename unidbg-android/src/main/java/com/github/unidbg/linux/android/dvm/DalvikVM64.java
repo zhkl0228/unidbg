@@ -18,8 +18,8 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
 import java.io.File;
@@ -31,7 +31,7 @@ import java.util.Objects;
 
 public class DalvikVM64 extends BaseVM implements VM {
 
-    private static final Log log = LogFactory.getLog(DalvikVM64.class);
+    private static final Logger log = LoggerFactory.getLogger(DalvikVM64.class);
 
     private final UnidbgPointer _JavaVM;
     private final UnidbgPointer _JNIEnv;
@@ -449,13 +449,11 @@ public class DalvikVM64 extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(2);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
-                if (log.isDebugEnabled()) {
-                    log.debug("IsInstanceOf object=" + object + ", clazz=" + clazz + ", dvmObject=" + dvmObject + ", dvmClass=" + dvmClass);
-                }
                 if (dvmObject == null || dvmClass == null) {
                     throw new BackendException();
                 }
                 boolean flag = dvmObject.isInstanceOf(dvmClass);
+                log.debug("IsInstanceOf object={}, clazz={}, dvmObject={}, dvmClass={}, flag={}", object, clazz, dvmObject, dvmClass, flag);
                 return flag ? JNI_TRUE : JNI_FALSE;
             }
         });
@@ -2810,7 +2808,27 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _NewString = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer unicodeChars = context.getPointerArg(1);
+                int len = context.getIntArg(2);
+                if (unicodeChars == null) {
+                    if (len == 0) {
+                        return VM.JNI_NULL;
+                    }
+                    throw new IllegalStateException("unicodeChars is null");
+                }
+                ByteBuffer buffer = ByteBuffer.wrap(unicodeChars.getByteArray(0, len * 2));
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                StringBuilder builder = new StringBuilder(len);
+                for (int i = 0; i < len; i++) {
+                    builder.append(buffer.getChar());
+                }
+                String string = builder.toString();
+                log.debug("NewString unicodeChars={}, len={}, string={}", unicodeChars, len, string);
+                if (verbose) {
+                    System.out.printf("JNIEnv->NewString(\"%s\") was called from %s%n", string, context.getLRPointer());
+                }
+                return addLocalObject(new StringObject(DalvikVM64.this, string));
             }
         });
 
