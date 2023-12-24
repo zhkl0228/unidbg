@@ -18,14 +18,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-class ProxyJni extends JniFunction {
+public class ProxyJni extends JniFunction {
 
     private static final Log log = LogFactory.getLog(ProxyJni.class);
 
     private final ProxyClassLoader classLoader;
     private final ProxyDvmObjectVisitor visitor;
 
-    ProxyJni(ProxyClassLoader classLoader, ProxyDvmObjectVisitor visitor) {
+    public ProxyJni(ProxyClassLoader classLoader, ProxyDvmObjectVisitor visitor) {
         this.classLoader = classLoader;
         this.visitor = visitor;
     }
