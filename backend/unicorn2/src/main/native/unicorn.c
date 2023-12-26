@@ -22,7 +22,8 @@ static void update_bps(t_unicorn unicorn) {
   int n = kh_size(unicorn->bps_map);
   if(n <= SEARCH_BPS_COUNT) {
     int idx = 0;
-    for (khiter_t k = kh_begin(unicorn->bps_map); k < kh_end(unicorn->bps_map); k++) {
+    khiter_t k;
+    for (k = kh_begin(unicorn->bps_map); k < kh_end(unicorn->bps_map); k++) {
       if(kh_exist(unicorn->bps_map, k)) {
         uint64_t key = kh_key(unicorn->bps_map, k);
         unicorn->bps[idx++] = key;
@@ -32,7 +33,8 @@ static void update_bps(t_unicorn unicorn) {
 }
 
 static inline bool hitBreakPoint(uint64_t bps[], int n, uint64_t address) {
-    for(int i = 0; i < n; i++) {
+    int i;
+    for(i = 0; i < n; i++) {
         if(bps[i] == address) {
             return true;
         }
