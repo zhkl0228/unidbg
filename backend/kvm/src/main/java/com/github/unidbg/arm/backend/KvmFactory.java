@@ -6,6 +6,7 @@ import com.github.unidbg.arm.backend.kvm.KvmBackend32;
 import com.github.unidbg.arm.backend.kvm.KvmBackend64;
 import org.scijava.nativelib.NativeLibraryUtil;
 
+import java.io.File;
 import java.io.IOException;
 
 public class KvmFactory extends BackendFactory {
@@ -25,6 +26,10 @@ public class KvmFactory extends BackendFactory {
 
     @Override
     protected Backend newBackendInternal(Emulator<?> emulator, boolean is64Bit) {
+        File kvmFile = new File("/dev/kvm");
+        if (!kvmFile.canRead()) {
+            throw new UnsupportedOperationException();
+        }
         Kvm kvm = new Kvm(is64Bit);
         if (is64Bit) {
             return new KvmBackend64(emulator, kvm);
