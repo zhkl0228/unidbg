@@ -7,6 +7,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.arm.backend.KvmFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorBackend64;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
@@ -39,6 +40,7 @@ public class Utilities64 extends TestCase {
                 .addBackendFactory(new HypervisorFactory(true))
                 .addBackendFactory(new DynarmicFactory(true))
                 .addBackendFactory(new KvmFactory(true))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
     }
 

@@ -5,6 +5,7 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.KvmFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
@@ -33,6 +34,7 @@ public class Utilities32 extends TestCase {
                 .setProcessName("org.telegram.messenger")
                 .addBackendFactory(new DynarmicFactory(true))
                 .addBackendFactory(new KvmFactory(true))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
     }
 
