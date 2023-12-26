@@ -11,9 +11,15 @@ import java.io.IOException;
 
 public class KvmFactory extends BackendFactory {
 
+    private static boolean supportKvm() {
+        File kvm = new File("/dev/kvm");
+        return kvm.exists();
+    }
+
     static {
         try {
-            if (NativeLibraryUtil.getArchitecture() == NativeLibraryUtil.Architecture.LINUX_ARM64) {
+            if (NativeLibraryUtil.getArchitecture() == NativeLibraryUtil.Architecture.LINUX_ARM64 &&
+                    supportKvm()) {
                 org.scijava.nativelib.NativeLoader.loadLibrary("kvm");
             }
         } catch (IOException ignored) {
@@ -26,15 +32,15 @@ public class KvmFactory extends BackendFactory {
 
     @Override
     protected Backend newBackendInternal(Emulator<?> emulator, boolean is64Bit) {
-        File kvmFile = new File("/dev/kvm");
-        if (!kvmFile.canRead()) {
-            throw new UnsupportedOperationException();
-        }
-        Kvm kvm = new Kvm(is64Bit);
-        if (is64Bit) {
-            return new KvmBackend64(emulator, kvm);
+        if (supportKvm()) {
+            Kvm kvm = new Kvm(is64Bit);
+            if (is64Bit) {
+                return new KvmBackend64(emulator, kvm);
+            } else {
+                return new KvmBackend32(emulator, kvm);
+            }
         } else {
-            return new KvmBackend32(emulator, kvm);
+            throw new UnsupportedOperationException();
         }
     }
 
