@@ -27,6 +27,9 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * mvn test -Dmaven.test.skip=false -Dtest=org.telegram.messenger.Utilities64
+ */
 public class Utilities64 extends TestCase {
 
     private static LibraryResolver createLibraryResolver() {

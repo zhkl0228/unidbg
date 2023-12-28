@@ -22,6 +22,9 @@ import junit.framework.TestCase;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * mvn test -Dmaven.test.skip=false -Dtest=org.telegram.messenger.Utilities32
+ */
 public class Utilities32 extends TestCase {
 
     private static LibraryResolver createLibraryResolver() {
