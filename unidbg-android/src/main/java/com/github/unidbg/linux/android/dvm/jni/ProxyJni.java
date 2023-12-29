@@ -242,6 +242,8 @@ public class ProxyJni extends JniFunction {
         super.callVoidMethod(vm, dvmObject, dvmMethod, varArg);
     }
 
+
+
     @Override
     public void callVoidMethodV(BaseVM vm, DvmObject<?> dvmObject, DvmMethod dvmMethod, VaList vaList) {
         try {

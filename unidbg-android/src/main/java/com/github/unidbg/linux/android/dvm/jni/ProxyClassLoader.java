@@ -4,7 +4,7 @@ public class ProxyClassLoader {
 
     private final ClassLoader classLoader;
 
-    ProxyClassLoader(ClassLoader classLoader) {
+    public ProxyClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
