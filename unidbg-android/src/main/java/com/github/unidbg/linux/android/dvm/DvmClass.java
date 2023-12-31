@@ -310,6 +310,7 @@ public class DvmClass extends DvmObject<Class<?>> {
         }
     }
 
+
     @SuppressWarnings("unused")
     public <T extends DvmObject<?>> T callStaticJniMethodObject(Emulator<?> emulator, String method, Object...args) {
         try {

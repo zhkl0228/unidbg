@@ -44,7 +44,7 @@ public class DvmObject<T> extends Hashable {
     }
 
     @SuppressWarnings("unused")
-    public void callJniMethod(Emulator<?> emulator, String method, Object...args) {
+    public void callJniMethod(Emulator<?> emulator, String method, Object... args) {
         if (objectType == null) {
             throw new IllegalStateException("objectType is null");
         }
@@ -56,12 +56,12 @@ public class DvmObject<T> extends Hashable {
     }
 
     @SuppressWarnings("unused")
-    public boolean callJniMethodBoolean(Emulator<?> emulator, String method, Object...args) {
+    public boolean callJniMethodBoolean(Emulator<?> emulator, String method, Object... args) {
         return BaseVM.valueOf(callJniMethodInt(emulator, method, args));
     }
 
     @SuppressWarnings("unused")
-    public int callJniMethodInt(Emulator<?> emulator, String method, Object...args) {
+    public int callJniMethodInt(Emulator<?> emulator, String method, Object... args) {
         if (objectType == null) {
             throw new IllegalStateException("objectType is null");
         }
@@ -73,7 +73,7 @@ public class DvmObject<T> extends Hashable {
     }
 
     @SuppressWarnings("unused")
-    public long callJniMethodLong(Emulator<?> emulator, String method, Object...args) {
+    public long callJniMethodLong(Emulator<?> emulator, String method, Object... args) {
         if (objectType == null) {
             throw new IllegalStateException("objectType is null");
         }
@@ -85,7 +85,7 @@ public class DvmObject<T> extends Hashable {
     }
 
     @SuppressWarnings("unused")
-    public <V extends DvmObject<?>> V callJniMethodObject(Emulator<?> emulator, String method, Object...args) {
+    public <V extends DvmObject<?>> V callJniMethodObject(Emulator<?> emulator, String method, Object... args) {
         if (objectType == null) {
             throw new IllegalStateException("objectType is null");
         }
@@ -97,7 +97,7 @@ public class DvmObject<T> extends Hashable {
         }
     }
 
-    protected static Number callJniMethod(Emulator<?> emulator, VM vm, DvmClass objectType, DvmObject<?> thisObj, String method, Object...args) {
+    protected static Number callJniMethod(Emulator<?> emulator, VM vm, DvmClass objectType, DvmObject<?> thisObj, String method, Object... args) {
         UnidbgPointer fnPtr = objectType.findNativeFunction(emulator, method);
         vm.addLocalObject(thisObj);
         List<Object> list = new ArrayList<>(10);
@@ -108,10 +108,10 @@ public class DvmObject<T> extends Hashable {
                 if (arg instanceof Boolean) {
                     list.add((Boolean) arg ? VM.JNI_TRUE : VM.JNI_FALSE);
                     continue;
-                } else if(arg instanceof Hashable) {
+                } else if (arg instanceof Hashable) {
                     list.add(arg.hashCode()); // dvm object
 
-                    if(arg instanceof DvmObject) {
+                    if (arg instanceof DvmObject) {
                         vm.addLocalObject((DvmObject<?>) arg);
                     }
                     continue;
@@ -122,6 +122,7 @@ public class DvmObject<T> extends Hashable {
                         arg instanceof int[] ||
                         arg instanceof float[] ||
                         arg instanceof double[] ||
+                        arg instanceof Object[] ||
                         arg instanceof Enum) {
                     DvmObject<?> obj = ProxyDvmObject.createObject(vm, arg);
                     list.add(obj.hashCode());
