@@ -81,7 +81,10 @@ public abstract class AbstractFileIO implements NewFileIO {
 
     @Override
     public int setsockopt(int level, int optname, Pointer optval, int optlen) {
-        throw new AbstractMethodError();
+//        throw new AbstractMethodError();
+        System.out.println("setsockopt level=" + level + ", optname=" + optname + ", optval=" + optval + ", optlen=" + optlen);
+
+        return 0;
     }
 
     @Override
