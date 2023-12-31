@@ -205,7 +205,7 @@ public class DvmMethod extends Hashable {
             log.debug("callStaticVoidMethodA signature=" + signature);
         }
         BaseVM vm = dvmClass.vm;
-        checkJni(vm, dvmClass).callStaticVoidMethodV(vm, dvmClass, signature, vaList);
+        checkJni(vm, dvmClass).callStaticVoidMethodV(vm, dvmClass, this, vaList);
     }
 
     DvmObject<?> newObjectV(VaList vaList) {
