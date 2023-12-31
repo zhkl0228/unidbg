@@ -57,6 +57,7 @@ public class Utilities32 extends TestCase {
         assert module != null;
         new AndroidModule(emulator, vm).register(memory);
 
+        System.out.println("backend=" + emulator.getBackend());
         vm.setVerbose(true);
         File file = new File("src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so");
         DalvikModule dm = vm.loadLibrary(file.canRead() ? file : new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), true);
@@ -71,7 +72,6 @@ public class Utilities32 extends TestCase {
     }
 
     public void test() throws Exception {
-        System.out.println("backend=" + emulator.getBackend());
         this.aesCbcEncryptionByteArray();
         this.aesCtrDecryptionByteArray();
         this.pbkdf2();
