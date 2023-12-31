@@ -5,8 +5,13 @@ Allows you to emulate Android and iOS native library on Raspberry Pi 4B.<br>
 Tested on [CentOS-7-aarch64](https://mirrors.bfsu.edu.cn/centos-altarch/7.9.2009/isos/aarch64/images/CentOS-Userland-7-aarch64-RaspberryPI-Minimal-4-2009-sda.raw.xz) with Raspberry Pi 4B.<br>
 
 1. Download [CentOS-7](https://mirrors.bfsu.edu.cn/centos-altarch/7.9.2009/isos/aarch64/images/CentOS-Userland-7-aarch64-RaspberryPI-Minimal-4-2009-sda.raw.xz) and flash to TF card.
-2. Boot Raspberry Pi 4B into CentOS-7 then compile kernel:<br>
-   ` 0x0: yum install -y gcc gcc-c++ flex bison openssl-devel java-1.8.0-openjdk-devel maven git `<br>
+2. Default root password: centos<br>
+3. Resize/Expand the RootFS for the Whole SD Card.<br>
+   ` 0x0: fdisk /dev/mmcblk0`<br>
+   ` 0x1: delete /dev/mmcblk0p3 and recreate /dev/mmcblk0p3 with whole blocks.`<br>
+   ` 0x2: reboot and resize2fs /dev/mmcblk0p3`<br>
+4. Boot Raspberry Pi 4B into CentOS-7 then compile kernel:<br>
+   ` 0x0: yum install -y make gcc gcc-c++ flex bison openssl-devel java-1.8.0-openjdk-devel maven git `<br>
    ` 0x1: git clone https://github.com/zhkl0228/linux `<br>
    ` 0x2: cd linux `<br>
    ` 0x3: git checkout rpi-5.4.y `<br>

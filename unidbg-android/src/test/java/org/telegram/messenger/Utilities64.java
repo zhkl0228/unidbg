@@ -77,6 +77,7 @@ public class Utilities64 extends TestCase {
     }
 
     public void test() throws Exception {
+        System.out.println("backend=" + emulator.getBackend());
         this.aesCbcEncryptionByteArray();
         this.aesCtrDecryptionByteArray();
         this.pbkdf2();
