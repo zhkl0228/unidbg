@@ -5,6 +5,7 @@ import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.KvmFactory;
+import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
@@ -21,6 +22,9 @@ import junit.framework.TestCase;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * mvn test -Dmaven.test.skip=false -Dtest=org.telegram.messenger.Utilities32
+ */
 public class Utilities32 extends TestCase {
 
     private static LibraryResolver createLibraryResolver() {
@@ -33,6 +37,7 @@ public class Utilities32 extends TestCase {
                 .setProcessName("org.telegram.messenger")
                 .addBackendFactory(new DynarmicFactory(true))
                 .addBackendFactory(new KvmFactory(true))
+                .addBackendFactory(new Unicorn2Factory(true))
                 .build();
     }
 
@@ -52,6 +57,7 @@ public class Utilities32 extends TestCase {
         assert module != null;
         new AndroidModule(emulator, vm).register(memory);
 
+        System.out.println("backend=" + emulator.getBackend());
         vm.setVerbose(true);
         File file = new File("src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so");
         DalvikModule dm = vm.loadLibrary(file.canRead() ? file : new File("unidbg-android/src/test/resources/example_binaries/armeabi-v7a/libtmessages.29.so"), true);

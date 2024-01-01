@@ -1,6 +1,6 @@
 package com.github.unidbg.arm.backend;
 
-final class UserMemoryRegion {
+public final class UserMemoryRegion {
 
     final int slot;
 //    int flags;
