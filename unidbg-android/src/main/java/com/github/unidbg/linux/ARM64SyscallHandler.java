@@ -18,14 +18,7 @@ import com.github.unidbg.file.IOResolver;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.linux.android.AndroidResolver;
-import com.github.unidbg.linux.file.ByteArrayFileIO;
-import com.github.unidbg.linux.file.DriverFileIO;
-import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
-import com.github.unidbg.linux.file.LocalSocketIO;
-import com.github.unidbg.linux.file.NetLinkSocket;
-import com.github.unidbg.linux.file.SocketIO;
-import com.github.unidbg.linux.file.TcpSocket;
-import com.github.unidbg.linux.file.UdpSocket;
+import com.github.unidbg.linux.file.*;
 import com.github.unidbg.linux.struct.RLimit64;
 import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.linux.thread.MarshmallowThread;
@@ -346,6 +339,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 198:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator));
+                    return;
+                case 199:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socketpair(emulator));
                     return;
                 case 203:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
@@ -1015,6 +1011,37 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 }
         }
         log.info("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
+        emulator.getMemory().setErrno(UnixEmulator.EAFNOSUPPORT);
+        return -1;
+    }
+
+    protected int socketpair(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int domain = context.getIntArg(0);
+        int type = context.getIntArg(1) & 0x7ffff;
+        int protocol = context.getIntArg(2);
+        Pointer sv = context.getPointerArg(3);
+        if (log.isDebugEnabled()) {
+            log.debug("socketpair domain=" + domain + ", type=" + type + ", protocol=" + protocol + ", sv=" + sv);
+        }
+
+        int[] fds = new int[2];
+        if (domain == SocketIO.AF_LOCAL) {
+            fds[0] = getMinFd();
+            BidirectionalPipeIO one = new BidirectionalPipeIO();
+            fdMap.put(fds[0], one);
+
+            fds[1] = getMinFd();
+            BidirectionalPipeIO two = new BidirectionalPipeIO();
+            fdMap.put(fds[1], two);
+            one.setTarget(two);
+            two.setTarget(one);
+
+            sv.setInt(0, fds[0]);
+            sv.setInt(4, fds[1]);
+            return 0;
+        }
+
         emulator.getMemory().setErrno(UnixEmulator.EAFNOSUPPORT);
         return -1;
     }

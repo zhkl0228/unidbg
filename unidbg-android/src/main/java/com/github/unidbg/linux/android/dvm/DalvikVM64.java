@@ -3393,9 +3393,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringRegion string=" + string + ", value=" + value + ", start=" + start +
-                            ", length=" + length + ", buf" + buf +", lr=" + context.getLRPointer());
+                            ", length=" + length + ", buf" + buf + ", lr=" + context.getLRPointer());
                 }
-                byte[] data = Arrays.copyOfRange(bytes, start, start+length+1);
+                byte[] data = Arrays.copyOfRange(bytes, start, start + length + 1);
                 buf.write(0, data, 0, data.length);
                 return JNI_OK;
             }
@@ -3418,9 +3418,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringUTFRegion string=" + string + ", value=" + value + ", start=" + start +
-                            ", length=" + length + ", buf" + buf +", lr=" + context.getLRPointer());
+                            ", length=" + length + ", buf" + buf + ", lr=" + context.getLRPointer());
                 }
-                byte[] data = Arrays.copyOfRange(bytes, start, start+length+1);
+                byte[] data = Arrays.copyOfRange(bytes, start, start + length + 1);
                 buf.write(0, data, 0, data.length);
                 return JNI_OK;
             }
@@ -3547,7 +3547,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 if (dvmGlobalObject != null) {
                     return dvmGlobalObject.weak ? JNIWeakGlobalRefType : JNIGlobalRefType;
-                } else if(dvmLocalObject != null) {
+                } else if (dvmLocalObject != null) {
                     return JNILocalRefType;
                 } else {
                     return JNIInvalidRefType;
