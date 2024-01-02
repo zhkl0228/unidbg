@@ -282,13 +282,13 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("DeleteGlobalRef object=" + object);
                 }
-                ObjRef ref = object == null ? null : globalObjectMap.remove(object.toIntPeer());
-                if (ref != null) {
-                    ref.obj.onDeleteRef();
-                }
-                if (verbose) {
-                    System.out.printf("JNIEnv->DeleteGlobalRef(%s) was called from %s%n", ref, context.getLRPointer());
-                }
+//                ObjRef ref = object == null ? null : globalObjectMap.remove(object.toIntPeer());
+//                if (ref != null) {
+//                    ref.obj.onDeleteRef();
+//                }
+//                if (verbose) {
+//                    System.out.printf("JNIEnv->DeleteGlobalRef(%s) was called from %s%n", ref, context.getLRPointer());
+//                }
                 return 0;
             }
         });
