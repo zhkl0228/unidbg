@@ -5,6 +5,7 @@ import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.DvmField;
 import com.github.unidbg.linux.android.dvm.DvmMethod;
 import com.github.unidbg.linux.android.dvm.DvmObject;
+import com.github.unidbg.linux.android.dvm.Jni;
 import com.github.unidbg.linux.android.dvm.JniFunction;
 import com.github.unidbg.linux.android.dvm.VaList;
 import com.github.unidbg.linux.android.dvm.VarArg;
@@ -25,7 +26,8 @@ class ProxyJni extends JniFunction {
     private final ProxyClassLoader classLoader;
     private final ProxyDvmObjectVisitor visitor;
 
-    ProxyJni(ProxyClassLoader classLoader, ProxyDvmObjectVisitor visitor) {
+    ProxyJni(ProxyClassLoader classLoader, ProxyDvmObjectVisitor visitor, Jni fallbackJni) {
+        super(fallbackJni);
         this.classLoader = classLoader;
         this.visitor = visitor;
     }

@@ -286,14 +286,15 @@ public abstract class AbstractJni implements Jni {
             case "java/lang/Class->getName()Ljava/lang/String;":
                 return new StringObject(vm, ((DvmClass) dvmObject).getName());
             case "android/view/accessibility/AccessibilityManager->getEnabledAccessibilityServiceList(I)Ljava/util/List;":
-                return new ArrayListObject(vm, Collections.<DvmObject<?>>emptyList());
+                return new ArrayListObject(vm, Collections.emptyList());
             case "java/util/Enumeration->nextElement()Ljava/lang/Object;":
                 return ((Enumeration) dvmObject).nextElement();
-            case "java/util/Locale->getLanguage()Ljava/lang/String;":
+            case "java/util/Locale->getLanguage()Ljava/lang/String;": {
                 Locale locale = (Locale) dvmObject.getValue();
                 return new StringObject(vm, locale.getLanguage());
+            }
             case "java/util/Locale->getCountry()Ljava/lang/String;":
-                locale = (Locale) dvmObject.getValue();
+                Locale locale = (Locale) dvmObject.getValue();
                 return new StringObject(vm, locale.getCountry());
             case "android/os/IServiceManager->getService(Ljava/lang/String;)Landroid/os/IBinder;": {
                 ServiceManager serviceManager = (ServiceManager) dvmObject;
@@ -725,11 +726,12 @@ public abstract class AbstractJni implements Jni {
     @Override
     public DvmObject<?> newObject(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
         switch (signature) {
-            case "java/lang/String-><init>([B)V":
+            case "java/lang/String-><init>([B)V": {
                 ByteArray array = varArg.getObjectArg(0);
                 return new StringObject(vm, new String(array.getValue()));
+            }
             case "java/lang/String-><init>([BLjava/lang/String;)V":
-                array = varArg.getObjectArg(0);
+                ByteArray array = varArg.getObjectArg(0);
                 StringObject string = varArg.getObjectArg(1);
                 try {
                     return new StringObject(vm, new String(array.getValue(), string.getValue()));
