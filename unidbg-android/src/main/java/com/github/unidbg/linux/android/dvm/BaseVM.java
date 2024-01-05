@@ -82,7 +82,9 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         ObjRef(DvmObject<?> obj, boolean weak) {
             this.obj = obj;
             this.weak = weak;
+            this.refCount = 1;
         }
+        int refCount;
         @Override
         public String toString() {
             return String.valueOf(obj);
@@ -138,10 +140,16 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             ((DvmAwareObject) value).initializeDvm(emulator, this, object);
         }
         if (global) {
-            if (weak) {
-                weakGlobalObjectMap.put(hash, new ObjRef(object, true));
+            ObjRef old = weak ? weakGlobalObjectMap.get(hash) : globalObjectMap.get(hash);
+            if (old == null) {
+                old = new ObjRef(object, weak);
             } else {
-                globalObjectMap.put(hash, new ObjRef(object, false));
+                old.refCount++;
+            }
+            if (weak) {
+                weakGlobalObjectMap.put(hash, old);
+            } else {
+                globalObjectMap.put(hash, old);
             }
         } else {
             localObjectMap.put(hash, new ObjRef(object, weak));

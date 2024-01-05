@@ -69,6 +69,11 @@ public class DvmMethod extends Hashable {
         return checkJni(vm, dvmClass).callObjectMethod(vm, dvmObject, this, varArg);
     }
 
+    long callLongMethodA(DvmObject<?> dvmObject, VaList vaList) {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).callLongMethodV(vm, dvmObject, this, vaList);
+    }
+
     long callLongMethod(DvmObject<?>  dvmObject, VarArg varArg) {
         BaseVM vm = dvmClass.vm;
         return checkJni(vm, dvmClass).callLongMethod(vm, dvmObject, this, varArg);
@@ -152,6 +157,11 @@ public class DvmMethod extends Hashable {
     int callStaticIntMethodV(VaList vaList) {
         BaseVM vm = dvmClass.vm;
         return checkJni(vm, dvmClass).callStaticIntMethodV(vm, dvmClass, this, vaList);
+    }
+
+    long callStaticLongMethodA(VaList vaList) {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).callStaticLongMethodV(vm, dvmClass, this, vaList);
     }
 
     long callStaticLongMethod(VarArg varArg) {
