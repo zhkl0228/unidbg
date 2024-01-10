@@ -101,6 +101,8 @@ public interface VM {
     void throwException(DvmObject<?> throwable);
 
     void setVerbose(boolean verbose);
+    void setVerboseMethodOperation(boolean verboseMethodOperation);
+    void setVerboseFieldOperation(boolean verboseFieldOperation);
 
     void setDvmClassFactory(DvmClassFactory factory);
 

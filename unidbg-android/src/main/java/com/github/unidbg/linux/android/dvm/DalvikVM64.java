@@ -121,7 +121,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmMethod == null) {
                     throw new BackendException();
                 } else {
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->ToReflectedMethod(%s, \"%s\", %s) was called from %s%n", dvmClass.getClassName(), dvmMethod.methodName, dvmMethod.isStatic ? "is static" : "not static", context.getLRPointer());
                     }
 
@@ -136,7 +136,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer clazz = context.getPointerArg(1);
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->GetSuperClass(%s) was called from %s%n", dvmClass, context.getLRPointer());
                 }
                 if (dvmClass.getClassName().equals("java/lang/Object")) {
@@ -366,7 +366,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     DvmObject<?> obj = dvmClass.allocObject();
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->AllocObject(%s => %s) was called from %s%n", dvmClass.getClassName(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -390,7 +390,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     DvmObject<?> obj = dvmMethod.newObject(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->NewObject(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -415,7 +415,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.newObjectV(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->NewObjectV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -440,7 +440,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     DvmObject<?> obj = dvmMethod.newObjectA(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->NewObjectA(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -528,7 +528,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     DvmObject<?> ret = dvmMethod.callObjectMethod(dvmObject, varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallObjectMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return addLocalObject(ret);
@@ -554,7 +554,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callObjectMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallObjectMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -580,7 +580,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callObjectMethodA(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallObjectMethodA(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -605,7 +605,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     boolean ret = dvmMethod.callBooleanMethod(dvmObject, varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallBooleanMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
@@ -631,7 +631,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     boolean ret = dvmMethod.callBooleanMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
@@ -657,7 +657,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     boolean ret = dvmMethod.callBooleanMethodA(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
@@ -690,7 +690,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     byte ret = dvmMethod.callByteMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallByteMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -751,7 +751,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     short ret = dvmMethod.callShortMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallShortMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -783,7 +783,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     int ret = dvmMethod.callIntMethod(dvmObject, varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallIntMethod(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -809,7 +809,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     int ret = dvmMethod.callIntMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallIntMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -835,7 +835,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     int ret = dvmMethod.callIntMethodA(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallIntMethodA(%s, %s(%s) => 0x%x) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -860,7 +860,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     long ret = dvmMethod.callLongMethod(dvmObject, varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallLongMethod(%s, %s(%s) => 0x%xL) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -886,7 +886,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     long ret = dvmMethod.callLongMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallLongMethodV(%s, %s(%s) => 0x%xL) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -912,7 +912,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     long ret = dvmMethod.callLongMethodA(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallLongMethodA(%s, %s(%s) => 0x%xL) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -945,7 +945,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     float ret = dvmMethod.callFloatMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallFloatMethodV(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
@@ -981,7 +981,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     double ret = dvmMethod.callDoubleMethod(dvmObject, varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallDoubleMethod(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
@@ -1024,7 +1024,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     dvmMethod.callVoidMethod(dvmObject, varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallVoidMethod(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, varArg.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -1050,7 +1050,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     dvmMethod.callVoidMethodV(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallVoidMethodV(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -1076,7 +1076,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     dvmMethod.callVoidMethodA(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallVoidMethodA(%s, %s(%s)) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -1141,7 +1141,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                         throw new IllegalStateException();
                     }
                     boolean ret = dvmMethod.callBooleanMethodA(dvmObject, vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallNonvirtualBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmObject, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
@@ -1327,7 +1327,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     } else {
                         dvmMethod.callVoidMethodV(dvmObject, vaList);
                     }
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallNonvirtualVoidMethodV(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -1359,7 +1359,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     } else {
                         dvmMethod.callVoidMethodA(dvmObject, vaList);
                     }
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallNonVirtualVoidMethodA(%s, %s, %s(%s)) was called from %s%n", dvmObject, dvmClass.getClassName(), dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -1408,7 +1408,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     DvmObject<?> obj = dvmField.getObjectField(dvmObject);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -1432,7 +1432,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     int ret = dvmField.getBooleanField(dvmObject);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetBooleanField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, ret == JNI_TRUE, context.getLRPointer());
                     }
                     return ret;
@@ -1477,7 +1477,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     int ret = dvmField.getIntField(dvmObject);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetIntField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
@@ -1501,7 +1501,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     long ret = dvmField.getLongField(dvmObject);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetLongField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
@@ -1525,7 +1525,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     float ret = dvmField.getFloatField(dvmObject);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetFloatField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
@@ -1562,7 +1562,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     DvmObject<?> obj = value == null ? null : getObject(value.toIntPeer());
                     dvmField.setObjectField(dvmObject, obj);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetObjectField(%s, %s %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
                     }
                 }
@@ -1588,7 +1588,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     boolean flag = BaseVM.valueOf(value);
                     dvmField.setBooleanField(dvmObject, flag);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetBooleanField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, flag, context.getLRPointer());
                     }
                 }
@@ -1634,7 +1634,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     dvmField.setIntField(dvmObject, value);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetIntField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
@@ -1659,7 +1659,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     dvmField.setLongField(dvmObject, value);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetLongField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
@@ -1688,7 +1688,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     dvmField.setFloatField(dvmObject, value);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetFloatField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
@@ -1717,7 +1717,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     dvmField.setDoubleField(dvmObject, value);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetDoubleField(%s, %s => %s) was called from %s%n", dvmObject, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
@@ -1766,7 +1766,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callStaticObjectMethod(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticObjectMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -1791,7 +1791,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callStaticObjectMethodV(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticObjectMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -1816,7 +1816,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     DvmObject<?> obj = dvmMethod.callStaticObjectMethodA(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticObjectMethodA(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -1840,7 +1840,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     boolean ret = dvmMethod.CallStaticBooleanMethod(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticBooleanMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
@@ -1865,7 +1865,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     boolean ret = dvmMethod.callStaticBooleanMethodV(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticBooleanMethodV(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? JNI_TRUE : JNI_FALSE;
@@ -1890,7 +1890,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     boolean ret = dvmMethod.callStaticBooleanMethodV(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticBooleanMethodA(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret ? VM.JNI_TRUE : VM.JNI_FALSE;
@@ -1977,7 +1977,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     int ret = dvmMethod.callStaticIntMethod(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticIntMethod(%s, %s(%s) => 0x%x) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -2002,7 +2002,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     int ret = dvmMethod.callStaticIntMethodV(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticIntMethodV(%s, %s(%s) => 0x%x) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -2033,7 +2033,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     long value = dvmMethod.callStaticLongMethod(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticLongMethod(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), context.getLRPointer());
                     }
                     return value;
@@ -2058,7 +2058,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     long ret = dvmMethod.callStaticLongMethodV(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticLongMethodV(%s, %s(%s) => 0x%xL) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -2083,7 +2083,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     long ret = dvmMethod.callStaticLongMethodA(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticLongMethodA(%s, %s(%s) => 0x%x) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), ret, context.getLRPointer());
                     }
                     return ret;
@@ -2107,7 +2107,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     float ret = dvmMethod.callStaticFloatMethod(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticFloatMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
@@ -2149,7 +2149,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     double ret = dvmMethod.callStaticDoubleMethod(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticDoubleMethod(%s, %s(%s) => %s) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), ret, context.getLRPointer());
                     }
                     ByteBuffer buffer = ByteBuffer.allocate(16);
@@ -2191,7 +2191,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VarArg varArg = ArmVarArg.create(emulator, DalvikVM64.this, dvmMethod);
                     dvmMethod.callStaticVoidMethod(varArg);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticVoidMethod(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -2216,7 +2216,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new VaList64(emulator, DalvikVM64.this, va_list, dvmMethod);
                     dvmMethod.callStaticVoidMethodV(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticVoidMethodV(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -2241,7 +2241,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     VaList vaList = new JValueList(DalvikVM64.this, jvalue, dvmMethod);
                     dvmMethod.callStaticVoidMethodA(vaList);
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticVoidMethodA(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
                     return 0;
@@ -2289,7 +2289,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     DvmObject<?> obj = dvmField.getStaticObjectField();
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetStaticObjectField(%s, %s %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, dvmField.fieldType, obj, context.getLRPointer());
                     }
                     return addLocalObject(obj);
@@ -2312,7 +2312,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     boolean ret = dvmField.getStaticBooleanField();
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetStaticBooleanField(%s, %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret ? VM.JNI_TRUE : VM.JNI_FALSE;
@@ -2335,7 +2335,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     byte ret = dvmField.getStaticByteField();
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetStaticByteField(%s, %s => %s) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
@@ -2372,7 +2372,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     int ret = dvmField.getStaticIntField();
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetStaticIntField(%s, %s => 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
@@ -2395,7 +2395,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException();
                 } else {
                     long ret = dvmField.getStaticLongField();
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->GetStaticLongField(%s, %s => 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, ret, context.getLRPointer());
                     }
                     return ret;
@@ -2434,7 +2434,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException("dvmClass=" + dvmClass);
                 } else {
                     dvmField.setStaticObjectField(dvmObject);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetStaticObjectField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, dvmObject, context.getLRPointer());
                     }
                 }
@@ -2459,7 +2459,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 } else {
                     boolean flag = BaseVM.valueOf(value);
                     dvmField.setStaticBooleanField(flag);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetStaticBooleanField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, flag, context.getLRPointer());
                     }
                 }
@@ -2503,7 +2503,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new BackendException("dvmClass=" + dvmClass);
                 } else {
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetStaticIntField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
                     }
                     dvmField.setStaticIntField(value);
@@ -2527,7 +2527,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (dvmField == null) {
                     throw new BackendException("dvmClass=" + dvmClass);
                 } else {
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetStaticLongField(%s, %s, 0x%x) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
                     }
                     dvmField.setStaticLongField(value);
@@ -2546,7 +2546,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("GetStringUTFLength string=" + string + ", lr=" + context.getLRPointer());
                 }
                 String value = (String) Objects.requireNonNull(string).getValue();
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->GetStringUTFLength(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 byte[] data = value.getBytes(StandardCharsets.UTF_8);
@@ -2565,7 +2565,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 String value = Objects.requireNonNull(string).getValue();
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->GetStringUtfChars(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
@@ -2606,7 +2606,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetArrayLength array=" + array);
                 }
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->GetArrayLength(%s => %s) was called from %s%n", array, array.length(), context.getLRPointer());
                 }
                 return array.length();
@@ -2631,7 +2631,11 @@ public class DalvikVM64 extends BaseVM implements VM {
                 DvmObject<?> obj = size == 0 ? null : initialElement == null ? null : getObject(initialElement.toIntPeer());
                 DvmObject<?>[] array = new DvmObject[size];
                 Arrays.fill(array, obj);
-                return addLocalObject(new ArrayObject(array));
+                ArrayObject arrayObject = new ArrayObject(array);
+                if (verbose || verboseMethodOperation) {
+                    System.out.printf("JNIEnv->NewObjectArray(%s => %s) was called from %s%n", arrayObject, size, context.getLRPointer());
+                }
+                return addLocalObject(arrayObject);
             }
         });
 
@@ -2646,7 +2650,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("GetObjectArrayElement array=" + array + ", index=" + index);
                 }
                 DvmObject<?> obj = Objects.requireNonNull(array).getValue()[index];
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->GetObjectArrayElement(%s, %d) => %s was called from %s%n", array, index, obj, context.getLRPointer());
                 }
                 return addLocalObject(obj);
@@ -2664,6 +2668,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 DvmObject<?> obj = element == null ? null : getObject(element.toIntPeer());
                 if (log.isDebugEnabled()) {
                     log.debug("setObjectArrayElement array=" + array + ", index=" + index + ", obj=" + obj);
+                }
+                if (verbose || verboseFieldOperation) {
+                    System.out.printf("JNIEnv->SetObjectArrayElement(%s, %d) => %s was called from %s%n", array, index, obj, context.getLRPointer());
                 }
                 DvmObject<?>[] objs = Objects.requireNonNull(array).getValue();
                 objs[index] = obj;
@@ -2686,7 +2693,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("NewByteArray size=" + size);
                 }
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->NewByteArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addLocalObject(new ByteArray(DalvikVM64.this, new byte[size]));
@@ -2715,7 +2722,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("NewIntArray size=" + size);
                 }
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->NewIntArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addLocalObject(new IntArray(DalvikVM64.this, new int[size]));
@@ -2737,7 +2744,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("NewFloatArray size=" + size);
                 }
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->NewFloatArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addLocalObject(new FloatArray(DalvikVM64.this, new float[size]));
@@ -2752,7 +2759,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("_NewDoubleArray size=" + size);
                 }
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->NewDoubleArray(%d) was called from %s%n", size, context.getLRPointer());
                 }
                 return addLocalObject(new DoubleArray(DalvikVM64.this, new double[size]));
@@ -2779,6 +2786,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                     isCopy.setInt(0, JNI_TRUE);
                 }
                 ByteArray array = getObject(arrayPointer.toIntPeer());
+                if (verbose || verboseFieldOperation) {
+                    System.out.printf("JNIEnv->GetByteArrayElements(%s) => %s was called from %s%n", isCopy != null, array, context.getLRPointer());
+                }
                 return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).peer;
             }
         });
@@ -2807,6 +2817,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetIntArrayElements array=" + array + ", isCopy=" + isCopy);
                 }
+                if (verbose || verboseFieldOperation) {
+                    System.out.printf("JNIEnv->GetIntArrayElements(%s) => %s was called from %s%n", isCopy != null, array, context.getLRPointer());
+                }
                 return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).peer;
             }
         });
@@ -2831,7 +2844,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException("dvmClass=" + dvmClass);
                 } else {
                     dvmField.setStaticFloatField(value);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetStaticFloatField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
@@ -2859,7 +2872,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     throw new BackendException("dvmClass=" + dvmClass);
                 } else {
                     dvmField.setStaticDoubleField(value);
-                    if (verbose) {
+                    if (verbose || verboseFieldOperation) {
                         System.out.printf("JNIEnv->SetStaticDoubleField(%s, %s, %s) was called from %s%n", dvmClass, dvmField.fieldName, value, context.getLRPointer());
                     }
                 }
@@ -2887,7 +2900,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 }
                 String string = builder.toString();
                 log.debug("NewString unicodeChars={}, len={}, string={}", unicodeChars, len, string);
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->NewString(\"%s\") was called from %s%n", string, context.getLRPointer());
                 }
                 return addLocalObject(new StringObject(DalvikVM64.this, string));
@@ -2928,7 +2941,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + context.getLRPointer());
                 }
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->GetStringUTFChars(\"%s\") was called from %s%n", value, context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
@@ -2966,7 +2979,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("NewStringUTF bytes=" + bytes + ", string=" + string);
                 }
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->NewStringUTF(\"%s\") was called from %s%n", string, context.getLRPointer());
                 }
                 return addLocalObject(new StringObject(DalvikVM64.this, string));
@@ -2987,6 +3000,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 Pointer isCopy = context.getPointerArg(2);
                 FloatArray array = getObject(object.toIntPeer());
+                if (verbose || verboseFieldOperation) {
+                    System.out.printf("JNIEnv->GetFloatArrayElements(%s) => %s was called from %s%n", isCopy != null, array, context.getLRPointer());
+                }
                 return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).peer;
             }
         });
@@ -3097,7 +3113,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
                 ByteArray array = getObject(object.toIntPeer());
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->GetByteArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
@@ -3125,7 +3141,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
                 ShortArray array = getObject(object.toIntPeer());
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->GetShortArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
                 short[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
@@ -3167,7 +3183,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
                 DoubleArray array = getObject(object.toIntPeer());
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->GetDoubleArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
                 double[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
@@ -3195,7 +3211,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
                 ByteArray array = getObject(object.toIntPeer());
-                if (verbose) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->SetByteArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
                 }
                 byte[] data = buf.getByteArray(0, length);
@@ -3234,6 +3250,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
                 IntArray array = getObject(object.toIntPeer());
+                if (verbose || verboseFieldOperation) {
+                    System.out.printf("JNIEnv->SetIntArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
                 int[] data = buf.getIntArray(0, length);
                 if (log.isDebugEnabled()) {
                     log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
@@ -3259,6 +3278,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
                 FloatArray array = getObject(object.toIntPeer());
+                if (verbose || verboseFieldOperation) {
+                    System.out.printf("JNIEnv->SetFloatArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
                 float[] data = buf.getFloatArray(0, length);
                 if (log.isDebugEnabled()) {
                     log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
@@ -3277,6 +3299,9 @@ public class DalvikVM64 extends BaseVM implements VM {
                 int length = context.getIntArg(3);
                 Pointer buf = context.getPointerArg(4);
                 DoubleArray array = getObject(object.toIntPeer());
+                if (verbose || verboseFieldOperation) {
+                    System.out.printf("JNIEnv->SetDoubleArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
                 double[] data = buf.getDoubleArray(0, length);
                 if (log.isDebugEnabled()) {
                     log.debug("SetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
@@ -3297,7 +3322,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("RegisterNatives dvmClass=" + dvmClass + ", methods=" + methods + ", nMethods=" + nMethods);
                 }
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.getClassName(), methods, nMethods, context.getLRPointer());
                 }
                 for (int i = 0; i < nMethods; i++) {
@@ -3377,7 +3402,7 @@ public class DalvikVM64 extends BaseVM implements VM {
 
                 StringObject string = getObject(object.toIntPeer());
                 String value = Objects.requireNonNull(string).getValue();
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->GetStringRegion(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 byte[] bytes = new byte[value.length() * 2];
@@ -3407,7 +3432,7 @@ public class DalvikVM64 extends BaseVM implements VM {
 
                 StringObject string = getObject(object.toIntPeer());
                 String value = Objects.requireNonNull(string).getValue();
-                if (verbose) {
+                if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->GetStringUTFRegion(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);

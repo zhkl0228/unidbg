@@ -44,11 +44,21 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
     DvmObject<?> throwable;
 
-    boolean verbose;
+    boolean verbose, verboseMethodOperation, verboseFieldOperation;
 
     @Override
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
+    }
+
+    @Override
+    public void setVerboseMethodOperation(boolean verboseMethodOperation) {
+        this.verboseMethodOperation = verboseMethodOperation;
+    }
+
+    @Override
+    public void setVerboseFieldOperation(boolean verboseFieldOperation) {
+        this.verboseFieldOperation = verboseFieldOperation;
     }
 
     @Override
