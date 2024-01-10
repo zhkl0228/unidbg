@@ -73,7 +73,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         boolean create = hasCreat(oflags);
         if (file.exists()) {
             if (create && hasExcl(oflags)) {
-                return FileResult.failed(UnixEmulator.EEXIST);
+//                return FileResult.failed(UnixEmulator.EEXIST);
             }
             return FileResult.success(file.isDirectory() ? createDirectoryFileIO(file, oflags, path) : createSimpleFileIO(file, oflags, path));
         }
