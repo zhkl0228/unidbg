@@ -3322,7 +3322,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 if (log.isDebugEnabled()) {
                     log.debug("RegisterNatives dvmClass=" + dvmClass + ", methods=" + methods + ", nMethods=" + nMethods);
                 }
-                if (verbose || verboseMethodOperation) {
+                if (verbose || verboseFieldOperation) {
                     System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.getClassName(), methods, nMethods, context.getLRPointer());
                 }
                 for (int i = 0; i < nMethods; i++) {
@@ -3337,7 +3337,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     }
                     dvmClass.nativesMap.put(methodName + signatureValue, (UnidbgPointer) fnPtr);
 
-                    if (verbose) {
+                    if (verbose || verboseMethodOperation) {
                         System.out.printf("RegisterNative(%s, %s%s, %s)%n", dvmClass.getClassName(), methodName, signatureValue, fnPtr);
                     }
                 }
