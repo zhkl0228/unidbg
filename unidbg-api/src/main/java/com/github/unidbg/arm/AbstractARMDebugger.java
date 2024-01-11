@@ -943,35 +943,39 @@ public abstract class AbstractARMDebugger implements Debugger {
                 new CodeHistory(address, size, thumb))
         ) {
             Instruction[] instructions = history.disassemble(emulator);
-            for (Instruction ins : instructions) {
-                if (ins.getAddress() == address) {
+            if (instructions != null) {
+                for (Instruction ins : instructions) {
+                    if (ins.getAddress() == address) {
+                        sb.append("=> *");
+                        on = true;
+                    } else {
+                        sb.append("    ");
+                        if (on) {
+                            next = ins.getAddress();
+                            on = false;
+                        }
+                    }
+                    sb.append(ARM.assembleDetail(emulator, ins, ins.getAddress(), history.thumb, on, maxLength)).append('\n');
+                    nextAddr += ins.getBytes().length;
+                }
+            }
+        }
+        Instruction[] insns = emulator.disassemble(nextAddr, 4 * 15, 15);
+        if (insns != null) {
+            for (Instruction ins : insns) {
+                if (nextAddr == address) {
                     sb.append("=> *");
                     on = true;
                 } else {
                     sb.append("    ");
                     if (on) {
-                        next = ins.getAddress();
+                        next = nextAddr;
                         on = false;
                     }
                 }
-                sb.append(ARM.assembleDetail(emulator, ins, ins.getAddress(), history.thumb, on, maxLength)).append('\n');
-                nextAddr += ins.getBytes().length;
+                sb.append(ARM.assembleDetail(emulator, ins, nextAddr, thumb, on, maxLength)).append('\n');
+                nextAddr += ins.getSize();
             }
-        }
-        Instruction[] insns = emulator.disassemble(nextAddr, 4 * 15, 15);
-        for (Instruction ins : insns) {
-            if (nextAddr == address) {
-                sb.append("=> *");
-                on = true;
-            } else {
-                sb.append("    ");
-                if (on) {
-                    next = nextAddr;
-                    on = false;
-                }
-            }
-            sb.append(ARM.assembleDetail(emulator, ins, nextAddr, thumb, on, maxLength)).append('\n');
-            nextAddr += ins.getSize();
         }
         System.out.println(sb);
         if (on) {

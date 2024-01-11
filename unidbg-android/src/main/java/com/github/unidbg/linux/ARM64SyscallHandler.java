@@ -23,6 +23,7 @@ import com.github.unidbg.linux.file.DriverFileIO;
 import com.github.unidbg.linux.file.LocalAndroidUdpSocket;
 import com.github.unidbg.linux.file.LocalSocketIO;
 import com.github.unidbg.linux.file.NetLinkSocket;
+import com.github.unidbg.linux.file.PipedSocketIO;
 import com.github.unidbg.linux.file.SocketIO;
 import com.github.unidbg.linux.file.TcpSocket;
 import com.github.unidbg.linux.file.UdpSocket;
@@ -42,6 +43,8 @@ import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
 import java.util.ArrayList;
@@ -53,7 +56,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
-    private static final Log log = LogFactory.getLog(ARM64SyscallHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ARM64SyscallHandler.class);
 
     private final SvcMemory svcMemory;
 
@@ -346,6 +349,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     return;
                 case 198:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socket(emulator));
+                    return;
+                case 199:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, socketpair(emulator));
                     return;
                 case 203:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, connect(emulator));
@@ -825,9 +831,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         Pointer src_addr = context.getPointerArg(4);
         Pointer addrlen = context.getPointerArg(5);
 
-        if (log.isDebugEnabled()) {
-            log.debug("recvfrom sockfd=" + sockfd + ", buf=" + buf + ", flags=" + flags + ", src_addr=" + src_addr + ", addrlen=" + addrlen);
-        }
+        log.debug("recvfrom sockfd={}, buf={}, len={}, flags={}, src_addr={}, addrlen={}", sockfd, buf, len, flags, src_addr, addrlen);
         FileIO file = fdMap.get(sockfd);
         if (file == null) {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
@@ -957,14 +961,45 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         return new LocalSocketIO(emulator, sdk);
     }
 
+    private long socketpair(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        int domain = context.getIntArg(0);
+        int type = context.getIntArg(1) & 0x7ffff;
+        int protocol = context.getIntArg(2);
+        Pointer sv = context.getPointerArg(3);
+        log.debug("socketpair domain={}, type={}, protocol={}, sv={}", domain, type, protocol, sv);
+
+        if (protocol != SocketIO.AF_UNSPEC) {
+            throw new UnsupportedOperationException();
+        }
+        if (domain == SocketIO.AF_LOCAL) {
+            switch (type) {
+                case SocketIO.SOCK_STREAM:
+                case SocketIO.SOCK_SEQPACKET: {
+                    int fd0 = getMinFd();
+                    PipedSocketIO one = new PipedSocketIO(emulator);
+                    fdMap.put(fd0, one);
+                    int fd1 = getMinFd();
+                    PipedSocketIO two = new PipedSocketIO(emulator);
+                    fdMap.put(fd1, two);
+                    one.connectPeer(two);
+                    sv.setInt(0, fd0);
+                    sv.setInt(4, fd1);
+                    return 0;
+                }
+                default:
+                    break;
+            }
+        }
+        throw new UnsupportedOperationException("domain=" + domain + ", type=" + type + ", LR=" + context.getLRPointer());
+    }
+
     private int socket(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int domain = context.getIntArg(0);
         int type = context.getIntArg(1) & 0x7ffff;
         int protocol = context.getIntArg(2);
-        if (log.isDebugEnabled()) {
-            log.debug("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
-        }
+        log.debug("socket domain={}, type={}, protocol={}", domain, type, protocol);
 
         if (protocol == SocketIO.IPPROTO_ICMP) {
             throw new UnsupportedOperationException();
@@ -1014,7 +1049,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                         throw new UnsupportedOperationException();
                 }
         }
-        log.info("socket domain=" + domain + ", type=" + type + ", protocol=" + protocol);
+        log.info("socket domain={}, type={}, protocol={}", domain, type, protocol);
         emulator.getMemory().setErrno(UnixEmulator.EAFNOSUPPORT);
         return -1;
     }

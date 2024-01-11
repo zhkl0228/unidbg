@@ -42,6 +42,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
     public static final int SOCK_STREAM = 1;
     public static final int SOCK_DGRAM = 2;
     public static final int SOCK_RAW = 3;
+    public static final int SOCK_SEQPACKET = 5;
 
     private static final int IPPROTO_IP = 0;
     public static final int IPPROTO_ICMP = 1;
@@ -67,7 +68,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
     private static final int TCP_MAXSEG = 2;
 
     static final int MSG_PEEK = 0x02; /* Peek at incoming messages. */
-    private static final int MSG_NOSIGNAL = 0x4000; /* Do not generate SIGPIPE. */
+    protected static final int MSG_NOSIGNAL = 0x4000; /* Do not generate SIGPIPE. */
 
     public static short IFF_UP = 0x1; /* interface is up		*/
     public static short IFF_BROADCAST = 0x2;		/* broadcast address valid	*/

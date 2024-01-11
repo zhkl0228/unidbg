@@ -2,7 +2,9 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.Arm64Svc;
+import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -2199,9 +2201,9 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
-        Pointer _CallStaticVoidMethodV = svcMemory.registerSvc(new Arm64Svc() {
+        Pointer _CallStaticVoidMethodV = svcMemory.registerSvc(new Arm64Hook() {
             @Override
-            public long handle(Emulator<?> emulator) {
+            protected HookStatus hook(Emulator<?> emulator) {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
@@ -2219,7 +2221,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticVoidMethodV(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, vaList.formatArgs(), context.getLRPointer());
                     }
-                    return 0;
+                    return HookStatus.LR(emulator, 0);
                 }
             }
         });
@@ -2650,7 +2652,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     log.debug("GetObjectArrayElement array=" + array + ", index=" + index);
                 }
                 DvmObject<?> obj = Objects.requireNonNull(array).getValue()[index];
-                if (verbose || verboseFieldOperation) {
+                if (verbose) {
                     System.out.printf("JNIEnv->GetObjectArrayElement(%s, %d) => %s was called from %s%n", array, index, obj, context.getLRPointer());
                 }
                 return addLocalObject(obj);
@@ -3819,6 +3821,12 @@ public class DalvikVM64 extends BaseVM implements VM {
         _JNIEnv = svcMemory.allocate(emulator.getPointerSize(), "_JNIEnv");
         _JNIEnv.setPointer(0, impl);
 
+        UnidbgPointer _DestroyJavaVM = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
         UnidbgPointer _AttachCurrentThread = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -3826,11 +3834,18 @@ public class DalvikVM64 extends BaseVM implements VM {
                 Pointer vm = context.getPointerArg(0);
                 Pointer env = context.getPointerArg(1);
                 Pointer args = context.getPointerArg(2); // JavaVMAttachArgs*
-                if (log.isDebugEnabled()) {
-                    log.debug("AttachCurrentThread vm=" + vm + ", env=" + env.getPointer(0) + ", args=" + args);
-                }
+                log.debug("AttachCurrentThread vm={}, env={}, args={}", vm, env.getPointer(0), args);
                 env.setPointer(0, _JNIEnv);
                 return JNI_OK;
+            }
+        });
+        UnidbgPointer _DetachCurrentThread = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                RegisterContext context = emulator.getContext();
+                Pointer vm = context.getPointerArg(0);
+                log.debug("DetachCurrentThread vm={}", vm);
+                return 0L;
             }
         });
 
@@ -3848,13 +3863,22 @@ public class DalvikVM64 extends BaseVM implements VM {
                 return JNI_OK;
             }
         });
+        UnidbgPointer _AttachCurrentThreadAsDaemon = svcMemory.registerSvc(new Arm64Svc() {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                throw new UnsupportedOperationException();
+            }
+        });
 
         UnidbgPointer _JNIInvokeInterface = svcMemory.allocate(emulator.getPointerSize() * 8, "_JNIInvokeInterface");
         for (int i = 0; i < emulator.getPointerSize() * 8; i += emulator.getPointerSize()) {
-            _JNIInvokeInterface.setInt(i, i);
+            _JNIInvokeInterface.setLong(i, i);
         }
+        _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 3L, _DestroyJavaVM);
         _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 4L, _AttachCurrentThread);
+        _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 5L, _DetachCurrentThread);
         _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 6L, _GetEnv);
+        _JNIInvokeInterface.setPointer(emulator.getPointerSize() * 7L, _AttachCurrentThreadAsDaemon);
 
         _JavaVM.setPointer(0, _JNIInvokeInterface);
 

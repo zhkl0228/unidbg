@@ -96,7 +96,7 @@ public abstract class Arm64Hook extends Arm64Svc {
         }
         UnidbgPointer sp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
-            HookStatus status = hook(emulator);
+            HookStatus status = doHook(emulator);
             if (status.forward || !enablePostCall) {
                 sp = sp.share(-8, 0);
                 sp.setLong(0, status.jump);
@@ -111,6 +111,14 @@ public abstract class Arm64Hook extends Arm64Svc {
         }
     }
 
-    protected abstract HookStatus hook(Emulator<?> emulator);
+    private HookStatus doHook(Emulator<?> emulator) {
+        try {
+            return hook(emulator);
+        } catch (NestedRun run) {
+            return HookStatus.RET(emulator, run.pc);
+        }
+    }
+
+    protected abstract HookStatus hook(Emulator<?> emulator) throws NestedRun;
 
 }

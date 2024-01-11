@@ -230,7 +230,7 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     final Map<String, UnidbgPointer> nativesMap = new HashMap<>();
 
-    UnidbgPointer findNativeFunction(Emulator<?> emulator, String method) {
+    public final UnidbgPointer findNativeFunction(Emulator<?> emulator, String method) {
         UnidbgPointer fnPtr = nativesMap.get(method);
         int index = method.indexOf('(');
         if (fnPtr == null && index == -1) {

@@ -44,15 +44,15 @@ public class TcpSocket extends SocketIO implements FileIO {
         }
     }
 
-    private OutputStream outputStream;
-    private InputStream inputStream;
+    protected OutputStream outputStream;
+    protected InputStream inputStream;
 
     @Override
     public void close() {
-        com.alibaba.fastjson.util.IOUtils.close(outputStream);
-        com.alibaba.fastjson.util.IOUtils.close(inputStream);
-        com.alibaba.fastjson.util.IOUtils.close(socket);
-        com.alibaba.fastjson.util.IOUtils.close(serverSocket);
+        IOUtils.close(outputStream);
+        IOUtils.close(inputStream);
+        IOUtils.close(socket);
+        IOUtils.close(serverSocket);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class TcpSocket extends SocketIO implements FileIO {
         return readInternal(buffer, count, true);
     }
 
-    private int readInternal(Pointer buffer, int count, boolean logRead) {
+    protected int readInternal(Pointer buffer, int count, boolean logRead) {
         try {
             if (receiveBuf == null) {
                 receiveBuf = new byte[socket.getReceiveBufferSize()];
