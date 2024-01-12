@@ -1,11 +1,12 @@
 package com.github.unidbg.arm;
 
-public class NestedRun extends RuntimeException {
+import com.github.unidbg.LongJumpException;
+
+public class NestedRun extends LongJumpException {
 
     public final long pc;
 
     private NestedRun(long pc) {
-        super("NestedRun: 0x" + Long.toHexString(pc));
         this.pc = pc;
     }
 
