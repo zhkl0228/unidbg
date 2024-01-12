@@ -11,8 +11,25 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_android_JniTest_testJni
   printf("testJni str=%s, l1=0x%llx, i=0x%x, d1=%f, b=%d, s=0x%x, f1=%f, d2=%f, bs=0x%x, l2=0x%llx, f2=%f\n", bytes, l1, i, d1, b, s, f1, d2, bs, l2, f2);
   const char *ap = (*env)->GetStringUTFChars(env, str, NULL);
   const char *bp = (*env)->GetStringUTFChars(env, str, NULL);
-  printf("testJni bytes=%p, ap=%p, bp=%p\n", bytes, ap, bp);
+  jmethodID nestedRun = (*env)->GetStaticMethodID(env, clazz, "nestedRun", "(Ljava/lang/String;JID)J");
+  jlong nestedLong = (*env)->CallStaticLongMethod(env, clazz, nestedRun, str, l1 * 2, i * 2, d1 * 2);
+  printf("testJni bytes=%p, ap=%p, bp=%p, nestedLong=0x%llx\n", bytes, ap, bp, nestedLong);
   (*env)->ReleaseStringUTFChars(env, str, bytes);
+  (*env)->ReleaseStringUTFChars(env, str, ap);
+  (*env)->ReleaseStringUTFChars(env, str, bp);
+}
+
+/*
+ * Class:     com_github_unidbg_android_JniTest
+ * Method:    nestedRun
+ * Signature: (Ljava/lang/String;JID)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_android_JniTest_nestedRun
+  (JNIEnv *env, jclass clazz, jstring str, jlong l1, jint i, jdouble d1) {
+  const char *bytes = (*env)->GetStringUTFChars(env, str, NULL);
+  printf("nestedRun str=%s, l1=0x%llx, i=0x%x, d1=%f\n", bytes, l1, i, d1);
+  (*env)->ReleaseStringUTFChars(env, str, bytes);
+  return l1 * 2;
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {

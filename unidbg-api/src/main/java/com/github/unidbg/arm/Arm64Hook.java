@@ -31,6 +31,7 @@ public abstract class Arm64Hook extends Arm64Svc {
         this.enablePostCall = enablePostCall;
     }
 
+    @SuppressWarnings("unused")
     public Arm64Hook(String name, boolean enablePostCall) {
         super(name);
         this.enablePostCall = enablePostCall;

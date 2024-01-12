@@ -5,6 +5,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.Arm64Svc;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.NestedRun;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.Arm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -2019,9 +2020,9 @@ public class DalvikVM64 extends BaseVM implements VM {
             }
         });
 
-        Pointer _CallStaticLongMethod = svcMemory.registerSvc(new Arm64Svc() {
+        Pointer _CallStaticLongMethod = svcMemory.registerSvc(new Arm64Hook() {
             @Override
-            public long handle(Emulator<?> emulator) {
+            protected HookStatus hook(Emulator<?> emulator) throws NestedRun {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
@@ -2038,7 +2039,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                     if (verbose || verboseMethodOperation) {
                         System.out.printf("JNIEnv->CallStaticLongMethod(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), context.getLRPointer());
                     }
-                    return value;
+                    return HookStatus.LR(emulator, value);
                 }
             }
         });

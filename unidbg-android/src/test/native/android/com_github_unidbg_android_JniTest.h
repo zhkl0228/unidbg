@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT void JNICALL Java_com_github_unidbg_android_JniTest_testJni
   (JNIEnv *, jclass, jstring, jlong, jint, jdouble, jboolean, jshort, jfloat, jdouble, jbyte, jlong, jfloat);
 
+/*
+ * Class:     com_github_unidbg_android_JniTest
+ * Method:    nestedRun
+ * Signature: (Ljava/lang/String;JID)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_android_JniTest_nestedRun
+  (JNIEnv *, jclass, jstring, jlong, jint, jdouble);
+
 #ifdef __cplusplus
 }
 #endif

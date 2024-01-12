@@ -2,7 +2,9 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
+import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.ArmSvc;
+import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.BackendException;
 import com.github.unidbg.arm.context.EditableArm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -2013,9 +2015,9 @@ public class DalvikVM extends BaseVM implements VM {
             }
         });
 
-        Pointer _CallStaticLongMethod = svcMemory.registerSvc(new ArmSvc() {
+        Pointer _CallStaticLongMethod = svcMemory.registerSvc(new ArmHook() {
             @Override
-            public long handle(Emulator<?> emulator) {
+            protected HookStatus hook(Emulator<?> emulator) {
                 EditableArm32RegisterContext context = emulator.getContext();
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
@@ -2033,7 +2035,7 @@ public class DalvikVM extends BaseVM implements VM {
                         System.out.printf("JNIEnv->CallStaticLongMethod(%s, %s(%s)) was called from %s%n", dvmClass, dvmMethod.methodName, varArg.formatArgs(), context.getLRPointer());
                     }
                     context.setR1((int) (value >> 32));
-                    return (value & 0xffffffffL);
+                    return HookStatus.LR(emulator, value & 0xffffffffL);
                 }
             }
         });

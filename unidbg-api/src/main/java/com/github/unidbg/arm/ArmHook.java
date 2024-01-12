@@ -31,6 +31,7 @@ public abstract class ArmHook extends ArmSvc {
         this.enablePostCall = enablePostCall;
     }
 
+    @SuppressWarnings("unused")
     public ArmHook(String name, boolean enablePostCall) {
         super(name);
         this.enablePostCall = enablePostCall;
@@ -95,7 +96,7 @@ public abstract class ArmHook extends ArmSvc {
         }
         UnidbgPointer sp = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
         try {
-            HookStatus status = hook(emulator);
+            HookStatus status = doHook(emulator);
             if (status.forward || !enablePostCall) {
                 sp = sp.share(-4, 0);
                 sp.setInt(0, (int) status.jump);
@@ -110,6 +111,14 @@ public abstract class ArmHook extends ArmSvc {
         }
     }
 
-    protected abstract HookStatus hook(Emulator<?> emulator);
+    private HookStatus doHook(Emulator<?> emulator) {
+        try {
+            return hook(emulator);
+        } catch (NestedRun run) {
+            return HookStatus.RET(emulator, run.pc);
+        }
+    }
+
+    protected abstract HookStatus hook(Emulator<?> emulator) throws NestedRun;
 
 }

@@ -5,9 +5,11 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.NestedRun;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
+import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.linux.ARM64SyscallHandler;
 import com.github.unidbg.linux.android.AndroidARM64Emulator;
@@ -17,17 +19,22 @@ import com.github.unidbg.linux.android.dvm.BaseVM;
 import com.github.unidbg.linux.android.dvm.DalvikModule;
 import com.github.unidbg.linux.android.dvm.DvmClass;
 import com.github.unidbg.linux.android.dvm.DvmObject;
+import com.github.unidbg.linux.android.dvm.StringObject;
 import com.github.unidbg.linux.android.dvm.VM;
 import com.github.unidbg.linux.android.dvm.VarArg;
 import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import unicorn.Arm64Const;
 
 import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public class Android64Test extends AbstractJni {
@@ -158,6 +165,31 @@ public class Android64Test extends AbstractJni {
         }
 
         super.setStaticFloatField(vm, dvmClass, signature, value);
+    }
+
+    @Override
+    public long callStaticLongMethod(BaseVM vm, DvmClass dvmClass, String signature, VarArg varArg) {
+        if ("com/github/unidbg/android/JniTest->nestedRun(Ljava/lang/String;JID)J".equals(signature)) {
+            { // fix call context
+                StringObject str = varArg.getObjectArg(0);
+                long l1 = varArg.getLongArg(1);
+                int i1 = varArg.getIntArg(2);
+                double d1 = varArg.getDoubleArg(3);
+                System.out.println("nestedRunInJava l1=0x" + Long.toHexString(l1 / 2) + ", i1=0x" + Integer.toHexString(i1 / 2) + ", d1=" + d1 / 2 + ", str=" + str.getValue());
+                EditableArm64RegisterContext context = emulator.getContext();
+                context.setXLong(2, str.hashCode());
+                context.setXLong(3, l1);
+                context.setXLong(4, i1);
+                ByteBuffer buffer = ByteBuffer.allocate(16);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putDouble(d1);
+                emulator.getBackend().reg_write_vector(Arm64Const.UC_ARM64_REG_Q0, buffer.array());
+            }
+            UnidbgPointer fun = dvmClass.findNativeFunction(emulator, "nestedRun(Ljava/lang/String;JID)J");
+            throw NestedRun.runToFunction(UnidbgPointer.nativeValue(fun));
+        }
+
+        return super.callStaticLongMethod(vm, dvmClass, signature, varArg);
     }
 
     private void test() {
