@@ -176,8 +176,6 @@ public class AndroidTest extends AbstractJni {
                 System.out.println("nestedRunInJava l1=0x" + Long.toHexString(l1 / 2) + ", i1=0x" + Integer.toHexString(i1 / 2) + ", d1=" + d1 / 2 + ", str=" + str.getValue());
                 EditableArm32RegisterContext context = emulator.getContext();
                 context.setR2(str.hashCode());
-                context.setR3((int) (l1 & 0xffffffffL));
-                context.setR4((int) ((l1 >>> 32) & 0xffffffffL));
             }
             UnidbgPointer fun = dvmClass.findNativeFunction(emulator, "nestedRun(Ljava/lang/String;JID)J");
             throw NestedRun.runToFunction(UnidbgPointer.nativeValue(fun));
