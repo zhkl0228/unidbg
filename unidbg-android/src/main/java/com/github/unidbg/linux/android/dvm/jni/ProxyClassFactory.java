@@ -17,14 +17,14 @@ public class ProxyClassFactory implements DvmClassFactory {
         this.classLoader = new ProxyClassLoader(classLoader);
     }
 
-    public DvmClassFactory configClassNameMapper(ProxyClassMapper mapper) {
+    public ProxyClassFactory configClassNameMapper(ProxyClassMapper mapper) {
         classLoader.setClassNameMapper(mapper);
         return this;
     }
 
     protected ProxyDvmObjectVisitor visitor;
 
-    public DvmClassFactory configObjectVisitor(ProxyDvmObjectVisitor visitor) {
+    public ProxyClassFactory configObjectVisitor(ProxyDvmObjectVisitor visitor) {
         this.visitor = visitor;
         return this;
     }
