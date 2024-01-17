@@ -1446,7 +1446,24 @@ public class DalvikVM64 extends BaseVM implements VM {
         Pointer _GetByteField = svcMemory.registerSvc(new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                UnidbgPointer jfieldID = context.getPointerArg(2);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetByteField object=" + object + ", jfieldID=" + jfieldID);
+                }
+                DvmObject<?> dvmObject = getObject(object.toIntPeer());
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
+                if (dvmField == null) {
+                    throw new BackendException();
+                } else {
+                    byte ret = dvmField.getByteField(dvmObject);
+                    if (verbose || verboseFieldOperation) {
+                        System.out.printf("JNIEnv->GetByteField(%s, %s => 0x%x) was called from %s%n", dvmObject, dvmField.fieldName, ret, context.getLRPointer());
+                    }
+                    return ret;
+                }
             }
         });
 

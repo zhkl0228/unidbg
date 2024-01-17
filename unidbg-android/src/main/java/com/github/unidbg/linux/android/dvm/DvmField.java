@@ -126,6 +126,11 @@ public class DvmField extends Hashable {
         return checkJni(vm, dvmClass).getObjectField(vm, dvmObject, this);
     }
 
+    byte getByteField(DvmObject<?> dvmObject) {
+        BaseVM vm = dvmClass.vm;
+        return checkJni(vm, dvmClass).getByteField(vm, dvmObject, this);
+    }
+
     int getIntField(DvmObject<?> dvmObject) {
         BaseVM vm = dvmClass.vm;
         return checkJni(vm, dvmClass).getIntField(vm, dvmObject, this);

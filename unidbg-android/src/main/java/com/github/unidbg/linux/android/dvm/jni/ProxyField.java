@@ -16,42 +16,66 @@ class ProxyField {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);
         }
-        return field.get(thisObj);
+        Object result = field.get(thisObj);
+        if (visitor != null) {
+            result = visitor.postProxyVisit(field, thisObj, null, result);
+        }
+        return result;
     }
 
     final long getLong(Object thisObj) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);
         }
-        return field.getLong(thisObj);
+        long result = field.getLong(thisObj);
+        if (visitor != null) {
+            result = visitor.postProxyVisit(field, thisObj, null, result);
+        }
+        return result;
     }
 
     final float getFloat(Object thisObj) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);
         }
-        return field.getFloat(thisObj);
+        float result = field.getFloat(thisObj);
+        if (visitor != null) {
+            result = visitor.postProxyVisit(field, thisObj, null, result);
+        }
+        return result;
     }
 
     final boolean getBoolean(Object thisObj) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);
         }
-        return field.getBoolean(thisObj);
+        boolean result = field.getBoolean(thisObj);
+        if (visitor != null) {
+            result = visitor.postProxyVisit(field, thisObj, null, result);
+        }
+        return result;
     }
 
     final byte getByte(Object thisObj) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);
         }
-        return field.getByte(thisObj);
+        byte result = field.getByte(thisObj);
+        if (visitor != null) {
+            result = visitor.postProxyVisit(field, thisObj, null, result);
+        }
+        return result;
     }
 
     final int getInt(Object thisObj) throws IllegalAccessException {
         if (visitor != null) {
             visitor.onProxyVisit(field, thisObj, null);
         }
-        return field.getInt(thisObj);
+        int result = field.getInt(thisObj);
+        if (visitor != null) {
+            result = visitor.postProxyVisit(field, thisObj, null, result);
+        }
+        return result;
     }
 
     final void setInt(Object thisObj, int value) throws IllegalAccessException {

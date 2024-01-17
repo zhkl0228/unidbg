@@ -22,13 +22,17 @@ class ProxyMethod implements ProxyCall {
     @Override
     public Object call(VM vm, Object obj) throws IllegalAccessException, InvocationTargetException {
         try {
-            patch(obj, args);
+            patchClassName(obj, args);
 
             if (visitor != null) {
                 visitor.onProxyVisit(method, obj, args);
             }
             if (method instanceof Method) {
-                return ((Method) method).invoke(obj, args);
+                Object result = ((Method) method).invoke(obj, args);
+                if (visitor != null) {
+                    result = visitor.postProxyVisit(method, obj, args, result);
+                }
+                return result;
             }
             throw new UnsupportedOperationException("method=" + method);
         } catch (InvocationTargetException e) {
@@ -48,7 +52,7 @@ class ProxyMethod implements ProxyCall {
         }
     }
 
-    private void patch(Object obj, Object[] args) {
+    private void patchClassName(Object obj, Object[] args) {
         if (obj instanceof ClassLoader &&
                 args.length == 1 &&
                 ("loadClass".equals(method.getName()) || "findClass".equals(method.getName()))) {

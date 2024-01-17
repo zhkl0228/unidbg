@@ -494,6 +494,20 @@ public abstract class JniFunction implements Jni {
     }
 
     @Override
+    public byte getByteField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
+        return getByteField(vm, dvmObject, dvmField.getSignature());
+    }
+
+    @Override
+    public byte getByteField(BaseVM vm, DvmObject<?> dvmObject, String signature) {
+        if (fallbackJni == null) {
+            throw new UnsupportedOperationException(signature);
+        } else {
+            return fallbackJni.getByteField(vm, dvmObject, signature);
+        }
+    }
+
+    @Override
     public int getIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField) {
         return getIntField(vm, dvmObject, dvmField.getSignature());
     }

@@ -24,6 +24,7 @@ class ProxyConstructor implements ProxyCall {
             Object inst = constructor.newInstance(args);
             if (visitor != null) {
                 visitor.onProxyVisit(constructor, inst, args);
+                inst = visitor.postProxyVisit(constructor, inst, args, inst);
             }
             return inst;
         } catch (InvocationTargetException e) {

@@ -103,6 +103,9 @@ public interface Jni {
     boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
     boolean getBooleanField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 
+    byte getByteField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
+    byte getByteField(BaseVM vm, DvmObject<?> dvmObject, String signature);
+
     int getIntField(BaseVM vm, DvmObject<?> dvmObject, DvmField dvmField);
     int getIntField(BaseVM vm, DvmObject<?> dvmObject, String signature);
 
