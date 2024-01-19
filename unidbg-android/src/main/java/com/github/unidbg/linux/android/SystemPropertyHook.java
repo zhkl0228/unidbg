@@ -9,15 +9,16 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+@SuppressWarnings("unused")
 public class SystemPropertyHook implements HookListener {
 
-    private static final Log log = LogFactory.getLog(SystemPropertyHook.class);
+    private static final Logger log = LoggerFactory.getLogger(SystemPropertyHook.class);
 
     private static final int PROP_VALUE_MAX = 92;
 
@@ -31,9 +32,7 @@ public class SystemPropertyHook implements HookListener {
     public long hook(SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
         if ("libc.so".equals(libraryName)) {
             if ("__system_property_get".equals(symbolName)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Hook " + symbolName);
-                }
+                log.debug("Hook {}", symbolName);
                 if (emulator.is64Bit()) {
                     return svcMemory.registerSvc(new Arm64Hook() {
                         @Override
@@ -59,9 +58,7 @@ public class SystemPropertyHook implements HookListener {
                 }
             }
             if ("__system_property_read".equals(symbolName)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Hook " + symbolName);
-                }
+                log.debug("Hook {}", symbolName);
                 if (emulator.is64Bit()) {
                     return svcMemory.registerSvc(new Arm64Hook() {
                         @Override
@@ -85,9 +82,7 @@ public class SystemPropertyHook implements HookListener {
                 }
             }
             if ("__system_property_find".equals(symbolName)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Hook " + symbolName);
-                }
+                log.debug("Hook {}", symbolName);
                 if (emulator.is64Bit()) {
                     return svcMemory.registerSvc(new Arm64Hook() {
                         @Override
@@ -95,7 +90,7 @@ public class SystemPropertyHook implements HookListener {
                             RegisterContext context = emulator.getContext();
                             Pointer name = context.getPointerArg(0);
                             if (log.isDebugEnabled()) {
-                                log.debug("__system_property_find key=" + name.getString(0));
+                                log.debug("__system_property_find key={}, LR={}", name.getString(0), context.getLRPointer());
                             }
                             return HookStatus.RET(emulator, old);
                         }
@@ -107,7 +102,7 @@ public class SystemPropertyHook implements HookListener {
                             RegisterContext context = emulator.getContext();
                             Pointer name = context.getPointerArg(0);
                             if (log.isDebugEnabled()) {
-                                log.debug("__system_property_find key=" + name.getString(0));
+                                log.debug("__system_property_find key={}, LR={}", name.getString(0), context.getLRPointer());
                             }
                             return HookStatus.RET(emulator, old);
                         }
@@ -123,23 +118,21 @@ public class SystemPropertyHook implements HookListener {
         if (propertyProvider != null) {
             String value = propertyProvider.getProperty(key);
             if (value != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("__system_property_get key=" + key + ", value=" + value);
-                }
+                log.debug("__system_property_get key={}, value={}", key, value);
 
                 byte[] data = value.getBytes(StandardCharsets.UTF_8);
                 if (data.length >= PROP_VALUE_MAX) {
                     throw new BackendException("invalid property value length: key=" + key + ", value=" + value);
                 }
 
-                context.getPointerArg(index + 1).write(0, Arrays.copyOf(data, data.length + 1), 0, data.length + 1);
+                byte[] newData = Arrays.copyOf(data, data.length + 1);
+                Pointer pointer = context.getPointerArg(index + 1);
+                pointer.write(0, newData, 0, newData.length);
                 return HookStatus.LR(emulator, data.length);
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("__system_property_get key=" + key);
-        }
+        log.debug("__system_property_get key={}", key);
         return HookStatus.RET(emulator, old);
     }
 
