@@ -498,10 +498,48 @@ static void test_dl_iterate_phdr() {
   printf("test_dl_iterate_phdr sizeof(dl_phdr_info)=0x%x, sizeof(Phdr)=0x%x, ret=%d\n", (unsigned int) sizeof(struct dl_phdr_info), (unsigned int) sizeof(ElfW(Phdr)), ret);
 }
 
+static void callback(void *cookie, const char* name, const char* value, uint32_t serial) {
+    printf("callback name=%s, value=%s, serial=%u\n", name, value, serial);
+}
+
+static void printSystemProperty(const char* key) {
+    const prop_info *pi = __system_property_find(key);
+    if(pi) {
+        __system_property_read_callback(pi, &callback, NULL);
+    } else {
+        printf("printSystemProperty key=%s, value=%p\n", key, pi);
+    }
+}
+
+static void test_system_properties() {
+    printSystemProperty("ro.kernel.qemu");
+    printSystemProperty("libc.debug.malloc");
+    printSystemProperty("ro.product.first_api_level");
+    printSystemProperty("ro.boot.verifiedbootstate");
+    printSystemProperty("ro.boot.vbmeta.digest");
+    printSystemProperty("ro.zygote");
+    printSystemProperty("ro.boot.flash.locked");
+    printSystemProperty("ro.secure");
+    printSystemProperty("ro.debuggable");
+    printSystemProperty("ro.boot.vbmeta.device_state");
+    printSystemProperty("ro.build.version.security_patch");
+    printSystemProperty("service.adb.root");
+    printSystemProperty("ro.boot.hardware.revision");
+    printSystemProperty("sys.usb.state");
+    printSystemProperty("ro.board.first_api_level");
+    printSystemProperty("ro.vendor.api_level");
+    printSystemProperty("init.svc.magisk_service");
+    printSystemProperty("persist.magisk.hide");
+    printSystemProperty("ro.magisk.disable");
+    printSystemProperty("init.svc.magisk_pfs");
+    printSystemProperty("magisk.version");
+    printSystemProperty("init.svc.magisk_pfsd");
+}
+
 int main() {
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
-  fprintf(stderr, "Start test, stdin=%p, stdout=%p, stderr=%p, size=%lu\n", stdin, stdout, stderr, (unsigned long) sizeof(*stdout));
+  fprintf(stderr, "Start test, stdin=%p, stdout=%p, stderr=%p\n", stdin, stdout, stderr);
   test_stat();
   test_dirent();
   test_ioctl();
@@ -520,6 +558,7 @@ int main() {
   test_dl_iterate_phdr();
   test_netlink();
   test_pthread();
+  test_system_properties();
   printf("Press any key to exit: cmp=%d\n", strcmp("23", sdk));
   getchar();
   return 0;

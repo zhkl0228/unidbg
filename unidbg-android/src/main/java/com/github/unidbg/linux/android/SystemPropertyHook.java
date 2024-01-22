@@ -5,9 +5,11 @@ import com.github.unidbg.arm.Arm64Hook;
 import com.github.unidbg.arm.ArmHook;
 import com.github.unidbg.arm.HookStatus;
 import com.github.unidbg.arm.backend.BackendException;
+import com.github.unidbg.arm.context.EditableArm64RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.memory.SvcMemory;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +17,11 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-@SuppressWarnings("unused")
 public class SystemPropertyHook implements HookListener {
 
     private static final Logger log = LoggerFactory.getLogger(SystemPropertyHook.class);
 
-    private static final int PROP_VALUE_MAX = 92;
+    public static final int PROP_VALUE_MAX = 92;
 
     private final Emulator<?> emulator;
 
@@ -84,15 +85,35 @@ public class SystemPropertyHook implements HookListener {
             if ("__system_property_find".equals(symbolName)) {
                 log.debug("Hook {}", symbolName);
                 if (emulator.is64Bit()) {
-                    return svcMemory.registerSvc(new Arm64Hook() {
+                    return svcMemory.registerSvc(new Arm64Hook(true) {
+                        private String name;
                         @Override
                         protected HookStatus hook(Emulator<?> emulator) {
                             RegisterContext context = emulator.getContext();
                             Pointer name = context.getPointerArg(0);
+                            this.name = name.getString(0);
                             if (log.isDebugEnabled()) {
-                                log.debug("__system_property_find key={}, LR={}", name.getString(0), context.getLRPointer());
+                                log.debug("__system_property_find key={}, LR={}", this.name, context.getLRPointer());
+                            }
+                            if (log.isTraceEnabled()) {
+                                emulator.attach().debug();
                             }
                             return HookStatus.RET(emulator, old);
+                        }
+                        @Override
+                        public void handlePostCallback(Emulator<?> emulator) {
+                            super.handlePostCallback(emulator);
+                            EditableArm64RegisterContext context = emulator.getContext();
+                            Pointer pi = context.getPointerArg(0);
+                            if (log.isDebugEnabled()) {
+                                log.debug("__system_property_find key={}, pi={}, value={}", this.name, pi, pi == null ? null : pi.share(4).getString(0));
+                            }
+                            if (propertyProvider != null) {
+                                Pointer replace = propertyProvider.__system_property_find(this.name);
+                                if (replace != null) {
+                                    context.setXLong(0, UnidbgPointer.nativeValue(replace));
+                                }
+                            }
                         }
                     }).peer;
                 } else {
@@ -103,6 +124,9 @@ public class SystemPropertyHook implements HookListener {
                             Pointer name = context.getPointerArg(0);
                             if (log.isDebugEnabled()) {
                                 log.debug("__system_property_find key={}, LR={}", name.getString(0), context.getLRPointer());
+                            }
+                            if (log.isTraceEnabled()) {
+                                emulator.attach().debug();
                             }
                             return HookStatus.RET(emulator, old);
                         }

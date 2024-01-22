@@ -119,4 +119,9 @@ public class ByteArrayFileIO extends BaseAndroidFileIO {
         return path;
     }
 
+    @Override
+    public int ftruncate(int length) {
+        return 0;
+    }
+
 }

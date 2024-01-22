@@ -27,6 +27,7 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unix.UnixSyscallHandler;
+import com.github.unidbg.virtualmodule.android.SystemProperties;
 import com.sun.jna.Pointer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -79,6 +80,7 @@ public class Android64Test extends AbstractJni {
         emulator.getSyscallHandler().setEnableThreadDispatcher(true);
         AndroidResolver resolver = new AndroidResolver(23);
         memory.setLibraryResolver(resolver);
+        new SystemProperties(emulator, null).register(memory);
 
         module = emulator.loadLibrary(executable);
 

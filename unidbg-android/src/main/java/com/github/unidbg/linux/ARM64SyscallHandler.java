@@ -203,6 +203,10 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, statfs64(emulator, path, buf));
                     return;
                 }
+                case 46: {
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, ftruncate(emulator));
+                    return;
+                }
                 case 134:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, sigaction(emulator));
                     return;
@@ -767,6 +771,20 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         Pointer set = context.getPointerArg(1);
         Pointer oldset = context.getPointerArg(2);
         return sigprocmask(emulator, how, set, oldset);
+    }
+
+    private int ftruncate(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int fd = context.getIntArg(0);
+        int length = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("ftruncate fd=" + fd + ", length=" + length);
+        }
+        FileIO file = fdMap.get(fd);
+        if (file == null) {
+            throw new UnsupportedOperationException();
+        }
+        return file.ftruncate(length);
     }
 
     private int sigaction(Emulator<?> emulator) {
