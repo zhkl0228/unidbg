@@ -3,18 +3,19 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.HookListener;
+import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 final class FixupChains {
 
-    private static final Log log = LogFactory.getLog(FixupChains.class);
+    private static final Logger log = LoggerFactory.getLogger(FixupChains.class);
 
     // values for dyld_chained_fixups_header.imports_format
     static final int DYLD_CHAINED_IMPORT = 1;
@@ -142,7 +143,7 @@ final class FixupChains {
                     if (pointer_format == DYLD_CHAINED_PTR_64) {
                         chain.setLong(0, unpackedTarget);
                     } else {
-                        throw new UnsupportedOperationException("DYLD_CHAINED_PTR_64_OFFSET");
+                        chain.setLong(0, UnidbgPointer.nativeValue(chain) + unpackedTarget);
                     }
                 }
                 break;
@@ -193,7 +194,8 @@ final class FixupChains {
                         if (symbol != null) {
                             return symbol;
                         }
-                        throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName=" + symbolName);
+                        log.warn("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName={}", symbolName);
+                        return null;
                     default:
                         throw new UnsupportedOperationException("unknown-ordinal: symbolName=" + symbolName);
                 }

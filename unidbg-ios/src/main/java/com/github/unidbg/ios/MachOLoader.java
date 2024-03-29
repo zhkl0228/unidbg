@@ -221,7 +221,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     private MachOModule loadInternal(LibraryFile libraryFile, boolean forceCallInit, boolean checkBootstrap) throws IOException {
-        MachOModule module = loadInternalPhase(libraryFile, true, checkBootstrap, Collections.<String>emptyList());
+        MachOModule module = loadInternalPhase(libraryFile, true, checkBootstrap, Collections.emptyList());
 
         for (MachOModule export : modules.values().toArray(new MachOModule[0])) {
             for (NeedLibrary library : export.lazyLoadNeededList.toArray(new NeedLibrary[0])) {
@@ -239,7 +239,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 }
                 LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.singletonList(FilenameUtils.getFullPath(libraryFile.getPath())));
                 if (neededLibraryFile != null) {
-                    MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.<String>emptySet());
+                    MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.emptySet());
                     needed.addReferenceCount();
 
                     if (library.upward) {
@@ -648,27 +648,31 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     regions.add(new MemRegion(begin, alignment.address, alignment.address + alignment.size, prot, libraryFile, segmentCommand64.vmaddr()));
                     break;
                 }
-                case LOAD_DYLIB:
+                case LOAD_DYLIB: {
                     MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     ordinalList.add(dylibCommand.name());
                     neededList.add(new NeedLibrary(dylibCommand.name(), false, false));
                     break;
-                case LOAD_WEAK_DYLIB:
-                    dylibCommand = (MachO.DylibCommand) command.body();
+                }
+                case LOAD_WEAK_DYLIB: {
+                    MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     ordinalList.add(dylibCommand.name());
                     neededList.add(new NeedLibrary(dylibCommand.name(), true, true));
                     break;
-                case REEXPORT_DYLIB:
-                    dylibCommand = (MachO.DylibCommand) command.body();
+                }
+                case REEXPORT_DYLIB: {
+                    MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     ordinalList.add(dylibCommand.name());
                     exportDylibs.add((MachO.DylibCommand) command.body());
                     break;
-                case LAZY_LOAD_DYLIB:
-                    dylibCommand = (MachO.DylibCommand) command.body();
+                }
+                case LAZY_LOAD_DYLIB: {
+                    MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     ordinalList.add(dylibCommand.name());
                     break;
+                }
                 case LOAD_UPWARD_DYLIB:
-                    dylibCommand = (MachO.DylibCommand) command.body();
+                    MachO.DylibCommand dylibCommand = (MachO.DylibCommand) command.body();
                     ordinalList.add(dylibCommand.name());
                     neededList.add(new NeedLibrary(dylibCommand.name(), true, false));
                     break;
@@ -760,7 +764,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         final long loadSize = size;
-        MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<String, Module>(neededLibraries), regions,
+        MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
                 dyldInfoCommand, chainedFixups, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
                 fEHFrameSection, fUnwindInfoSection, objcSections, segments.toArray(new Segment[0]), libraryFile);
@@ -948,7 +952,20 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                      *                 name_offset : 23;
                      * };
                      */
-                    throw new UnsupportedOperationException("DYLD_CHAINED_IMPORT");
+                    formatEntrySize = 4;
+                    io.seek(imports_offset);
+                    for (int i = 0; i < imports_count; i++) {
+                        long raw32 = io.readU4le();
+                        int lib_ordinal = (int) (raw32 & 0xff);
+                        raw32 >>>= 8;
+                        boolean weak_import = (raw32 & 1) != 0;
+                        int name_offset = (int) (raw32 >>> 1);
+                        if (lib_ordinal > 0xf0) {
+                            lib_ordinal = (byte) lib_ordinal;
+                        }
+                        bindTargets.add(new FixupChains.dyld_chained_import_addend64(lib_ordinal, weak_import, name_offset, 0L));
+                    }
+                    break;
                 case FixupChains.DYLD_CHAINED_IMPORT_ADDEND: {
                     /*
                      * struct dyld_chained_import_addend {
@@ -1059,7 +1076,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     throw new IllegalStateException(String.format("chained fixups, pointer_format not same for all segments %d and %d", pointer_format, pointer_format_for_all));
                 }
                 long segment_offset = io.readU8le(); // offset in memory to start of segment
-                if (segment_offset != (mm.segments[i].vmAddr - mm.machHeader)) {
+                if (segment_offset != (mm.segments[i].vmAddr - mm.machHeader) && segment_offset != mm.segments[i].vmAddr) {
                     throw new IllegalStateException(String.format("chained fixups, segment_offset does not match vmaddr from LC_SEGMENT in segment #%d", i));
                 }
                 long max_valid_pointer = io.readU4le(); // for 32-bit OS, any value beyond this is not a pointer
@@ -1941,7 +1958,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             return null;
         }
 
-        MachOModule module = loadInternalPhase(libraryFile, true, false, Collections.<String>emptyList());
+        MachOModule module = loadInternalPhase(libraryFile, true, false, Collections.emptyList());
 
         for (MachOModule export : modules.values().toArray(new MachOModule[0])) {
             for (NeedLibrary library : export.lazyLoadNeededList.toArray(new NeedLibrary[0])) {
@@ -1960,7 +1977,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 try {
                     LibraryFile neededLibraryFile = resolveLibrary(libraryFile, neededLibrary, Collections.singletonList(FilenameUtils.getFullPath(libraryFile.getPath())));
                     if (neededLibraryFile != null) {
-                        MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.<String>emptySet());
+                        MachOModule needed = loadInternalPhase(neededLibraryFile, true, false, Collections.emptySet());
                         needed.addReferenceCount();
 
                         if (library.upward) {
@@ -2036,7 +2053,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     @Override
     public Collection<Module> getLoadedModules() {
-        return new ArrayList<Module>(modules.values());
+        return new ArrayList<>(modules.values());
     }
 
     final List<Module> getLoadedModulesNoVirtual() {

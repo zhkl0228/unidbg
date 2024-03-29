@@ -38,4 +38,4 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework Security "CoreFoundation"
+build_framework AVFAudio "CoreFoundation"
