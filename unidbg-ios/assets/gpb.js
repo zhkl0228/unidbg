@@ -1,5 +1,5 @@
-var buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescriptors, dataType) {
-    var buffer = "";
+const buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescriptors, dataType) {
+    let buffer = "";
     switch (dataType) {
         case 0: // GPBDataTypeBool
             buffer += "bool";
@@ -47,7 +47,7 @@ var buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescriptors
             buffer += "string";
             break;
         case 15: // GPBDataTypeMessage
-            var msgClass = field.msgClass();
+            const msgClass = field.msgClass();
             buffer += msgClass;
             if(isFieldTypeMap) {
                 buffer += "> ";
@@ -56,11 +56,11 @@ var buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescriptors
         case 16: // GPBDataTypeGroup
             break;
         case 17: // GPBDataTypeEnum
-            var enumDescriptor = field.enumDescriptor();
-            var enumName = enumDescriptor.name().toString();
-            var prefix = name.toString() + "_";
+            const enumDescriptor = field.enumDescriptor();
+            let enumName = enumDescriptor.name().toString();
+            const prefix = name.toString() + "_";
             if (enumName.startsWith(prefix)) {
-                var length = prefix.length;
+                const length = prefix.length;
                 enumName = enumName.substring(length);
             }
             buffer += enumName;
@@ -73,24 +73,24 @@ var buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescriptors
     return buffer;
 }
 
-var buildEnumMsgDef = function (msgName, descriptor) {
-    var buffer = "";
-    var prefix = msgName + "_";
-    var name = descriptor.name().toString();
+const buildEnumMsgDef = function (msgName, descriptor) {
+    let buffer = "";
+    let prefix = msgName + "_";
+    let name = descriptor.name().toString();
     if (name.startsWith(prefix)) {
         name = name.substring(prefix.length);
     }
     buffer += ("enum " + name + " {\n");
-    var enumNameCount = descriptor.enumNameCount();
-    var ptr = Memory.alloc(4);
-    for (var i = 0; i < enumNameCount; i++) {
-        var enumNameObject = descriptor.getEnumNameForIndex_(i);
-        var enumName = enumNameObject.toString();
+    const enumNameCount = descriptor.enumNameCount();
+    const ptr = Memory.alloc(4);
+    for (let i = 0; i < enumNameCount; i++) {
+        const enumNameObject = descriptor.getEnumNameForIndex_(i);
+        let enumName = enumNameObject.toString();
         prefix = descriptor.name() + "_";
         if (enumName.startsWith(prefix)) {
             enumName = enumName.substring(prefix.length);
         }
-        var status = descriptor.getValue_forEnumName_(ptr, enumNameObject);
+        const status = descriptor.getValue_forEnumName_(ptr, enumNameObject);
         if (!status) {
             console.warn("Read " + enumName + " value failed.")
         }
@@ -100,26 +100,26 @@ var buildEnumMsgDef = function (msgName, descriptor) {
     return buffer;
 }
 
-var buildMsgDef = function (descriptor) {
-    var file = descriptor.file();
-    var _package = file.package();
-    var objcPrefix = file.objcPrefix();
-    var buffer = "// package=" + _package + ", objcPrefix=" + objcPrefix + "\n";
+const buildMsgDef = function (descriptor) {
+    const file = descriptor.file();
+    const _package = file.package();
+    const objcPrefix = file.objcPrefix();
+    let buffer = "// package=" + _package + ", objcPrefix=" + objcPrefix + "\n";
 
-    var name = descriptor.name();
+    const name = descriptor.name();
     buffer += ("message " + name + " {\n")
 
     const GPBFieldTypeMap = 2;
-    var enumDescriptors = [];
-    var fields = descriptor.fields();
-    for (var i = 0; i < fields.count(); i++) {
-        var field = fields.objectAtIndex_(i);
-        var fieldName = field.name();
-        var number = field.number();
-        var dataType = field.dataType();
-        var required = field.isRequired();
-        var optional = field.isOptional();
-        var fieldType = field.fieldType();
+    const enumDescriptors = [];
+    const fields = descriptor.fields();
+    for (let i = 0; i < fields.count(); i++) {
+        const field = fields.objectAtIndex_(i);
+        const fieldName = field.name();
+        const number = field.number();
+        const dataType = field.dataType();
+        const required = field.isRequired();
+        const optional = field.isOptional();
+        const fieldType = field.fieldType();
         if (field.hasDefaultValue()) {
             console.log(name + "." + fieldName + " has default value.")
         }
@@ -128,7 +128,7 @@ var buildMsgDef = function (descriptor) {
         switch (fieldType) {
             case 0: { // GPBFieldTypeSingle
                 if (required === optional) {
-                    log.warn("fieldName=" + fieldName + ", required=" + required);
+                    console.log("fieldName=" + fieldName + ", required=" + required);
                 }
                 if (optional) {
                     buffer += "optional ";
@@ -140,7 +140,7 @@ var buildMsgDef = function (descriptor) {
                 break;
             }
             case GPBFieldTypeMap: {
-                var mapKeyDataType = field.mapKeyDataType();
+                const mapKeyDataType = field.mapKeyDataType();
                 buffer += ("map<" + buildDataTypeMsgDef(field, name, true, enumDescriptors, mapKeyDataType) + ", ");
                 break;
             }
@@ -154,30 +154,54 @@ var buildMsgDef = function (descriptor) {
 
     buffer += "}";
 
-    for (var m = 0; m < enumDescriptors.length; m++) {
+    for (let m = 0; m < enumDescriptors.length; m++) {
         console.log(buildEnumMsgDef(name, enumDescriptors[m]));
     }
 
     return buffer;
 }
 
+const list_gpbs = function (filter) {
+    console.log("Try list gpbs: " + filter)
+    for (const className in ObjC.classes) {
+        if (filter) {
+            if (className.toLowerCase().indexOf(filter) == -1) {
+                continue;
+            }
+        }
+        const cGPBMessage = ObjC.classes[className];
+        const descriptorMethod = cGPBMessage["- descriptor"];
+        if (typeof descriptorMethod === "function") {
+            try {
+                const descriptor = cGPBMessage.descriptor();
+                if (descriptor.className().toString() === "GPBDescriptor") {
+                    console.log(cGPBMessage)
+                }
+            } catch(error) {
+            }
+        }
+    }
+};
+
 function gpb(className) {
     if (ObjC.available) {
-        var cGPBMessage = ObjC.classes[className];
+        const cGPBMessage = ObjC.classes[className];
         if (cGPBMessage) {
-            var descriptorMethod = cGPBMessage["- descriptor"];
+            const descriptorMethod = cGPBMessage["- descriptor"];
             if (descriptorMethod) {
-                var descriptor = cGPBMessage.descriptor();
+                const descriptor = cGPBMessage.descriptor();
                 if (descriptor.className().toString() === "GPBDescriptor") {
                     console.log(buildMsgDef(descriptor));
                 } else {
                     console.log(cGPBMessage + " is not GPBDescriptor");
+                    list_gpbs(className);
                 }
             } else {
                 console.log(cGPBMessage + " no descriptor method.");
+                list_gpbs(className);
             }
         } else {
-            console.log("NOT found: " + className);
+            list_gpbs(className);
         }
     } else {
         console.log("Objc unavailable")
