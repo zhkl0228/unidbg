@@ -165,7 +165,7 @@ const list_gpbs = function (filter) {
     console.log("Try list gpbs: " + filter)
     for (const className in ObjC.classes) {
         if (filter) {
-            if (className.toLowerCase().indexOf(filter) == -1) {
+            if (className.toLowerCase().indexOf(filter.toLowerCase()) === -1) {
                 continue;
             }
         }

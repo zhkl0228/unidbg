@@ -8,9 +8,6 @@ Use it at your own risk !
 
 ## License
 - unidbg uses software libraries from [Apache Software Foundation](http://apache.org). 
-- unidbg developer Idea enterprise licenses are supported by [Jetbrains](https://www.jetbrains.com?from=unidbg).
-- [IntelliJ IDEA](https://www.jetbrains.com/idea?from=unidbg) can be used to edit unidbg sources.
-- ![](assets/idea_logo.svg)
 
 Simple tests under src/test directory
 - [unidbg-android/src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java](https://github.com/zhkl0228/unidbg/blob/master/unidbg-android/src/test/java/com/bytedance/frameworks/core/encrypt/TTEncrypt.java)  
