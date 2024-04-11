@@ -74,6 +74,16 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
         return 0;
     }
 
+    final int munlock(Emulator<AndroidFileIO> emulator) {
+        RegisterContext context = emulator.getContext();
+        Pointer addr = context.getPointerArg(0);
+        int len = context.getIntArg(1);
+        if (log.isDebugEnabled()) {
+            log.debug("munlock addr={}, len={}", addr, len);
+        }
+        return 0;
+    }
+
     final long sched_setaffinity(Emulator<AndroidFileIO> emulator) {
         RegisterContext context = emulator.getContext();
         int pid = context.getIntArg(0);
