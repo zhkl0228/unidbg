@@ -96,6 +96,13 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     }
 
     @Override
+    public int addFileIO(T io) {
+        int fd = getMinFd();
+        fdMap.put(fd, io);
+        return fd;
+    }
+
+    @Override
     public void addIOResolver(IOResolver<T> resolver) {
         if (!resolvers.contains(resolver)) {
             resolvers.add(0, resolver);

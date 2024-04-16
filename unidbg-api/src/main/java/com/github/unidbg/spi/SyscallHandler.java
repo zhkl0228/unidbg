@@ -40,6 +40,8 @@ public interface SyscallHandler<T extends NewFileIO> extends InterruptHook, Seri
 
     void closeFileIO(int fd);
 
+    int addFileIO(T io);
+
     void destroy();
 
 }
