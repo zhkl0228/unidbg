@@ -240,8 +240,13 @@ public class HypervisorBackend64 extends HypervisorBackend {
                         hypervisor.reg_set_elr_el1(elr + 4);
                         return true;
                     }
+                    if (CRm == 0 && CRn == 14 && Op1 == 3 && Op2 == 2 && Op0 == 3) { // CNTVCT_EL0
+                        hypervisor.reg_write64(Rt, 0);
+                        hypervisor.reg_set_elr_el1(elr + 4);
+                        return true;
+                    }
                 }
-                throw new UnsupportedOperationException("EC_SYSTEMREGISTERTRAP");
+                throw new UnsupportedOperationException("EC_SYSTEMREGISTERTRAP isRead=" + isRead + ", CRm=" + CRm + ", CRn=" + CRn + ", Op1=" + Op1 + ", Op2=" + Op2 + ", Op0=" + Op0);
             }
             default:
                 log.warn("handleException ec=0x" + Integer.toHexString(ec));
