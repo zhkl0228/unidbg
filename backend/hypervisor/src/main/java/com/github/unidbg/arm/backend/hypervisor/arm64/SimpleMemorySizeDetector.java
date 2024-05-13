@@ -32,6 +32,16 @@ public class SimpleMemorySizeDetector implements MemorySizeDetector {
                     size = 8;
                     break;
                 }
+            case "ldp":
+                if (insn.getOpStr().startsWith("w")) {
+                    size = 8;
+                    break;
+                }
+                if (insn.getOpStr().startsWith("x")) {
+                    size = 16;
+                    break;
+                }
+                break;
             default:
                 log.info("onHit: insn=" + insn);
                 break;
