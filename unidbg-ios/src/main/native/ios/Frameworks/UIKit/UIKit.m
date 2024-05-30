@@ -671,6 +671,13 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled() {
 }
 @end
 
+@implementation LAContext
+- (BOOL) canEvaluatePolicy:(LAPolicy) policy
+                     error:(NSError * *) error {
+  return TRUE;
+}
+@end
+
 __attribute__((constructor))
 void init() {
   __NSArray0__ = [NSArray array];

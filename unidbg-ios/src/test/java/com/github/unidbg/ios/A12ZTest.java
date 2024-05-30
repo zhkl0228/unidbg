@@ -4,7 +4,6 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.HypervisorFactory;
-import com.github.unidbg.arm.backend.hypervisor.HypervisorBackend64;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.memory.Memory;
@@ -20,7 +19,7 @@ public class A12ZTest {
     public static void main(String[] args) throws IOException {
         Logger.getLogger(BaseTask.class).setLevel(Level.INFO);
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(HypervisorBackend64.class).setLevel(Level.INFO);
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.DEBUG);
         DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.for64Bit();
         builder.addBackendFactory(new HypervisorFactory(true));
         Emulator<DarwinFileIO> emulator = builder.build();

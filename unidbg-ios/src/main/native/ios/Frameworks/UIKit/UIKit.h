@@ -429,3 +429,10 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled();
 - (unsigned long long)unsignedLongValue;
 - (unsigned short)unsignedShortValue;
 @end
+
+typedef NSInteger LAPolicy;
+
+@interface LAContext : NSObject
+- (BOOL) canEvaluatePolicy:(LAPolicy) policy
+                     error:(NSError * *) error;
+@end

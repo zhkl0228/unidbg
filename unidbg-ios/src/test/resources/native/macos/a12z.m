@@ -103,5 +103,10 @@ int main(int argc, char *argv[]) {
 
   NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
   NSLog(@"standardUserDefaults=%@", standardUserDefaults);
+
+  NSPurgeableData *data = [NSPurgeableData dataWithLength: 0xb400];
+  NSLog(@"NSPurgeableData=%p", [data bytes]);
+  [data endContentAccess];
+  [data beginContentAccess];
   return 0;
 }
