@@ -43,6 +43,8 @@ import com.github.unidbg.ios.struct.kernel.MachPortTypeReply;
 import com.github.unidbg.ios.struct.kernel.MachPortTypeRequest;
 import com.github.unidbg.ios.struct.kernel.MachPortsLookupReply64;
 import com.github.unidbg.ios.struct.kernel.MachTimebaseInfo;
+import com.github.unidbg.ios.struct.kernel.MachVmMapReply;
+import com.github.unidbg.ios.struct.kernel.MachVmMapRequest;
 import com.github.unidbg.ios.struct.kernel.MakeMemoryEntryReply;
 import com.github.unidbg.ios.struct.kernel.MakeMemoryEntryRequest;
 import com.github.unidbg.ios.struct.kernel.NotifyServerCancelReply;
@@ -109,8 +111,6 @@ import com.github.unidbg.unix.struct.TimeVal64;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
@@ -211,7 +211,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 int indirectNR = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).intValue();
                 if (!handleIndirect(emulator, indirectNR)) {
                     log.warn("handleInterrupt intno={}, indirectNR={}, svcNumber=0x{}, PC={}", intno, indirectNR, Integer.toHexString(swi), pc);
-                    if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                    if (log.isDebugEnabled() || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
                         createBreaker(emulator).debug();
                     }
                 }
@@ -644,7 +644,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
 
         log.warn("handleInterrupt intno={}, NR={}, svcNumber=0x{}, PC={}, syscall={}", intno, NR, Integer.toHexString(swi), pc, syscall, exception);
-        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (log.isDebugEnabled() || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
 
@@ -850,7 +850,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return 0;
         } else {
             log.info("csops pid={}, op={}, addr={}, length={}", pid, op, addr, length);
-            Log log = LogFactory.getLog(AbstractEmulator.class);
+            Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
             if (log.isDebugEnabled()) {
                 emulator.attach().debug();
             }
@@ -1236,7 +1236,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
     }
 
     private int psynch_cvwait(Emulator<?> emulator) {
-        Log log = LogFactory.getLog(AbstractEmulator.class);
+        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
         if (threadDispatcherEnabled) {
             if (log.isTraceEnabled()) {
                 emulator.attach().debug();
@@ -1691,7 +1691,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             return 0;
         } else {
             log.info(msg);
-            Log log = LogFactory.getLog(AbstractEmulator.class);
+            Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
             if (log.isDebugEnabled()) {
                 emulator.attach().debug();
             }
@@ -1832,7 +1832,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     }
                     switch (sub) {
                         case "unidbg.debug":
-                            return verbose || LogFactory.getLog("com.github.unidbg.ios.debug").isDebugEnabled() ? 1 : 0;
+                            return verbose || LoggerFactory.getLogger("com.github.unidbg.ios.debug").isDebugEnabled() ? 1 : 0;
                         case "kern.ostype":
                             buffer.setInt(0, CTL_KERN);
                             buffer.setInt(4, KERN_OSTYPE);
@@ -1955,16 +1955,20 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     case KERN_PROC:
                         int subType = name.getInt(8);
                         if (subType == KERN_PROC_PID) {
-                            int pid = name.getInt(0xc);
-                            KInfoProc64 kInfoProc = new KInfoProc64(buffer);
-                            kInfoProc.unpack();
-
-                            kInfoProc.kp_proc.p_flag = 0; // P_TRACED
-                            kInfoProc.kp_eproc.e_ucred.cr_uid = 0;
-                            kInfoProc.pack();
-                            if (log.isDebugEnabled()) {
-                                log.debug("{}, subType={}, pid={}, kInfoProc={}", msg, subType, pid, kInfoProc);
+                            if (bufferSize != null) {
+                                bufferSize.setLong(0, UnidbgStructure.calculateSize(KInfoProc64.class));
                             }
+                            KInfoProc64 kInfoProc = null;
+                            if (buffer != null) {
+                                kInfoProc = new KInfoProc64(buffer);
+                                kInfoProc.unpack();
+
+                                kInfoProc.kp_proc.p_flag = 0; // P_TRACED
+                                kInfoProc.kp_eproc.e_ucred.cr_uid = 0;
+                                kInfoProc.pack();
+                            }
+                            int pid = name.getInt(0xc);
+                            log.debug("{}, subType={}, pid={}, kInfoProc={}", msg, subType, pid, kInfoProc);
                             return 0;
                         }
                         log.info("{}, subType={}", msg, subType);
@@ -2219,7 +2223,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             int ret = result.io.getattrlist(attrList, attrBuf, attrBufSize);
             if (ret != 0) {
                 log.info("{}, ret={}", msg, ret);
-                if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                if (log.isDebugEnabled() || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
                     createBreaker(emulator).debug();
                 }
             } else {
@@ -2390,7 +2394,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("_kernelrpc_mach_vm_deallocate_trap target={}, address=0x{}, size=0x{}", target, Long.toHexString(address), Long.toHexString(size));
         } else {
-            Log log = LogFactory.getLog("com.github.unidbg.ios.malloc");
+            Logger log = LoggerFactory.getLogger("com.github.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
                 log.debug("_kernelrpc_mach_vm_deallocate_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", lr=" + context.getLRPointer());
             }
@@ -2427,7 +2431,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug(msg);
         } else {
-            Log log = LogFactory.getLog("com.github.unidbg.ios.malloc");
+            Logger log = LoggerFactory.getLogger("com.github.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
                 log.debug(msg);
             }
@@ -2472,7 +2476,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug(msg);
         } else {
-            Log log = LogFactory.getLog("com.github.unidbg.ios.malloc");
+            Logger log = LoggerFactory.getLogger("com.github.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
                 log.debug(msg);
             }
@@ -2498,7 +2502,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("_workq_open LR={}", context.getLRPointer());
         }
-        if (LogFactory.getLog(AbstractEmulator.class).isTraceEnabled()) {
+        if (LoggerFactory.getLogger(AbstractEmulator.class).isTraceEnabled()) {
             createBreaker(emulator).debug();
         }
         return 0;
@@ -2513,7 +2517,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         if (log.isDebugEnabled()) {
             log.debug("_workq_kernreturn options=0x{}, item={}, arg2={}, arg3=0x{}, LR={}", Integer.toHexString(options), item, arg2, Integer.toHexString(arg3), context.getLRPointer());
         }
-        if (LogFactory.getLog(AbstractEmulator.class).isTraceEnabled()) {
+        if (LoggerFactory.getLogger(AbstractEmulator.class).isTraceEnabled()) {
             createBreaker(emulator).debug();
         }
         return 0;
@@ -3321,7 +3325,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                     return MACH_MSG_SUCCESS;
                 }
                 log.warn("task_info flavor={}", args.flavor);
-                if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                if (LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
                     createBreaker(emulator).debug();
                 }
                 return -1;
@@ -3498,6 +3502,37 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
                 return MACH_MSG_SUCCESS;
             }
+            case 4811: { // _kernelrpc_mach_vm_map
+                MachVmMapRequest args = new MachVmMapRequest(request);
+                args.unpack();
+                log.debug("_kernelrpc_mach_vm_map args={}", args);
+
+                MachVmMapReply reply = new MachVmMapReply(request);
+                reply.unpack();
+
+                header.setMsgBits(false);
+                header.msgh_size = header.size() + reply.size();
+                header.msgh_remote_port = header.msgh_local_port;
+                header.msgh_local_port = 0;
+                header.msgh_id += 100; // reply Id always equals reqId+100
+                header.pack();
+
+                reply.NDR = args.NDR;
+                reply.retCode = 0;
+                {
+                    MachOLoader loader = (MachOLoader) emulator.getMemory();
+                    UnidbgPointer pointer;
+                    if (args.mask != 0) {
+                        pointer = UnidbgPointer.pointer(emulator, loader.allocate(args.size, args.mask));
+                    } else {
+                        pointer = loader.mmap((int) args.size, args.cur_protection);
+                    }
+                    reply.address = UnidbgPointer.nativeValue(pointer);
+                }
+                reply.pack();
+                log.debug("_kernelrpc_mach_vm_map reply={}, header={}", reply, header);
+                return MACH_MSG_SUCCESS;
+            }
             case 4817: { // mach_make_memory_entry_64
                 MakeMemoryEntryRequest args = new MakeMemoryEntryRequest(request);
                 args.unpack();
@@ -3556,7 +3591,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
             default:
                 log.warn("mach_msg_trap header={}, size={}, lr={}", header, header.size(), UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_LR));
-                if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                if (log.isDebugEnabled() || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
                     createBreaker(emulator).debug();
                 }
                 break;
@@ -3840,7 +3875,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             } else {
                 log.debug(msg);
             }
-        } else if(LogFactory.getLog("com.github.unidbg.ios.malloc").isDebugEnabled()) {
+        } else if(LoggerFactory.getLogger("com.github.unidbg.ios.malloc").isDebugEnabled()) {
             log.debug(msg);
         }
         return base;

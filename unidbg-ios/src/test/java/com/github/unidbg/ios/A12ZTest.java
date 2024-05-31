@@ -19,7 +19,7 @@ public class A12ZTest {
     public static void main(String[] args) throws IOException {
         Logger.getLogger(BaseTask.class).setLevel(Level.INFO);
         Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.DEBUG);
+        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.for64Bit();
         builder.addBackendFactory(new HypervisorFactory(true));
         Emulator<DarwinFileIO> emulator = builder.build();
