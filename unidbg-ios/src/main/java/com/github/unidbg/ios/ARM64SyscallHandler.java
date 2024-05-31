@@ -232,6 +232,9 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 case -12:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_deallocate_trap(emulator));
                     return;
+                case -14:
+                    backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_protect_trap(emulator));
+                    return;
                 case -15:
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, _kernelrpc_mach_vm_map_trap(emulator));
                     return;
@@ -2403,6 +2406,23 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             emulator.getMemory().munmap(address, (int) size);
         }
         return 0;
+    }
+
+    private int _kernelrpc_mach_vm_protect_trap(Emulator<?> emulator) {
+        RegisterContext context = emulator.getContext();
+        int target = context.getIntArg(0);
+        long address = context.getLongArg(1);
+        long size = context.getLongArg(2);
+        int set_maximum = context.getIntArg(3);
+        int new_protection = context.getIntArg(4);
+        long alignedLength = ARM.alignSize(size, emulator.getPageAlign());
+        if (log.isDebugEnabled()) {
+            log.debug("_kernelrpc_mach_vm_protect_trap target={}, address=0x{}, size=0x{}, set_maximum={}, new_protection=0x{}", target, Long.toHexString(address), Long.toHexString(size), set_maximum, Integer.toHexString(new_protection));
+        }
+        if (address % emulator.getPageAlign() != 0) {
+            throw new UnsupportedOperationException("address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
+        }
+        return emulator.getMemory().mprotect(address, (int) alignedLength, new_protection);
     }
 
     private int _kernelrpc_mach_vm_map_trap(Emulator<?> emulator) {
