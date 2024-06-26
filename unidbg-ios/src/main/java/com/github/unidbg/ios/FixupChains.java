@@ -69,16 +69,15 @@ final class FixupChains {
                         int bindOrdinal = (pointer_format == DYLD_CHAINED_PTR_ARM64E_USERLAND24) ? authBind24_ordinal : authBind_ordinal;
                         if ( bindOrdinal >= bindTargets.size() ) {
                             log.warn(String.format("out of range bind ordinal %d (max %d): pointer_format=%d", bindOrdinal, bindTargets.size(), pointer_format));
-                            break;
                         } else {
                             // authenticated bind
                             /*BindTarget bindTarget = bindTargets.get(bindOrdinal);
                             newValue = (void*)(bindTargets[bindOrdinal]);
                             if (newValue != 0)  // Don't sign missing weak imports
                                 newValue = (void*)fixupLoc->arm64e.signPointer(fixupLoc, (uintptr_t)newValue);*/
-                            log.warn("Unsupported authenticated bind: bindOrdinal=" + bindOrdinal);
-                            break;
+                            log.warn("Unsupported authenticated bind: bindOrdinal={}", bindOrdinal);
                         }
+                        break;
                     } else {
                         log.warn("Unsupported authenticated rebase");
                         break;
@@ -91,7 +90,6 @@ final class FixupChains {
                         int bindOrdinal = (pointer_format == DYLD_CHAINED_PTR_ARM64E_USERLAND24) ? bind24_ordinal : bind_ordinal;
                         if (bindOrdinal >= bindTargets.size()) {
                             log.warn(String.format("out of range bind ordinal %d (max %d): pointer_format=%d", bindOrdinal, bindTargets.size(), pointer_format));
-                            break;
                         } else {
                             BindTarget bindTarget = bindTargets.get(bindOrdinal);
                             long addend19 = (dyld_chained_ptr_arm64e_bind >>> 32) & 0x7ffff;
@@ -100,8 +98,8 @@ final class FixupChains {
                             }
                             newValue = bindTarget.bind(emulator, mm, hookListeners, symbolsPool) + addend19;
                             chain.setLong(0, newValue);
-                            break;
                         }
+                        break;
                     } else {
                         if (pointer_format == DYLD_CHAINED_PTR_ARM64E) {
                             long target = dyld_chained_ptr_arm64e_rebase & 0xfffffffffL;
@@ -166,7 +164,7 @@ final class FixupChains {
                     return null;
                 }
                 if (targetImage == null) {
-                    log.info("resolveSymbol libraryOrdinal=" + libraryOrdinal + ", symbolName=" + symbolName);
+                    log.info("resolveSymbol libraryOrdinal={}, symbolName={}, path={}, module={}", libraryOrdinal, symbolName, path, mm.getPath());
                     return null;
                 }
                 return loader.findSymbolInternal(targetImage, symbolName);
@@ -194,7 +192,7 @@ final class FixupChains {
                         if (symbol != null) {
                             return symbol;
                         }
-                        log.warn("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName={}", symbolName);
+                        log.info("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName={}, module={}", symbolName, mm.getPath());
                         return null;
                     default:
                         throw new UnsupportedOperationException("unknown-ordinal: symbolName=" + symbolName);
@@ -222,7 +220,7 @@ final class FixupChains {
             Symbol symbol = resolveSymbol(loader, mm, lib_ordinal, symbolName, weak_import);
             if (symbol == null) {
                 if (log.isDebugEnabled()) {
-                    log.info("bind symbolName=" + symbolName + ", lib_ordinal=" + lib_ordinal);
+                    log.info("bind symbolName={}, lib_ordinal={}", symbolName, lib_ordinal);
                 }
                 long bindAt = 0;
                 for (HookListener listener : hookListeners) {
