@@ -165,6 +165,12 @@ public class ElfDynamicStructure {
 		// necessary DT_STRSZ is read.
 		int soName = -1;
 		int init = 0;
+		
+		// Avoid divide-by-zero exceptions
+		// rela struct 64bit: https://llvm.org/doxygen/structllvm_1_1ELF_1_1Elf64__Rela.html
+		// 32bit: https://llvm.org/doxygen/structllvm_1_1ELF_1_1Elf32__Rela.html
+		relEntrySize = elfFile.arch == ElfFile.CLASS_64 ? 24 : 12;
+
 		loop: for (int i = 0; i < numEntries; i++) {
 			long d_tag = parser.readIntOrLong();
 			final long d_val_or_ptr = parser.readIntOrLong();
