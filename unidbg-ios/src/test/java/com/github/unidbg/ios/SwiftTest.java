@@ -34,9 +34,9 @@ public class SwiftTest {
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/swift_test"));
         HookLoader.load(emulator).hookDispatchAsync(new DispatchAsyncCallback() {
             @Override
-            public boolean canDispatch(Emulator<?> emulator, Pointer dq, Pointer fun, boolean is_barrier_async) {
+            public Result canDispatch(Emulator<?> emulator, Pointer dq, Pointer fun, boolean is_barrier_async) {
                 System.out.println("canDispatch dq=" + dq + ", fun=" + fun + ", is_barrier_async=" + is_barrier_async);
-                return true;
+                return Result.direct_run;
             }
         });
         long start = System.currentTimeMillis();

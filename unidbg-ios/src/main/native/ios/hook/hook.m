@@ -65,12 +65,19 @@ static void *dispatch_queue_perform(void *arg) {
   return NULL;
 }
 
-typedef bool (*t_dispatch)(dispatch_queue_t dq, void (^)(void), bool);
+enum dispatch_ret { skip, thread_run, direct_run };
+typedef enum dispatch_ret (*t_dispatch)(dispatch_queue_t dq, void (^)(void), bool);
 static t_dispatch can_dispatch = NULL;
 
 void (*old_dispatch_async)(dispatch_queue_t dq, void (^work)(void));
 void new_dispatch_async(dispatch_queue_t dq, void (^work)(void)) {
-  if(can_dispatch && !can_dispatch(dq, work, false)) {
+  enum dispatch_ret dret = thread_run;
+  if(can_dispatch && (dret = can_dispatch(dq, work, false)) == skip) {
+    return;
+  }
+  if(dret == direct_run) {
+    printf("dispatch_async direct_run dq=%p, work=%p\n", dq, work);
+    work();
     return;
   }
 
@@ -97,7 +104,13 @@ void new_dispatch_async(dispatch_queue_t dq, void (^work)(void)) {
 
 void (*old_dispatch_barrier_async)(dispatch_queue_t dq, void (^work)(void));
 void new_dispatch_barrier_async(dispatch_queue_t dq, void (^work)(void)) {
-  if(can_dispatch && !can_dispatch(dq, work, true)) {
+  enum dispatch_ret dret = thread_run;
+  if(can_dispatch && (dret = can_dispatch(dq, work, true)) == skip) {
+    return;
+  }
+  if(dret == direct_run) {
+    printf("dispatch_barrier_async direct_run dq=%p, work=%p\n", dq, work);
+    work();
     return;
   }
 

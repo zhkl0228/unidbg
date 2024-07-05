@@ -127,8 +127,8 @@ public class LineApp implements EmulatorConfigurator, HookListener, DispatchAsyn
     }
 
     @Override
-    public boolean canDispatch(Emulator<?> emulator, Pointer dq, Pointer fun, boolean is_barrier_async) {
-        return false;
+    public Result canDispatch(Emulator<?> emulator, Pointer dq, Pointer fun, boolean is_barrier_async) {
+        return Result.skip;
     }
 
     @Override

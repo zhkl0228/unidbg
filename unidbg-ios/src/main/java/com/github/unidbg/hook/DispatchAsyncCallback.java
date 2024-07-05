@@ -5,6 +5,10 @@ import com.sun.jna.Pointer;
 
 public interface DispatchAsyncCallback {
 
-    boolean canDispatch(Emulator<?> emulator, Pointer dq, Pointer fun, boolean is_barrier_async);
+    enum Result {
+        skip, thread_run, direct_run
+    }
+
+    Result canDispatch(Emulator<?> emulator, Pointer dq, Pointer fun, boolean is_barrier_async);
 
 }
