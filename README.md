@@ -61,11 +61,6 @@ Simple tests under src/test directory
 - [runtime_class-dump](https://github.com/Tyilo/runtime_class-dump)
 - [mman-win32](https://github.com/mcgarrah/mman-win32)
 
-### One-time Donation
-We accept donations via WeChatPay:
-
-![WeChat Pay](assets/wx.png)
-
 ## Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/zhkl0228/unidbg.svg)](https://starchart.cc/zhkl0228/unidbg)
