@@ -31,6 +31,7 @@ import com.github.unidbg.linux.struct.RLimit64;
 import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.linux.thread.PPollWaiter;
+import com.github.unidbg.linux.thread.ReceiveWaiter;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -873,6 +874,15 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
+
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        if (threadDispatcherEnabled && runningTask != null) {
+            runningTask.setWaiter(emulator, new ReceiveWaiter(
+                    file, backend, buf, len, flags, src_addr, addrlen
+            ));
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        }
+
         return file.recvfrom(backend, buf, len, flags, src_addr, addrlen);
     }
 

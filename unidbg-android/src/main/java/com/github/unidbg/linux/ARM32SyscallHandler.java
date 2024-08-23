@@ -31,10 +31,12 @@ import com.github.unidbg.linux.struct.Stat32;
 import com.github.unidbg.linux.struct.SysInfo32;
 import com.github.unidbg.linux.thread.KitKatThread;
 import com.github.unidbg.linux.thread.MarshmallowThread;
+import com.github.unidbg.linux.thread.ReceiveWaiter;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.thread.PopContextException;
+import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.IO;
@@ -1382,6 +1384,15 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
+
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        if (threadDispatcherEnabled && runningTask != null) {
+            runningTask.setWaiter(emulator, new ReceiveWaiter(
+                    file, backend, buf, len, flags, src_addr, addrlen
+            ));
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        }
+
         return file.recvfrom(backend, buf, len, flags, src_addr, addrlen);
     }
 
