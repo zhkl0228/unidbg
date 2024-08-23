@@ -12,6 +12,9 @@ public interface FileIO {
     int SEEK_CUR = 1;
     int SEEK_END = 2;
 
+    boolean canRead();
+    boolean canWrite();
+
     void close();
 
     int write(byte[] data);
