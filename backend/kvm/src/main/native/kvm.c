@@ -162,37 +162,66 @@ static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t n
 }
 
 static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
-  int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
-  if (fd == -1) {
-    fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
-    abort();
-    return NULL;
-  }
   struct kvm_vcpu_init vcpu_init;
   if (ioctl(gKvmFd, KVM_ARM_PREFERRED_TARGET, &vcpu_init) == -1) {
     fprintf(stderr, "KVM_ARM_PREFERRED_TARGET failed.\n");
     abort();
     return NULL;
   }
+
+  int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
+  if (fd == -1) {
+    fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
+    abort();
+    return NULL;
+  }
+
   // ask for psci 0.2
   vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PSCI_0_2;
   if(gHasPmuV3) {
     vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
   }
+
   if (ioctl(fd, KVM_ARM_VCPU_INIT, &vcpu_init) == -1) {
     fprintf(stderr, "KVM_ARM_VCPU_INIT failed.\n");
     abort();
     return NULL;
   }
+
   struct kvm_run *run = mmap(NULL, gRunSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (run == MAP_FAILED) {
     fprintf(stderr, "init kvm_run failed.\n");
     abort();
     return NULL;
   }
+
   t_kvm_cpu cpu = (t_kvm_cpu) calloc(1, sizeof(struct kvm_cpu));
   cpu->fd = fd;
   cpu->run = run;
+
+  //ask for pmu,see https://github.com/OpenMPDK/SMDK/blob/1f9726b3c43b41885cbfd3955f5d9a7aa3a286cb/lib/linux-6.9-smdk/tools/testing/selftests/kvm/aarch64/vpmu_counter_access.c#L423
+  if(gHasPmuV3) {
+    uint64_t irq = 23;
+    uint8_t pmuver;
+    struct kvm_device_attr irq_attr = {
+        .group = KVM_ARM_VCPU_PMU_V3_CTRL,
+        .attr = KVM_ARM_VCPU_PMU_V3_IRQ,
+        .addr = (uint64_t)&irq,
+    };
+    struct kvm_device_attr init_attr = {
+        .group = KVM_ARM_VCPU_PMU_V3_CTRL,
+        .attr = KVM_ARM_VCPU_PMU_V3_INIT,
+    };
+
+    /* Initialize vPMU */
+    if (ioctl(fd, KVM_SET_DEVICE_ATTR, &irq_attr) == -1){
+        fprintf(stderr, "KVM_SET_DEVICE_ATTR irq_attr failed.\n");
+    }
+    if (ioctl(fd, KVM_SET_DEVICE_ATTR, &init_attr) == -1){
+        fprintf(stderr, "KVM_SET_DEVICE_ATTR init_attr failed.\n");
+    }
+
+  }
 
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
@@ -261,8 +290,8 @@ static void init() {
   close(kvm);
   gKvmFd = fd;
 
-//  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, hasMultiAddressSpace=%d, has32Bit=%d, gHasPmuV3=%d\n", fd, gRunSize, gMaxSlots, hasMultiAddressSpace, has32Bit, gHasPmuV3);
-//  printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx, gKvmFd=%d\n", HV_REG_X0, HV_REG_X1, HV_REG_PC, gKvmFd);
+  //printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, hasMultiAddressSpace=%d, has32Bit=%d, gHasPmuV3=%d\n", fd, gRunSize, gMaxSlots, hasMultiAddressSpace, has32Bit, gHasPmuV3);
+  //printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx, gKvmFd=%d\n", HV_REG_X0, HV_REG_X1, HV_REG_PC, gKvmFd);
 }
 
 __attribute__((destructor))
@@ -378,7 +407,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
     }
   }
 
-//  printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off, start_addr);
+  //printf("remove_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, vaddr_off=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, vaddr_off, start_addr);
 
   struct kvm_userspace_memory_region region = {
     .slot = slot,
@@ -431,7 +460,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     }
   }
 
-//  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
+  //printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
 
   if(guest_phys_addr <= MMIO_TRAP_ADDRESS && guest_phys_addr + memory_size > MMIO_TRAP_ADDRESS) {
     fprintf(stderr, "set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
@@ -450,7 +479,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     abort();
     return 0L;
   }
-//  printf("set_user_memory_region slot=0x%x, guest_phys_addr=0x%llx, memory_size=0x%llx, userspace_addr=%p\n", slot, guest_phys_addr, memory_size, start_addr);
+  //printf("set_user_memory_region slot=0x%x, guest_phys_addr=0x%llx, memory_size=0x%llx, userspace_addr=%p\n", slot, guest_phys_addr, memory_size, start_addr);
 
   if(userspace_addr > 0) {
     return userspace_addr;
@@ -466,7 +495,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     }
 
     void *addr = &start_addr[vaddr - guest_phys_addr];
-//    printf("set_user_memory_region vaddr=0x%llx addr=%p\n", vaddr, addr);
+    //printf("set_user_memory_region vaddr=0x%llx addr=%p\n", vaddr, addr);
     if(kvm->page_table && idx < kvm->num_page_table_entries) {
       kvm->page_table[idx] = addr;
     } else {
@@ -765,15 +794,18 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
   uint64_t lr = 0;
   uint64_t sp = 0;
   uint64_t cpsr = 0;
+
   while(true) {
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
       hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
       hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
-      fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
+      int code = errno;
+      fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx, err = %s(%d)\n", cpu->run->exit_reason, cpsr, pc, strerror(code), code);
       return -1;
     }
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_PC, &pc));
+
     switch(cpu->run->exit_reason) {
       case KVM_EXIT_MMIO: {
         if(cpu->run->mmio.phys_addr == MMIO_TRAP_ADDRESS || cpu->run->mmio.is_write || cpu->run->mmio.len == 1) {
@@ -827,7 +859,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1start
 
   if(kvm->is64Bit) {
     uint32_t cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
-//    printf("emu_start cpsr=0x%x, pc=0x%lx\n", cpsr, pc);
+    //printf("emu_start cpsr=0x%x, pc=0x%lx\n", cpsr, pc);
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_CPSR, cpsr));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu, HV_REG_PC, pc - cpu->offset));
   } else {
