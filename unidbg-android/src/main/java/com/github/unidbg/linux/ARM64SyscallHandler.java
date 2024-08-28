@@ -1316,15 +1316,16 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         return emulator.getMemory().mprotect(alignedAddress, (int) alignedLength, prot);
     }
 
-    private static final int MMAP2_SHIFT = 12;
-
     private long mmap(Backend backend, Emulator<?> emulator) {
         long start = backend.reg_read(Arm64Const.UC_ARM64_REG_X0).longValue();
         int length = backend.reg_read(Arm64Const.UC_ARM64_REG_X1).intValue();
         int prot = backend.reg_read(Arm64Const.UC_ARM64_REG_X2).intValue();
         int flags = backend.reg_read(Arm64Const.UC_ARM64_REG_X3).intValue();
         int fd = backend.reg_read(Arm64Const.UC_ARM64_REG_X4).intValue();
-        int offset = backend.reg_read(Arm64Const.UC_ARM64_REG_X5).intValue() << MMAP2_SHIFT;
+        int offset = backend.reg_read(Arm64Const.UC_ARM64_REG_X5).intValue();
+        if (offset % emulator.getPageAlign() != 0) {
+            throw new IllegalArgumentException("offset=0x" + Long.toHexString(offset));
+        }
 
         boolean warning = length > 0x10000000;
         if (log.isDebugEnabled() || warning) {
