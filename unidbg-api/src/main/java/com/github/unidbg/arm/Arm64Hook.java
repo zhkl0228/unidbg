@@ -98,11 +98,10 @@ public abstract class Arm64Hook extends Arm64Svc {
         UnidbgPointer sp = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_SP);
         try {
             HookStatus status = doHook(emulator);
+            sp = sp.share(-8, 0);
             if (status.forward || !enablePostCall) {
-                sp = sp.share(-8, 0);
                 sp.setLong(0, status.jump);
             } else {
-                sp = sp.share(-8, 0);
                 sp.setLong(0, 0);
             }
 

@@ -162,18 +162,20 @@ static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t n
 }
 
 static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
-  int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
-  if (fd == -1) {
-    fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
-    abort();
-    return NULL;
-  }
   struct kvm_vcpu_init vcpu_init;
   if (ioctl(gKvmFd, KVM_ARM_PREFERRED_TARGET, &vcpu_init) == -1) {
     fprintf(stderr, "KVM_ARM_PREFERRED_TARGET failed.\n");
     abort();
     return NULL;
   }
+
+  int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
+  if (fd == -1) {
+    fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
+    abort();
+    return NULL;
+  }
+
   // ask for psci 0.2
   vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PSCI_0_2;
   if(gHasPmuV3) {
@@ -193,6 +195,30 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
   t_kvm_cpu cpu = (t_kvm_cpu) calloc(1, sizeof(struct kvm_cpu));
   cpu->fd = fd;
   cpu->run = run;
+
+  //ask for pmu,see https://github.com/OpenMPDK/SMDK/blob/1f9726b3c43b41885cbfd3955f5d9a7aa3a286cb/lib/linux-6.9-smdk/tools/testing/selftests/kvm/aarch64/vpmu_counter_access.c#L423
+  if(gHasPmuV3) {
+    uint64_t irq = 23;
+    uint8_t pmuver;
+    struct kvm_device_attr irq_attr = {
+        .group = KVM_ARM_VCPU_PMU_V3_CTRL,
+        .attr = KVM_ARM_VCPU_PMU_V3_IRQ,
+        .addr = (uint64_t)&irq,
+    };
+    struct kvm_device_attr init_attr = {
+        .group = KVM_ARM_VCPU_PMU_V3_CTRL,
+        .attr = KVM_ARM_VCPU_PMU_V3_INIT,
+    };
+
+    /* Initialize vPMU */
+    if (ioctl(fd, KVM_SET_DEVICE_ATTR, &irq_attr) == -1){
+        fprintf(stderr, "KVM_SET_DEVICE_ATTR irq_attr failed.\n");
+    }
+    if (ioctl(fd, KVM_SET_DEVICE_ATTR, &init_attr) == -1){
+        fprintf(stderr, "KVM_SET_DEVICE_ATTR init_attr failed.\n");
+    }
+
+  }
 
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
@@ -769,7 +795,8 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
     if (ioctl(cpu->fd, KVM_RUN, NULL) == -1) {
       hv_vcpu_get_reg(cpu, HV_REG_CPSR, &cpsr);
       hv_vcpu_get_reg(cpu, HV_REG_PC, &pc);
-      fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx\n", cpu->run->exit_reason, cpsr, pc);
+      int code = errno;
+      fprintf(stderr, "KVM_RUN failed: reason=%d, cpsr=0x%llx, pc=0x%llx, err = %s(%d)\n", cpu->run->exit_reason, cpsr, pc, strerror(code), code);
       return -1;
     }
 
