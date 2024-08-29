@@ -881,6 +881,87 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_emu_1stop
   return 0;
 }
 
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_free(JNIEnv *env, jclass clazz, jlong context) {
+  void *ctx = (void *) context;
+  free(ctx);
+ }
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    context_alloc
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1alloc(JNIEnv *env, jclass clazz, jlong handle){
+  t_kvm kvm = (t_kvm) handle;
+  if(kvm->is64Bit) {
+    void *ctx = malloc(sizeof(struct context64));
+    return (jlong) ctx;
+  } else {
+    fprintf(stderr, "Doesn't support 32 bit\n");
+    abort();
+    return 0;
+  }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    context_save
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1save(JNIEnv *env, jclass clazz, jlong handle, jlong context){
+    t_kvm kvm = (t_kvm) handle;
+    t_context64 ctx = (t_context64) context;
+    if(kvm->is64Bit) {
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_SYS_REG_SP_EL0, &ctx->sp));
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_REG_PC, &ctx->pc));
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_SYS_REG_TPIDR_EL0, &ctx->tpidr_el0));
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_SYS_REG_TPIDRRO_EL0, &ctx->tpidrro_el0));
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_REG_FPCR, &ctx->fpcr));
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_REG_FPSR, &ctx->fpsr));
+        for(int i = 0; i < 31; i++){
+            HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, gprs[i], &ctx->registers[i]));
+        }
+    }else{
+        fprintf(stderr, "Doesn't support 32 bit\n");
+        abort();
+        return;
+    }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    context_restore
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1restore(JNIEnv *env, jclass clazz, jlong handle, jlong context){
+    t_kvm kvm = (t_kvm) handle;
+    t_context64 ctx = (t_context64) context;
+    if(kvm->is64Bit) {
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_SYS_REG_SP_EL0, ctx->sp));
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_REG_PC, ctx->pc));
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_SYS_REG_TPIDR_EL0, ctx->tpidr_el0));
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_SYS_REG_TPIDRRO_EL0, ctx->tpidrro_el0));
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_REG_FPCR, ctx->fpcr));
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_REG_FPSR, ctx->fpsr));
+        for(int i = 0; i < 31; i++){
+            HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, gprs[i], ctx->registers[i]));
+        }
+    }else{
+        fprintf(stderr, "Doesn't support 32 bit\n");
+        abort();
+        return;
+    }
+}
+
+
+
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   JNIEnv *env;
   if (JNI_OK != (*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_6)) {

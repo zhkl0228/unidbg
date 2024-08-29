@@ -41,6 +41,11 @@ public class Kvm implements Closeable {
     private static native int emu_start(long handle, long pc);
     private static native int emu_stop(long handle);
 
+    public static native void free(long context);
+    private static native long context_alloc(long handle);
+    private static native void context_save(long handle, long context);
+    private static native void context_restore(long handle, long context);
+
     private final long nativeHandle;
 
     private static Kvm singleInstance;
@@ -252,5 +257,15 @@ public class Kvm implements Closeable {
 
         singleInstance = null;
     }
+    public long context_alloc() {
+        return context_alloc(nativeHandle);
+    }
 
+    public void context_save(long context) {
+        context_save(nativeHandle, context);
+    }
+
+    public void context_restore(long context) {
+        context_restore(nativeHandle, context);
+    }
 }

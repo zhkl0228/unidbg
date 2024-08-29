@@ -148,3 +148,23 @@ hv_return_t hv_vcpu_set_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_sim
 #define PSR_AA32_I_BIT          0x00000080
 #define PSR_AA32_A_BIT          0x00000100
 #define PSR_AA32_E_BIT          0x00000200
+
+typedef struct context64 {
+    uint64_t registers[31];
+    uint64_t pc;
+    uint64_t sp;
+    uint64_t fpcr;
+    uint64_t fpsr;
+    uint64_t pstate;
+    uint64_t tpidr_el0;
+    uint64_t tpidrro_el0;
+} *t_context64;
+
+/*
+typedef struct {
+    uint32_t regs[16];
+    uint32_t extRegs[64];
+    uint32_t cpsr;
+    uint32_t fpscr;
+    uint32_t uro;
+} context32;*/

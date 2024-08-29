@@ -271,22 +271,20 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     }
 
     @Override
-    public void context_restore(long context) {
-        throw new UnsupportedOperationException();
-    }
+    public void context_restore(long context) { kvm.context_restore(context); }
 
     @Override
     public void context_free(long context) {
-        throw new UnsupportedOperationException();
+        Kvm.free(context);
     }
 
     @Override
-    public void context_save(long context) {
-        throw new UnsupportedOperationException();
-    }
+    public void context_save(long context) {kvm.context_save(context);}
 
     @Override
     public long context_alloc() {
-        throw new UnsupportedOperationException();
+        return kvm.context_alloc();
     }
+
+
 }
