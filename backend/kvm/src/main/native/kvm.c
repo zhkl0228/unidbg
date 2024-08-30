@@ -138,6 +138,10 @@ typedef struct kvm {
   t_kvm_cpu cpu;
   jobject callback;
   bool stop_request;
+  uint64_t sp;
+  uint64_t cpacr;
+  uint64_t tpidr;
+  uint64_t tpidrro;
 } *t_kvm;
 
 static jmethodID handleException = NULL;
@@ -227,6 +231,9 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SP_EL1, MMIO_TRAP_ADDRESS));
+  //HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR0_EL1, 0x5));
+  //HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_ID_AA64MMFR2_EL1, 0x10000));
+
 
   if(kvm->is64Bit) {
 //      vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC); // set stage 1 as normal memory
@@ -287,6 +294,13 @@ static void init() {
   close(kvm);
   gKvmFd = fd;
 
+  struct kvm_enable_cap cap;
+  memset(&cap, 0, sizeof(struct kvm_enable_cap));
+  cap.cap = KVM_CAP_ARM_NISV_TO_USER;
+  ret = ioctl(fd, KVM_ENABLE_CAP, &cap);
+  if (ret == -1) {
+    fprintf(stderr, "KVM_CAP_ARM_NISV_TO_USER unavailable,errno = %d\n",errno);
+  }
 //  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, hasMultiAddressSpace=%d, has32Bit=%d, gHasPmuV3=%d\n", fd, gRunSize, gMaxSlots, hasMultiAddressSpace, has32Bit, gHasPmuV3);
 //  printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx, gKvmFd=%d\n", HV_REG_X0, HV_REG_X1, HV_REG_PC, gKvmFd);
 }
@@ -753,6 +767,40 @@ static hv_reg_t gprs[] = {
   HV_REG_X29,
   HV_REG_X30,
 };
+static hv_simd_fp_reg_t fgprs[] = {
+  HV_SIMD_FP_REG_Q0,
+  HV_SIMD_FP_REG_Q1,
+  HV_SIMD_FP_REG_Q2,
+  HV_SIMD_FP_REG_Q3,
+  HV_SIMD_FP_REG_Q4,
+  HV_SIMD_FP_REG_Q5,
+  HV_SIMD_FP_REG_Q6,
+  HV_SIMD_FP_REG_Q7,
+  HV_SIMD_FP_REG_Q8,
+  HV_SIMD_FP_REG_Q9,
+  HV_SIMD_FP_REG_Q10,
+  HV_SIMD_FP_REG_Q11,
+  HV_SIMD_FP_REG_Q12,
+  HV_SIMD_FP_REG_Q13,
+  HV_SIMD_FP_REG_Q14,
+  HV_SIMD_FP_REG_Q15,
+  HV_SIMD_FP_REG_Q16,
+  HV_SIMD_FP_REG_Q17,
+  HV_SIMD_FP_REG_Q18,
+  HV_SIMD_FP_REG_Q19,
+  HV_SIMD_FP_REG_Q20,
+  HV_SIMD_FP_REG_Q21,
+  HV_SIMD_FP_REG_Q22,
+  HV_SIMD_FP_REG_Q23,
+  HV_SIMD_FP_REG_Q24,
+  HV_SIMD_FP_REG_Q25,
+  HV_SIMD_FP_REG_Q26,
+  HV_SIMD_FP_REG_Q27,
+  HV_SIMD_FP_REG_Q28,
+  HV_SIMD_FP_REG_Q29,
+  HV_SIMD_FP_REG_Q30,
+  HV_SIMD_FP_REG_Q31
+};
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
@@ -802,6 +850,12 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
 
     HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu, HV_REG_PC, &pc));
     switch(cpu->run->exit_reason) {
+      case KVM_EXIT_ARM_NISV: {
+          hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SP_EL0, &sp);
+          fprintf(stderr, "KVM_RUN failed: KVM_EXIT_ARM_NISV error. esr_iss=%p, fault_ipa=%p, sp=%p\n",cpu->run->arm_nisv.esr_iss, cpu->run->arm_nisv.fault_ipa, sp);
+          hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_SP_EL0, 0x13000000L);
+          return -3;
+      }
       case KVM_EXIT_MMIO: {
         if(cpu->run->mmio.phys_addr == MMIO_TRAP_ADDRESS || cpu->run->mmio.is_write || cpu->run->mmio.len == 1) {
           uint64_t esr = 0;
@@ -814,14 +868,12 @@ static int cpu_loop(JNIEnv *env, t_kvm kvm, t_kvm_cpu cpu) {
           HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu, HV_SYS_REG_SPSR_EL1, &cpsr));
           jboolean handled = (*env)->CallBooleanMethod(env, kvm->callback, handleException, esr, far, elr, cpsr, pc);
           if ((*env)->ExceptionCheck(env)) {
-            fprintf(stderr, "handle_exception cpsr=0x%llx\n", cpsr);
             return -1;
           }
-          if(handled == JNI_TRUE) {
-            break;
-          } else {
+          if(handled != JNI_TRUE) {
             return 1;
           }
+          break;
         }
       }
       default: {
@@ -922,11 +974,17 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1save(
         HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_REG_PC, &ctx->pc));
         HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_SYS_REG_TPIDR_EL0, &ctx->tpidr_el0));
         HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_SYS_REG_TPIDRRO_EL0, &ctx->tpidrro_el0));
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_SYS_REG_CPACR_EL1, &ctx->cpacr_el1));
         HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_REG_FPCR, &ctx->fpcr));
         HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_REG_FPSR, &ctx->fpsr));
+        HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, HV_REG_CPSR, &ctx->cpsr));
         for(int i = 0; i < 31; i++){
             HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(kvm->cpu, gprs[i], &ctx->registers[i]));
         }
+        for(int i = 0; i < 32; i++){
+            HYP_ASSERT_SUCCESS(hv_vcpu_get_simd_fp_reg(kvm->cpu, fgprs[i], &ctx->fp_registers[i]));
+        }
+
     }else{
         fprintf(stderr, "Doesn't support 32 bit\n");
         abort();
@@ -947,10 +1005,15 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1resto
         HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_REG_PC, ctx->pc));
         HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_SYS_REG_TPIDR_EL0, ctx->tpidr_el0));
         HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_SYS_REG_TPIDRRO_EL0, ctx->tpidrro_el0));
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_SYS_REG_CPACR_EL1, ctx->cpacr_el1));
         HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_REG_FPCR, ctx->fpcr));
         HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_REG_FPSR, ctx->fpsr));
+        HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, HV_REG_CPSR, ctx->cpsr));
         for(int i = 0; i < 31; i++){
             HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(kvm->cpu, gprs[i], ctx->registers[i]));
+        }
+        for(int i = 0; i < 32; i++){
+            HYP_ASSERT_SUCCESS(hv_vcpu_set_simd_fp_reg(kvm->cpu, fgprs[i], ctx->fp_registers[i]));
         }
     }else{
         fprintf(stderr, "Doesn't support 32 bit\n");

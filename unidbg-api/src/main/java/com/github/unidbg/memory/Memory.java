@@ -9,11 +9,16 @@ import java.util.Collection;
 @SuppressWarnings("unused")
 public interface Memory extends IO, Loader, StackMemory {
 
-    long STACK_BASE = 0xc0000000L;
-    int STACK_SIZE_OF_PAGE = 256; // 1024k
+    long STACK_BASE = 0xe5000000L;
 
-    long MMAP_BASE = 0x40000000L;
+    int STACK_SIZE_OF_THREAD_PAGE = 1024*32; // 32MB for thread stack
+    int STACK_SIZE_OF_PAGE = STACK_SIZE_OF_THREAD_PAGE + 1024*16; // + 16MB for main stack
 
+    long MMAP_BASE = 0x12000000L;//0x1fffe180e , limited by MMIO_TRAP_ADDRESS
+
+    int allocateThreadIndex();
+    void freeThreadIndex(int index);
+    UnidbgPointer allocateThreadStack(int index);
     UnidbgPointer allocateStack(int size);
     UnidbgPointer pointer(long address);
     void setStackPoint(long sp);

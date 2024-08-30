@@ -14,6 +14,7 @@ import com.github.unidbg.memory.MMapListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.BaseTask;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
@@ -47,7 +48,41 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     protected long mmapBaseAddress;
     protected final Map<Long, MemoryMap> memoryMap = new TreeMap<>();
 
+    static Boolean[] threadStackMap = new Boolean[32];
+
     protected MMapListener mMapListener;
+
+    static {
+        Arrays.fill(threadStackMap, false);
+    }
+
+    @Override
+    public int allocateThreadIndex(){
+        for(int i = 0; i<threadStackMap.length ;  i++){
+            if(!threadStackMap[i]){
+                threadStackMap[i] = true;
+                return i;
+            }
+        }
+        throw new UnsupportedOperationException("Threads is too much, max is = " + threadStackMap.length);
+    }
+
+    @Override
+    public void freeThreadIndex(int index){
+        if(index>0) {
+            threadStackMap[index] = false;
+        }
+    }
+
+    @Override
+    public UnidbgPointer allocateThreadStack(int index){
+        long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_THREAD_PAGE * emulator.getPageAlign();
+        long address = threadStackBase - (long) BaseTask.THREAD_STACK_SIZE * index;
+        if (log.isDebugEnabled()) {
+            log.debug("allocateThreadStackAddress=0x" + Long.toHexString(address));
+        }
+        return UnidbgPointer.pointer(emulator, address);
+    }
 
     @Override
     public void setMMapListener(MMapListener listener) {

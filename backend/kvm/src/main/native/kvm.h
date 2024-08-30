@@ -78,6 +78,7 @@ typedef enum {
     HV_SYS_REG_MIDR_EL1 = ARM64_SYS_REG(3, 0, 0, 0, 0),
     HV_SYS_REG_ID_AA64MMFR0_EL1 = ARM64_SYS_REG(3, 0, 0, 7, 0),
     HV_SYS_REG_ID_AA64MMFR2_EL1 = ARM64_SYS_REG(3, 0, 0, 7, 2),
+    HV_SYS_REG_ID_AA64DFR0_EL1 = ARM64_SYS_REG(0, 5, 3, 0, 0);
     HV_SYS_REG_SCTLR_EL1 = ARM64_SYS_REG(3, 0, 1, 0, 0),
     HV_SYS_REG_CPACR_EL1 = ARM64_SYS_REG(3, 0, 1, 0, 2),
     HV_SYS_REG_ESR_EL1 = ARM64_SYS_REG(3, 0, 5, 2, 0),
@@ -151,11 +152,13 @@ hv_return_t hv_vcpu_set_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_sim
 
 typedef struct context64 {
     uint64_t registers[31];
+    hv_simd_fp_uchar16_t fp_registers[32];
     uint64_t pc;
     uint64_t sp;
     uint64_t fpcr;
     uint64_t fpsr;
-    uint64_t pstate;
+    uint64_t cpsr;
+    uint64_t cpacr_el1;
     uint64_t tpidr_el0;
     uint64_t tpidrro_el0;
 } *t_context64;
