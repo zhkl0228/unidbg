@@ -48,18 +48,15 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     protected long mmapBaseAddress;
     protected final Map<Long, MemoryMap> memoryMap = new TreeMap<>();
 
-    static Boolean[] threadStackMap = new Boolean[32];
+    protected Boolean[] threadStackMap = new Boolean[32];
 
     protected MMapListener mMapListener;
 
-    static {
-        Arrays.fill(threadStackMap, false);
-    }
 
     @Override
     public int allocateThreadIndex(){
         for(int i = 0; i<threadStackMap.length ;  i++){
-            if(!threadStackMap[i]){
+            if(threadStackMap[i]==null || !threadStackMap[i]){
                 threadStackMap[i] = true;
                 return i;
             }
