@@ -73,6 +73,9 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public UnidbgPointer allocateThreadStack(int index){
+        if(!threadStackMap[index]) {
+            throw new UnsupportedOperationException("Your ThreadStackIndex doesn't exist, it must come from allocateThreadIndex(), index = " + index);
+        }
         long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_MAIN_PAGE * emulator.getPageAlign();
         long address = threadStackBase - (long) BaseTask.THREAD_STACK_PAGE * index * emulator.getPageAlign();
         if (log.isDebugEnabled()) {
