@@ -108,7 +108,9 @@ public abstract class BaseTask implements RunnableTask {
     public void destroy(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
 
-        emulator.getMemory().freeThreadIndex(stackSpaceAllocIndex);
+        if (stackSpaceAllocIndex > 0) {
+            emulator.getMemory().freeThreadIndex(stackSpaceAllocIndex);
+        }
 
         if (this.context != 0) {
             backend.context_free(this.context);
