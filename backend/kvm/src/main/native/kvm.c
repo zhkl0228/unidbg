@@ -202,26 +202,14 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
 
   //ask for pmu,see https://github.com/OpenMPDK/SMDK/blob/1f9726b3c43b41885cbfd3955f5d9a7aa3a286cb/lib/linux-6.9-smdk/tools/testing/selftests/kvm/aarch64/vpmu_counter_access.c#L423
   if(gHasPmuV3) {
-    uint64_t irq = 23;
-    uint8_t pmuver;
-    struct kvm_device_attr irq_attr = {
-        .group = KVM_ARM_VCPU_PMU_V3_CTRL,
-        .attr = KVM_ARM_VCPU_PMU_V3_IRQ,
-        .addr = (uint64_t)&irq,
-    };
     struct kvm_device_attr init_attr = {
         .group = KVM_ARM_VCPU_PMU_V3_CTRL,
         .attr = KVM_ARM_VCPU_PMU_V3_INIT,
     };
-
     /* Initialize vPMU */
-    if (ioctl(fd, KVM_SET_DEVICE_ATTR, &irq_attr) == -1){
-        fprintf(stderr, "KVM_SET_DEVICE_ATTR irq_attr failed.\n");
-    }
     if (ioctl(fd, KVM_SET_DEVICE_ATTR, &init_attr) == -1){
         fprintf(stderr, "KVM_SET_DEVICE_ATTR init_attr failed.\n");
     }
-
   }
 
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu, HV_SYS_REG_VBAR_EL1, REG_VBAR_EL1));
