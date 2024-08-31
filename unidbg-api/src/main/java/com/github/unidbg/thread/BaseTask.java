@@ -120,7 +120,7 @@ public abstract class BaseTask implements RunnableTask {
         }
     }
 
-    public static final int THREAD_STACK_SIZE = 0x80000;
+    public static final int THREAD_STACK_PAGE = 8;
 
     protected final UnidbgPointer allocateStack(Emulator<?> emulator) {
         //stackBlock地址基于MMAP_BASE，必须想办法让它基于STACK_BASE(KVM在使用sp寄存器时会校验，校验失败直接升天）。

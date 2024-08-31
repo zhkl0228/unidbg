@@ -2,6 +2,7 @@ package com.github.unidbg.memory;
 
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.Loader;
+import com.github.unidbg.thread.BaseTask;
 import com.github.unidbg.unix.IO;
 
 import java.util.Collection;
@@ -11,8 +12,9 @@ public interface Memory extends IO, Loader, StackMemory {
 
     long STACK_BASE = 0xe5000000L;
 
-    int STACK_SIZE_OF_THREAD_PAGE = 1024*32; // 32MB for thread stack
-    int STACK_SIZE_OF_PAGE = STACK_SIZE_OF_THREAD_PAGE + 1024*16; // + 16MB for main stack
+    int MAX_THREADS = 128;
+    int STACK_SIZE_OF_THREAD_PAGE = MAX_THREADS * BaseTask.THREAD_STACK_PAGE; // for thread stack
+    int STACK_SIZE_OF_PAGE = STACK_SIZE_OF_THREAD_PAGE + 1024; // for main stack
 
     long MMAP_BASE = 0x12000000L;//0x1fffe180e , limited by MMIO_TRAP_ADDRESS
 

@@ -48,7 +48,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     protected long mmapBaseAddress;
     protected final Map<Long, MemoryMap> memoryMap = new TreeMap<>();
 
-    protected Boolean[] threadStackMap = new Boolean[32];
+    protected Boolean[] threadStackMap = new Boolean[Memory.MAX_THREADS];
 
     protected MMapListener mMapListener;
 
@@ -66,7 +66,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public void freeThreadIndex(int index){
-        if(index>0) {
+        if(index>=0) {
             threadStackMap[index] = false;
         }
     }
@@ -74,7 +74,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     @Override
     public UnidbgPointer allocateThreadStack(int index){
         long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_THREAD_PAGE * emulator.getPageAlign();
-        long address = threadStackBase - (long) BaseTask.THREAD_STACK_SIZE * index;
+        long address = threadStackBase - (long) BaseTask.THREAD_STACK_PAGE * index * emulator.getPageAlign();
         if (log.isDebugEnabled()) {
             log.debug("allocateThreadStackAddress=0x" + Long.toHexString(address));
         }
