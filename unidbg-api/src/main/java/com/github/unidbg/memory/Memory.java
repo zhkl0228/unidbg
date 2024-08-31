@@ -14,7 +14,8 @@ public interface Memory extends IO, Loader, StackMemory {
 
     int MAX_THREADS = 128;
     int STACK_SIZE_OF_THREAD_PAGE = MAX_THREADS * BaseTask.THREAD_STACK_PAGE; // for thread stack
-    int STACK_SIZE_OF_PAGE = STACK_SIZE_OF_THREAD_PAGE + 1024; // for main stack
+    int STACK_SIZE_OF_MAIN_PAGE = 256; // for main stack
+    int STACK_SIZE_OF_PAGE = STACK_SIZE_OF_THREAD_PAGE + STACK_SIZE_OF_MAIN_PAGE;
 
     long MMAP_BASE = 0x12000000L;//0x1fffe180e , limited by MMIO_TRAP_ADDRESS
 

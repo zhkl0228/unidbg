@@ -73,7 +73,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public UnidbgPointer allocateThreadStack(int index){
-        long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_THREAD_PAGE * emulator.getPageAlign();
+        long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_MAIN_PAGE * emulator.getPageAlign();
         long address = threadStackBase - (long) BaseTask.THREAD_STACK_PAGE * index * emulator.getPageAlign();
         if (log.isDebugEnabled()) {
             log.debug("allocateThreadStackAddress=0x" + Long.toHexString(address));
@@ -301,7 +301,12 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public final UnidbgPointer allocateStack(int size) {
-        setStackPoint(sp - size);
+        long newAddr = sp - size;
+        long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_MAIN_PAGE * emulator.getPageAlign();
+        if(newAddr <= threadStackBase){
+            throw new IllegalStateException("Error! main thread stack point too large. sp=0x" + Long.toHexString(sp) + ", threadStackBase=0x" + Long.toHexString(threadStackBase));
+        }
+        setStackPoint(newAddr);
         UnidbgPointer pointer = UnidbgPointer.pointer(emulator, sp);
         assert pointer != null;
         return pointer.setSize(size);
