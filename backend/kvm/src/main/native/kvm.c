@@ -16,6 +16,31 @@ typedef struct kvm_cpu {
   uint32_t offset;
 } *t_kvm_cpu;
 
+
+typedef struct kvm {
+  bool is64Bit;
+  khash_t(memory) *memory;
+  size_t num_page_table_entries;
+  void **page_table;
+  t_kvm_cpu cpu;
+  jobject callback;
+  bool stop_request;
+  uint64_t sp;
+  uint64_t cpacr;
+  uint64_t tpidr;
+  uint64_t tpidrro;
+
+  ////
+  int gKvmFd;
+  int gRunSize;
+  int gMaxSlots;
+  bool gHasPmuV3;
+  bool has32Bit;
+  int hasMultiAddressSpace;
+} *t_kvm;
+
+static jmethodID handleException = NULL;
+
 static int check_one_reg(uint64_t reg, int ret) {
   if(ret == 0) {
     return 0;
@@ -103,20 +128,15 @@ hv_return_t hv_vcpu_set_simd_fp_reg(hv_vcpu_t vcpu, hv_simd_fp_reg_t reg, hv_sim
     return HV_SUCCESS;
 }
 
-static int gKvmFd = 0;
-static int gRunSize = 0;
-static int gMaxSlots = 0;
-static bool gHasPmuV3;
-static bool has32Bit;
-
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    getMaxSlots
- * Signature: ()I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getMaxSlots
-  (JNIEnv *env, jclass clazz) {
-  return gMaxSlots;
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_kvm kvm = (t_kvm) handle;
+  return kvm->gMaxSlots;
 }
 
 /*
@@ -129,22 +149,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getPageSize
   long sz = sysconf(_SC_PAGESIZE);
   return (jint) sz;
 }
-
-typedef struct kvm {
-  bool is64Bit;
-  khash_t(memory) *memory;
-  size_t num_page_table_entries;
-  void **page_table;
-  t_kvm_cpu cpu;
-  jobject callback;
-  bool stop_request;
-  uint64_t sp;
-  uint64_t cpacr;
-  uint64_t tpidr;
-  uint64_t tpidrro;
-} *t_kvm;
-
-static jmethodID handleException = NULL;
 
 static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
     uint64_t idx = vaddr >> PAGE_BITS;
@@ -167,13 +171,13 @@ static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t n
 
 static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
   struct kvm_vcpu_init vcpu_init;
-  if (ioctl(gKvmFd, KVM_ARM_PREFERRED_TARGET, &vcpu_init) == -1) {
+  if (ioctl(kvm->gKvmFd, KVM_ARM_PREFERRED_TARGET, &vcpu_init) == -1) {
     fprintf(stderr, "KVM_ARM_PREFERRED_TARGET failed.\n");
     abort();
     return NULL;
   }
 
-  int fd = ioctl(gKvmFd, KVM_CREATE_VCPU, 0);
+  int fd = ioctl(kvm->gKvmFd, KVM_CREATE_VCPU, 0);
   if (fd == -1) {
     fprintf(stderr, "KVM_CREATE_VCPU failed.\n");
     abort();
@@ -182,7 +186,7 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
 
   // ask for psci 0.2
   vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PSCI_0_2;
-  if(gHasPmuV3) {
+  if(kvm->gHasPmuV3) {
     vcpu_init.features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
   }
   if (ioctl(fd, KVM_ARM_VCPU_INIT, &vcpu_init) == -1) {
@@ -190,7 +194,7 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
     abort();
     return NULL;
   }
-  struct kvm_run *run = mmap(NULL, gRunSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  struct kvm_run *run = mmap(NULL, kvm->gRunSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (run == MAP_FAILED) {
     fprintf(stderr, "init kvm_run failed.\n");
     abort();
@@ -201,7 +205,7 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
   cpu->run = run;
 
   //ask for pmu,see https://github.com/OpenMPDK/SMDK/blob/1f9726b3c43b41885cbfd3955f5d9a7aa3a286cb/lib/linux-6.9-smdk/tools/testing/selftests/kvm/aarch64/vpmu_counter_access.c#L423
-  if(gHasPmuV3) {
+  if(kvm->gHasPmuV3) {
     struct kvm_device_attr init_attr = {
         .group = KVM_ARM_VCPU_PMU_V3_CTRL,
         .attr = KVM_ARM_VCPU_PMU_V3_INIT,
@@ -227,7 +231,7 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
 //      vcpu->HV_SYS_REG_HCR_EL2 |= (1LL << HCR_EL2$DC); // set stage 1 as normal memory
     return cpu;
   } else {
-    if(has32Bit) {
+    if(kvm->has32Bit) {
       return cpu;
     } else {
       fprintf(stderr, "KVM_CAP_ARM_EL1_32BIT unavailable\n");
@@ -235,68 +239,6 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
       return NULL;
     }
   }
-}
-
-__attribute__((constructor))
-static void init() {
-  int kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
-  if(kvm == -1) {
-    fprintf(stderr, "open /dev/kvm failed.\n");
-    abort();
-    return;
-  }
-
-  int api_ver = ioctl(kvm, KVM_GET_API_VERSION, NULL);
-  if(api_ver != KVM_API_VERSION) {
-    fprintf(stderr, "Got KVM api version %d, expected %d\n", api_ver, KVM_API_VERSION);
-    abort();
-    return;
-  }
-
-  int ret = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_USER_MEMORY);
-  if (!ret) {
-    fprintf(stderr, "kvm user memory capability unavailable\n");
-    abort();
-    return;
-  }
-
-  ret = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PSCI_0_2);
-  if (!ret) {
-    fprintf(stderr, "KVM_CAP_ARM_PSCI_0_2 unavailable\n");
-    abort();
-    return;
-  }
-
-  gHasPmuV3 = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PMU_V3) > 0;
-  gRunSize = ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
-  gMaxSlots = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
-  int hasMultiAddressSpace = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
-  has32Bit = ioctl(kvm, KVM_CHECK_EXTENSION, KVM_CAP_ARM_EL1_32BIT) > 0;
-
-  int fd = ioctl(kvm, KVM_CREATE_VM, KVM_VM_TYPE_ARM_IPA_SIZE(0));
-  if (fd == -1) {
-    fprintf(stderr, "createVM failed\n");
-    abort();
-    return;
-  }
-  close(kvm);
-  gKvmFd = fd;
-
-  struct kvm_enable_cap cap;
-  memset(&cap, 0, sizeof(struct kvm_enable_cap));
-  cap.cap = KVM_CAP_ARM_NISV_TO_USER;
-  ret = ioctl(fd, KVM_ENABLE_CAP, &cap);
-  if (ret == -1) {
-    fprintf(stderr, "KVM_CAP_ARM_NISV_TO_USER unavailable,errno = %d\n",errno);
-  }
-//  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, hasMultiAddressSpace=%d, has32Bit=%d, gHasPmuV3=%d\n", fd, gRunSize, gMaxSlots, hasMultiAddressSpace, has32Bit, gHasPmuV3);
-//  printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx, gKvmFd=%d\n", HV_REG_X0, HV_REG_X1, HV_REG_PC, gKvmFd);
-}
-
-__attribute__((destructor))
-static void destroy() {
-  close(gKvmFd);
-  gKvmFd = 0;
 }
 
 /*
@@ -324,6 +266,62 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitial
     abort();
     return 0;
   }
+
+  //kvm initialize
+  int kvm_open = open("/dev/kvm", O_RDWR | O_CLOEXEC);
+  if(kvm_open == -1) {
+    fprintf(stderr, "open /dev/kvm failed.\n");
+    abort();
+    return 0;
+  }
+
+  int api_ver = ioctl(kvm_open, KVM_GET_API_VERSION, NULL);
+  if(api_ver != KVM_API_VERSION) {
+    fprintf(stderr, "Got KVM api version %d, expected %d\n", api_ver, KVM_API_VERSION);
+    abort();
+    return 0;
+  }
+
+  int ret = ioctl(kvm_open, KVM_CHECK_EXTENSION, KVM_CAP_USER_MEMORY);
+  if (!ret) {
+    fprintf(stderr, "kvm user memory capability unavailable\n");
+    abort();
+    return 0;
+  }
+
+  ret = ioctl(kvm_open, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PSCI_0_2);
+  if (!ret) {
+    fprintf(stderr, "KVM_CAP_ARM_PSCI_0_2 unavailable\n");
+    abort();
+    return 0;
+  }
+
+  kvm->gHasPmuV3 = ioctl(kvm_open, KVM_CHECK_EXTENSION, KVM_CAP_ARM_PMU_V3) > 0;
+  kvm->gRunSize = ioctl(kvm_open, KVM_GET_VCPU_MMAP_SIZE, NULL);
+  kvm->gMaxSlots = ioctl(kvm_open, KVM_CHECK_EXTENSION, KVM_CAP_NR_MEMSLOTS);
+  kvm->hasMultiAddressSpace = ioctl(kvm_open, KVM_CHECK_EXTENSION, KVM_CAP_MULTI_ADDRESS_SPACE);
+  kvm->has32Bit = ioctl(kvm_open, KVM_CHECK_EXTENSION, KVM_CAP_ARM_EL1_32BIT) > 0;
+
+  int fd = ioctl(kvm_open, KVM_CREATE_VM, KVM_VM_TYPE_ARM_IPA_SIZE(0));
+  if (fd == -1) {
+    fprintf(stderr, "createVM failed\n");
+    abort();
+    return 0;
+  }
+  struct kvm_enable_cap cap;
+  memset(&cap, 0, sizeof(struct kvm_enable_cap));
+  cap.cap = KVM_CAP_ARM_NISV_TO_USER;
+  ret = ioctl(fd, KVM_ENABLE_CAP, &cap);
+  if (ret == -1) {
+    fprintf(stderr, "KVM_CAP_ARM_NISV_TO_USER unavailable,errno = %d\n",errno);
+  }
+  kvm->gKvmFd = fd;
+  close(kvm_open);
+  //  printf("initVM fd=%d, gRunSize=0x%x, gMaxSlots=0x%x, hasMultiAddressSpace=%d, has32Bit=%d, gHasPmuV3=%d\n", fd, gRunSize, gMaxSlots, hasMultiAddressSpace, has32Bit, gHasPmuV3);
+  //  printf("initVM HV_REG_X0=0x%llx, HV_REG_X1=0x%llx, HV_REG_PC=0x%llx, gKvmFd=%d\n", HV_REG_X0, HV_REG_X1, HV_REG_PC, gKvmFd);
+  //kvm initialize end//
+
+
   kvm->is64Bit = is64Bit == JNI_TRUE;
   kvm->memory = kh_init(memory);
   if(kvm->memory == NULL) {
@@ -331,7 +329,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitial
     abort();
     return 0;
   }
-  int ret = kh_resize(memory, kvm->memory, 0x1000);
+  ret = kh_resize(memory, kvm->memory, 0x1000);
   if(ret == -1) {
     fprintf(stderr, "kh_resize memory failed\n");
     abort();
@@ -357,7 +355,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeInitial
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_kvm kvm = (t_kvm) handle;
-  munmap(kvm->cpu->run, gRunSize);
+  munmap(kvm->cpu->run, kvm->gRunSize);
   close(kvm->cpu->fd);
   free(kvm->cpu);
 
@@ -384,6 +382,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
     }
   }
   free(kvm);
+  close(kvm->gKvmFd);
 }
 
 /*
@@ -415,7 +414,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
     .memory_size = 0,
     .userspace_addr = userspace_addr,
   };
-  if (ioctl(gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
+  if (ioctl(kvm->gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
     fprintf(stderr, "set_user_memory_region failed userspace_addr=0x%llx, guest_phys_addr=0x%lx\n", userspace_addr, guest_phys_addr);
     return 2;
   }
@@ -473,7 +472,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     .memory_size = memory_size,
     .userspace_addr = (uint64_t)start_addr,
   };
-  if (ioctl(gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
+  if (ioctl(kvm->gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
     fprintf(stderr, "set_user_memory_region failed start_addr=%p, guest_phys_addr=0x%lx\n", start_addr, guest_phys_addr);
     abort();
     return 0L;

@@ -18,10 +18,10 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_setKvmCallback
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
  * Method:    getMaxSlots
- * Signature: ()I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_getMaxSlots
-  (JNIEnv *, jclass);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_kvm_Kvm
