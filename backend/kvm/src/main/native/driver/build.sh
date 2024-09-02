@@ -21,7 +21,7 @@ fi
 cd $SCRIPT_DIR/kernel-hook-framework/src
 #Check cat /proc/kallsyms | grep simplify_symbols is empty
 if [ -z "$(cat /proc/kallsyms | grep simplify_symbols)" ]; then
-  make arm64 KDIR=/lib/modules/$KERNEL_VERSION/build HAS_NO_SYMBOL_RESOLVER=1
+  make arm64 KDIR=/lib/modules/$KERNEL_VERSION/build HAS_NO_SIMPLIFY_SYMBOLS=1
 else
   make arm64 KDIR=/lib/modules/$KERNEL_VERSION/build
 fi
