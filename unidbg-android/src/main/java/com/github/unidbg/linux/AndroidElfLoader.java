@@ -69,6 +69,10 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
     public AndroidElfLoader(Emulator<AndroidFileIO> emulator, UnixSyscallHandler<AndroidFileIO> syscallHandler) {
         super(emulator, syscallHandler);
 
+        // init stack
+        stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
+        backend.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+
         setStackPoint(STACK_BASE);
         this.environ = initializeTLS(new String[] {
                 "ANDROID_DATA=/data",
