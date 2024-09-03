@@ -11,7 +11,7 @@ public class Kvm implements Closeable {
 
     private static native int setKvmCallback(long handle, KvmCallback callback);
 
-    public static native int getMaxSlots();
+    public static native int getMaxSlots(long handle);
     public static native int getPageSize();
     private static native long nativeInitialize(boolean is64Bit);
     private static native void nativeDestroy(long handle);
@@ -41,17 +41,16 @@ public class Kvm implements Closeable {
     private static native int emu_start(long handle, long pc);
     private static native int emu_stop(long handle);
 
+    public static native void free(long context);
+    private static native long context_alloc(long handle);
+    private static native void context_save(long handle, long context);
+    private static native void context_restore(long handle, long context);
+
     private final long nativeHandle;
 
-    private static Kvm singleInstance;
 
     public Kvm(boolean is64Bit) {
-        if (singleInstance != null) {
-            throw new IllegalStateException("Only one kvm VM instance per process allowed.");
-        }
-
         this.nativeHandle = nativeInitialize(is64Bit);
-        singleInstance = this;
     }
 
     public void setKvmCallback(KvmCallback callback) {
@@ -152,6 +151,13 @@ public class Kvm implements Closeable {
         return nzcv;
     }
 
+    public int getMaxSlots(){
+        int ret = getMaxSlots(nativeHandle);
+        if (ret <= 0)
+            throw new KvmException("getMaxSlots failed: ret=" + ret);
+        return ret;
+    }
+
     public void mem_write(long address, byte[] bytes) {
         long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_write(nativeHandle, address, bytes);
@@ -249,8 +255,16 @@ public class Kvm implements Closeable {
     @Override
     public void close() {
         nativeDestroy(nativeHandle);
-
-        singleInstance = null;
+    }
+    public long context_alloc() {
+        return context_alloc(nativeHandle);
     }
 
+    public void context_save(long context) {
+        context_save(nativeHandle, context);
+    }
+
+    public void context_restore(long context) {
+        context_restore(nativeHandle, context);
+    }
 }

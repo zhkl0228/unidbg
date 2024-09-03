@@ -55,7 +55,7 @@ public class DarwinThread extends ThreadTask {
         Backend backend = emulator.getBackend();
 
         UnidbgPointer stack = allocateStack(emulator);
-        pthread.setStack(stack, THREAD_STACK_SIZE);
+        pthread.setStack(stack, (long) THREAD_STACK_PAGE * emulator.getPageAlign());
         pthread.pack();
 
         backend.reg_write(emulator.is32Bit() ? ArmConst.UC_ARM_REG_R0 : Arm64Const.UC_ARM64_REG_X0, this.arg == null ? 0L : this.arg.peer);

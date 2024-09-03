@@ -5,7 +5,6 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.FunctionCall;
 import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.HashBag;
@@ -21,6 +20,7 @@ public abstract class BaseTask implements RunnableTask {
     private static final Log log = LogFactory.getLog(BaseTask.class);
 
     private Waiter waiter;
+    private int stackSpaceAllocIndex = -1;
 
     @Override
     public void setWaiter(Emulator<?> emulator, Waiter waiter) {
@@ -108,9 +108,8 @@ public abstract class BaseTask implements RunnableTask {
     public void destroy(Emulator<?> emulator) {
         Backend backend = emulator.getBackend();
 
-        if (stackBlock != null) {
-            stackBlock.free();
-            stackBlock = null;
+        if (stackSpaceAllocIndex > 0) {
+            emulator.getMemory().freeThreadIndex(stackSpaceAllocIndex);
         }
 
         if (this.context != 0) {
@@ -123,15 +122,14 @@ public abstract class BaseTask implements RunnableTask {
         }
     }
 
-    public static final int THREAD_STACK_SIZE = 0x80000;
-
-    private MemoryBlock stackBlock;
+    public static final int THREAD_STACK_PAGE = 8;
 
     protected final UnidbgPointer allocateStack(Emulator<?> emulator) {
-        if (stackBlock == null) {
-            stackBlock = emulator.getMemory().malloc(THREAD_STACK_SIZE, true);
+        //stackBlock地址基于MMAP_BASE，必须想办法让它基于STACK_BASE(KVM在使用sp寄存器时会校验，校验失败直接升天）。
+        if (stackSpaceAllocIndex == -1){
+            stackSpaceAllocIndex = emulator.getMemory().allocateThreadIndex();
         }
-        return stackBlock.getPointer().share(THREAD_STACK_SIZE, 0);
+        return emulator.getMemory().allocateThreadStack(stackSpaceAllocIndex);
     }
 
     @Override
