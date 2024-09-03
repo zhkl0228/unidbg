@@ -295,7 +295,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public final void addHookListener(HookListener listener) {
-        hookListeners.add(0,listener);
+        hookListeners.add(listener);
     }
 
     protected LibraryResolver libraryResolver;
