@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
-import unicorn.UnicornConst;
 
 import java.io.DataOutput;
 import java.io.File;
@@ -104,10 +103,6 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         this.syscallHandler = syscallHandler;
 
         setMMapBaseAddress(MMAP_BASE);
-
-        // init stack
-        stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
-        backend.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
     }
 
     @Override
@@ -295,7 +290,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public final void addHookListener(HookListener listener) {
-        hookListeners.add(0,listener);
+        hookListeners.add(listener);
     }
 
     protected LibraryResolver libraryResolver;
