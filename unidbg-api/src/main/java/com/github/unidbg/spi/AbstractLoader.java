@@ -14,6 +14,7 @@ import com.github.unidbg.memory.MMapListener;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.thread.BaseTask;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
@@ -47,7 +48,41 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
     protected long mmapBaseAddress;
     protected final Map<Long, MemoryMap> memoryMap = new TreeMap<>();
 
+    protected Boolean[] threadStackMap = new Boolean[Memory.MAX_THREADS];
+
     protected MMapListener mMapListener;
+
+
+    @Override
+    public int allocateThreadIndex(){
+        for(int i = 0; i<threadStackMap.length ;  i++){
+            if(threadStackMap[i]==null || !threadStackMap[i]){
+                threadStackMap[i] = true;
+                return i;
+            }
+        }
+        throw new UnsupportedOperationException("Threads is too much, max is = " + threadStackMap.length);
+    }
+
+    @Override
+    public void freeThreadIndex(int index){
+        if(index>=0) {
+            threadStackMap[index] = false;
+        }
+    }
+
+    @Override
+    public UnidbgPointer allocateThreadStack(int index){
+        if(!threadStackMap[index]) {
+            throw new UnsupportedOperationException("Your ThreadStackIndex doesn't exist, it must come from allocateThreadIndex(), index = " + index);
+        }
+        long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_MAIN_PAGE * emulator.getPageAlign();
+        long address = threadStackBase - (long) BaseTask.THREAD_STACK_PAGE * index * emulator.getPageAlign();
+        if (log.isDebugEnabled()) {
+            log.debug("allocateThreadStackAddress=0x" + Long.toHexString(address));
+        }
+        return UnidbgPointer.pointer(emulator, address);
+    }
 
     @Override
     public void setMMapListener(MMapListener listener) {
@@ -269,7 +304,12 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
 
     @Override
     public final UnidbgPointer allocateStack(int size) {
-        setStackPoint(sp - size);
+        long newAddr = sp - size;
+        long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_MAIN_PAGE * emulator.getPageAlign();
+        if(newAddr <= threadStackBase){
+            throw new IllegalStateException("Error! main thread stack point too large. sp=0x" + Long.toHexString(sp) + ", threadStackBase=0x" + Long.toHexString(threadStackBase));
+        }
+        setStackPoint(newAddr);
         UnidbgPointer pointer = UnidbgPointer.pointer(emulator, sp);
         assert pointer != null;
         return pointer.setSize(size);

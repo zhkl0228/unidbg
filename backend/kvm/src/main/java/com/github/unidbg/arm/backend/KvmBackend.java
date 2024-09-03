@@ -30,7 +30,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         this.kvm = kvm;
         this.pageSize = Kvm.getPageSize();
 
-        int maxSlots = Kvm.getMaxSlots();
+        int maxSlots = kvm.getMaxSlots();
         if (log.isDebugEnabled()) {
             log.debug("init kvm backend kvm=" + kvm + ", maxSlots=0x" + Integer.toHexString(maxSlots) + ", pageSize=0x" + Integer.toHexString(pageSize));
         }
@@ -271,22 +271,20 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     }
 
     @Override
-    public void context_restore(long context) {
-        throw new UnsupportedOperationException();
-    }
+    public void context_restore(long context) { kvm.context_restore(context); }
 
     @Override
     public void context_free(long context) {
-        throw new UnsupportedOperationException();
+        Kvm.free(context);
     }
 
     @Override
-    public void context_save(long context) {
-        throw new UnsupportedOperationException();
-    }
+    public void context_save(long context) {kvm.context_save(context);}
 
     @Override
     public long context_alloc() {
-        throw new UnsupportedOperationException();
+        return kvm.context_alloc();
     }
+
+
 }
