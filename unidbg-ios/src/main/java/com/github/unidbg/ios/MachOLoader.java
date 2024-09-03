@@ -81,16 +81,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     MachOLoader(Emulator<DarwinFileIO> emulator, UnixSyscallHandler<DarwinFileIO> syscallHandler, String[] envs) {
         super(emulator, syscallHandler);
 
-        // init stack
-        long stackBase = STACK_BASE;
-        if (emulator.is64Bit()) {
-            stackBase += 0xf00000000L;
-        }
-
         stackSize = STACK_SIZE_OF_PAGE * emulator.getPageAlign();
-        backend.mem_map(stackBase - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+        backend.mem_map(STACK_BASE - stackSize, stackSize, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
 
-        setStackPoint(stackBase);
+        setStackPoint(STACK_BASE);
         initializeTSD(envs);
     }
 
