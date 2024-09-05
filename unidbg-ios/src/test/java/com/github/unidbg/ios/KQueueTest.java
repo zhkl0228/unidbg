@@ -1,7 +1,6 @@
 package com.github.unidbg.ios;
 
 import com.alibaba.fastjson.util.IOUtils;
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.DynarmicFactory;
@@ -40,9 +39,6 @@ public class KQueueTest {
     }
 
     public static void main(String[] args) {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
-        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.ios.kevent").setLevel(Level.INFO);
         KQueueTest test = new KQueueTest();

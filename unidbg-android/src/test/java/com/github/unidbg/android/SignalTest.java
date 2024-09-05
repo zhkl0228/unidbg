@@ -1,16 +1,12 @@
 package com.github.unidbg.android;
 
 import com.alibaba.fastjson.util.IOUtils;
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.TraceFunctionCall;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.debugger.Debugger;
 import com.github.unidbg.debugger.FunctionCallListener;
-import com.github.unidbg.linux.ARM32SyscallHandler;
-import com.github.unidbg.linux.AndroidSyscallHandler;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
 import com.github.unidbg.linux.android.AndroidResolver;
 import com.github.unidbg.memory.Memory;
@@ -23,10 +19,6 @@ import java.io.File;
 public class SignalTest {
 
     public static void main(String[] args) {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
-        Logger.getLogger(AndroidSyscallHandler.class).setLevel(Level.INFO);
-        Logger.getLogger(TraceFunctionCall.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
 
         SignalTest test = new SignalTest();

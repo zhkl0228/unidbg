@@ -1,15 +1,11 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.file.ios.DarwinFileIO;
 import com.github.unidbg.ios.ipa.SymbolResolver;
 import com.github.unidbg.memory.Memory;
-import com.github.unidbg.thread.BaseTask;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +13,6 @@ import java.io.IOException;
 public class A12ZTest {
 
     public static void main(String[] args) throws IOException {
-        Logger.getLogger(BaseTask.class).setLevel(Level.INFO);
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
         DarwinEmulatorBuilder builder = DarwinEmulatorBuilder.for64Bit();
         builder.addBackendFactory(new HypervisorFactory(true));
         Emulator<DarwinFileIO> emulator = builder.build();

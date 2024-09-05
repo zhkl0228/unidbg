@@ -34,30 +34,24 @@ public class IpaLoaderTest implements EmulatorConfigurator {
         System.err.println("load offset=" + (System.currentTimeMillis() - start) + "ms");
         loader.callEntry();
         final Module module = loader.getExecutable();
-        emulator.attach().run(new DebugRunnable<Void>() {
-            @Override
-            public Void runWithArgs(String[] args) throws Exception {
-                long start = System.currentTimeMillis();
-                final IClassDumper classDumper = ClassDumper.getInstance(emulator);
-                String objcClass = classDumper.dumpClass("AppDelegate");
-                System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass);
+        emulator.attach().run((DebugRunnable<Void>) args -> {
+            long start1 = System.currentTimeMillis();
+            final IClassDumper classDumper = ClassDumper.getInstance(emulator);
+            String objcClass = classDumper.dumpClass("AppDelegate");
+            System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass);
 
-                Thread thread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String objcClass = classDumper.dumpClass("NSDate");
-                        System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass);
-                    }
-                });
-                thread.start();
-                thread.join();
+            Thread thread = new Thread(() -> {
+                String objcClass1 = classDumper.dumpClass("NSDate");
+                System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass1);
+            });
+            thread.start();
+            thread.join();
 
-                Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");
-                Pointer pointer = UnidbgPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
-                assert pointer != null;
-                System.out.println("_TelegramCoreVersionString=" + pointer.getString(0) + "offset=" + (System.currentTimeMillis() - start) + "ms");
-                return null;
-            }
+            Symbol _TelegramCoreVersionString = module.findSymbolByName("_TelegramCoreVersionString");
+            Pointer pointer = UnidbgPointer.pointer(emulator, _TelegramCoreVersionString.getAddress());
+            assert pointer != null;
+            System.out.println("_TelegramCoreVersionString=" + pointer.getString(0) + "offset=" + (System.currentTimeMillis() - start1) + "ms");
+            return null;
         });
     }
 

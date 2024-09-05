@@ -54,8 +54,6 @@ public class XpcTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
 
     @SuppressWarnings("unused")
     private void processXpc() {
-//        emulator.attach().addBreakPoint(null, 0x403b7dfc);
-//        emulator.traceCode();
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/xpc"));
 
         Symbol malloc_default_zone = module.findSymbolByName("_malloc_default_zone");
@@ -64,17 +62,11 @@ public class XpcTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         System.err.println("_malloc_default_zone zone=" + zone);
 
         long start = System.currentTimeMillis();
-//        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x0000b794);
         int ret = module.callEntry(emulator);
         System.err.println("testXpc ret=0x" + Integer.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
 
-//        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x4041ba6c);
         MemoryBlock block = emulator.getMemory().malloc(1, false);
         System.out.println("block=" + block.getPointer());
-//        emulator.traceCode();
-//        emulator.attach().addBreakPoint(null, 0x4041ddac);
         block.free();
 
         ISubstrate substrate = Substrate.getInstance(emulator);

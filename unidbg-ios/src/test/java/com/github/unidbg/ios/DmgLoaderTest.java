@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.ModuleListener;
@@ -21,15 +20,12 @@ import com.github.unidbg.ios.ipa.EmulatorConfigurator;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 
 public class DmgLoaderTest implements EmulatorConfigurator, ModuleListener {
 
     public void testLoader() throws Exception {
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         long start = System.currentTimeMillis();
         File dmg = new File(FileUtils.getUserDirectory(), "Downloads/WeChat.app");
         DmgLoader ipaLoader = new DmgLoader64(dmg, new File("target/rootfs/dmg"));

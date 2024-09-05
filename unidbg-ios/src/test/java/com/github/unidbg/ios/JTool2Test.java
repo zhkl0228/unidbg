@@ -23,14 +23,11 @@ public class JTool2Test {
         emulator.getSyscallHandler().setVerbose(true);
 
         final File jtool2 = new File("unidbg-ios/src/test/resources/example_binaries/jtool2_arm64");
-        IOResolver<DarwinFileIO> resolver = new IOResolver<DarwinFileIO>() {
-            @Override
-            public FileResult<DarwinFileIO> resolve(Emulator<DarwinFileIO> emulator, String pathname, int oflags) {
-                if ("test_executable".equals(pathname)) {
-                    return FileResult.<DarwinFileIO>success(new SimpleFileIO(oflags, jtool2, pathname));
-                }
-                return null;
+        IOResolver<DarwinFileIO> resolver = (emulator1, pathname, oflags) -> {
+            if ("test_executable".equals(pathname)) {
+                return FileResult.success(new SimpleFileIO(oflags, jtool2, pathname));
             }
+            return null;
         };
         emulator.getSyscallHandler().addIOResolver(resolver);
 

@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
@@ -40,7 +39,6 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
     private void processMS() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
         loader.setObjcRuntime(true);
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         long start;
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/libsubstrate.dylib"));
 
@@ -48,36 +46,6 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         assertNotNull(symbol);
 
         start = System.currentTimeMillis();
-
-//        emulator.traceRead();
-//        emulator.attach().addBreakPoint(null, 0x401495dc);
-//        emulator.traceCode();
-
-        /*whale.inlineHookFunction(module.findSymbolByName("_malloc"), new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                int size = context.getIntArg(0);
-                System.err.println("onCall _malloc size=" + size + ", origin=" + UnicornPointer.pointer(emulator, originFunction));
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });*/
-
-//        Logger.getLogger("com.github.unidbg.AbstractEmulator").setLevel(Level.DEBUG);
-//        emulator.traceCode();
-        /*whale.importHookFunction("_strcmp", new ReplaceCallback() {
-            @Override
-            public HookStatus onCall(Emulator<?> emulator, long originFunction) {
-                RegisterContext context = emulator.getContext();
-                Pointer pointer1 = context.getPointerArg(0);
-                Pointer pointer2 = context.getPointerArg(1);
-                System.out.println("IWhale strcmp str1=" + (pointer1 == null ? null : pointer1.getString(0)) + ", str2=" + (pointer2 == null ? null : pointer2.getString(0)) + ", originFunction=0x" + Long.toHexString(originFunction));
-                return HookStatus.RET(emulator, originFunction);
-            }
-        });*/
-
-        // emulator.attach().addBreakPoint(module, 0x00b608L);
-//        emulator.traceCode();
         Number number = symbol.call(emulator, "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate");
         long ret = number.intValue() & 0xffffffffL;
         System.err.println("_MSGetImageByName ret=0x" + Long.toHexString(ret) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
@@ -93,9 +61,6 @@ public class SubstrateTest extends EmulatorTest<ARMEmulator<DarwinFileIO>> {
         HookLoader.load(emulator).hookObjcMsgSend(null);
 
         start = System.currentTimeMillis();
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM32SyscallHandler.class).setLevel(Level.INFO);
-        Logger.getLogger(DarwinSyscallHandler.class).setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.ios.debug").setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.thread").setLevel(Level.INFO);
         Logger.getLogger("com.github.unidbg.ios.kevent").setLevel(Level.INFO);

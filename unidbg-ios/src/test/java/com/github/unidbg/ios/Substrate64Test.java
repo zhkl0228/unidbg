@@ -1,6 +1,5 @@
 package com.github.unidbg.ios;
 
-import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
@@ -19,8 +18,6 @@ import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 
@@ -44,7 +41,6 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
 
     public void testMS() {
         MachOLoader loader = (MachOLoader) emulator.getMemory();
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
         loader.setObjcRuntime(true);
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/libsubstrate.dylib"));
 
@@ -77,9 +73,6 @@ public class Substrate64Test extends EmulatorTest<ARMEmulator<DarwinFileIO>> imp
             throw new IllegalStateException(e);
         }
 
-        Logger.getLogger(AbstractEmulator.class).setLevel(Level.INFO);
-        Logger.getLogger(ARM64SyscallHandler.class).setLevel(Level.INFO);
-        Logger.getLogger(Dyld64.class).setLevel(Level.INFO);
         loader.getExecutableModule().callEntry(emulator);
         System.err.println("callExecutableEntry offset=" + (System.currentTimeMillis() - start) + "ms");
     }
