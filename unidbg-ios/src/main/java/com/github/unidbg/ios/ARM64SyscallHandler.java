@@ -3368,14 +3368,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 header.pack();
 
                 reply.body.msgh_descriptor_count = 1;
-                reply.act_list = 0;
+                reply.act_list = UnidbgPointer.nativeValue(request);
                 reply.mask = 0x2110000;
                 reply.act_listCnt = 0;
                 reply.pack();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("task_threads reply={}", reply);
-                }
+                log.debug("task_threads reply={}", reply);
                 return MACH_MSG_SUCCESS;
             }
             case 1000: { // clock_get_time

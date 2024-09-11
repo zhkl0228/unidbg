@@ -453,6 +453,11 @@ static UIApplication *sharedApplication;
 }
 @end
 
+@implementation NSOperation (Foundation)
+- (void) setQualityOfService: (NSQualityOfService) qualityOfService {
+}
+@end
+
 @implementation NSDateFormatter (Foundation)
 - (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate {
 }

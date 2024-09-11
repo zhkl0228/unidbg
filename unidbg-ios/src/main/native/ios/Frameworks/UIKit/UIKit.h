@@ -338,6 +338,10 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 - (void) setUnderlyingQueue: (dispatch_queue_t) queue;
 @end
 
+@interface NSOperation (Foundation)
+- (void) setQualityOfService: (NSQualityOfService) qualityOfService;
+@end
+
 @interface NSDateFormatter (Foundation)
 - (void)setLocalizedDateFormatFromTemplate:(NSString *)dateFormatTemplate;
 @end
