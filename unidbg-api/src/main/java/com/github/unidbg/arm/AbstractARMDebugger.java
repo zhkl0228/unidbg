@@ -37,8 +37,8 @@ import keystone.exceptions.AssembleFailedKeystoneException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.UnicornConst;
@@ -70,7 +70,7 @@ import java.util.regex.Pattern;
 
 public abstract class AbstractARMDebugger implements Debugger {
 
-    private static final Log log = LogFactory.getLog(AbstractARMDebugger.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractARMDebugger.class);
 
     private final Map<Long, BreakPoint> breakMap = new LinkedHashMap<>();
 
@@ -136,7 +136,7 @@ public abstract class AbstractARMDebugger implements Debugger {
         address &= (~1);
 
         if (log.isDebugEnabled()) {
-            log.debug("addBreakPoint address=0x" + Long.toHexString(address));
+            log.debug("addBreakPoint address=0x{}", Long.toHexString(address));
         }
         BreakPoint breakPoint = emulator.getBackend().addBreakPoint(address, callback, thumb);
         breakMap.put(address, breakPoint);
@@ -773,50 +773,50 @@ public abstract class AbstractARMDebugger implements Debugger {
             }
             return false;
         }
-        if ("vbs".equals(line)) { // view breakpoints
-            Memory memory = emulator.getMemory();
-            StringBuilder sb = new StringBuilder("* means temporary bp:\n");
-            String maxLengthSoName = memory.getMaxLengthLibraryName();
-            for (Map.Entry<Long, BreakPoint> entry : breakMap.entrySet()) {
-                address = entry.getKey();
-                BreakPoint bp = entry.getValue();
-                Instruction ins = null;
-                try {
-                    byte[] code = backend.mem_read(address, 4);
-                    Instruction[] insns = emulator.disassemble(address, code, bp.isThumb(), 1);
-                    if (insns != null && insns.length > 0) {
-                        ins = insns[0];
+        switch (line) {
+            case "vbs":  // view breakpoints
+                Memory memory = emulator.getMemory();
+                StringBuilder sb = new StringBuilder("* means temporary bp:\n");
+                String maxLengthSoName = memory.getMaxLengthLibraryName();
+                for (Map.Entry<Long, BreakPoint> entry : breakMap.entrySet()) {
+                    address = entry.getKey();
+                    BreakPoint bp = entry.getValue();
+                    Instruction ins = null;
+                    try {
+                        byte[] code = backend.mem_read(address, 4);
+                        Instruction[] insns = emulator.disassemble(address, code, bp.isThumb(), 1);
+                        if (insns != null && insns.length > 0) {
+                            ins = insns[0];
+                        }
+                    } catch (Exception ignored) {
                     }
-                } catch(Exception ignored) {}
 
-                if (ins == null) {
-                    sb.append(String.format("[%" + String.valueOf(maxLengthSoName).length() + "s]", "0x" + Long.toHexString(address)));
-                    if (bp.isTemporary()) {
-                        sb.append('*');
+                    if (ins == null) {
+                        sb.append(String.format("[%" + String.valueOf(maxLengthSoName).length() + "s]", "0x" + Long.toHexString(address)));
+                        if (bp.isTemporary()) {
+                            sb.append('*');
+                        }
+                    } else {
+                        sb.append(ARM.assembleDetail(emulator, ins, address, bp.isThumb(), bp.isTemporary(), memory.getMaxLengthLibraryName().length()));
                     }
-                } else {
-                    sb.append(ARM.assembleDetail(emulator, ins, address, bp.isThumb(), bp.isTemporary(), memory.getMaxLengthLibraryName().length()));
+                    sb.append("\n");
                 }
-                sb.append("\n");
-            }
-            System.out.println(sb);
-            return false;
-        }
-        if ("stop".equals(line)) {
-            backend.emu_stop();
-            return true;
-        }
-        if ("s".equals(line) || "si".equals(line)) {
-            setSingleStep(1);
-            return true;
-        }
-        if ("nb".equals(line)) {
-            if (!blockHooked) {
-                blockHooked = true;
-                emulator.getBackend().hook_add_new((BlockHook) this, 1, 0, emulator);
-            }
-            breakNextBlock = true;
-            return true;
+                System.out.println(sb);
+                return false;
+            case "stop":
+                backend.emu_stop();
+                return true;
+            case "s":
+            case "si":
+                setSingleStep(1);
+                return true;
+            case "nb":
+                if (!blockHooked) {
+                    blockHooked = true;
+                    emulator.getBackend().hook_add_new((BlockHook) this, 1, 0, emulator);
+                }
+                breakNextBlock = true;
+                return true;
         }
         if (line.startsWith("s")) {
             try {

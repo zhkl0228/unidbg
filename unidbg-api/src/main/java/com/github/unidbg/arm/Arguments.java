@@ -5,15 +5,15 @@ import com.github.unidbg.StringNumber;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Arguments {
 
-    private static final Log log = LogFactory.getLog(Arguments.class);
+    private static final Logger log = LoggerFactory.getLogger(Arguments.class);
 
     public final Number[] args;
 
@@ -24,7 +24,7 @@ public class Arguments {
                 StringNumber str = (StringNumber) args[i];
                 UnidbgPointer pointer = memory.writeStackString(str.value);
                 if (log.isDebugEnabled()) {
-                    log.debug("map arg" + (i+1) + ": " + pointer + " -> " + args[i]);
+                    log.debug("map string arg{}: {} -> {}", i + 1, pointer, args[i]);
                 }
                 args[i] = pointer.peer;
                 pointers.add(pointer.peer);
@@ -32,7 +32,7 @@ public class Arguments {
                 ByteArrayNumber array = (ByteArrayNumber) args[i];
                 UnidbgPointer pointer = memory.writeStackBytes(array.value);
                 if (log.isDebugEnabled()) {
-                    log.debug("map arg" + (i+1) + ": " + pointer + " -> " + Hex.encodeHexString(array.value));
+                    log.debug("map bytes arg{}: {} -> {}", i + 1, pointer, Hex.encodeHexString(array.value));
                 }
                 args[i] = pointer.peer;
                 pointers.add(pointer.peer);

@@ -3,12 +3,12 @@ package com.github.unidbg.linux.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class Ashmem extends DriverFileIO {
 
-    private static final Log log = LogFactory.getLog(Ashmem.class);
+    private static final Logger log = LoggerFactory.getLogger(Ashmem.class);
 
     Ashmem(Emulator<?> emulator, int oflags, String path) {
         super(emulator, oflags, path);
@@ -27,12 +27,12 @@ class Ashmem extends DriverFileIO {
             Pointer pointer = UnidbgPointer.pointer(emulator, argp);
             assert pointer != null;
             this.name = pointer.getString(0);
-            log.debug("ashmem set name: " + this.name);
+            log.debug("ashmem set name: {}", this.name);
             return 0;
         }
         if (request == ASHMEM_SET_SIZE_32 || request == ASHMEM_SET_SIZE_64) {
             this.size = (int) argp;
-            log.debug("ashmem set size: " + this.size);
+            log.debug("ashmem set size: {}", this.size);
             return 0;
         }
 

@@ -11,12 +11,12 @@ import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FishHook extends BaseHook implements IFishHook {
 
-    private static final Log log = LogFactory.getLog(FishHook.class);
+    private static final Logger log = LoggerFactory.getLogger(FishHook.class);
 
     public static IFishHook getInstance(Emulator<?> emulator) {
         IFishHook fishHook = emulator.get(FishHook.class.getName());
@@ -35,7 +35,7 @@ public class FishHook extends BaseHook implements IFishHook {
         rebind_symbols = module.findSymbolByName("_rebind_symbols", false);
         rebind_symbols_image = module.findSymbolByName("_rebind_symbols_image", false);
         if (log.isDebugEnabled()) {
-            log.debug("rebind_symbols=" + rebind_symbols + ", rebind_symbols_image=" + rebind_symbols_image);
+            log.debug("rebind_symbols={}, rebind_symbols_image={}", rebind_symbols, rebind_symbols_image);
         }
 
         if (rebind_symbols == null) {

@@ -2,8 +2,8 @@ package com.github.unidbg;
 
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,7 +16,7 @@ import java.nio.channels.FileChannel;
 
 public class Utils {
 
-    private static final Log log = LogFactory.getLog(Utils.class);
+    private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
     /** Returns val represented by the specified number of hex digits. */
     private static String digits(long val, int digits) {
@@ -101,7 +101,7 @@ public class Utils {
                  *        the gap.
                  */
                 if (count < 0) {
-                    log.warn("read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", _count=" + _count + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+                    log.warn("read path={}, fp={}, _count={}, length={}, buffer={}", randomAccessFile, randomAccessFile.getFilePointer(), _count, randomAccessFile.length(), buffer);
                     return 0;
                 }
             }
@@ -113,7 +113,7 @@ public class Utils {
                 int read = randomAccessFile.read(buf, 0, Math.min(buf.length, count - total));
                 if (read <= 0) {
                     if (log.isDebugEnabled()) {
-                        log.debug("read path=" + randomAccessFile + ", fp=" + randomAccessFile.getFilePointer() + ", read=" + read + ", length=" + randomAccessFile.length() + ", buffer=" + buffer);
+                        log.debug("read path={}, fp={}, read={}, length={}, buffer={}", randomAccessFile, randomAccessFile.getFilePointer(), read, randomAccessFile.length(), buffer);
                     }
                     return total;
                 }

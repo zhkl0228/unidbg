@@ -11,12 +11,12 @@ import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Substrate extends BaseHook implements ISubstrate {
 
-    private static final Log log = LogFactory.getLog(Substrate.class);
+    private static final Logger log = LoggerFactory.getLogger(Substrate.class);
 
     public static ISubstrate getInstance(Emulator<?> emulator) {
         Substrate substrate = emulator.get(Substrate.class.getName());
@@ -58,7 +58,7 @@ public class Substrate extends BaseHook implements ISubstrate {
             throw new IllegalStateException("_MSDebug is null");
         }
         if (log.isDebugEnabled()) {
-            log.debug("_MSGetImageByName=" + UnidbgPointer.pointer(emulator, _MSGetImageByName.getAddress()) + ", _MSFindSymbol=" + UnidbgPointer.pointer(emulator, _MSFindSymbol.getAddress()) + ", _MSHookFunction=" + UnidbgPointer.pointer(emulator, _MSHookFunction.getAddress()) + ", _MSHookMessageEx=" + UnidbgPointer.pointer(emulator, _MSHookMessageEx.getAddress()) + ", _MSDebug=" + UnidbgPointer.pointer(emulator, _MSDebug.getAddress()));
+            log.debug("_MSGetImageByName={}, _MSFindSymbol={}, _MSHookFunction={}, _MSHookMessageEx={}, _MSDebug={}", UnidbgPointer.pointer(emulator, _MSGetImageByName.getAddress()), UnidbgPointer.pointer(emulator, _MSFindSymbol.getAddress()), UnidbgPointer.pointer(emulator, _MSHookFunction.getAddress()), UnidbgPointer.pointer(emulator, _MSHookMessageEx.getAddress()), UnidbgPointer.pointer(emulator, _MSDebug.getAddress()));
         }
 
         if (log.isDebugEnabled()) {

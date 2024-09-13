@@ -17,8 +17,8 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.spi.SyscallHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -32,7 +32,7 @@ import java.util.UUID;
 
 public abstract class DmgLoader extends BaseLoader {
 
-    private static final Log log = LogFactory.getLog(DmgLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(DmgLoader.class);
 
     @SuppressWarnings("unused")
     public final LoadedDmg load(String... loads) {

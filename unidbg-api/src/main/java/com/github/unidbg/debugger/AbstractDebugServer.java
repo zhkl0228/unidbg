@@ -5,8 +5,8 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.AbstractARMDebugger;
 import com.github.unidbg.utils.Inspector;
 import keystone.Keystone;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -23,7 +23,7 @@ import java.util.concurrent.Semaphore;
 
 public abstract class AbstractDebugServer extends AbstractARMDebugger implements DebugServer {
 
-    private static final Log log = LogFactory.getLog(AbstractDebugServer.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractDebugServer.class);
 
     private final List<ByteBuffer> pendingWrites;
 

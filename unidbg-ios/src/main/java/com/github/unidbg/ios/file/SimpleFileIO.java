@@ -14,8 +14,8 @@ import com.github.unidbg.unix.IO;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +29,7 @@ import java.nio.file.Files;
 
 public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
 
-    private static final Log log = LogFactory.getLog(SimpleFileIO.class);
+    private static final Logger log = LoggerFactory.getLogger(SimpleFileIO.class);
 
     protected final File file;
     protected final String path;
@@ -242,7 +242,8 @@ public class SimpleFileIO extends BaseDarwinFileIO implements FileIO {
 
     @Override
     public int ftruncate(int length) {
-        try (FileChannel channel = new FileOutputStream(file, true).getChannel()) {
+        try (FileOutputStream outputStream = new FileOutputStream(file, true);
+             FileChannel channel = outputStream.getChannel()) {
             channel.truncate(length);
             return 0;
         } catch (IOException e) {

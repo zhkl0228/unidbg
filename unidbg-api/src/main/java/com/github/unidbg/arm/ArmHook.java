@@ -9,8 +9,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.ArmConst;
 
 import java.nio.ByteBuffer;
@@ -19,7 +19,7 @@ import java.util.Arrays;
 
 public abstract class ArmHook extends ArmSvc {
 
-    private static final Log log = LogFactory.getLog(ArmHook.class);
+    private static final Logger log = LoggerFactory.getLogger(ArmHook.class);
 
     private final boolean enablePostCall;
 
@@ -66,7 +66,7 @@ public abstract class ArmHook extends ArmSvc {
         UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "ArmHook" : name);
         pointer.write(0, code, 0, code.length);
         if (log.isDebugEnabled()) {
-            log.debug("ARM hook: pointer=" + pointer);
+            log.debug("ARM hook: pointer={}", pointer);
         }
         return pointer;
     }

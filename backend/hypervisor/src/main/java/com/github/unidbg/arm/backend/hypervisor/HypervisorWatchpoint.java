@@ -6,12 +6,12 @@ import com.github.unidbg.arm.backend.ReadHook;
 import com.github.unidbg.arm.backend.WriteHook;
 import com.github.unidbg.arm.backend.hypervisor.arm64.MemorySizeDetector;
 import com.github.unidbg.arm.backend.hypervisor.arm64.SimpleMemorySizeDetector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class HypervisorWatchpoint implements BreakRestorer {
 
-    private static final Log log = LogFactory.getLog(HypervisorWatchpoint.class);
+    private static final Logger log = LoggerFactory.getLogger(HypervisorWatchpoint.class);
 
     private final Object callback;
     private final long begin;
@@ -67,7 +67,7 @@ class HypervisorWatchpoint implements BreakRestorer {
                 dbgwcr |= (maskBits << 24);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("begin=0x" + Long.toHexString(begin) + ", end=0x" + Long.toHexString(end) + ", dbgwvr=0x" + Long.toHexString(dbgwvr) + ", dbgwcr=0x" + Long.toHexString(dbgwcr) + ", offset=" + offset + ", size=" + size + ", i=" + i);
+                    log.debug("begin=0x{}, end=0x{}, dbgwvr=0x{}, dbgwcr=0x{}, offset={}, size={}, i={}", Long.toHexString(begin), Long.toHexString(end), Long.toHexString(dbgwvr), Long.toHexString(dbgwcr), offset, size, i);
                 }
 
                 this.bytes = bytes;

@@ -6,8 +6,8 @@ import com.github.unidbg.ios.objc.NSString;
 import com.github.unidbg.ios.objc.ObjC;
 import com.github.unidbg.ios.struct.objc.ObjcClass;
 import com.github.unidbg.ios.struct.objc.ObjcObject;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class GPBDescriptor {
 
-    private static final Log log = LogFactory.getLog(GPBDescriptor.class);
+    private static final Logger log = LoggerFactory.getLogger(GPBDescriptor.class);
 
     private final Emulator<?> emulator;
     private final ObjcObject descriptor;
@@ -54,7 +54,7 @@ public class GPBDescriptor {
         List<GPBEnumDescriptor> enumDescriptors = new ArrayList<>();
         ObjcObject fieldsObject = descriptor.callObjc("fields");
         if (fieldsObject == null) {
-            log.warn("descriptor=" + descriptor.getDescription());
+            log.warn("descriptor={}", descriptor.getDescription());
         } else {
             NSArray fields = fieldsObject.toNSArray();
             for (ObjcObject field : fields) {
@@ -66,7 +66,7 @@ public class GPBDescriptor {
                 int fieldTypeValue = field.callObjcInt("fieldType");
                 int hasDefaultValue = field.callObjcInt("hasDefaultValue");
                 if (hasDefaultValue != 0) {
-                    log.warn("hasDefaultValue=" + hasDefaultValue);
+                    log.warn("hasDefaultValue={}", hasDefaultValue);
                 }
 
                 builder.append("  ");

@@ -3,8 +3,8 @@ package com.github.unidbg.ios.kevent;
 import com.github.unidbg.file.ios.BaseDarwinFileIO;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class KEvent extends BaseDarwinFileIO {
 
-    private static final Log log = LogFactory.getLog(KEvent.class);
+    private static final Logger log = LoggerFactory.getLogger(KEvent.class);
 
     private static final short EVFILT_SIGNAL = (-6); /* attached to struct proc */
     private static final short EVFILT_MACHPORT = (-8); /* Mach portsets */
@@ -93,7 +93,7 @@ public class KEvent extends BaseDarwinFileIO {
             KEvent64 kev = new KEvent64(ptr);
             kev.unpack();
             if (log.isDebugEnabled()) {
-                log.debug("processChangeList i=" + i + ", kev=" + kev);
+                log.debug("processChangeList i={}, kev={}", i, kev);
             }
             processKev(kev);
         }

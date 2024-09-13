@@ -3,12 +3,12 @@ package com.github.unidbg.debugger.gdb;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.backend.Backend;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class RegistersCommand implements GdbStubCommand {
 
-    private static final Log log = LogFactory.getLog(RegistersCommand.class);
+    private static final Logger log = LoggerFactory.getLogger(RegistersCommand.class);
 
     @Override
     public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {

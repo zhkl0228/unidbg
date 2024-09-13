@@ -8,8 +8,8 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.SyscallHandler;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.UnicornConst;
 
 import java.io.DataOutput;
@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class ARMSvcMemory implements SvcMemory {
 
-    private static final Log log = LogFactory.getLog(ARMSvcMemory.class);
+    private static final Logger log = LoggerFactory.getLogger(ARMSvcMemory.class);
 
     private final Emulator<?> emulator;
     private UnidbgPointer base;
@@ -78,7 +78,7 @@ public class ARMSvcMemory implements SvcMemory {
         UnidbgPointer pointer = base.share(0, size);
         base = (UnidbgPointer) base.share(size);
         if (log.isDebugEnabled()) {
-            log.debug("allocate size=" + size + ", label=" + label + ", base=" + base);
+            log.debug("allocate size={}, label={}, base={}", size, label, base);
         }
         memRegions.add(new MemRegion(pointer.peer, pointer.peer, pointer.peer + size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_EXEC, null, 0) {
             @Override

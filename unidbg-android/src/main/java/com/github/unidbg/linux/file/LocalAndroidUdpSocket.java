@@ -6,8 +6,8 @@ import com.github.unidbg.file.linux.LinuxFileSystem;
 import com.github.unidbg.linux.android.LogCatHandler;
 import com.github.unidbg.linux.android.LogCatLevel;
 import com.github.unidbg.unix.UnixEmulator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import java.nio.ByteOrder;
 
 public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFileIO {
 
-    private static final Log log = LogFactory.getLog(LocalAndroidUdpSocket.class);
+    private static final Logger log = LoggerFactory.getLogger(LocalAndroidUdpSocket.class);
 
     public LocalAndroidUdpSocket(Emulator<?> emulator) {
         super(emulator);
@@ -53,7 +53,7 @@ public class LocalAndroidUdpSocket extends LocalUdpSocket implements AndroidFile
                         int tv_sec = buffer.getInt();
                         int tv_nsec = buffer.getInt();
                         if (log.isDebugEnabled()) {
-                            log.debug("handle id=" + id + ", tid=" + tid + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
+                            log.debug("handle id={}, tid={}, tv_sec={}, tv_nsec={}", id, tid, tv_sec, tv_nsec);
                         }
 
                         String type;

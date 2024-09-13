@@ -41,8 +41,6 @@ import com.github.unidbg.unix.struct.TimeSpec;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import net.dongliu.apk.parser.utils.Pair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -396,7 +394,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             throw new ThreadContextSwitchException().setReturnValue(-UnixEmulator.EINTR);
         }
         log.info("rt_sigtimedwait set={}, info={}, timeout={}, sigsetsize={}, sigSet={}, task={}", set, info, timeout, sigsetsize, sigSet, task);
-        Log log = LogFactory.getLog(AbstractEmulator.class);
+        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }
@@ -624,7 +622,7 @@ public abstract class AndroidSyscallHandler extends UnixSyscallHandler<AndroidFi
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
         System.out.println("exit status=" + status);
-        if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
             emulator.attach().debug();
         }
         emulator.getBackend().emu_stop();

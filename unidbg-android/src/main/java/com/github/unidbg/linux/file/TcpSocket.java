@@ -9,8 +9,8 @@ import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.Arrays;
 
 public class TcpSocket extends SocketIO implements FileIO {
 
-    private static final Log log = LogFactory.getLog(TcpSocket.class);
+    private static final Logger log = LoggerFactory.getLogger(TcpSocket.class);
 
     private final Socket socket;
     private ServerSocket serverSocket;

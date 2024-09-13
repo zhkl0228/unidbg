@@ -29,8 +29,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 import unicorn.UnicornConst;
 
@@ -46,7 +46,7 @@ import java.util.Map;
 
 public abstract class AbstractARM64Emulator<T extends NewFileIO> extends AbstractEmulator<T> implements ARMEmulator<T> {
 
-    private static final Log log = LogFactory.getLog(AbstractARM64Emulator.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractARM64Emulator.class);
 
     protected final Memory memory;
     private final UnixSyscallHandler<T> syscallHandler;
@@ -63,8 +63,8 @@ public abstract class AbstractARM64Emulator<T extends NewFileIO> extends Abstrac
         backend.hook_add_new(new EventMemHook() {
             @Override
             public boolean hook(Backend backend, long address, int size, long value, Object user, UnmappedType unmappedType) {
-                log.warn(unmappedType + " memory failed: address=0x" + Long.toHexString(address) + ", size=" + size + ", value=0x" + Long.toHexString(value));
-                if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+                log.warn("{} memory failed: address=0x{}, size={}, value=0x{}", unmappedType, Long.toHexString(address), size, Long.toHexString(value));
+                if (LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
                     attach().debug();
                 }
                 return false;

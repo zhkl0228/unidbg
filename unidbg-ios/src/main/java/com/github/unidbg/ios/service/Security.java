@@ -9,12 +9,12 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.substrate.ISubstrate;
 import com.github.unidbg.ios.hook.Substrate;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Security extends FrameworkHooker {
 
-    private static final Log log = LogFactory.getLog(Security.class);
+    private static final Logger log = LoggerFactory.getLogger(Security.class);
 
     private static final int errSecSuccess                            = 0; /* No error. */
     private static final int errSecItemNotFound                       = -25300; /* The specified item could not be found in the keychain. */
@@ -42,7 +42,7 @@ public class Security extends FrameworkHooker {
                 Pointer query = context.getPointerArg(0);
                 Pointer result = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("_SecItemCopyMatching query=" + query + ", result=" + result);
+                    log.debug("_SecItemCopyMatching query={}, result={}", query, result);
                 }
                 return HookStatus.LR(emulator, errSecItemNotFound);
             }
@@ -53,7 +53,7 @@ public class Security extends FrameworkHooker {
                 RegisterContext context = emulator.getContext();
                 Pointer query = context.getPointerArg(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("_SecItemDelete query=" + query);
+                    log.debug("_SecItemDelete query={}", query);
                 }
                 return HookStatus.LR(emulator, errSecSuccess);
             }
@@ -65,7 +65,7 @@ public class Security extends FrameworkHooker {
                 Pointer attributes = context.getPointerArg(0);
                 Pointer result = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("_SecItemAdd attributes=" + attributes + ", result=" + result);
+                    log.debug("_SecItemAdd attributes={}, result={}", attributes, result);
                 }
                 return HookStatus.LR(emulator, errSecSuccess);
             }

@@ -10,8 +10,8 @@ import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.struct.SockAddr;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -25,7 +25,7 @@ import java.util.Objects;
 
 public class UdpSocket extends SocketIO implements FileIO {
 
-    private static final Log log = LogFactory.getLog(UdpSocket.class);
+    private static final Logger log = LoggerFactory.getLogger(UdpSocket.class);
 
     private final Emulator<?> emulator;
     private final DatagramSocket datagramSocket;
@@ -230,7 +230,7 @@ public class UdpSocket extends SocketIO implements FileIO {
         req.unpack();
         String ifName = new String(req.ifrn_name).trim();
         if (log.isDebugEnabled()) {
-            log.debug("get iface flags: " + ifName);
+            log.debug("get iface flags: {}", ifName);
         }
         NetworkIF selected = null;
         try {
@@ -263,7 +263,7 @@ public class UdpSocket extends SocketIO implements FileIO {
         Pointer ptr = req.getAddrPointer();
         int ifindex = ptr.getInt(0);
         if (log.isDebugEnabled()) {
-            log.debug("get iface name: " + ifindex);
+            log.debug("get iface name: {}", ifindex);
         }
         try {
             List<NetworkIF> list = getNetworkIFs(emulator);

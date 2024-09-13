@@ -12,8 +12,8 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Stack;
 
@@ -22,7 +22,7 @@ import java.util.Stack;
  */
 public final class Dobby extends BaseHook implements IHookZz {
 
-    private static final Log log = LogFactory.getLog(Dobby.class);
+    private static final Logger log = LoggerFactory.getLogger(Dobby.class);
 
     public static Dobby getInstance(Emulator<?> emulator) {
         Dobby dobby = emulator.get(Dobby.class.getName());
@@ -50,7 +50,7 @@ public final class Dobby extends BaseHook implements IHookZz {
         dobbyHook = module.findSymbolByName(isIOS ? "_DobbyHook" : "DobbyHook", false);
         dobbyInstrument = module.findSymbolByName(isIOS ? "_DobbyInstrument" : "DobbyInstrument", false);
         if (log.isDebugEnabled()) {
-            log.debug("dobbyHook=" + dobbyHook + ", dobbyInstrument=" + dobbyInstrument);
+            log.debug("dobbyHook={}, dobbyInstrument={}", dobbyHook, dobbyInstrument);
         }
 
         if (dobby_enable_near_branch_trampoline == null && emulator.is64Bit()) {

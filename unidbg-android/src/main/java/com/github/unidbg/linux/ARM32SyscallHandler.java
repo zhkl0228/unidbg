@@ -42,8 +42,6 @@ import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unicorn.ArmConst;
@@ -773,7 +771,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
 
     protected int fork(Emulator<?> emulator) {
         log.info("fork");
-        Log log = LogFactory.getLog(AbstractEmulator.class);
+        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
@@ -871,7 +869,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         }
 
         log.info("pthread_clone child_stack={}, thread_id={}, fn={}, arg={}, flags={}", child_stack, threadId, fn, arg, list);
-        Log log = LogFactory.getLog(AbstractEmulator.class);
+        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }
@@ -1029,7 +1027,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
             envp = envp.share(4);
         }
         log.info("execve filename={}, args={}, env={}", filename.getString(0), args, env);
-        Log log = LogFactory.getLog(AbstractEmulator.class);
+        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
@@ -1631,7 +1629,7 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
         } else {
             System.out.println("exit with code: " + status);
         }
-        if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
         emulator.getBackend().emu_stop();

@@ -10,8 +10,8 @@ import com.github.unidbg.memory.MemoryMap;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.UnicornConst;
 
 import java.io.ByteArrayOutputStream;
@@ -22,7 +22,7 @@ import java.util.Arrays;
 
 public class UnidbgPointer extends Pointer implements PointerArg {
 
-    private static final Log log = LogFactory.getLog(UnidbgPointer.class);
+    private static final Logger log = LoggerFactory.getLogger(UnidbgPointer.class);
 
     private final Emulator<?> emulator;
     private final Backend backend;
@@ -345,7 +345,7 @@ public class UnidbgPointer extends Pointer implements PointerArg {
 
         try {
             String ret = baos.toString(encoding);
-            log.debug("getString pointer=" + this + ", size=" + baos.size() + ", encoding=" + encoding + ", ret=" + ret);
+            log.debug("getString pointer={}, size={}, encoding={}, ret={}", this, baos.size(), encoding, ret);
             return ret;
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException(e);

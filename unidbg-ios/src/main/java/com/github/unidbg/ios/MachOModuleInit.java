@@ -4,15 +4,15 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.PointerNumber;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 class MachOModuleInit extends InitFunction {
 
-    private static final Log log = LogFactory.getLog(MachOModuleInit.class);
+    private static final Logger log = LoggerFactory.getLogger(MachOModuleInit.class);
 
     private final UnidbgPointer envp;
     private final UnidbgPointer apple;
@@ -38,9 +38,9 @@ class MachOModuleInit extends InitFunction {
     public long call(Emulator<?> emulator) {
 //        emulator.traceCode();
         if (isModInit) {
-            log.debug("[" + libName + "]CallInitFunction: 0x" + Long.toHexString(address));
+            log.debug("[{}]CallInitFunction: 0x{}", libName, Long.toHexString(address));
         } else {
-            log.debug("[" + libName + "]CallRoutineFunction: 0x" + Long.toHexString(address));
+            log.debug("[{}]CallRoutineFunction: 0x{}", libName, Long.toHexString(address));
         }
 //            emulator.attach().addBreakPoint(null, 0x401d6be6);
 //            emulator.attach().addBreakPoint(null, 0x402fb538);

@@ -17,8 +17,8 @@ import com.github.unidbg.unix.struct.TimeVal64;
 import com.github.unidbg.unix.struct.TimeZone;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 
 public abstract class UnixSyscallHandler<T extends NewFileIO> implements SyscallHandler<T> {
 
-    private static final Log log = LogFactory.getLog(UnixSyscallHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(UnixSyscallHandler.class);
 
     private final List<IOResolver<T>> resolvers = new ArrayList<>(5);
 
@@ -188,7 +188,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
     @SuppressWarnings("unused")
     protected int gettimeofday(Emulator<?> emulator, Pointer tv, Pointer tz) {
         if (log.isDebugEnabled()) {
-            log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
+            log.debug("gettimeofday tv={}, tz={}", tv, tz);
         }
 
         if (log.isDebugEnabled()) {
@@ -230,7 +230,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected int gettimeofday64(Pointer tv, Pointer tz) {
         if (log.isDebugEnabled()) {
-            log.debug("gettimeofday tv=" + tv + ", tz=" + tz);
+            log.debug("gettimeofday64 tv={}, tz={}", tv, tz);
         }
 
         if (log.isDebugEnabled()) {
@@ -272,7 +272,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected int sigprocmask(Emulator<?> emulator, int how, Pointer set, Pointer oldset) {
         if (log.isDebugEnabled()) {
-            log.debug("sigprocmask how=" + how + ", set=" + set + ", oldset=" + oldset);
+            log.debug("sigprocmask how={}, set={}, oldset={}", how, set, oldset);
         }
         emulator.getMemory().setErrno(UnixEmulator.EINVAL);
         return -1;
@@ -280,7 +280,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected final int read(Emulator<?> emulator, int fd, Pointer buffer, int count) {
         if (log.isDebugEnabled()) {
-            log.debug("read fd=" + fd + ", buffer=" + buffer + ", count=" + count + ", from=" + emulator.getContext().getLRPointer());
+            log.debug("read fd={}, buffer={}, count={}, from={}", fd, buffer, count, emulator.getContext().getLRPointer());
         }
 
         FileIO file = fdMap.get(fd);
@@ -306,7 +306,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected final int pread(Emulator<?> emulator, int fd, Pointer buffer, int count, long offset) {
         if (log.isDebugEnabled()) {
-            log.debug("pread fd=" + fd + ", buffer=" + buffer + ", count=" + count + ", offset=" + offset + ", from=" + emulator.getContext().getLRPointer());
+            log.debug("pread fd={}, buffer={}, count={}, offset={}, from={}", fd, buffer, count, offset, emulator.getContext().getLRPointer());
         }
 
         FileIO file = fdMap.get(fd);
@@ -384,7 +384,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected int fcntl(Emulator<?> emulator, int fd, int cmd, long arg) {
         if (log.isDebugEnabled()) {
-            log.debug("fcntl fd=" + fd + ", cmd=" + cmd + ", arg=" + arg);
+            log.debug("fcntl fd={}, cmd={}, arg={}", fd, cmd, arg);
         }
 
         FileIO file = fdMap.get(fd);
@@ -399,7 +399,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected int readlink(Emulator<?> emulator, String path, Pointer buf, int bufSize) {
         if (log.isDebugEnabled()) {
-            log.debug("readlink path=" + path + ", buf=" + buf + ", bufSize=" + bufSize);
+            log.debug("readlink path={}, buf={}, bufSize={}", path, buf, bufSize);
         }
         Matcher matcher = FD_PATTERN.matcher(path);
         if (matcher.find()) {
@@ -450,7 +450,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
             prefix = "Real-time";
         }
         if (log.isDebugEnabled()) {
-            log.debug("sigaction signum=" + signum + ", act=" + act + ", oldact=" + oldact + ", prefix=" + prefix);
+            log.debug("sigaction signum={}, act={}, oldact={}, prefix={}", signum, act, oldact, prefix);
         }
 
         if (oldact != null) {
@@ -508,7 +508,7 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
 
     protected final int listen(Emulator<?> emulator, int sockfd, int backlog) {
         if (log.isDebugEnabled()) {
-            log.debug("listen sockfd=" + sockfd + ", backlog=" + backlog);
+            log.debug("listen sockfd={}, backlog={}", sockfd, backlog);
         }
 
         FileIO file = fdMap.get(sockfd);

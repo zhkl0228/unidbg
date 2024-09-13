@@ -4,8 +4,8 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.linux.LinuxFileSystem;
 import com.github.unidbg.linux.android.LogCatHandler;
 import com.github.unidbg.linux.android.LogCatLevel;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -14,7 +14,7 @@ import java.io.RandomAccessFile;
 
 public class LogCatFileIO extends SimpleFileIO {
 
-    private static final Log log = LogFactory.getLog(LogCatFileIO.class);
+    private static final Logger log = LoggerFactory.getLogger(LogCatFileIO.class);
 
     public static final String LOG_PATH_PREFIX = "/dev/log/";
 

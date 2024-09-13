@@ -12,8 +12,8 @@ import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Stack;
 
@@ -22,7 +22,7 @@ import java.util.Stack;
  */
 public final class HookZz extends BaseHook implements IHookZz {
 
-    private static final Log log = LogFactory.getLog(HookZz.class);
+    private static final Logger log = LoggerFactory.getLogger(HookZz.class);
 
     public static HookZz getInstance(Emulator<?> emulator) {
         HookZz hookZz = emulator.get(HookZz.class.getName());
@@ -51,7 +51,7 @@ public final class HookZz extends BaseHook implements IHookZz {
         zzWrap = module.findSymbolByName(isIOS ? "_ZzWrap" : "ZzWrap", false);
         zzDynamicBinaryInstrumentation = module.findSymbolByName(isIOS ? "_ZzDynamicBinaryInstrumentation" : "ZzDynamicBinaryInstrumentation", false);
         if (log.isDebugEnabled()) {
-            log.debug("zzReplace=" + zzReplace + ", zzWrap=" + zzWrap);
+            log.debug("zzReplace={}, zzWrap={}", zzReplace, zzWrap);
         }
 
         if (zz_enable_arm_arm64_b_branch == null) {

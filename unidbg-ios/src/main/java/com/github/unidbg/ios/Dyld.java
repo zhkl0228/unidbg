@@ -16,15 +16,15 @@ import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.Dlfcn;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Dyld extends Dlfcn {
 
-    private static final Log log = LogFactory.getLog(Dyld.class);
+    private static final Logger log = LoggerFactory.getLogger(Dyld.class);
 
     static final int dyld_image_state_bound = 40;
     static final int dyld_image_state_dependents_initialized = 45; // Only single notification for this
@@ -72,7 +72,7 @@ public abstract class Dyld extends Dlfcn {
 
     protected final UnidbgStructure[] registerImageStateBatchChangeHandler(MachOLoader loader, int state, UnidbgPointer handler, Emulator<?> emulator) {
         if (log.isDebugEnabled()) {
-            log.debug("registerImageStateBatchChangeHandler state=" + state + ", handler=" + handler);
+            log.debug("registerImageStateBatchChangeHandler state={}, handler={}", state, handler);
         }
 
         if (state != dyld_image_state_bound) {
@@ -100,7 +100,7 @@ public abstract class Dyld extends Dlfcn {
                 continue;
             }
             if (log.isDebugEnabled()) {
-                log.debug("generateDyldImageInfo: " + module.name);
+                log.debug("generateDyldImageInfo: {}", module.name);
             }
 
             MachOModule mm = (MachOModule) module;
@@ -133,7 +133,7 @@ public abstract class Dyld extends Dlfcn {
 
     protected final UnidbgStructure[] registerImageStateSingleChangeHandler(MachOLoader loader, int state, UnidbgPointer handler, Emulator<?> emulator) {
         if (log.isDebugEnabled()) {
-            log.debug("registerImageStateSingleChangeHandler state=" + state + ", handler=" + handler);
+            log.debug("registerImageStateSingleChangeHandler state={}, handler={}", state, handler);
         }
 
         if (state == dyld_image_state_terminated) {

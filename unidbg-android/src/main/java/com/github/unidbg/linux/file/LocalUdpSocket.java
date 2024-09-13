@@ -3,16 +3,15 @@ package com.github.unidbg.linux.file;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.file.FileIO;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 
 public abstract class LocalUdpSocket extends SocketIO implements FileIO {
 
-    private static final Log log = LogFactory.getLog(LocalUdpSocket.class);
+    private static final Logger log = LoggerFactory.getLogger(LocalUdpSocket.class);
 
     protected interface UdpHandler {
         void handle(byte[] request) throws IOException;
@@ -51,7 +50,7 @@ public abstract class LocalUdpSocket extends SocketIO implements FileIO {
         }
 
         String path = addr.getString(2);
-        log.debug("connect sa_family=" + sa_family + ", path=" + path);
+        log.debug("connect sa_family={}, path={}", sa_family, path);
 
         return connect(path);
     }

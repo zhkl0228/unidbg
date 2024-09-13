@@ -7,14 +7,14 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.serialize.Serializable;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataOutput;
 
 public abstract class Dlfcn implements HookListener, Serializable {
 
-    private static final Log log = LogFactory.getLog(Dlfcn.class);
+    private static final Logger log = LoggerFactory.getLogger(Dlfcn.class);
 
     protected final UnidbgPointer error;
 
@@ -28,7 +28,7 @@ public abstract class Dlfcn implements HookListener, Serializable {
         Memory memory = emulator.getMemory();
         Symbol symbol = memory.dlsym(handle, symbolName);
         if (symbol == null) {
-            log.info("Find symbol \"" + symbolName + "\" failed: handle=0x" + Long.toHexString(handle) + ", LR=" + emulator.getContext().getLRPointer());
+            log.info("Find symbol \"{}\" failed: handle=0x{}, LR={}", symbolName, Long.toHexString(handle), emulator.getContext().getLRPointer());
             this.error.setString(0, "Find symbol " + symbolName + " failed");
             return 0;
         }

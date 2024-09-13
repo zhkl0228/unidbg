@@ -3,8 +3,8 @@ package com.github.unidbg.ios.ipa;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.spi.LibraryFile;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.util.List;
 
 public class IpaLibraryFile implements LibraryFile {
 
-    private static final Log log = LogFactory.getLog(IpaLibraryFile.class);
+    private static final Logger log = LoggerFactory.getLogger(IpaLibraryFile.class);
 
     private final String appDir;
     private final File ipa;
@@ -60,10 +60,10 @@ public class IpaLibraryFile implements LibraryFile {
 
         String path = soName.replace("@executable_path/", appDir);
         if (log.isDebugEnabled()) {
-            log.debug("Try resolve library soName=" + soName + ", path=" + path);
+            log.debug("Try resolve library soName={}, path={}", soName, path);
         }
         if (path.contains("@")) {
-            log.warn("Try resolve library soName=" + soName + ", path=" + path, new Exception());
+            log.warn("Try resolve library soName={}, path={}", soName, path, new Exception());
             return null;
         }
         if (!loadList.isEmpty() && !loadList.contains(FilenameUtils.getName(path))) {

@@ -7,12 +7,12 @@ import com.github.unidbg.file.linux.AndroidFileIO;
 import com.github.unidbg.file.linux.BaseAndroidFileIO;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, AndroidFileIO {
 
-    private static final Log log = LogFactory.getLog(DriverFileIO.class);
+    private static final Logger log = LoggerFactory.getLogger(DriverFileIO.class);
 
     public static DriverFileIO create(Emulator<?> emulator, int oflags, String pathname) {
         if ("/dev/urandom".equals(pathname) || "/dev/random".equals(pathname) || "/dev/srandom".equals(pathname)) {
@@ -91,7 +91,7 @@ public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, Androi
                 return androidAlarm(dir, c, AndroidAlarmType.valueOf(type), size, argp);
             }
 
-            log.info("alarm ioctl request=0x" + Long.toHexString(request) + ", argp=0x" + Long.toHexString(argp) + ", nr=" + nr + ", type=" + type + ", size=" + size + ", dir=" + dir);
+            log.info("alarm ioctl request=0x{}, argp=0x{}, nr={}, type={}, size={}, dir={}", Long.toHexString(request), Long.toHexString(argp), nr, type, size, dir);
             return -1;
         }
 
@@ -125,7 +125,7 @@ public class DriverFileIO extends BaseAndroidFileIO implements NewFileIO, Androi
             }
         }
 
-        log.info("androidAlarm argp=0x" + Long.toHexString(argp) + ", c=" + c + ", type=" + type + ", size=" + size + ", dir=" + dir);
+        log.info("androidAlarm argp=0x{}, c={}, type={}, size={}, dir={}", Long.toHexString(argp), c, type, size, dir);
         return -1;
     }
 

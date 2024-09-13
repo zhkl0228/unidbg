@@ -1,7 +1,7 @@
 package com.github.unidbg.ios;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -12,7 +12,7 @@ import java.util.List;
 
 public class DarwinUtils {
 
-    private static final Log log = LogFactory.getLog(DarwinUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(DarwinUtils.class);
 
     static class NetworkIF {
         final NetworkInterface networkInterface;
@@ -39,7 +39,7 @@ public class DarwinUtils {
             }
         }
         if (log.isDebugEnabled()) {
-            log.debug("Return host network ifs: " + list);
+            log.debug("Return host network ifs: {}", list);
         }
         if (verbose) {
             System.out.println("Return host network ifs: " + list);

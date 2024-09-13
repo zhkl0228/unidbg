@@ -7,8 +7,8 @@ import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorCallback;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorException;
 import com.github.unidbg.pointer.UnidbgPointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 import unicorn.UnicornConst;
 
@@ -17,7 +17,7 @@ import java.nio.ByteOrder;
 
 public abstract class HypervisorBackend extends FastBackend implements Backend, HypervisorCallback {
 
-    private static final Log log = LogFactory.getLog(HypervisorBackend.class);
+    private static final Logger log = LoggerFactory.getLogger(HypervisorBackend.class);
 
     protected final Hypervisor hypervisor;
     private final int pageSize;
@@ -179,7 +179,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
 
     protected final void callSVC(long pc, int swi) {
         if (log.isDebugEnabled()) {
-            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until) + ", swi=" + swi);
+            log.debug("callSVC pc=0x{}, until=0x{}, swi={}", Long.toHexString(pc), Long.toHexString(until), swi);
         }
         if (pc == until) {
             emu_stop();
@@ -198,7 +198,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     @Override
     public final synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
         if (log.isDebugEnabled()) {
-            log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
+            log.debug("emu_start begin=0x{}, until=0x{}, timeout={}, count={}", Long.toHexString(begin), Long.toHexString(until), timeout, count);
         }
         this.until = until + 4;
         try {

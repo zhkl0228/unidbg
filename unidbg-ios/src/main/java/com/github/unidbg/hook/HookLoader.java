@@ -10,12 +10,12 @@ import com.github.unidbg.ios.hook.FishHook;
 import com.github.unidbg.ios.hook.Substrate;
 import com.github.unidbg.memory.SvcMemory;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HookLoader extends BaseHook {
 
-    private static final Log log = LogFactory.getLog(HookLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(HookLoader.class);
 
     public static HookLoader load(Emulator<?> emulator) {
         Substrate.getInstance(emulator); // load substrate first
@@ -101,7 +101,7 @@ public class HookLoader extends BaseHook {
         if (dispatch == null) {
             dispatch = DispatchAsyncCallback.Result.skip;
         }
-        if (dispatch == DispatchAsyncCallback.Result.skip && (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled())) {
+        if (dispatch == DispatchAsyncCallback.Result.skip && (log.isDebugEnabled() || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled())) {
             System.err.println("Skip dispatch_async dq=" + dq + ", fun=" + fun);
         }
         return dispatch.ordinal();

@@ -7,14 +7,14 @@ import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 public class ByteArrayFileIO extends BaseAndroidFileIO {
 
-    private static final Log log = LogFactory.getLog(ByteArrayFileIO.class);
+    private static final Logger log = LoggerFactory.getLogger(ByteArrayFileIO.class);
 
     protected final byte[] bytes;
     protected final String path;

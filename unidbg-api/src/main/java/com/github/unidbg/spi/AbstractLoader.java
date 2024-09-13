@@ -18,8 +18,8 @@ import com.github.unidbg.thread.BaseTask;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 
@@ -38,7 +38,7 @@ import java.util.TreeMap;
 
 public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loader {
 
-    private static final Log log = LogFactory.getLog(AbstractLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractLoader.class);
 
     protected final Backend backend;
     protected final Emulator<T> emulator;
@@ -79,7 +79,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         long threadStackBase = Memory.STACK_BASE - (long) Memory.STACK_SIZE_OF_MAIN_PAGE * emulator.getPageAlign();
         long address = threadStackBase - (long) BaseTask.THREAD_STACK_PAGE * index * emulator.getPageAlign();
         if (log.isDebugEnabled()) {
-            log.debug("allocateThreadStackAddress=0x" + Long.toHexString(address));
+            log.debug("allocateThreadStackAddress=0x{}", Long.toHexString(address));
         }
         return UnidbgPointer.pointer(emulator, address);
     }
@@ -93,7 +93,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         this.mmapBaseAddress = address;
 
         if (log.isDebugEnabled()) {
-            log.debug("setMMapBaseAddress=0x" + Long.toHexString(address));
+            log.debug("setMMapBaseAddress=0x{}", Long.toHexString(address));
         }
     }
 
@@ -144,7 +144,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
             MemoryMap map = lastEntry.getValue();
             long mmapAddress = map.base + map.size;
             if (mmapAddress < mmapBaseAddress) {
-                log.debug("allocateMapAddress mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", mmapAddress=0x" + Long.toHexString(mmapAddress));
+                log.debug("allocateMapAddress mmapBaseAddress=0x{}, mmapAddress=0x{}", Long.toHexString(mmapBaseAddress), Long.toHexString(mmapAddress));
                 setMMapBaseAddress(mmapAddress);
             }
         }
@@ -167,31 +167,21 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         MemoryMap removed = memoryMap.remove(start);
 
         if (removed == null) {
-            MemoryMap segment = null;
-            for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
-                MemoryMap map = entry.getValue();
-                if (start > entry.getKey() && start < map.base + map.size) {
-                    segment = entry.getValue();
-                    break;
-                }
-            }
-            if (segment == null || segment.size < aligned) {
-                throw new IllegalStateException("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start));
-            }
+            MemoryMap segment = findMemoryMap(start, aligned);
             if (start + aligned < segment.base + segment.size) {
                 long newSize = segment.base + segment.size - start - aligned;
                 if (log.isDebugEnabled()) {
-                    log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(start + aligned) + ", size=" + newSize);
+                    log.debug("munmap aligned=0x{}, start=0x{}, base=0x{}, newSize={}", Long.toHexString(aligned), Long.toHexString(start), Long.toHexString(start + aligned), newSize);
                 }
                 if (memoryMap.put(start + aligned, new MemoryMap(start + aligned, (int) newSize, segment.prot)) != null) {
-                    log.warn("munmap replace exists memory map addr=0x" + Long.toHexString(start + aligned));
+                    log.warn("munmap replace exists memory map addr=0x{}", Long.toHexString(start + aligned));
                 }
             }
             if (memoryMap.put(segment.base, new MemoryMap(segment.base, (int) (start - segment.base), segment.prot)) == null) {
-                log.warn("munmap replace failed warning: addr=0x" + Long.toHexString(segment.base));
+                log.warn("munmap replace failed warning: addr=0x{}", Long.toHexString(segment.base));
             }
             if (log.isDebugEnabled()) {
-                log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(segment.base) + ", size=" + (start - segment.base));
+                log.debug("munmap aligned=0x{}, start=0x{}, base=0x{}, size={}", Long.toHexString(aligned), Long.toHexString(start), Long.toHexString(segment.base), start - segment.base);
             }
             return segment.prot;
         }
@@ -199,7 +189,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         if(removed.size != aligned) {
             if (aligned >= removed.size) {
                 if (log.isDebugEnabled()) {
-                    log.debug("munmap removed=0x" + Long.toHexString(removed.size) + ", aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start));
+                    log.debug("munmap removed=0x{}, aligned=0x{}, start=0x{}", Long.toHexString(removed.size), Long.toHexString(aligned), Long.toHexString(start));
                 }
                 long address = start + removed.size;
                 long size = aligned - removed.size;
@@ -215,21 +205,36 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
             }
 
             if (memoryMap.put(start + aligned, new MemoryMap(start + aligned, removed.size - aligned, removed.prot)) != null) {
-                log.warn("munmap replace exists memory map addr=0x" + Long.toHexString(start + aligned));
+                log.warn("munmap not aligned replace exists memory map addr=0x{}", Long.toHexString(start + aligned));
             }
             if (log.isDebugEnabled()) {
-                log.debug("munmap removed=0x" + Long.toHexString(removed.size) + ", aligned=0x" + Long.toHexString(aligned) + ", base=0x" + Long.toHexString(start + aligned) + ", size=" + (removed.size - aligned));
+                log.debug("munmap removed=0x{}, aligned=0x{}, base=0x{}, size={}", Long.toHexString(removed.size), Long.toHexString(aligned), Long.toHexString(start + aligned), removed.size - aligned);
             }
             return removed.prot;
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start) + ", base=0x" + Long.toHexString(removed.base) + ", size=" + removed.size);
+            log.debug("munmap aligned=0x{}, start=0x{}, base=0x{}, size={}", Long.toHexString(aligned), Long.toHexString(start), Long.toHexString(removed.base), removed.size);
         }
         if (memoryMap.isEmpty()) {
             setMMapBaseAddress(MMAP_BASE);
         }
         return removed.prot;
+    }
+
+    private MemoryMap findMemoryMap(long start, int aligned) {
+        MemoryMap segment = null;
+        for (Map.Entry<Long, MemoryMap> entry : memoryMap.entrySet()) {
+            MemoryMap map = entry.getValue();
+            if (start > entry.getKey() && start < map.base + map.size) {
+                segment = entry.getValue();
+                break;
+            }
+        }
+        if (segment == null || segment.size < aligned) {
+            throw new IllegalStateException("munmap aligned=0x" + Long.toHexString(aligned) + ", start=0x" + Long.toHexString(start));
+        }
+        return segment;
     }
 
     @Override
@@ -389,7 +394,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
                 }
                 byte[] data = pointer.getByteArray(dump, (int) read);
                 outputStream.write(data);
-                dump += read;
+                dump += (int) read;
             }
         }
     }
@@ -398,7 +403,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         Alignment alignment = ARM.align(address, size, align);
 
         if (log.isDebugEnabled()) {
-            log.debug("[" + libraryName + "]0x" + Long.toHexString(alignment.address) + " - 0x" + Long.toHexString(alignment.address + alignment.size) + ", size=0x" + Long.toHexString(alignment.size) + ", prot=" + prot);
+            log.debug("[{}]0x{} - 0x{}, size=0x{}, prot={}", libraryName, Long.toHexString(alignment.address), Long.toHexString(alignment.address + alignment.size), Long.toHexString(alignment.size), prot);
         }
 
         backend.mem_map(alignment.address, alignment.size, prot);
@@ -406,7 +411,7 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
             mMapListener.onMap(alignment.address, alignment.size, prot);
         }
         if (memoryMap.put(alignment.address, new MemoryMap(alignment.address, (int) alignment.size, prot)) != null) {
-            log.warn("mem_map replace exists memory map address=" + Long.toHexString(alignment.address));
+            log.warn("mem_map replace exists memory map address={}", Long.toHexString(alignment.address));
         }
         return alignment;
     }

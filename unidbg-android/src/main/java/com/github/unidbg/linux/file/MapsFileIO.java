@@ -6,8 +6,8 @@ import com.github.unidbg.file.FileIO;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryMap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.UnicornConst;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.List;
 
 public class MapsFileIO extends ByteArrayFileIO implements FileIO {
 
-    private static final Log log = LogFactory.getLog(MapsFileIO.class);
+    private static final Logger log = LoggerFactory.getLogger(MapsFileIO.class);
 
     public MapsFileIO(Emulator<?> emulator, int oflags, String path, Collection<Module> modules) {
         super(oflags, path, getMapsData(emulator, modules, null));
@@ -68,7 +68,7 @@ public class MapsFileIO extends ByteArrayFileIO implements FileIO {
             builder.append(additionContent).append('\n');
         }
         if (log.isDebugEnabled()) {
-            log.debug("\n" + builder);
+            log.debug("\n{}", builder);
         }
 
         return builder.toString().getBytes();

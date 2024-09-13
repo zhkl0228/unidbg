@@ -4,15 +4,15 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Svc;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public abstract class Arm64Svc implements Svc {
 
-    private static final Log log = LogFactory.getLog(Arm64Svc.class);
+    private static final Logger log = LoggerFactory.getLogger(Arm64Svc.class);
 
     public static final int SVC_MAX = 0xffff;
 
@@ -37,7 +37,7 @@ public abstract class Arm64Svc implements Svc {
     @Override
     public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
         if (log.isDebugEnabled()) {
-            log.debug("onRegister: " + getClass(), new Exception("svcNumber=0x" + Integer.toHexString(svcNumber)));
+            log.debug("onRegister: {}", getClass(), new Exception("svcNumber=0x" + Integer.toHexString(svcNumber)));
         }
 
         String name = getName();

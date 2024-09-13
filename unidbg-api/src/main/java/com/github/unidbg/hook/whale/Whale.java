@@ -8,12 +8,12 @@ import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Whale extends BaseHook implements IWhale {
 
-    private static final Log log = LogFactory.getLog(Whale.class);
+    private static final Logger log = LoggerFactory.getLogger(Whale.class);
 
     public static IWhale getInstance(Emulator<?> emulator) {
         IWhale whale = emulator.get(Whale.class.getName());
@@ -33,7 +33,7 @@ public final class Whale extends BaseHook implements IWhale {
         WInlineHookFunction = module.findSymbolByName(isIOS ? "_WInlineHookFunction" : "WInlineHookFunction", false);
         WImportHookFunction = module.findSymbolByName(isIOS ? "_WImportHookFunction" : "WImportHookFunction", false);
         if (log.isDebugEnabled()) {
-            log.debug("WInlineHookFunction=" + WInlineHookFunction + ", WImportHookFunction=" + WImportHookFunction);
+            log.debug("WInlineHookFunction={}, WImportHookFunction={}", WInlineHookFunction, WImportHookFunction);
         }
 
         if (WInlineHookFunction == null) {

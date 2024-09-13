@@ -39,8 +39,8 @@ import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.unix.UnixSyscallHandler;
 import com.github.unidbg.unix.struct.TimeSpec;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,7 +48,7 @@ import java.util.Map;
 
 public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFileIO> implements SyscallHandler<DarwinFileIO>, DarwinSyscall  {
 
-    private static final Log log = LogFactory.getLog(DarwinSyscallHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(DarwinSyscallHandler.class);
 
     final long bootTime = System.currentTimeMillis();
 
@@ -74,7 +74,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
     protected final void exit(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
         int status = context.getIntArg(0);
-        if (status != 0 || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (status != 0 || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
             emulator.attach().debug();
         }
         System.exit(status);
@@ -98,7 +98,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         String pathname = pathname_p.getString(0);
         int fd = open(emulator, pathname, oflags);
         if (log.isDebugEnabled()) {
-            log.debug("open_NOCANCEL pathname=" + pathname + ", oflags=0x" + Integer.toHexString(oflags) + ", mode=" + Integer.toHexString(mode) + ", fd=" + fd + ", LR=" + context.getLRPointer());
+            log.debug("open_NOCANCEL pathname={}, oflags=0x{}, mode={}, fd={}, LR={}", pathname, Integer.toHexString(oflags), Integer.toHexString(mode), fd, context.getLRPointer());
         }
         if (fd == -1) {
             if (emulator.is64Bit()) {
@@ -118,7 +118,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         int bufSize = context.getIntArg(off + 1);
         int flags = context.getIntArg(off + 2);
         if (log.isDebugEnabled()) {
-            log.debug("getfsstat64 buf=" + buf + ", bufSize=" + bufSize + ", flags=0x" + Integer.toHexString(flags));
+            log.debug("getfsstat64 buf={}, bufSize={}, flags=0x{}", buf, bufSize, Integer.toHexString(flags));
         }
 
         final int mountedFsSize = 2;
@@ -185,7 +185,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         int mode = context.getIntArg(1);
         String path = pathname.getString(0);
         if (log.isDebugEnabled()) {
-            log.debug("access pathname=" + path + ", mode=" + mode);
+            log.debug("access pathname={}, mode={}", path, mode);
         }
         return faccessat(emulator, path, mode);
     }
@@ -219,15 +219,15 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (io != null) {
             int ret = io.listxattr(namebuf, size, options);
             if (ret == -1) {
-                log.info("flistxattr fd=" + fd + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+                log.info("flistxattr fd={}, namebuf={}, size={}, options={}, LR={}", fd, namebuf, size, options, context.getLRPointer());
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("flistxattr fd=" + fd + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+                    log.debug("flistxattr fd={}, namebuf={}, size={}, options={}, LR={}", fd, namebuf, size, options, context.getLRPointer());
                 }
             }
             return ret;
         } else {
-            log.info("flistxattr fd=" + fd + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+            log.info("flistxattr fd={}, namebuf={}, size={}, options={}, LR={}", fd, namebuf, size, options, context.getLRPointer());
             emulator.getMemory().setErrno(UnixEmulator.ENOENT);
             return -1;
         }
@@ -247,15 +247,15 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (result.isSuccess()) {
             int ret = result.io.listxattr(namebuf, size, options);
             if (ret == -1) {
-                log.info("listxattr path=" + pathname + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+                log.info("listxattr path={}, namebuf={}, size={}, options={}, LR={}", pathname, namebuf, size, options, context.getLRPointer());
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("listxattr path=" + pathname + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+                    log.debug("listxattr path={}, namebuf={}, size={}, options={}, LR={}", pathname, namebuf, size, options, context.getLRPointer());
                 }
             }
             return ret;
         } else {
-            log.info("listxattr path=" + pathname + ", namebuf=" + namebuf + ", size=" + size + ", options=" + options + ", LR=" + context.getLRPointer());
+            log.info("listxattr path={}, namebuf={}, size={}, options={}, LR={}", pathname, namebuf, size, options, context.getLRPointer());
             emulator.getMemory().setErrno(UnixEmulator.ENOENT);
             return -1;
         }
@@ -269,19 +269,19 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         int fsmode = context.getIntArg(3);
         int fsacl = context.getIntArg(4);
         DarwinFileIO io = fdMap.get(fd);
-        log.debug("fchmodx_np fd=" + fd + ", fsowner=" + fsowner + ", fsgrp=" + fsgrp + ", fsmode=0x" + Integer.toHexString(fsmode) + ", fsacl=" + fsacl + ", io=" + io);
+        log.debug("fchmodx_np fd={}, fsowner={}, fsgrp={}, fsmode=0x{}, fsacl={}, io={}", fd, fsowner, fsgrp, Integer.toHexString(fsmode), fsacl, io);
         if (io != null) {
             int ret = io.chmod(fsmode);
             if (ret == -1) {
-                log.info("fchmodx_np fd=" + fd + ", fsmode=0x" + Integer.toHexString(fsmode));
+                log.info("fchmodx_np fd={}, fsmode=0x{}, io={}", fd, Integer.toHexString(fsmode), io);
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("fchmodx_np fd=" + fd + ", fsmode=0x" + Integer.toHexString(fsmode));
+                    log.debug("fchmodx_np fd={}, fsmode=0x{}", fd, Integer.toHexString(fsmode));
                 }
             }
             return ret;
         } else {
-            log.info("fchmodx_np fd=" + fd + ", fsmode=0x" + Integer.toHexString(fsmode));
+            log.info("fchmodx_np fd={}, fsmode=0x{}", fd, Integer.toHexString(fsmode));
             Cpsr.getArm64(emulator.getBackend()).setCarry(true);
             return UnixEmulator.ENOENT;
         }
@@ -295,20 +295,20 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         int fsmode = context.getIntArg(3);
         int fsacl = context.getIntArg(4);
         String pathname = path.getString(0);
-        log.debug("chmodx_np pathname=" + pathname + ", fsowner=" + fsowner + ", fsgrp=" + fsgrp + ", fsmode=0x" + Integer.toHexString(fsmode) + ", fsacl=" + fsacl);
+        log.debug("chmodx_np pathname={}, fsowner={}, fsgrp={}, fsmode=0x{}, fsacl={}", pathname, fsowner, fsgrp, Integer.toHexString(fsmode), fsacl);
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (result.isSuccess()) {
             int ret = result.io.chmod(fsmode);
             if (ret == -1) {
-                log.info("chmodx_np path=" + pathname + ", fsmode=0x" + Integer.toHexString(fsmode));
+                log.info("chmodx_np path={}, fsmode=0x{}, io={}", pathname, Integer.toHexString(fsmode), result.io);
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("chmodx_np path=" + pathname + ", fsmode=0x" + Integer.toHexString(fsmode));
+                    log.debug("chmodx_np path={}, fsmode=0x{}", pathname, Integer.toHexString(fsmode));
                 }
             }
             return ret;
         } else {
-            log.info("chmodx_np path=" + pathname + ", fsmode=0x" + Integer.toHexString(fsmode));
+            log.info("chmodx_np path={}, fsmode=0x{}", pathname, Integer.toHexString(fsmode));
             Cpsr.getArm64(emulator.getBackend()).setCarry(true);
             return UnixEmulator.ENOENT;
         }
@@ -322,15 +322,15 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (io != null) {
             int ret = io.chmod(mode);
             if (ret == -1) {
-                log.info("fchmod fd=" + fd + ", mode=0x" + Integer.toHexString(mode));
+                log.info("fchmod fd={}, mode=0x{}, io={}", fd, Integer.toHexString(mode), io);
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("fchmod fd=" + fd + ", mode=0x" + Integer.toHexString(mode));
+                    log.debug("fchmod fd={}, mode=0x{}", fd, Integer.toHexString(mode));
                 }
             }
             return ret;
         } else {
-            log.info("fchmod fd=" + fd + ", mode=0x" + Integer.toHexString(mode));
+            log.info("fchmod fd={}, mode=0x{}", fd, Integer.toHexString(mode));
             Cpsr.getArm64(emulator.getBackend()).setCarry(true);
             return UnixEmulator.ENOENT;
         }
@@ -369,15 +369,15 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (result.isSuccess()) {
             int ret = result.io.chmod(mode);
             if (ret == -1) {
-                log.info("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
+                log.info("chmod path={}, mode=0x{}, io={}", pathname, Integer.toHexString(mode), result.io);
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
+                    log.debug("chmod path={}, mode=0x{}", pathname, Integer.toHexString(mode));
                 }
             }
             return ret;
         } else {
-            log.info("chmod path=" + pathname + ", mode=0x" + Integer.toHexString(mode));
+            log.info("chmod path={}, mode=0x{}", pathname, Integer.toHexString(mode));
             Cpsr.getArm64(emulator.getBackend()).setCarry(true);
             return UnixEmulator.ENOENT;
         }
@@ -387,7 +387,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         HostStatisticsRequest args = new HostStatisticsRequest(request);
         args.unpack();
         if (log.isDebugEnabled()) {
-            log.debug("host_statistics args=" + args);
+            log.debug("host_statistics args={}", args);
         }
 
         if (args.flavor == HostStatisticsRequest.HOST_VM_INFO) {
@@ -408,7 +408,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             reply.pack();
 
             if (log.isDebugEnabled()) {
-                log.debug("host_statistics HOST_VM_INFO reply=" + reply);
+                log.debug("host_statistics HOST_VM_INFO reply={}", reply);
             }
             return true;
         }
@@ -421,7 +421,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         args.unpack();
         String serviceName = args.getServiceName();
         if (log.isDebugEnabled()) {
-            log.debug("vproc_mig_look_up2 args=" + args + ", serviceName=" + serviceName);
+            log.debug("vproc_mig_look_up2 args={}, serviceName={}", args, serviceName);
         }
 
         if ("cy:com.saurik.substrated".equals(serviceName)) {
@@ -452,7 +452,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         data.pack();
 
         if (log.isDebugEnabled()) {
-            log.debug("vproc_mig_look_up2 reply=" + reply + ", data=" + data);
+            log.debug("vproc_mig_look_up2 reply={}, data={}", reply, data);
         }
         return MACH_MSG_SUCCESS;
     }
@@ -492,7 +492,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         int threadPort = context.getIntArg(0);
         int sig = context.getIntArg(1);
         if (log.isDebugEnabled()) {
-            log.debug("pthread_kill threadPort=" + threadPort + ", sig=" + sig);
+            log.debug("pthread_kill threadPort={}, sig={}", threadPort, sig);
         }
         if (sig > 0) {
             SigAction action = sigActionMap.get(sig);
@@ -507,7 +507,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         RegisterContext context = emulator.getContext();
         int port = context.getIntArg(0);
         if (log.isDebugEnabled()) {
-            log.debug("_semaphore_wait_trap port=" + port + ", LR=" + context.getLRPointer());
+            log.debug("_semaphore_wait_trap port={}, LR={}", port, context.getLRPointer());
         }
         if (log.isDebugEnabled()) {
             createBreaker(emulator).debug();
@@ -517,7 +517,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             runningTask.setWaiter(emulator, new SemWaiter(port, semaphoreMap));
             throw new ThreadContextSwitchException().setReturnValue(0);
         }
-        if (LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
         return 0;
@@ -554,7 +554,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         RegisterContext context = emulator.getContext();
         int status = context.getIntArg(0);
         if (log.isDebugEnabled()) {
-            log.debug("disable_threadsignal status=" + status);
+            log.debug("disable_threadsignal status={}", status);
         }
         Task task = emulator.get(Task.TASK_KEY);
         if (task == emulator.getThreadDispatcher().getRunningTask() &&
@@ -568,7 +568,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         RegisterContext context = emulator.getContext();
         Pointer set = context.getPointerArg(0);
         if (log.isDebugEnabled()) {
-            log.debug("sigpending set=" + set);
+            log.debug("sigpending set={}", set);
         }
         Task task = emulator.get(Task.TASK_KEY);
         SignalOps signalOps = task.isMainThread() ? emulator.getThreadDispatcher() : task;
@@ -601,8 +601,8 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         if (!task.isMainThread()) {
             throw new ThreadContextSwitchException().setReturnValue(-1);
         }
-        log.info("sigwait set=" + set + ", sig=" + sig);
-        Log log = LogFactory.getLog(AbstractEmulator.class);
+        log.info("sigwait set={}, sig={}", set, sig);
+        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
         if (log.isDebugEnabled()) {
             emulator.attach().debug();
         }
@@ -614,7 +614,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         int pid = context.getIntArg(0);
         int sig = context.getIntArg(1);
         if (log.isDebugEnabled()) {
-            log.debug("kill pid=" + pid + ", sig=" + sig);
+            log.debug("kill pid={}, sig={}", pid, sig);
         }
         Task task = emulator.get(Task.TASK_KEY);
         if ((pid == 0 || pid == emulator.getPid()) && sig > 0 && task != null) {
@@ -631,7 +631,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         SigAction action = SigAction.create(emulator, act);
         SigAction oldAction = SigAction.create(emulator, oldact);
         if (log.isDebugEnabled()) {
-            log.debug("sigaction signum=" + signum + ", action=" + action + ", oldAction=" + oldAction);
+            log.debug("sigaction signum={}, action={}, oldAction={}", signum, action, oldAction);
         }
         SigAction lastAction = sigActionMap.put(signum, action);
         if (oldAction != null) {
@@ -672,7 +672,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         Pointer set = context.getPointerArg(1);
         Pointer oset = context.getPointerArg(2);
         if (log.isDebugEnabled()) {
-            log.debug("pthread_sigmask how=" + how + ", set=" + set + ", oset=" + oset);
+            log.debug("pthread_sigmask how={}, set={}, oset={}", how, set, oset);
         }
 
         Task task = emulator.get(Task.TASK_KEY);
@@ -728,7 +728,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         KEvent64 kev = new KEvent64(guard.getPointer(0));
         kev.unpack();
         if (log.isDebugEnabled()) {
-            log.debug("guarded_kqueue_np kev=" + kev + ", guardFlags=0x" + Integer.toHexString(guardFlags) + ", LR=" + context.getLRPointer());
+            log.debug("guarded_kqueue_np kev={}, guardFlags=0x{}, LR={}", kev, Integer.toHexString(guardFlags), context.getLRPointer());
         }
         int fd = getMinFd();
         fdMap.put(fd, new KEvent(guardFlags));
@@ -738,7 +738,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
     protected int kevent64(Emulator<?> emulator, int kq, Pointer changelist, int nchanges, Pointer eventlist, int nevents, int flags, TimeSpec timeSpec) {
         RegisterContext context = emulator.getContext();
         if (log.isDebugEnabled()) {
-            log.debug("kevent64 kq=" + kq + ", changelist=" + changelist + ", nchanges=" + nchanges + ", eventlist=" + eventlist + ", nevents=" + nevents + ", flags=0x" + Integer.toHexString(flags) + ", timeSpec=" + timeSpec + ", LR=" + context.getLRPointer());
+            log.debug("kevent64 kq={}, changelist={}, nchanges={}, eventlist={}, nevents={}, flags=0x{}, timeSpec={}, LR={}", kq, changelist, nchanges, eventlist, nevents, Integer.toHexString(flags), timeSpec, context.getLRPointer());
         }
         if (timeSpec != null) {
             throw new UnsupportedOperationException();
@@ -753,7 +753,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
             runningTask.setWaiter(emulator, new KEventWaiter(event, eventlist, nevents));
             throw new ThreadContextSwitchException();
         }
-        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (log.isDebugEnabled() || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
         return 0;
@@ -763,7 +763,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         RegisterContext context = emulator.getContext();
         Pointer ocond = context.getPointerArg(0);
         if (log.isDebugEnabled()) {
-            log.debug("psynch_cvbroad ocond=" + ocond);
+            log.debug("psynch_cvbroad ocond={}", ocond);
         }
         if (threadDispatcherEnabled) {
             throw new ThreadContextSwitchException().setReturnValue(0);
@@ -787,7 +787,7 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         int kport = context.getIntArg(2);
         int joinsem = context.getIntArg(3);
         if (log.isDebugEnabled()) {
-            log.debug("bsdthread_terminate freeaddr=" + freeaddr + ", freesize=" + freesize + ", kport=" + kport + ", joinsem=" + joinsem);
+            log.debug("bsdthread_terminate freeaddr={}, freesize={}, kport={}, joinsem={}", freeaddr, freesize, kport, joinsem);
         }
         if (joinsem != 0) {
             semaphoreMap.put(joinsem, Boolean.TRUE);
@@ -846,9 +846,9 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         RegisterContext context = emulator.getContext();
         int pri = context.getIntArg(0);
         if (log.isDebugEnabled()) {
-            log.debug("swtch_pri pri=" + pri + ", LR=" + context.getLRPointer());
+            log.debug("swtch_pri pri={}, LR={}", pri, context.getLRPointer());
         }
-        if (log.isDebugEnabled() || LogFactory.getLog(AbstractEmulator.class).isDebugEnabled()) {
+        if (log.isDebugEnabled() || LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
             createBreaker(emulator).debug();
         }
         return 0;

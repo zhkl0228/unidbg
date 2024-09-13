@@ -25,8 +25,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.Stack;
 
 public class HypervisorBackend64 extends HypervisorBackend {
 
-    private static final Log log = LogFactory.getLog(HypervisorBackend64.class);
+    private static final Logger log = LoggerFactory.getLogger(HypervisorBackend64.class);
 
     private static final int INS_SIZE = 4;
 
@@ -137,7 +137,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                  */
                 boolean sf = ((esr >> 15) & 1) != 0;
                 if (log.isDebugEnabled()) {
-                    log.debug("handleDataAbort srt=" + srt + ", sf=" + sf + ", accessSize=" + accessSize);
+                    log.debug("handleDataAbort srt={}, sf={}, accessSize={}", srt, sf, accessSize);
                 }
                 if (eventMemHookNotifier != null) {
                     eventMemHookNotifier.notifyDataAbort(isWrite, accessSize, virtualAddress);
@@ -149,7 +149,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 }
                 break;
             default:
-                log.warn("handleUnknownException ec=0x" + Integer.toHexString(ec) + ", virtualAddress=0x" + Long.toHexString(virtualAddress) + ", esr=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far));
+                log.warn("handleUnknownException ec=0x{}, virtualAddress=0x{}, esr=0x{}, far=0x{}", Integer.toHexString(ec), Long.toHexString(virtualAddress), Long.toHexString(esr), Long.toHexString(far));
                 break;
         }
     }
@@ -160,7 +160,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     public boolean handleException(long esr, long far, final long elr, long cpsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", cpsr=0x" + Long.toHexString(cpsr));
+            log.debug("handleException syndrome=0x{}, far=0x{}, elr=0x{}, ec=0x{}, cpsr=0x{}", Long.toHexString(esr), Long.toHexString(far), Long.toHexString(elr), Integer.toHexString(ec), Long.toHexString(cpsr));
         }
         if (lastHitPointAddress != elr &&
                 (ec == EC_SOFTWARESTEP || ec == EC_BREAKPOINT)) {
@@ -213,7 +213,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 int srt = (int) ((esr >> 16) & 0x1f);
                 int dfsc = (int) (esr & 0x3f);
                 if (log.isDebugEnabled()) {
-                    log.debug("handle EC_DATAABORT isv=" + isv + ", isWrite=" + isWrite + ", s1ptw=" + s1ptw + ", len=" + len + ", srt=" + srt + ", dfsc=0x" + Integer.toHexString(dfsc) + ", vaddr=0x" + Long.toHexString(far));
+                    log.debug("handle EC_DATAABORT isv={}, isWrite={}, s1ptw={}, len={}, srt={}, dfsc=0x{}, vaddr=0x{}", isv, isWrite, s1ptw, len, srt, Integer.toHexString(dfsc), Long.toHexString(far));
                 }
                 if (dfsc == 0x00 && emulator.getFamily() == Family.iOS) {
                     int accessSize = isv ? 1 << sas : 0;
@@ -249,7 +249,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 throw new UnsupportedOperationException("EC_SYSTEMREGISTERTRAP isRead=" + isRead + ", CRm=" + CRm + ", CRn=" + CRn + ", Op1=" + Op1 + ", Op2=" + Op2 + ", Op0=" + Op0);
             }
             default:
-                log.warn("handleException ec=0x" + Integer.toHexString(ec));
+                log.warn("handleException ec=0x{}", Integer.toHexString(ec));
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec));
         }
     }
@@ -309,7 +309,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         int wpt = (int) ((esr >> 18) & 0x3f); // Watchpoint number, 0 to 15 inclusive.
         boolean wptv = ((esr >> 17) & 1) == 1; // The WPT field is valid, and holds the number of a watchpoint that triggered a Watchpoint exception.
         if (log.isDebugEnabled()) {
-            log.debug("onWatchpoint write=" + write + ", address=0x" + Long.toHexString(address) + ", cm=" + cm + ", wpt=" + wpt + ", wptv=" + wptv + ", status=0x" + Integer.toHexString(status));
+            log.debug("onWatchpoint write={}, address=0x{}, cm={}, wpt={}, wptv={}, status=0x{}", write, Long.toHexString(address), cm, wpt, wptv, Integer.toHexString(status));
         }
         HypervisorWatchpoint hitWp = null;
         for (int n = 0; n < watchpoints.length; n++) {
@@ -452,7 +452,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                     builder.append(String.format("0x%x: %s%n", instruction.getAddress(), instruction));
                 }
                 if (foundAddress == 0) {
-                    log.info("CodeHookNotifier.onSoftwareStep: \n" + builder);
+                    log.info("CodeHookNotifier.onSoftwareStep: \n{}", builder);
                 } else {
                     resetRegionInfo();
                     final long breakAddress = foundAddress + 4;
@@ -481,7 +481,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                             return;
                         }
                     }
-                    log.warn("No more BKPs: " + breakpoints.length);
+                    log.warn("No more BKPs: {}", breakpoints.length);
                 }
             }
             callback.notifyCallback(address);
@@ -559,7 +559,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         byte[] code = pc.getByteArray(0, 4);
         Instruction insn = createDisassembler().disasm(code, elr, 1)[0];
         if (log.isDebugEnabled()) {
-            log.debug("handleCommRead vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn);
+            log.debug("handleCommRead vaddr=0x{}, elr=0x{}, asm={}", Long.toHexString(vaddr), Long.toHexString(elr), insn);
         }
         OpInfo opInfo = (OpInfo) insn.getOperands();
         if (opInfo.isUpdateFlags() || opInfo.isWriteBack() || !insn.getMnemonic().startsWith("ldr") || vaddr < _COMM_PAGE64_BASE_ADDRESS) {

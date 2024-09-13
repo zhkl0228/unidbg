@@ -21,8 +21,8 @@ import com.github.unidbg.unix.struct.TimeSpec32;
 import com.sun.jna.Pointer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.util.List;
 
 public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileIO {
 
-    private static final Log log = LogFactory.getLog(BaseDarwinFileIO.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseDarwinFileIO.class);
 
     public static File createAttrFile(File dest) {
         if (!dest.exists()) {
@@ -228,7 +228,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             TimeSpec32 timeSpec = new TimeSpec32(pointer);
             pointer = pointer.share(timeSpec.size());
             if (log.isDebugEnabled()) {
-                log.debug("setattrlist timeSpec=" + timeSpec + ", pointer=" + pointer);
+                log.debug("setattrlist ATTR_CMN_CRTIME timeSpec={}, pointer={}", timeSpec, pointer);
             }
             attributeSet.commonattr &= ~ATTR_CMN_CRTIME;
         }
@@ -236,7 +236,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             TimeSpec32 timeSpec = new TimeSpec32(pointer);
             pointer = pointer.share(timeSpec.size());
             if (log.isDebugEnabled()) {
-                log.debug("setattrlist timeSpec=" + timeSpec + ", pointer=" + pointer);
+                log.debug("setattrlist ATTR_CMN_MODTIME timeSpec={}, pointer={}", timeSpec, pointer);
             }
             attributeSet.commonattr &= ~ATTR_CMN_MODTIME;
         }
@@ -244,7 +244,7 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
             FinderInfo finderInfo = new FinderInfo(pointer);
             pointer = pointer.share(finderInfo.size());
             if (log.isDebugEnabled()) {
-                log.debug("setattrlist finderInfo=" + finderInfo + ", pointer=" + pointer);
+                log.debug("setattrlist finderInfo={}, pointer={}", finderInfo, pointer);
             }
             attributeSet.commonattr &= ~ATTR_CMN_FNDRINFO;
         }

@@ -2,8 +2,8 @@ package com.github.unidbg.linux.file;
 
 import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.utils.Inspector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import java.util.Arrays;
 
 class DnsProxyDaemon implements LocalSocketIO.SocketHandler {
 
-    private static final Log log = LogFactory.getLog(DnsProxyDaemon.class);
+    private static final Logger log = LoggerFactory.getLogger(DnsProxyDaemon.class);
 
     private static final int DnsProxyQueryResult = 222;
     private static final int DnsProxyOperationFailed = 401;
@@ -123,7 +123,7 @@ class DnsProxyDaemon implements LocalSocketIO.SocketHandler {
         try {
             InetAddress[] addresses = InetAddress.getAllByName(hostname);
             if (log.isDebugEnabled()) {
-                log.debug("getaddrinfo hostname=" + hostname + ", servername=" + servername + ", addresses=" + Arrays.toString(addresses) + ", ai_flags=" + ai_flags + ", ai_family=" + ai_family + ", ai_socktype=" + ai_socktype + ", ai_protocol=" + ai_protocol);
+                log.debug("getaddrinfo hostname={}, servername={}, addresses={}, ai_flags={}, ai_family={}, ai_socktype={}, ai_protocol={}", hostname, servername, Arrays.toString(addresses), ai_flags, ai_family, ai_socktype, ai_protocol);
             }
             buffer.put((DnsProxyQueryResult + "\0").getBytes());
 
@@ -166,7 +166,7 @@ class DnsProxyDaemon implements LocalSocketIO.SocketHandler {
             buffer.order(ByteOrder.BIG_ENDIAN);
             buffer.putInt(16); // ai_addrlen
             buffer.order(ByteOrder.LITTLE_ENDIAN);
-            buffer.putShort((short) SocketIO.AF_INET); // sin_family
+            buffer.putShort(SocketIO.AF_INET); // sin_family
             buffer.putShort(Short.reverseBytes(port)); // sin_port
             buffer.put(Arrays.copyOf(address.getAddress(), 4));
             buffer.put(new byte[8]); // __pad
@@ -181,7 +181,7 @@ class DnsProxyDaemon implements LocalSocketIO.SocketHandler {
             buffer.putInt(SocketIO.IPPROTO_TCP);
             buffer.putInt(16); // ai_addrlen
             buffer.order(ByteOrder.LITTLE_ENDIAN);
-            buffer.putShort((short) SocketIO.AF_INET); // sin_family
+            buffer.putShort(SocketIO.AF_INET); // sin_family
             buffer.putShort(Short.reverseBytes(port)); // sin_port
             buffer.put(Arrays.copyOf(address.getAddress(), 4));
             buffer.put(new byte[8]); // __pad

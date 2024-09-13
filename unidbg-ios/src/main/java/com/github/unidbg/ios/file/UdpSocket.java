@@ -7,8 +7,8 @@ import com.github.unidbg.ios.struct.attr.AttrList;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -18,7 +18,7 @@ import java.net.SocketException;
 
 public class UdpSocket extends SocketIO implements FileIO {
 
-    private static final Log log = LogFactory.getLog(UdpSocket.class);
+    private static final Logger log = LoggerFactory.getLogger(UdpSocket.class);
 
     private final Emulator<?> emulator;
     private final DatagramSocket datagramSocket;

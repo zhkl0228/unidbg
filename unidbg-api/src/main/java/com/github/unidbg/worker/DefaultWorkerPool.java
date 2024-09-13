@@ -1,8 +1,8 @@
 package com.github.unidbg.worker;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.scijava.nativelib.NativeLibraryUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 class DefaultWorkerPool implements WorkerPool, Runnable {
 
-    private static final Log log = LogFactory.getLog(DefaultWorkerPool.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultWorkerPool.class);
 
     private final BlockingQueue<Worker> releaseQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<Worker> workers;

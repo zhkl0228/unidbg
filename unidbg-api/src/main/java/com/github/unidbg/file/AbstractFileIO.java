@@ -4,14 +4,14 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public abstract class AbstractFileIO implements NewFileIO {
 
-    private static final Log log = LogFactory.getLog(AbstractFileIO.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractFileIO.class);
 
     private static final int F_GETFD = 1; /* get file descriptor flags */
     private static final int F_SETFD = 2; /* set file descriptor flags */

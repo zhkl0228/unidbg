@@ -7,8 +7,8 @@ import com.github.unidbg.file.linux.StatStructure;
 import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 public class LocalSocketIO extends SocketIO implements FileIO {
 
-    private static final Log log = LogFactory.getLog(LocalSocketIO.class);
+    private static final Logger log = LoggerFactory.getLogger(LocalSocketIO.class);
 
     public interface SocketHandler {
         byte[] handle(byte[] request) throws IOException;
@@ -99,7 +99,7 @@ public class LocalSocketIO extends SocketIO implements FileIO {
         }
         String path = new String(addr.getByteArray(2, addrlen - 2), StandardCharsets.UTF_8).trim();
         if (log.isDebugEnabled()) {
-            log.debug("connect sa_family=" + sa_family + ", path=" + path);
+            log.debug("connect sa_family={}, path={}", sa_family, path);
         }
 
         handler = resolveHandler(path);

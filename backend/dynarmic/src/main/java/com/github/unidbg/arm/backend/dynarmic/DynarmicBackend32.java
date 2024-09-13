@@ -8,13 +8,13 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.ArmConst;
 
 public class DynarmicBackend32 extends DynarmicBackend {
 
-    private static final Log log = LogFactory.getLog(DynarmicBackend32.class);
+    private static final Logger log = LoggerFactory.getLogger(DynarmicBackend32.class);
 
     public DynarmicBackend32(Emulator<?> emulator, Dynarmic dynarmic) {
         super(emulator, dynarmic);
@@ -23,7 +23,7 @@ public class DynarmicBackend32 extends DynarmicBackend {
     @Override
     public void callSVC(long pc, int swi) {
         if (log.isDebugEnabled()) {
-            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", swi=" + swi);
+            log.debug("callSVC pc=0x{}, swi={}", Long.toHexString(pc), swi);
         }
         if (pc == until) {
             emu_stop();

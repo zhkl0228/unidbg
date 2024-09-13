@@ -8,8 +8,8 @@ import com.github.unidbg.file.linux.IOConstants;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.struct.SockAddr;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -26,7 +26,7 @@ import java.util.List;
 
 public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileIO {
 
-    private static final Log log = LogFactory.getLog(SocketIO.class);
+    private static final Logger log = LoggerFactory.getLogger(SocketIO.class);
 
     public static final short AF_UNSPEC = 0;
     public static final short AF_LOCAL = 1; // AF_UNIX
@@ -103,7 +103,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
             }
         }
         if (log.isDebugEnabled()) {
-            log.debug("Return host network ifs: " + list);
+            log.debug("Return host network ifs: {}", list);
         }
         if (emulator.getSyscallHandler().isVerbose()) {
             System.out.println(getClass().getSimpleName() + " return host network ifs: " + list + " from " + emulator.getContext().getLRPointer());
@@ -192,7 +192,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
                             if (optlen != 4) {
                                 throw new IllegalStateException("optlen=" + optlen);
                             }
-                            log.debug("setsockopt TCP_MAXSEG=" + optval.getInt(0));
+                            log.debug("setsockopt TCP_MAXSEG={}", optval.getInt(0));
                             return 0;
                     }
                     break;
@@ -203,7 +203,7 @@ public abstract class SocketIO extends BaseAndroidFileIO implements AndroidFileI
             throw new IllegalStateException(e);
         }
 
-        log.warn("setsockopt level=" + level + ", optname=" + optname + ", optval=" + optval + ", optlen=" + optlen);
+        log.warn("setsockopt level={}, optname={}, optval={}, optlen={}", level, optname, optval, optlen);
         return 0;
     }
 

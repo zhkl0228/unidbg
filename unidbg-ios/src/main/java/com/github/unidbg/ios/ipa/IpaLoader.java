@@ -17,8 +17,8 @@ import com.github.unidbg.memory.Memory;
 import com.github.unidbg.spi.SyscallHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 
 public abstract class IpaLoader extends BaseLoader {
 
-    private static final Log log = LogFactory.getLog(IpaLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(IpaLoader.class);
 
     @SuppressWarnings("unused")
     public final LoadedIpa load(String... loads) {

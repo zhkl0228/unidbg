@@ -9,8 +9,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
 import java.nio.ByteBuffer;
@@ -19,7 +19,7 @@ import java.util.Arrays;
 
 public abstract class Arm64Hook extends Arm64Svc {
 
-    private static final Log log = LogFactory.getLog(Arm64Hook.class);
+    private static final Logger log = LoggerFactory.getLogger(Arm64Hook.class);
 
     private final boolean enablePostCall;
 
@@ -70,7 +70,7 @@ public abstract class Arm64Hook extends Arm64Svc {
         UnidbgPointer pointer = svcMemory.allocate(code.length, name == null ? "Arm64Hook" : name);
         pointer.write(0, code, 0, code.length);
         if (log.isDebugEnabled()) {
-            log.debug("ARM64 hook: pointer=" + pointer);
+            log.debug("ARM64 hook: pointer={}", pointer);
         }
         return pointer;
     }

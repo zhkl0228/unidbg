@@ -21,8 +21,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.ArmConst;
 
 import java.nio.charset.StandardCharsets;
@@ -35,7 +35,7 @@ import java.util.Set;
 
 public class Dyld32 extends Dyld {
 
-    private static final Log log = LogFactory.getLog(Dyld32.class);
+    private static final Logger log = LoggerFactory.getLogger(Dyld32.class);
 
     Dyld32(final MachOLoader loader, final SvcMemory svcMemory) {
         super(svcMemory);
@@ -45,7 +45,7 @@ public class Dyld32 extends Dyld {
             public long handle(Emulator<?> emulator) {
                 int ret = loader.getLoadedModulesNoVirtual().size();
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_image_count size=" + ret);
+                    log.debug("__dyld_image_count size={}", ret);
                 }
                 return ret;
             }
@@ -63,7 +63,7 @@ public class Dyld32 extends Dyld {
                     ret = module.createPathMemory(svcMemory).peer;
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_get_image_name ret=0x" + Long.toHexString(ret));
+                    log.debug("__dyld_get_image_name ret=0x{}", Long.toHexString(ret));
                 }
                 return ret;
             }
@@ -81,7 +81,7 @@ public class Dyld32 extends Dyld {
                     ret = module.machHeader;
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_get_image_header machHeader=0x" + Long.toHexString(ret));
+                    log.debug("__dyld_get_image_header machHeader=0x{}", Long.toHexString(ret));
                 }
                 return ret;
             }
@@ -98,7 +98,7 @@ public class Dyld32 extends Dyld {
                     MachOModule module = (MachOModule) modules[image_index];
                     ret = computeSlide(emulator, module.machHeader);
                 }
-                log.debug("__dyld_get_image_vmaddr_slide index=" + image_index + ", ret=0x" + Long.toHexString(ret));
+                log.debug("__dyld_get_image_vmaddr_slide index={}, ret=0x{}", image_index, Long.toHexString(ret));
                 return ret;
             }
         });
@@ -107,7 +107,7 @@ public class Dyld32 extends Dyld {
             public long handle(Emulator<?> emulator) {
                 UnidbgPointer mh = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_get_image_slide mh=" + mh);
+                    log.debug("__dyld_get_image_slide mh={}", mh);
                 }
                 return mh == null ? 0 : computeSlide(emulator, mh.peer);
             }
@@ -145,7 +145,7 @@ public class Dyld32 extends Dyld {
 
                 UnidbgPointer callback = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_register_func_for_add_image callback=" + callback);
+                    log.debug("__dyld_register_func_for_add_image callback={}", callback);
                 }
 
                 Pointer pointer = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_SP);
@@ -162,7 +162,7 @@ public class Dyld32 extends Dyld {
                         List<Module> modules = loader.getLoadedModulesNoVirtual();
                         Collections.reverse(modules);
                         for (Module md : modules) {
-                            Log log = LogFactory.getLog("com.github.unidbg.ios." + md.name);
+                            Logger log = LoggerFactory.getLogger("com.github.unidbg.ios." + md.name);
                             MachOModule mm = (MachOModule) md;
                             if (mm.executable) {
                                 continue;
@@ -203,7 +203,7 @@ public class Dyld32 extends Dyld {
             public long handle(Emulator<?> emulator) {
                 Pointer callback = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_register_func_for_remove_image callback=" + callback);
+                    log.debug("__dyld_register_func_for_remove_image callback={}", callback);
                 }
                 return 0;
             }
@@ -214,7 +214,7 @@ public class Dyld32 extends Dyld {
                 // the table passed to dyld containing thread helpers
                 Pointer helpers = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 if (log.isDebugEnabled()) {
-                    log.debug("registerThreadHelpers helpers=" + helpers + ", version=" + helpers.getInt(0));
+                    log.debug("registerThreadHelpers helpers={}, version={}", helpers, helpers.getInt(0));
                 }
                 return 0;
             }
@@ -269,7 +269,7 @@ public class Dyld32 extends Dyld {
                         pointer.setInt(0, state);
 
                         if (log.isDebugEnabled()) {
-                            log.debug("PushImageHandlerFunction: " + handler + ", imageSize=" + imageInfos.length + ", batch=" + batch);
+                            log.debug("PushImageHandlerFunction: {}, imageSize={}, batch={}", handler, imageInfos.length, batch);
                         }
                         pointer = pointer.share(-4); // handler
                         pointer.setPointer(0, handler);
@@ -287,7 +287,7 @@ public class Dyld32 extends Dyld {
                 UnidbgPointer address = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R0);
                 MachOModule module = (MachOModule) loader.findModuleByAddress(address.peer);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_image_path_containing_address address=" + address + ", module=" + module);
+                    log.debug("__dyld_image_path_containing_address address={}, module={}", address, module);
                 }
                 if (module != null) {
                     return module.createPathMemory(svcMemory).peer;
@@ -303,7 +303,7 @@ public class Dyld32 extends Dyld {
                 Pointer buf = context.getPointerArg(0);
                 Pointer bufSize = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld__NSGetExecutablePath buf=" + buf + ", bufSize=" + bufSize);
+                    log.debug("__dyld__NSGetExecutablePath buf={}, bufSize={}", buf, bufSize);
                 }
                 byte[] str = emulator.getProcessName().getBytes(StandardCharsets.UTF_8);
                 byte[] data = Arrays.copyOf(str, str.length + 1);
@@ -324,7 +324,7 @@ public class Dyld32 extends Dyld {
                 MachOModule mm = (MachOModule) emulator.getMemory().findModuleByAddress(imageLoaderCache.peer);
                 long result = mm.doBindFastLazySymbol(emulator, lazyBindingInfoOffset);
                 if (log.isDebugEnabled()) {
-                    log.info("__dyld_fast_stub_entry imageLoaderCache=" + imageLoaderCache + ", lazyBindingInfoOffset=0x" + Long.toHexString(lazyBindingInfoOffset) + ", result=0x" + Long.toHexString(result));
+                    log.info("__dyld_fast_stub_entry imageLoaderCache={}, lazyBindingInfoOffset=0x{}, result=0x{}", imageLoaderCache, Long.toHexString(lazyBindingInfoOffset), Long.toHexString(result));
                 }
                 return result;
             }
@@ -354,7 +354,7 @@ public class Dyld32 extends Dyld {
                 int mode = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R1).intValue();
                 String str = path == null ? null : path.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_dlopen path=" + str + ", mode=0x" + Integer.toHexString(mode));
+                    log.debug("__dyld_dlopen path={}, mode=0x{}", str, Integer.toHexString(mode));
                 }
                 return dlopen(emulator, str, mode);
             }
@@ -365,7 +365,7 @@ public class Dyld32 extends Dyld {
                 long handle = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
                 Pointer symbol = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_dlsym handle=0x" + Long.toHexString(handle) + ", symbol=" + symbol.getString(0));
+                    log.debug("__dyld_dlsym handle=0x{}, symbol={}", Long.toHexString(handle), symbol.getString(0));
                 }
 
                 String symbolName = symbol.getString(0);
@@ -382,7 +382,7 @@ public class Dyld32 extends Dyld {
                 long addr = emulator.getBackend().reg_read(ArmConst.UC_ARM_REG_R0).intValue() & 0xffffffffL;
                 Pointer info = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_R1);
                 if (log.isDebugEnabled()) {
-                    log.debug("__dyld_dladdr addr=0x" + Long.toHexString(addr) + ", info=" + info);
+                    log.debug("__dyld_dladdr addr=0x{}, info={}", Long.toHexString(addr), info);
                 }
                 MachOModule module = (MachOModule) loader.findModuleByAddress(addr);
                 if (module == null) {
@@ -407,7 +407,7 @@ public class Dyld32 extends Dyld {
             public long handle(Emulator<?> emulator) {
                 Arm32RegisterContext context = emulator.getContext();
                 long handler = context.getR0Long();
-                log.info("__dyld_dlclose handler=0x" + Long.toHexString(handler));
+                log.info("__dyld_dlclose handler=0x{}", Long.toHexString(handler));
                 return 0;
             }
         });
@@ -420,7 +420,7 @@ public class Dyld32 extends Dyld {
                 MachOLoader loader = (MachOLoader) emulator.getMemory();
                 boolean canLoad = loader.dlopen_preflight(pathname);
                 if (log.isDebugEnabled()) {
-                    log.debug("dlopen_preflight path=" + pathname + ", canLoad=" + canLoad);
+                    log.debug("dlopen_preflight path={}, canLoad={}", pathname, canLoad);
                 }
                 return canLoad ? 1 : 0;
             }
@@ -517,7 +517,7 @@ public class Dyld32 extends Dyld {
                 address.setPointer(0, __dyld_dyld_register_image_state_change_handler);
                 return 1;
             default:
-                log.info("_dyld_func_lookup name=" + name + ", address=" + address);
+                log.info("_dyld_func_lookup name={}, address={}", name, address);
                 break;
         }
         address.setPointer(0, null);
@@ -557,7 +557,7 @@ public class Dyld32 extends Dyld {
                     if ("/usr/sbin/aslmanager".equals(path)) {
                         return 0;
                     }
-                    log.info("dlopen failed: " + path);
+                    log.info("dlopen failed: {}", path);
                     if (log.isDebugEnabled()) {
                         emulator.attach().debug();
                     }
@@ -573,7 +573,7 @@ public class Dyld32 extends Dyld {
                 Set<Module> newLoaded = new HashSet<>(memory.getLoadedModules());
                 newLoaded.removeAll(loaded);
                 if (log.isDebugEnabled()) {
-                    log.debug("newLoaded=" + newLoaded + ", contains=" + loaded.contains(module));
+                    log.debug("newLoaded={}, contains={}", newLoaded, loaded.contains(module));
                 }
                 for (Module m : newLoaded) {
                     MachOModule mm = (MachOModule) m;
@@ -582,7 +582,7 @@ public class Dyld32 extends Dyld {
                     }
                     for (InitFunction initFunction : mm.routines) {
                         if (log.isDebugEnabled()) {
-                            log.debug("[" + mm.name + "]PushRoutineFunction: 0x" + Long.toHexString(initFunction.getAddress()));
+                            log.debug("[{}]PushRoutineFunction: 0x{}", mm.name, Long.toHexString(initFunction.getAddress()));
                         }
                         pointer = pointer.share(-4); // routine
                         pointer.setInt(0, (int) initFunction.getAddress());
@@ -590,7 +590,7 @@ public class Dyld32 extends Dyld {
                     mm.routines.clear();
                     for (InitFunction initFunction : mm.initFunctionList) {
                         if (log.isDebugEnabled()) {
-                            log.debug("[" + mm.name + "]PushModInitFunction: 0x" + Long.toHexString(initFunction.getAddress()));
+                            log.debug("[{}]PushModInitFunction: 0x{}", mm.name, Long.toHexString(initFunction.getAddress()));
                         }
                         pointer = pointer.share(-4); // init array
                         pointer.setInt(0, (int) initFunction.getAddress());
@@ -635,7 +635,7 @@ public class Dyld32 extends Dyld {
                             Pointer facility = context.getR1Pointer();
                             int opts = context.getR2Int();
                             if (log.isDebugEnabled()) {
-                                log.debug("_asl_open ident=" + (ident == null ? null : ident.getString(0)) + ", facility=" + facility.getString(0) + ", opts=0x" + Integer.toHexString(opts));
+                                log.debug("_asl_open ident={}, facility={}, opts=0x{}", ident == null ? null : ident.getString(0), facility.getString(0), Integer.toHexString(opts));
                             }
                             context.setR2(opts | ASL_OPT_STDERR);
                             return HookStatus.RET(emulator, old);

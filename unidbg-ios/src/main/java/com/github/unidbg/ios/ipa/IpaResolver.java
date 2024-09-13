@@ -8,8 +8,8 @@ import com.github.unidbg.ios.file.ByteArrayFileIO;
 import com.github.unidbg.ios.file.DirectoryFileIO;
 import com.github.unidbg.ios.file.JarEntryFileIO;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.jar.JarFile;
 
 class IpaResolver implements IOResolver<DarwinFileIO> {
 
-    private static final Log log = LogFactory.getLog(IpaResolver.class);
+    private static final Logger log = LoggerFactory.getLogger(IpaResolver.class);
 
     private final String appDir;
     private final File ipa;
@@ -38,7 +38,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
     @Override
     public FileResult<DarwinFileIO> resolve(Emulator<DarwinFileIO> emulator, String pathname, int oflags) {
         if ((randomDir + "/StoreKit/receipt").equals(pathname)) {
-            return FileResult.<DarwinFileIO>success(new ByteArrayFileIO(oflags, pathname, new byte[0]));
+            return FileResult.success(new ByteArrayFileIO(oflags, pathname, new byte[0]));
         }
 
         pathname = FilenameUtils.normalize(pathname, true);
@@ -68,7 +68,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
 
                 if (entry == null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Resolve appDir=" + appDir + ", path=" + path);
+                        log.debug("Resolve appDir={}, path={}", appDir, path);
                     }
                     return null;
                 }
@@ -76,7 +76,7 @@ class IpaResolver implements IOResolver<DarwinFileIO> {
                 if (entry.isDirectory()) {
                     return FileResult.success(createDirectoryFileIO(entry.getName(), pathname, oflags));
                 } else {
-                    return FileResult.<DarwinFileIO>success(new JarEntryFileIO(oflags, pathname, ipa, entry));
+                    return FileResult.success(new JarEntryFileIO(oflags, pathname, ipa, entry));
                 }
             } catch (IOException e) {
                 throw new IllegalStateException(e);

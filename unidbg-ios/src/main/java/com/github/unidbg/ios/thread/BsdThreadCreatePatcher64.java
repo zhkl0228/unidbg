@@ -17,8 +17,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
 import java.util.Arrays;
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 class BsdThreadCreatePatcher64 extends Arm64Svc {
 
-    private static final Log log = LogFactory.getLog(BsdThreadCreatePatcher64.class);
+    private static final Logger log = LoggerFactory.getLogger(BsdThreadCreatePatcher64.class);
 
     private final ThreadJoinVisitor visitor;
     private final AtomicLong value_ptr;
@@ -45,7 +45,7 @@ class BsdThreadCreatePatcher64 extends Arm64Svc {
         Pointer stack = context.getPointerArg(2);
         Pointer thread = context.getPointerArg(3);
         int flags = context.getIntArg(4);
-        log.info("bsdthread_create start_routine=" + start_routine + ", arg=" + arg + ", stack=" + stack + ", thread=" + thread + ", flags=0x" + Integer.toHexString(flags));
+        log.info("bsdthread_create start_routine={}, arg={}, stack={}, thread={}, flags=0x{}", start_routine, arg, stack, thread, Integer.toHexString(flags));
 
         if (thread == null) {
             MemoryBlock memoryBlock = emulator.getMemory().malloc(0x100, true);

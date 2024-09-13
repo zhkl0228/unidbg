@@ -4,14 +4,14 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.debugger.DebugServer;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 
 class QueryCommand implements GdbStubCommand {
 
-    private static final Log log = LogFactory.getLog(QueryCommand.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryCommand.class);
 
     @Override
     public boolean processCommand(Emulator<?> emulator, GdbStub stub, String command) {
@@ -39,7 +39,7 @@ class QueryCommand implements GdbStubCommand {
             try {
                 String cmd = new String(Hex.decodeHex(command.substring(6).toCharArray()), StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
-                    log.debug("qRcmd=" + cmd);
+                    log.debug("qRcmd={}", cmd);
                 }
                 stub.makePacketAndSend("E01");
                 return true;

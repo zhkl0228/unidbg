@@ -22,14 +22,14 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 public class SymbolResolver implements HookListener {
 
-    private static final Log log = LogFactory.getLog(SymbolResolver.class);
+    private static final Logger log = LoggerFactory.getLogger(SymbolResolver.class);
 
     private final Emulator<DarwinFileIO> emulator;
     private UnidbgPointer _os_unfair_lock_lock, _os_unfair_lock_unlock;
@@ -67,9 +67,6 @@ public class SymbolResolver implements HookListener {
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
-        /*if (symbolName.contains("dispatch_block_create")) {
-            System.out.println("libraryName=" + libraryName + ", symbolName=" + symbolName + ", old=0x" + Long.toHexString(old));
-        }*/
         if ("_dispatch_sync".equals(symbolName) && "libdispatch.dylib".equals(libraryName)) {
             old_dispatch_sync = old;
         }
@@ -88,7 +85,7 @@ public class SymbolResolver implements HookListener {
                             Pointer group = context.getPointerArg(0);
                             UnidbgPointer queue = context.getPointerArg(1);
                             UnidbgPointer block = context.getPointerArg(2);
-                            log.info("Patch dispatch_group_async to dispatch_sync group=" + group + ", queue=" + queue + ", block=" + block + ", LR=" + context.getLRPointer());
+                            log.info("Patch64 dispatch_group_async to dispatch_sync group={}, queue={}, block={}, LR={}", group, queue, block, context.getLRPointer());
                             context.setXLong(0, queue == null ? 0 : queue.peer);
                             context.setXLong(1, block == null ? 0 : block.peer);
                             return HookStatus.RET(emulator, old_dispatch_sync);
@@ -102,7 +99,7 @@ public class SymbolResolver implements HookListener {
                             Pointer group = context.getPointerArg(0);
                             UnidbgPointer queue = context.getPointerArg(1);
                             UnidbgPointer block = context.getPointerArg(2);
-                            log.info("Patch dispatch_group_async to dispatch_sync group=" + group + ", queue=" + queue + ", block=" + block + ", LR=" + context.getLRPointer());
+                            log.info("Patch32 dispatch_group_async to dispatch_sync group={}, queue={}, block={}, LR={}", group, queue, block, context.getLRPointer());
                             context.setR0(queue == null ? 0 : queue.toIntPeer());
                             context.setR1(block == null ? 0 : block.toIntPeer());
                             return HookStatus.RET(emulator, old_dispatch_sync);
@@ -122,7 +119,7 @@ public class SymbolResolver implements HookListener {
                             int identifier = context.getIntArg(0);
                             int flags = context.getIntArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("dispatch_get_global_queue identifier=0x" + Integer.toHexString(identifier) + ", flags=0x" + Integer.toHexString(flags));
+                                log.debug("dispatch_get_global_queue64 identifier=0x{}, flags=0x{}", Integer.toHexString(identifier), Integer.toHexString(flags));
                             }
                             int QOS_CLASS_USER_INTERACTIVE = 0x21;
                             int QOS_CLASS_USER_INITIATED = 0x19;
@@ -148,7 +145,7 @@ public class SymbolResolver implements HookListener {
                             int identifier = context.getIntArg(0);
                             int flags = context.getIntArg(1);
                             if (log.isDebugEnabled()) {
-                                log.debug("dispatch_get_global_queue identifier=0x" + Integer.toHexString(identifier) + ", flags=0x" + Integer.toHexString(flags));
+                                log.debug("dispatch_get_global_queue32 identifier=0x{}, flags=0x{}", Integer.toHexString(identifier), Integer.toHexString(flags));
                             }
                             int QOS_CLASS_USER_INTERACTIVE = 0x21;
                             int QOS_CLASS_USER_INITIATED = 0x19;
@@ -178,7 +175,7 @@ public class SymbolResolver implements HookListener {
                         RegisterContext context = emulator.getContext();
                         int flags = context.getIntArg(0);
                         UnidbgPointer block = context.getPointerArg(1);
-                        log.info("_dispatch_block_create flags=0x" + Integer.toHexString(flags) + ", block=" + block);
+                        log.info("_dispatch_block_create flags=0x{}, block={}", Integer.toHexString(flags), block);
                         return block == null ? 0 : block.peer;
                     }
                 });
@@ -191,7 +188,7 @@ public class SymbolResolver implements HookListener {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
-                        log.info("_dispatch_assert_queue$V2 queue=" + context.getPointerArg(0));
+                        log.info("_dispatch_assert_queue$V2 queue={}", context.getPointerArg(0));
                         return 0;
                     }
                 });
@@ -204,7 +201,7 @@ public class SymbolResolver implements HookListener {
                     @Override
                     public long handle(Emulator<?> emulator) {
                         RegisterContext context = emulator.getContext();
-                        log.info("_dispatch_assert_queue_not$V2 queue=" + context.getPointerArg(0));
+                        log.info("_dispatch_assert_queue_not$V2 queue={}", context.getPointerArg(0));
                         return 0;
                     }
                 });
@@ -232,7 +229,7 @@ public class SymbolResolver implements HookListener {
                         int __qos_class = context.getIntArg(0);
                         int __relative_priority = context.getIntArg(1);
                         if (log.isDebugEnabled()) {
-                            log.debug("_pthread_set_qos_class_self_np __qos_class=" + __qos_class + ", __relative_priority=" + __relative_priority);
+                            log.debug("_pthread_set_qos_class_self_np __qos_class={}, __relative_priority={}", __qos_class, __relative_priority);
                         }
                         return 0;
                     }
@@ -250,7 +247,7 @@ public class SymbolResolver implements HookListener {
                         int __qos_class = context.getIntArg(1);
                         int __relative_priority = context.getIntArg(2);
                         if (log.isDebugEnabled()) {
-                            log.debug("_pthread_attr_set_qos_class_np __attr=" + __attr + ", __qos_class=" + __qos_class + ", __relative_priority=" + __relative_priority);
+                            log.debug("_pthread_attr_set_qos_class_np __attr={}, __qos_class={}, __relative_priority={}", __attr, __qos_class, __relative_priority);
                         }
                         return 0;
                     }
@@ -270,7 +267,7 @@ public class SymbolResolver implements HookListener {
                         long tv_sec = offset / 1000000000L;
                         long tv_nsec = offset % 1000000000L;
                         if (log.isDebugEnabled()) {
-                            log.debug("clock_gettime clk_id=" + clk_id + ", tp=" + tp + ", offset=" + offset + ", tv_sec=" + tv_sec + ", tv_nsec=" + tv_nsec);
+                            log.debug("clock_gettime clk_id={}, tp={}, offset={}, tv_sec={}, tv_nsec={}", clk_id, tp, offset, tv_sec, tv_nsec);
                         }
                         switch (clk_id) {
                             case CLOCK_REALTIME:

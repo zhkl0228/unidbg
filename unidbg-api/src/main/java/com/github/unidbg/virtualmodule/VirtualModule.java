@@ -4,15 +4,15 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class VirtualModule<T> {
 
-    private static final Log log = LogFactory.getLog(VirtualModule.class);
+    private static final Logger log = LoggerFactory.getLogger(VirtualModule.class);
 
     private final String name;
     private final Map<String, UnidbgPointer> symbols = new HashMap<>();
@@ -30,7 +30,7 @@ public abstract class VirtualModule<T> {
     protected abstract void onInitialize(Emulator<?> emulator, T extra, Map<String, UnidbgPointer> symbols);
 
     public Module register(Memory memory) {
-        if (name == null || name.trim().length() < 1) {
+        if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("name is empty");
         }
         if (symbols.isEmpty()) {
@@ -38,7 +38,7 @@ public abstract class VirtualModule<T> {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Register virtual module[%s]: (%s)", name, symbols));
+            log.debug("Register virtual module[{}]: ({})", name, symbols);
         }
         return memory.loadVirtualModule(name, symbols);
     }

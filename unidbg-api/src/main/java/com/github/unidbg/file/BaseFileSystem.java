@@ -4,8 +4,8 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixEmulator;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.nio.file.StandardCopyOption;
 
 public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<T> {
 
-    private static final Log log = LogFactory.getLog(BaseFileSystem.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseFileSystem.class);
 
     protected final Emulator<T> emulator;
     protected final File rootDir;
@@ -133,7 +133,7 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         File file = new File(rootDir, path);
         FileUtils.deleteQuietly(file);
         if (log.isDebugEnabled()) {
-            log.debug("unlink path=" + path + ", file=" + file);
+            log.debug("unlink path={}, file={}", path, file);
         }
         if (emulator.getSyscallHandler().isVerbose()) {
             System.out.printf("unlink '%s' from %s%n", path, emulator.getContext().getLRPointer());
