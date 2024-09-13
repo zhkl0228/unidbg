@@ -4,8 +4,8 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.pointer.UnidbgPointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.Objects;
 
 public class DvmClass extends DvmObject<Class<?>> {
 
-    private static final Log log = LogFactory.getLog(DvmClass.class);
+    private static final Logger log = LoggerFactory.getLogger(DvmClass.class);
 
     private static final String ROOT_CLASS = "java/lang/Class";
 
@@ -68,7 +68,7 @@ public class DvmClass extends DvmObject<Class<?>> {
     DvmObject<?> allocObject() {
         String signature = this.getClassName() + "->allocObject";
         if (log.isDebugEnabled()) {
-            log.debug("allocObject signature=" + signature);
+            log.debug("allocObject signature={}", signature);
         }
         BaseVM vm = this.vm;
         return checkJni(vm, this).allocObject(vm, this, signature);
@@ -96,7 +96,7 @@ public class DvmClass extends DvmObject<Class<?>> {
         String signature = getClassName() + "->" + methodName + args;
         int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
-            log.debug("getStaticMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
+            log.debug("getStaticMethodID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
         if (checkJni(vm, this).acceptMethod(this, signature, true)) {
             if (!staticMethodMap.containsKey(hash)) {
@@ -130,7 +130,7 @@ public class DvmClass extends DvmObject<Class<?>> {
         String signature = getClassName() + "->" + methodName + args;
         int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
-            log.debug("getMethodID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
+            log.debug("getMethodID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptMethod(this, signature, false)) {
             if (!methodMap.containsKey(hash)) {
@@ -164,7 +164,7 @@ public class DvmClass extends DvmObject<Class<?>> {
         String signature = getClassName() + "->" + fieldName + ":" + fieldType;
         int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
-            log.debug("getFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
+            log.debug("getFieldID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptField(this, signature, false)) {
             if (!fieldMap.containsKey(hash)) {
@@ -198,7 +198,7 @@ public class DvmClass extends DvmObject<Class<?>> {
         String signature = getClassName() + "->" + fieldName + ":" + fieldType;
         int hash = signature.hashCode();
         if (log.isDebugEnabled()) {
-            log.debug("getStaticFieldID signature=" + signature + ", hash=0x" + Long.toHexString(hash));
+            log.debug("getStaticFieldID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
         if (vm.jni == null || vm.jni.acceptField(this, signature, true)) {
             if (!staticFieldMap.containsKey(hash)) {

@@ -11,8 +11,8 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualModule;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class JniGraphics extends VirtualModule<VM> {
 
-    private static final Log log = LogFactory.getLog(JniGraphics.class);
+    private static final Logger log = LoggerFactory.getLogger(JniGraphics.class);
 
     public JniGraphics(Emulator<?> emulator, VM vm) {
         super(emulator, vm, "libjnigraphics.so");
@@ -77,7 +77,7 @@ public class JniGraphics extends VirtualModule<VM> {
         Bitmap bitmap = vm.getObject(jbitmap.toIntPeer());
         BufferedImage image = bitmap.getValue();
         if (log.isDebugEnabled()) {
-            log.debug("AndroidBitmap_getInfo env=" + env + ", width=" + image.getWidth() + ", height=" + image.getHeight() + ", stride=" + image.getWidth() * 4 + ", info=" + info);
+            log.debug("AndroidBitmap_getInfo env={}, width={}, height={}, stride={}, info={}", env, image.getWidth(), image.getHeight(), image.getWidth() * 4, info);
         }
         info.setInt(0, image.getWidth());
         info.setInt(4, image.getHeight());
@@ -117,7 +117,7 @@ public class JniGraphics extends VirtualModule<VM> {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("AndroidBitmap_lockPixels env=" + env + ", bitmap=" + bitmap + ", addrPtr=" + addrPtr);
+            log.debug("AndroidBitmap_lockPixels env={}, bitmap={}, addrPtr={}", env, bitmap, addrPtr);
         }
         return ANDROID_BITMAP_RESULT_SUCCESS;
     }
@@ -129,7 +129,7 @@ public class JniGraphics extends VirtualModule<VM> {
         Bitmap bitmap = vm.getObject(jbitmap.toIntPeer());
         bitmap.unlockPixels();
         if (log.isDebugEnabled()) {
-            log.debug("AndroidBitmap_unlockPixels env=" + env + ", bitmap=" + bitmap);
+            log.debug("AndroidBitmap_unlockPixels env={}, bitmap={}", env, bitmap);
         }
         return ANDROID_BITMAP_RESULT_SUCCESS;
     }

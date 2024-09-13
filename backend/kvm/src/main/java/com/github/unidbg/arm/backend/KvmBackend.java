@@ -6,15 +6,15 @@ import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.kvm.Kvm;
 import com.github.unidbg.arm.backend.kvm.KvmCallback;
 import com.github.unidbg.arm.backend.kvm.KvmException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.TreeMap;
 
 public abstract class KvmBackend extends FastBackend implements Backend, KvmCallback {
 
-    private static final Log log = LogFactory.getLog(KvmBackend.class);
+    private static final Logger log = LoggerFactory.getLogger(KvmBackend.class);
 
     protected static final long REG_VBAR_EL1 = 0xf0000000L;
 
@@ -32,7 +32,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
         int maxSlots = kvm.getMaxSlots();
         if (log.isDebugEnabled()) {
-            log.debug("init kvm backend kvm=" + kvm + ", maxSlots=0x" + Integer.toHexString(maxSlots) + ", pageSize=0x" + Integer.toHexString(pageSize));
+            log.debug("init kvm backend kvm={}, maxSlots=0x{}, pageSize=0x{}", kvm, Integer.toHexString(maxSlots), Integer.toHexString(pageSize));
         }
 
         this.slots = new UserMemoryRegion[maxSlots];
@@ -67,7 +67,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         int slot = allocateSlot();
         long userspace_addr = kvm.set_user_memory_region(slot, address, size, 0L);
         if (log.isDebugEnabled()) {
-            log.debug("mem_map slot=" + slot + ", address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", userspace_addr=0x" + Long.toHexString(userspace_addr));
+            log.debug("mem_map slot={}, address=0x{}, size=0x{}, userspace_addr=0x{}", slot, Long.toHexString(address), Long.toHexString(size), Long.toHexString(userspace_addr));
         }
         UserMemoryRegion region = new UserMemoryRegion(slot, address, size, userspace_addr);
         memoryRegionMap.put(region.guest_phys_addr, region);
@@ -150,21 +150,26 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 //        System.out.println("mem_unmap address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size));
 
         for (long i = address; i < address + size; i += pageSize) {
-            UserMemoryRegion userMemoryRegion = null;
-            for (UserMemoryRegion region : memoryRegionMap.values()) {
-                long min = Math.max(i, region.guest_phys_addr);
-                long max = Math.min(i + pageSize, region.guest_phys_addr + region.memory_size);
-                if (min < max) {
-                    userMemoryRegion = region;
-                    break;
-                }
-            }
-            if (userMemoryRegion == null) {
-                throw new IllegalStateException("find userMemoryRegion failed: i=0x" + Long.toHexString(i));
-            }
+            UserMemoryRegion userMemoryRegion = findUserMemoryRegion(i);
 
             mem_unmap_page(i, userMemoryRegion);
         }
+    }
+
+    private UserMemoryRegion findUserMemoryRegion(long i) {
+        UserMemoryRegion userMemoryRegion = null;
+        for (UserMemoryRegion region : memoryRegionMap.values()) {
+            long min = Math.max(i, region.guest_phys_addr);
+            long max = Math.min(i + pageSize, region.guest_phys_addr + region.memory_size);
+            if (min < max) {
+                userMemoryRegion = region;
+                break;
+            }
+        }
+        if (userMemoryRegion == null) {
+            throw new IllegalStateException("find userMemoryRegion failed: i=0x" + Long.toHexString(i));
+        }
+        return userMemoryRegion;
     }
 
     @Override
@@ -191,7 +196,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
 
     protected final void callSVC(long pc, int swi) {
         if (log.isDebugEnabled()) {
-            log.debug("callSVC pc=0x" + Long.toHexString(pc) + ", until=0x" + Long.toHexString(until) + ", swi=" + swi);
+            log.debug("callSVC pc=0x{}, until=0x{}, swi={}", Long.toHexString(pc), Long.toHexString(until), swi);
         }
         if (pc == until) {
             emu_stop();
@@ -216,7 +221,7 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
     @Override
     public synchronized void emu_start(long begin, long until, long timeout, long count) throws BackendException {
         if (log.isDebugEnabled()) {
-            log.debug("emu_start begin=0x" + Long.toHexString(begin) + ", until=0x" + Long.toHexString(until) + ", timeout=" + timeout + ", count=" + count);
+            log.debug("emu_start begin=0x{}, until=0x{}, timeout={}, count={}", Long.toHexString(begin), Long.toHexString(until), timeout, count);
         }
 
         this.until = until + 4;

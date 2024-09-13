@@ -15,8 +15,8 @@ import com.github.unidbg.linux.android.dvm.wrapper.DvmBoolean;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmInteger;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmLong;
 import net.dongliu.apk.parser.bean.CertificateMeta;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -46,7 +46,7 @@ import java.util.UUID;
 
 public abstract class AbstractJni implements Jni {
 
-    private static final Log log = LogFactory.getLog(AbstractJni.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractJni.class);
 
     @Override
     public DvmObject<?> getStaticObjectField(BaseVM vm, DvmClass dvmClass, DvmField dvmField) {
@@ -315,7 +315,7 @@ public abstract class AbstractJni implements Jni {
                 assert packageName != null;
                 int flags = vaList.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("getPackageInfo packageName=" + packageName.getValue() + ", flags=0x" + Integer.toHexString(flags));
+                    log.debug("callObjectMethodV getPackageInfo packageName={}, flags=0x{}", packageName.getValue(), Integer.toHexString(flags));
                 }
                 return new PackageInfo(vm, packageName.value, flags);
             }
@@ -900,7 +900,7 @@ public abstract class AbstractJni implements Jni {
                 StringObject packageName = varArg.getObjectArg(0);
                 int flags = varArg.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("getPackageInfo packageName=" + packageName.getValue() + ", flags=0x" + Integer.toHexString(flags));
+                    log.debug("getPackageInfo packageName={}, flags=0x{}", packageName.getValue(), Integer.toHexString(flags));
                 }
                 return new PackageInfo(vm, packageName.value, flags);
             }

@@ -6,8 +6,8 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.unwind.Frame;
 import com.github.unidbg.unwind.Unwinder;
 import com.github.unidbg.utils.Inspector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.ArmConst;
 
 import java.nio.ByteBuffer;
@@ -18,7 +18,7 @@ import java.util.List;
 
 public class ArmExIdx {
 
-    private static final Log log = LogFactory.getLog(ArmExIdx.class);
+    private static final Logger log = LoggerFactory.getLogger(ArmExIdx.class);
 
     private static final int ARM_EXIDX_CANT_UNWIND = 0x00000001;
     private static final int ARM_EXIDX_COMPACT = 0x80000000;
@@ -64,7 +64,7 @@ public class ArmExIdx {
             if (key == 0) {
                 continue;
             }
-            key += offset;
+            key += (int) offset;
 
             if (fun >= key) {
                 offset += 8;
@@ -118,7 +118,7 @@ public class ArmExIdx {
                 }
                 instruction = Arrays.copyOfRange(bb.array(), 1, bb.capacity());
                 if (log.isDebugEnabled()) {
-                    log.debug("unwind generic model: " + module + ", entry=0x" + Integer.toHexString(entry) + ", personality=0x" + Long.toHexString(personality));
+                    log.debug("unwind generic model: {}, entry=0x{}, personality=0x{}", module, Integer.toHexString(entry), Long.toHexString(personality));
                 }
             } else {
                 index = (value >> 24) & 0xf;
@@ -278,14 +278,14 @@ public class ArmExIdx {
             case ARM_EXIDX_CMD_DATA_PUSH: {
                 context.cfa -= edata.data;
                 if (log.isDebugEnabled()) {
-                    log.debug("vsp = vsp - " + edata.data);
+                    log.debug("vsp = vsp - {}", edata.data);
                 }
                 break;
             }
             case ARM_EXIDX_CMD_DATA_POP: {
                 context.cfa += edata.data;
                 if (log.isDebugEnabled()) {
-                    log.debug("vsp = vsp + " + edata.data);
+                    log.debug("vsp = vsp + {}", edata.data);
                 }
                 break;
             }
@@ -309,7 +309,7 @@ public class ArmExIdx {
                         context.loc[m] = value;
                         context.cfa += 4;
                         if (log.isDebugEnabled()) {
-                            log.debug("pop " + reg + " -> 0x" + Long.toHexString(value));
+                            log.debug("pop {} -> 0x{}", reg, Long.toHexString(value));
                         }
                     }
                 }
@@ -318,7 +318,7 @@ public class ArmExIdx {
                     context.cfa = context.loc[UNW_ARM_SP];
                 }
                 if (log.isDebugEnabled() && list != null) {
-                    log.debug("pop " + list.toString().replace('[', '{').replace(']', '}'));
+                    log.debug("pop {}", list.toString().replace('[', '{').replace(']', '}'));
                 }
                 break;
             }
@@ -326,7 +326,7 @@ public class ArmExIdx {
                 long value = context.loc[edata.data];
                 context.loc[UNW_ARM_SP] = value;
                 if (log.isDebugEnabled()) {
-                    log.debug("vsp = r" + edata.data + " [0x" + Long.toHexString(context.loc[UNW_ARM_SP]) + "]");
+                    log.debug("vsp = r{} [0x{}]", edata.data, Long.toHexString(context.loc[UNW_ARM_SP]));
                 }
                 long sp = context.cfa;
                 context.cfa = value;
@@ -347,7 +347,7 @@ public class ArmExIdx {
                     context.cfa += 4;
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("pop {D" + start + "-D" + end + "}");
+                    log.debug("pop {D{}-D{}}", start, end);
                 }
                 break;
             }
@@ -371,11 +371,11 @@ public class ArmExIdx {
             case ARM_EXIDX_CMD_REFUSED:
             case ARM_EXIDX_CMD_RESERVED:
                 if (log.isDebugEnabled()) {
-                    log.debug("cmd=" + edata.cmd);
+                    log.debug("cmd={}", edata.cmd);
                 }
                 return false;
             default:
-                log.warn("arm_exidx_decode cmd=" + edata.cmd);
+                log.warn("arm_exidx_decode cmd={}", edata.cmd);
                 return false;
         }
         return true;

@@ -19,8 +19,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 import unicorn.UnicornConst;
 
@@ -29,7 +29,7 @@ import java.nio.ByteOrder;
 
 public class KvmBackend64 extends KvmBackend {
 
-    private static final Log log = LogFactory.getLog(KvmBackend64.class);
+    private static final Logger log = LoggerFactory.getLogger(KvmBackend64.class);
 
     private static final int EC_AA64_SVC = 0x15;
     private static final int EC_AA64_BKPT = 0x3c;
@@ -73,7 +73,7 @@ public class KvmBackend64 extends KvmBackend {
         return disassembler;
     }
 
-    private boolean handleCommRead(long vaddr, long elr) {
+    private void handleCommRead(long vaddr, long elr) {
         Pointer pointer = UnidbgPointer.pointer(emulator, vaddr);
         assert pointer != null;
         Pointer pc = UnidbgPointer.pointer(emulator, elr);
@@ -81,7 +81,7 @@ public class KvmBackend64 extends KvmBackend {
         byte[] code = pc.getByteArray(0, 4);
         Instruction insn = createDisassembler().disasm(code, elr, 1)[0];
         if (log.isDebugEnabled()) {
-            log.debug("handleCommRead vaddr=0x" + Long.toHexString(vaddr) + ", elr=0x" + Long.toHexString(elr) + ", asm=" + insn);
+            log.debug("handleCommRead vaddr=0x{}, elr=0x{}, asm={}", Long.toHexString(vaddr), Long.toHexString(elr), insn);
         }
         OpInfo opInfo = (OpInfo) insn.getOperands();
         if (opInfo.isUpdateFlags() || opInfo.isWriteBack() || !insn.getMnemonic().startsWith("ldr") || vaddr < _COMM_PAGE64_BASE_ADDRESS) {
@@ -97,7 +97,7 @@ public class KvmBackend64 extends KvmBackend {
                 OpValue value = operand.getValue();
                 reg_write(insn.mapToUnicornReg(value.getReg()), 0x0L);
                 kvm.reg_set_elr_el1(elr + 4);
-                return true;
+                return;
             }
             case 0x48:
             case 0x4c:
@@ -109,7 +109,7 @@ public class KvmBackend64 extends KvmBackend {
                 OpValue value = operand.getValue();
                 reg_write(insn.mapToUnicornReg(value.getReg()), 0x0);
                 kvm.reg_set_elr_el1(elr + 4);
-                return true;
+                return;
             }
             case 0x22: // uint8_t number of configured CPUs
             case 0x34: // uint8_t number of active CPUs (hw.activecpu)
@@ -119,7 +119,7 @@ public class KvmBackend64 extends KvmBackend {
                 OpValue value = operand.getValue();
                 reg_write(insn.mapToUnicornReg(value.getReg()), 1);
                 kvm.reg_set_elr_el1(elr + 4);
-                return true;
+                return;
             }
             default:
                 throw new UnsupportedOperationException("vaddr=0x" + Long.toHexString(vaddr));
@@ -130,7 +130,7 @@ public class KvmBackend64 extends KvmBackend {
     public boolean handleException(long esr, long far, long elr, long spsr, long pc) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", pc=0x" + Long.toHexString(pc));
+            log.debug("handleException syndrome=0x{}, far=0x{}, elr=0x{}, ec=0x{}, pc=0x{}", Long.toHexString(esr), Long.toHexString(far), Long.toHexString(elr), Integer.toHexString(ec), Long.toHexString(pc));
         }
         switch (ec) {
             case EC_AA64_SVC: {
@@ -152,10 +152,11 @@ public class KvmBackend64 extends KvmBackend {
                 int srt = (int) ((esr >> 16) & 0x1f);
                 int dfsc = (int) (esr & 0x3f);
                 if (log.isDebugEnabled()) {
-                    log.debug("handle EC_DATAABORT isv=" + isv + ", isWrite=" + isWrite + ", s1ptw=" + s1ptw + ", len=" + len + ", srt=" + srt + ", dfsc=0x" + Integer.toHexString(dfsc) + ", vaddr=0x" + Long.toHexString(far));
+                    log.debug("handle EC_DATAABORT isv={}, isWrite={}, s1ptw={}, len={}, srt={}, dfsc=0x{}, vaddr=0x{}", isv, isWrite, s1ptw, len, srt, Integer.toHexString(dfsc), Long.toHexString(far));
                 }
                 if (dfsc == 0x00 && emulator.getFamily() == Family.iOS) {
-                    return handleCommRead(far, elr);
+                    handleCommRead(far, elr);
+                    return true;
                 }
                 throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
             }

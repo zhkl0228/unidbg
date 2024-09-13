@@ -3,14 +3,14 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 class VaList64 extends VaList {
 
-    private static final Log log = LogFactory.getLog(VaList64.class);
+    private static final Logger log = LoggerFactory.getLogger(VaList64.class);
 
     VaList64(Emulator<?> emulator, BaseVM vm, UnidbgPointer va_list, DvmMethod method) {
         super(vm, method);
@@ -128,7 +128,7 @@ class VaList64 extends VaList {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("VaList64 base_p=0x" + Long.toHexString(base_p) + ", base_integer=0x" + Long.toHexString(base_integer) + ", base_float=0x" + Long.toHexString(base_float) + ", mask_integer=0x" + Long.toHexString(mask_integer & 0xffffffffL) + ", mask_float=0x" + Long.toHexString(mask_float & 0xffffffffL) + ", args=" + method.args + ", shorty=" + Arrays.toString(shorties));
+            log.debug("VaList64 base_p=0x{}, base_integer=0x{}, base_float=0x{}, mask_integer=0x{}, mask_float=0x{}, args={}, shorty={}", Long.toHexString(base_p), Long.toHexString(base_integer), Long.toHexString(base_float), Long.toHexString(mask_integer & 0xffffffffL), Long.toHexString(mask_float & 0xffffffffL), method.args, Arrays.toString(shorties));
         }
     }
 }

@@ -9,14 +9,14 @@ import net.fornwall.jelf.DwarfCursor;
 import net.fornwall.jelf.DwarfCursor32;
 import net.fornwall.jelf.GnuEhFrameHeader;
 import net.fornwall.jelf.MemoizedObject;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 class AndroidARMUnwinder extends SimpleARMUnwinder {
 
-    private static final Log log = LogFactory.getLog(AndroidARMUnwinder.class);
+    private static final Logger log = LoggerFactory.getLogger(AndroidARMUnwinder.class);
 
     private final DwarfCursor context;
 

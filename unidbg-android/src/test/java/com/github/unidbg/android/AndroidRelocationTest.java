@@ -6,14 +6,14 @@ import net.fornwall.jelf.AndroidRelocationIterator;
 import net.fornwall.jelf.ElfFile;
 import net.fornwall.jelf.ElfRelocation;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
 public class AndroidRelocationTest extends TestCase {
 
-    private static final Log log = LogFactory.getLog(AndroidRelocationTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AndroidRelocationTest.class);
 
     private static int arm_expand_prel31(int word, int where) {
         int offset;
@@ -55,7 +55,7 @@ public class AndroidRelocationTest extends TestCase {
                 case ARMEmulator.R_AARCH64_PREL16:
                     break;
                 default:
-                    log.debug("type=" + type + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=0x" + Long.toHexString(relocation.addend()) + ", symbol=" + relocation.sym());
+                    log.debug("type={}, offset=0x{}, addend=0x{}, symbol={}", type, Long.toHexString(relocation.offset()), Long.toHexString(relocation.addend()), relocation.sym());
                     break;
             }
         }
@@ -77,7 +77,7 @@ public class AndroidRelocationTest extends TestCase {
                 case ARMEmulator.R_ARM_COPY:
                     break;
                 default:
-                    log.debug("type=" + type + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=0x" + Long.toHexString(relocation.addend()) + ", symbol=" + relocation.sym());
+                    log.debug("test32 type={}, offset=0x{}, addend=0x{}, symbol={}", type, Long.toHexString(relocation.offset()), Long.toHexString(relocation.addend()), relocation.sym());
                     break;
             }
         }

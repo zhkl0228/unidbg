@@ -9,8 +9,8 @@ import com.github.unidbg.linux.android.dvm.Jni;
 import com.github.unidbg.linux.android.dvm.JniFunction;
 import com.github.unidbg.linux.android.dvm.VaList;
 import com.github.unidbg.linux.android.dvm.VarArg;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -21,7 +21,7 @@ import java.util.List;
 
 class ProxyJni extends JniFunction {
 
-    private static final Log log = LogFactory.getLog(ProxyJni.class);
+    private static final Logger log = LoggerFactory.getLogger(ProxyJni.class);
 
     private final ProxyClassLoader classLoader;
     private final ProxyDvmObjectVisitor visitor;
@@ -515,7 +515,7 @@ class ProxyJni extends JniFunction {
             Object obj = field.get(thisObj);
             return ProxyDvmObject.createObject(vm, obj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("getObjectField: " + dvmField, e);
+            log.warn("getObjectField: {}", dvmField, e);
         }
 
         return super.getObjectField(vm, dvmObject, dvmField);
@@ -532,7 +532,7 @@ class ProxyJni extends JniFunction {
             }
             return field.getLong(thisObj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("getLongField: " + dvmField, e);
+            log.warn("getLongField: {}", dvmField, e);
         }
 
         return super.getLongField(vm, dvmObject, dvmField);
@@ -549,7 +549,7 @@ class ProxyJni extends JniFunction {
             }
             return field.getFloat(thisObj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("getFloatField: " + dvmField, e);
+            log.warn("getFloatField: {}", dvmField, e);
         }
 
         return super.getFloatField(vm, dvmObject, dvmField);
@@ -566,7 +566,7 @@ class ProxyJni extends JniFunction {
             }
             return field.getBoolean(thisObj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("getBooleanField: " + dvmField, e);
+            log.warn("getBooleanField: {}", dvmField, e);
         }
         return super.getBooleanField(vm, dvmObject, dvmField);
     }
@@ -582,7 +582,7 @@ class ProxyJni extends JniFunction {
             }
             return field.getByte(thisObj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("getByteField: " + dvmField, e);
+            log.warn("getByteField: {}", dvmField, e);
         }
         return super.getByteField(vm, dvmObject, dvmField);
     }
@@ -598,7 +598,7 @@ class ProxyJni extends JniFunction {
             }
             return field.getInt(thisObj);
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("getIntField: " + dvmField, e);
+            log.warn("getIntField: {}", dvmField, e);
         }
         return super.getIntField(vm, dvmObject, dvmField);
     }
@@ -615,7 +615,7 @@ class ProxyJni extends JniFunction {
             field.setInt(thisObj, value);
             return;
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("setIntField: " + dvmField, e);
+            log.warn("setIntField: {}", dvmField, e);
         }
         super.setIntField(vm, dvmObject, dvmField, value);
     }
@@ -632,7 +632,7 @@ class ProxyJni extends JniFunction {
             field.setFloat(thisObj, value);
             return;
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("setFloatField: " + dvmField, e);
+            log.warn("setFloatField: {}", dvmField, e);
         }
         super.setFloatField(vm, dvmObject, dvmField, value);
     }
@@ -649,7 +649,7 @@ class ProxyJni extends JniFunction {
             field.setDouble(thisObj, value);
             return;
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("setDoubleField: " + dvmField, e);
+            log.warn("setDoubleField: {}", dvmField, e);
         }
         super.setDoubleField(vm, dvmObject, dvmField, value);
     }
@@ -666,7 +666,7 @@ class ProxyJni extends JniFunction {
             field.setLong(thisObj, value);
             return;
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("setLongField: " + dvmField, e);
+            log.warn("setLongField: {}", dvmField, e);
         }
         super.setLongField(vm, dvmObject, dvmField, value);
     }
@@ -683,7 +683,7 @@ class ProxyJni extends JniFunction {
             field.setBoolean(thisObj, value);
             return;
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("setBooleanField: " + dvmField, e);
+            log.warn("setBooleanField: {}", dvmField, e);
         }
         super.setBooleanField(vm, dvmObject, dvmField, value);
     }
@@ -700,7 +700,7 @@ class ProxyJni extends JniFunction {
             field.setObject(thisObj, value == null ? null : value.getValue());
             return;
         } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("setObjectField: " + dvmField, e);
+            log.warn("setObjectField: {}", dvmField, e);
         }
         super.setObjectField(vm, dvmObject, dvmField, value);
     }

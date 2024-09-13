@@ -10,8 +10,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.ArmConst;
 import unicorn.UnicornConst;
 
@@ -20,7 +20,7 @@ import java.nio.ByteOrder;
 
 public class KvmBackend32 extends KvmBackend {
 
-    private static final Log log = LogFactory.getLog(KvmBackend32.class);
+    private static final Logger log = LoggerFactory.getLogger(KvmBackend32.class);
 
     private static final int EC_AA32_SVC = 0x11;
     private static final int EC_AA32_BKPT = 0x38;
@@ -55,7 +55,7 @@ public class KvmBackend32 extends KvmBackend {
     public boolean handleException(long esr, long far, long elr, long spsr, long pc) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x" + Long.toHexString(esr) + ", far=0x" + Long.toHexString(far) + ", elr=0x" + Long.toHexString(elr) + ", ec=0x" + Integer.toHexString(ec) + ", pc=0x" + Long.toHexString(pc));
+            log.debug("handleException syndrome=0x{}, far=0x{}, elr=0x{}, ec=0x{}, pc=0x{}", Long.toHexString(esr), Long.toHexString(far), Long.toHexString(elr), Integer.toHexString(ec), Long.toHexString(pc));
         }
 
         switch (ec) {

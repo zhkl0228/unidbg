@@ -10,8 +10,8 @@ import com.github.unidbg.linux.android.dvm.apk.ApkFactory;
 import com.github.unidbg.linux.android.dvm.apk.AssetResolver;
 import com.github.unidbg.spi.LibraryFile;
 import net.dongliu.apk.parser.bean.CertificateMeta;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
@@ -26,7 +26,7 @@ import java.util.Set;
 
 public abstract class BaseVM implements VM, DvmClassFactory {
 
-    private static final Log log = LogFactory.getLog(BaseVM.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseVM.class);
 
     public static boolean valueOf(int value) {
         if (value == VM.JNI_TRUE) {
@@ -143,7 +143,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     final int addObject(DvmObject<?> object, boolean global, boolean weak) {
         int hash = object.hashCode();
         if (log.isDebugEnabled()) {
-            log.debug("addObject hash=0x" + Long.toHexString(hash) + ", global=" + global);
+            log.debug("addObject hash=0x{}, global={}", Long.toHexString(hash), global);
         }
         Object value = object.getValue();
         if (value instanceof DvmAwareObject) {

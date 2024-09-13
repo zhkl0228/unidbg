@@ -3,12 +3,12 @@ package com.github.unidbg.linux.android.dvm;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DalvikModule {
 
-    private static final Log log = LogFactory.getLog(DalvikModule.class);
+    private static final Logger log = LoggerFactory.getLogger(DalvikModule.class);
 
     private final BaseVM vm;
     private final Module module;
@@ -28,12 +28,12 @@ public class DalvikModule {
             try {
                 long start = System.currentTimeMillis();
                 if (log.isDebugEnabled()) {
-                    log.debug("Call [" + module.name + "]JNI_OnLoad: 0x" + Long.toHexString(onLoad.getAddress()));
+                    log.debug("Call [{}]JNI_OnLoad: 0x{}", module.name, Long.toHexString(onLoad.getAddress()));
                 }
                 Number ret = onLoad.call(emulator, vm.getJavaVM(), null);
                 int version = ret.intValue();
                 if (log.isDebugEnabled()) {
-                    log.debug("Call [" + module.name + "]JNI_OnLoad finished: version=0x" + Integer.toHexString(version) + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+                    log.debug("Call [{}]JNI_OnLoad finished: version=0x{}, offset={}ms", module.name, Integer.toHexString(version), System.currentTimeMillis() - start);
                 }
 
                 vm.checkVersion(version);

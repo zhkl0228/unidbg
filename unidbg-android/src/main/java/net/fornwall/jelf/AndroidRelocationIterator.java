@@ -2,15 +2,15 @@ package net.fornwall.jelf;
 
 import com.github.unidbg.Utils;
 import com.github.unidbg.utils.Inspector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 public class AndroidRelocationIterator implements Iterator<MemoizedObject<ElfRelocation>> {
 
-    private static final Log log = LogFactory.getLog(AndroidRelocationIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(AndroidRelocationIterator.class);
 
     private static final int RELOCATION_GROUPED_BY_INFO_FLAG = 1;
     private static final int RELOCATION_GROUPED_BY_OFFSET_DELTA_FLAG = 2;

@@ -6,12 +6,12 @@ import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.xhook.IxHook;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class XHookImpl extends BaseHook implements IxHook {
 
-    private static final Log log = LogFactory.getLog(XHookImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(XHookImpl.class);
 
     public static IxHook getInstance(Emulator<?> emulator) {
         IxHook ixHook = emulator.get(XHookImpl.class.getName());
@@ -31,7 +31,7 @@ public class XHookImpl extends BaseHook implements IxHook {
         xhook_register = module.findSymbolByName("xhook_register", false);
         xhook_refresh = module.findSymbolByName("xhook_refresh", false);
         if (log.isDebugEnabled()) {
-            log.debug("xhook_register=" + xhook_register + ", xhook_refresh=" + xhook_refresh);
+            log.debug("xhook_register={}, xhook_refresh={}", xhook_register, xhook_refresh);
         }
 
         if (xhook_register == null) {

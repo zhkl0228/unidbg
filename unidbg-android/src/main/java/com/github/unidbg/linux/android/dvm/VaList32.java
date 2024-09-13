@@ -2,14 +2,14 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgPointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 class VaList32 extends VaList {
 
-    private static final Log log = LogFactory.getLog(VaList32.class);
+    private static final Logger log = LoggerFactory.getLogger(VaList32.class);
 
     VaList32(Emulator<?> emulator, BaseVM vm, UnidbgPointer va_list, DvmMethod method) {
         super(vm, method);
@@ -54,7 +54,7 @@ class VaList32 extends VaList {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("VaList64 args=" + method.args + ", shorty=" + Arrays.toString(shorties));
+            log.debug("VaList64 args={}, shorty={}", method.args, Arrays.toString(shorties));
         }
     }
 }

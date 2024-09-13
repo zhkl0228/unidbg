@@ -10,8 +10,8 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.virtualmodule.VirtualModule;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -20,7 +20,7 @@ import java.util.Random;
 @SuppressWarnings("unused")
 public class MediaNdkModule extends VirtualModule<VM> {
 
-    private static final Log log = LogFactory.getLog(MediaNdkModule.class);
+    private static final Logger log = LoggerFactory.getLogger(MediaNdkModule.class);
 
     public MediaNdkModule(Emulator<?> emulator, VM vm) {
         super(emulator, vm, "libmediandk.so");

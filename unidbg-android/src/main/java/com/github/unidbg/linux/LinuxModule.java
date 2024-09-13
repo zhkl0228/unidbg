@@ -22,20 +22,19 @@ import net.fornwall.jelf.ElfSymbol;
 import net.fornwall.jelf.GnuEhFrameHeader;
 import net.fornwall.jelf.MemoizedObject;
 import net.fornwall.jelf.SymbolLocator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class LinuxModule extends Module {
 
-    private static final Log log = LogFactory.getLog(LinuxModule.class);
+    private static final Logger log = LoggerFactory.getLogger(LinuxModule.class);
 
     static LinuxModule createVirtualModule(String name, final Map<String, UnidbgPointer> symbols, Emulator<?> emulator) {
         if (symbols.isEmpty()) {
@@ -43,12 +42,7 @@ public class LinuxModule extends Module {
         }
 
         List<UnidbgPointer> list = new ArrayList<>(symbols.values());
-        Collections.sort(list, new Comparator<UnidbgPointer>() {
-            @Override
-            public int compare(UnidbgPointer o1, UnidbgPointer o2) {
-                return (int) (o1.peer - o2.peer);
-            }
-        });
+        list.sort((o1, o2) -> (int) (o1.peer - o2.peer));
         UnidbgPointer first = list.get(0);
         UnidbgPointer last = list.get(list.size() - 1);
         Alignment alignment = ARM.align(first.peer, last.peer - first.peer, emulator.getPageAlign());
@@ -56,12 +50,12 @@ public class LinuxModule extends Module {
         final long size = alignment.size;
 
         if (log.isDebugEnabled()) {
-            log.debug("createVirtualModule first=0x" + Long.toHexString(first.peer) + ", last=0x" + Long.toHexString(last.peer) + ", base=0x" + Long.toHexString(base) + ", size=0x" + Long.toHexString(size));
+            log.debug("createVirtualModule first=0x{}, last=0x{}, base=0x{}, size=0x{}", Long.toHexString(first.peer), Long.toHexString(last.peer), Long.toHexString(base), Long.toHexString(size));
         }
 
         LinuxModule module = new LinuxModule(base, base, size, name, null,
-                Collections.<ModuleSymbol>emptyList(), Collections.<InitFunction>emptyList(),
-                Collections.<String, Module>emptyMap(), Collections.<MemRegion>emptyList(),
+                Collections.emptyList(), Collections.emptyList(),
+                Collections.emptyMap(), Collections.emptyList(),
                 null, null, null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
@@ -128,7 +122,7 @@ public class LinuxModule extends Module {
     void callInitFunction(Emulator<?> emulator, boolean mustCallInit) throws IOException {
         if (!mustCallInit && !unresolvedSymbol.isEmpty()) {
             for (ModuleSymbol moduleSymbol : unresolvedSymbol) {
-                log.info("[" + name + "]" + moduleSymbol.getSymbol().getName() + " symbol is missing before init relocationAddr=" + moduleSymbol.getRelocationAddr());
+                log.info("[{}]{} symbol is missing before init relocationAddr={}", name, moduleSymbol.getSymbol().getName(), moduleSymbol.getRelocationAddr());
             }
             return;
         }

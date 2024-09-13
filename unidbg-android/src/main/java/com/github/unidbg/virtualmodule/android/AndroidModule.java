@@ -12,14 +12,14 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.virtualmodule.VirtualModule;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class AndroidModule extends VirtualModule<VM> {
 
-    private static final Log log = LogFactory.getLog(AndroidModule.class);
+    private static final Logger log = LoggerFactory.getLogger(AndroidModule.class);
 
     public AndroidModule(Emulator<?> emulator, VM vm) {
         super(emulator, vm, "libandroid.so");
@@ -103,7 +103,7 @@ public class AndroidModule extends VirtualModule<VM> {
         UnidbgPointer assetManager = context.getPointerArg(1);
         DvmObject<?> obj = vm.getObject(assetManager.toIntPeer());
         if (log.isDebugEnabled()) {
-            log.debug("AAssetManager_fromJava env=" + env + ", assetManager=" + obj.getObjectType() + ", LR=" + context.getLRPointer());
+            log.debug("AAssetManager_fromJava env={}, assetManager={}, LR={}", env, obj.getObjectType(), context.getLRPointer());
         }
         return assetManager.peer;
     }
@@ -114,7 +114,7 @@ public class AndroidModule extends VirtualModule<VM> {
         String filename = context.getPointerArg(1).getString(0);
         int mode = context.getIntArg(2);
         if (log.isDebugEnabled()) {
-            log.debug("AAssetManager_open amgr=" + amgr + ", filename=" + filename + ", mode=" + mode + ", LR=" + context.getLRPointer());
+            log.debug("AAssetManager_open amgr={}, filename={}, mode={}, LR={}", amgr, filename, mode, context.getLRPointer());
         }
         final int AASSET_MODE_UNKNOWN = 0;
         final int AASSET_MODE_RANDOM = 1;
@@ -139,7 +139,7 @@ public class AndroidModule extends VirtualModule<VM> {
         Asset asset = vm.getObject(pointer.toIntPeer());
         asset.close();
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_close pointer=" + pointer + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_close pointer={}, LR={}", pointer, context.getLRPointer());
         }
         return 0;
     }
@@ -150,7 +150,7 @@ public class AndroidModule extends VirtualModule<VM> {
         Asset asset = vm.getObject(pointer.toIntPeer());
         UnidbgPointer buffer = asset.getBuffer();
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_getBuffer pointer=" + pointer + ", buffer=" + buffer + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_getBuffer pointer={}, buffer={}, LR={}", pointer, buffer, context.getLRPointer());
         }
         return buffer.peer;
     }
@@ -161,7 +161,7 @@ public class AndroidModule extends VirtualModule<VM> {
         Asset asset = vm.getObject(pointer.toIntPeer());
         int length = asset.getLength();
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_getLength pointer=" + pointer + ", length=" + length + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_getLength pointer={}, length={}, LR={}", pointer, length, context.getLRPointer());
         }
         return length;
     }
@@ -174,7 +174,7 @@ public class AndroidModule extends VirtualModule<VM> {
         Asset asset = vm.getObject(pointer.toIntPeer());
         byte[] bytes = asset.read(count);
         if (log.isDebugEnabled()) {
-            log.debug("AAsset_read pointer=" + pointer + ", buf=" + buf + ", count=" + count + ", LR=" + context.getLRPointer());
+            log.debug("AAsset_read pointer={}, buf={}, count={}, LR={}", pointer, buf, count, context.getLRPointer());
         }
         buf.write(0, bytes, 0, bytes.length);
         return bytes.length;

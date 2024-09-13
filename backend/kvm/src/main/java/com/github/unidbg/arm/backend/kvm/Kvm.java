@@ -1,13 +1,13 @@
 package com.github.unidbg.arm.backend.kvm;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 
 public class Kvm implements Closeable {
 
-    private static final Log log = LogFactory.getLog(Kvm.class);
+    private static final Logger log = LoggerFactory.getLogger(Kvm.class);
 
     private static native int setKvmCallback(long handle, KvmCallback callback);
 
@@ -55,7 +55,7 @@ public class Kvm implements Closeable {
 
     public void setKvmCallback(KvmCallback callback) {
         if (log.isDebugEnabled()) {
-            log.debug("setKvmCallback callback" + callback);
+            log.debug("setKvmCallback callback{}", callback);
         }
 
         int ret = setKvmCallback(nativeHandle, callback);
@@ -82,14 +82,14 @@ public class Kvm implements Closeable {
     public long reg_read_cpacr_el1() {
         long cpacr = reg_read_cpacr_el1(nativeHandle);
         if (log.isDebugEnabled()) {
-            log.debug("reg_read_cpacr_el1=0x" + Long.toHexString(cpacr));
+            log.debug("reg_read_cpacr_el1=0x{}", Long.toHexString(cpacr));
         }
         return cpacr;
     }
 
     public void reg_set_cpacr_el1(long value) {
         if (log.isDebugEnabled()) {
-            log.debug("reg_set_cpacr_el1 value=0x" + Long.toHexString(value));
+            log.debug("reg_set_cpacr_el1 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_cpacr_el1(nativeHandle, value);
         if (ret != 0) {
@@ -99,7 +99,7 @@ public class Kvm implements Closeable {
 
     public void reg_set_sp64(long value) {
         if (log.isDebugEnabled()) {
-            log.debug("reg_set_sp64 value=0x" + Long.toHexString(value));
+            log.debug("reg_set_sp64 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_sp64(nativeHandle, value);
         if (ret != 0) {
@@ -109,7 +109,7 @@ public class Kvm implements Closeable {
 
     public void reg_set_fpexc(long value) {
         if (log.isDebugEnabled()) {
-            log.debug("reg_set_fpexc value=0x" + Long.toHexString(value));
+            log.debug("reg_set_fpexc value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_fpexc(nativeHandle, value);
         if (ret != 0) {
@@ -119,7 +119,7 @@ public class Kvm implements Closeable {
 
     public void reg_set_elr_el1(long value) {
         if (log.isDebugEnabled()) {
-            log.debug("reg_set_elr_el1 value=0x" + Long.toHexString(value));
+            log.debug("reg_set_elr_el1 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_elr_el1(nativeHandle, value);
         if (ret != 0) {
@@ -130,7 +130,7 @@ public class Kvm implements Closeable {
     public long reg_read_sp64() {
         long sp = reg_read_sp64(nativeHandle);
         if (log.isDebugEnabled()) {
-            log.debug("reg_read_sp64=0x" + Long.toHexString(sp));
+            log.debug("reg_read_sp64=0x{}", Long.toHexString(sp));
         }
         return sp;
     }
@@ -138,7 +138,7 @@ public class Kvm implements Closeable {
     public long reg_read_pc64() {
         long pc = reg_read_pc64(nativeHandle);
         if (log.isDebugEnabled()) {
-            log.debug("reg_read_pc64=0x" + Long.toHexString(pc));
+            log.debug("reg_read_pc64=0x{}", Long.toHexString(pc));
         }
         return pc;
     }
@@ -146,7 +146,7 @@ public class Kvm implements Closeable {
     public long reg_read_nzcv() {
         long nzcv = reg_read_nzcv(nativeHandle);
         if (log.isDebugEnabled()) {
-            log.debug("reg_read_nzcv=0x" + Long.toHexString(nzcv));
+            log.debug("reg_read_nzcv=0x{}", Long.toHexString(nzcv));
         }
         return nzcv;
     }
@@ -162,7 +162,7 @@ public class Kvm implements Closeable {
         long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_write(nativeHandle, address, bytes);
         if (log.isDebugEnabled()) {
-            log.debug("mem_write address=0x" + Long.toHexString(address) + ", size=" + bytes.length + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+            log.debug("mem_write address=0x{}, size={}, offset={}ms", Long.toHexString(address), bytes.length, System.currentTimeMillis() - start);
         }
         if (ret != 0) {
             throw new KvmException("ret=" + ret);
@@ -173,7 +173,7 @@ public class Kvm implements Closeable {
         long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
         byte[] ret = mem_read(nativeHandle, address, size);
         if (log.isDebugEnabled()) {
-            log.debug("mem_read address=0x" + Long.toHexString(address) + ", size=" + size + ", offset=" + (System.currentTimeMillis() - start) + "ms");
+            log.debug("mem_read address=0x{}, size={}, offset={}ms", Long.toHexString(address), size, System.currentTimeMillis() - start);
         }
         if (ret == null) {
             throw new KvmException();
@@ -183,7 +183,7 @@ public class Kvm implements Closeable {
 
     public void reg_set_tpidr_el0(long value) {
         if (log.isDebugEnabled()) {
-            log.debug("reg_set_tpidr_el0 value=0x" + Long.toHexString(value));
+            log.debug("reg_set_tpidr_el0 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_tpidr_el0(nativeHandle, value);
         if (ret != 0) {
@@ -193,7 +193,7 @@ public class Kvm implements Closeable {
 
     public void reg_set_tpidrro_el0(long value) {
         if (log.isDebugEnabled()) {
-            log.debug("reg_set_tpidrro_el0 value=0x" + Long.toHexString(value));
+            log.debug("reg_set_tpidrro_el0 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_tpidrro_el0(nativeHandle, value);
         if (ret != 0) {
@@ -203,7 +203,7 @@ public class Kvm implements Closeable {
 
     public void reg_set_nzcv(long value) {
         if (log.isDebugEnabled()) {
-            log.debug("reg_set_nzcv value=0x" + Long.toHexString(value));
+            log.debug("reg_set_nzcv value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_nzcv(nativeHandle, value);
         if (ret != 0) {
@@ -216,7 +216,7 @@ public class Kvm implements Closeable {
             throw new IllegalArgumentException("index=" + index);
         }
         if (log.isDebugEnabled()) {
-            log.debug("reg_write64 index=" + index + ", value=0x" + Long.toHexString(value));
+            log.debug("reg_write64 index={}, value=0x{}", index, Long.toHexString(value));
         }
         int ret = reg_write(nativeHandle, index, value);
         if (ret != 0) {
@@ -229,7 +229,7 @@ public class Kvm implements Closeable {
             throw new IllegalArgumentException("index=" + index);
         }
         if (log.isDebugEnabled()) {
-            log.debug("reg_read64 index=" + index);
+            log.debug("reg_read64 index={}", index);
         }
         return reg_read(nativeHandle, index);
     }

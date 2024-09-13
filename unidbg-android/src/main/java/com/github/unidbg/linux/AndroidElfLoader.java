@@ -42,8 +42,8 @@ import net.fornwall.jelf.MemoizedObject;
 import net.fornwall.jelf.PtLoadData;
 import net.fornwall.jelf.SymbolLocator;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
@@ -62,7 +62,7 @@ import java.util.Map;
 
 public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements Memory, Loader {
 
-    private static final Log log = LogFactory.getLog(AndroidElfLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(AndroidElfLoader.class);
 
     private Symbol malloc, free;
 
@@ -163,7 +163,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         setStackPoint(sp);
 
         if (log.isDebugEnabled()) {
-            log.debug("initializeTLS tls=" + tls + ", argv=" + argv + ", auxv=" + auxv + ", thread=" + thread + ", environ=" + environ + ", sp=0x" + Long.toHexString(getStackPoint()));
+            log.debug("initializeTLS tls={}, argv={}, auxv={}, thread={}, environ={}, sp=0x{}", tls, argv, auxv, thread, environ, Long.toHexString(getStackPoint()));
         }
         return argv.share(2L * emulator.getPointerSize(), 0);
     }
@@ -197,13 +197,13 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         for (LinuxModule m : linuxModules) {
             for (Iterator<ModuleSymbol> iterator = m.getUnresolvedSymbol().iterator(); iterator.hasNext(); ) {
                 ModuleSymbol moduleSymbol = iterator.next();
-                ModuleSymbol resolved = moduleSymbol.resolve(new HashSet<Module>(linuxModules), true, hookListeners, emulator.getSvcMemory());
+                ModuleSymbol resolved = moduleSymbol.resolve(new HashSet<>(linuxModules), true, hookListeners, emulator.getSvcMemory());
                 if (resolved != null) {
-                    log.debug("[" + moduleSymbol.soName + "]" + moduleSymbol.symbol.getName() + " symbol resolved to " + resolved.toSoName);
+                    log.debug("resolveSymbols[{}]{} symbol resolved to {}", moduleSymbol.soName, moduleSymbol.symbol.getName(), resolved.toSoName);
                     resolved.relocation(emulator, m);
                     iterator.remove();
                 } else if(showWarning) {
-                    log.info("[" + moduleSymbol.soName + "]symbol " + moduleSymbol.symbol + " is missing relocationAddr=" + moduleSymbol.relocationAddr + ", offset=0x" + Long.toHexString(moduleSymbol.offset));
+                    log.info("[{}]symbol {} is missing relocationAddr={}, offset=0x{}", moduleSymbol.soName, moduleSymbol.symbol, moduleSymbol.relocationAddr, Long.toHexString(moduleSymbol.offset));
                 }
             }
         }
@@ -416,7 +416,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                                     mMapListener.onMap(base, off, UnicornConst.UC_PROT_NONE);
                                 }
                                 if (memoryMap.put(base, new MemoryMap(base, (int) off, UnicornConst.UC_PROT_NONE)) != null) {
-                                    log.warn("mem_map replace exists memory map base=" + Long.toHexString(base));
+                                    log.warn("mem_map replace exists memory map base={}", Long.toHexString(base));
                                 }
                             }
                         }
@@ -435,7 +435,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     break;
                 case ElfSegment.PT_INTERP:
                     if (log.isDebugEnabled()) {
-                        log.debug("[" + libraryFile.getName() + "]interp=" + ph.getInterpreter());
+                        log.debug("[{}]interp={}", libraryFile.getName(), ph.getInterpreter());
                     }
                     break;
                 case ElfSegment.PT_GNU_EH_FRAME:
@@ -446,7 +446,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     break;
                 default:
                     if (log.isDebugEnabled()) {
-                        log.debug("[" + libraryFile.getName() + "]segment type=0x" + Integer.toHexString(ph.type) + ", offset=0x" + Long.toHexString(ph.offset));
+                        log.debug("[{}]segment type=0x{}, offset=0x{}", libraryFile.getName(), Integer.toHexString(ph.type), Long.toHexString(ph.offset));
                     }
                     break;
             }
@@ -460,7 +460,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         Map<String, Module> neededLibraries = new HashMap<>();
         for (String neededLibrary : dynamicStructure.getNeededLibraries()) {
             if (log.isDebugEnabled()) {
-                log.debug(soName + " need dependency " + neededLibrary);
+                log.debug("{} need dependency {}", soName, neededLibrary);
             }
 
             LinuxModule loaded = modules.get(neededLibrary);
@@ -478,7 +478,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 needed.addReferenceCount();
                 neededLibraries.put(FilenameUtils.getBaseName(needed.name), needed);
             } else {
-                log.info(soName + " load dependency " + neededLibrary + " failed");
+                log.info("{} load dependency {} failed", soName, neededLibrary);
             }
         }
 
@@ -488,7 +488,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 ModuleSymbol resolved = moduleSymbol.resolve(module.getNeededLibraries(), false, hookListeners, emulator.getSvcMemory());
                 if (resolved != null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("[" + moduleSymbol.soName + "]" + moduleSymbol.symbol.getName() + " symbol resolved to " + resolved.toSoName);
+                        log.debug("[{}]{} symbol resolved to {}", moduleSymbol.soName, moduleSymbol.symbol.getName(), resolved.toSoName);
                     }
                     resolved.relocation(emulator, module);
                     iterator.remove();
@@ -502,7 +502,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             ElfRelocation relocation = object.getValue();
             final int type = relocation.type();
             if (type == 0) {
-                log.warn("Unhandled relocation type " + type);
+                log.warn("Unhandled relocation type {}", type);
                 continue;
             }
             ElfSymbol symbol = relocation.sym() == 0 ? null : relocation.symbol();
@@ -510,9 +510,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             Pointer relocationAddr = UnidbgPointer.pointer(emulator, load_base + relocation.offset());
             assert relocationAddr != null;
 
-            Log log = LogFactory.getLog("com.github.unidbg.linux." + soName);
+            Logger log = LoggerFactory.getLogger("com.github.unidbg.linux." + soName);
             if (log.isDebugEnabled()) {
-                log.debug("symbol=" + symbol + ", type=" + type + ", relocationAddr=" + relocationAddr + ", offset=0x" + Long.toHexString(relocation.offset()) + ", addend=" + relocation.addend() + ", sym=" + relocation.sym() + ", android=" + relocation.isAndroid());
+                log.debug("symbol={}, type={}, relocationAddr={}, offset=0x{}, addend={}, sym={}, android={}", symbol, type, relocationAddr, Long.toHexString(relocation.offset()), relocation.addend(), relocation.sym(), relocation.isAndroid());
             }
 
             ModuleSymbol moduleSymbol;
@@ -667,7 +667,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             maxSizeOfSo = bound_high;
         }
         module.setEntryPoint(elfFile.entry_point);
-        log.debug("Load library " + soName + " offset=" + (System.currentTimeMillis() - start) + "ms" + ", entry_point=0x" + Long.toHexString(elfFile.entry_point));
+        log.debug("Load library {} offset={}ms, entry_point=0x{}", soName, System.currentTimeMillis() - start, Long.toHexString(elfFile.entry_point));
         notifyModuleLoaded(module);
         return module;
     }
@@ -762,7 +762,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         boolean isAnonymous = ((flags & MAP_ANONYMOUS) != 0) || (start == 0 && fd <= 0 && offset == 0);
         if ((flags & MAP_FIXED) != 0 && isAnonymous) {
             if (log.isDebugEnabled()) {
-                log.debug("mmap2 MAP_FIXED start=0x" + Long.toHexString(start) + ", length=" + length + ", prot=" + prot);
+                log.debug("mmap2 MAP_FIXED start=0x{}, length={}, prot={}", Long.toHexString(start), length, prot);
             }
 
             munmap(start, length);
@@ -771,21 +771,21 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 mMapListener.onMap(start, aligned, prot);
             }
             if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
-                log.warn("mmap2 replace exists memory map: start=" + Long.toHexString(start));
+                log.warn("mmap2 replace exists memory map: start={}", Long.toHexString(start));
             }
             return start;
         }
         if (isAnonymous) {
             long addr = allocateMapAddress(0, aligned);
             if (log.isDebugEnabled()) {
-                log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", start=" + start + ", fd=" + fd + ", offset=" + offset + ", aligned=" + aligned + ", LR=" + emulator.getContext().getLRPointer());
+                log.debug("mmap2 addr=0x{}, mmapBaseAddress=0x{}, start={}, fd={}, offset={}, aligned={}, LR={}", Long.toHexString(addr), Long.toHexString(mmapBaseAddress), start, fd, offset, aligned, emulator.getContext().getLRPointer());
             }
             backend.mem_map(addr, aligned, prot);
             if (mMapListener != null) {
                 mMapListener.onMap(start, aligned, prot);
             }
             if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
-                log.warn("mmap2 replace exists memory map addr=" + Long.toHexString(addr));
+                log.warn("memoryMap mmap2 replace exists memory map addr={}", Long.toHexString(addr));
             }
             return addr;
         }
@@ -794,14 +794,14 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             if (start == 0 && fd > 0 && (file = syscallHandler.getFileIO(fd)) != null) {
                 long addr = allocateMapAddress(0, aligned);
                 if (log.isDebugEnabled()) {
-                    log.debug("mmap2 addr=0x" + Long.toHexString(addr) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress));
+                    log.debug("mmap2 addr=0x{}, mmapBaseAddress=0x{}", Long.toHexString(addr), Long.toHexString(mmapBaseAddress));
                 }
                 long ret = file.mmap2(emulator, addr, aligned, prot, offset, length);
                 if (mMapListener != null) {
                     mMapListener.onMap(addr, aligned, prot);
                 }
                 if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
-                    log.warn("mmap2 replace exists memory map addr=0x" + Long.toHexString(addr));
+                    log.warn("mmap2 replace exists memory map addr=0x{}", Long.toHexString(addr));
                 }
                 return ret;
             }
@@ -822,14 +822,14 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                     }
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("mmap2 start=0x" + Long.toHexString(start) + ", mmapBaseAddress=0x" + Long.toHexString(mmapBaseAddress) + ", flags=0x" + Integer.toHexString(flags) + ", length=0x" + Integer.toHexString(length));
+                    log.debug("mmap2 start=0x{}, mmapBaseAddress=0x{}, flags=0x{}, length=0x{}", Long.toHexString(start), Long.toHexString(mmapBaseAddress), Integer.toHexString(flags), Integer.toHexString(length));
                 }
                 long ret = file.mmap2(emulator, start, aligned, prot, offset, length);
                 if (mMapListener != null) {
                     mMapListener.onMap(start, aligned, prot);
                 }
                 if (memoryMap.put(start, new MemoryMap(start, aligned, prot)) != null) {
-                    log.warn("mmap2 replace exists memory map start=0x" + Long.toHexString(start));
+                    log.warn("mmap2 replace exists memory map start=0x{}", Long.toHexString(start));
                 }
                 return ret;
             }
@@ -872,6 +872,6 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
     @Override
     public Collection<Module> getLoadedModules() {
-        return new ArrayList<Module>(modules.values());
+        return new ArrayList<>(modules.values());
     }
 }

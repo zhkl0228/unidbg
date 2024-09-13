@@ -20,8 +20,8 @@ import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.utils.Inspector;
 import com.sun.jna.Pointer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -32,7 +32,7 @@ import java.util.Objects;
 
 public class DalvikVM extends BaseVM implements VM {
 
-    private static final Log log = LogFactory.getLog(DalvikVM.class);
+    private static final Logger log = LoggerFactory.getLogger(DalvikVM.class);
 
     private final UnidbgPointer _JavaVM;
     private final UnidbgPointer _JNIEnv;
@@ -82,7 +82,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmClass dvmClass = resolveClass(name);
                 long hash = dvmClass.hashCode() & 0xffffffffL;
                 if (log.isDebugEnabled()) {
-                    log.debug("FindClass env=" + env + ", className=" + name + ", hash=0x" + Long.toHexString(hash));
+                    log.debug("FindClass env={}, className={}, hash=0x{}", env, name, Long.toHexString(hash));
                 }
                 return hash;
             }
@@ -117,7 +117,7 @@ public class DalvikVM extends BaseVM implements VM {
                     }
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("ToReflectedMethod clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", lr=" + context.getLRPointer());
+                    log.debug("ToReflectedMethod clazz={}, jmethodID={}, lr={}", dvmClass, jmethodID, context.getLRPointer());
                 }
                 if (dvmMethod == null) {
                     throw new BackendException();
@@ -141,19 +141,18 @@ public class DalvikVM extends BaseVM implements VM {
                     System.out.printf("JNIEnv->GetSuperClass(%s) was called from %s%n", dvmClass, context.getLRPointer());
                 }
                 if (dvmClass.getClassName().equals("java/lang/Object")) {
-                    log.debug("JNIEnv->GetSuperClass was called, class = " + dvmClass.getClassName() + " According to Java Native Interface Specification, " +
-                            "If clazz specifies the class Object, returns NULL.");
+                    log.debug("JNIEnv->GetSuperClass was called, class = {} According to Java Native Interface Specification, If clazz specifies the class Object, returns NULL.", dvmClass.getClassName());
                     throw new BackendException();
                 }
                 DvmClass superClass = dvmClass.getSuperclass();
                 if (superClass == null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("JNIEnv->GetSuperClass was called, class = " + dvmClass.getClassName() + ", superClass get failed.");
+                        log.debug("JNIEnv->GetSuperClass was called, class = {}, superClass get failed.", dvmClass.getClassName());
                     }
                     throw new BackendException();
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("JNIEnv->GetSuperClass was called, class = " + dvmClass.getClassName() + ", superClass = " + superClass.getClassName());
+                        log.debug("JNIEnv->GetSuperClass was called, class = {}, superClass = {}", dvmClass.getClassName(), superClass.getClassName());
                     }
                     return superClass.hashCode();
                 }
@@ -180,7 +179,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                log.warn("Throw dvmObject=" + dvmObject + ", class=" + (dvmObject != null ? dvmObject.getObjectType() : null));
+                log.warn("Throw dvmObject={}, class={}", dvmObject, dvmObject != null ? dvmObject.getObjectType() : null);
                 throwable = dvmObject;
                 return 0;
             }
@@ -198,7 +197,7 @@ public class DalvikVM extends BaseVM implements VM {
             public long handle(Emulator<?> emulator) {
                 long exception = throwable == null ? JNI_NULL : (throwable.hashCode() & 0xffffffffL);
                 if (log.isDebugEnabled()) {
-                    log.debug("ExceptionOccurred: 0x" + Long.toHexString(exception));
+                    log.debug("ExceptionOccurred: 0x{}", Long.toHexString(exception));
                 }
                 return exception;
             }
@@ -235,7 +234,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 int capacity = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("PushLocalFrame capacity=" + capacity);
+                    log.debug("PushLocalFrame capacity={}", capacity);
                 }
                 return JNI_OK;
             }
@@ -247,7 +246,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer jresult = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("PopLocalFrame jresult=" + jresult);
+                    log.debug("PopLocalFrame jresult={}", jresult);
                 }
                 return jresult == null ? 0 : jresult.toIntPeer();
             }
@@ -263,7 +262,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewGlobalRef object=" + object + ", dvmObject=" + dvmObject);
+                    log.debug("NewGlobalRef object={}, dvmObject={}", object, dvmObject);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewGlobalRef(%s) was called from %s%n", dvmObject, context.getLRPointer());
@@ -278,7 +277,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer object = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("DeleteGlobalRef object=" + object);
+                    log.debug("DeleteGlobalRef object={}", object);
                 }
                 ObjRef ref = object == null ? null : globalObjectMap.get(object.toIntPeer());
                 if (ref != null) {
@@ -301,7 +300,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer object = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("DeleteLocalRef object=" + object);
+                    log.debug("DeleteLocalRef object={}", object);
                 }
                 return 0;
             }
@@ -314,7 +313,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer ref1 = context.getPointerArg(1);
                 UnidbgPointer ref2 = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("IsSameObject ref1=" + ref1 + ", ref2=" + ref2 + ", LR=" + context.getLRPointer());
+                    log.debug("IsSameObject ref1={}, ref2={}, LR={}", ref1, ref2, context.getLRPointer());
                 }
                 return ref1 == ref2 || ref1.equals(ref2) ? JNI_TRUE : JNI_FALSE;
             }
@@ -330,7 +329,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewLocalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + (dvmObject != null ? dvmObject.getObjectType() : null));
+                    log.debug("NewLocalRef object={}, dvmObject={}, class={}", object, dvmObject, dvmObject != null ? dvmObject.getObjectType() : null);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewLocalRef(%s) was called from %s%n", dvmObject, context.getLRPointer());
@@ -345,7 +344,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 int capacity = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("EnsureLocalCapacity capacity=" + capacity);
+                    log.debug("EnsureLocalCapacity capacity={}", capacity);
                 }
                 return 0;
             }
@@ -358,7 +357,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("AllocObject clazz=" + dvmClass + ", lr=" + context.getLRPointer());
+                    log.debug("AllocObject clazz={}, lr={}", dvmClass, context.getLRPointer());
                 }
                 if (dvmClass == null) {
                     throw new BackendException();
@@ -381,7 +380,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewObject clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", lr=" + context.getLRPointer());
+                    log.debug("NewObject clazz={}, jmethodID={}, lr={}", dvmClass, jmethodID, context.getLRPointer());
                 }
                 if (dvmMethod == null) {
                     throw new BackendException();
@@ -406,7 +405,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewObjectV clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + context.getLRPointer());
+                    log.debug("NewObjectV clazz={}, jmethodID={}, va_list={}, lr={}", dvmClass, jmethodID, va_list, context.getLRPointer());
                 }
                 if (dvmMethod == null) {
                     throw new BackendException();
@@ -431,7 +430,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getMethod(jmethodID.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("NewObjectA clazz=" + dvmClass + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue + ", lr=" + context.getLRPointer());
+                    log.debug("NewObjectA clazz={}, jmethodID={}, jvalue={}, lr={}", dvmClass, jmethodID, jvalue, context.getLRPointer());
                 }
                 if (dvmMethod == null) {
                     throw new BackendException();
@@ -453,7 +452,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> dvmObject = object == null ? null : getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetObjectClass object=" + object + ", dvmObject=" + dvmObject);
+                    log.debug("GetObjectClass object={}, dvmObject={}", object, dvmObject);
                 }
                 if (dvmObject == null) {
                     throw new BackendException();
@@ -473,7 +472,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("IsInstanceOf object=" + object + ", clazz=" + clazz + ", dvmObject=" + dvmObject + ", dvmClass=" + dvmClass);
+                    log.debug("IsInstanceOf object={}, clazz={}, dvmObject={}, dvmClass={}", object, clazz, dvmObject, dvmClass);
                 }
                 if (dvmObject == null || dvmClass == null) {
                     throw new BackendException();
@@ -493,7 +492,7 @@ public class DalvikVM extends BaseVM implements VM {
                 String name = methodName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetMethodID class=" + clazz + ", methodName=" + name + ", args=" + args + ", LR=" + context.getLRPointer());
+                    log.debug("GetMethodID class={}, methodName={}, args={}, LR={}", clazz, name, args, context.getLRPointer());
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (dvmClass == null) {
@@ -515,7 +514,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallObjectMethod object=" + object + ", jmethodID=" + jmethodID);
+                    log.debug("CallObjectMethod object={}, jmethodID={}", object, jmethodID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -541,7 +540,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallObjectMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + context.getLRPointer());
+                    log.debug("CallObjectMethodV object={}, jmethodID={}, va_list={}, lr={}", object, jmethodID, va_list, context.getLRPointer());
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -567,7 +566,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallObjectMethodA object=" + object + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue + ", lr=" + context.getLRPointer());
+                    log.debug("CallObjectMethodA object={}, jmethodID={}, jvalue={}, lr={}", object, jmethodID, jvalue, context.getLRPointer());
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -592,7 +591,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallBooleanMethod object=" + object + ", jmethodID=" + jmethodID);
+                    log.debug("CallBooleanMethod object={}, jmethodID={}", object, jmethodID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -618,7 +617,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallBooleanMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallBooleanMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -644,7 +643,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallBooleanMethodA object=" + object + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallBooleanMethodA object={}, jmethodID={}, jvalue={}", object, jmethodID, jvalue);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -677,7 +676,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallByteMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallByteMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -717,7 +716,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallCharMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallCharMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -757,7 +756,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallShortMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallShortMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -789,7 +788,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallIntMethod object=" + object + ", jmethodID=" + jmethodID);
+                    log.debug("CallIntMethod object={}, jmethodID={}", object, jmethodID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -815,7 +814,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallIntMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallIntMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -841,7 +840,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallIntMethodA object=" + object + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallIntMethodA object={}, jmethodID={}, jvalue={}", object, jmethodID, jvalue);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -866,7 +865,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallLongMethod object=" + object + ", jmethodID=" + jmethodID);
+                    log.debug("CallLongMethod object={}, jmethodID={}", object, jmethodID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -893,7 +892,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallLongMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallLongMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -934,7 +933,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallFloatMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallFloatMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -970,7 +969,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallDoubleMethod object=" + object + ", jmethodID=" + jmethodID);
+                    log.debug("CallDoubleMethod object={}, jmethodID={}", object, jmethodID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1013,7 +1012,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallVoidMethod object=" + object + ", jmethodID=" + jmethodID);
+                    log.debug("CallVoidMethod object={}, jmethodID={}", object, jmethodID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1039,7 +1038,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallVoidMethodV object=" + object + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallVoidMethodV object={}, jmethodID={}, va_list={}", object, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1065,7 +1064,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallVoidMethodA object=" + object + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallVoidMethodA object={}, jmethodID={}, jvalue={}", object, jmethodID, jvalue);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1127,7 +1126,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(3);
                 UnidbgPointer jvalue = context.getPointerArg(4);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallNonvirtualBooleanMethodA object=" + object + ", clazz=" + clazz + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallNonvirtualBooleanMethodA object={}, clazz={}, jmethodID={}, jvalue={}", object, clazz, jmethodID, jvalue);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
@@ -1311,7 +1310,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(3);
                 UnidbgPointer va_list = context.getPointerArg(4);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallNonvirtualVoidMethodV object=" + object + ", clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallNonvirtualVoidMethodV object={}, clazz={}, jmethodID={}, va_list={}", object, clazz, jmethodID, va_list);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
@@ -1343,7 +1342,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(3);
                 UnidbgPointer jvalue = context.getPointerArg(4);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallNonVirtualVoidMethodA object=" + object + ", clazz=" + clazz + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallNonVirtualVoidMethodA object={}, clazz={}, jmethodID={}, jvalue={}", object, clazz, jmethodID, jvalue);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
@@ -1376,7 +1375,7 @@ public class DalvikVM extends BaseVM implements VM {
                 String name = fieldName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetFieldID class=" + clazz + ", fieldName=" + name + ", args=" + args);
+                    log.debug("GetFieldID class={}, fieldName={}, args={}", clazz, name, args);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (dvmClass == null) {
@@ -1398,7 +1397,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetObjectField object=" + object + ", jfieldID=" + jfieldID);
+                    log.debug("GetObjectField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1422,7 +1421,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetBooleanField object=" + object + ", jfieldID=" + jfieldID);
+                    log.debug("GetBooleanField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1467,7 +1466,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetIntField object=" + object + ", jfieldID=" + jfieldID);
+                    log.debug("GetIntField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1491,7 +1490,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetLongField object=" + object + ", jfieldID=" + jfieldID);
+                    log.debug("GetLongField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1516,7 +1515,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetFloatField object=" + object + ", jfieldID=" + jfieldID);
+                    log.debug("GetFloatField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1552,7 +1551,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 UnidbgPointer value = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetObjectField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetObjectField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1578,7 +1577,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 int value = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetBooleanField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetBooleanField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1625,7 +1624,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 int value = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetIntField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetIntField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1651,7 +1650,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer sp = context.getStackPointer();
                 long value = sp.getLong(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetLongField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetLongField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1680,7 +1679,7 @@ public class DalvikVM extends BaseVM implements VM {
                 buffer.flip();
                 float value = buffer.getFloat();
                 if (log.isDebugEnabled()) {
-                    log.debug("SetFloatField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetFloatField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1706,7 +1705,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer sp = context.getStackPointer();
                 double value = sp.getDouble(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetDoubleField object=" + object + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetDoubleField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
                 DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
@@ -1733,7 +1732,7 @@ public class DalvikVM extends BaseVM implements VM {
                 String name = methodName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticMethodID class=" + clazz + ", methodName=" + name + ", args=" + args + ", LR=" + context.getLRPointer());
+                    log.debug("GetStaticMethodID class={}, methodName={}, args={}, LR={}", clazz, name, args, context.getLRPointer());
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (dvmClass == null) {
@@ -1755,7 +1754,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticObjectMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                    log.debug("CallStaticObjectMethod clazz={}, jmethodID={}", clazz, jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1780,7 +1779,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticBooleanMethodA clazz=" + clazz + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallStaticBooleanMethodA clazz={}, jmethodID={}, jvalue={}", clazz, jmethodID, jvalue);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1805,7 +1804,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticObjectMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallStaticObjectMethodV clazz={}, jmethodID={}, va_list={}", clazz, jmethodID, va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1830,7 +1829,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticObjectMethodA clazz=" + clazz + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallStaticObjectMethodA clazz={}, jmethodID={}, jvalue={}", clazz, jmethodID, jvalue);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1854,7 +1853,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticBooleanMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                    log.debug("CallStaticBooleanMethod clazz={}, jmethodID={}", clazz, jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1879,7 +1878,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticBooleanMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallStaticBooleanMethodV clazz={}, jmethodID={}, va_list={}", clazz, jmethodID, va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1966,7 +1965,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticIntMethodV clazz=" + clazz + ", jmethodID=" + jmethodID);
+                    log.debug("CallStaticIntMethodV clazz={}, jmethodID={}", clazz, jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -1991,7 +1990,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticIntMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallStaticIntMethodV clazz={}, jmethodID={}, va_list={}", clazz, jmethodID, va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2022,7 +2021,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticLongMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                    log.debug("CallStaticLongMethod clazz={}, jmethodID={}", clazz, jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2048,7 +2047,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticLongMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list + ", lr=" + context.getLRPointer());
+                    log.debug("CallStaticLongMethodV clazz={}, jmethodID={}, va_list={}, lr={}", clazz, jmethodID, va_list, context.getLRPointer());
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2080,7 +2079,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticFloatMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                    log.debug("CallStaticFloatMethod clazz={}, jmethodID={}", clazz, jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2122,7 +2121,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticDoubleMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                    log.debug("CallStaticDoubleMethod clazz={}, jmethodID={}", clazz, jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2167,7 +2166,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticVoidMethod clazz=" + clazz + ", jmethodID=" + jmethodID);
+                    log.debug("CallStaticVoidMethod clazz={}, jmethodID={}", clazz, jmethodID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2192,7 +2191,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer va_list = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticVoidMethodV clazz=" + clazz + ", jmethodID=" + jmethodID + ", va_list=" + va_list);
+                    log.debug("CallStaticVoidMethodV clazz={}, jmethodID={}, va_list={}", clazz, jmethodID, va_list);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2217,7 +2216,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jmethodID = context.getPointerArg(2);
                 UnidbgPointer jvalue = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("CallStaticVoidMethodA clazz=" + clazz + ", jmethodID=" + jmethodID + ", jvalue=" + jvalue);
+                    log.debug("CallStaticVoidMethodA clazz={}, jmethodID={}, jvalue={}", clazz, jmethodID, jvalue);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmMethod dvmMethod = dvmClass == null ? null : dvmClass.getStaticMethod(jmethodID.toIntPeer());
@@ -2244,7 +2243,7 @@ public class DalvikVM extends BaseVM implements VM {
                 String name = fieldName.getString(0);
                 String args = argsPointer.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticFieldID class=" + clazz + ", fieldName=" + name + ", args=" + args);
+                    log.debug("GetStaticFieldID class={}, fieldName={}, args={}", clazz, name, args);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (dvmClass == null) {
@@ -2266,7 +2265,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticObjectField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                    log.debug("GetStaticObjectField clazz={}, jfieldID={}", clazz, jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2289,7 +2288,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticBooleanField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                    log.debug("GetStaticBooleanField clazz={}, jfieldID={}", clazz, jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2312,7 +2311,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticByteField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                    log.debug("GetStaticByteField clazz={}, jfieldID={}", clazz, jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2349,7 +2348,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticIntField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                    log.debug("GetStaticIntField clazz={}, jfieldID={}", clazz, jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2372,7 +2371,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer clazz = context.getPointerArg(1);
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStaticLongField clazz=" + clazz + ", jfieldID=" + jfieldID);
+                    log.debug("GetStaticLongField clazz={}, jfieldID={}", clazz, jfieldID);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2411,7 +2410,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 UnidbgPointer value = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetStaticObjectField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetStaticObjectField clazz={}, jfieldID={}, value={}", clazz, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = value == null ? null : getObject(value.toIntPeer());
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
@@ -2436,7 +2435,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 int value = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetStaticBooleanField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetStaticBooleanField clazz={}, jfieldID={}, value={}", clazz, jfieldID, value);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2482,7 +2481,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer jfieldID = context.getPointerArg(2);
                 int value = context.getIntArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetStaticIntField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetStaticIntField clazz={}, jfieldID={}, value={}", clazz, jfieldID, value);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2507,7 +2506,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer sp = context.getStackPointer();
                 long value = sp.getLong(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetStaticLongField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetStaticLongField clazz={}, jfieldID={}, value={}", clazz, jfieldID, value);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2535,7 +2534,7 @@ public class DalvikVM extends BaseVM implements VM {
                 buffer.flip();
                 float value = buffer.getFloat();
                 if (log.isDebugEnabled()) {
-                    log.debug("SetStaticFloatField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetStaticFloatField clazz={}, jfieldID={}, value={}", clazz, jfieldID, value);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2560,7 +2559,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer sp = context.getStackPointer();
                 double value = sp.getDouble(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetStaticDoubleField clazz=" + clazz + ", jfieldID=" + jfieldID + ", value=" + value);
+                    log.debug("SetStaticDoubleField clazz={}, jfieldID={}, value={}", clazz, jfieldID, value);
                 }
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getStaticField(jfieldID.toIntPeer());
@@ -2583,7 +2582,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> string = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringUTFLength string=" + string + ", lr=" + context.getLRPointer());
+                    log.debug("GetStringUTFLength string={}, lr={}", string, context.getLRPointer());
                 }
                 String value = (String) Objects.requireNonNull(string).getValue();
                 if (verbose) {
@@ -2610,7 +2609,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringUTFChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + context.getLRPointer());
+                    log.debug("GetStringUTFChars string={}, isCopy={}, value={}, lr={}", string, isCopy, value, context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOf(bytes, bytes.length + 1);
                 UnidbgPointer pointer = string.allocateMemoryBlock(emulator, data.length);
@@ -2630,7 +2629,7 @@ public class DalvikVM extends BaseVM implements VM {
                     System.out.printf("JNIEnv->ReleaseStringUTFChars(%s) was called from %s%n", string, context.getLRPointer());
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleaseStringUTFChars string=" + string + ", pointer=" + pointer + ", lr=" + context.getLRPointer());
+                    log.debug("ReleaseStringUTFChars string={}, pointer={}, lr={}", string, pointer, context.getLRPointer());
                 }
                 Objects.requireNonNull(string).freeMemoryBlock(pointer);
                 return 0;
@@ -2644,7 +2643,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer pointer = context.getPointerArg(1);
                 Array<?> array = Objects.requireNonNull((Array<?>) getObject(pointer.toIntPeer()));
                 if (log.isDebugEnabled()) {
-                    log.debug("GetArrayLength array=" + array + ", lr=" + context.getLRPointer());
+                    log.debug("GetArrayLength array={}, lr={}", array, context.getLRPointer());
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->GetArrayLength(%s => %s) was called from %s%n", array, array.length(), context.getLRPointer());
@@ -2661,7 +2660,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer elementClass = context.getPointerArg(2);
                 UnidbgPointer initialElement = context.getPointerArg(3);
                 if (log.isDebugEnabled()) {
-                    log.debug("NewObjectArray size=" + size + ", elementClass=" + elementClass + ", initialElement=" + initialElement);
+                    log.debug("NewObjectArray size={}, elementClass={}, initialElement={}", size, elementClass, initialElement);
                 }
                 DvmClass dvmClass = classMap.get(elementClass.toIntPeer());
                 if (dvmClass == null) {
@@ -2670,9 +2669,7 @@ public class DalvikVM extends BaseVM implements VM {
 
                 DvmObject<?> obj = size == 0 ? null : initialElement == null ? null : getObject(initialElement.toIntPeer());
                 DvmObject<?>[] array = new DvmObject[size];
-                for (int i = 0; i < size; i++) {
-                    array[i] = obj;
-                }
+                Arrays.fill(array, obj);
 
                 return addLocalObject(new ArrayObject(array));
             }
@@ -2686,7 +2683,7 @@ public class DalvikVM extends BaseVM implements VM {
                 int index = context.getIntArg(2);
                 ArrayObject array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetObjectArrayElement array=" + array + ", index=" + index);
+                    log.debug("GetObjectArrayElement array={}, index={}", array, index);
                 }
                 DvmObject<?> obj = Objects.requireNonNull(array).getValue()[index];
                 if (verbose) {
@@ -2706,7 +2703,7 @@ public class DalvikVM extends BaseVM implements VM {
                 ArrayObject array = getObject(object.toIntPeer());
                 DvmObject<?> obj = element == null ? null : getObject(element.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("setObjectArrayElement array=" + array + ", index=" + index + ", obj=" + obj);
+                    log.debug("setObjectArrayElement array={}, index={}, obj={}", array, index, obj);
                 }
                 DvmObject<?>[] objs = Objects.requireNonNull(array).getValue();
                 objs[index] = obj;
@@ -2727,7 +2724,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 int size = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("NewFloatArray size=" + size);
+                    log.debug("NewFloatArray size={}", size);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewFloatArray(%d) was called from %s%n", size, context.getLRPointer());
@@ -2774,7 +2771,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 int size = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("NewByteArray size=" + size + ", LR=" + context.getLRPointer() + ", PC=" + context.getPCPointer());
+                    log.debug("NewByteArray size={}, LR={}, PC={}", size, context.getLRPointer(), context.getPCPointer());
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewByteArray(%d) was called from %s%n", size, context.getLRPointer());
@@ -2803,7 +2800,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 int size = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("NewIntArray size=" + size);
+                    log.debug("NewIntArray size={}", size);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewIntArray(%d) was called from %s%n", size, context.getLRPointer());
@@ -2818,7 +2815,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 int size = context.getIntArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("_NewDoubleArray size=" + size);
+                    log.debug("_NewDoubleArray size={}", size);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewDoubleArray(%d) was called from %s%n", size, context.getLRPointer());
@@ -2870,7 +2867,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer isCopy = context.getPointerArg(2);
                 IntArray array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetIntArrayElements array=" + array + ", isCopy=" + isCopy);
+                    log.debug("GetIntArrayElements array={}, isCopy={}", array, isCopy);
                 }
                 return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).toIntPeer();
             }
@@ -2896,7 +2893,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 String string = builder.toString();
                 if (log.isDebugEnabled()) {
-                    log.debug("NewString unicodeChars=" + unicodeChars + ", len=" + len + ", string=" + string);
+                    log.debug("NewString unicodeChars={}, len={}, string={}", unicodeChars, len, string);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewString(\"%s\") was called from %s%n", string, context.getLRPointer());
@@ -2912,7 +2909,7 @@ public class DalvikVM extends BaseVM implements VM {
                 UnidbgPointer object = context.getPointerArg(1);
                 DvmObject<?> string = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringLength string=" + string + ", lr=" + context.getLRPointer());
+                    log.debug("GetStringLength string={}, lr={}", string, context.getLRPointer());
                 }
                 String value = (String) Objects.requireNonNull(string).getValue();
                 return value.length();
@@ -2937,7 +2934,7 @@ public class DalvikVM extends BaseVM implements VM {
                     buffer.putChar(c);
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringChars string=" + string + ", isCopy=" + isCopy + ", value=" + value + ", lr=" + context.getLRPointer());
+                    log.debug("GetStringChars string={}, isCopy={}, value={}, lr={}", string, isCopy, value, context.getLRPointer());
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->GetStringUTFChars(\"%s\") was called from %s%n", value, context.getLRPointer());
@@ -2957,7 +2954,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer pointer = context.getPointerArg(2);
                 StringObject string = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleaseStringChars string=" + string + ", pointer=" + pointer + ", lr=" + context.getLRPointer());
+                    log.debug("ReleaseStringChars string={}, pointer={}, lr={}", string, pointer, context.getLRPointer());
                 }
                 Objects.requireNonNull(string).freeMemoryBlock(pointer);
                 return 0;
@@ -2975,7 +2972,7 @@ public class DalvikVM extends BaseVM implements VM {
 
                 String string = bytes.getString(0);
                 if (log.isDebugEnabled()) {
-                    log.debug("NewStringUTF bytes=" + bytes + ", string=" + string);
+                    log.debug("NewStringUTF bytes={}, string={}", bytes, string);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->NewStringUTF(\"%s\") was called from %s%n", string, context.getLRPointer());
@@ -3000,7 +2997,7 @@ public class DalvikVM extends BaseVM implements VM {
                 int mode = context.getIntArg(3);
                 ByteArray array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleaseByteArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
+                    log.debug("ReleaseByteArrayElements array={}, pointer={}, mode={}", array, pointer, mode);
                 }
                 Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
@@ -3030,7 +3027,7 @@ public class DalvikVM extends BaseVM implements VM {
                 int mode = context.getIntArg(3);
                 IntArray array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleaseIntArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
+                    log.debug("ReleaseIntArrayElements array={}, pointer={}, mode={}", array, pointer, mode);
                 }
                 Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
@@ -3053,7 +3050,7 @@ public class DalvikVM extends BaseVM implements VM {
                 int mode = context.getIntArg(3);
                 FloatArray array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleaseByteArrayElements array=" + array + ", pointer=" + pointer + ", mode=" + mode);
+                    log.debug("ReleaseFloatArrayElements array={}, pointer={}, mode={}", array, pointer, mode);
                 }
                 Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
@@ -3116,7 +3113,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 short[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetShortArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                    log.debug("GetShortArrayRegion array={}, start={}, length={}, buf={}", array, start, length, buf);
                 }
                 buf.write(0, data, 0, data.length);
                 return 0;
@@ -3158,7 +3155,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 double[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                    log.debug("GetDoubleArrayRegion array={}, start={}, length={}, buf={}", array, start, length, buf);
                 }
                 buf.write(0, data, 0, data.length);
                 return 0;
@@ -3222,7 +3219,7 @@ public class DalvikVM extends BaseVM implements VM {
                 IntArray array = getObject(object.toIntPeer());
                 int[] data = buf.getIntArray(0, length);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                    log.debug("SetIntArrayRegion array={}, start={}, length={}, buf={}", array, start, length, buf);
                 }
                 Objects.requireNonNull(array).setData(start, data);
                 return 0;
@@ -3247,7 +3244,7 @@ public class DalvikVM extends BaseVM implements VM {
                 FloatArray array = getObject(object.toIntPeer());
                 float[] data = buf.getFloatArray(0, length);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetIntArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                    log.debug("SetFloatArrayRegion array={}, start={}, length={}, buf={}", array, start, length, buf);
                 }
                 Objects.requireNonNull(array).setData(start, data);
                 return 0;
@@ -3265,7 +3262,7 @@ public class DalvikVM extends BaseVM implements VM {
                 DoubleArray array = getObject(object.toIntPeer());
                 double[] data = buf.getDoubleArray(0, length);
                 if (log.isDebugEnabled()) {
-                    log.debug("SetDoubleArrayRegion array=" + array + ", start=" + start + ", length=" + length + ", buf=" + buf);
+                    log.debug("SetDoubleArrayRegion array={}, start={}, length={}, buf={}", array, start, length, buf);
                 }
                 Objects.requireNonNull(array).setData(start, data);
                 return 0;
@@ -3281,7 +3278,7 @@ public class DalvikVM extends BaseVM implements VM {
                 int nMethods = context.getIntArg(3);
                 DvmClass dvmClass = classMap.get(clazz.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("RegisterNatives dvmClass=" + dvmClass + ", methods=" + methods + ", nMethods=" + nMethods);
+                    log.debug("RegisterNatives dvmClass={}, methods={}, nMethods={}", dvmClass, methods, nMethods);
                 }
                 if (verbose) {
                     System.out.printf("JNIEnv->RegisterNatives(%s, %s, %d) was called from %s%n", dvmClass.getClassName(), methods, nMethods, context.getLRPointer());
@@ -3294,7 +3291,7 @@ public class DalvikVM extends BaseVM implements VM {
                     String methodName = name.getString(0);
                     String signatureValue = signature.getString(0);
                     if (log.isDebugEnabled()) {
-                        log.debug("RegisterNatives dvmClass=" + dvmClass + ", name=" + methodName + ", signature=" + signatureValue + ", fnPtr=" + fnPtr);
+                        log.debug("RegisterNatives dvmClass={}, name={}, signature={}, fnPtr={}", dvmClass, methodName, signatureValue, fnPtr);
                     }
                     dvmClass.nativesMap.put(methodName + signatureValue, (UnidbgPointer) fnPtr);
 
@@ -3320,7 +3317,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer env = context.getPointerArg(0);
                 DvmObject<?> obj = getObject(context.getPointerArg(1).toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("MonitorEnter env=" + env + ", obj=" + obj);
+                    log.debug("MonitorEnter env={}, obj={}", env, obj);
                 }
                 return 0;
             }
@@ -3333,7 +3330,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer env = context.getPointerArg(0);
                 DvmObject<?> obj = getObject(context.getPointerArg(1).toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("MonitorExit env=" + env + ", obj=" + obj);
+                    log.debug("MonitorExit env={}, obj={}", env, obj);
                 }
                 return 0;
             }
@@ -3345,7 +3342,7 @@ public class DalvikVM extends BaseVM implements VM {
                 RegisterContext context = emulator.getContext();
                 UnidbgPointer vm = context.getPointerArg(1);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetJavaVM vm=" + vm);
+                    log.debug("GetJavaVM vm={}", vm);
                 }
                 vm.setPointer(0, _JavaVM);
                 return JNI_OK;
@@ -3373,8 +3370,7 @@ public class DalvikVM extends BaseVM implements VM {
                     buffer.putChar(c);
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringRegion string=" + string + ", value=" + value + ", start=" + start +
-                            ", length=" + length + ", buf" + buf +", lr=" + context.getLRPointer());
+                    log.debug("GetStringRegion string={}, value={}, start={}, length={}, buf{}, lr={}", string, value, start, length, buf, context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOfRange(bytes, start, start+length+1);
                 buf.write(0, data, 0, data.length);
@@ -3398,8 +3394,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetStringUTFRegion string=" + string + ", value=" + value + ", start=" + start +
-                            ", length=" + length + ", buf" + buf +", lr=" + context.getLRPointer());
+                    log.debug("GetStringUTFRegion string={}, value={}, start={}, length={}, buf{}, lr={}", string, value, start, length, buf, context.getLRPointer());
                 }
                 byte[] data = Arrays.copyOfRange(bytes, start, start+length+1);
                 buf.write(0, data, 0, data.length);
@@ -3415,7 +3410,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer isCopy = context.getPointerArg(2);
                 PrimitiveArray<?> array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("GetPrimitiveArrayCritical array=" + array + ", isCopy=" + isCopy);
+                    log.debug("GetPrimitiveArrayCritical array={}, isCopy={}", array, isCopy);
                 }
                 return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).toIntPeer();
             }
@@ -3430,7 +3425,7 @@ public class DalvikVM extends BaseVM implements VM {
                 int mode = context.getIntArg(3);
                 PrimitiveArray<?> array = getObject(object.toIntPeer());
                 if (log.isDebugEnabled()) {
-                    log.debug("ReleasePrimitiveArrayCritical array=" + array + ", pointer=" + pointer + ", mode=" + mode);
+                    log.debug("ReleasePrimitiveArrayCritical array={}, pointer={}, mode={}", array, pointer, mode);
                 }
                 Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
                 return 0;
@@ -3461,7 +3456,7 @@ public class DalvikVM extends BaseVM implements VM {
                 }
                 DvmObject<?> dvmObject = Objects.requireNonNull(getObject(object.toIntPeer()));
                 if (log.isDebugEnabled()) {
-                    log.debug("NewWeakGlobalRef object=" + object + ", dvmObject=" + dvmObject + ", class=" + dvmObject.getClass());
+                    log.debug("NewWeakGlobalRef object={}, dvmObject={}, class={}", object, dvmObject, dvmObject.getClass());
                 }
                 return addObject(dvmObject, true, true);
             }
@@ -3478,7 +3473,7 @@ public class DalvikVM extends BaseVM implements VM {
             @Override
             public long handle(Emulator<?> emulator) {
                 if (log.isDebugEnabled()) {
-                    log.debug("ExceptionCheck throwable=" + throwable);
+                    log.debug("ExceptionCheck throwable={}", throwable);
                 }
                 return throwable == null ? JNI_FALSE : JNI_TRUE;
             }
@@ -3522,7 +3517,7 @@ public class DalvikVM extends BaseVM implements VM {
                     dvmGlobalObject = weakGlobalObjectMap.getOrDefault(hash, null);
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("GetObjectRefType object=" + object + ", dvmGlobalObject=" + dvmGlobalObject + ", dvmLocalObject=" + dvmLocalObject + ", LR=" + context.getLRPointer());
+                    log.debug("GetObjectRefType object={}, dvmGlobalObject={}, dvmLocalObject={}, LR={}", object, dvmGlobalObject, dvmLocalObject, context.getLRPointer());
                 }
                 if (dvmGlobalObject != null) {
                     return dvmGlobalObject.weak ? JNIWeakGlobalRefType : JNIGlobalRefType;
@@ -3788,7 +3783,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer env = context.getPointerArg(1);
                 Pointer args = context.getPointerArg(2); // JavaVMAttachArgs*
                 if (log.isDebugEnabled()) {
-                    log.debug("AttachCurrentThread vm=" + vm + ", env=" + env.getPointer(0) + ", args=" + args);
+                    log.debug("AttachCurrentThread vm={}, env={}, args={}", vm, env.getPointer(0), args);
                 }
                 env.setPointer(0, _JNIEnv);
                 return JNI_OK;
@@ -3803,7 +3798,7 @@ public class DalvikVM extends BaseVM implements VM {
                 Pointer env = context.getPointerArg(1);
                 int version = context.getIntArg(2);
                 if (log.isDebugEnabled()) {
-                    log.debug("GetEnv vm=" + vm + ", env=" + env.getPointer(0) + ", version=0x" + Integer.toHexString(version));
+                    log.debug("GetEnv vm={}, env={}, version=0x{}", vm, env.getPointer(0), Integer.toHexString(version));
                 }
                 env.setPointer(0, _JNIEnv);
                 return JNI_OK;
@@ -3820,7 +3815,7 @@ public class DalvikVM extends BaseVM implements VM {
         _JavaVM.setPointer(0, _JNIInvokeInterface);
 
         if (log.isDebugEnabled()) {
-            log.debug("_JavaVM=" + _JavaVM + ", _JNIInvokeInterface=" + _JNIInvokeInterface + ", _JNIEnv=" + _JNIEnv);
+            log.debug("_JavaVM={}, _JNIInvokeInterface={}, _JNIEnv={}", _JavaVM, _JNIInvokeInterface, _JNIEnv);
         }
     }
 
@@ -3838,13 +3833,13 @@ public class DalvikVM extends BaseVM implements VM {
         byte[] soData = apk.getFileData("lib/armeabi-v7a/" + soName);
         if (soData != null) {
             if (log.isDebugEnabled()) {
-                log.debug("resolve armeabi-v7a library: " + soName);
+                log.debug("resolve armeabi-v7a library: {}", soName);
             }
             return soData;
         }
         soData = apk.getFileData("lib/armeabi/" + soName);
         if (soData != null && log.isDebugEnabled()) {
-            log.debug("resolve armeabi library: " + soName);
+            log.debug("resolve armeabi library: {}", soName);
         }
         return soData;
     }

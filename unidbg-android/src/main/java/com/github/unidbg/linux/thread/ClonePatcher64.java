@@ -13,8 +13,8 @@ import keystone.Keystone;
 import keystone.KeystoneArchitecture;
 import keystone.KeystoneEncoded;
 import keystone.KeystoneMode;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
 import java.util.Arrays;
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 class ClonePatcher64 extends Arm64Svc {
 
-    private static final Log log = LogFactory.getLog(ClonePatcher64.class);
+    private static final Logger log = LoggerFactory.getLogger(ClonePatcher64.class);
 
     private final ThreadJoinVisitor visitor;
     private final AtomicLong value_ptr;
@@ -43,7 +43,7 @@ class ClonePatcher64 extends Arm64Svc {
 
         Pointer start_routine = thread.getPointer(0x60);
         Pointer arg = thread.getPointer(0x68);
-        log.info("clone start_routine=" + start_routine + ", child_stack=" + child_stack + ", flags=0x" + Integer.toHexString(flags) + ", arg=" + arg + ", pthread_start=" + pthread_start);
+        log.info("clone start_routine={}, child_stack={}, flags=0x{}, arg={}, pthread_start={}", start_routine, child_stack, Integer.toHexString(flags), arg, pthread_start);
 
         Backend backend = emulator.getBackend();
         boolean join = visitor == null || visitor.canJoin(start_routine, ++threadId);
