@@ -1306,7 +1306,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             }
             pointer.setPointer(0, UnidbgPointer.pointer(emulator, module.base + target));
             if (log.isDebugEnabled()) {
-                log.debug("bindLocalRelocations address=0x" + Integer.toHexString(relocation.address) + ", symbolNum=0x" + Integer.toHexString(relocation.symbolNum) + ", target=0x" + Long.toHexString(target));
+                log.debug("bindLocalRelocations address=0x{}, symbolNum=0x{}, target=0x{}", Integer.toHexString(relocation.address), Integer.toHexString(relocation.symbolNum), Long.toHexString(target));
             }
         }
     }
@@ -1346,17 +1346,17 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
             if (address == 0L) {
                 if (isWeakRef) {
                     if (log.isDebugEnabled()) {
-                        log.debug("bindExternalRelocations failed symbol=" + symbol + ", isWeakRef=true");
+                        log.debug("bindExternalRelocations failed symbol={}, isWeakRef=true", symbol);
                     }
                     pointer.setPointer(0, null);
                 } else {
-                    log.warn("bindExternalRelocations failed symbol=" + symbol + ", isWeakRef=false");
+                    log.warn("bindExternalRelocations failed symbol={}, isWeakRef=false", symbol);
                 }
                 ret = false;
             } else {
                 pointer.setPointer(0, UnidbgPointer.pointer(emulator, address));
                 if (log.isDebugEnabled()) {
-                    log.debug("bindExternalRelocations address=0x" + Long.toHexString(relocation.address) + ", symbolNum=0x" + Integer.toHexString(relocation.symbolNum) + ", symbolName=" + symbol.getName());
+                    log.debug("bindExternalRelocations address=0x{}, symbolNum=0x{}, symbolName={}", Long.toHexString(relocation.address), Integer.toHexString(relocation.symbolNum), symbol.getName());
                 }
             }
         }
@@ -1746,12 +1746,18 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 "_NSProcessInfoPowerStateDidChangeNotification".equals(symbolName) ||
                 "_NSExtensionHostDidEnterBackgroundNotification".equals(symbolName) ||
                 "_NSExtensionHostDidBecomeActiveNotification".equals(symbolName)) {
-            targetImage = this.modules.get("UIKit");
-            if (targetImage == null) {
-                targetImage = this.modules.get("AppKit");
+            MachOModule fakeImage = this.modules.get("UIKit");
+            if (fakeImage == null) {
+                fakeImage = this.modules.get("AppKit");
             }
-            if (targetImage == null) {
-                throw new IllegalStateException();
+            if (fakeImage == null) {
+                fakeImage = this.modules.get("IOKit");
+            }
+            if (fakeImage == null) {
+                emulator.attach().debug();
+                throw new IllegalStateException(String.format("targetImage=%s, symbolName=%s", targetImage, symbolName));
+            } else {
+                targetImage = fakeImage;
             }
         }
         return targetImage;

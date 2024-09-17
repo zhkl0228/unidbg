@@ -769,7 +769,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 symbol = objectiveCProcessor.findObjcSymbol(symbol, targetAddress, this);
             }
         } catch (Exception e) {
-            if (LoggerFactory.getLogger(AbstractEmulator.class).isDebugEnabled()) {
+            if (LoggerFactory.getLogger(AbstractEmulator.class).isTraceEnabled()) {
                 e.printStackTrace(System.err);
             }
         }

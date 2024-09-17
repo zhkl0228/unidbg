@@ -577,9 +577,7 @@ public class Dyld64 extends Dyld {
 
     @Override
     final int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address) {
-        if (log.isDebugEnabled()) {
-            log.debug("_dyld_func_lookup name={}", name);
-        }
+        log.debug("_dyld_func_lookup name={}", name);
         switch (name) {
             case "__dyld_fast_stub_entry": // fastBindLazySymbol
                 address.setPointer(0, __dyld_fast_stub_entry);
