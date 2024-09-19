@@ -96,7 +96,7 @@ public class Dyld32 extends Dyld {
                     ret = 0;
                 } else {
                     MachOModule module = (MachOModule) modules[image_index];
-                    ret = computeSlide(emulator, module.machHeader);
+                    ret = module.slide;
                 }
                 log.debug("__dyld_get_image_vmaddr_slide index={}, ret=0x{}", image_index, Long.toHexString(ret));
                 return ret;
@@ -109,7 +109,7 @@ public class Dyld32 extends Dyld {
                 if (log.isDebugEnabled()) {
                     log.debug("__dyld_get_image_slide mh={}", mh);
                 }
-                return mh == null ? 0 : computeSlide(emulator, mh.peer);
+                return mh == null ? 0 : MachOModule.computeSlide(emulator, mh.peer);
             }
         });
 
@@ -173,7 +173,7 @@ public class Dyld32 extends Dyld {
                             pointer = pointer.share(-4);
                             pointer.setInt(0, (int) mm.machHeader);
                             pointer = pointer.share(-4);
-                            pointer.setInt(0, (int) computeSlide(emulator, mm.machHeader));
+                            pointer.setInt(0, (int) mm.slide);
 
                             String str = "[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader);
                             if (log.isDebugEnabled()) {

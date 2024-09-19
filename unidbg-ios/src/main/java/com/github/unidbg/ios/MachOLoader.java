@@ -1141,10 +1141,12 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     /**
      * <a href="http://localhost:8080/source/xref/dyld/common/MachOLoaded.cpp#1308">参考实现</a>
      */
-    private void walkChain(MachOModule mm, Pointer chain, int pointer_format, List<FixupChains.BindTarget> bindTargets, ByteBufferKaitaiStream symbolsPool) {
+    private void walkChain(MachOModule mm, Pointer chain, final int pointer_format, List<FixupChains.BindTarget> bindTargets, ByteBufferKaitaiStream symbolsPool) {
+        Logger log = LoggerFactory.getLogger("com.github.unidbg.ios." + mm.name);
         boolean chainEnd = false;
         while (!chainEnd) {
             long raw64 = chain.getLong(0);
+            log.debug("handleChain: {}, raw64=0x{}", chain, Long.toHexString(raw64));
             FixupChains.handleChain(emulator, mm, hookListeners, pointer_format, chain, raw64, bindTargets, symbolsPool);
             switch (pointer_format) {
                 case FixupChains.DYLD_CHAINED_PTR_ARM64E: {
@@ -2112,7 +2114,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         UnidbgStructure info = createDyldImageInfo(module);
         switch (state) {
             case Dyld.dyld_image_state_bound:
-                long slide = Dyld.computeSlide(emulator, module.machHeader);
+                long slide = module.slide;
                 if (!module.executable) {
                     for (UnidbgPointer callback : addImageCallbacks) {
                         if (module.addImageCallSet.add(callback)) {

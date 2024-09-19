@@ -58,7 +58,7 @@ public class Dyld64 extends Dyld {
             @Override
             public long handle(Emulator<?> emulator) {
                 UnidbgPointer mh = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_X0);
-                long slide = mh == null ? 0 : computeSlide(emulator, mh.peer);
+                long slide = mh == null ? 0 : MachOModule.computeSlide(emulator, mh.peer);
                 log.debug("__dyld_get_image_slide mh={}, slide=0x{}", mh, Long.toHexString(slide));
                 return slide;
             }
@@ -121,7 +121,7 @@ public class Dyld64 extends Dyld {
                     return 0;
                 }
                 MachOModule module = (MachOModule) modules[image_index];
-                long slide = computeSlide(emulator, module.machHeader);
+                long slide = module.slide;
                 if (log.isDebugEnabled()) {
                     log.debug("__dyld_get_image_vmaddr_slide index={}, slide=0x{}, module={}", image_index, Long.toHexString(slide), module.name);
                 }
@@ -204,7 +204,7 @@ public class Dyld64 extends Dyld {
                             pointer = pointer.share(-8);
                             pointer.setLong(0, mm.machHeader);
                             pointer = pointer.share(-8);
-                            pointer.setLong(0, computeSlide(emulator, mm.machHeader));
+                            pointer.setLong(0, mm.slide);
 
                             String msg = "[" + md.name + "]PushAddImageFunction: 0x" + Long.toHexString(mm.machHeader);
                             if (log.isDebugEnabled()) {

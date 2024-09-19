@@ -2,12 +2,6 @@ package com.github.unidbg.ios;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
-import com.github.unidbg.ios.struct.LoadCommand;
-import com.github.unidbg.ios.struct.MachHeader;
-import com.github.unidbg.ios.struct.MachHeader64;
-import com.github.unidbg.ios.struct.SegmentCommand;
-import com.github.unidbg.ios.struct.SegmentCommand32;
-import com.github.unidbg.ios.struct.SegmentCommand64;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo32;
 import com.github.unidbg.ios.struct.sysctl.DyldImageInfo64;
 import com.github.unidbg.memory.SvcMemory;
@@ -15,7 +9,6 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.Dlfcn;
 import com.sun.jna.Pointer;
-import io.kaitai.MachO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,29 +37,6 @@ public abstract class Dyld extends Dlfcn {
     }
 
     abstract int _stub_binding_helper();
-
-    public static long computeSlide(Emulator<?> emulator, long machHeader) {
-        Pointer pointer = UnidbgPointer.pointer(emulator, machHeader);
-        assert pointer != null;
-        MachHeader header = emulator.is32Bit() ? new MachHeader(pointer) : new MachHeader64(pointer);
-        header.unpack();
-        Pointer loadPointer = pointer.share(header.size());
-        for (int i = 0; i < header.ncmds; i++) {
-            LoadCommand loadCommand = new LoadCommand(loadPointer);
-            loadCommand.unpack();
-            if (loadCommand.type == io.kaitai.MachO.LoadCommandType.SEGMENT.id() ||
-                    loadCommand.type == MachO.LoadCommandType.SEGMENT_64.id()) {
-                SegmentCommand segmentCommand = emulator.is64Bit() ? new SegmentCommand64(loadPointer) : new SegmentCommand32(loadPointer);
-                segmentCommand.unpack();
-
-                if ("__TEXT".equals(segmentCommand.getSegName())) {
-                    return (machHeader - segmentCommand.getVmAddress());
-                }
-            }
-            loadPointer = loadPointer.share(loadCommand.size);
-        }
-        return 0;
-    }
 
     abstract int _dyld_func_lookup(Emulator<?> emulator, String name, Pointer address);
 

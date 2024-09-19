@@ -11,6 +11,12 @@ import com.github.unidbg.hook.HookListener;
 import com.github.unidbg.ios.objc.ObjectiveCProcessor;
 import com.github.unidbg.ios.objc.processor.CDObjectiveC2Processor;
 import com.github.unidbg.ios.struct.DyldUnwindSections;
+import com.github.unidbg.ios.struct.LoadCommand;
+import com.github.unidbg.ios.struct.MachHeader;
+import com.github.unidbg.ios.struct.MachHeader64;
+import com.github.unidbg.ios.struct.SegmentCommand;
+import com.github.unidbg.ios.struct.SegmentCommand32;
+import com.github.unidbg.ios.struct.SegmentCommand64;
 import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.MemoryBlock;
@@ -59,6 +65,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     final List<InitFunction> initFunctionList;
 
     public final long machHeader;
+    public final long slide;
 
     boolean indirectSymbolBound;
     boolean lazyPointerProcessed;
@@ -136,6 +143,29 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private final List<InitFunction> allInitFunctionList;
 
+    static long computeSlide(Emulator<?> emulator, long machHeader) {
+        Pointer pointer = UnidbgPointer.pointer(emulator, machHeader);
+        assert pointer != null;
+        MachHeader header = emulator.is32Bit() ? new MachHeader(pointer) : new MachHeader64(pointer);
+        header.unpack();
+        Pointer loadPointer = pointer.share(header.size());
+        for (int i = 0; i < header.ncmds; i++) {
+            LoadCommand loadCommand = new LoadCommand(loadPointer);
+            loadCommand.unpack();
+            if (loadCommand.type == io.kaitai.MachO.LoadCommandType.SEGMENT.id() ||
+                    loadCommand.type == MachO.LoadCommandType.SEGMENT_64.id()) {
+                SegmentCommand segmentCommand = emulator.is64Bit() ? new SegmentCommand64(loadPointer) : new SegmentCommand32(loadPointer);
+                segmentCommand.unpack();
+
+                if ("__TEXT".equals(segmentCommand.getSegName())) {
+                    return (machHeader - segmentCommand.getVmAddress());
+                }
+            }
+            loadPointer = loadPointer.share(loadCommand.size);
+        }
+        return 0;
+    }
+
     MachOModule(MachO machO, String name, long base, long size, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MachO.SymtabCommand symtabCommand, MachO.DysymtabCommand dysymtabCommand, ByteBuffer buffer,
                 List<NeedLibrary> lazyLoadNeededList, Map<String, Module> upwardLibraries, Map<String, Module> exportModules,
@@ -160,6 +190,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.apple = apple;
         this.vars = vars;
         this.machHeader = machHeader;
+        this.slide = computeSlide(emulator, machHeader);
         this.executable = executable;
         this.loader = loader;
         this.hookListeners = hookListeners;
@@ -570,20 +601,32 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     private void parseInitFunction(ByteBuffer buffer, String libName, Emulator<?> emulator, List<InitFunction> initFunctionList, long flags, long size, long offset) {
         long type = flags & SECTION_TYPE;
-        if (type != S_MOD_INIT_FUNC_POINTERS) {
-            return;
-        }
-
-        long elementCount = size / emulator.getPointerSize();
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.limit((int) (offset + size));
-        buffer.position((int) offset);
-        for (int i = 0; i < elementCount; i++) {
-            long address = emulator.is32Bit() ? buffer.getInt() : buffer.getLong();
-            if (log.isDebugEnabled()) {
-                log.debug("parseInitFunction libName={}, address=0x{}, offset=0x{}, elementCount={}", libName, Long.toHexString(address), Long.toHexString(offset), elementCount);
+        if (type == S_MOD_INIT_FUNC_POINTERS) {
+            long elementCount = size / emulator.getPointerSize();
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.limit((int) (offset + size));
+            buffer.position((int) offset);
+            for (int i = 0; i < elementCount; i++) {
+                long address = emulator.is32Bit() ? buffer.getInt() : buffer.getLong();
+                if (log.isDebugEnabled()) {
+                    log.debug("parseInitFunction libName={}, address=0x{}, offset=0x{}, elementCount={}", libName, Long.toHexString(address), Long.toHexString(offset), elementCount);
+                }
+                initFunctionList.add(new MachOModuleInit(this, envp, apple, vars, true, address));
             }
-            initFunctionList.add(new MachOModuleInit(this, envp, apple, vars, true, address));
+        } else if (type == S_INIT_FUNC_OFFSETS) {
+            long elementCount = size / 4;
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.limit((int) (offset + size));
+            buffer.position((int) offset);
+
+            for (int i = 0; i < elementCount; i++) {
+                long initOffset = buffer.getInt() & 0xffffffffL;
+                long address = this.machHeader + initOffset;
+                if (log.isDebugEnabled()) {
+                    log.debug("parseInitOffset libName={}, func_offset=0x{}, func_addr=0x{}, offset=0x{}, elementCount={}", libName, Long.toHexString(initOffset), Long.toHexString(address), Long.toHexString(offset), elementCount);
+                }
+                initFunctionList.add(new MachOModuleInitOffset(this, envp, apple, vars, address));
+            }
         }
     }
 

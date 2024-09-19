@@ -1,5 +1,6 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.HookListener;
@@ -68,7 +69,7 @@ final class FixupChains {
                         int authBind_ordinal = (int) (dyld_chained_ptr_arm64e_auth_bind & 0xffff);
                         int bindOrdinal = (pointer_format == DYLD_CHAINED_PTR_ARM64E_USERLAND24) ? authBind24_ordinal : authBind_ordinal;
                         if ( bindOrdinal >= bindTargets.size() ) {
-                            log.warn(String.format("out of range bind ordinal %d (max %d): pointer_format=%d", bindOrdinal, bindTargets.size(), pointer_format));
+                            log.warn("authBind_bind out of range bind ordinal {} (max {}): pointer_format={}", bindOrdinal, bindTargets.size(), pointer_format);
                         } else {
                             // authenticated bind
                             /*BindTarget bindTarget = bindTargets.get(bindOrdinal);
@@ -77,11 +78,10 @@ final class FixupChains {
                                 newValue = (void*)fixupLoc->arm64e.signPointer(fixupLoc, (uintptr_t)newValue);*/
                             log.warn("Unsupported authenticated bind: bindOrdinal={}", bindOrdinal);
                         }
-                        break;
                     } else {
                         log.warn("Unsupported authenticated rebase");
-                        break;
                     }
+                    break;
                 } else {
                     boolean bind_bind = (dyld_chained_ptr_arm64e_bind >>> 62) != 0;
                     if (bind_bind) {
@@ -89,7 +89,7 @@ final class FixupChains {
                         int bind_ordinal = (int) (dyld_chained_ptr_arm64e_bind & 0xffff);
                         int bindOrdinal = (pointer_format == DYLD_CHAINED_PTR_ARM64E_USERLAND24) ? bind24_ordinal : bind_ordinal;
                         if (bindOrdinal >= bindTargets.size()) {
-                            log.warn(String.format("out of range bind ordinal %d (max %d): pointer_format=%d", bindOrdinal, bindTargets.size(), pointer_format));
+                            log.warn("bind_bind out of range bind ordinal {} (max {}): pointer_format={}", bindOrdinal, bindTargets.size(), pointer_format);
                         } else {
                             BindTarget bindTarget = bindTargets.get(bindOrdinal);
                             long addend19 = (dyld_chained_ptr_arm64e_bind >>> 32) & 0x7ffff;
@@ -139,7 +139,7 @@ final class FixupChains {
                     // plain rebase (old format target is vmaddr, new format target is offset)
                     long unpackedTarget = (high8 << 56) | target;
                     if (pointer_format == DYLD_CHAINED_PTR_64) {
-                        chain.setLong(0, unpackedTarget);
+                        chain.setLong(0, unpackedTarget + mm.slide);
                     } else {
                         chain.setLong(0, UnidbgPointer.nativeValue(chain) + unpackedTarget);
                     }
@@ -192,7 +192,10 @@ final class FixupChains {
                         if (symbol != null) {
                             return symbol;
                         }
-                        log.info("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName={}, module={}", symbolName, mm.getPath());
+                        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
+                        if (log.isDebugEnabled()) {
+                            FixupChains.log.info("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName={}, module={}", symbolName, mm.getPath());
+                        }
                         return null;
                     default:
                         throw new UnsupportedOperationException("unknown-ordinal: symbolName=" + symbolName);
@@ -219,8 +222,9 @@ final class FixupChains {
             MachOLoader loader = (MachOLoader) emulator.getMemory();
             Symbol symbol = resolveSymbol(loader, mm, lib_ordinal, symbolName, weak_import);
             if (symbol == null) {
+                Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
                 if (log.isDebugEnabled()) {
-                    log.info("bind symbolName={}, lib_ordinal={}", symbolName, lib_ordinal);
+                    FixupChains.log.info("bind symbolName={}, lib_ordinal={}", symbolName, lib_ordinal);
                 }
                 long bindAt = 0;
                 for (HookListener listener : hookListeners) {

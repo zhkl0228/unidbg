@@ -6,7 +6,6 @@ import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.BaseHook;
 import com.github.unidbg.hook.ReplaceCallback;
 import com.github.unidbg.hook.fishhook.IFishHook;
-import com.github.unidbg.ios.Dyld;
 import com.github.unidbg.ios.MachOModule;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -85,7 +84,7 @@ public class FishHook extends BaseHook implements IFishHook {
     public void rebindSymbolImage(Module module, String symbol, ReplaceCallback callback, boolean enablePostCall) {
         MachOModule mm = (MachOModule) module;
         long header = mm.machHeader;
-        long slide = Dyld.computeSlide(emulator, header);
+        long slide = mm.slide;
         Pointer rebinding = createRebinding(symbol, callback, enablePostCall);
         int ret = rebind_symbols_image.call(emulator, UnidbgPointer.pointer(emulator, header), UnidbgPointer.pointer(emulator, slide), rebinding, 1).intValue();
         if (ret != RET_SUCCESS) {
