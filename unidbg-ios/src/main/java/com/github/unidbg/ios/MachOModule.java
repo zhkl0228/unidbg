@@ -124,7 +124,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 long relativeOffset = address - ph.vmAddr;
                 if (relativeOffset >= ph.fileSize)
                     throw new IllegalStateException("Can not convert virtual memory address 0x" + Long.toHexString(address) + " to file offset -" + " found segment " + ph
-                            + " but address maps to memory outside file range");
+                        + " but address maps to memory outside file range");
                 long ret = ph.fileOffset + relativeOffset;
                 if ((ret >> 33L) != 0) {
                     throw new IllegalStateException("ret=0x" + Long.toHexString(ret));
@@ -369,7 +369,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                 importName = baos.toString();
             } else {
                 address = Utils.readULEB128(buffer).longValue();
-                if((flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER) != 0) {
+                if ((flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER) != 0) {
                     other = Utils.readULEB128(buffer).longValue();
                 } else {
                     other = 0;
@@ -390,16 +390,16 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             int edgeStrLen = 0;
             byte b;
             while ((b = buffer.get()) != 0) {
-                cummulativeString[curStrOffset+edgeStrLen] = b;
+                cummulativeString[curStrOffset + edgeStrLen] = b;
                 ++edgeStrLen;
             }
-            cummulativeString[curStrOffset+edgeStrLen] = 0;
+            cummulativeString[curStrOffset + edgeStrLen] = 0;
 
             int childNodeOffset = Utils.readULEB128(buffer).intValue();
 
             ByteBuffer duplicate = buffer.duplicate();
             duplicate.position(childNodeOffset);
-            processExportNode(log, duplicate, cummulativeString, curStrOffset+edgeStrLen, map);
+            processExportNode(log, duplicate, cummulativeString, curStrOffset + edgeStrLen, map);
         }
     }
 
@@ -500,7 +500,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     if (address == findAddress) {
                         return symbolName;
                     }
-                    address += ((long) immediate *emulator.getPointerSize() + emulator.getPointerSize());
+                    address += ((long) immediate * emulator.getPointerSize() + emulator.getPointerSize());
                     break;
                 case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
                     count = Utils.readULEB128(buffer).intValue();
@@ -557,12 +557,14 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     MachO.SegmentCommand segmentCommand = (MachO.SegmentCommand) command.body();
                     for (MachO.SegmentCommand.Section section : segmentCommand.sections()) {
                         parseInitFunction(buffer, libName, emulator, initFunctionList, section.flags(), section.size(), section.offset());
+                        parseInitOffsets(buffer, libName, emulator, initFunctionList, section.flags(), section.size(), section.offset(), section.addr());
                     }
                     break;
                 case SEGMENT_64:
                     MachO.SegmentCommand64 segmentCommand64 = (MachO.SegmentCommand64) command.body();
                     for (MachO.SegmentCommand64.Section64 section : segmentCommand64.sections()) {
                         parseInitFunction(buffer, libName, emulator, initFunctionList, section.flags(), section.size(), section.offset());
+                        parseInitOffsets(buffer, libName, emulator, initFunctionList, section.flags(), section.size(), section.offset(), section.addr());
                     }
             }
         }
@@ -583,6 +585,28 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             long address = emulator.is32Bit() ? buffer.getInt() : buffer.getLong();
             if (log.isDebugEnabled()) {
                 log.debug("parseInitFunction libName=" + libName + ", address=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(offset) + ", elementCount=" + elementCount);
+            }
+            initFunctionList.add(new MachOModuleInit(this, envp, apple, vars, true, address));
+        }
+    }
+
+    private void parseInitOffsets(ByteBuffer buffer, String libName, Emulator<?> emulator,
+                                  List<InitFunction> initFunctionList, long flags, long size, long offset, long addr) {
+        if ((flags & SECTION_TYPE) != S_INIT_FUNC_OFFSETS) {
+            return;
+        }
+
+        //
+        long elementCount = size / 4;
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.limit((int) (offset + size));
+        buffer.position((int) offset);
+
+        for (int i = 0; i < elementCount; i++) {
+            long initOffset = buffer.getInt();
+            long address = this.machHeader + initOffset;
+            if (log.isDebugEnabled()) {
+                log.debug("parseInitOffset libName=" + libName + ", func_offset=0x" + Long.toHexString(initOffset) + ", func_addr=0x" + Long.toHexString(address) + ", offset=0x" + Long.toHexString(offset) + ", elementCount=" + elementCount);
             }
             initFunctionList.add(new MachOModuleInit(this, envp, apple, vars, true, address));
         }
@@ -701,11 +725,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         for (long i = dysymtabCommand.iExtDefSym(); i < dysymtabCommand.iExtDefSym() + dysymtabCommand.nExtDefSym(); i++) {
             MachO.SymtabCommand.Nlist nlist = symbols.get((int) i);
             if ((nlist.type() & N_TYPE) == N_SECT) {
-                if ( bestSymbol == null ) {
-                    if ( nlist.value() <= targetAddress ) {
+                if (bestSymbol == null) {
+                    if (nlist.value() <= targetAddress) {
                         bestSymbol = nlist;
                     }
-                } else if ( (nlist.value() <= targetAddress) && (bestSymbol.value() < nlist.value()) ) {
+                } else if ((nlist.value() <= targetAddress) && (bestSymbol.value() < nlist.value())) {
                     bestSymbol = nlist;
                 }
             }
@@ -715,11 +739,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         for (long i = dysymtabCommand.iLocalSym(); i < dysymtabCommand.iLocalSym() + dysymtabCommand.nLocalSym(); i++) {
             MachO.SymtabCommand.Nlist nlist = symbols.get((int) i);
             if ((nlist.type() & N_TYPE) == N_SECT && ((nlist.type() & N_STAB) == 0)) {
-                if ( bestSymbol == null ) {
-                    if ( nlist.value() <= targetAddress ) {
+                if (bestSymbol == null) {
+                    if (nlist.value() <= targetAddress) {
                         bestSymbol = nlist;
                     }
-                } else if ( (nlist.value() <= targetAddress) && (bestSymbol.value() < nlist.value()) ) {
+                } else if ((nlist.value() <= targetAddress) && (bestSymbol.value() < nlist.value())) {
                     bestSymbol = nlist;
                 }
             }
@@ -832,13 +856,13 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
 
         MachOModule module = new MachOModule(null, name, base, size, Collections.<String, Module>emptyMap(),
-                Collections.<MemRegion>emptyList(),
-                null, null, null,
-                Collections.<NeedLibrary>emptyList(),
-                Collections.<String, Module>emptyMap(),
-                Collections.<String, Module>emptyMap(),
-                name, emulator, null, null, null, null, null, 0L, false, null,
-                Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null, null, null, null) {
+            Collections.<MemRegion>emptyList(),
+            null, null, null,
+            Collections.<NeedLibrary>emptyList(),
+            Collections.<String, Module>emptyMap(),
+            Collections.<String, Module>emptyMap(),
+            name, emulator, null, null, null, null, null, 0L, false, null,
+            Collections.<HookListener>emptyList(), Collections.<String>emptyList(), null, null, null, null, null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);
@@ -848,9 +872,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     return null;
                 }
             }
+
             @Override
             public void registerSymbol(String symbolName, long address) {
             }
+
             @Override
             public boolean isVirtual() {
                 return true;
@@ -894,7 +920,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                     break;
                 case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
                     // the special ordinals are negative numbers
-                    if ( immediate == 0 )
+                    if (immediate == 0)
                         libraryOrdinal = 0;
                     else {
                         libraryOrdinal = BIND_OPCODE_MASK | immediate;
@@ -942,7 +968,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_SELF) {
             targetImage = this;
         } else if (libraryOrdinal == BIND_SPECIAL_DYLIB_FLAT_LOOKUP) {
-            for(MachOModule mm : loader.modules.values().toArray(new MachOModule[0])) {
+            for (MachOModule mm : loader.modules.values().toArray(new MachOModule[0])) {
                 long at = bindAt(type, pointer, mm, symbolName);
                 if (at != 0) {
                     return at;
