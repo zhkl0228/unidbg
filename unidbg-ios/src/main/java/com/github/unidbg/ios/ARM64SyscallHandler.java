@@ -1913,7 +1913,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
                 log.info("sysctl CTL_UNSPEC action={}, namelen={}, buffer={}, bufferSize={}, set0={}, set1={}", action, namelen, buffer, bufferSize, set0, set1);
                 break;
-            case CTL_KERN:
+            case CTL_KERN: {
                 action = name.getInt(4);
                 String msg = "sysctl CTL_KERN action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 switch (action) {
@@ -1923,7 +1923,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         return 1;
                     case KERN_OSTYPE:
                         log.debug(msg);
-                        String osType = "Darwin";
+                        String osType = getKernelOsType();
                         if (bufferSize != null) {
                             bufferSize.setLong(0, osType.length() + 1);
                         }
@@ -1933,7 +1933,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         return 0;
                     case KERN_OSRELEASE:
                         log.debug(msg);
-                        String osRelease = "7.1.2";
+                        String osRelease = getKernelOsRelease();
                         if (bufferSize != null) {
                             bufferSize.setLong(0, osRelease.length() + 1);
                         }
@@ -1943,7 +1943,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         return 0;
                     case KERN_VERSION:
                         log.debug(msg);
-                        String version = "Darwin Kernel Version 14.0.0: Sun Mar 29 19:47:37 PDT 2015; root:xnu-2784.20.34~2/RELEASE_ARM64_S5L8960X";
+                        String version = getKernelVersion();
                         if (bufferSize != null) {
                             bufferSize.setLong(0, version.length() + 1);
                         }
@@ -1978,7 +1978,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         break;
                     case KERN_OSVERSION:
                         log.debug(msg);
-                        String osVersion = "9A127";
+                        String osVersion = getBuildVersion();
                         if (bufferSize != null) {
                             bufferSize.setLong(0, osVersion.length() + 1);
                         }
@@ -1988,7 +1988,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         return 0;
                     case KERN_HOSTNAME:
                         log.debug(msg);
-                        String hostName = "unidbg.local";
+                        String hostName = getKernelHostName();
                         if (bufferSize != null) {
                             bufferSize.setLong(0, hostName.length() + 1);
                         }
@@ -2028,9 +2028,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                         break;
                 }
                 break;
-            case CTL_HW:
+            }
+            case CTL_HW: {
                 action = name.getInt(4);
-                msg = "sysctl CTL_HW action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
+                String msg = "sysctl CTL_HW action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 switch (action) {
                     case HW_MACHINE:
                         log.debug(msg);
@@ -2126,9 +2127,10 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                 }
                 log.info(msg);
                 break;
+            }
             case CTL_NET:
                 action = name.getInt(4); // AF_ROUTE
-                msg = "sysctl CTL_NET action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
+                String msg = "sysctl CTL_NET action=" + action + ", namelen=" + namelen + ", buffer=" + buffer + ", bufferSize=" + bufferSize + ", set0=" + set0 + ", set1=" + set1;
                 int family = name.getInt(0xc); // AF_INET
                 int rt = name.getInt(0x10);
                 if(action == AF_ROUTE && rt == NET_RT_IFLIST) {

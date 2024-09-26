@@ -1425,7 +1425,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                         return 1;
                     case KERN_OSTYPE:
                         log.debug(msg);
-                        String osType = "Darwin";
+                        String osType = getKernelOsType();
                         if (bufferSize != null) {
                             bufferSize.setInt(0, osType.length() + 1);
                         }
@@ -1435,7 +1435,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                         return 0;
                     case KERN_OSRELEASE:
                         log.debug(msg);
-                        String osRelease = "7.1.2";
+                        String osRelease = getKernelOsRelease();
                         if (bufferSize != null) {
                             bufferSize.setInt(0, osRelease.length() + 1);
                         }
@@ -1445,7 +1445,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                         return 0;
                     case KERN_VERSION:
                         log.debug(msg);
-                        String version = "Darwin Kernel Version 14.0.0: Sun Mar 29 19:47:37 PDT 2015; root:xnu-2784.20.34~2/RELEASE_ARM64_S5L8960X";
+                        String version = getKernelVersion();
                         if (bufferSize != null) {
                             bufferSize.setInt(0, version.length() + 1);
                         }
@@ -1459,7 +1459,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                         return 0;
                     case KERN_HOSTNAME:
                         log.debug(msg);
-                        String host = "localhost";
+                        String host = getKernelHostName();
                         if (bufferSize != null) {
                             bufferSize.setInt(0, host.length() + 1);
                         }
@@ -1486,7 +1486,7 @@ public class ARM32SyscallHandler extends DarwinSyscallHandler {
                         break;
                     case KERN_OSVERSION:
                         log.debug(msg);
-                        String osVersion = "9A127";
+                        String osVersion = getBuildVersion();
                         if (bufferSize != null) {
                             bufferSize.setInt(0, osVersion.length() + 1);
                         }

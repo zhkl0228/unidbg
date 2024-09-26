@@ -854,4 +854,24 @@ public abstract class DarwinSyscallHandler extends UnixSyscallHandler<DarwinFile
         return 0;
     }
 
+    protected String getKernelOsType() {
+        return "Darwin";
+    }
+
+    protected String getKernelOsRelease() {
+        return "7.1.2";
+    }
+
+    protected String getKernelVersion() {
+        return "Darwin Kernel Version 14.0.0: Sun Mar 29 19:47:37 PDT 2015; root:xnu-2784.20.34~2/RELEASE_ARM64_S5L8960X";
+    }
+
+    protected String getBuildVersion() {
+        return "9A127";
+    }
+
+    protected String getKernelHostName() {
+        return "unidbg.local";
+    }
+
 }
