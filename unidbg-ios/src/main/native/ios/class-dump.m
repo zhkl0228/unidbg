@@ -386,10 +386,13 @@ NSUInteger findClosedBracket(NSString *string) {
 						case 'P':
 							// Garbage collection
 							break;
+                        case '?':
+                            break;
 						case 't':
 							assert(0);
 							break;
 						default:
+						    NSLog(@"Unknown name: %s, propertyAttributeCount=%d, i=%d, attribute=%@, attributeValue=%s, typeEncoding=%s, propertyName=%s\n", propertyAttribute->name, propertyAttributeCount, i, attribute, attributeValue, typeEncoding, propertyName);
 							assert(0);
 							break;
 					}
@@ -421,8 +424,11 @@ NSUInteger findClosedBracket(NSString *string) {
 			assert(typeEncoding);
 			
 			NSString *propertyType = [ClassDump methodArgTypeString: typeEncoding];
-			
-			[result appendFormat:@"@property %@%@ %s;\n", attributesString, propertyType, propertyName];
+			if([propertyType hasSuffix: @"*"]) {
+			    [result appendFormat:@"@property %@%@%s;\n", attributesString, propertyType, propertyName];
+			} else {
+			    [result appendFormat:@"@property %@%@ %s;\n", attributesString, propertyType, propertyName];
+			}
 			
 			free(typeEncoding);
 		}
