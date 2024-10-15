@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
@@ -127,18 +128,23 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
         for (Segment ph : segments) {
             if (address >= ph.vmAddr && address < (ph.vmAddr + ph.vmSize)) {
-                long relativeOffset = address - ph.vmAddr;
-                if (relativeOffset >= ph.fileSize)
-                    throw new IllegalStateException("Can not convert virtual memory address 0x" + Long.toHexString(address) + " to file offset -" + " found segment " + ph
-                            + " but address maps to memory outside file range");
-                long ret = ph.fileOffset + relativeOffset;
-                if ((ret >> 33L) != 0) {
-                    throw new IllegalStateException("ret=0x" + Long.toHexString(ret));
-                }
+                long ret = calcFileOffset(address, ph);
                 return (int) ret;
             }
         }
         throw new IllegalStateException("Cannot find segment for address: 0x" + Long.toHexString(address));
+    }
+
+    private static long calcFileOffset(long address, Segment ph) {
+        long relativeOffset = address - ph.vmAddr;
+        if (relativeOffset >= ph.fileSize)
+            throw new IllegalStateException("Can not convert virtual memory address 0x" + Long.toHexString(address) + " to file offset -" + " found segment " + ph
+                    + " but address maps to memory outside file range");
+        long ret = ph.fileOffset + relativeOffset;
+        if ((ret >> 33L) != 0) {
+            throw new IllegalStateException("ret=0x" + Long.toHexString(ret));
+        }
+        return ret;
     }
 
     private final List<InitFunction> allInitFunctionList;
@@ -207,6 +213,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         allInitFunctionList.addAll(routines);
         allInitFunctionList.addAll(initFunctionList);
         this.allInitFunctionList = Collections.unmodifiableList(allInitFunctionList);
+
+        if (log.isDebugEnabled()) {
+            log.debug("allInitFunctionList={}", allInitFunctionList);
+        }
 
         if (machO == null) {
             exportSymbols = Collections.emptyMap();
@@ -367,8 +377,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
     }
 
-    final void callInitFunction(Emulator<?> emulator) {
-        Logger log = LoggerFactory.getLogger(MachOModule.class);
+    private void callInitFunction(Emulator<?> emulator) {
         if (log.isDebugEnabled() && !initFunctionList.isEmpty()) {
             log.debug("callInitFunction name={}", name);
         }
@@ -826,11 +835,18 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     boolean hasUnresolvedSymbol() {
-        return !allSymbolBound || !allLazySymbolBound;
+        return !symbolNotBound.isEmpty() || !allLazySymbolBound;
     }
 
-    boolean allSymbolBound;
+    final Set<String> symbolNotBound = new HashSet<>();
     boolean allLazySymbolBound;
+
+    final void addNotBoundSymbol(String symbolName) {
+        symbolNotBound.add(symbolName);
+        if (log.isDebugEnabled()) {
+            log.debug("addNotBoundSymbol: {}", symbolName);
+        }
+    }
 
     final Set<UnidbgPointer> addImageCallSet = new HashSet<>();
     final Set<UnidbgPointer> boundCallSet = new HashSet<>();

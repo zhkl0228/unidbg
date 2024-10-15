@@ -25,13 +25,19 @@ public abstract class BaseHook implements IHook {
         this.module = emulator.getMemory().load(resolveLibrary(libName));
     }
 
+    @SuppressWarnings("unused")
+    public BaseHook(Emulator<?> emulator, String libName, boolean forceCallInit) {
+        this.emulator = emulator;
+        this.module = emulator.getMemory().load(resolveLibrary(libName), forceCallInit);
+    }
+
     protected Pointer createReplacePointer(final ReplaceCallback callback, final Pointer backup, boolean enablePostCall) {
         SvcMemory svcMemory = emulator.getSvcMemory();
         return svcMemory.registerSvc(emulator.is64Bit() ? new Arm64Hook(enablePostCall) {
             private final Stack<Object> context = new Stack<>();
             @Override
             protected HookStatus hook(Emulator<?> emulator) {
-                return callback.onCall(emulator, new Arm64HookContext(context, emulator.<EditableArm64RegisterContext>getContext()), backup.getLong(0));
+                return callback.onCall(emulator, new Arm64HookContext(context, emulator.getContext()), backup.getLong(0));
             }
             @Override
             public void handlePostCallback(Emulator<?> emulator) {
@@ -43,7 +49,7 @@ public abstract class BaseHook implements IHook {
             private final Stack<Object> context = new Stack<>();
             @Override
             protected HookStatus hook(Emulator<?> emulator) {
-                return callback.onCall(emulator, new Arm32HookContext(context, emulator.<EditableArm32RegisterContext>getContext()), backup.getInt(0) & 0xffffffffL);
+                return callback.onCall(emulator, new Arm32HookContext(context, emulator.getContext()), backup.getInt(0) & 0xffffffffL);
             }
             @Override
             public void handlePostCallback(Emulator<?> emulator) {
