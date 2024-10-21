@@ -87,7 +87,7 @@ public class AndroidModule extends VirtualModule<VM> {
         symbols.put("AAsset_read", svcMemory.registerSvc(is64Bit ? new Arm64Svc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new BackendException();
+                return read(emulator, vm);
             }
         } : new ArmSvc() {
             @Override
