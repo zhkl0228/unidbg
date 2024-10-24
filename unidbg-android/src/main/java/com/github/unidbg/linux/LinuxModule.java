@@ -159,6 +159,9 @@ public class LinuxModule extends Module {
             if (withDependencies) {
                 return findDependencySymbolByName(name);
             }
+            if(hookMap.containsKey(name)){
+                return new VirtualSymbol(name,this,hookMap.get(name));
+            }
             return null;
         } catch (IOException e) {
             throw new IllegalStateException(e);
