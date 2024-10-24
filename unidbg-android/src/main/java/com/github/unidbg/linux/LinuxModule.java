@@ -159,8 +159,8 @@ public class LinuxModule extends Module {
             if (withDependencies) {
                 return findDependencySymbolByName(name);
             }
-            if(hookMap.containsKey(name)){
-                return new VirtualSymbol(name,this,hookMap.get(name));
+            if(addSymbolMap.containsKey(name)){
+                return addSymbolMap.get(name);
             }
             return null;
         } catch (IOException e) {
@@ -265,10 +265,16 @@ public class LinuxModule extends Module {
     }
 
     final Map<String, Long> hookMap = new HashMap<>();
+    final Map<String, Symbol> addSymbolMap = new HashMap<>();
 
     @Override
     public void registerSymbol(String symbolName, long address) {
-        hookMap.put(symbolName, address);
+        if(findSymbolByName(symbolName,false)==null){
+            addSymbolMap.put(symbolName,new VirtualSymbol(symbolName,this,address));
+        }else {
+            hookMap.put(symbolName, address);
+        }
+
     }
 
     @Override
