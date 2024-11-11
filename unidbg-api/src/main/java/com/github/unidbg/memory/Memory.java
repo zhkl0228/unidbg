@@ -12,7 +12,7 @@ public interface Memory extends IO, Loader, StackMemory {
 
     long STACK_BASE = 0xe5000000L;
 
-    int MAX_THREADS = 128;
+    int MAX_THREADS = 16;
     int STACK_SIZE_OF_THREAD_PAGE = MAX_THREADS * BaseTask.THREAD_STACK_PAGE; // for thread stack
     int STACK_SIZE_OF_MAIN_PAGE = 256; // for main stack
     int STACK_SIZE_OF_PAGE = STACK_SIZE_OF_THREAD_PAGE + STACK_SIZE_OF_MAIN_PAGE;
