@@ -49,9 +49,6 @@ const buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescripto
         case 15: // GPBDataTypeMessage
             const msgClass = field.msgClass();
             buffer += msgClass;
-            if(isFieldTypeMap) {
-                buffer += "> ";
-            }
             break;
         case 16: // GPBDataTypeGroup
             break;
@@ -69,6 +66,9 @@ const buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescripto
         default:
             console.warn("dataType=" + dataType)
             break;
+    }
+    if(isFieldTypeMap) {
+        buffer += ">";
     }
     return buffer;
 }
@@ -100,7 +100,73 @@ const buildEnumMsgDef = function (msgName, descriptor) {
     return buffer;
 }
 
-const buildMsgDef = function (descriptor) {
+const buildDefaultValue = function (name, field, dataType) {
+    let buffer = " [default = ";
+    switch (dataType) {
+        case 0: {// GPBDataTypeBool
+            if (ptr(field.defaultValue()).toInt32() === 1) {
+                buffer += "true";
+            } else {
+                buffer += "false";
+            }
+            break;
+        }
+        case 3: // GPBDataTypeFloat
+        case 6: // GPBDataTypeDouble
+            const fm = Memory.alloc(4);
+            fm.writeU32(field.defaultValue());
+            buffer += fm.readFloat();
+            break;
+        case 7: { // GPBDataTypeInt32
+            const fm = Memory.alloc(4);
+            fm.writeU32(field.defaultValue());
+            buffer += fm.readInt();
+            break
+        }
+        case 8: // GPBDataTypeInt64
+            buffer += field.defaultValue();
+            break;
+        case 14: // GPBDataTypeString
+            buffer += ("\"" + new ObjC.Object(ptr(field.defaultValue())) + "\"");
+            break;
+        case 17: {// GPBDataTypeEnum
+            let prefix = name + "_";
+            const defaultEnumValue = ptr(field.defaultValue()).toInt32();
+            let defaultEnumName = null;
+            const descriptor = field.enumDescriptor();
+            const enumNameCount = descriptor.enumNameCount();
+            const ip = Memory.alloc(4);
+            for (let i = 0; i < enumNameCount; i++) {
+                const enumNameObject = descriptor.getEnumNameForIndex_(i);
+                let enumName = enumNameObject.toString();
+                prefix = descriptor.name() + "_";
+                if (enumName.startsWith(prefix)) {
+                    enumName = enumName.substring(prefix.length);
+                }
+                const status = descriptor.getValue_forEnumName_(ip, enumNameObject);
+                if (!status) {
+                    console.warn("buildDefaultValue read " + enumName + " value failed.")
+                }
+                if(defaultEnumValue === ip.readU32()) {
+                    defaultEnumName = enumName;
+                    break;
+                }
+            }
+            if(defaultEnumName) {
+                buffer += defaultEnumName;
+            }
+            break;
+        }
+        default: {
+            console.log(name + "." + field.name() + " has default value: " + field.defaultValue() + ", dataType=" + dataType);
+            break;
+        }
+    }
+    buffer += "]";
+    return buffer;
+}
+
+const buildMsgDef = function (descriptor, extensionNumber) {
     const file = descriptor.file();
     const _package = file.package();
     const objcPrefix = file.objcPrefix();
@@ -108,6 +174,27 @@ const buildMsgDef = function (descriptor) {
 
     const name = descriptor.name();
     buffer += ("message " + name + " {\n")
+
+    if (extensionNumber > 0) {
+        let extensionDescriptor = null;
+        for (const className in ObjC.classes) {
+            if (className.indexOf("Root") === -1) {
+                continue;
+            }
+            const cRootObject = ObjC.classes[className];
+            const extensionRegistryMethod = cRootObject["+ extensionRegistry"];
+            if (extensionRegistryMethod && (typeof extensionRegistryMethod === "function")) {
+                try {
+                    const extensionRegistry = cRootObject.extensionRegistry();
+                    extensionDescriptor = extensionRegistry.extensionForDescriptor_fieldNumber_(descriptor, int64(extensionNumber));
+                    if (extensionDescriptor) {
+                        console.log("className=" + className + ", singletonName=" + extensionDescriptor.singletonName() + ", msgClass=" + extensionDescriptor.msgClass());
+                    }
+                } catch(error) {
+                }
+            }
+        }
+    }
 
     const GPBFieldTypeMap = 2;
     const enumDescriptors = [];
@@ -120,9 +207,6 @@ const buildMsgDef = function (descriptor) {
         const required = field.isRequired();
         const optional = field.isOptional();
         const fieldType = field.fieldType();
-        if (field.hasDefaultValue()) {
-            console.log(name + "." + fieldName + " has default value.")
-        }
         buffer += "  ";
 
         switch (fieldType) {
@@ -141,7 +225,7 @@ const buildMsgDef = function (descriptor) {
             }
             case GPBFieldTypeMap: {
                 const mapKeyDataType = field.mapKeyDataType();
-                buffer += ("map<" + buildDataTypeMsgDef(field, name, true, enumDescriptors, mapKeyDataType) + ", ");
+                buffer += ("map<" + buildDataTypeMsgDef(field, name, false, enumDescriptors, mapKeyDataType) + ", ");
                 break;
             }
             default:
@@ -149,7 +233,11 @@ const buildMsgDef = function (descriptor) {
                 break;
         }
         buffer += buildDataTypeMsgDef(field, name, fieldType === GPBFieldTypeMap, enumDescriptors, dataType);
-        buffer += (" " + fieldName + " = " + number + ";\n");
+        buffer += (" " + fieldName + " = " + number);
+        if (field.hasDefaultValue()) {
+            buffer += buildDefaultValue(name, field, dataType);
+        }
+        buffer += ";\n";
     }
 
     buffer += "}";
@@ -183,7 +271,7 @@ const list_gpbs = function (filter) {
     }
 };
 
-function gpb(className) {
+function gpbe(className, extensionNumber) {
     if (ObjC.available) {
         const cGPBMessage = ObjC.classes[className];
         if (cGPBMessage) {
@@ -191,7 +279,7 @@ function gpb(className) {
             if (descriptorMethod) {
                 const descriptor = cGPBMessage.descriptor();
                 if (descriptor.className().toString() === "GPBDescriptor") {
-                    console.log(buildMsgDef(descriptor));
+                    console.log(buildMsgDef(descriptor, extensionNumber));
                 } else {
                     console.log(cGPBMessage + " is not GPBDescriptor");
                     list_gpbs(className);
@@ -206,4 +294,8 @@ function gpb(className) {
     } else {
         console.log("Objc unavailable")
     }
+}
+
+function gpb(className) {
+    gpbe(className, 0);
 }

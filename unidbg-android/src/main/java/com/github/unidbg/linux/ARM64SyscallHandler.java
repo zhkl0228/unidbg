@@ -1211,6 +1211,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
 
     private static final int CLOCK_REALTIME = 0;
     private static final int CLOCK_MONOTONIC = 1;
+    private static final int CLOCK_THREAD_CPUTIME_ID = 3;
     private static final int CLOCK_MONOTONIC_RAW = 4;
     private static final int CLOCK_MONOTONIC_COARSE = 6;
     private static final int CLOCK_BOOTTIME = 7;
@@ -1230,6 +1231,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         switch (clk_id) {
             case CLOCK_REALTIME:
             case CLOCK_MONOTONIC:
+            case CLOCK_THREAD_CPUTIME_ID:
             case CLOCK_MONOTONIC_RAW:
             case CLOCK_MONOTONIC_COARSE:
             case CLOCK_BOOTTIME:
