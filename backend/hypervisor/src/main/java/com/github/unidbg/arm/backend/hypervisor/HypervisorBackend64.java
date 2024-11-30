@@ -416,7 +416,10 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
         final void onSoftwareStep(long spsr, long address) {
             UnidbgPointer pointer = UnidbgPointer.pointer(emulator, address);
-            assert pointer != null;
+            if (pointer == null) {
+                hypervisor.reg_set_spsr_el1(spsr | Hypervisor.PSTATE$SS);
+                return;
+            }
             int asm = pointer.getInt(0);
             if (isLoadExclusiveCode(asm)) {
                 if (loadExclusiveAddress == address) {

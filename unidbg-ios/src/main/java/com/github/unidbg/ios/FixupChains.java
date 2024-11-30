@@ -61,7 +61,6 @@ final class FixupChains {
                 long dyld_chained_ptr_arm64e_bind24 = chain.getLong(32);
                 long dyld_chained_ptr_arm64e_auth_bind24 = chain.getLong(40);
                 boolean authRebase_auth = (raw64 >>> 63) != 0;
-                long newValue = -1;
                 if (authRebase_auth) {
                     boolean authBind_bind = (dyld_chained_ptr_arm64e_auth_bind >>> 62) != 0;
                     if (authBind_bind) {
@@ -96,8 +95,11 @@ final class FixupChains {
                             if ((addend19 & 0x40000) != 0) {
                                 addend19 |= 0xfffffffffffc0000L;
                             }
-                            newValue = bindTarget.bind(emulator, mm, hookListeners, symbolsPool) + addend19;
-                            chain.setLong(0, newValue);
+                            Fixup fixup = new Fixup(chain, addend19);
+                            LazyFixup lazyFixup = bindTarget.bind(emulator, mm, hookListeners, symbolsPool, fixup);
+                            if (lazyFixup != null) {
+                                mm.unbindTargets.add(lazyFixup);
+                            }
                         }
                         break;
                     } else {
@@ -115,12 +117,10 @@ final class FixupChains {
                     }
                 }
                 throw new UnsupportedOperationException("DYLD_CHAINED_PTR_ARM64E dyld_chained_ptr_arm64e_auth_rebase=0x" + Long.toHexString(raw64) +
-                        ", dyld_chained_ptr_arm64e_auth_bind=0x" + Long.toHexString(dyld_chained_ptr_arm64e_auth_bind) +
-                        ", newValue=0x" + Long.toHexString(newValue));
+                        ", dyld_chained_ptr_arm64e_auth_bind=0x" + Long.toHexString(dyld_chained_ptr_arm64e_auth_bind));
             }
             case DYLD_CHAINED_PTR_64:
             case DYLD_CHAINED_PTR_64_OFFSET:
-                long newValue;
                 boolean bind = (raw64 >>> 63) != 0;
                 if (bind) {
                     int ordinal = (int) (raw64 & 0xffffff);
@@ -129,8 +129,11 @@ final class FixupChains {
                         throw new IllegalStateException(String.format("out of range bind ordinal %d (max %d)", ordinal, bindTargets.size()));
                     } else {
                         BindTarget bindTarget = bindTargets.get(ordinal);
-                        newValue = bindTarget.bind(emulator, mm, hookListeners, symbolsPool) + signExtendedAddend(addend);
-                        chain.setLong(0, newValue);
+                        Fixup fixup = new Fixup(chain, signExtendedAddend(addend));
+                        LazyFixup lazyFixup = bindTarget.bind(emulator, mm, hookListeners, symbolsPool, fixup);
+                        if (lazyFixup != null) {
+                            mm.unbindTargets.add(lazyFixup);
+                        }
                     }
                 } else {
                     long target = raw64 & 0xfffffffffL;
@@ -151,14 +154,22 @@ final class FixupChains {
     }
 
     static abstract class BindTarget implements MachO {
-        protected abstract long bind(Emulator<?> emulator, MachOModule mm, List<HookListener> hookListeners, ByteBufferKaitaiStream symbolsPool);
-        final Symbol resolveSymbol(MachOLoader loader, MachOModule mm, int libraryOrdinal, String symbolName, boolean weak) {
+        final int libraryOrdinal;
+        public BindTarget(int libraryOrdinal) {
+            this.libraryOrdinal = libraryOrdinal;
+        }
+        abstract long resolve(Emulator<?> emulator, MachOModule mm, List<HookListener> hookListeners, String symbolName);
+        public abstract LazyFixup bind(Emulator<?> emulator, MachOModule mm, List<HookListener> hookListeners, ByteBufferKaitaiStream symbolsPool, Fixup fixup);
+        final Symbol resolveSymbol(MachOLoader loader, MachOModule mm, String symbolName, boolean weak) {
             if (libraryOrdinal > 0) {
                 if (libraryOrdinal > mm.ordinalList.size()) {
                     throw new IllegalStateException("ordinal-too-large");
                 }
                 String path = mm.ordinalList.get(libraryOrdinal - 1);
-                MachOModule targetImage = loader.modules.get(FilenameUtils.getName(path));
+                MachOModule targetImage = loader.path_modules.get(path);
+                if (targetImage == null) {
+                    targetImage = loader.modules.get(FilenameUtils.getName(path));
+                }
                 targetImage = loader.fakeTargetImage(targetImage, symbolName);
                 if (targetImage == null && weak) {
                     return null;
@@ -205,26 +216,36 @@ final class FixupChains {
     }
 
     static class dyld_chained_import_addend64 extends BindTarget {
-        final int lib_ordinal;
         final boolean weak_import;
         final int name_offset;
         final long addend;
         public dyld_chained_import_addend64(int lib_ordinal, boolean weak_import, int name_offset, long addend) {
-            this.lib_ordinal = lib_ordinal;
+            super(lib_ordinal);
             this.weak_import = weak_import;
             this.name_offset = name_offset;
             this.addend = addend;
         }
         @Override
-        protected long bind(Emulator<?> emulator, MachOModule mm, List<HookListener> hookListeners, ByteBufferKaitaiStream symbolsPool) {
-            symbolsPool.seek(name_offset);
-            String symbolName = new String(symbolsPool.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
+        long resolve(Emulator<?> emulator, MachOModule mm, List<HookListener> hookListeners, String symbolName) {
             MachOLoader loader = (MachOLoader) emulator.getMemory();
-            Symbol symbol = resolveSymbol(loader, mm, lib_ordinal, symbolName, weak_import);
+            Symbol symbol = resolveSymbol(loader, mm, symbolName, weak_import);
             if (symbol == null) {
                 Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
                 if (log.isDebugEnabled()) {
-                    FixupChains.log.info("bind symbolName={}, lib_ordinal={}", symbolName, lib_ordinal);
+                    String targetPath = null;
+                    MachOModule targetImage = null;
+                    if (libraryOrdinal > 0 && libraryOrdinal <= mm.ordinalList.size()) {
+                        targetPath = mm.ordinalList.get(libraryOrdinal - 1);
+                        targetImage = loader.path_modules.get(targetPath);
+                    }
+                    if (targetImage == null) {
+                        FixupChains.log.info("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetPath={}", mm.name, symbolName, libraryOrdinal, weak_import, targetPath);
+                    } else {
+                        FixupChains.log.info("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetImage={}", mm.name, symbolName, libraryOrdinal, weak_import, targetImage);
+                    }
+                }
+                if (hookListeners == null) {
+                    return 0L;
                 }
                 long bindAt = 0;
                 for (HookListener listener : hookListeners) {
@@ -237,6 +258,9 @@ final class FixupChains {
                 return bindAt;
             }
             long bindAt = symbol.getAddress() + addend;
+            if (hookListeners == null) {
+                return bindAt;
+            }
             for (HookListener listener : hookListeners) {
                 long hook = listener.hook(emulator.getSvcMemory(), symbol.getModuleName(), symbol.getName(), bindAt);
                 if (hook > 0) {
@@ -245,6 +269,53 @@ final class FixupChains {
                 }
             }
             return bindAt;
+        }
+        @Override
+        public LazyFixup bind(Emulator<?> emulator, MachOModule mm, List<HookListener> hookListeners, ByteBufferKaitaiStream symbolsPool, Fixup fixup) {
+            symbolsPool.seek(name_offset);
+            String symbolName = new String(symbolsPool.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
+            long bindAt = resolve(emulator, mm, hookListeners, symbolName);
+            fixup.fix(bindAt);
+            if (bindAt == 0 && libraryOrdinal > 0) {
+                return new LazyFixup(mm, this, symbolName, fixup);
+            } else {
+                return null;
+            }
+        }
+    }
+
+    static class Fixup {
+        private final Pointer chain;
+        private final long addend;
+        public Fixup(Pointer chain, long addend) {
+            this.chain = chain;
+            this.addend = addend;
+        }
+        final void fix(long bindAt) {
+            long newValue = bindAt + addend;
+            chain.setLong(0, newValue);
+        }
+    }
+
+    static class LazyFixup {
+        private final MachOModule mm;
+        private final BindTarget bindTarget;
+        private final String symbolName;
+        private final Fixup fixup;
+        LazyFixup(MachOModule mm, BindTarget bindTarget, String symbolName, Fixup fixup) {
+            this.mm = mm;
+            this.bindTarget = bindTarget;
+            this.symbolName = symbolName;
+            this.fixup = fixup;
+        }
+        boolean fixup(Emulator<?> emulator) {
+            long bindAt = bindTarget.resolve(emulator, mm, null, symbolName);
+            if (bindAt != 0) {
+                fixup.fix(bindAt);
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

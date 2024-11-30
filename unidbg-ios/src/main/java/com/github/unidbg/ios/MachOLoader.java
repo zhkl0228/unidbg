@@ -765,7 +765,11 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if (isExecutable) {
             setExecuteModule(module);
         }
+        for(MachOModule mm : modules.values()) {
+            mm.onLoadNewModule(module);
+        }
         modules.put(dyId, module);
+        path_modules.put(dylibPath, module);
         if (subModule != null) {
             subModule.exportModules.put(FilenameUtils.getBaseName(module.name), module);
         }
@@ -883,18 +887,18 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
     }
 
-    private void processRebase(Logger log, MachOModule mm) {
-        MachO.DyldInfoCommand dyldInfoCommand = mm.dyldInfoCommand;
+    private void processRebase(Logger log, MachOModule module) {
+        MachO.DyldInfoCommand dyldInfoCommand = module.dyldInfoCommand;
         if (dyldInfoCommand == null) {
-            MachO.LinkeditDataCommand chainedFixups = mm.chainedFixups;
+            MachO.LinkeditDataCommand chainedFixups = module.chainedFixups;
             if (chainedFixups == null) {
                 return;
             }
-            ByteBuffer buffer = mm.buffer.duplicate();
+            ByteBuffer buffer = module.buffer.duplicate();
             buffer.limit((int) (chainedFixups.dataOff() + chainedFixups.dataSize()));
             buffer.position((int) chainedFixups.dataOff()); // dyld_chained_fixups_header
             try (ByteBufferKaitaiStream io = new ByteBufferKaitaiStream(buffer.slice())) {
-                fixupAllChainedFixups(io, mm, chainedFixups);
+                fixupAllChainedFixups(io, module, chainedFixups);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -902,10 +906,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         if (dyldInfoCommand.rebaseSize() > 0) {
-            ByteBuffer buffer = mm.buffer.duplicate();
+            ByteBuffer buffer = module.buffer.duplicate();
             buffer.limit((int) (dyldInfoCommand.rebaseOff() + dyldInfoCommand.rebaseSize()));
             buffer.position((int) dyldInfoCommand.rebaseOff());
-            rebase(log, buffer.slice(), mm);
+            rebase(log, buffer.slice(), module);
         }
     }
 
@@ -1146,7 +1150,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         boolean chainEnd = false;
         while (!chainEnd) {
             long raw64 = chain.getLong(0);
-            log.debug("handleChain: {}, raw64=0x{}", chain, Long.toHexString(raw64));
+            log.trace("handleChain: {}, raw64=0x{}", chain, Long.toHexString(raw64));
             FixupChains.handleChain(emulator, mm, hookListeners, pointer_format, chain, raw64, bindTargets, symbolsPool);
             switch (pointer_format) {
                 case FixupChains.DYLD_CHAINED_PTR_ARM64E: {
@@ -1870,6 +1874,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     final Map<String, MachOModule> modules = new LinkedHashMap<>();
+    final Map<String, MachOModule> path_modules = new LinkedHashMap<>();
 
     private int get_segment_protection(MachO.VmProt vmProt) {
         int prot = Unicorn.UC_PROT_NONE;

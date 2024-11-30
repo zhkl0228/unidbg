@@ -50,8 +50,10 @@ const buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescripto
             const msgClass = field.msgClass();
             buffer += msgClass;
             break;
-        case 16: // GPBDataTypeGroup
+        case 16: { // GPBDataTypeGroup
+            buffer += ("group " + field.msgClass());
             break;
+        }
         case 17: // GPBDataTypeEnum
             const enumDescriptor = field.enumDescriptor();
             let enumName = enumDescriptor.name().toString();

@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
@@ -111,6 +110,16 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             }
         }
         return false;
+    }
+
+    final List<FixupChains.LazyFixup> unbindTargets = new ArrayList<>();
+
+    final void onLoadNewModule(MachOModule module) {
+        boolean containsOrdinal = ordinalList.contains(module.path);
+        if (containsOrdinal) {
+            unbindTargets.removeIf(fixup -> fixup.fixup(emulator));
+        }
+        log.debug("onLoadNewModule: {}, containsOrdinal={}, unbindTargetSize={}", module, containsOrdinal, unbindTargets.size());
     }
 
     @Override

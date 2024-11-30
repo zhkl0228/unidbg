@@ -15,3 +15,9 @@ const NSNotificationName AVAudioSessionRouteChangeNotification = @"AVAudioSessio
 
 typedef NSString *AVCaptureSessionPreset;
 const AVCaptureSessionPreset AVCaptureSessionPreset1280x720 = @"AVCaptureSessionPreset1280x720";
+
+typedef NSString *AVCaptureDeviceType;
+const AVCaptureDeviceType AVCaptureDeviceTypeBuiltInWideAngleCamera = @"AVCaptureDeviceTypeBuiltInWideAngleCamera";
+
+typedef NSString * AVMediaType;
+const AVMediaType AVMediaTypeVideo = @"AVMediaTypeVideo";
