@@ -1874,7 +1874,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     }
 
     final Map<String, MachOModule> modules = new LinkedHashMap<>();
-    final Map<String, MachOModule> path_modules = new LinkedHashMap<>();
+    final Map<String, MachOModule> path_modules = new HashMap<>();
 
     private int get_segment_protection(MachO.VmProt vmProt) {
         int prot = Unicorn.UC_PROT_NONE;

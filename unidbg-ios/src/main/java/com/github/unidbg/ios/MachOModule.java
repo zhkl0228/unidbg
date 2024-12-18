@@ -205,7 +205,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         this.apple = apple;
         this.vars = vars;
         this.machHeader = machHeader;
-        this.slide = computeSlide(emulator, machHeader);
+        this.slide = machHeader == 0 ? 0 : computeSlide(emulator, machHeader);
         this.executable = executable;
         this.loader = loader;
         this.hookListeners = hookListeners;
@@ -356,7 +356,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     final void doInitialization(Emulator<?> emulator) {
         try {
-            if (initialized) {
+            if (initialized || isVirtual()) {
                 return;
             }
 
@@ -746,6 +746,10 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
 
     @Override
     public Symbol findClosestSymbolByAddress(long addr, boolean fast) {
+        if (isVirtual()) {
+            return null;
+        }
+
         long targetAddress = addr - base;
         if (targetAddress == 0) {
             return new ExportSymbol("__dso_handle", addr, this, 0, EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE);
