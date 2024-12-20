@@ -144,7 +144,7 @@ final class FixupChains {
                     if (pointer_format == DYLD_CHAINED_PTR_64) {
                         chain.setLong(0, unpackedTarget + mm.slide);
                     } else {
-                        chain.setLong(0, UnidbgPointer.nativeValue(chain) + unpackedTarget);
+                        chain.setLong(0, unpackedTarget + mm.machHeader);
                     }
                 }
                 break;

@@ -1150,7 +1150,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         boolean chainEnd = false;
         while (!chainEnd) {
             long raw64 = chain.getLong(0);
-            log.trace("handleChain: {}, raw64=0x{}", chain, Long.toHexString(raw64));
+            log.trace("handleChain: {}, pointer_format={}, raw64=0x{}", chain, pointer_format, Long.toHexString(raw64));
             FixupChains.handleChain(emulator, mm, hookListeners, pointer_format, chain, raw64, bindTargets, symbolsPool);
             switch (pointer_format) {
                 case FixupChains.DYLD_CHAINED_PTR_ARM64E: {
