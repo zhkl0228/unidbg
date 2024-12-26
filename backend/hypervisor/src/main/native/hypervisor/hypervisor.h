@@ -1,6 +1,6 @@
+#pragma once
 #include "khash.h"
 #include "vcpu.h"
-#include "com_github_unidbg_arm_backend_hypervisor_Hypervisor.h"
 
 // Diagnostics
 #define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
@@ -67,7 +67,7 @@ enum arm_exception_class {
 #define ARM_EL_IL (1 << ARM_EL_IL_SHIFT)
 #define ARM_EL_ISV (1 << ARM_EL_ISV_SHIFT)
 
-static inline uint32_t syn_get_ec(uint32_t syn) {
+static uint32_t syn_get_ec(uint32_t syn) {
   return syn >> ARM_EL_EC_SHIFT;
 }
 
@@ -79,7 +79,7 @@ static inline uint32_t syn_get_ec(uint32_t syn) {
 #define PSR_D_BIT	0x00000200
 
 typedef struct cpu_context {
-  struct vcpu_context ctx;
+  vcpu_context ctx;
   uint64_t sp;
   uint64_t cpacr;
   uint64_t tpidr;
