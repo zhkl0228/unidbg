@@ -143,7 +143,7 @@ static int cpu_loop(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) 
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_testVcpu
-  (JNIEnv *, jclass) {
+  (JNIEnv *env, jclass clazz) {
   auto cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
   HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, nullptr));
   void *vcpu = lookupVcpu(cpu->vcpu);
@@ -191,6 +191,28 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
 
     return cpu;
   }
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getCpuContext
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getCpuContext
+        (JNIEnv *env, jclass clazz, jlong handle) {
+    auto hypervisor = (t_hypervisor) handle;
+    t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+    return (jlong) _hv_vcpu_get_context(cpu->vcpu);
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getVCpus
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getVCpus
+        (JNIEnv *env, jclass clazz) {
+    return (jlong) find_vcpus();
 }
 
 /*

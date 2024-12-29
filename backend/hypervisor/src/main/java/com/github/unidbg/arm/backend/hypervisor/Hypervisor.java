@@ -1,5 +1,6 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
+import com.sun.jna.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +57,18 @@ public class Hypervisor implements Closeable {
     private static native int getBRPs(long handle);
     private static native int getWRPs(long handle);
 
+    private static native long getCpuContext(long handle); // _hv_vcpu_get_context
+    private static native long getVCpus(); // find_vcpus
+
+    public final Pointer getCpuContextPointer() {
+        long peer = getCpuContext(nativeHandle);
+        return peer == 0L ? Pointer.NULL : new Pointer(peer);
+    }
+    public static Pointer getVCpusPointer() {
+        long peer = getVCpus();
+        return peer == 0 ? Pointer.NULL : new Pointer(peer);
+    }
+
     public int getBRPs() {
         return getBRPs(nativeHandle);
     }
@@ -105,6 +118,10 @@ public class Hypervisor implements Closeable {
     private static Hypervisor singleInstance;
 
     public Hypervisor(boolean is64Bit) {
+        if (!is64Bit) {
+            throw new UnsupportedOperationException();
+        }
+
         if (singleInstance != null) {
             throw new IllegalStateException("Only one hypervisor VM instance per process allowed.");
         }

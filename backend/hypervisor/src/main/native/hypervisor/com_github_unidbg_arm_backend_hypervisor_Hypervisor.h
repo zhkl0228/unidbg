@@ -277,6 +277,22 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getCpuContext
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getCpuContext
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getVCpus
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getVCpus
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    enable_single_step
  * Signature: (JZ)V
  */
