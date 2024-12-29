@@ -305,7 +305,7 @@ inline void set_HV_SYS_REG_HCR_EL2(void *vcpu, const uint64_t value) {
   }
 }
 
-static void *lookupVcpu(hv_vcpu_t vcpu) {
+static const mach_header *findHypervisorHeader(intptr_t *out_slide) {
   const mach_header *header = nullptr;
   intptr_t slide = 0;
   for (uint32_t i = 0, count = _dyld_image_count(); i < count; i++) {
@@ -315,55 +315,73 @@ static void *lookupVcpu(hv_vcpu_t vcpu) {
       break;
     }
   }
-  if(header) {
-    segment_command_64 *cur_seg_cmd;
-    const segment_command_64 *linkedit_segment = nullptr;
-    symtab_command* symtab_cmd = nullptr;
-    uintptr_t cur = reinterpret_cast<uintptr_t>(header) + sizeof(struct mach_header_64);
-    for (uint i = 0; i < header->ncmds; i++, cur += cur_seg_cmd->cmdsize) {
-      cur_seg_cmd = reinterpret_cast<segment_command_64 *>(cur);
-      if (cur_seg_cmd->cmd == LC_SEGMENT_64) {
-        if (strcmp(cur_seg_cmd->segname, SEG_LINKEDIT) == 0) {
-          linkedit_segment = cur_seg_cmd;
-        }
-      } else if (cur_seg_cmd->cmd == LC_SYMTAB) {
-        symtab_cmd = reinterpret_cast<symtab_command *>(cur_seg_cmd);
-      }
-    }
-    if(symtab_cmd && linkedit_segment) {
-      const uintptr_t linkedit_base = static_cast<uintptr_t>(slide) + linkedit_segment->vmaddr - linkedit_segment->fileoff;
-      auto strtab = reinterpret_cast<char *>(linkedit_base + symtab_cmd->stroff);
+  *out_slide = slide;
+  return header;
+}
 
-      auto *symtab = reinterpret_cast<struct nlist_64 *>(linkedit_base + symtab_cmd->symoff);
-      for(uint i = 0; i < symtab_cmd->nsyms; i++, symtab++) {
-        const uint32_t strtab_offset = symtab->n_un.n_strx;
-        if(const char *symbol_name = strtab + strtab_offset; strcmp(symbol_name, "_vcpus") == 0) {
-          void *vcpus = (void *) (symtab->n_value + slide);
-          void *_cpu;
-          const char *os = nullptr;
-          if (@available(macOS 15.0.0, *)) {
-            const auto hv_vcpu = static_cast<void **>(vcpus) + vcpu;
-            const auto vcpu1500 = static_cast<t_vcpus_v1500>(*hv_vcpu);
-            _cpu = static_cast<void*>(&vcpu1500->context);
-            os = "15.0.0";
-          } else if (@available(macOS 13.5.1, *)) {
-            auto _vcpus = static_cast<t_vcpus_v1351>(vcpus);
-            _cpu = _vcpus + vcpu;
-            os = "13.5.1";
-          } else {
-            auto _vcpus = static_cast<t_vcpus>(vcpus);
-            _cpu = _vcpus + vcpu;
-            os = "others";
-          }
-          if(const auto cpu = static_cast<t_vcpus>(_cpu); cpu->context == _hv_vcpu_get_context(vcpu)) {
-            return cpu;
-          }
-          // Check _hv_vcpu_get_context in IDA
-          fprintf(stderr, "Verify _vcpus failed: vcpus=%p, sizeof(struct vcpus)=%lu, vcpu=%llu, os=%s\n", vcpus, sizeof(struct vcpus), vcpu, os);
-          abort();
+static void *find_vcpus() {
+    intptr_t slide = 0;
+    const mach_header *header = findHypervisorHeader(&slide);
+    if(header) {
+        segment_command_64 *cur_seg_cmd;
+        const segment_command_64 *linkedit_segment = nullptr;
+        symtab_command* symtab_cmd = nullptr;
+        uintptr_t cur = reinterpret_cast<uintptr_t>(header) + sizeof(struct mach_header_64);
+        for (uint i = 0; i < header->ncmds; i++, cur += cur_seg_cmd->cmdsize) {
+            cur_seg_cmd = reinterpret_cast<segment_command_64 *>(cur);
+            if (cur_seg_cmd->cmd == LC_SEGMENT_64) {
+                if (strcmp(cur_seg_cmd->segname, SEG_LINKEDIT) == 0) {
+                    linkedit_segment = cur_seg_cmd;
+                }
+            } else if (cur_seg_cmd->cmd == LC_SYMTAB) {
+                symtab_cmd = reinterpret_cast<symtab_command *>(cur_seg_cmd);
+            }
         }
-      }
+        if(symtab_cmd && linkedit_segment) {
+            const uintptr_t linkedit_base = static_cast<uintptr_t>(slide) + linkedit_segment->vmaddr - linkedit_segment->fileoff;
+            auto strtab = reinterpret_cast<char *>(linkedit_base + symtab_cmd->stroff);
+
+            auto *symtab = reinterpret_cast<struct nlist_64 *>(linkedit_base + symtab_cmd->symoff);
+            for(uint i = 0; i < symtab_cmd->nsyms; i++, symtab++) {
+                const uint32_t strtab_offset = symtab->n_un.n_strx;
+                if(const char *symbol_name = strtab + strtab_offset; strcmp(symbol_name, "_vcpus") == 0) {
+                    void *vcpus = (void *) (symtab->n_value + slide);
+                    return vcpus;
+                }
+            }
+        }
     }
-  }
-  return nullptr;
+    return nullptr;
+}
+
+static void *lookupVcpu(hv_vcpu_t vcpu) {
+    void *vcpus = find_vcpus();
+    if(!vcpus) {
+        fprintf(stderr, "Find _vcpus failed: sizeof(struct vcpus)=%lu, vcpu=%llu\n", sizeof(struct vcpus), vcpu);
+        abort();
+        return nullptr;
+    }
+    void *_cpu;
+    const char *os = nullptr;
+    if (@available(macOS 15.0.0, *)) {
+        const auto hv_vcpu = static_cast<void **>(vcpus) + vcpu;
+        const auto vcpu1500 = static_cast<t_vcpus_v1500>(*hv_vcpu);
+        _cpu = static_cast<void*>(&vcpu1500->context);
+        os = "15.0.0";
+    } else if (@available(macOS 13.5.1, *)) {
+        auto _vcpus = static_cast<t_vcpus_v1351>(vcpus);
+        _cpu = _vcpus + vcpu;
+        os = "13.5.1";
+    } else {
+        auto _vcpus = static_cast<t_vcpus>(vcpus);
+        _cpu = _vcpus + vcpu;
+        os = "others";
+    }
+    if(const auto cpu = static_cast<t_vcpus>(_cpu); cpu->context == _hv_vcpu_get_context(vcpu)) {
+        return cpu;
+    }
+    // Check _hv_vcpu_get_context in IDA
+    fprintf(stderr, "Verify _vcpus failed: vcpus=%p, sizeof(struct vcpus)=%lu, vcpu=%llu, os=%s\n", vcpus, sizeof(struct vcpus), vcpu, os);
+    abort();
+    return nullptr;
 }
