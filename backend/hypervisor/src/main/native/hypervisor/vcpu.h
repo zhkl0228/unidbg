@@ -77,7 +77,8 @@ typedef struct vcpu_context {
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q30;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q31;
 
-  char _pad2[0x10];
+  uint64_t HV_REG_FPSR;
+  uint16_t HV_REG_FPCR;
   uint64_t HV_SYS_REG_MDSCR_EL1;
   uint64_t HV_SYS_REG_TPIDR_EL1;
   uint64_t HV_SYS_REG_TPIDR_EL0;
@@ -86,8 +87,8 @@ typedef struct vcpu_context {
   uint64_t HV_SYS_REG_SP_EL1;
   uint64_t HV_SYS_REG_PAR_EL1;
   uint64_t HV_SYS_REG_CSSELR_EL1;
-  uint64_t ext_reg;
-  uint64_t unknown0x398;
+  uint64_t ext_reg; // _hv_vcpu_get_ext_reg
+  uint64_t unknown0x398_0xF795;
   uint64_t HV_SYS_REG_TTBR0_EL1;
   uint64_t HV_SYS_REG_TTBR1_EL1;
   uint64_t HV_SYS_REG_TCR_EL1;
@@ -257,7 +258,6 @@ typedef struct vcpus_v1500 {
   char _pad1[0x98];
   uint64_t unknown_13_5_1; // since 13.5.1
   uint64_t HV_SYS_REG_HCR_EL2;
-  char _pad2[0x28];
 } *t_vcpus_v1500;
 
 typedef struct vcpus_v1520 {
@@ -278,7 +278,6 @@ typedef struct vcpus_v1520 {
   uint64_t unknown_15_2_0; // since 15.2
   uint64_t unknown_15_2_1; // since 15.2
   uint64_t HV_SYS_REG_HCR_EL2;
-  char _pad2[0x28];
 } *t_vcpus_v1520;
 
 #define HCR_EL2$DC 12
@@ -381,7 +380,7 @@ static void *lookupVcpu(hv_vcpu_t vcpu) {
         return cpu;
     }
     // Check _hv_vcpu_get_context in IDA
-    fprintf(stderr, "Verify _vcpus failed: vcpus=%p, sizeof(struct vcpus)=%lu, vcpu=%llu, os=%s\n", vcpus, sizeof(struct vcpus), vcpu, os);
+    fprintf(stderr, "Verify _vcpus failed: vcpus=%p, vcpu=%llu, os=%s\n", vcpus, vcpu, os);
     abort();
     return nullptr;
 }
