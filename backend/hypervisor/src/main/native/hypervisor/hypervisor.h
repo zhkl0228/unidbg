@@ -2,10 +2,6 @@
 #include "khash.h"
 #include "vcpu.h"
 
-// Diagnostics
-#define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
-#define HV_REG_SP HV_SYS_REG_SP_EL0
-
 #define PAGE_TABLE_ADDRESS_SPACE_BITS 36
 #define PAGE_BITS 14 // 16k
 #define HVF_PAGE_SIZE (1ULL << PAGE_BITS)

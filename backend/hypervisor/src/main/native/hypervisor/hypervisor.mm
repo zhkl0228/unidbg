@@ -43,14 +43,6 @@ static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t n
     return page ? &page[vaddr & HVF_PAGE_MASK] : nullptr;
 }
 
-typedef struct hypervisor_cpu {
-  hv_vcpu_t vcpu;
-  hv_vcpu_exit_t *vcpu_exit;
-  void *cpu;
-  uint8_t BRPs; // Number of breakpoints
-  uint8_t WRPs; // Number of watchpoints
-} *t_hypervisor_cpu;
-
 static t_vcpu_context get_vcpu_context(t_hypervisor_cpu cpu) {
   auto vcpus = (t_vcpus) cpu->cpu;
   return vcpus->context;
@@ -184,7 +176,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
 
     if(hypervisor->is64Bit) {
       uint64_t value = 1LL << HCR_EL2$DC; // set stage 1 as normal memory
-      set_HV_SYS_REG_HCR_EL2(vcpu, value);
+      set_HV_SYS_REG_HCR_EL2(cpu, value);
     } else {
       abort();
     }
@@ -538,9 +530,21 @@ static void destroy_hypervisor_cpu(void *data) {
 
 __attribute__((constructor))
 static void init() {
-  hv_return_t ret = hv_vm_create(nullptr);
+  uint32_t max_vcpu_count = 0;
+  hv_vm_get_max_vcpu_count(&max_vcpu_count);
+  hv_vm_config_t config = nullptr;
+  if (@available(macOS 13.0.0, *)) {
+    config = hv_vm_config_create();
+  }
+  if (@available(macOS 15.0.0, *)) {
+    HYP_ASSERT_SUCCESS(hv_vm_config_set_el2_enabled(config, false));
+  }
+  hv_return_t ret = hv_vm_create(config);
+  if(config) {
+      os_release(config);
+  }
   if(HV_SUCCESS != ret) {
-    fprintf(stderr, "Follow instructions: https://github.com/zhkl0228/unidbg/blob/master/backend/hypervisor/README.md\n");
+    fprintf(stderr, "Follow instructions: https://github.com/zhkl0228/unidbg/blob/master/backend/hypervisor/README.md\nNumber of vCPUs that the hypervisor supports: %u\n", max_vcpu_count);
   }
   HYP_ASSERT_SUCCESS(ret);
 }

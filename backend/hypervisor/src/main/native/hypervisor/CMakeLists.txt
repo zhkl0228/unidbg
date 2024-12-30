@@ -24,5 +24,5 @@ add_library(${PROJECT_LIB_NAME} MODULE
     com_github_unidbg_arm_backend_hypervisor_Hypervisor.h
 )
 set_target_properties(${PROJECT_LIB_NAME} PROPERTIES SUFFIX ".dylib")
-target_link_libraries(${PROJECT_LIB_NAME} "-framework Hypervisor")
+target_link_libraries(${PROJECT_LIB_NAME} "-framework Hypervisor -lobjc")
 target_link_libraries(${PROJECT_LIB_NAME} ${JNI_LIBRARIES})

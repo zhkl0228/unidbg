@@ -6,6 +6,10 @@
 #include <mach-o/dyld.h>
 #include <mach-o/dyld_images.h>
 
+// Diagnostics
+#define HYP_ASSERT_SUCCESS(ret) assert((hv_return_t) (ret) == HV_SUCCESS)
+#define HV_REG_SP HV_SYS_REG_SP_EL0
+
 typedef struct vcpu_context {
   uint64_t magic;
   uint64_t HV_REG_X0;
@@ -280,26 +284,34 @@ typedef struct vcpus_v1520 {
   uint64_t HV_SYS_REG_HCR_EL2;
 } *t_vcpus_v1520;
 
-#define HCR_EL2$DC 12
-
 extern "C" t_vcpu_context _hv_vcpu_get_context(hv_vcpu_t vcpu);
 
 extern "C" hv_return_t _hv_vcpu_get_ext_reg(hv_vcpu_t vcpu, bool error, uint64_t *value);
 
 extern "C" hv_return_t _hv_vcpu_set_control_field(hv_vcpu_t vcpu, int index, uint64_t value);
 
-inline void set_HV_SYS_REG_HCR_EL2(void *vcpu, const uint64_t value) {
+typedef struct hypervisor_cpu {
+  hv_vcpu_t vcpu;
+  hv_vcpu_exit_t *vcpu_exit;
+  void *cpu;
+  uint8_t BRPs; // Number of breakpoints
+  uint8_t WRPs; // Number of watchpoints
+} *t_hypervisor_cpu;
+
+#define HCR_EL2$DC 12
+
+inline void set_HV_SYS_REG_HCR_EL2(t_hypervisor_cpu _cpu, const uint64_t value) {
   if (@available(macOS 15.2.0, *)) {
-    const auto cpu = static_cast<t_vcpus_v1520>(vcpu);
+    const auto cpu = static_cast<t_vcpus_v1520>(_cpu->cpu);
     cpu->HV_SYS_REG_HCR_EL2 = value;
-  } else if (@available(macOS 15.0.0, *)) {
-    const auto cpu = static_cast<t_vcpus_v1500>(vcpu);
+  } else if (@available(macOS 15.0.0, *)) { // HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(_cpu->vcpu, HV_SYS_REG_HCR_EL2, value));
+    const auto cpu = static_cast<t_vcpus_v1500>(_cpu->cpu);
     cpu->HV_SYS_REG_HCR_EL2 = value;
   } else if (@available(macOS 13.5.1, *)) {
-    const auto cpu = static_cast<t_vcpus_v1351>(vcpu);
+    const auto cpu = static_cast<t_vcpus_v1351>(_cpu->cpu);
     cpu->HV_SYS_REG_HCR_EL2 = value;
   } else {
-    const auto cpu = static_cast<t_vcpus>(vcpu);
+    const auto cpu = static_cast<t_vcpus>(_cpu->cpu);
     cpu->HV_SYS_REG_HCR_EL2 = value;
   }
 }
