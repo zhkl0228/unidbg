@@ -116,7 +116,7 @@ public abstract class JniFunction implements Jni {
         if (fallbackJni == null) {
             throw new UnsupportedOperationException(signature);
         } else {
-            return callStaticIntMethodV(vm, dvmClass, signature, vaList);
+            return fallbackJni.callStaticIntMethodV(vm, dvmClass, signature, vaList);
         }
     }
 
