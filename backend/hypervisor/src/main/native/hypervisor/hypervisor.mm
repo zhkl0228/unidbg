@@ -199,6 +199,18 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    lookupVcpu
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_lookupVcpu
+    (JNIEnv *env, jclass clazz, jlong handle) {
+    auto hypervisor = (t_hypervisor) handle;
+    t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+    return (jlong) cpu->cpu;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    getVCpus
  * Signature: ()J
  */
@@ -536,9 +548,11 @@ static void init() {
   if (@available(macOS 13.0.0, *)) {
     config = hv_vm_config_create();
   }
+#if __MAC_15_0
   if (@available(macOS 15.0.0, *)) {
     HYP_ASSERT_SUCCESS(hv_vm_config_set_el2_enabled(config, false));
   }
+#endif
   hv_return_t ret = hv_vm_create(config);
   if(config) {
       os_release(config);

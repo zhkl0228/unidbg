@@ -28,13 +28,15 @@ public class VCpuTest extends TestCase {
             {
                 Pointer context = hypervisor.getCpuContextPointer();
                 assertNotNull(context);
-                log.info("main context={}", context);
+                Pointer cpu = hypervisor.lookupVcpuPointer();
+                log.info("main context={}, cpu={}", context, cpu);
             }
 
             Thread thread = new Thread(() -> {
                 Pointer context = hypervisor.getCpuContextPointer();
                 assertNotNull(context);
-                log.info("thread context={}", context);
+                Pointer cpu = hypervisor.lookupVcpuPointer();
+                log.info("thread context={}, cpu={}", context, cpu);
             }, "TestThread");
             thread.start();
             thread.join();

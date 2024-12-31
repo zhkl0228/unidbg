@@ -58,10 +58,15 @@ public class Hypervisor implements Closeable {
     private static native int getWRPs(long handle);
 
     private static native long getCpuContext(long handle); // _hv_vcpu_get_context
+    private static native long lookupVcpu(long handle);
     private static native long getVCpus(); // find_vcpus
 
     public final Pointer getCpuContextPointer() {
         long peer = getCpuContext(nativeHandle);
+        return peer == 0L ? Pointer.NULL : new Pointer(peer);
+    }
+    public final Pointer lookupVcpuPointer() {
+        long peer = lookupVcpu(nativeHandle);
         return peer == 0L ? Pointer.NULL : new Pointer(peer);
     }
     public static Pointer getVCpusPointer() {
