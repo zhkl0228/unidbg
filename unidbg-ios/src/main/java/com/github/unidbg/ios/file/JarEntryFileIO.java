@@ -13,6 +13,8 @@ import org.apache.commons.io.IOUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -135,7 +137,19 @@ public class JarEntryFileIO extends BaseDarwinFileIO {
         stat.st_ino = 7;
         stat.st_uid = 0;
         stat.st_gid = 0;
-        stat.setLastModification(System.currentTimeMillis());
+        FileTime ct = entry.getCreationTime();
+        FileTime at = entry.getLastAccessTime();
+        FileTime mt = entry.getLastModifiedTime();
+        stat.setLastModification(mt == null ? System.currentTimeMillis() : mt.toMillis());
+        if (ct != null) {
+            Instant instant = ct.toInstant();
+            stat.setSt_ctimespec(instant.getEpochSecond(), instant.getNano());
+            stat.setSt_birthtimespec(instant.getEpochSecond(), instant.getNano());
+        }
+        if (at != null) {
+            Instant instant = at.toInstant();
+            stat.setSt_atimespec(instant.getEpochSecond(), instant.getNano());
+        }
         stat.pack();
         return 0;
     }

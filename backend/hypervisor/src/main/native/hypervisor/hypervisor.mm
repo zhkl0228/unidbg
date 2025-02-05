@@ -8,11 +8,11 @@
 #include "com_github_unidbg_arm_backend_hypervisor_Hypervisor.h"
 
 typedef struct hypervisor {
-  bool is64Bit{};
-  khash_t(memory) *memory{};
-  size_t num_page_table_entries{};
-  void **page_table{};
-  pthread_key_t cpu_key{};
+  bool is64Bit = false;
+  khash_t(memory) *memory = nullptr;
+  size_t num_page_table_entries = 0;
+  void **page_table = nullptr;
+  pthread_key_t cpu_key = 0;
   jobject callback = nullptr;
   bool stop_request = false;
   uint64_t sp = 0ULL;

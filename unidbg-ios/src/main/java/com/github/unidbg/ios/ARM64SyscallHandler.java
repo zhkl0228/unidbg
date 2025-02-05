@@ -1460,7 +1460,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         FileResult<DarwinFileIO> result = resolve(emulator, pathname, IOConstants.O_RDONLY);
         if (result != null && result.isSuccess()) {
             if (verbose) {
-                System.out.printf("File stat '%s' from %s%n", pathname, emulator.getContext().getLRPointer());
+                System.out.printf("File stat '%s' from %s: %s%n", pathname, emulator.getContext().getLRPointer(), result.io.getClass().getName());
             }
             return result.io.fstat(emulator, new Stat64(statbuf));
         }

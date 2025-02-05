@@ -13,11 +13,7 @@ import com.sun.jna.Pointer;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class DirectoryFileIO extends BaseDarwinFileIO {
 
@@ -79,9 +75,14 @@ public class DirectoryFileIO extends BaseDarwinFileIO {
     public int fstat(Emulator<?> emulator, StatStructure stat) {
         stat.st_dev = 1;
         stat.st_mode = IO.S_IFDIR | 0x777;
-        stat.setSize(0);
+        stat.setSize(dir == null ? 0 : dir.getTotalSpace());
         stat.st_blksize = 0;
         stat.st_ino = 7;
+        stat.st_uid = 0;
+        stat.st_gid = 0;
+        if (dir != null) {
+            stat.setLastModification(dir.lastModified());
+        }
         stat.pack();
         return 0;
     }
