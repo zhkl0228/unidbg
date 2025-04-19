@@ -84,7 +84,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     private final Section fUnwindInfoSection;
     public final Map<String, MachO.SegmentCommand64.Section64> objcSections;
 
-    private final Map<String, ExportSymbol> exportSymbols;
+    final Map<String, ExportSymbol> exportSymbols;
 
     final Segment[] segments;
 
@@ -278,17 +278,15 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                         strBuffer.position(nlist.value().intValue());
                         String indirectSymbol = new String(io.readBytesTerm(0, false, true, true), StandardCharsets.US_ASCII);
                         if (!symbolName.equals(indirectSymbol)) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("nlist indirect symbolName={}, indirectSymbol={}", symbolName, indirectSymbol);
-                            }
+                            log.debug("nlist same indirect symbolName={}, indirectSymbol={}", symbolName, indirectSymbol);
                             if (symbolMap.put(symbolName, new IndirectSymbol(symbolName, this, indirectSymbol)) != null) {
                                 log.warn("Replace exist symbol: {}, indirectSymbol={}", symbolName, indirectSymbol);
                             }
+                        } else {
+                            log.debug("nlist indirect symbolName={}, indirectSymbol={}", symbolName, indirectSymbol);
                         }
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("nlist isWeakDef={}, isThumb={}, type={}, symbolName={}", isWeakDef, isThumb, type, symbolName);
-                        }
+                        log.debug("nlist isWeakDef={}, isThumb={}, type={}, symbolName={}", isWeakDef, isThumb, type, symbolName);
                         otherSymbols.put(symbolName, symbol);
                     }
                 }

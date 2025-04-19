@@ -4,7 +4,6 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.HookListener;
-import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;
@@ -187,7 +186,7 @@ final class FixupChains {
                         throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_MAIN_EXECUTABLE: symbolName=" + symbolName);
                     case BIND_SPECIAL_DYLIB_FLAT_LOOKUP:
                         throw new UnsupportedOperationException("BIND_SPECIAL_DYLIB_FLAT_LOOKUP: symbolName=" + symbolName);
-                    case BIND_SPECIAL_DYLIB_WEAK_LOOKUP:
+                    case BIND_SPECIAL_DYLIB_WEAK_LOOKUP: {
                         Symbol symbol = null;
                         for (MachOModule module : loader.modules.values().toArray(new MachOModule[0])) {
                             if (module.hasWeakDefines()) {
@@ -203,11 +202,32 @@ final class FixupChains {
                         if (symbol != null) {
                             return symbol;
                         }
-                        Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
                         if (log.isDebugEnabled()) {
-                            FixupChains.log.info("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName={}, module={}", symbolName, mm.getPath());
+                            MachOSymbol other = null;
+                            MachOModule otherModule = null;
+                            for (MachOModule module : loader.modules.values().toArray(new MachOModule[0])) {
+                                MachOSymbol s = module.otherSymbols.get(symbolName);
+                                if (s != null) {
+                                    otherModule = module;
+                                    other = s;
+                                    break;
+                                }
+                            }
+                            Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
+                            if (other != null && other.isExternalSymbol() && log.isTraceEnabled()) {
+                                return new ExternalSymbol(symbolName, otherModule, other);
+                            }
+                            Symbol export = null;
+                            for (MachOModule module : loader.modules.values().toArray(new MachOModule[0])) {
+                                Symbol s = module.exportSymbols.get(symbolName);
+                                if (export == null && s != null) {
+                                    export = s;
+                                }
+                            }
+                            FixupChains.log.info("BIND_SPECIAL_DYLIB_WEAK_LOOKUP: symbolName={}, module={}, other={}, export={}, otherModule={}", symbolName, mm.getPath(), other, export, otherModule);
                         }
                         return null;
+                    }
                     default:
                         throw new UnsupportedOperationException("unknown-ordinal: symbolName=" + symbolName);
                 }
@@ -238,10 +258,10 @@ final class FixupChains {
                         targetPath = mm.ordinalList.get(libraryOrdinal - 1);
                         targetImage = loader.path_modules.get(targetPath);
                     }
-                    if (targetImage == null) {
-                        FixupChains.log.info("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetPath={}", mm.name, symbolName, libraryOrdinal, weak_import, targetPath);
+                    if (targetImage != null || weak_import) {
+                        FixupChains.log.debug("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetImage={}", mm.name, symbolName, libraryOrdinal, weak_import, targetImage);
                     } else {
-                        FixupChains.log.info("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetImage={}", mm.name, symbolName, libraryOrdinal, weak_import, targetImage);
+                        FixupChains.log.info("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetPath={}", mm.name, symbolName, libraryOrdinal, false, targetPath);
                     }
                 }
                 if (hookListeners == null) {
