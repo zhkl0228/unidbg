@@ -30,6 +30,8 @@ public interface DarwinSyscall {
 
     int NET_RT_IFLIST =		3;	/* survey interface list */
     int RTM_IFINFO =	0xe;	/* iface going up/down etc. */
+    int RTM_NEWADDR =      0xc;    /* address being added to iface */
+
 
     int KERN_OSTYPE	   = 1;	/* string: system version */
     int KERN_OSRELEASE = 2; /* string: system release */
