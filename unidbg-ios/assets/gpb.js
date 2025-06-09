@@ -253,6 +253,7 @@ const buildMsgDef = function (descriptor, extensionNumber) {
 
 const list_gpbs = function (filter) {
     console.log("Try list gpbs: " + filter)
+    let haveGPB = false;
     for (const className in ObjC.classes) {
         if (filter) {
             if (className.toLowerCase().indexOf(filter.toLowerCase()) === -1) {
@@ -266,8 +267,17 @@ const list_gpbs = function (filter) {
                 const descriptor = cGPBMessage.descriptor();
                 if (descriptor.className().toString() === "GPBDescriptor") {
                     console.log(cGPBMessage)
+                    haveGPB = true;
                 }
             } catch(error) {
+            }
+        }
+    }
+    if (!haveGPB && filter) {
+        console.log("Try list classes: " + filter)
+        for (const className in ObjC.classes) {
+            if (className.toLowerCase().indexOf(filter.toLowerCase()) !== -1) {
+                console.log("Found class: " + className)
             }
         }
     }

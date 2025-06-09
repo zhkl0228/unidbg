@@ -5,15 +5,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.file.BaseFileIO;
 import com.github.unidbg.file.UnidbgFileFilter;
 import com.github.unidbg.ios.file.DirectoryFileIO;
-import com.github.unidbg.ios.struct.attr.AttrList;
-import com.github.unidbg.ios.struct.attr.AttrReference;
-import com.github.unidbg.ios.struct.attr.AttributeSet;
-import com.github.unidbg.ios.struct.attr.Dev;
-import com.github.unidbg.ios.struct.attr.FinderInfo;
-import com.github.unidbg.ios.struct.attr.Fsid;
-import com.github.unidbg.ios.struct.attr.ObjId;
-import com.github.unidbg.ios.struct.attr.ObjType;
-import com.github.unidbg.ios.struct.attr.UserAccess;
+import com.github.unidbg.ios.struct.attr.*;
 import com.github.unidbg.ios.struct.kernel.StatFS;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.unix.UnixEmulator;
@@ -183,11 +175,27 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
         if ((attributeSet.commonattr & ATTR_CMN_USERACCESS) != 0) {
             UserAccess userAccess = new UserAccess(pointer);
             userAccess.mode = X_OK | W_OK | R_OK;
-//            pointer = pointer.share(userAccess.size());
+            pointer = pointer.share(userAccess.size());
             list.add(userAccess);
             attributeSet.commonattr &= ~ATTR_CMN_USERACCESS;
             if (returnedAttributeSet != null) {
                 returnedAttributeSet.commonattr |= ATTR_CMN_USERACCESS;
+            }
+        }
+        if ((attributeSet.volattr & ATTR_VOL_INFO) != 0) {
+            if (returnedAttributeSet == null) {
+                returnedAttributeSet = new AttributeSet(pointer);
+            }
+            attributeSet.volattr &= ~ATTR_VOL_INFO;
+        }
+        if ((attributeSet.volattr & ATTR_VOL_SPACEUSED) != 0) {
+            SpaceUsed spaceUsed = new SpaceUsed(pointer);
+            spaceUsed.spaceused = getVolSpaceUsed();
+//            pointer = pointer.share(spaceUsed.size());
+            list.add(spaceUsed);
+            attributeSet.volattr &= ~ATTR_VOL_SPACEUSED;
+            if (returnedAttributeSet != null) {
+                returnedAttributeSet.volattr |= ATTR_VOL_SPACEUSED;
             }
         }
         if (attributeSet.commonattr != 0 || attributeSet.volattr != 0 ||
@@ -215,6 +223,10 @@ public abstract class BaseDarwinFileIO extends BaseFileIO implements DarwinFileI
         }
 
         return 0;
+    }
+
+    protected long getVolSpaceUsed() {
+        return 0x123456789abL;
     }
 
     @Override

@@ -49,7 +49,7 @@
         <dependency>
             <groupId>com.googlecode.plist</groupId>
             <artifactId>dd-plist</artifactId>
-            <version>1.23</version>
+            <version>1.28</version>
         </dependency>
     </dependencies>
 </project>

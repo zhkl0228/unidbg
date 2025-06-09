@@ -30,6 +30,9 @@ public interface DarwinFileIO extends NewFileIO {
     int ATTR_CMN_USERACCESS = 0x00200000; // (used to get the user's access mode to the file).
     int ATTR_CMN_RETURNED_ATTRS = 0x80000000; // It is always the first attribute in the return buffer.
 
+    int ATTR_VOL_INFO = 0x80000000;
+    int ATTR_VOL_SPACEUSED = 0x00800000;
+
     int X_OK = 1;
     int W_OK = 2;
     int R_OK = 4;
