@@ -7,3 +7,7 @@ CMTime* CMTimeMakeWithSeconds(CMTime* ret, Float64 seconds, int32_t preferredTim
 CMTime* CMTimeMake(CMTime* ret, CMTimeValue value, CMTimeScale timescale) {
   return ret;
 }
+
+Float64 CMTimeGetSeconds(CMTime time) {
+  return time.value / time.timescale;
+}
