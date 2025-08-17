@@ -847,7 +847,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     private static final String RPATH = "@rpath";
 
     private LibraryFile resolveLibrary(LibraryFile libraryFile, String neededLibrary, Collection<String> rpathSet) throws IOException {
-        if (rpathSet.isEmpty() || !neededLibrary.contains(RPATH)) {
+        boolean isRPath = neededLibrary.contains(RPATH);
+        if (rpathSet.isEmpty() || !isRPath) {
             LibraryFile neededLibraryFile = libraryFile.resolveLibrary(emulator, neededLibrary);
             if (libraryResolver != null && neededLibraryFile == null) {
                 neededLibraryFile = libraryResolver.resolveLibrary(emulator, neededLibrary);
@@ -866,7 +867,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     return neededLibraryFile;
                 }
             }
-            return null;
+            return libraryFile.resolveLibrary(emulator, neededLibrary.replace(RPATH, FilenameUtils.getFullPathNoEndSeparator(libraryFile.getPath())));
         }
     }
 

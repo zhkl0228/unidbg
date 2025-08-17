@@ -27,5 +27,6 @@ function build_UIKit() {
 }
 
 #build_UIKit UIKit "Foundation"
-build_framework AVFoundation "Foundation"
-build_framework CoreMedia "CoreFoundation"
+build_framework AdServices "Foundation"
+build_framework CoreHaptics "CoreFoundation"
+build_framework VisionKit "Foundation"
