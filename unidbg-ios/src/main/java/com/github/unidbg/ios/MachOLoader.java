@@ -37,6 +37,7 @@ import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.pointer.UnidbgStructure;
 import com.github.unidbg.spi.AbstractLoader;
+import com.github.unidbg.spi.InitFunctionFilter;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.Loader;
 import com.github.unidbg.thread.Task;
@@ -758,10 +759,14 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         final long loadSize = size;
+        InitFunctionFilter initFunctionFilter = null;
+        if (libraryResolver instanceof InitFunctionFilter) {
+            initFunctionFilter = (InitFunctionFilter) libraryResolver;
+        }
         MachOModule module = new MachOModule(machO, dyId, loadBase, loadSize, new HashMap<>(neededLibraries), regions,
                 symtabCommand, dysymtabCommand, buffer, lazyLoadNeededList, upwardLibraries, exportModules, dylibPath, emulator,
                 dyldInfoCommand, chainedFixups, null, null, vars, machHeader, isExecutable, this, hookListeners, ordinalList,
-                fEHFrameSection, fUnwindInfoSection, objcSections, segments.toArray(new Segment[0]), libraryFile);
+                fEHFrameSection, fUnwindInfoSection, objcSections, segments.toArray(new Segment[0]), libraryFile, initFunctionFilter);
         if (isExecutable) {
             setExecuteModule(module);
         }

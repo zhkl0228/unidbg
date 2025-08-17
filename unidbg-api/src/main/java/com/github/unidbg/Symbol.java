@@ -38,4 +38,16 @@ public abstract class Symbol {
     public String toString() {
         return name;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Symbol)) return false;
+        Symbol symbol = (Symbol) o;
+        return getAddress() == symbol.getAddress();
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(getAddress());
+    }
 }
