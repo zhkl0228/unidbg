@@ -879,10 +879,17 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
     private void __NSSetLogCStringFunction(Pointer message, int length, boolean withSysLogBanner) {
         byte[] data = message.getByteArray(0, length);
         String str = new String(data, StandardCharsets.UTF_8);
-        if (withSysLogBanner) {
-            System.err.println("NSLog: " + str);
-        } else {
-            System.out.println("NSLog: " + str);
+        boolean print = true;
+        if (libraryResolver instanceof NSLogListener) {
+            NSLogListener listener = (NSLogListener) libraryResolver;
+            print = listener.onLog(str);
+        }
+        if (print) {
+            if (withSysLogBanner) {
+                System.err.println("NSLog: " + str);
+            } else {
+                System.out.println("NSLog: " + str);
+            }
         }
     }
 
