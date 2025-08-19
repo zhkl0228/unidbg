@@ -275,9 +275,20 @@ const list_gpbs = function (filter) {
     }
     if (!haveGPB && filter) {
         console.log("Try list classes: " + filter)
-        for (const className in ObjC.classes) {
-            if (className.toLowerCase().indexOf(filter.toLowerCase()) !== -1) {
-                console.log("Found class: " + className)
+        if (filter.startsWith("^")) {
+            const classArray = [];
+            const prefix = filter.substring(1);
+            for (const className in ObjC.classes) {
+                if(className.startsWith(prefix)) {
+                    classArray.push(className);
+                }
+            }
+            console.log("Found class: " + JSON.stringify(classArray));
+        } else {
+            for (const className in ObjC.classes) {
+                if (className.toLowerCase().indexOf(filter.toLowerCase()) !== -1) {
+                    console.log("Found class: " + className)
+                }
             }
         }
     }
