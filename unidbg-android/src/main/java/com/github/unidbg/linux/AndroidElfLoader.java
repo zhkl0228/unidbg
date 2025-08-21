@@ -20,10 +20,7 @@ import com.github.unidbg.memory.MemoryBlock;
 import com.github.unidbg.memory.MemoryBlockImpl;
 import com.github.unidbg.memory.MemoryMap;
 import com.github.unidbg.pointer.UnidbgPointer;
-import com.github.unidbg.spi.AbstractLoader;
-import com.github.unidbg.spi.InitFunction;
-import com.github.unidbg.spi.LibraryFile;
-import com.github.unidbg.spi.Loader;
+import com.github.unidbg.spi.*;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.unix.IO;
 import com.github.unidbg.unix.UnixSyscallHandler;
@@ -638,8 +635,12 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         if (load_virtual_address == 0) {
             throw new IllegalStateException("load_virtual_address");
         }
+        InitFunctionFilter initFunctionFilter = null;
+        if(libraryResolver instanceof InitFunctionFilter) {
+            initFunctionFilter = (InitFunctionFilter) libraryResolver;
+        }
         LinuxModule module = new LinuxModule(load_virtual_address, load_base, size, soName, dynsym, list, initFunctionList, neededLibraries, regions,
-                armExIdx, ehFrameHeader, symbolTableSection, elfFile, dynamicStructure, libraryFile);
+                armExIdx, ehFrameHeader, symbolTableSection, elfFile, dynamicStructure, libraryFile, initFunctionFilter);
         for (ModuleSymbol symbol : resolvedSymbols) {
             symbol.relocation(emulator, module);
         }

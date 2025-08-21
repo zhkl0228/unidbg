@@ -9,6 +9,7 @@ import com.github.unidbg.memory.MemRegion;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.spi.InitFunction;
+import com.github.unidbg.spi.InitFunctionFilter;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
@@ -56,7 +57,8 @@ public class LinuxModule extends Module {
         LinuxModule module = new LinuxModule(base, base, size, name, null,
                 Collections.emptyList(), Collections.emptyList(),
                 Collections.emptyMap(), Collections.emptyList(),
-                null, null, null, null, null, null) {
+                null, null, null, null, null, null,
+                null) {
             @Override
             public Symbol findSymbolByName(String name, boolean withDependencies) {
                 UnidbgPointer pointer = symbols.get(name);
@@ -90,11 +92,13 @@ public class LinuxModule extends Module {
     public final ElfFile elfFile;
     public final ElfDynamicStructure dynamicStructure;
     public final long virtualBase;
+    private final InitFunctionFilter initFunctionFilter;
 
     LinuxModule(long virtualBase, long base, long size, String name, SymbolLocator dynsym,
                 List<ModuleSymbol> unresolvedSymbol, List<InitFunction> initFunctionList, Map<String, Module> neededLibraries, List<MemRegion> regions,
                 MemoizedObject<ArmExIdx> armExIdx, MemoizedObject<GnuEhFrameHeader> ehFrameHeader,
-                ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure, LibraryFile libraryFile) {
+                ElfSection symbolTableSection, ElfFile elfFile, ElfDynamicStructure dynamicStructure, LibraryFile libraryFile,
+                InitFunctionFilter initFunctionFilter) {
         super(name, base, size, neededLibraries, regions, libraryFile);
 
         this.virtualBase = virtualBase;
@@ -106,6 +110,7 @@ public class LinuxModule extends Module {
         this.symbolTableSection = symbolTableSection;
         this.elfFile = elfFile;
         this.dynamicStructure = dynamicStructure;
+        this.initFunctionFilter = initFunctionFilter;
     }
 
     @Override
@@ -131,6 +136,9 @@ public class LinuxModule extends Module {
         while (!initFunctionList.isEmpty()) {
             InitFunction initFunction = initFunctionList.remove(0);
             long initAddress = initFunction.getAddress();
+            if (initFunctionFilter != null && !initFunctionFilter.accept(emulator, initAddress)) {
+                continue;
+            }
             if (initFunctionListener != null) {
                 initFunctionListener.onPreCallInitFunction(this, initAddress, index);
             }
