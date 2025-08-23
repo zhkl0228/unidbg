@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
@@ -231,6 +232,26 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
     abstract byte[] loadLibraryData(Apk apk, String soName);
 
+    private File getSplitFile(String soName) {
+        String currentSplit  = emulator.is64Bit() ? "config.arm64_v8a.apk" : "config.armeabi_v7a.apk";
+        File splitFile = new File(apk.getParentFile(), currentSplit);
+        if(splitFile != null && splitFile.canRead()) {
+            return splitFile;
+        }
+        //recursive
+        File []listFiles = apk.getParentFile().listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.getName().endsWith(".apk") && !pathname.getName().equals(currentSplit);
+            }
+        });
+        for(File file : listFiles) {
+            if(!file.canRead())continue;
+            LibraryFile libraryFile = findLibrary(ApkFactory.createApk(file), soName);
+            if (null != libraryFile)return file;
+        }
+        return null;
+    }
     @Override
     public LibraryFile findLibrary(String soName) {
         if (apk == null) {
@@ -239,8 +260,8 @@ public abstract class BaseVM implements VM, DvmClassFactory {
 
         ApkLibraryFile libraryFile = findLibrary(apk, soName);
         if (libraryFile == null) {
-            File split = new File(apk.getParentFile(), emulator.is64Bit() ? "config.arm64_v8a.apk" : "config.armeabi_v7a.apk");
-            if (split.canRead()) {
+            File split = getSplitFile(soName);
+            if (split!= null && split.canRead()) {
                 libraryFile = findLibrary(ApkFactory.createApk(split), soName);
             }
         }
