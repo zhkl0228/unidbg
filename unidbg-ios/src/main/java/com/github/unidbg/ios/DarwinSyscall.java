@@ -51,6 +51,14 @@ public interface DarwinSyscall {
     int HW_NCPU = 3; /* int: number of cpus */
     int HW_PAGESIZE = 7; /* int: software page size */
     int HW_CPU_FREQ =	15; /* int: CPU Frequency */
+    int HW_CACHELINE =	16;		/* int: Cache Line Size in Bytes */
+    int HW_L1ICACHESIZE =	17;		/* int: L1 I Cache Size in Bytes */
+    int HW_L1DCACHESIZE =	18;		/* int: L1 D Cache Size in Bytes */
+    int HW_L2SETTINGS =	19;		/* int: L2 Cache Settings */
+    int HW_L2CACHESIZE =	20;		/* int: L2 Cache Size in Bytes */
+    int HW_L3SETTINGS =	21;		/* int: L3 Cache Settings */
+    int HW_L3CACHESIZE =    22;		/* int: L3 Cache Size in Bytes */
+    int HW_TB_FREQ =	23;		/* int: Bus Frequency */
     int HW_MEMSIZE =	24;		/* uint64_t: physical ram size */
     int HW_AVAILCPU = 25;		/* int: number of available CPUs */
     int HW_CPU_TYPE = 105;

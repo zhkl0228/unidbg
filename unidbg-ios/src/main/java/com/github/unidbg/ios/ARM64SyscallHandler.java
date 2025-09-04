@@ -2123,6 +2123,12 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
                             buffer.setInt(0, getHwNcpu());
                         }
                         return 0;
+                    case HW_CACHELINE:
+                    case HW_L1ICACHESIZE:
+                    case HW_L1DCACHESIZE:
+                    case HW_L2CACHESIZE:
+                    case HW_L3CACHESIZE:
+                        break;
                 }
                 log.info(msg);
                 break;
