@@ -26,9 +26,25 @@ void operator delete(void *ptr, size_t size, std::align_val_t alignment) _NOEXCE
     free(ptr);
 }
 
+void operator delete[](void *ptr, std::align_val_t alignment) _NOEXCEPT {
+    free(ptr);
+}
+
+void operator delete(void *ptr, std::align_val_t alignment) _NOEXCEPT {
+    free(ptr);
+}
+
 void *operator new(size_t size, std::align_val_t alignment) {
     void *ptr = NULL;
     int ret = posix_memalign(&ptr, (size_t) alignment, size);
     assert(ret == 0);
     return ptr;
+}
+
+void *operator new[](size_t size, std::align_val_t alignment, std::nothrow_t const& throw_t) _NOEXCEPT {
+    return operator new(size, alignment);
+}
+
+void *operator new(size_t size, std::align_val_t alignment, std::nothrow_t const& throw_t) _NOEXCEPT {
+    return operator new(size, alignment);
 }
