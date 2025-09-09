@@ -4,6 +4,8 @@ import com.github.unidbg.AbstractEmulator;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.hook.HookListener;
+import com.github.zhkl0228.demumble.DemanglerFactory;
+import com.github.zhkl0228.demumble.GccDemangler;
 import com.sun.jna.Pointer;
 import io.kaitai.struct.ByteBufferKaitaiStream;
 import org.apache.commons.io.FilenameUtils;
@@ -258,10 +260,11 @@ final class FixupChains {
                         targetPath = mm.ordinalList.get(libraryOrdinal - 1);
                         targetImage = loader.path_modules.get(targetPath);
                     }
+                    GccDemangler demangler = DemanglerFactory.createDemangler();
                     if (targetImage != null || weak_import) {
-                        FixupChains.log.debug("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetImage={}", mm.name, symbolName, libraryOrdinal, weak_import, targetImage);
+                        FixupChains.log.debug("bind mm={}, symbolName={}, demangledSymbol={}, lib_ordinal={}, weak_import={}, targetImage={}", mm.name, symbolName, demangler.demangle(symbolName), libraryOrdinal, weak_import, targetImage);
                     } else {
-                        FixupChains.log.info("bind mm={}, symbolName={}, lib_ordinal={}, weak_import={}, targetPath={}", mm.name, symbolName, libraryOrdinal, false, targetPath);
+                        FixupChains.log.info("bind mm={}, symbolName={}, demangledSymbol={}, lib_ordinal={}, weak_import={}, targetPath={}", mm.name, symbolName, demangler.demangle(symbolName), libraryOrdinal, false, targetPath);
                     }
                 }
                 if (hookListeners == null) {

@@ -6,6 +6,7 @@ import io.kaitai.struct.ByteBufferKaitaiStream;
 import io.kaitai.struct.KaitaiStruct;
 import io.kaitai.struct.KaitaiStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -3565,7 +3566,10 @@ public class MachO extends KaitaiStruct {
             this.timestamp = this._io.readU4le();
             this.currentVersion = this._io.readU4le();
             this.compatibilityVersion = this._io.readU4le();
-            this.name = new String(this._io.readBytesTerm((byte) 0, false, true, true), Charset.forName("utf-8"));
+            long off = this.nameOffset - 24;
+            assert off >= 0;
+            this._io.readBytes(off);
+            this.name = new String(this._io.readBytesTerm((byte) 0, false, true, true), StandardCharsets.UTF_8);
         }
         private long nameOffset;
         private long timestamp;

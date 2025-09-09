@@ -547,6 +547,9 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         }
 
         final List<NeedLibrary> neededList = new ArrayList<>();
+        if (checkBootstrap && isExecutable) {
+            neededList.add(new NeedLibrary("/System/Library/Frameworks/UIKit.framework/UIKit", false, false));
+        }
         final List<MemRegion> regions = new ArrayList<>(5);
         final List<MachO.DylibCommand> exportDylibs = new ArrayList<>();
         MachO.SymtabCommand symtabCommand = null;
@@ -747,7 +750,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                     if ("/usr/lib/libnetwork.dylib".equals(neededLibrary)) {
                         continue;
                     }
-                    log.info("Module \"{}\" load dependency {} failed: rpath={}", dyId, neededLibrary, rpathSet);
+                    log.info("Module \"{}\" load dependency \"{}\" failed: rpath={}", dyId, neededLibrary, rpathSet);
                 }
             }
         } else {
@@ -1759,7 +1762,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 "_OBJC_CLASS_$_NSConstantIntegerNumber".equals(symbolName) ||
                 "_NSProcessInfoPowerStateDidChangeNotification".equals(symbolName) ||
                 "_NSExtensionHostDidEnterBackgroundNotification".equals(symbolName) ||
-                "_NSExtensionHostDidBecomeActiveNotification".equals(symbolName)) {
+                "_NSExtensionHostDidBecomeActiveNotification".equals(symbolName) ||
+                "_objc_retain_x8".equals(symbolName)) {
             MachOModule fakeImage = this.modules.get("UIKit");
             if (fakeImage == null) {
                 fakeImage = this.modules.get("AppKit");

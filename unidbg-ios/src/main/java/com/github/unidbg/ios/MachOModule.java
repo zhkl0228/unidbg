@@ -27,6 +27,8 @@ import com.github.unidbg.spi.InitFunctionFilter;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.utils.Inspector;
 import com.github.unidbg.virtualmodule.VirtualSymbol;
+import com.github.zhkl0228.demumble.DemanglerFactory;
+import com.github.zhkl0228.demumble.GccDemangler;
 import com.sun.jna.Pointer;
 import io.kaitai.MachO;
 import io.kaitai.struct.ByteBufferKaitaiStream;
@@ -271,11 +273,12 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
                             } else {
                                 Symbol old = symbolMap.put(symbolName, symbol);
                                 if (old != null && !old.equals(symbol)) {
+                                    GccDemangler demangler = DemanglerFactory.createDemangler();
                                     Logger log = LoggerFactory.getLogger(AbstractEmulator.class);
                                     if (log.isDebugEnabled()) {
-                                        log.warn("Replace exist symbol: {}, old=0x{}, symbol=0x{}", symbolName, Long.toHexString(old.getAddress()), Long.toHexString(symbol.getAddress()));
+                                        this.log.warn("Replace exist symbol: {}, demangledSymbol={}, old=0x{}, symbol=0x{}, path={}", symbolName, demangler.demangle(symbolName), Long.toHexString(old.getAddress()), Long.toHexString(symbol.getAddress()), path);
                                     } else {
-                                        log.debug("Replace exist symbol: {}, old=0x{}, symbol=0x{}", symbolName, Long.toHexString(old.getAddress()), Long.toHexString(symbol.getAddress()));
+                                        this.log.debug("Replace exist symbol: {}, demangledSymbol={}, old=0x{}, symbol=0x{}, path={}", symbolName, demangler.demangle(symbolName), Long.toHexString(old.getAddress()), Long.toHexString(symbol.getAddress()), path);
                                     }
                                 }
                             }
