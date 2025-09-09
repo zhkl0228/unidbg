@@ -140,7 +140,7 @@ public abstract class IpaLoader extends BaseLoader {
         config(emulator, ipa, executableBundlePath, rootDir);
         Memory memory = emulator.getMemory();
         DarwinResolver resolver = createLibraryResolver();
-        if (overrideResolver) {
+        if (isUseOverrideResolver()) {
             resolver.setOverride();
         }
         memory.setLibraryResolver(resolver);

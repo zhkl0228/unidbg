@@ -63,15 +63,15 @@ public abstract class Dyld extends Dlfcn {
         Pointer pointer = svcMemory.allocate(elementSize * loader.getLoadedModulesNoVirtual().size(), "DyldImageInfo");
         List<Module> loadedModules = new ArrayList<>(loader.getLoadedModulesNoVirtual());
         for (Module module : loadedModules) {
-            if (module == loader.getExecutableModule()) {
-                continue;
+            if (!loader.isUseOverrideResolver()) {
+                if (module == loader.getExecutableModule()) {
+                    continue;
+                }
+                if (loader.isPayloadModule(module)) {
+                    continue;
+                }
             }
-            if (loader.isPayloadModule(module)) {
-                continue;
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("generateDyldImageInfo: {}", module.name);
-            }
+            log.debug("generateDyldImageInfo: {}", module.name);
 
             MachOModule mm = (MachOModule) module;
             if (emulator.is64Bit()) {

@@ -102,7 +102,7 @@ public abstract class DmgLoader extends BaseLoader {
         config(emulator, dmgDir);
         Memory memory = emulator.getMemory();
         DarwinResolver resolver = createLibraryResolver();
-        if (overrideResolver) {
+        if (isUseOverrideResolver()) {
             resolver.setOverride();
         }
         memory.setLibraryResolver(resolver);

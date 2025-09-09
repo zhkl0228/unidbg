@@ -20,10 +20,15 @@ public abstract class BaseLoader implements Loader {
         this.backendFactories.add(backendFactory);
     }
 
-    protected boolean overrideResolver;
+    private boolean overrideResolver;
 
     public void useOverrideResolver() {
         this.overrideResolver = true;
+    }
+
+    @Override
+    public final boolean isUseOverrideResolver() {
+        return overrideResolver;
     }
 
     protected DarwinResolver createLibraryResolver() {

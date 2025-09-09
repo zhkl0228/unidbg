@@ -27,7 +27,10 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework Accessibility "Foundation"
-build_framework FileProvider "Foundation"
-build_framework CoreMIDI "CoreFoundation"
-build_framework CoreServices "CoreFoundation"
+build_framework QuickLookUI "Foundation"
+build_framework OpenDirectory "Foundation"
+build_framework AGL "Foundation"
+build_framework VideoDecodeAcceleration "Foundation"
+build_framework DiskArbitration "Foundation"
+build_framework ColorSync "Foundation"
+build_framework CoreMediaIO "CoreFoundation"

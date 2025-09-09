@@ -89,7 +89,7 @@ public class BundleLoader extends BaseLoader {
             MachOLoader memory = (MachOLoader) emulator.getMemory();
             memory.setObjcRuntime(true);
             DarwinResolver resolver = createLibraryResolver();
-            if (overrideResolver) {
+            if (isUseOverrideResolver()) {
                 resolver.setOverride();
             }
             memory.setLibraryResolver(resolver);

@@ -10,6 +10,8 @@ static NSString *name = @"iPhone5S";
 static NSString *identifierForVendor = @"00000000-0000-0000-0000-000000000000";
 const NSOperatingSystemVersion g_systemVersion = { 7, 1, 2 };
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
 @implementation NSProcessInfo (Foundation)
 - (NSOperatingSystemVersion) operatingSystemVersion {
   return g_systemVersion;
@@ -18,6 +20,10 @@ const NSOperatingSystemVersion g_systemVersion = { 7, 1, 2 };
   return NSProcessInfoThermalStateNominal;
 }
 - (BOOL) isLowPowerModeEnabled {
+  return YES;
+}
+- (BOOL) isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion) version {
+  NSLog(@"NSProcessInfo.isOperatingSystemAtLeastVersion: %ld.%ld.%ld", version.majorVersion, version.minorVersion, version.patchVersion);
   return YES;
 }
 @end

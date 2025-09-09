@@ -25,6 +25,7 @@ import keystone.KeystoneMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 
 public class SymbolResolver implements HookListener {
@@ -36,6 +37,7 @@ public class SymbolResolver implements HookListener {
     private UnidbgPointer _objc_readClassPair;
     private UnidbgPointer _objc_unsafeClaimAutoreleasedReturnValue;
     private UnidbgPointer __tlv_bootstrap;
+    private UnidbgPointer _getentropy;
 
     private UnidbgPointer __dispatch_source_type_memorypressure;
     private UnidbgPointer dispatch_source_type_memorypressure_init;
@@ -71,6 +73,27 @@ public class SymbolResolver implements HookListener {
 
     @Override
     public long hook(final SvcMemory svcMemory, String libraryName, String symbolName, final long old) {
+        if ("_getentropy".equals(symbolName)) {
+            if (emulator.is64Bit()) {
+                if (_getentropy == null) {
+                    _getentropy = svcMemory.registerSvc(new Arm64Svc("_getentropy") {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            Pointer buf = context.getPointerArg(0);
+                            int size = context.getIntArg(1);
+                            byte[] bytes = new byte[size];
+                            new SecureRandom().nextBytes(bytes);
+                            buf.write(0, bytes, 0, bytes.length);
+                            return 0;
+                        }
+                    });
+                }
+            } else {
+                throw new UnsupportedOperationException();
+            }
+            return _getentropy.peer;
+        }
         if ("__ZNSt3__119__shared_mutex_baseC1Ev".equals(symbolName)) {
             if (emulator.is64Bit()) {
                 if (__shared_mutex_base$$__shared_mutex_base == null) {

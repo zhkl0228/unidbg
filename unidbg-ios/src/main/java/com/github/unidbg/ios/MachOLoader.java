@@ -278,6 +278,10 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
 
     private com.github.unidbg.ios.Loader loader;
 
+    public boolean isUseOverrideResolver() {
+        return loader != null && loader.isUseOverrideResolver();
+    }
+
     public void setLoader(com.github.unidbg.ios.Loader loader) {
         this.loader = loader;
     }
@@ -1763,7 +1767,35 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 "_NSProcessInfoPowerStateDidChangeNotification".equals(symbolName) ||
                 "_NSExtensionHostDidEnterBackgroundNotification".equals(symbolName) ||
                 "_NSExtensionHostDidBecomeActiveNotification".equals(symbolName) ||
-                "_objc_retain_x8".equals(symbolName)) {
+                "_objc_claimAutoreleasedReturnValue".equals(symbolName) ||
+                "_objc_retain_x1".equals(symbolName) ||
+                "_objc_release_x1".equals(symbolName) ||
+                "_objc_retain_x2".equals(symbolName) ||
+                "_objc_retain_x3".equals(symbolName) ||
+                "_objc_retain_x7".equals(symbolName) ||
+                "_objc_retain_x8".equals(symbolName) ||
+                "_objc_release_x8".equals(symbolName) ||
+                "_objc_release_x9".equals(symbolName) ||
+                "_objc_retain_x19".equals(symbolName) ||
+                "_objc_release_x19".equals(symbolName) ||
+                "_objc_retain_x20".equals(symbolName) ||
+                "_objc_release_x20".equals(symbolName) ||
+                "_objc_retain_x21".equals(symbolName) ||
+                "_objc_release_x21".equals(symbolName) ||
+                "_objc_retain_x22".equals(symbolName) ||
+                "_objc_release_x22".equals(symbolName) ||
+                "_objc_retain_x23".equals(symbolName) ||
+                "_objc_release_x23".equals(symbolName) ||
+                "_objc_retain_x24".equals(symbolName) ||
+                "_objc_release_x24".equals(symbolName) ||
+                "_objc_retain_x25".equals(symbolName) ||
+                "_objc_release_x25".equals(symbolName) ||
+                "_objc_retain_x26".equals(symbolName) ||
+                "_objc_release_x26".equals(symbolName) ||
+                "_objc_retain_x27".equals(symbolName) ||
+                "_objc_release_x27".equals(symbolName) ||
+                "_objc_retain_x28".equals(symbolName) ||
+                "_objc_release_x28".equals(symbolName)) {
             MachOModule fakeImage = this.modules.get("UIKit");
             if (fakeImage == null) {
                 fakeImage = this.modules.get("AppKit");

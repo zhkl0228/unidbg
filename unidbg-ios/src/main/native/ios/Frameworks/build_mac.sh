@@ -43,12 +43,3 @@ function build_UIKit() {
 }
 
 build_framework AppKit "Foundation"
-build_framework Quartz "Foundation"
-build_framework Carbon "Foundation"
-build_framework Cocoa "Foundation"
-build_framework CoreServices "CoreFoundation"
-build_framework ApplicationServices "Foundation"
-build_framework CoreWLAN "Foundation"
-build_framework AudioUnit "Foundation"
-build_framework OpenGL "Foundation"
-build_framework ServiceManagement "Foundation"

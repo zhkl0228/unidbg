@@ -309,6 +309,7 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 - (NSOperatingSystemVersion) operatingSystemVersion;
 - (NSProcessInfoThermalState) thermalState;
 - (BOOL) isLowPowerModeEnabled;
+- (BOOL) isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion) version;
 @end
 #pragma clang diagnostic pop
 

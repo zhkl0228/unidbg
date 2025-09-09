@@ -28,13 +28,7 @@ import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Dyld64 extends Dyld {
 
@@ -513,6 +507,12 @@ public class Dyld64 extends Dyld {
                 return 0;
             }
         });
+        __dyld_dlerror = svcMemory.registerSvc(new Arm64Svc("dyld_dlerror") {
+            @Override
+            public long handle(Emulator<?> emulator) {
+                return 0;
+            }
+        });
         __dyld_dlopen_preflight = svcMemory.registerSvc(new Arm64Svc("dyld_dlopen_preflight") {
             @Override
             public long handle(Emulator<?> emulator) {
@@ -569,6 +569,7 @@ public class Dyld64 extends Dyld {
     private final Pointer __dyld_dlsym;
     private final Pointer __dyld_dladdr;
     private final Pointer __dyld_dlclose;
+    private final Pointer __dyld_dlerror;
     private final Pointer __dyld_dlopen_preflight;
     private final Pointer __dyld_shared_cache_some_image_overridden;
     private final long _os_trace_redirect_func;
@@ -611,6 +612,9 @@ public class Dyld64 extends Dyld {
                 return 1;
             case "__dyld_dlclose":
                 address.setPointer(0, __dyld_dlclose);
+                return 1;
+            case "__dyld_dlerror":
+                address.setPointer(0, __dyld_dlerror);
                 return 1;
             case "__dyld_dlsym":
                 address.setPointer(0, __dyld_dlsym);
@@ -1027,6 +1031,27 @@ public class Dyld64 extends Dyld {
             }
             return __dyld_is_memory_immutable;
         }
+        if ("_clock_gettime_nsec_np".equals(symbolName)) {
+            if (_clock_gettime_nsec_np == 0) {
+                _clock_gettime_nsec_np = svcMemory.registerSvc(new Arm64Svc("clock_gettime_nsec_np") {
+                    @Override
+                    public long handle(Emulator<?> emulator) {
+                        RegisterContext context = emulator.getContext();
+                        int clock_id = context.getIntArg(0);
+                        switch (clock_id) {
+                            case DarwinSyscall.CLOCK_REALTIME:
+                                return System.currentTimeMillis() * 1000000L;
+                            case DarwinSyscall.CLOCK_MONOTONIC_RAW:
+                                return System.nanoTime() - DarwinSyscall.nanoTime;
+                            case DarwinSyscall.CLOCK_MONOTONIC:
+                            default:
+                                throw new UnsupportedOperationException("clock_id=" + clock_id);
+                        }
+                    }
+                }).peer;
+            }
+            return _clock_gettime_nsec_np;
+        }
         if ("libobjc.A.dylib".equals(libraryName)) {
             if ("_abort_with_reason".equals(symbolName)) {
                 if (_abort_with_reason == 0) {
@@ -1270,25 +1295,6 @@ public class Dyld64 extends Dyld {
                     }).peer;
                 }
                 return __dyld_objc_notify_register;
-            }
-            if ("_clock_gettime_nsec_np".equals(symbolName)) {
-                if (_clock_gettime_nsec_np == 0) {
-                    _clock_gettime_nsec_np = svcMemory.registerSvc(new Arm64Svc("clock_gettime_nsec_np") {
-                        @Override
-                        public long handle(Emulator<?> emulator) {
-                            RegisterContext context = emulator.getContext();
-                            int clock_id = context.getIntArg(0);
-                            switch (clock_id) {
-                                case DarwinSyscall.CLOCK_MONOTONIC_RAW:
-                                    return System.nanoTime() - DarwinSyscall.nanoTime;
-                                case DarwinSyscall.CLOCK_MONOTONIC:
-                                default:
-                                    throw new UnsupportedOperationException("clock_id=" + clock_id);
-                            }
-                        }
-                    }).peer;
-                }
-                return _clock_gettime_nsec_np;
             }
             if ("_os_unfair_recursive_lock_tryunlock4objc".equals(symbolName)) {
                 if (_os_unfair_recursive_lock_tryunlock4objc == 0) {
