@@ -1040,10 +1040,11 @@ public class Dyld64 extends Dyld {
                         int clock_id = context.getIntArg(0);
                         switch (clock_id) {
                             case DarwinSyscall.CLOCK_REALTIME:
+                            case DarwinSyscall.CLOCK_REALTIME_ALARM:
                                 return System.currentTimeMillis() * 1000000L;
                             case DarwinSyscall.CLOCK_MONOTONIC_RAW:
-                                return System.nanoTime() - DarwinSyscall.nanoTime;
                             case DarwinSyscall.CLOCK_MONOTONIC:
+                                return System.nanoTime() - DarwinSyscall.nanoTime;
                             default:
                                 throw new UnsupportedOperationException("clock_id=" + clock_id);
                         }

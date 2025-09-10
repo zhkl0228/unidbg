@@ -1764,6 +1764,7 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
         if ("___NSArray0__".equals(symbolName) ||
                 "___NSDictionary0__".equals(symbolName) ||
                 "_OBJC_CLASS_$_NSConstantIntegerNumber".equals(symbolName) ||
+                "_OBJC_CLASS_$_NSConstantArray".equals(symbolName) ||
                 "_NSProcessInfoPowerStateDidChangeNotification".equals(symbolName) ||
                 "_NSExtensionHostDidEnterBackgroundNotification".equals(symbolName) ||
                 "_NSExtensionHostDidBecomeActiveNotification".equals(symbolName) ||
@@ -1772,6 +1773,8 @@ public class MachOLoader extends AbstractLoader<DarwinFileIO> implements Memory,
                 "_objc_release_x1".equals(symbolName) ||
                 "_objc_retain_x2".equals(symbolName) ||
                 "_objc_retain_x3".equals(symbolName) ||
+                "_objc_retain_x4".equals(symbolName) ||
+                "_objc_retain_x5".equals(symbolName) ||
                 "_objc_retain_x7".equals(symbolName) ||
                 "_objc_retain_x8".equals(symbolName) ||
                 "_objc_release_x8".equals(symbolName) ||

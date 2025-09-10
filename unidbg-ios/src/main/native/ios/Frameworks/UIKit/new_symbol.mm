@@ -47,6 +47,20 @@ extern "C" {
         return objc_retain(obj);
     }
 
+    id objc_retain_x4(id obj) {
+        __asm__ (
+            "str x4, [sp, #8]"
+        );
+        return objc_retain(obj);
+    }
+
+    id objc_retain_x5(id obj) {
+        __asm__ (
+            "str x5, [sp, #8]"
+        );
+        return objc_retain(obj);
+    }
+
     id objc_retain_x7(id obj) {
         __asm__ (
             "str x7, [sp, #8]"

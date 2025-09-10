@@ -30,6 +30,7 @@ const NSNotificationName UIContentSizeCategoryDidChangeNotification = @"UIConten
 const NSNotificationName UIDeviceBatteryLevelDidChangeNotification = @"UIDeviceBatteryLevelDidChangeNotification";
 const NSNotificationName UIKeyboardWillChangeFrameNotification = @"UIKeyboardWillChangeFrameNotification";
 const NSNotificationName UIKeyboardDidChangeFrameNotification = @"UIKeyboardDidChangeFrameNotification";
+const NSNotificationName UIDeviceOrientationDidChangeNotification = @"UIDeviceOrientationDidChangeNotification";
 
 NSString *const NSExtensionHostDidEnterBackgroundNotification = @"NSExtensionHostDidEnterBackgroundNotification";
 NSString *const NSExtensionHostDidBecomeActiveNotification = @"NSExtensionHostDidBecomeActiveNotification";
@@ -269,6 +270,16 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
     UIUserInterfaceIdiomPhone
 } UIUserInterfaceIdiom;
 
+typedef enum UIDeviceOrientation : NSInteger {
+    UIDeviceOrientationUnknown,
+    UIDeviceOrientationPortrait,
+    UIDeviceOrientationPortraitUpsideDown,
+    UIDeviceOrientationLandscapeLeft,
+    UIDeviceOrientationLandscapeRight,
+    UIDeviceOrientationFaceUp,
+    UIDeviceOrientationFaceDown
+} UIDeviceOrientation;
+
 @interface UIDevice : NSObject
 
 @property(nonatomic, getter=isBatteryMonitoringEnabled) BOOL batteryMonitoringEnabled;
@@ -284,6 +295,7 @@ typedef enum UIUserInterfaceIdiom : NSInteger {
 - (NSString *)name;
 
 - (UIDeviceBatteryState)batteryState;
+- (UIDeviceOrientation)orientation;
 
 @end
 
@@ -411,6 +423,10 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled();
 @end
 
 @interface BRQuery : NSObject
+@end
+
+@interface NSConstantArray : NSArray
+- (unsigned long)count;
 @end
 
 @interface NSConstantIntegerNumber : NSNumber {

@@ -82,5 +82,6 @@ public interface DarwinSyscall {
     int CLOCK_REALTIME = 0;
     int CLOCK_MONOTONIC_RAW = 4;
     int CLOCK_MONOTONIC = 6;
+    int CLOCK_REALTIME_ALARM = 8;
 
 }

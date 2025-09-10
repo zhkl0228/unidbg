@@ -373,6 +373,10 @@ static UIApplication *sharedApplication;
     return UIDeviceBatteryStateUnplugged;
 }
 
+- (UIDeviceOrientation)orientation {
+    return UIDeviceOrientationPortrait;
+}
+
 @end
 
 @implementation NSString (Fix)
@@ -627,6 +631,12 @@ BOOL UIAccessibilityDarkerSystemColorsEnabled() {
 @end
 
 @implementation BRQuery
+@end
+
+@implementation NSConstantArray
+- (unsigned long)count {
+    return 0;
+}
 @end
 
 @implementation NSConstantIntegerNumber
