@@ -27,11 +27,13 @@ public interface DarwinSyscall {
     int CTL_KERN = 1; /* "high kernel": proc, limits */
     int CTL_NET =	4;		/* network, see socket.h */
     int CTL_HW = 6; /* generic cpu/io */
+    int CTL_MACHDEP =	7;		/* machine dependent */
 
     int NET_RT_IFLIST =		3;	/* survey interface list */
     int RTM_IFINFO =	0xe;	/* iface going up/down etc. */
     int RTM_NEWADDR =      0xc;    /* address being added to iface */
 
+    int SYSCTL_PROC_NATIVE = 101;
 
     int KERN_OSTYPE	   = 1;	/* string: system version */
     int KERN_OSRELEASE = 2; /* string: system release */
@@ -61,15 +63,25 @@ public interface DarwinSyscall {
     int HW_TB_FREQ =	23;		/* int: Bus Frequency */
     int HW_MEMSIZE =	24;		/* uint64_t: physical ram size */
     int HW_AVAILCPU = 25;		/* int: number of available CPUs */
+    int HW_OPTIONAL = 102;
     int HW_CPU_TYPE = 105;
     int HW_CPU_SUBTYPE = 106;
     int HW_CPU_FAMILY = 108;
+    int HW_CPU_SUB_FAMILY = 112;
     int HW_CPU_MAX = 0x8000;
+
+    String HW_OPTIONAL_PREFIX = "hw.optional.";
 
     int KERN_PROC_PID = 1; /* by process id */
 
     int CPU_TYPE_ARM = 12;
     int CPU_SUBTYPE_ARM_V7 = 9;
+
+    int CPUSUBFAMILY_ARM_HC_HD = 5;
+
+    String CPU_BRAND = "Apple processor";
+    int CPU_BRAND_STRING = 100;
+    int VIRTUAL_ADDRESS_SIZE = 106;
 
     int CPU_TYPE_ARM64 = 0x100000c;
     int CPU_SUBTYPE_ARM64_ALL = 0;

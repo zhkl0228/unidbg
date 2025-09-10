@@ -38,6 +38,8 @@ const CFStringRef kSecAttrKeyTypeEC = CFSTR("kSecAttrKeyTypeEC");
 const CFStringRef kSecAttrKeyTypeECSECPrimeRandom = CFSTR("kSecAttrKeyTypeECSECPrimeRandom");
 const CFStringRef kSecAttrKeySizeInBits = CFSTR("kSecAttrKeySizeInBits");
 
+const CFStringRef kSecClassKey = CFSTR("kSecClassKey");
+
 typedef struct SecRandom {
 } *SecRandomRef;
 const SecRandomRef kSecRandomDefault = NULL;
@@ -58,3 +60,13 @@ typedef struct SecCertificate {
 
 SecCertificateRef SecCertificateCreateWithData(CFAllocatorRef allocator, CFDataRef data);
 int SecRandomCopyBytes(SecRandomRef rnd, size_t count, uint8_t *bytes);
+
+typedef struct SecKey {
+} *SecKeyRef;
+
+typedef enum SecPadding : uint32_t {
+    kSecPaddingNone
+} SecPadding;
+
+SecKeyRef SecKeyCreateWithData(CFDataRef keyData, CFDictionaryRef attributes, CFErrorRef *error);
+OSStatus SecKeyRawVerify(SecKeyRef key, SecPadding padding, const uint8_t *signedData, size_t signedDataLen, const uint8_t *sig, size_t sigLen);

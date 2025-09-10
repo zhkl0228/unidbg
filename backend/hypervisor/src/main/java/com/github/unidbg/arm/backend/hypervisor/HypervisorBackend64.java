@@ -23,9 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class HypervisorBackend64 extends HypervisorBackend {
 
@@ -832,5 +830,45 @@ public class HypervisorBackend64 extends HypervisorBackend {
     @Override
     public void context_free(long context) {
         Hypervisor.free(context);
+    }
+
+    private static final Map<String, Integer> CPU_FEATURES;
+    static {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("floatingpoint", 1);
+        map.put("arm.AdvSIMD", 1);
+        map.put("arm.FEAT_AES", 1);
+        map.put("arm.FEAT_PMULL", 1);
+        map.put("arm.FEAT_SHA1", 1);
+        map.put("arm.FEAT_SHA256", 1);
+        map.put("armv8_crc32", 1);
+        map.put("arm.FEAT_LSE", 1);
+        map.put("arm.FEAT_FP16", 1);
+        map.put("arm.AdvSIMD_HPFPCvt", 1);
+        map.put("arm.FEAT_RDM", 1);
+        map.put("arm.FEAT_JSCVT", 1);
+        map.put("arm.FEAT_FCMA", 1);
+        map.put("arm.FEAT_LRCPC", 1);
+        map.put("arm.FEAT_DPB", 1);
+        map.put("arm.FEAT_SHA3", 1);
+        map.put("arm.FEAT_DotProd", 1);
+        map.put("arm.FEAT_SHA512", 1);
+        map.put("arm.FEAT_FHM", 1);
+        map.put("arm.FEAT_DIT", 1);
+        map.put("arm.FEAT_LSE2", 1);
+        map.put("arm.FEAT_FlagM", 1);
+        map.put("arm.FEAT_SSBS", 0);
+        map.put("arm.FEAT_SB", 1);
+        map.put("arm.FEAT_FlagM2", 1);
+        map.put("arm.FEAT_FRINTTS", 1);
+        map.put("arm.FEAT_I8MM", 1);
+        map.put("arm.FEAT_BF16", 1);
+        map.put("arm.FEAT_BTI", 1);
+        CPU_FEATURES = Collections.unmodifiableMap(map);
+    }
+
+    @Override
+    public Map<String, Integer> getCpuFeatures() {
+        return CPU_FEATURES;
     }
 }

@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 
+@Deprecated
 public class KQueueTest {
 
     private final Emulator<?> emulator;

@@ -363,6 +363,10 @@ typedef enum UIDeviceOrientation : NSInteger {
 - (id)initRequiringSecureCoding:(BOOL)requiresSecureCoding;
 @end
 
+@interface NSDate (Foundation)
++ (id)now;
+@end
+
 @interface UIScreen : NSObject
 @property(nonatomic, readonly, getter=isCaptured) BOOL captured;
 + (UIScreen *)mainScreen;

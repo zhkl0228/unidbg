@@ -477,6 +477,11 @@ static UIApplication *sharedApplication;
     return nil;
 }
 @end
+@implementation NSDate (Foundation)
++ (id)now {
+    return [NSDate date];
+}
+@end
 #pragma clang diagnostic pop
 
 @implementation UINavigationItem

@@ -3,6 +3,8 @@ package com.github.unidbg.arm.backend;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 
+import java.util.Map;
+
 public interface Backend {
 
     void onInitialize();
@@ -62,5 +64,40 @@ public interface Backend {
     int getPageSize();
 
     void registerEmuCountHook(long emu_count);
+
+    /**
+     * <a href="https://github.com/google/cpu_features/blob/main/src/impl_aarch64_macos_or_iphone.c">arm64_features</a>
+     * hw.optional.floatingpoint
+     * hw.optional.AdvSIMD
+     * hw.optional.arm.AdvSIMD
+     * hw.optional.arm.FEAT_AES
+     * hw.optional.arm.FEAT_PMULL
+     * hw.optional.arm.FEAT_SHA1
+     * hw.optional.arm.FEAT_SHA256
+     * hw.optional.armv8_crc32
+     * hw.optional.arm.FEAT_LSE
+     * hw.optional.arm.FEAT_FP16
+     * hw.optional.arm.AdvSIMD_HPFPCvt
+     * hw.optional.arm.FEAT_RDM
+     * hw.optional.arm.FEAT_JSCVT
+     * hw.optional.arm.FEAT_FCMA
+     * hw.optional.arm.FEAT_LRCPC
+     * hw.optional.arm.FEAT_DPB
+     * hw.optional.arm.FEAT_SHA3
+     * hw.optional.arm.FEAT_DotProd
+     * hw.optional.arm.FEAT_SHA512
+     * hw.optional.arm.FEAT_FHM
+     * hw.optional.arm.FEAT_DIT
+     * hw.optional.arm.FEAT_LSE2
+     * hw.optional.arm.FEAT_FlagM
+     * hw.optional.arm.FEAT_SSBS
+     * hw.optional.arm.FEAT_SB
+     * hw.optional.arm.FEAT_FlagM2
+     * hw.optional.arm.FEAT_FRINTTS
+     * hw.optional.arm.FEAT_I8MM
+     * hw.optional.arm.FEAT_BF16
+     * hw.optional.arm.FEAT_BTI
+     */
+    Map<String, Integer> getCpuFeatures();
 
 }

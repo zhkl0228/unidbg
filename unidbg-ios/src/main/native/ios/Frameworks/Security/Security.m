@@ -67,8 +67,8 @@ int SecItemCopyMatching(CFDictionaryRef query, CFTypeRef *result) {
   CFStringRef limit = CFDictionaryGetValue(query, kSecMatchLimit);
   CFDictionaryRef classDict = class == NULL ? NULL : CFDictionaryGetValue(plist, class);
   CFTypeRef value = acct == NULL || classDict == NULL ? NULL : CFDictionaryGetValue(classDict, acct);
-  if(CFGetTypeID(acct) != CFStringGetTypeID()) {
-    fprintf(stderr, "SecItemCopyMatching kSecAttrAccount is not CFString LR=%s\n", buf);
+  if(!acct || CFGetTypeID(acct) != CFStringGetTypeID()) {
+    fprintf(stderr, "SecItemCopyMatching kSecAttrAccount[%p] is not CFString LR=%s\n", acct, buf);
     return ret;
   }
   if(value && CFDictionaryGetValue(query, kSecReturnData) && limit && CFStringCompare(limit, kSecMatchLimitOne, 0) == kCFCompareEqualTo) {
@@ -272,6 +272,107 @@ SecCertificateRef SecCertificateCreateWithData(CFAllocatorRef allocator, CFDataR
   result->_der.data = (DERByte *) CFDataGetBytePtr(result->data);
   result->_der.length = CFDataGetLength(result->data);
   return result;
+}
+
+static pthread_once_t kSecKeyRegisterClass = PTHREAD_ONCE_INIT;
+static CFTypeID kSecKeyTypeID = _kCFRuntimeNotATypeID;
+
+static void SecKeyDestroy(CFTypeRef cf) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  char buf[512];
+  print_lr(buf, lr);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "SecKeyDestroy cf=%p, LR=%s\n", cf, buf);
+  }
+}
+
+static CFStringRef SecKeyDescribe(CFTypeRef cf) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  char buf[512];
+  print_lr(buf, lr);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "SecKeyDescribe cf=%p, LR=%s\n", cf, buf);
+  }
+  SecKeyRef key = (SecKeyRef)cf;
+  CFStringRef desc = CFStringCreateWithFormat(kCFAllocatorDefault, NULL, CFSTR("<key(%p)>"), key);
+  return desc;
+}
+
+static Boolean SecKeyEqual(CFTypeRef cf1, CFTypeRef cf2) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  char buf[512];
+  print_lr(buf, lr);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "SecKeyEqual LR=%s\n", buf);
+  }
+  SecKeyRef key1 = (SecKeyRef)cf1;
+  SecKeyRef key2 = (SecKeyRef)cf2;
+  if (key1 == key2)
+    return true;
+  return false;
+}
+
+static CFHashCode SecKeyHash(CFTypeRef cf) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  char buf[512];
+  print_lr(buf, lr);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "SecKeyHash LR=%s\n", buf);
+  }
+  SecKeyRef key = (SecKeyRef)cf;
+  CFHashCode hashCode = 0;
+  return hashCode;
+}
+
+static void SecKeyRegisterClass() {
+    static const CFRuntimeClass kSecKeyClass = {
+        0,												/* version */
+        "SecKey",					     		        /* class name */
+        NULL,											/* init */
+        NULL,											/* copy */
+        SecKeyDestroy,                                  /* dealloc */
+        SecKeyEqual,							        /* equal */
+        SecKeyHash,		        						/* hash */
+        NULL,											/* copyFormattingDesc */
+        SecKeyDescribe                                  /* copyDebugDesc */
+    };
+    kSecKeyTypeID = _CFRuntimeRegisterClass(&kSecKeyClass);
+}
+
+CFTypeID SecKeyGetTypeID(void) {
+    pthread_once(&kSecKeyRegisterClass, SecKeyRegisterClass);
+    return kSecKeyTypeID;
+}
+
+SecKeyRef SecKeyCreateWithData(CFDataRef keyData, CFDictionaryRef attributes, CFErrorRef *error) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  char buf[512];
+  print_lr(buf, lr);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "SecKeyCreateWithData keyData=%p, attributes=%p, error=%p, LR=%s\n", keyData, attributes, error, buf);
+    CFShow(keyData);
+    CFShow(attributes);
+  }
+
+  CFIndex size = sizeof(struct SecKey);
+  SecKeyRef result = (SecKeyRef) _CFRuntimeCreateInstance(kCFAllocatorDefault, SecKeyGetTypeID(), size - sizeof(CFRuntimeBase), 0);
+  return result;
+}
+
+OSStatus SecKeyRawVerify(SecKeyRef key, SecPadding padding, const uint8_t *signedData, size_t signedDataLen, const uint8_t *sig, size_t sigLen) {
+  uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+  char buf[512];
+  print_lr(buf, lr);
+  int debug = is_debug();
+  if(debug) {
+    fprintf(stderr, "SecKeyRawVerify key=%p, padding=%d, signedData=%p, signedDataLen=%zu, sig=%p, sigLen=%zu, LR=%s\n", key, padding, signedData, signedDataLen, sig, sigLen, buf);
+  }
+  return errSecSuccess;
 }
 
 int SecRandomCopyBytes(SecRandomRef rnd, size_t count, uint8_t *bytes) {

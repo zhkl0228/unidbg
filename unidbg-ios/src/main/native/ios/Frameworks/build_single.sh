@@ -27,10 +27,4 @@ function build_UIKit() {
 }
 
 build_UIKit UIKit "Foundation"
-build_framework QuickLookUI "Foundation"
-build_framework OpenDirectory "Foundation"
-build_framework AGL "Foundation"
-build_framework VideoDecodeAcceleration "Foundation"
-build_framework DiskArbitration "Foundation"
-build_framework ColorSync "Foundation"
-build_framework CoreMediaIO "CoreFoundation"
+build_framework Security "CoreFoundation"

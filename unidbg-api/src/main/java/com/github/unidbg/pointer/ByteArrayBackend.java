@@ -1,20 +1,12 @@
 package com.github.unidbg.pointer;
 
-import com.github.unidbg.arm.backend.Backend;
-import com.github.unidbg.arm.backend.BackendException;
-import com.github.unidbg.arm.backend.BlockHook;
-import com.github.unidbg.arm.backend.CodeHook;
-import com.github.unidbg.arm.backend.DebugHook;
-import com.github.unidbg.arm.backend.EventMemHook;
-import com.github.unidbg.arm.backend.InterruptHook;
-import com.github.unidbg.arm.backend.ReadHook;
-import com.github.unidbg.arm.backend.WriteHook;
+import com.github.unidbg.arm.backend.*;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 
 import java.util.Arrays;
 
-class ByteArrayBackend implements Backend {
+class ByteArrayBackend extends AbstractBackend implements Backend {
 
     private final byte[] data;
 
