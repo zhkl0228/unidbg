@@ -21,6 +21,8 @@ class ObjcImpl extends ObjC {
     private final Symbol _objc_getMetaClass;
     private final Symbol _objc_getClass;
     private final Symbol _objc_lookUpClass;
+    private final Symbol _objc_retain;
+    private final Symbol _objc_release;
     private final Symbol _sel_registerName;
     private final Symbol _class_getMethodImplementation;
     private final Symbol _class_respondsToSelector;
@@ -52,6 +54,16 @@ class ObjcImpl extends ObjC {
         _objc_lookUpClass = module.findSymbolByName("_objc_lookUpClass", false);
         if (_objc_lookUpClass == null) {
             throw new IllegalStateException("_objc_lookUpClass is null");
+        }
+
+        _objc_retain = module.findSymbolByName("_objc_retain", false);
+        if (_objc_retain == null) {
+            throw new IllegalStateException("_objc_retain is null");
+        }
+
+        _objc_release = module.findSymbolByName("_objc_release", false);
+        if (_objc_release == null) {
+            throw new IllegalStateException("_objc_release is null");
         }
 
         _sel_registerName = module.findSymbolByName("_sel_registerName", false);
@@ -139,6 +151,18 @@ class ObjcImpl extends ObjC {
         Number number = _objc_lookUpClass.call(emulator, className);
         Pointer pointer = UnidbgPointer.pointer(emulator, number);
         return pointer == null ? null : ObjcClass.create(emulator, pointer);
+    }
+
+    @Override
+    public ObjcObject retain(ObjcObject obj) {
+        Number number = _objc_retain.call(emulator, obj);
+        Pointer pointer = UnidbgPointer.pointer(emulator, number);
+        return pointer == null ? null : ObjcObject.create(emulator, pointer);
+    }
+
+    @Override
+    public void release(ObjcObject obj) {
+        _objc_release.call(emulator, obj);
     }
 
     @Override

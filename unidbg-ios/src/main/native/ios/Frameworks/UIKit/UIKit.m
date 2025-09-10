@@ -361,8 +361,15 @@ static UIApplication *sharedApplication;
     return systemName;
 }
 - (NSUUID *)identifierForVendor {
+    uintptr_t lr = (uintptr_t) __builtin_return_address(0);
+    char buf[512];
+    print_lr(buf, lr);
     NSUUID *uuid = [NSUUID alloc];
     [uuid initWithUUIDString:identifierForVendor];
+    int debug = is_debug();
+    if(debug) {
+      NSLog(@"UIDevice.identifierForVendor uuid=%@, LR=%s", uuid, buf);
+    }
     return uuid;
 }
 - (NSString *)name {

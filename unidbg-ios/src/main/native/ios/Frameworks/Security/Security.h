@@ -48,14 +48,14 @@ typedef uint8_t DERByte;
 typedef size_t DERSize;
 
 typedef struct {
-	DERByte		*data;
-	DERSize		length;
+  DERByte		*data;
+  DERSize		length;
 } DERItem;
 
 typedef struct SecCertificate {
   CFRuntimeBase		_base;
-  CFDataRef				data;
-  DERItem				_der;			/* Entire certificate in DER form. */
+  CFDataRef			data;
+  DERItem			_der;			/* Entire certificate in DER form. */
 } *SecCertificateRef;
 
 SecCertificateRef SecCertificateCreateWithData(CFAllocatorRef allocator, CFDataRef data);
@@ -65,7 +65,7 @@ typedef struct SecKey {
 } *SecKeyRef;
 
 typedef enum SecPadding : uint32_t {
-    kSecPaddingNone
+  kSecPaddingNone
 } SecPadding;
 
 SecKeyRef SecKeyCreateWithData(CFDataRef keyData, CFDictionaryRef attributes, CFErrorRef *error);
