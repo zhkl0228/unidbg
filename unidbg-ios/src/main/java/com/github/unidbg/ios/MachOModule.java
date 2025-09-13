@@ -413,7 +413,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
     }
 
     private void processExportNode(Logger log, ByteBuffer buffer, byte[] cummulativeString, int curStrOffset, Map<String, ExportSymbol> map) {
-        int terminalSize = Utils.readULEB128(buffer).intValue();
+        final int terminalSize = Utils.readULEB128(buffer).intValue();
 
         if (terminalSize != 0) {
             buffer.mark();
@@ -453,7 +453,11 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             int edgeStrLen = 0;
             byte b;
             while ((b = buffer.get()) != 0) {
-                cummulativeString[curStrOffset+edgeStrLen] = b;
+                int index = curStrOffset + edgeStrLen;
+                if (index >= cummulativeString.length) {
+                    throw new IllegalStateException("index=" + index + ", length=" + cummulativeString.length + ", module=" + path);
+                }
+                cummulativeString[index] = b;
                 ++edgeStrLen;
             }
             cummulativeString[curStrOffset+edgeStrLen] = 0;
@@ -476,7 +480,7 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
             buffer = buffer.duplicate();
             buffer.limit((int) (dyldInfoCommand.exportOff() + dyldInfoCommand.exportSize()));
             buffer.position((int) dyldInfoCommand.exportOff());
-            processExportNode(log, buffer.slice(), new byte[4000], 0, map);
+            processExportNode(log, buffer.slice(), new byte[0x4000], 0, map);
         }
         return map;
     }

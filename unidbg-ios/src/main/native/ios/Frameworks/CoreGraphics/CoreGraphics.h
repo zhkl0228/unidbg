@@ -26,21 +26,6 @@ typedef struct CGContext {
     size_t bytesPerRow;
 } *CGContextRef;
 
-typedef struct CGPoint {
-    CGFloat x;
-    CGFloat y;
-} CGPoint;
-
-typedef struct CGSize {
-    CGFloat width;
-    CGFloat height;
-} CGSize;
-
-typedef struct CGRect {
-    CGPoint origin;
-    CGSize size;
-} CGRect;
-
 const CGRect CGRectZero = { 0, 0, 0, 0 };
 
 const CGSize CGSizeZero = { 0, 0 };

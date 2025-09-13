@@ -195,6 +195,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 @end
 
 @implementation UIView
++ (NSTimeInterval)inheritedAnimationDuration {
+  return 1.0;
+}
 + (id)appearance {
   return nil;
 }
@@ -223,6 +226,9 @@ const CGRect g_frame = { 0, 0, 768, 1024 };
 }
 - (UIView *)snapshotViewAfterScreenUpdates:(BOOL)afterUpdates {
   return self;
+}
+- (NSArray *)gestureRecognizers {
+  return [NSArray array];
 }
 @end
 
@@ -503,6 +509,11 @@ static UIApplication *sharedApplication;
     return self;
 }
 - (void)setExtendedLayoutIncludesOpaqueBars: (BOOL)flag {
+}
+- (UITraitCollection *)traitCollection {
+  return [UITraitCollection new];
+}
+- (void) viewWillAppear:(BOOL) animated {
 }
 @end
 

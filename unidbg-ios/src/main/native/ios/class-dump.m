@@ -89,6 +89,9 @@ NSUInteger findClosedBracket(NSString *string) {
 }
 
 +(NSArray *) typeStringFromEncoding: (const char *) typeEncoding end: (NSUInteger *) end {
+	if(!typeEncoding) {
+		return @[@"unknown", @""];
+	}
 	if(typeEncoding[0] == '\0') {
 		return @[@"void", @""];
 	}
@@ -315,7 +318,7 @@ NSUInteger findClosedBracket(NSString *string) {
 				Ivar ivar = ivars[i];
 				const char *ivarName = ivar_getName(ivar);
 				const char *ivarTypeEncoding = ivar_getTypeEncoding(ivar);
-				
+
 				[result appendFormat:@"\t%@\n", [ClassDump variableDefinitionWithName: ivarTypeEncoding name: ivarName]];
 				
 			}

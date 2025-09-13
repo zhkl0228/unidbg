@@ -3,6 +3,7 @@
 #import "../frameworks.h"
 
 typedef NSString *NSNotificationName;
+const NSNotificationName UIAccessibilityVoiceOverStatusDidChangeNotification = @"UIAccessibilityVoiceOverStatusDidChangeNotification";
 const NSNotificationName UIApplicationDidReceiveMemoryWarningNotification = @"UIApplicationDidReceiveMemoryWarningNotification";
 const NSNotificationName UIApplicationDidEnterBackgroundNotification = @"UIApplicationDidEnterBackgroundNotification";
 const NSNotificationName UIApplicationDidBecomeActiveNotification = @"UIApplicationDidBecomeActiveNotification";
@@ -153,6 +154,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @property(nonatomic, readonly) UIView *superview;
 @property(nonatomic) UIViewAutoresizing autoresizingMask;
 @property(nonatomic, readonly, strong) CALayer *layer;
++ (NSTimeInterval)inheritedAnimationDuration;
 - (id)initWithFrame:(CGRect)rect;
 - (void)setAccessibilityViewIsModal:(BOOL)flag;
 - (void)setOverrideUserInterfaceStyle:(UIUserInterfaceStyle)style;
@@ -162,6 +164,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)addGestureRecognizer:(UIGestureRecognizer *)gestureRecognizer;
 - (void)setTintColor:(UIColor *)tintColor;
 - (UIView *)snapshotViewAfterScreenUpdates:(BOOL)afterUpdates;
+- (NSArray *)gestureRecognizers;
 @end
 
 @interface UINavigationItem : NSObject

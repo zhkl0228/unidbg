@@ -282,3 +282,7 @@ CGColorRef CGColorCreate(CGColorSpaceRef space, const CGFloat *components) {
 bool CGColorEqualToColor(CGColorRef color1, CGColorRef color2) {
   return false;
 }
+
+bool CGRectEqualToRect(CGRect rect1, CGRect rect2) {
+  return true;
+}
