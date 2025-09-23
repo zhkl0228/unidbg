@@ -38,6 +38,52 @@ public class GPBDescriptor {
         this.descriptor = descriptor;
     }
 
+    private void buildMsgField(StringBuilder builder, String name, ObjcObject field,
+                               List<GPBEnumDescriptor> enumDescriptors, String pad) {
+        String fieldName = field.callObjc("name").toNSString().getString();
+        int number = field.callObjcInt("number");
+        int dataTypeValue = field.callObjcInt("dataType");
+        int required = field.callObjcInt("isRequired");
+        int optional = field.callObjcInt("isOptional");
+        int fieldTypeValue = field.callObjcInt("fieldType");
+        int hasDefaultValue = field.callObjcInt("hasDefaultValue");
+        if (hasDefaultValue != 0) {
+            log.warn("hasDefaultValue={}", hasDefaultValue);
+        }
+
+        builder.append(pad);
+        builder.append("  ");
+        GPBFieldType fieldType = GPBFieldType.of(fieldTypeValue);
+        switch (fieldType) {
+            case GPBFieldTypeSingle: {
+                if (required == optional) {
+                    throw new IllegalStateException("fieldName=" + fieldName + ", fieldType=" + fieldTypeValue + ", required=" + required);
+                }
+                if (optional != 0) {
+                    builder.append("optional ");
+                }
+                break;
+            }
+            case GPBFieldTypeRepeated:
+                builder.append("repeated ");
+                break;
+            case GPBFieldTypeMap: {
+                int mapKeyDataType = field.callObjcInt("mapKeyDataType");
+                GPBDataType dataType = GPBDataType.of(mapKeyDataType);
+                builder.append("map<").append(dataType.buildMsgDef(field, name, GPBFieldType.GPBFieldTypeSingle, enumDescriptors)).append(", ");
+                break;
+            }
+            default:
+                throw new UnsupportedOperationException("fieldType=" + fieldType);
+        }
+        GPBDataType dataType = GPBDataType.of(dataTypeValue);
+        builder.append(dataType.buildMsgDef(field, name, fieldType, enumDescriptors));
+        builder.append(" ");
+        builder.append(fieldName);
+        builder.append(" = ").append(number).append(";");
+        builder.append("\n");
+    }
+
     private String buildMsgDef() {
         StringBuilder builder = new StringBuilder();
 
@@ -53,52 +99,28 @@ public class GPBDescriptor {
 
         List<GPBEnumDescriptor> enumDescriptors = new ArrayList<>();
         ObjcObject fieldsObject = descriptor.callObjc("fields");
+        ObjcObject oneofsObject = descriptor.callObjc("oneofs");
         if (fieldsObject == null) {
             log.warn("descriptor={}", descriptor.getDescription());
         } else {
             NSArray fields = fieldsObject.toNSArray();
+            NSArray oneofs = oneofsObject == null ? null : oneofsObject.toNSArray();
             for (ObjcObject field : fields) {
-                String fieldName = field.callObjc("name").toNSString().getString();
-                int number = field.callObjcInt("number");
-                int dataTypeValue = field.callObjcInt("dataType");
-                int required = field.callObjcInt("isRequired");
-                int optional = field.callObjcInt("isOptional");
-                int fieldTypeValue = field.callObjcInt("fieldType");
-                int hasDefaultValue = field.callObjcInt("hasDefaultValue");
-                if (hasDefaultValue != 0) {
-                    log.warn("hasDefaultValue={}", hasDefaultValue);
+                ObjcObject containingOneof = field.callObjc("containingOneof");
+                if (containingOneof == null) {
+                    buildMsgField(builder, name, field, enumDescriptors, "");
                 }
-
-                builder.append("  ");
-                GPBFieldType fieldType = GPBFieldType.of(fieldTypeValue);
-                switch (fieldType) {
-                    case GPBFieldTypeSingle: {
-                        if (required == optional) {
-                            throw new IllegalStateException("fieldName=" + fieldName + ", fieldType=" + fieldTypeValue + ", required=" + required);
-                        }
-                        if (optional != 0) {
-                            builder.append("optional ");
-                        }
-                        break;
+            }
+            if (oneofs != null) {
+                for(ObjcObject oneof : oneofs) {
+                    NSString oneofName = oneof.callObjc("name").toNSString();
+                    NSArray oneofFields = oneof.callObjc("fields").toNSArray();
+                    builder.append("  oneof ").append(oneofName.getString()).append(" {\n");
+                    for(ObjcObject field : oneofFields) {
+                        buildMsgField(builder, name, field, enumDescriptors, "  ");
                     }
-                    case GPBFieldTypeRepeated:
-                        builder.append("repeated ");
-                        break;
-                    case GPBFieldTypeMap: {
-                        int mapKeyDataType = field.callObjcInt("mapKeyDataType");
-                        GPBDataType dataType = GPBDataType.of(mapKeyDataType);
-                        builder.append("map<").append(dataType.buildMsgDef(field, name, GPBFieldType.GPBFieldTypeSingle, enumDescriptors)).append(", ");
-                        break;
-                    }
-                    default:
-                        throw new UnsupportedOperationException("fieldType=" + fieldType);
+                    builder.append("  }\n");
                 }
-                GPBDataType dataType = GPBDataType.of(dataTypeValue);
-                builder.append(dataType.buildMsgDef(field, name, fieldType, enumDescriptors));
-                builder.append(" ");
-                builder.append(fieldName);
-                builder.append(" = ").append(number).append(";");
-                builder.append("\n");
             }
         }
 

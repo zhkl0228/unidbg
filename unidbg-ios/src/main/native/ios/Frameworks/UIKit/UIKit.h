@@ -32,6 +32,7 @@ const NSNotificationName UIDeviceBatteryLevelDidChangeNotification = @"UIDeviceB
 const NSNotificationName UIKeyboardWillChangeFrameNotification = @"UIKeyboardWillChangeFrameNotification";
 const NSNotificationName UIKeyboardDidChangeFrameNotification = @"UIKeyboardDidChangeFrameNotification";
 const NSNotificationName UIDeviceOrientationDidChangeNotification = @"UIDeviceOrientationDidChangeNotification";
+const NSNotificationName UIKeyboardDidShowNotification = @"UIKeyboardDidShowNotification";
 
 NSString *const NSExtensionHostDidEnterBackgroundNotification = @"NSExtensionHostDidEnterBackgroundNotification";
 NSString *const NSExtensionHostDidBecomeActiveNotification = @"NSExtensionHostDidBecomeActiveNotification";

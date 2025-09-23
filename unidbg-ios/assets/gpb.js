@@ -1,3 +1,5 @@
+// see https://github.com/protocolbuffers/protobuf/blob/main/objectivec/GPBDescriptor.h
+
 const buildDataTypeMsgDef = function (field, name, isFieldTypeMap, enumDescriptors, dataType) {
     let buffer = "";
     switch (dataType) {
@@ -168,6 +170,51 @@ const buildDefaultValue = function (name, field, dataType) {
     return buffer;
 }
 
+const GPBFieldTypeMap = 2;
+
+const buildMsgField = function (name, field, enumDescriptors, pad) {
+    let buffer = "";
+    const fieldName = field.name();
+    const number = field.number();
+    const dataType = field.dataType();
+    const required = field.isRequired();
+    const optional = field.isOptional();
+    const fieldType = field.fieldType();
+    buffer += pad;
+    buffer += "  ";
+
+    switch (fieldType) {
+        case 0: { // GPBFieldTypeSingle
+            if (required === optional) {
+                console.log("fieldName=" + fieldName + ", required=" + required);
+            }
+            if (optional) {
+                buffer += "optional ";
+            }
+            break;
+        }
+        case 1: { // GPBFieldTypeRepeated
+            buffer += "repeated ";
+            break;
+        }
+        case GPBFieldTypeMap: {
+            const mapKeyDataType = field.mapKeyDataType();
+            buffer += ("map<" + buildDataTypeMsgDef(field, name, false, enumDescriptors, mapKeyDataType) + ", ");
+            break;
+        }
+        default:
+            console.warn("fieldType=" + fieldType)
+            break;
+    }
+    buffer += buildDataTypeMsgDef(field, name, fieldType === GPBFieldTypeMap, enumDescriptors, dataType);
+    buffer += (" " + fieldName + " = " + number);
+    if (field.hasDefaultValue()) {
+        buffer += buildDefaultValue(name, field, dataType);
+    }
+    buffer += ";\n";
+    return buffer;
+}
+
 const buildMsgDef = function (descriptor, extensionNumber) {
     const file = descriptor.file();
     const _package = file.package();
@@ -198,50 +245,31 @@ const buildMsgDef = function (descriptor, extensionNumber) {
         }
     }
 
-    const GPBFieldTypeMap = 2;
     const enumDescriptors = [];
     const fields = descriptor.fields();
+    const oneofs = descriptor.oneofs();
     for (let i = 0; i < fields.count(); i++) {
         const field = fields.objectAtIndex_(i);
-        const fieldName = field.name();
-        const number = field.number();
-        const dataType = field.dataType();
-        const required = field.isRequired();
-        const optional = field.isOptional();
-        const fieldType = field.fieldType();
-        buffer += "  ";
-
-        switch (fieldType) {
-            case 0: { // GPBFieldTypeSingle
-                if (required === optional) {
-                    console.log("fieldName=" + fieldName + ", required=" + required);
-                }
-                if (optional) {
-                    buffer += "optional ";
-                }
-                break;
-            }
-            case 1: { // GPBFieldTypeRepeated
-                buffer += "repeated ";
-                break;
-            }
-            case GPBFieldTypeMap: {
-                const mapKeyDataType = field.mapKeyDataType();
-                buffer += ("map<" + buildDataTypeMsgDef(field, name, false, enumDescriptors, mapKeyDataType) + ", ");
-                break;
-            }
-            default:
-                console.warn("fieldType=" + fieldType)
-                break;
+        const containingOneof = field.containingOneof();
+        if (containingOneof === null) {
+            buffer += buildMsgField(name, field, enumDescriptors, "");
         }
-        buffer += buildDataTypeMsgDef(field, name, fieldType === GPBFieldTypeMap, enumDescriptors, dataType);
-        buffer += (" " + fieldName + " = " + number);
-        if (field.hasDefaultValue()) {
-            buffer += buildDefaultValue(name, field, dataType);
-        }
-        buffer += ";\n";
     }
-
+    if (oneofs !== null) {
+        for(let i = 0; i < oneofs.count(); i++) {
+            const oneof = oneofs.objectAtIndex_(i);
+            const oneofName = oneof.name();
+            const oneofFields = oneof.fields();
+            if(oneofFields.count() > 0) {
+                buffer += "  oneof " + oneofName + " {\n";
+                for (let m = 0; m < oneofFields.count(); m++) {
+                    const field = oneofFields.objectAtIndex_(m);
+                    buffer += buildMsgField(name, field, enumDescriptors, "  ");
+                }
+                buffer += "  }\n";
+            }
+        }
+    }
     buffer += "}";
 
     for (let m = 0; m < enumDescriptors.length; m++) {
