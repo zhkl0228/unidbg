@@ -172,15 +172,17 @@ const buildDefaultValue = function (name, field, dataType) {
 
 const GPBFieldTypeMap = 2;
 
-const buildMsgField = function (name, field, enumDescriptors, pad) {
+const buildMsgField = function (name, field, enumDescriptors, oneof) {
     let buffer = "";
     const fieldName = field.name();
     const number = field.number();
     const dataType = field.dataType();
     const required = field.isRequired();
-    const optional = field.isOptional();
+    const optional = field.isOptional() && !oneof;
     const fieldType = field.fieldType();
-    buffer += pad;
+    if (oneof) {
+        buffer += "  ";
+    }
     buffer += "  ";
 
     switch (fieldType) {
@@ -252,7 +254,7 @@ const buildMsgDef = function (descriptor, extensionNumber) {
         const field = fields.objectAtIndex_(i);
         const containingOneof = field.containingOneof();
         if (containingOneof === null) {
-            buffer += buildMsgField(name, field, enumDescriptors, "");
+            buffer += buildMsgField(name, field, enumDescriptors, false);
         }
     }
     if (oneofs !== null) {
@@ -264,7 +266,7 @@ const buildMsgDef = function (descriptor, extensionNumber) {
                 buffer += "  oneof " + oneofName + " {\n";
                 for (let m = 0; m < oneofFields.count(); m++) {
                     const field = oneofFields.objectAtIndex_(m);
-                    buffer += buildMsgField(name, field, enumDescriptors, "  ");
+                    buffer += buildMsgField(name, field, enumDescriptors, true);
                 }
                 buffer += "  }\n";
             }

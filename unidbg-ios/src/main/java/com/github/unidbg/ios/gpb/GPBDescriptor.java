@@ -39,7 +39,7 @@ public class GPBDescriptor {
     }
 
     private void buildMsgField(StringBuilder builder, String name, ObjcObject field,
-                               List<GPBEnumDescriptor> enumDescriptors, String pad) {
+                               List<GPBEnumDescriptor> enumDescriptors, boolean oneof) {
         String fieldName = field.callObjc("name").toNSString().getString();
         int number = field.callObjcInt("number");
         int dataTypeValue = field.callObjcInt("dataType");
@@ -51,7 +51,9 @@ public class GPBDescriptor {
             log.warn("hasDefaultValue={}", hasDefaultValue);
         }
 
-        builder.append(pad);
+        if (oneof) {
+            builder.append("  ");
+        }
         builder.append("  ");
         GPBFieldType fieldType = GPBFieldType.of(fieldTypeValue);
         switch (fieldType) {
@@ -59,7 +61,7 @@ public class GPBDescriptor {
                 if (required == optional) {
                     throw new IllegalStateException("fieldName=" + fieldName + ", fieldType=" + fieldTypeValue + ", required=" + required);
                 }
-                if (optional != 0) {
+                if (optional != 0 && !oneof) {
                     builder.append("optional ");
                 }
                 break;
@@ -108,7 +110,7 @@ public class GPBDescriptor {
             for (ObjcObject field : fields) {
                 ObjcObject containingOneof = field.callObjc("containingOneof");
                 if (containingOneof == null) {
-                    buildMsgField(builder, name, field, enumDescriptors, "");
+                    buildMsgField(builder, name, field, enumDescriptors, false);
                 }
             }
             if (oneofs != null) {
@@ -117,7 +119,7 @@ public class GPBDescriptor {
                     NSArray oneofFields = oneof.callObjc("fields").toNSArray();
                     builder.append("  oneof ").append(oneofName.getString()).append(" {\n");
                     for(ObjcObject field : oneofFields) {
-                        buildMsgField(builder, name, field, enumDescriptors, "  ");
+                        buildMsgField(builder, name, field, enumDescriptors, true);
                     }
                     builder.append("  }\n");
                 }
