@@ -21,15 +21,15 @@ class ElfParser implements ElfDataIn {
 	 * Signed byte utility functions used for converting from big-endian (MSB) to little-endian (LSB).
 	 */
 	short byteSwap(short arg) {
-		return (short) ((arg << 8) | ((arg >>> 8) & 0xFF));
+		return Short.reverseBytes(arg);
 	}
 
 	int byteSwap(int arg) {
-		return ((byteSwap((short) arg)) << 16) | (((byteSwap((short) (arg >>> 16)))) & 0xFFFF);
+		return Integer.reverseBytes(arg);
 	}
 
 	long byteSwap(long arg) {
-		return ((((long) byteSwap((int) arg)) << 32) | (((long) byteSwap((int) (arg >>> 32)))));
+		return Long.reverseBytes(arg);
 	}
 
 	@Override
