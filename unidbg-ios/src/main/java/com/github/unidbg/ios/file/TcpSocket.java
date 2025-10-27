@@ -112,7 +112,7 @@ public class TcpSocket extends SocketIO implements FileIO {
 
     @Override
     protected int bind_ipv4(Pointer addr, int addrlen) {
-        int sa_family = addr.getShort(0);
+        int sa_family = addr.getByte(1);
         if (sa_family != AF_INET) {
             throw new AbstractMethodError("sa_family=" + sa_family);
         }
@@ -143,7 +143,7 @@ public class TcpSocket extends SocketIO implements FileIO {
             Inspector.inspect(data, "addr");
         }
 
-        int sa_family = Short.reverseBytes(addr.getShort(0)) & 0xffff;
+        int sa_family = addr.getByte(1);
         if (sa_family != AF_INET) {
             throw new AbstractMethodError("sa_family=" + sa_family);
         }
