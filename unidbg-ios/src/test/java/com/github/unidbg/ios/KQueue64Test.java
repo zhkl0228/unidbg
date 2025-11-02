@@ -32,7 +32,7 @@ public class KQueue64Test {
 
     private void test() {
         long start = System.currentTimeMillis();
-        module.callEntry(emulator);
+        module.callEntry(emulator,"1");
         System.out.println("offset=" + (System.currentTimeMillis() - start) + "ms, backend=" + emulator.getBackend());
     }
 
