@@ -360,6 +360,15 @@ public class MachOModule extends Module implements com.github.unidbg.ios.MachO {
         }
 
         Pointer argvPointer = memory.allocateStack(0);
+
+        if (emulator.is64Bit()){
+            long currSP = memory.getStackPoint();
+            long mis = currSP & 0xF;
+            if (mis != 0) {
+                memory.allocateStack((int) mis);
+            }
+        }
+
         return emulateFunction(emulator, machHeader + entryPoint, argc, argvPointer, envPointer, auxvPointer).intValue();
     }
 
