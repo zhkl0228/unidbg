@@ -116,6 +116,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -688,7 +689,15 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             int count = select(nfds, readfds, writefds, true);
             if (count == 0) {
                 try {
-                    TimeUnit.SECONDS.sleep(1);
+                    if (timeout != null){
+                        ByteBuffer bb = timeout.getByteBuffer(0, 16);
+                        long sec = bb.getLong();
+                        long usec = bb.getInt();
+                        long millis = sec * 1000L + usec / 1000L;
+                        TimeUnit.MILLISECONDS.sleep(millis);
+                    }else{
+                        TimeUnit.SECONDS.sleep(1);
+                    }
                 } catch (InterruptedException e) {
                     throw new IllegalStateException(e);
                 }
