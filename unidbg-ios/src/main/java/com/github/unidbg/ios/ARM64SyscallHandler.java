@@ -1728,7 +1728,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         }
         log.info(msg);
         try {
-            Thread.sleep(tv_sec * 1000L + tv_nsec / 1000L, tv_nsec % 1000);
+            Thread.sleep(tv_sec * 1000L + tv_nsec / 1000_000L, (int) (tv_nsec % 1000_000L));
             emulator.getMemory().setErrno(ETIMEDOUT);
             return -1;
         } catch (InterruptedException e) {

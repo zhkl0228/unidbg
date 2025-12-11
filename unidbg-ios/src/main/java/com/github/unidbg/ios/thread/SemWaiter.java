@@ -24,7 +24,7 @@ public class SemWaiter extends AbstractWaiter implements Waiter {
     public SemWaiter(int sem, Map<Integer, Boolean> semaphoreMap, long tv_sec, int tv_nsec) {
         this.sem = sem;
         this.semaphoreMap = semaphoreMap;
-        this.waitMillis = tv_sec * 1000L + tv_nsec / 1000L;
+        this.waitMillis = tv_sec * 1000L + tv_nsec / 1000_000L;
         this.startWaitTimeInMillis = System.currentTimeMillis();
     }
 
