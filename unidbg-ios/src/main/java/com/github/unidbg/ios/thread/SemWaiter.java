@@ -16,6 +16,7 @@ public class SemWaiter extends AbstractWaiter implements Waiter {
     private final Map<Integer, Boolean> semaphoreMap;
     private final long waitMillis;
     private final long startWaitTimeInMillis;
+    private final int nsec;
 
     public SemWaiter(int sem, Map<Integer, Boolean> semaphoreMap) {
         this(sem, semaphoreMap, 0L, 0);
@@ -25,6 +26,7 @@ public class SemWaiter extends AbstractWaiter implements Waiter {
         this.sem = sem;
         this.semaphoreMap = semaphoreMap;
         this.waitMillis = tv_sec * 1000L + tv_nsec / 1000_000L;
+        nsec = tv_nsec;
         this.startWaitTimeInMillis = System.currentTimeMillis();
     }
 
@@ -36,7 +38,7 @@ public class SemWaiter extends AbstractWaiter implements Waiter {
         if (val != null) {
             return true;
         }
-        if (waitMillis > 0) {
+        if (nsec > 0 || waitMillis > 0) {
             if (System.currentTimeMillis() - startWaitTimeInMillis >= waitMillis) {
                 timeout = true;
                 return true;
