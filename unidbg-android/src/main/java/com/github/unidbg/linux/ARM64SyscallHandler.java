@@ -30,10 +30,13 @@ import com.github.unidbg.linux.file.UdpSocket;
 import com.github.unidbg.linux.struct.RLimit64;
 import com.github.unidbg.linux.struct.Stat64;
 import com.github.unidbg.linux.thread.MarshmallowThread;
+import com.github.unidbg.linux.thread.PPollWaiter;
+import com.github.unidbg.linux.thread.ReceiveWaiter;
 import com.github.unidbg.memory.Memory;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.pointer.UnidbgPointer;
 import com.github.unidbg.thread.PopContextException;
+import com.github.unidbg.thread.RunnableTask;
 import com.github.unidbg.thread.Task;
 import com.github.unidbg.thread.ThreadContextSwitchException;
 import com.github.unidbg.unix.IO;
@@ -754,15 +757,28 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 pollfd.setShort(6, (short) 0);
             } else {
                 short revents = 0;
-                if ((events & POLLOUT) != 0) {
+                FileIO io = fdMap.get(fd);
+                if ((events & POLLOUT) != 0 && io.canWrite()) {
                     revents = POLLOUT;
-                } else if ((events & POLLIN) != 0) {
+                } else if ((events & POLLIN) != 0 && io.canRead()) {
                     revents = POLLIN;
                 }
-                pollfd.setShort(6, revents); // returned events
-                count++;
+                if (revents != 0) {
+                    pollfd.setShort(6, revents); // returned events
+                    count++;
+                }
             }
         }
+
+        if (count == 0) {
+            RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+            if (threadDispatcherEnabled && runningTask != null) {
+                runningTask.setWaiter(emulator, new PPollWaiter(
+                        emulator, fds, nfds, tmo_p, sigmask, fdMap));
+                throw new ThreadContextSwitchException().setReturnValue(0);
+            }
+        }
+
         return count;
     }
 
@@ -856,6 +872,15 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             emulator.getMemory().setErrno(UnixEmulator.EBADF);
             return -1;
         }
+
+        RunnableTask runningTask = emulator.getThreadDispatcher().getRunningTask();
+        if (threadDispatcherEnabled && runningTask != null) {
+            runningTask.setWaiter(emulator, new ReceiveWaiter(
+                    file, backend, buf, len, flags, src_addr, addrlen
+            ));
+            throw new ThreadContextSwitchException().setReturnValue(0);
+        }
+
         return file.recvfrom(backend, buf, len, flags, src_addr, addrlen);
     }
 

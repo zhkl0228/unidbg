@@ -39,4 +39,12 @@ public class PipedSocketIO extends TcpSocket implements FileIO {
         return super.sendto(data, flags, dest_addr, addrlen);
     }
 
+    @Override
+    public boolean canRead() {
+        try {
+            return pipedInputStream != null && pipedInputStream.available() > 0;
+        } catch (IOException ignored) {
+            return false;
+        }
+    }
 }
