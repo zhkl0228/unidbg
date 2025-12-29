@@ -8,7 +8,10 @@ import com.github.unidbg.linux.android.ElfLibraryRawFile;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
 import com.github.unidbg.linux.android.dvm.apk.ApkFactory;
 import com.github.unidbg.linux.android.dvm.apk.AssetResolver;
+import com.github.unidbg.linux.thread.MarshmallowThread;
 import com.github.unidbg.spi.LibraryFile;
+import com.github.unidbg.thread.Function32;
+import com.github.unidbg.thread.Function64;
 import net.dongliu.apk.parser.bean.CertificateMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +107,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     final Map<Integer, ObjRef> globalObjectMap = new HashMap<>();
     final Map<Integer, ObjRef> weakGlobalObjectMap = new HashMap<>();
     final Map<Integer, ObjRef> localObjectMap = new HashMap<>();
-
+    final Map<Integer, Map> xLocalObjectMap = new HashMap<>();
     private DvmClassFactory dvmClassFactory;
 
     @Override
@@ -140,6 +143,32 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         return new DvmClass(vm, className, superClass, interfaceClasses);
     }
 
+    public void putObj(int tid, int hash, ObjRef obj) {
+        Map objMap = xLocalObjectMap.get(tid);
+        if (objMap == null) {
+            objMap = new HashMap<>();
+        }
+        objMap.put(hash, obj);
+        xLocalObjectMap.put(tid, objMap);
+    }
+
+    public int getTid(){
+        Object obj = emulator.getThreadDispatcher().getRunningTask();
+        int tid;
+        if (obj == null) {
+            tid = emulator.getPid();
+        } else if (obj instanceof Function64) {
+            tid = ((Function64) obj).getId();
+        } else if (obj instanceof Function32) {
+            tid = ((Function32) obj).getId();
+        } else if (obj instanceof MarshmallowThread) {
+            tid = ((MarshmallowThread) obj).getId();
+        } else {
+            throw new RuntimeException("未知类型的RunningTask");
+        }
+        return tid;
+    }
+
     final int addObject(DvmObject<?> object, boolean global, boolean weak) {
         int hash = object.hashCode();
         if (log.isDebugEnabled()) {
@@ -162,7 +191,8 @@ public abstract class BaseVM implements VM, DvmClassFactory {
                 globalObjectMap.put(hash, old);
             }
         } else {
-            localObjectMap.put(hash, new ObjRef(object, weak));
+            //localObjectMap.put(hash, new ObjRef(object, weak));
+            putObj(getTid(),hash, new ObjRef(object, weak));
         }
         return hash;
     }
@@ -189,8 +219,9 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     @Override
     public final <T extends DvmObject<?>> T getObject(int hash) {
         ObjRef ref;
-        if (localObjectMap.containsKey(hash)) {
-            ref = localObjectMap.get(hash);
+        Map <Integer,ObjRef>_localObjectMap = xLocalObjectMap.get(getTid());
+        if (_localObjectMap.containsKey(hash)) {
+            ref = _localObjectMap.get(hash);
         } else if(globalObjectMap.containsKey(hash)) {
             ref = globalObjectMap.get(hash);
         } else {
@@ -205,10 +236,11 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     final void deleteLocalRefs() {
-        for (ObjRef ref : localObjectMap.values()) {
+        Map <Integer,ObjRef>_localObjectMap = xLocalObjectMap.get(getTid());
+        for (ObjRef ref : _localObjectMap.values()) {
             ref.obj.onDeleteRef();
         }
-        localObjectMap.clear();
+        _localObjectMap.clear();
 
         if (throwable != null) {
             throwable.onDeleteRef();
