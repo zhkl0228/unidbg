@@ -53,13 +53,20 @@ public class IpaLoaderTest implements EmulatorConfigurator {
         toolkit.addTool(new McpTool() {
             @Override public String name() { return "readVersion"; }
             @Override public String description() { return "Read the TelegramCoreVersionString from the executable"; }
-            @Override public void execute(String[] params) {
+            @Override public void execute(String[] params) throws InterruptedException {
                 Symbol sym = module.findSymbolByName("_TelegramCoreVersionString");
                 if (sym != null) {
                     Pointer pointer = UnidbgPointer.pointer(emulator, sym.getAddress());
                     if (pointer != null) {
                         System.out.println("_TelegramCoreVersionString=" + pointer.getString(0));
                     }
+                    IClassDumper classDumper = ClassDumper.getInstance(emulator);
+                    Thread thread = new Thread(() -> {
+                        String objcClass1 = classDumper.dumpClass("NSDate");
+                        System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass1);
+                    });
+                    thread.start();
+                    thread.join();
                 } else {
                     System.out.println("Symbol _TelegramCoreVersionString not found");
                 }
