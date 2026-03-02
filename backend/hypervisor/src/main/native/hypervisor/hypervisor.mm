@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/errno.h>
+#include <dlfcn.h>
 #include <atomic>
 
 #include "hypervisor.h"
@@ -73,7 +74,8 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
     default:
       uint64_t pc = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
-      HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, pc));
+      uint64_t elr = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &elr));
       uint64_t cpsr = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
       uint64_t sp = 0;
@@ -83,12 +85,13 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       uint64_t far = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_FAR_EL1, &far));
       env->CallVoidMethod(hypervisor->callback, handleUnknownException, ec, esr, far, cpu->vcpu_exit->exception.virtual_address);
-      fprintf(stderr, "Unexpected VM exception: 0x%llx, EC 0x%x, VirtAddr 0x%llx, IPA 0x%llx, PC 0x%llx, SPSR_EL1 0x%llx, SP_EL0 0x%llx, ESR_EL1 0x%llx, FAR_EL1 0x%llx\n",
+      fprintf(stderr, "Unexpected VM exception: 0x%llx, EC 0x%x, VirtAddr 0x%llx, IPA 0x%llx, PC 0x%llx, ELR_EL1 0x%llx, SPSR_EL1 0x%llx, SP_EL0 0x%llx, ESR_EL1 0x%llx, FAR_EL1 0x%llx\n",
                           syndrome,
                           ec,
                           cpu->vcpu_exit->exception.virtual_address,
                           cpu->vcpu_exit->exception.physical_address,
                           pc,
+                          elr,
                           cpsr,
                           sp,
                           esr,
@@ -100,14 +103,15 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
 
 static int cpu_loop(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) {
   hypervisor->stop_request = false;
-  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDR_EL0, hypervisor->tpidr));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CPACR_EL1, hypervisor->cpacr));
   while(true) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDR_EL0, hypervisor->tpidr));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDRRO_EL0, hypervisor->tpidrro));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_REG_SP, hypervisor->sp));
     HYP_ASSERT_SUCCESS(hv_vcpu_run(cpu->vcpu));
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_REG_SP, &hypervisor->sp));
     HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDRRO_EL0, &hypervisor->tpidrro));
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDR_EL0, &hypervisor->tpidr));
 
     switch(cpu->vcpu_exit->reason) {
       case HV_EXIT_REASON_EXCEPTION: {
@@ -393,11 +397,11 @@ static void init() {
   if (@available(macOS 13.0.0, *)) {
     config = hv_vm_config_create();
   }
-#if __MAC_15_0
-  if (@available(macOS 15.0.0, *)) {
-    HYP_ASSERT_SUCCESS(hv_vm_config_set_el2_enabled(config, false));
+  typedef hv_return_t (*set_el2_fn_t)(hv_vm_config_t, bool);
+  auto set_el2 = (set_el2_fn_t)dlsym(RTLD_DEFAULT, "hv_vm_config_set_el2_enabled");
+  if (set_el2 && config) {
+    HYP_ASSERT_SUCCESS(set_el2(config, false));
   }
-#endif
   hv_return_t ret = hv_vm_create(config);
   if(config) {
       os_release(config);

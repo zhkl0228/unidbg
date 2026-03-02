@@ -207,39 +207,39 @@ typedef struct vcpu_context {
   uint64_t HV_SYS_REG_DBGWVR14_EL1;
   uint64_t HV_SYS_REG_DBGWCR14_EL1;
   uint64_t HV_SYS_REG_DBGWVR15_EL1;
-  uint64_t HV_SYS_REG_DBGWCR15_EL1;      // 0x760 / 0x730
-  uint64_t HV_SYS_REG_MDCCINT_EL1;        // 0x768 / 0x738
-  char _pad4[0x18];                        // 0x770 / 0x740  (includes dirty flags at +0x780)
-  uint64_t control_field_0;               // 0x788 / 0x758
-  uint64_t control_field_6;
-  uint64_t control_field_1;
-  uint64_t HV_SYS_REG_MDCR_EL2;          // control_field_2
-  uint64_t HV_SYS_REG_MPIDR_EL1;         // control_field_3
-  uint64_t HV_SYS_REG_MIDR_EL1;          // control_field_5
-  uint64_t HV_SYS_REG_CNTVOFF_EL2;       // control_field_4
-  uint64_t unknown0x6a0;
-  uint64_t control_field_12;
-  uint64_t control_field_13;
-  uint64_t control_field_14;
-  uint64_t control_field_15;
-  uint64_t control_field_16;
-  uint64_t vtimer_mask_reg;               // hv_vcpu_set_vtimer_mask
-  uint64_t control_field_7;
-  uint64_t control_field_8;
-  uint64_t control_field_9;
-  uint64_t control_field_10;
-  uint64_t control_field_11;
-  uint64_t unknown0x700;                  // trap debug related
-  uint64_t exec_time;                     // cumulative execution time (ns)
-  char _pad5[0x60];
+  uint64_t HV_SYS_REG_DBGWCR15_EL1;      // 0x670 / 0x640
+  uint64_t HV_SYS_REG_MDCCINT_EL1;        // 0x678 / 0x648
+  char _pad4[0x18];                        // 0x680 / 0x650
+  uint64_t control_field_0;               // 0x698 / 0x668  HCR_EL2 via _hv_vcpu_set_control_field(0)
+  uint64_t control_field_6;               // 0x6A0 / 0x670
+  uint64_t control_field_1;               // 0x6A8 / 0x678
+  uint64_t HV_SYS_REG_MDCR_EL2;          // 0x6B0 / 0x680  control_field_2
+  uint64_t HV_SYS_REG_MPIDR_EL1;         // 0x6B8 / 0x688  control_field_3
+  uint64_t HV_SYS_REG_MIDR_EL1;          // 0x6C0 / 0x690  control_field_5
+  uint64_t HV_SYS_REG_CNTVOFF_EL2;       // 0x6C8 / 0x698  control_field_4
+  uint64_t unknown0x6a0;                  // 0x6D0 / 0x6A0
+  uint64_t control_field_12;              // 0x6D8 / 0x6A8
+  uint64_t control_field_13;              // 0x6E0 / 0x6B0
+  uint64_t control_field_14;              // 0x6E8 / 0x6B8
+  uint64_t control_field_15;              // 0x6F0 / 0x6C0
+  uint64_t control_field_16;              // 0x6F8 / 0x6C8
+  uint64_t vtimer_mask_reg;               // 0x700 / 0x6D0  hv_vcpu_set_vtimer_mask
+  uint64_t control_field_7;               // 0x708 / 0x6D8
+  uint64_t control_field_8;               // 0x710 / 0x6E0
+  uint64_t control_field_9;               // 0x718 / 0x6E8
+  uint64_t control_field_10;              // 0x720 / 0x6F0
+  uint64_t control_field_11;              // 0x728 / 0x6F8
+  uint64_t unknown0x700;                  // 0x730 / 0x700  trap debug related
+  uint64_t exec_time;                     // 0x738 / 0x708  cumulative execution time (ns)
+  char _pad5[0x60];                       // 0x740 / 0x710  (dirty flags at context+0x780 are within this region)
   uint64_t HV_SYS_REG_APGAKEYHI_EL1;     // 0x7A0 / 0x770  (PAC: stored in Vcpu object, not here)
-  uint64_t HV_SYS_REG_APGAKEYLO_EL1;
-  uint64_t HV_SYS_REG_APIAKEYHI_EL1;
-  uint64_t HV_SYS_REG_APIAKEYLO_EL1;
-  uint64_t HV_SYS_REG_APIBKEYHI_EL1;
-  uint64_t HV_SYS_REG_APIBKEYLO_EL1;
-  uint64_t HV_SYS_REG_APDAKEYHI_EL1;
-  uint64_t HV_SYS_REG_APDAKEYLO_EL1;
+  uint64_t HV_SYS_REG_APGAKEYLO_EL1;     // 0x7A8 / 0x778
+  uint64_t HV_SYS_REG_APIAKEYHI_EL1;     // 0x7B0 / 0x780
+  uint64_t HV_SYS_REG_APIAKEYLO_EL1;     // 0x7B8 / 0x788
+  uint64_t HV_SYS_REG_APIBKEYHI_EL1;     // 0x7C0 / 0x790
+  uint64_t HV_SYS_REG_APIBKEYLO_EL1;     // 0x7C8 / 0x798
+  uint64_t HV_SYS_REG_APDAKEYHI_EL1;     // 0x7D0 / 0x7A0
+  uint64_t HV_SYS_REG_APDAKEYLO_EL1;     // 0x7D8 / 0x7A8
   uint64_t HV_SYS_REG_APDBKEYHI_EL1;     // 0x7E0 / 0x7B0
   uint64_t HV_SYS_REG_APDBKEYLO_EL1;     // 0x7E8 / 0x7B8  (end of struct)
 } *t_vcpu_context;
