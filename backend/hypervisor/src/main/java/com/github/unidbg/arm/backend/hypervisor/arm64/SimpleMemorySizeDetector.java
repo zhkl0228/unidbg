@@ -13,14 +13,44 @@ public class SimpleMemorySizeDetector implements MemorySizeDetector {
         switch (insn.getMnemonic()) {
             case "ldrb":
             case "ldursb":
+            case "ldarb":
+            case "ldaprb":
                 return 1;
             case "ldursh":
             case "ldrh":
+            case "ldarh":
+            case "ldaprh":
                 return 2;
             case "ldr":
             case "ldxr":
             case "ldaxr":
             case "ldur":
+            case "ldar":
+            case "ldapr":
+            case "ldadd":
+            case "ldadda":
+            case "ldaddal":
+            case "ldaddl":
+            case "ldclr":
+            case "ldclra":
+            case "ldclral":
+            case "ldclrl":
+            case "ldeor":
+            case "ldeora":
+            case "ldeoral":
+            case "ldeorl":
+            case "ldset":
+            case "ldseta":
+            case "ldsetal":
+            case "ldsetl":
+            case "swp":
+            case "swpa":
+            case "swpal":
+            case "swpl":
+            case "cas":
+            case "casa":
+            case "casal":
+            case "casl":
                 if (insn.getOpStr().startsWith("w")) {
                     return 4;
                 }
@@ -51,12 +81,39 @@ public class SimpleMemorySizeDetector implements MemorySizeDetector {
         switch (insn.getMnemonic()) {
             case "strb":
             case "sturb":
+            case "stlrb":
                 return 1;
             case "strh":
             case "sturh":
+            case "stlrh":
                 return 2;
             case "str":
             case "stur":
+            case "stlr":
+            case "ldadd":
+            case "ldadda":
+            case "ldaddal":
+            case "ldaddl":
+            case "ldclr":
+            case "ldclra":
+            case "ldclral":
+            case "ldclrl":
+            case "ldeor":
+            case "ldeora":
+            case "ldeoral":
+            case "ldeorl":
+            case "ldset":
+            case "ldseta":
+            case "ldsetal":
+            case "ldsetl":
+            case "swp":
+            case "swpa":
+            case "swpal":
+            case "swpl":
+            case "cas":
+            case "casa":
+            case "casal":
+            case "casl":
                 if (opStr.startsWith("w")) {
                     return 4;
                 }
