@@ -1,7 +1,6 @@
 package com.github.unidbg.arm.backend.hypervisor;
 
 import capstone.Arm64_const;
-import capstone.api.Disassembler;
 import capstone.api.Instruction;
 import capstone.api.arm64.OpInfo;
 import capstone.api.arm64.Operand;
@@ -85,44 +84,88 @@ class HypervisorWatchpoint implements BreakRestorer {
         throw new UnsupportedOperationException("begin=0x" + Long.toHexString(begin) + ", end=0x" + Long.toHexString(end));
     }
 
-    final boolean contains(long address, boolean isWrite) {
+    final boolean matches(long begin, long end, boolean isWrite) {
+        return this.begin == begin && this.end == end && this.isWrite == isWrite;
+    }
+
+    final boolean contains(long address, int accessSize, boolean isWrite) {
         if (isWrite ^ this.isWrite) {
             return false;
         }
-        return address >= dbgwvr && address < (dbgwvr + bytes);
+        if (accessSize <= 0) {
+            accessSize = 1;
+        }
+        long accessEnd = address + accessSize;
+        return address < (dbgwvr + bytes) && accessEnd > dbgwvr;
     }
 
-    final void onHit(Backend backend, long address, boolean isWrite, Disassembler disassembler, byte[] code, long pc) {
-        if (address >= begin && address < end) {
-            Instruction insn = disassembler.disasm(code, pc, 1)[0];
-            if (isWrite) {
-                int size = MEMORY_SIZE_DETECTOR.detectWriteSize(insn);
-                long value = extractWriteValue(insn, backend, size);
-                ((WriteHook) callback).hook(backend, address, size, value, user_data);
-            } else {
-                int size = MEMORY_SIZE_DETECTOR.detectReadSize(insn);
-                ((ReadHook) callback).hook(backend, address, size, user_data);
+    static int detectAccessSize(Instruction insn, boolean isWrite) {
+        if (isWrite) {
+            return MEMORY_SIZE_DETECTOR.detectWriteSize(insn);
+        } else {
+            return MEMORY_SIZE_DETECTOR.detectReadSize(insn);
+        }
+    }
+
+    final void onHit(Backend backend, long address, int accessSize, boolean isWrite, Instruction insn) {
+        long accessEnd = address + accessSize;
+        if (address >= end || accessEnd <= begin) {
+            return;
+        }
+        switch (insn.getMnemonic()) {
+            case "ldp":
+            case "ldxp":
+            case "ldaxp":
+            case "stp":
+            case "stxp":
+            case "stlxp": {
+                int halfSize = accessSize / 2;
+                int baseRegIndex = pairFirstRegIndex(insn.getMnemonic());
+                notifySubAccess(backend, address, halfSize, isWrite, insn, baseRegIndex);
+                notifySubAccess(backend, address + halfSize, halfSize, isWrite, insn, baseRegIndex + 1);
+                return;
             }
         }
+        notifySubAccess(backend, address, accessSize, isWrite, insn, singleRegIndex(insn.getMnemonic()));
     }
 
-    private static long extractWriteValue(Instruction insn, Backend backend, int size) {
-        int valueOpIndex;
-        switch (insn.getMnemonic()) {
-            case "stxr":
-            case "stlxr":
+    private void notifySubAccess(Backend backend, long address, int size, boolean isWrite, Instruction insn, int regIndex) {
+        if (address >= end || (address + size) <= begin) {
+            return;
+        }
+        if (isWrite) {
+            long value = extractWriteValue(insn, backend, size, regIndex);
+            ((WriteHook) callback).hook(backend, address, size, value, user_data);
+        } else {
+            ((ReadHook) callback).hook(backend, address, size, user_data);
+        }
+    }
+
+    private static int pairFirstRegIndex(String mnemonic) {
+        switch (mnemonic) {
             case "stxp":
             case "stlxp":
-                valueOpIndex = 1;
-                break;
+                return 1;
             default:
-                valueOpIndex = 0;
-                break;
+                return 0;
         }
+    }
+
+    private static int singleRegIndex(String mnemonic) {
+        switch (mnemonic) {
+            case "stxr":
+            case "stlxr":
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+    private static long extractWriteValue(Instruction insn, Backend backend, int size, int regIndex) {
         OpInfo opInfo = (OpInfo) insn.getOperands();
         Operand[] ops = opInfo.getOperands();
-        if (ops.length > valueOpIndex && ops[valueOpIndex].getType() == Arm64_const.ARM64_OP_REG) {
-            int unicornReg = insn.mapToUnicornReg(ops[valueOpIndex].getValue().getReg());
+        if (ops.length > regIndex && ops[regIndex].getType() == Arm64_const.ARM64_OP_REG) {
+            int unicornReg = insn.mapToUnicornReg(ops[regIndex].getValue().getReg());
             long value = backend.reg_read(unicornReg).longValue();
             switch (size) {
                 case 1: return value & 0xFFL;

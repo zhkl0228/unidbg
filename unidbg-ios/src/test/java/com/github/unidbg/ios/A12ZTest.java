@@ -25,8 +25,10 @@ public class A12ZTest {
 
         Module module = emulator.loadLibrary(new File("unidbg-ios/src/test/resources/example_binaries/a12z_osx"));
         long start = System.currentTimeMillis();
-        emulator.traceRead(0xfbffffd30L, 0xfbffffd30L + 0x8);
-        emulator.attach().addBreakPoint(0x100003af4L, (emu, address) -> {
+        emulator.traceRead(0x100004000L, 0x100004000L + 0x8);
+        emulator.traceWrite(0x100008194L, 0x100008194L + 8);
+        emulator.traceCode(0x100000c80L, 0x100000c80L + 0x100);
+        emulator.attach().addBreakPoint(0x10000392cL, (emu, address) -> {
             System.out.println("Hit breakpoint: 0x" + Long.toHexString(address));
             return true;
         });

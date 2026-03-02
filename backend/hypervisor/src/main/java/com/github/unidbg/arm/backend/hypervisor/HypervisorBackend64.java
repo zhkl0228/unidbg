@@ -262,13 +262,20 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private final HypervisorWatchpoint[] watchpoints;
 
     private void installWatchpoint(Object callback, long begin, long end, Object user_data, boolean isWrite) {
+        int freeSlot = -1;
         for (int i = 0; i < watchpoints.length; i++) {
-            if (watchpoints[i] == null) {
-                HypervisorWatchpoint wp = new HypervisorWatchpoint(callback, begin, end, user_data, i, isWrite);
-                wp.install(hypervisor);
-                watchpoints[i] = wp;
+            if (watchpoints[i] != null && watchpoints[i].matches(begin, end, isWrite)) {
                 return;
             }
+            if (freeSlot == -1 && watchpoints[i] == null) {
+                freeSlot = i;
+            }
+        }
+        if (freeSlot != -1) {
+            HypervisorWatchpoint wp = new HypervisorWatchpoint(callback, begin, end, user_data, freeSlot, isWrite);
+            wp.install(hypervisor);
+            watchpoints[freeSlot] = wp;
+            return;
         }
         throw new UnsupportedOperationException("Max WRPs: " + watchpoints.length);
     }
@@ -329,9 +336,14 @@ public class HypervisorBackend64 extends HypervisorBackend {
             boolean wptv = ((esr >> 17) & 1) == 1;
             log.debug("onWatchpoint write={}, address=0x{}, cm={}, wpt={}, wptv={}, status=0x{}", write, Long.toHexString(address), cm, wpt, wptv, Integer.toHexString(status));
         }
+        Instruction insn = createDisassembler().disasm(code, elr, 1)[0];
+        int accessSize = HypervisorWatchpoint.detectAccessSize(insn, write);
+        if (accessSize <= 0) {
+            accessSize = 1;
+        }
         HypervisorWatchpoint hitWp = null;
         for (HypervisorWatchpoint watchpoint : watchpoints) {
-            if (watchpoint != null && watchpoint.contains(address, write)) {
+            if (watchpoint != null && watchpoint.contains(address, accessSize, write)) {
                 hitWp = watchpoint;
                 break;
             }
@@ -346,7 +358,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 step();
             }
         } else {
-            hitWp.onHit(this, address, write, createDisassembler(), code, elr);
+            hitWp.onHit(this, address, accessSize, write, insn);
             hypervisor.disable_watchpoint(hitWp.n);
             visitorStack.push(ExceptionVisitor.breakRestorerVisitor(hitWp));
             step();
@@ -580,6 +592,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         }
         @Override
         void onEscapeSuccess() {
+            hypervisor.enable_single_step(false);
             wp.install(hypervisor);
             lastWatchpointAddress = -1;
             lastWatchpointDataAddress = -1;

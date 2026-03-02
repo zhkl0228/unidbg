@@ -84,13 +84,15 @@ int main(int argc, char *argv[]) {
   int ret = test_ldadd(&v);
   printf("Test v=0x%x, ret=0x%x\n", v, ret);
 
-  char vc;
+  static char vc;
   short vs;
-  int vi;
-  long vl;
+  static int vi;
+  static long vl = 0x12345678a;
   float vf;
-  double vd;
-  printf("Memory test: vc[%p]=0x%x, vs[%p]=0x%x, vi[%p]=0x%x, vl[%p]=0x%lx, vf[%p]=%f, vd[%p]=%lf\n", &vc, vc, &vs, vs, &vi, vi, &vl, vl, &vf, vf, &vd, vd);
+  static double vd;
+
+  vi = 0x789;
+  printf("Memory test: vc[%p]=0x%x, vs[%p]=0x%x, vi[%p]=0x%x, vl[%p]=0x%lx, vf[%p]=%f, vd[%p]=%lf, entry=%p\n", &vc, vc, &vs, vs, &vi, vi, &vl, vl, &vf, vf, &vd, vd, &main);
 
   NSLog(@"a12z _dyld_objc_notify_register=%p, map_images=%p", &_dyld_objc_notify_register, &map_images);
   // _dyld_objc_notify_register(&map_images, load_images, unmap_image);
