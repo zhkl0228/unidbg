@@ -7,28 +7,39 @@ import capstone.api.arm64.Operand;
 import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.ReadHook;
 import com.github.unidbg.arm.backend.WriteHook;
-import com.github.unidbg.arm.backend.hypervisor.arm64.MemorySizeDetector;
-import com.github.unidbg.arm.backend.hypervisor.arm64.SimpleMemorySizeDetector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class HypervisorWatchpoint implements BreakRestorer {
 
     private static final Logger log = LoggerFactory.getLogger(HypervisorWatchpoint.class);
-    private static final MemorySizeDetector MEMORY_SIZE_DETECTOR = new SimpleMemorySizeDetector();
 
-    private final Object callback;
+    /** DBGWCR: E=1 (enabled), PAC=0b10 (EL1 & EL0) */
+    private static final long DBGWCR_ENABLE = 0x5L;
+    /** DBGWCR LSC field: store only */
+    private static final long DBGWCR_LSC_STORE = 0b10L << 3;
+    /** DBGWCR LSC field: load only */
+    private static final long DBGWCR_LSC_LOAD = 0b01L << 3;
+    /** DBGWCR BAS field bit offset */
+    private static final int DBGWCR_BAS_SHIFT = 5;
+    /** DBGWCR MASK field bit offset */
+    private static final int DBGWCR_MASK_SHIFT = 24;
+    /** Full byte-address-select mask (all 8 bytes selected) */
+    private static final long DBGWCR_BAS_FULL = 0xFFL;
+
+    private final ReadHook readHook;
+    private final WriteHook writeHook;
     private final long begin;
     private final long end;
-    private final Object user_data;
-    final int n;
+    private final Object userData;
+    private final int slot;
     private final boolean isWrite;
 
     private final long dbgwcr, dbgwvr, bytes;
 
-    HypervisorWatchpoint(Object callback, long begin, long end, Object user_data, int n, boolean isWrite) {
+    HypervisorWatchpoint(Object callback, long begin, long end, Object userData, int slot, boolean isWrite) {
         if (begin >= end) {
-            throw new IllegalArgumentException("begin=0x" + Long.toHexString(begin) + ", end=" + Long.toHexString(end));
+            throw new IllegalArgumentException("Watchpoint begin must be less than end: begin=0x" + Long.toHexString(begin) + ", end=0x" + Long.toHexString(end));
         }
 
         long size = end - begin;
@@ -36,25 +47,42 @@ class HypervisorWatchpoint implements BreakRestorer {
             throw new IllegalArgumentException("too large size=0x" + Long.toHexString(size));
         }
 
-        this.callback = callback;
+        if (isWrite) {
+            this.writeHook = (WriteHook) callback;
+            this.readHook = null;
+        } else {
+            this.readHook = (ReadHook) callback;
+            this.writeHook = null;
+        }
         this.begin = begin;
         this.end = end;
-        this.user_data = user_data;
-        this.n = n;
+        this.userData = userData;
+        this.slot = slot;
         this.isWrite = isWrite;
 
-        long dbgwcr = 0x5;
-        if (isWrite) {
-            dbgwcr |= 0b10 << 3;
-        } else {
-            dbgwcr |= 0b01 << 3;
+        long[] config = computeWatchpointConfig(begin, size, isWrite);
+        if (config == null) {
+            throw new UnsupportedOperationException("Failed to find a power-of-2 aligned region for watchpoint: begin=0x" + Long.toHexString(begin) + ", end=0x" + Long.toHexString(end));
         }
+        this.dbgwcr = config[0];
+        this.dbgwvr = config[1];
+        this.bytes = config[2];
+    }
+
+    /**
+     * Finds the smallest power-of-2 aligned region that covers [begin, begin+size),
+     * and computes the DBGWCR/DBGWVR register values for the ARM watchpoint hardware.
+     *
+     * @return {dbgwcr, dbgwvr, bytes} or null if no suitable region found
+     */
+    private static long[] computeWatchpointConfig(long begin, long size, boolean isWrite) {
+        long dbgwcr = DBGWCR_ENABLE | (isWrite ? DBGWCR_LSC_STORE : DBGWCR_LSC_LOAD);
         for (int i = 2; i <= 31; i++) {
             int bytes = 1 << i;
             int mask = bytes - 1;
             long dbgwvr = begin & ~mask;
             long offset = begin - dbgwvr;
-            if(offset + size <= bytes) {
+            if (offset + size <= bytes) {
                 long bas;
                 int maskBits;
                 if (i <= 3) {
@@ -65,29 +93,32 @@ class HypervisorWatchpoint implements BreakRestorer {
                     }
                 } else {
                     maskBits = i;
-                    bas = 0xff;
+                    bas = DBGWCR_BAS_FULL;
                 }
-                dbgwcr |= (bas << 5);
-                dbgwcr |= (maskBits << 24);
+                dbgwcr |= (bas << DBGWCR_BAS_SHIFT);
+                dbgwcr |= ((long) maskBits << DBGWCR_MASK_SHIFT);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("begin=0x{}, end=0x{}, dbgwvr=0x{}, dbgwcr=0x{}, offset={}, size={}, i={}", Long.toHexString(begin), Long.toHexString(end), Long.toHexString(dbgwvr), Long.toHexString(dbgwcr), offset, size, i);
+                    log.debug("begin=0x{}, end=0x{}, dbgwvr=0x{}, dbgwcr=0x{}, offset={}, size={}, i={}", Long.toHexString(begin), Long.toHexString(begin + size), Long.toHexString(dbgwvr), Long.toHexString(dbgwcr), offset, size, i);
                 }
-
-                this.bytes = bytes;
-                this.dbgwvr = dbgwvr;
-                this.dbgwcr = dbgwcr;
-                return;
+                return new long[]{dbgwcr, dbgwvr, bytes};
             }
         }
+        return null;
+    }
 
-        throw new UnsupportedOperationException("begin=0x" + Long.toHexString(begin) + ", end=0x" + Long.toHexString(end));
+    int getSlot() {
+        return slot;
     }
 
     final boolean matches(long begin, long end, boolean isWrite) {
         return this.begin == begin && this.end == end && this.isWrite == isWrite;
     }
 
+    /**
+     * Coarse check using the hardware-aligned region (dbgwvr/bytes) to quickly
+     * determine if an access overlaps the watchpoint's monitored range.
+     */
     final boolean contains(long address, int accessSize, boolean isWrite) {
         if (isWrite ^ this.isWrite) {
             return false;
@@ -99,14 +130,10 @@ class HypervisorWatchpoint implements BreakRestorer {
         return address < (dbgwvr + bytes) && accessEnd > dbgwvr;
     }
 
-    static int detectAccessSize(Instruction insn, boolean isWrite) {
-        if (isWrite) {
-            return MEMORY_SIZE_DETECTOR.detectWriteSize(insn);
-        } else {
-            return MEMORY_SIZE_DETECTOR.detectReadSize(insn);
-        }
-    }
-
+    /**
+     * Fine-grained callback dispatch using the exact user-specified range (begin/end),
+     * invoked only after {@link #contains} passes the coarse hardware-level check.
+     */
     final void onHit(Backend backend, long address, int accessSize, boolean isWrite, Instruction insn) {
         long accessEnd = address + accessSize;
         if (address >= end || accessEnd <= begin) {
@@ -135,9 +162,9 @@ class HypervisorWatchpoint implements BreakRestorer {
         }
         if (isWrite) {
             long value = extractWriteValue(insn, backend, size, regIndex);
-            ((WriteHook) callback).hook(backend, address, size, value, user_data);
+            writeHook.hook(backend, address, size, value, userData);
         } else {
-            ((ReadHook) callback).hook(backend, address, size, user_data);
+            readHook.hook(backend, address, size, userData);
         }
     }
 
@@ -179,6 +206,6 @@ class HypervisorWatchpoint implements BreakRestorer {
 
     @Override
     public final void install(Hypervisor hypervisor) {
-        hypervisor.install_watchpoint(n, dbgwcr, dbgwvr);
+        hypervisor.install_watchpoint(slot, dbgwcr, dbgwvr);
     }
 }

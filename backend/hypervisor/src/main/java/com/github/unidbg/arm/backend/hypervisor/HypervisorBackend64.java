@@ -11,6 +11,8 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.*;
+import com.github.unidbg.arm.backend.hypervisor.arm64.MemorySizeDetector;
+import com.github.unidbg.arm.backend.hypervisor.arm64.SimpleMemorySizeDetector;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
 import com.github.unidbg.pointer.UnidbgPointer;
@@ -30,6 +32,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private static final Logger log = LoggerFactory.getLogger(HypervisorBackend64.class);
 
     private static final int INS_SIZE = 4;
+    private static final MemorySizeDetector MEMORY_SIZE_DETECTOR = new SimpleMemorySizeDetector();
 
     public HypervisorBackend64(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator, hypervisor);
@@ -337,10 +340,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             log.debug("onWatchpoint write={}, address=0x{}, cm={}, wpt={}, wptv={}, status=0x{}", write, Long.toHexString(address), cm, wpt, wptv, Integer.toHexString(status));
         }
         Instruction insn = createDisassembler().disasm(code, elr, 1)[0];
-        int accessSize = HypervisorWatchpoint.detectAccessSize(insn, write);
-        if (accessSize <= 0) {
-            accessSize = 1;
-        }
+        int accessSize = write ? MEMORY_SIZE_DETECTOR.detectWriteSize(insn) : MEMORY_SIZE_DETECTOR.detectReadSize(insn);
         HypervisorWatchpoint hitWp = null;
         for (HypervisorWatchpoint watchpoint : watchpoints) {
             if (watchpoint != null && watchpoint.contains(address, accessSize, write)) {
@@ -359,7 +359,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             }
         } else {
             hitWp.onHit(this, address, accessSize, write, insn);
-            hypervisor.disable_watchpoint(hitWp.n);
+            hypervisor.disable_watchpoint(hitWp.getSlot());
             visitorStack.push(ExceptionVisitor.breakRestorerVisitor(hitWp));
             step();
         }
@@ -580,7 +580,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         private static final int MAX_ESCAPE_STEPS = 200;
         WatchpointEscaper(HypervisorWatchpoint wp) {
             this.wp = wp;
-            hypervisor.disable_watchpoint(wp.n);
+            hypervisor.disable_watchpoint(wp.getSlot());
         }
         @Override
         boolean notifyCallback(long address) {
