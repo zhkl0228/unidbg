@@ -100,4 +100,8 @@ public interface Backend {
      */
     Map<String, Integer> getCpuFeatures();
 
+    default boolean isHypervisor() {
+        return false;
+    }
+
 }
