@@ -5,14 +5,18 @@ import com.github.unidbg.debugger.BreakPointCallback;
 
 class HypervisorBreakPoint implements BreakPoint, BreakRestorer {
 
-    private final int n;
-    protected final long address;
+    private final int slot;
+    private final long address;
     private final BreakPointCallback callback;
 
-    public HypervisorBreakPoint(int n, long address, BreakPointCallback callback) {
-        this.n = n;
+    public HypervisorBreakPoint(int slot, long address, BreakPointCallback callback) {
+        this.slot = slot;
         this.address = address;
         this.callback = callback;
+    }
+
+    long getAddress() {
+        return address;
     }
 
     private boolean temporary;
@@ -39,7 +43,7 @@ class HypervisorBreakPoint implements BreakPoint, BreakRestorer {
 
     @Override
     public void install(Hypervisor hypervisor) {
-        hypervisor.install_hw_breakpoint(n, address);
+        hypervisor.install_hw_breakpoint(slot, address);
     }
 
 }

@@ -118,6 +118,12 @@ public class Hypervisor implements Closeable {
     }
     private static native void install_watchpoint(long handle, int n, long dbgwcr, long dbgwvr);
 
+    private void checkReturnCode(int ret) {
+        if (ret != 0) {
+            throw new HypervisorException("ret=" + ret);
+        }
+    }
+
     private final long nativeHandle;
 
     private static Hypervisor singleInstance;
@@ -150,42 +156,34 @@ public class Hypervisor implements Closeable {
         }
 
         int ret = setHypervisorCallback(nativeHandle, callback);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void mem_map(long address, long size, int perms) {
-        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        long start = log.isTraceEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_map(nativeHandle, address, size, perms);
         if (log.isTraceEnabled()) {
             log.trace("mem_map address=0x{}, size=0x{}, perms=0b{}, offset={}ms", Long.toHexString(address), Long.toHexString(size), Integer.toBinaryString(perms), System.currentTimeMillis() - start);
         }
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void mem_protect(long address, long size, int perms) {
-        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        long start = log.isTraceEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_protect(nativeHandle, address, size, perms);
         if (log.isTraceEnabled()) {
             log.trace("mem_protect address=0x{}, size=0x{}, perms=0b{}, offset={}ms", Long.toHexString(address), Long.toHexString(size), Integer.toBinaryString(perms), System.currentTimeMillis() - start);
         }
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void mem_unmap(long address, long size) {
-        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        long start = log.isTraceEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_unmap(nativeHandle, address, size);
         if (log.isTraceEnabled()) {
             log.trace("mem_unmap address=0x{}, size=0x{}, offset={}ms", Long.toHexString(address), Long.toHexString(size), System.currentTimeMillis() - start);
         }
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_write64(int index, long value) {
@@ -196,9 +194,7 @@ public class Hypervisor implements Closeable {
             log.debug("reg_write64 index={}, value=0x{}", index, Long.toHexString(value));
         }
         int ret = reg_write(nativeHandle, index, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_set_sp64(long value) {
@@ -206,9 +202,7 @@ public class Hypervisor implements Closeable {
             log.debug("reg_set_sp64 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_sp64(nativeHandle, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_set_tpidr_el0(long value) {
@@ -216,9 +210,7 @@ public class Hypervisor implements Closeable {
             log.trace("reg_set_tpidr_el0 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_tpidr_el0(nativeHandle, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_set_tpidrro_el0(long value) {
@@ -226,9 +218,7 @@ public class Hypervisor implements Closeable {
             log.trace("reg_set_tpidrro_el0 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_tpidrro_el0(nativeHandle, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_set_nzcv(long value) {
@@ -236,9 +226,7 @@ public class Hypervisor implements Closeable {
             log.trace("reg_set_nzcv value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_nzcv(nativeHandle, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_set_cpacr_el1(long value) {
@@ -246,9 +234,7 @@ public class Hypervisor implements Closeable {
             log.trace("reg_set_cpacr_el1 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_cpacr_el1(nativeHandle, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_set_elr_el1(long value) {
@@ -256,9 +242,7 @@ public class Hypervisor implements Closeable {
             log.trace("reg_set_elr_el1 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_elr_el1(nativeHandle, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public byte[] reg_read_vector(int index) {
@@ -272,9 +256,7 @@ public class Hypervisor implements Closeable {
 
     public void reg_set_vector(int index, byte[] vector) {
         int ret = reg_set_vector(nativeHandle, index, vector);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void reg_set_spsr_el1(long value) {
@@ -282,24 +264,20 @@ public class Hypervisor implements Closeable {
             log.trace("reg_set_spsr_el1 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_spsr_el1(nativeHandle, value);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void mem_write(long address, byte[] bytes) {
-        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        long start = log.isTraceEnabled() ? System.currentTimeMillis() : 0;
         int ret = mem_write(nativeHandle, address, bytes);
         if (log.isTraceEnabled()) {
             log.trace("mem_write address=0x{}, size={}, offset={}ms", Long.toHexString(address), bytes.length, System.currentTimeMillis() - start);
         }
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public byte[] mem_read(long address, int size) {
-        long start = log.isDebugEnabled() ? System.currentTimeMillis() : 0;
+        long start = log.isTraceEnabled() ? System.currentTimeMillis() : 0;
         byte[] ret = mem_read(nativeHandle, address, size);
         if (log.isTraceEnabled()) {
             log.trace("mem_read address=0x{}, size={}, offset={}ms", Long.toHexString(address), size, System.currentTimeMillis() - start);
@@ -355,9 +333,7 @@ public class Hypervisor implements Closeable {
 
     public void emu_start(long begin) {
         int ret = emu_start(nativeHandle, begin);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     public void emu_stop() {
@@ -366,9 +342,7 @@ public class Hypervisor implements Closeable {
         }
 
         int ret = emu_stop(nativeHandle);
-        if (ret != 0) {
-            throw new HypervisorException("ret=" + ret);
-        }
+        checkReturnCode(ret);
     }
 
     private boolean closed;

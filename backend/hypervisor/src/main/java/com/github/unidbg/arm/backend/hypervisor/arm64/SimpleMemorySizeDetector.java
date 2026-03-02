@@ -8,6 +8,23 @@ public class SimpleMemorySizeDetector implements MemorySizeDetector {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleMemorySizeDetector.class);
 
+    private static int detectSingleRegSize(String opStr) {
+        if (opStr.startsWith("w")) return 4;
+        if (opStr.startsWith("x")) return 8;
+        return 0;
+    }
+
+    private static int detectPairRegSize(String opStr) {
+        if (opStr.startsWith("w")) return 8;
+        if (opStr.startsWith("x")) return 16;
+        return 0;
+    }
+
+    private static String extractAfterFirstComma(String opStr) {
+        int commaIdx = opStr.indexOf(',');
+        return commaIdx >= 0 ? opStr.substring(commaIdx + 1).trim() : opStr;
+    }
+
     @Override
     public int detectReadSize(Instruction insn) {
         switch (insn.getMnemonic()) {
@@ -51,28 +68,15 @@ public class SimpleMemorySizeDetector implements MemorySizeDetector {
             case "casa":
             case "casal":
             case "casl":
-                if (insn.getOpStr().startsWith("w")) {
-                    return 4;
-                }
-                if (insn.getOpStr().startsWith("x")) {
-                    return 8;
-                }
-                break;
+                return detectSingleRegSize(insn.getOpStr());
             case "ldp":
             case "ldxp":
             case "ldaxp":
-                if (insn.getOpStr().startsWith("w")) {
-                    return 8;
-                }
-                if (insn.getOpStr().startsWith("x")) {
-                    return 16;
-                }
-                break;
+                return detectPairRegSize(insn.getOpStr());
             default:
                 log.info("detectReadSize: insn={}", insn);
-                break;
+                return 0;
         }
-        return 0;
     }
 
     @Override
@@ -114,53 +118,19 @@ public class SimpleMemorySizeDetector implements MemorySizeDetector {
             case "casa":
             case "casal":
             case "casl":
-                if (opStr.startsWith("w")) {
-                    return 4;
-                }
-                if (opStr.startsWith("x")) {
-                    return 8;
-                }
-                break;
+                return detectSingleRegSize(opStr);
             case "stxr":
-            case "stlxr": {
-                String valueReg = extractAfterFirstComma(opStr);
-                if (valueReg.startsWith("w")) {
-                    return 4;
-                }
-                if (valueReg.startsWith("x")) {
-                    return 8;
-                }
-                break;
-            }
+            case "stlxr":
+                return detectSingleRegSize(extractAfterFirstComma(opStr));
             case "stp":
-                if (opStr.startsWith("w")) {
-                    return 8;
-                }
-                if (opStr.startsWith("x")) {
-                    return 16;
-                }
-                break;
+                return detectPairRegSize(opStr);
             case "stxp":
-            case "stlxp": {
-                String valueReg = extractAfterFirstComma(opStr);
-                if (valueReg.startsWith("w")) {
-                    return 8;
-                }
-                if (valueReg.startsWith("x")) {
-                    return 16;
-                }
-                break;
-            }
+            case "stlxp":
+                return detectPairRegSize(extractAfterFirstComma(opStr));
             default:
                 log.info("detectWriteSize: insn={}", insn);
-                break;
+                return 0;
         }
-        return 0;
-    }
-
-    private static String extractAfterFirstComma(String opStr) {
-        int commaIdx = opStr.indexOf(',');
-        return commaIdx >= 0 ? opStr.substring(commaIdx + 1).trim() : opStr;
     }
 
 }

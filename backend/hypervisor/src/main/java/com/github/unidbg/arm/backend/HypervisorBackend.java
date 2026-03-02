@@ -162,21 +162,21 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     protected EventMemHookNotifier eventMemHookNotifier;
 
     @Override
-    public void hook_add_new(EventMemHook callback, int type, Object user_data) throws BackendException {
+    public void hook_add_new(EventMemHook callback, int type, Object userData) throws BackendException {
         if (eventMemHookNotifier != null) {
             throw new IllegalStateException();
         }
-        eventMemHookNotifier = new EventMemHookNotifier(callback, type, user_data);
+        eventMemHookNotifier = new EventMemHookNotifier(callback, type, userData);
     }
 
     protected InterruptHookNotifier interruptHookNotifier;
 
     @Override
-    public void hook_add_new(InterruptHook callback, Object user_data) throws BackendException {
+    public void hook_add_new(InterruptHook callback, Object userData) throws BackendException {
         if (interruptHookNotifier != null) {
             throw new IllegalStateException();
         } else {
-            interruptHookNotifier = new InterruptHookNotifier(callback, user_data);
+            interruptHookNotifier = new InterruptHookNotifier(callback, userData);
         }
     }
 
@@ -199,9 +199,11 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
-    public void hook_add_new(BlockHook callback, long begin, long end, Object user_data) throws BackendException {
+    public void hook_add_new(BlockHook callback, long begin, long end, Object userData) throws BackendException {
         throw new UnsupportedOperationException();
     }
+
+    protected static final int INS_SIZE = 4;
 
     protected long until;
 
@@ -210,7 +212,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
         if (log.isDebugEnabled()) {
             log.debug("emu_start begin=0x{}, until=0x{}, timeout={}, count={}", Long.toHexString(begin), Long.toHexString(until), timeout, count);
         }
-        this.until = until + 4;
+        this.until = until + INS_SIZE;
         try {
             hypervisor.emu_start(begin);
         } catch (HypervisorException e) {
