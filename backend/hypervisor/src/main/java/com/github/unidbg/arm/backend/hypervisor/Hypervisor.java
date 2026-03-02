@@ -16,6 +16,8 @@ public class Hypervisor implements Closeable {
     public static final long PSTATE$SS = 1 << 21;
 
     public static native int getPageSize();
+    public static native int getMaxVcpuCount();
+    public static native int sysctlInt(String name);
 
     private static native int setHypervisorCallback(long handle, HypervisorCallback callback);
 

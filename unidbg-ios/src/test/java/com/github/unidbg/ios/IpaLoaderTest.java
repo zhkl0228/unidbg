@@ -5,6 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
+import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
 import com.github.unidbg.debugger.McpTool;
 import com.github.unidbg.debugger.McpToolkit;
 import com.github.unidbg.file.ios.DarwinFileIO;
@@ -60,13 +61,15 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                     if (pointer != null) {
                         System.out.println("_TelegramCoreVersionString=" + pointer.getString(0));
                     }
-                    IClassDumper classDumper = ClassDumper.getInstance(emulator);
-                    Thread thread = new Thread(() -> {
-                        String objcClass1 = classDumper.dumpClass("NSDate");
-                        System.out.println("[" + Thread.currentThread().getName() + "]\n" + objcClass1);
-                    });
-                    thread.start();
-                    thread.join();
+                    if (emulator.getBackend().isHypervisor()) {
+                        IClassDumper classDumper = ClassDumper.getInstance(emulator);
+                        Thread thread = new Thread(() -> {
+                            String objcClass1 = classDumper.dumpClass("NSDate");
+                            System.out.printf("[%s]maxVcpuCount=%d\n%s%n", Thread.currentThread().getName(), Hypervisor.getMaxVcpuCount(), objcClass1);
+                        });
+                        thread.start();
+                        thread.join();
+                    }
                 } else {
                     System.out.println("Symbol _TelegramCoreVersionString not found");
                 }

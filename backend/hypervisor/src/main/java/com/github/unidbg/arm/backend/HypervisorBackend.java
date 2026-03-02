@@ -238,4 +238,9 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     public int getPageSize() {
         return pageSize;
     }
+
+    @Override
+    public boolean isHypervisor() {
+        return true;
+    }
 }

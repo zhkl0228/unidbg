@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/errno.h>
+#include <sys/sysctl.h>
 #include <dlfcn.h>
 #include <atomic>
 
@@ -360,6 +361,33 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz) {
   long sz = sysconf(_SC_PAGESIZE);
   return (jint) sz;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    getMaxVcpuCount
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getMaxVcpuCount
+  (JNIEnv *env, jclass clazz) {
+  uint32_t max_vcpu_count = 0;
+  HYP_ASSERT_SUCCESS(hv_vm_get_max_vcpu_count(&max_vcpu_count));
+  return (jint) max_vcpu_count;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    sysctlInt
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_sysctlInt
+  (JNIEnv *env, jclass clazz, jstring name) {
+  const char *key = env->GetStringUTFChars(name, nullptr);
+  int32_t val = 0;
+  size_t len = sizeof(val);
+  int ret = sysctlbyname(key, &val, &len, nullptr, 0);
+  env->ReleaseStringUTFChars(name, key);
+  return ret == 0 ? (jint) val : -1;
 }
 
 /*

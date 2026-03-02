@@ -800,38 +800,82 @@ public class HypervisorBackend64 extends HypervisorBackend {
         Hypervisor.free(context);
     }
 
+    private static final String[] CPU_FEATURE_KEYS = {
+        "floatingpoint",
+        "neon",
+        "neon_fp16",
+        "neon_hpfp",
+        "arm64",
+        "armv8_crc32",
+        "armv8_1_atomics",
+        "armv8_2_fhm",
+        "armv8_2_sha3",
+        "armv8_2_sha512",
+        "armv8_3_compnum",
+        "armv8_gpi",
+        "ucnormal_mem",
+        "arm.AdvSIMD",
+        "arm.AdvSIMD_HPFPCvt",
+        "arm.FP_SyncExceptions",
+        "arm.FEAT_AES",
+        "arm.FEAT_AFP",
+        "arm.FEAT_BF16",
+        "arm.FEAT_BTI",
+        "arm.FEAT_CRC32",
+        "arm.FEAT_CSSC",
+        "arm.FEAT_CSV2",
+        "arm.FEAT_CSV3",
+        "arm.FEAT_DIT",
+        "arm.FEAT_DotProd",
+        "arm.FEAT_DPB",
+        "arm.FEAT_DPB2",
+        "arm.FEAT_EBF16",
+        "arm.FEAT_ECV",
+        "arm.FEAT_FCMA",
+        "arm.FEAT_FHM",
+        "arm.FEAT_FlagM",
+        "arm.FEAT_FlagM2",
+        "arm.FEAT_FP16",
+        "arm.FEAT_FPAC",
+        "arm.FEAT_FPACCOMBINE",
+        "arm.FEAT_FRINTTS",
+        "arm.FEAT_HBC",
+        "arm.FEAT_I8MM",
+        "arm.FEAT_JSCVT",
+        "arm.FEAT_LRCPC",
+        "arm.FEAT_LRCPC2",
+        "arm.FEAT_LSE",
+        "arm.FEAT_LSE2",
+        "arm.FEAT_PACIMP",
+        "arm.FEAT_PAuth",
+        "arm.FEAT_PAuth2",
+        "arm.FEAT_PMULL",
+        "arm.FEAT_RDM",
+        "arm.FEAT_RPRES",
+        "arm.FEAT_SB",
+        "arm.FEAT_SHA1",
+        "arm.FEAT_SHA256",
+        "arm.FEAT_SHA3",
+        "arm.FEAT_SHA512",
+        "arm.FEAT_SME",
+        "arm.FEAT_SME2",
+        "arm.FEAT_SME_F64F64",
+        "arm.FEAT_SME_I16I64",
+        "arm.FEAT_SPECRES",
+        "arm.FEAT_SPECRES2",
+        "arm.FEAT_SSBS",
+        "arm.FEAT_WFxT",
+    };
+
     private static final Map<String, Integer> CPU_FEATURES;
     static {
         Map<String, Integer> map = new HashMap<>();
-        map.put("floatingpoint", 1);
-        map.put("arm.AdvSIMD", 1);
-        map.put("arm.FEAT_AES", 1);
-        map.put("arm.FEAT_PMULL", 1);
-        map.put("arm.FEAT_SHA1", 1);
-        map.put("arm.FEAT_SHA256", 1);
-        map.put("armv8_crc32", 1);
-        map.put("arm.FEAT_LSE", 1);
-        map.put("arm.FEAT_FP16", 1);
-        map.put("arm.AdvSIMD_HPFPCvt", 1);
-        map.put("arm.FEAT_RDM", 1);
-        map.put("arm.FEAT_JSCVT", 1);
-        map.put("arm.FEAT_FCMA", 1);
-        map.put("arm.FEAT_LRCPC", 1);
-        map.put("arm.FEAT_DPB", 1);
-        map.put("arm.FEAT_SHA3", 1);
-        map.put("arm.FEAT_DotProd", 1);
-        map.put("arm.FEAT_SHA512", 1);
-        map.put("arm.FEAT_FHM", 1);
-        map.put("arm.FEAT_DIT", 1);
-        map.put("arm.FEAT_LSE2", 1);
-        map.put("arm.FEAT_FlagM", 1);
-        map.put("arm.FEAT_SSBS", 0);
-        map.put("arm.FEAT_SB", 1);
-        map.put("arm.FEAT_FlagM2", 1);
-        map.put("arm.FEAT_FRINTTS", 1);
-        map.put("arm.FEAT_I8MM", 1);
-        map.put("arm.FEAT_BF16", 1);
-        map.put("arm.FEAT_BTI", 1);
+        for (String key : CPU_FEATURE_KEYS) {
+            int val = Hypervisor.sysctlInt("hw.optional." + key);
+            if (val >= 0) {
+                map.put(key, val);
+            }
+        }
         CPU_FEATURES = Collections.unmodifiableMap(map);
     }
 
