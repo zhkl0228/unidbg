@@ -936,7 +936,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   auto ctx = (t_cpu_context) context;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   t_vcpu_context vcpu_context = get_vcpu_context(cpu);
-  memcpy(vcpu_context, &ctx->ctx, sizeof(struct vcpu_context));
+  memcpy(vcpu_context, ctx->ctx, vcpu_context_size());
   hypervisor->sp = ctx->sp;
   hypervisor->cpacr = ctx->cpacr;
   hypervisor->tpidr = ctx->tpidr;
@@ -954,7 +954,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   auto ctx = (t_cpu_context) context;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   t_vcpu_context vcpu_context = get_vcpu_context(cpu);
-  memcpy(&ctx->ctx, vcpu_context, sizeof(struct vcpu_context));
+  memcpy(ctx->ctx, vcpu_context, vcpu_context_size());
   ctx->sp = hypervisor->sp;
   ctx->cpacr = hypervisor->cpacr;
   ctx->tpidr = hypervisor->tpidr;

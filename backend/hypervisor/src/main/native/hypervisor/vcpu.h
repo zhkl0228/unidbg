@@ -16,45 +16,61 @@
 } while(0)
 #define HV_REG_SP HV_SYS_REG_SP_EL0
 
+// vcpu_context: mirrors the Hypervisor framework's internal vCPU context buffer.
+//
+// Offsets listed are for the macOS 15+ layout (sizeof = 0x7F0).
+// Pre-macOS 15: the 6 NV2 fields (0x448-0x470) don't exist, so fields after
+// CNTKCTL_EL1 are 0x30 bytes earlier (sizeof = 0x7C0).
+//
+// [VNCR] marks fields that on macOS 15+ are managed via the VNCR page
+// (context+0x1000) through VcpuStateManager, NOT written to these context
+// buffer offsets. The API (hv_vcpu_get/set_sys_reg) is VNCR-aware and
+// reads/writes the correct location transparently.
+// The slots at the old offsets are stale on macOS 15+ and should not be
+// read directly from the context buffer.
+//
+// PAC key fields are stored in the Vcpu C++ object (this+24..this+104),
+// not in the context buffer. They appear here for layout completeness
+// but are not maintained by the framework at these offsets.
 typedef struct vcpu_context {
-  uint64_t magic;
-  uint64_t HV_REG_X0;
-  uint64_t HV_REG_X1;
-  uint64_t HV_REG_X2;
-  uint64_t HV_REG_X3;
-  uint64_t HV_REG_X4;
-  uint64_t HV_REG_X5;
-  uint64_t HV_REG_X6;
-  uint64_t HV_REG_X7;
-  uint64_t HV_REG_X8;
-  uint64_t HV_REG_X9;
-  uint64_t HV_REG_X10;
-  uint64_t HV_REG_X11;
-  uint64_t HV_REG_X12;
-  uint64_t HV_REG_X13;
-  uint64_t HV_REG_X14;
-  uint64_t HV_REG_X15;
-  uint64_t HV_REG_X16;
-  uint64_t HV_REG_X17;
-  uint64_t HV_REG_X18;
-  uint64_t HV_REG_X19;
-  uint64_t HV_REG_X20;
-  uint64_t HV_REG_X21;
-  uint64_t HV_REG_X22;
-  uint64_t HV_REG_X23;
-  uint64_t HV_REG_X24;
-  uint64_t HV_REG_X25;
-  uint64_t HV_REG_X26;
-  uint64_t HV_REG_X27;
-  uint64_t HV_REG_X28;
-  uint64_t HV_REG_X29; // HV_REG_FP
-  uint64_t HV_REG_X30; // HV_REG_LR
-  uint64_t unknown0x100;
-  uint64_t HV_REG_PC; // 0x108
-  uint64_t HV_REG_CPSR; // 0x110
+  uint64_t magic;                        // 0x000
+  uint64_t HV_REG_X0;                   // 0x008
+  uint64_t HV_REG_X1;                   // 0x010
+  uint64_t HV_REG_X2;                   // 0x018
+  uint64_t HV_REG_X3;                   // 0x020
+  uint64_t HV_REG_X4;                   // 0x028
+  uint64_t HV_REG_X5;                   // 0x030
+  uint64_t HV_REG_X6;                   // 0x038
+  uint64_t HV_REG_X7;                   // 0x040
+  uint64_t HV_REG_X8;                   // 0x048
+  uint64_t HV_REG_X9;                   // 0x050
+  uint64_t HV_REG_X10;                  // 0x058
+  uint64_t HV_REG_X11;                  // 0x060
+  uint64_t HV_REG_X12;                  // 0x068
+  uint64_t HV_REG_X13;                  // 0x070
+  uint64_t HV_REG_X14;                  // 0x078
+  uint64_t HV_REG_X15;                  // 0x080
+  uint64_t HV_REG_X16;                  // 0x088
+  uint64_t HV_REG_X17;                  // 0x090
+  uint64_t HV_REG_X18;                  // 0x098
+  uint64_t HV_REG_X19;                  // 0x0A0
+  uint64_t HV_REG_X20;                  // 0x0A8
+  uint64_t HV_REG_X21;                  // 0x0B0
+  uint64_t HV_REG_X22;                  // 0x0B8
+  uint64_t HV_REG_X23;                  // 0x0C0
+  uint64_t HV_REG_X24;                  // 0x0C8
+  uint64_t HV_REG_X25;                  // 0x0D0
+  uint64_t HV_REG_X26;                  // 0x0D8
+  uint64_t HV_REG_X27;                  // 0x0E0
+  uint64_t HV_REG_X28;                  // 0x0E8
+  uint64_t HV_REG_X29;                  // 0x0F0  HV_REG_FP
+  uint64_t HV_REG_X30;                  // 0x0F8  HV_REG_LR
+  uint64_t unknown0x100;                 // 0x100
+  uint64_t HV_REG_PC;                   // 0x108
+  uint64_t HV_REG_CPSR;                 // 0x110
 
-  char _pad1[0x28];
-  hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q0;
+  char _pad1[0x28];                      // 0x118-0x13F
+  hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q0;  // 0x140  (16 bytes each)
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q1;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q2;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q3;
@@ -85,41 +101,50 @@ typedef struct vcpu_context {
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q28;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q29;
   hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q30;
-  hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q31;
+  hv_simd_fp_uchar16_t HV_SIMD_FP_REG_Q31;   // 0x330
 
-  uint64_t HV_REG_FPSR;
-  uint16_t HV_REG_FPCR;
-  uint64_t HV_SYS_REG_MDSCR_EL1;
-  uint64_t HV_SYS_REG_TPIDR_EL1;
-  uint64_t HV_SYS_REG_TPIDR_EL0;
-  uint64_t HV_SYS_REG_TPIDRRO_EL0;
-  uint64_t HV_SYS_REG_SP_EL0;
-  uint64_t HV_SYS_REG_SP_EL1;
-  uint64_t HV_SYS_REG_PAR_EL1;
-  uint64_t HV_SYS_REG_CSSELR_EL1;
-  uint64_t ext_reg; // _hv_vcpu_get_ext_reg
-  uint64_t unknown0x398_0xF795;
-  uint64_t HV_SYS_REG_TTBR0_EL1;
-  uint64_t HV_SYS_REG_TTBR1_EL1;
-  uint64_t HV_SYS_REG_TCR_EL1;
-  uint64_t HV_SYS_REG_ELR_EL1;
-  uint64_t HV_SYS_REG_FAR_EL1;
-  uint64_t HV_SYS_REG_ESR_EL1;
-  char _pad3[0x10];
-  uint64_t HV_SYS_REG_VBAR_EL1; // 0x3e0
-  uint64_t HV_SYS_REG_CNTV_CVAL_EL0;
-  uint64_t HV_SYS_REG_MAIR_EL1;
-  uint64_t HV_SYS_REG_AMAIR_EL1;
-  uint64_t HV_SYS_REG_SCTLR_EL1;
-  uint64_t HV_SYS_REG_CPACR_EL1;
-  uint64_t HV_SYS_REG_SPSR_EL1;
-  uint64_t HV_SYS_REG_AFSR0_EL1;
-  uint64_t HV_SYS_REG_AFSR1_EL1;
-  uint64_t HV_SYS_REG_CONTEXTIDR_EL1;
-  uint64_t HV_SYS_REG_CNTV_CTL_EL0; // 0x430
-  uint64_t unknown0x438;
-  uint64_t HV_SYS_REG_CNTKCTL_EL1;
-  uint64_t HV_SYS_REG_DBGBVR0_EL1;
+  uint32_t HV_REG_FPSR;                 // 0x340  DWORD
+  uint32_t HV_REG_FPCR;                 // 0x344  DWORD
+  uint64_t _pad_fpcr;                    // 0x348
+  uint64_t HV_SYS_REG_MDSCR_EL1;        // 0x350  [VNCR]
+  uint64_t HV_SYS_REG_TPIDR_EL1;        // 0x358
+  uint64_t HV_SYS_REG_TPIDR_EL0;        // 0x360
+  uint64_t HV_SYS_REG_TPIDRRO_EL0;      // 0x368
+  uint64_t HV_SYS_REG_SP_EL0;           // 0x370
+  uint64_t HV_SYS_REG_SP_EL1;           // 0x378  [VNCR]
+  uint64_t HV_SYS_REG_PAR_EL1;          // 0x380
+  uint64_t HV_SYS_REG_CSSELR_EL1;       // 0x388
+  uint64_t ext_reg;                      // 0x390  _hv_vcpu_get_ext_reg
+  uint64_t unknown0x398_0xF795;          // 0x398
+  uint64_t HV_SYS_REG_TTBR0_EL1;        // 0x3A0  [VNCR]
+  uint64_t HV_SYS_REG_TTBR1_EL1;        // 0x3A8  [VNCR]
+  uint64_t HV_SYS_REG_TCR_EL1;          // 0x3B0  [VNCR]
+  uint64_t HV_SYS_REG_ELR_EL1;          // 0x3B8  [VNCR]
+  uint64_t HV_SYS_REG_FAR_EL1;          // 0x3C0  [VNCR]
+  uint64_t HV_SYS_REG_ESR_EL1;          // 0x3C8  [VNCR]
+  char _pad3[0x10];                      // 0x3D0-0x3DF
+  uint64_t HV_SYS_REG_VBAR_EL1;         // 0x3E0  [VNCR]
+  uint64_t HV_SYS_REG_CNTV_CVAL_EL0;    // 0x3E8  [VNCR]
+  uint64_t HV_SYS_REG_MAIR_EL1;         // 0x3F0  [VNCR]
+  uint64_t HV_SYS_REG_AMAIR_EL1;        // 0x3F8
+  uint64_t HV_SYS_REG_SCTLR_EL1;        // 0x400  [VNCR]
+  uint64_t HV_SYS_REG_CPACR_EL1;        // 0x408  [VNCR]
+  uint64_t HV_SYS_REG_SPSR_EL1;         // 0x410  [VNCR]
+  uint64_t HV_SYS_REG_AFSR0_EL1;        // 0x418
+  uint64_t HV_SYS_REG_AFSR1_EL1;        // 0x420
+  uint64_t HV_SYS_REG_CONTEXTIDR_EL1;   // 0x428  [VNCR]
+  uint64_t HV_SYS_REG_CNTV_CTL_EL0;     // 0x430  [VNCR]
+  uint64_t unknown0x438;                 // 0x438
+  uint64_t HV_SYS_REG_CNTKCTL_EL1;      // 0x440
+  // macOS 15+ inserts 6 NV2 fields here (0x30 bytes), shifting all subsequent offsets by +0x30
+  uint64_t _nv2_field0;                  // 0x448 (macOS 15+ only)
+  uint64_t _nv2_field1;                  // 0x450
+  uint64_t _nv2_field2;                  // 0x458
+  uint64_t _nv2_field3;                  // 0x460
+  uint64_t _nv2_field4;                  // 0x468
+  uint64_t _nv2_field5;                  // 0x470
+  // --- offsets below: macOS 15+ / pre-15 ---
+  uint64_t HV_SYS_REG_DBGBVR0_EL1;      // 0x478 / 0x448
   uint64_t HV_SYS_REG_DBGBCR0_EL1;
   uint64_t HV_SYS_REG_DBGBVR1_EL1;
   uint64_t HV_SYS_REG_DBGBCR1_EL1;
@@ -182,32 +207,32 @@ typedef struct vcpu_context {
   uint64_t HV_SYS_REG_DBGWVR14_EL1;
   uint64_t HV_SYS_REG_DBGWCR14_EL1;
   uint64_t HV_SYS_REG_DBGWVR15_EL1;
-  uint64_t HV_SYS_REG_DBGWCR15_EL1;
-  uint64_t HV_SYS_REG_MDCCINT_EL1;
-  char _pad4[0x18];
-  uint64_t control_field_0;
+  uint64_t HV_SYS_REG_DBGWCR15_EL1;      // 0x760 / 0x730
+  uint64_t HV_SYS_REG_MDCCINT_EL1;        // 0x768 / 0x738
+  char _pad4[0x18];                        // 0x770 / 0x740  (includes dirty flags at +0x780)
+  uint64_t control_field_0;               // 0x788 / 0x758
   uint64_t control_field_6;
   uint64_t control_field_1;
-  uint64_t HV_SYS_REG_MDCR_EL2; // control_field_2, hv_vcpu_set_trap_debug_reg_accesses and hv_vcpu_set_trap_debug_exceptions
-  uint64_t HV_SYS_REG_MPIDR_EL1; // control_field_3
-  uint64_t HV_SYS_REG_MIDR_EL1; // control_field_5
-  uint64_t HV_SYS_REG_CNTVOFF_EL2; // control_field_4
+  uint64_t HV_SYS_REG_MDCR_EL2;          // control_field_2
+  uint64_t HV_SYS_REG_MPIDR_EL1;         // control_field_3
+  uint64_t HV_SYS_REG_MIDR_EL1;          // control_field_5
+  uint64_t HV_SYS_REG_CNTVOFF_EL2;       // control_field_4
   uint64_t unknown0x6a0;
   uint64_t control_field_12;
   uint64_t control_field_13;
   uint64_t control_field_14;
   uint64_t control_field_15;
   uint64_t control_field_16;
-  uint64_t vtimer_mask_reg; // hv_vcpu_set_vtimer_mask
+  uint64_t vtimer_mask_reg;               // hv_vcpu_set_vtimer_mask
   uint64_t control_field_7;
   uint64_t control_field_8;
   uint64_t control_field_9;
   uint64_t control_field_10;
   uint64_t control_field_11;
-  uint64_t unknown0x700; // hv_vcpu_set_trap_debug_reg_accesses and hv_vcpu_set_trap_debug_exceptions related
-  uint64_t exec_time; // the cumulative execution time of a vCPU, in nanoseconds.
+  uint64_t unknown0x700;                  // trap debug related
+  uint64_t exec_time;                     // cumulative execution time (ns)
   char _pad5[0x60];
-  uint64_t HV_SYS_REG_APGAKEYHI_EL1; // 0x770
+  uint64_t HV_SYS_REG_APGAKEYHI_EL1;     // 0x7A0 / 0x770  (PAC: stored in Vcpu object, not here)
   uint64_t HV_SYS_REG_APGAKEYLO_EL1;
   uint64_t HV_SYS_REG_APIAKEYHI_EL1;
   uint64_t HV_SYS_REG_APIAKEYLO_EL1;
@@ -215,9 +240,37 @@ typedef struct vcpu_context {
   uint64_t HV_SYS_REG_APIBKEYLO_EL1;
   uint64_t HV_SYS_REG_APDAKEYHI_EL1;
   uint64_t HV_SYS_REG_APDAKEYLO_EL1;
-  uint64_t HV_SYS_REG_APDBKEYHI_EL1; // 0x7b0
-  uint64_t HV_SYS_REG_APDBKEYLO_EL1;
+  uint64_t HV_SYS_REG_APDBKEYHI_EL1;     // 0x7E0 / 0x7B0
+  uint64_t HV_SYS_REG_APDBKEYLO_EL1;     // 0x7E8 / 0x7B8  (end of struct)
 } *t_vcpu_context;
+
+// macOS 15+ added 6 fields (0x30 bytes) between CNTKCTL_EL1 and DBGBVR0_EL1.
+// sizeof(struct vcpu_context) = 0x7F0 (macOS 15+ named fields only).
+//
+// The actual kernel context buffer extends well beyond sizeof(vcpu_context):
+//   0x000-0x7EF  named registers (struct vcpu_context)
+//   0x7F0-0xA18  private/internal registers (NV2, PMU, written by framework)
+//   0xA20-0xFFF  reserved / unknown internal state
+//   0x1000+      VNCR page (managed via hv_vcpu_get/set_sys_reg API)
+//
+// For single-thread context switching on the same vCPU, we must save/restore
+// up to 0x1000 to preserve internal state modified during hv_vcpu_run.
+//
+// VNCR note: on macOS 15+, [VNCR]-marked registers (SCTLR, TTBR0/1, TCR,
+// ELR, SPSR, ESR, FAR, VBAR, MAIR, CPACR, CONTEXTIDR, CNTV_*, MDSCR,
+// SP_EL1) live at context+0x1000 offsets and are NOT in our memcpy range.
+// This is safe for unidbg because:
+//   - page table / system regs (SCTLR, TTBR, TCR, VBAR, MAIR, MDSCR) are
+//     one-time init and identical across contexts on the same vCPU
+//   - CPACR is stored separately in hypervisor->cpacr and set via API
+//   - ELR/SPSR are set via API in emu_start / exception handling
+//   - ESR/FAR are read-only (set by hardware on exception entry)
+inline size_t vcpu_context_size() {
+  if (@available(macOS 15.0.0, *)) {
+    return 0x1000;
+  }
+  return sizeof(struct vcpu_context) - 0x30; // 0x7C0 (pre-macOS 15)
+}
 
 typedef struct vcpus {
   t_vcpu_context context;
@@ -247,47 +300,50 @@ typedef struct vcpus_v1351 {
   uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;
   uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;
   char _pad1[0x98];
-  uint64_t unknown_13_5_1; // since 13.5.1
+  uint64_t vcpu_config; // since 13.5.1
   uint64_t HV_SYS_REG_HCR_EL2;
   char _pad2[0x28];
 } *t_vcpus_v1351;
 
+// macOS 15.0+: _vcpus[] is an array of pointers to Hv::Vcpu C++ objects.
+// This struct overlays the Hv::Vcpu object starting from its base address.
 typedef struct vcpus_v1500 {
-  void *_1;
-  void *_2;
-  t_vcpu_context context;
-  uint64_t HV_SYS_REG_ID_AA64DFR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64DFR1_EL1;
-  uint64_t HV_SYS_REG_ID_AA64ISAR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64ISAR1_EL1;
-  uint64_t HV_SYS_REG_ID_AA64MMFR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64MMFR1_EL1;
-  uint64_t HV_SYS_REG_ID_AA64MMFR2_EL1;
-  uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;
-  char _pad1[0x98];
-  uint64_t unknown_13_5_1; // since 13.5.1
-  uint64_t HV_SYS_REG_HCR_EL2;
+  void *vtable;                                   // 0x00  Hv::Vcpu vtable
+  void *delegate;                                 // 0x08  VcpuStateManager::Delegate
+  t_vcpu_context context;                         // 0x10  arm_guest_context_t*
+  uint64_t HV_SYS_REG_ID_AA64DFR0_EL1;           // 0x18  feature_regs
+  uint64_t HV_SYS_REG_ID_AA64DFR1_EL1;           // 0x20
+  uint64_t HV_SYS_REG_ID_AA64ISAR0_EL1;          // 0x28
+  uint64_t HV_SYS_REG_ID_AA64ISAR1_EL1;          // 0x30
+  uint64_t HV_SYS_REG_ID_AA64MMFR0_EL1;          // 0x38
+  uint64_t HV_SYS_REG_ID_AA64MMFR1_EL1;          // 0x40
+  uint64_t HV_SYS_REG_ID_AA64MMFR2_EL1;          // 0x48
+  uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;           // 0x50
+  uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;           // 0x58
+  char _pad1[0x98];                               // 0x60  remaining feature_regs
+  uint64_t vcpu_config;                           // 0xF8  CfPtr<hv_vcpu_config_s>
+  uint64_t hcr_el2_trap_override;                 // 0x100 ORed into control_field_0 (HCR_EL2) before hv_vcpu_run
 } *t_vcpus_v1500;
 
+// macOS 15.2+: same as vcpus_v1500 but with 2 additional fields before trap_override.
 typedef struct vcpus_v1520 {
-  void *_1;
-  void *_2;
-  t_vcpu_context context;
-  uint64_t HV_SYS_REG_ID_AA64DFR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64DFR1_EL1;
-  uint64_t HV_SYS_REG_ID_AA64ISAR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64ISAR1_EL1;
-  uint64_t HV_SYS_REG_ID_AA64MMFR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64MMFR1_EL1;
-  uint64_t HV_SYS_REG_ID_AA64MMFR2_EL1;
-  uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;
-  uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;
-  char _pad1[0x98];
-  uint64_t unknown_13_5_1; // since 13.5.1
-  uint64_t unknown_15_2_0; // since 15.2
-  uint64_t unknown_15_2_1; // since 15.2
-  uint64_t HV_SYS_REG_HCR_EL2;
+  void *vtable;                                   // 0x00  Hv::Vcpu vtable
+  void *delegate;                                 // 0x08  VcpuStateManager::Delegate
+  t_vcpu_context context;                         // 0x10  arm_guest_context_t*
+  uint64_t HV_SYS_REG_ID_AA64DFR0_EL1;           // 0x18  feature_regs
+  uint64_t HV_SYS_REG_ID_AA64DFR1_EL1;           // 0x20
+  uint64_t HV_SYS_REG_ID_AA64ISAR0_EL1;          // 0x28
+  uint64_t HV_SYS_REG_ID_AA64ISAR1_EL1;          // 0x30
+  uint64_t HV_SYS_REG_ID_AA64MMFR0_EL1;          // 0x38
+  uint64_t HV_SYS_REG_ID_AA64MMFR1_EL1;          // 0x40
+  uint64_t HV_SYS_REG_ID_AA64MMFR2_EL1;          // 0x48
+  uint64_t HV_SYS_REG_ID_AA64PFR0_EL1;           // 0x50
+  uint64_t HV_SYS_REG_ID_AA64PFR1_EL1;           // 0x58
+  char _pad1[0x98];                               // 0x60  remaining feature_regs
+  uint64_t vcpu_config;                           // 0xF8  CfPtr<hv_vcpu_config_s>
+  uint64_t vcpu_handle;                           // 0x100 hv_vcpu_t slot index (0-63)
+  uint64_t vm_flags;                              // 0x108 packed: byte0=*(vm+92), byte1=(*(vm+24)!=0)
+  uint64_t hcr_el2_trap_override;                 // 0x110 ORed into control_field_0 (HCR_EL2) before hv_vcpu_run
 } *t_vcpus_v1520;
 
 extern "C" t_vcpu_context _hv_vcpu_get_context(hv_vcpu_t vcpu);
@@ -306,13 +362,17 @@ typedef struct hypervisor_cpu {
 
 #define HCR_EL2$DC 12
 
+// macOS 15+: writes to trap_override field in Hv::Vcpu object;
+//   Hv::Vcpu::run ORs it into control_field_0 (context+0x698) before hv_trap,
+//   then clears trap_override after exit.
+// Pre-15: writes directly to the canonical HCR_EL2 field in the flat _vcpus array.
 inline void set_HV_SYS_REG_HCR_EL2(t_hypervisor_cpu _cpu, const uint64_t value) {
   if (@available(macOS 15.2.0, *)) {
     const auto cpu = static_cast<t_vcpus_v1520>(_cpu->cpu);
-    cpu->HV_SYS_REG_HCR_EL2 = value;
-  } else if (@available(macOS 15.0.0, *)) { // HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(_cpu->vcpu, HV_SYS_REG_HCR_EL2, value));
+    cpu->hcr_el2_trap_override = value;
+  } else if (@available(macOS 15.0.0, *)) {
     const auto cpu = static_cast<t_vcpus_v1500>(_cpu->cpu);
-    cpu->HV_SYS_REG_HCR_EL2 = value;
+    cpu->hcr_el2_trap_override = value;
   } else if (@available(macOS 13.5.1, *)) {
     const auto cpu = static_cast<t_vcpus_v1351>(_cpu->cpu);
     cpu->HV_SYS_REG_HCR_EL2 = value;

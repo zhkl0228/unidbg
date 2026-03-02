@@ -75,7 +75,7 @@ static uint32_t syn_get_ec(uint64_t syn) {
 #define PSR_D_BIT	0x00000200
 
 typedef struct cpu_context {
-  vcpu_context ctx;
+  char ctx[0x1000]; // raw vcpu context buffer: macOS 15+ needs 0x1000 (up to VNCR page); legacy is 0x7C0
   uint64_t sp;
   uint64_t cpacr;
   uint64_t tpidr;
