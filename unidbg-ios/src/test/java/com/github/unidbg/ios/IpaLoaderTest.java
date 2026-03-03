@@ -5,7 +5,7 @@ import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
-import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
+import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.debugger.McpTool;
 import com.github.unidbg.debugger.McpToolkit;
 import com.github.unidbg.file.ios.DarwinFileIO;
@@ -64,7 +64,7 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                         System.out.println("_TelegramCoreVersionString=" + pointer.getString(0));
                     }
                     if (emulator.getBackend().isHypervisor()) {
-                        final int maxVcpuCount = Hypervisor.getMaxVcpuCount();
+                        final int maxVcpuCount = HypervisorFactory.getMaxVcpuCount();
                         if (executorService == null) {
                             executorService = Executors.newFixedThreadPool(maxVcpuCount - 1);
                         }
@@ -74,7 +74,7 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                                     synchronized (IpaLoaderTest.this) {
                                         IClassDumper classDumper = ClassDumper.getInstance(emulator);
                                         String objcClass1 = classDumper.dumpClass("NSDate");
-                                        System.out.printf("[%s]maxVcpuCount=%d\n%s%n", Thread.currentThread().getName(), Hypervisor.getMaxVcpuCount(), objcClass1);
+                                        System.out.printf("[%s]maxVcpuCount=%d\n%s%n", Thread.currentThread().getName(), HypervisorFactory.getMaxVcpuCount(), objcClass1);
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace(System.err);

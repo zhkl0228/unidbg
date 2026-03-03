@@ -16,6 +16,13 @@ public class HypervisorFactory extends BackendFactory {
         }
     }
 
+    public static native void testVcpu();
+    public static native int getPageSize();
+    public static native int getMaxVcpuCount();
+    public static native int sysctlInt(String name);
+    public static native long context_alloc();
+    public static native void free(long context);
+
     public HypervisorFactory(boolean fallbackUnicorn) {
         super(fallbackUnicorn);
     }

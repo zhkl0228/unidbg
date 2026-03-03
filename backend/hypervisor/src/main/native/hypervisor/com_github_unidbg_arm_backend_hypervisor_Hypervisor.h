@@ -13,38 +13,6 @@ extern "C" {
 #define com_github_unidbg_arm_backend_hypervisor_Hypervisor_PSTATE_00024SS 2097152LL
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
- * Method:    testVcpu
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_testVcpu
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
- * Method:    getPageSize
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getPageSize
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
- * Method:    getMaxVcpuCount
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getMaxVcpuCount
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
- * Method:    sysctlInt
- * Signature: (Ljava/lang/String;)I
- */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_sysctlInt
-  (JNIEnv *, jclass, jstring);
-
-/*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    setHypervisorCallback
  * Signature: (JLcom/github/unidbg/arm/backend/hypervisor/HypervisorCallback;)I
  */
@@ -245,14 +213,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
- * Method:    context_alloc
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1alloc
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    context_save
  * Signature: (JJ)V
  */
@@ -266,14 +226,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1restore
   (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
- * Method:    free
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_free
-  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor

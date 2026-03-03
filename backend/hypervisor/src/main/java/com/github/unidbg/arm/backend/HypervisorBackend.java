@@ -26,7 +26,7 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     protected HypervisorBackend(Emulator<?> emulator, Hypervisor hypervisor) throws BackendException {
         super(emulator);
         this.hypervisor = hypervisor;
-        this.pageSize = Hypervisor.getPageSize();
+        this.pageSize = HypervisorFactory.getPageSize();
         try {
             this.hypervisor.setHypervisorCallback(this);
         } catch (HypervisorException e) {

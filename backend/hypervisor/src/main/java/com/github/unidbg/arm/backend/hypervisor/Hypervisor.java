@@ -10,14 +10,8 @@ public class Hypervisor implements Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(Hypervisor.class);
 
-    public static native void testVcpu();
-
     public static final long REG_VBAR_EL1 = 0xf0000000L;
     public static final long PSTATE$SS = 1 << 21;
-
-    public static native int getPageSize();
-    public static native int getMaxVcpuCount();
-    public static native int sysctlInt(String name);
 
     private static native int setHypervisorCallback(long handle, HypervisorCallback callback);
 
@@ -51,10 +45,8 @@ public class Hypervisor implements Closeable {
     private static native int emu_start(long handle, long pc);
     private static native int emu_stop(long handle);
 
-    public static native long context_alloc();
     private static native void context_save(long handle, long context);
     private static native void context_restore(long handle, long context);
-    public static native void free(long context);
 
     private static native int getBRPs(long handle);
     private static native int getWRPs(long handle);

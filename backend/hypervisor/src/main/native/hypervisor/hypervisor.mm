@@ -9,6 +9,7 @@
 
 #include "hypervisor.h"
 #include "com_github_unidbg_arm_backend_hypervisor_Hypervisor.h"
+#include "com_github_unidbg_arm_backend_HypervisorFactory.h"
 
 typedef struct hypervisor {
   bool is64Bit = false;
@@ -137,11 +138,11 @@ static int cpu_loop(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) 
 }
 
 /*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Class:     com_github_unidbg_arm_backend_HypervisorFactory
  * Method:    testVcpu
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_testVcpu
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_HypervisorFactory_testVcpu
   (JNIEnv *env, jclass clazz) {
   auto cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
   HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, nullptr));
@@ -374,22 +375,22 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 }
 
 /*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Class:     com_github_unidbg_arm_backend_HypervisorFactory
  * Method:    getPageSize
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getPageSize
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_HypervisorFactory_getPageSize
   (JNIEnv *env, jclass clazz) {
   long sz = sysconf(_SC_PAGESIZE);
   return (jint) sz;
 }
 
 /*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Class:     com_github_unidbg_arm_backend_HypervisorFactory
  * Method:    getMaxVcpuCount
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_getMaxVcpuCount
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_HypervisorFactory_getMaxVcpuCount
   (JNIEnv *env, jclass clazz) {
   uint32_t max_vcpu_count = 0;
   HYP_ASSERT_SUCCESS(hv_vm_get_max_vcpu_count(&max_vcpu_count));
@@ -397,11 +398,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 }
 
 /*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Class:     com_github_unidbg_arm_backend_HypervisorFactory
  * Method:    sysctlInt
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_sysctlInt
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_HypervisorFactory_sysctlInt
   (JNIEnv *env, jclass clazz, jstring name) {
   const char *key = env->GetStringUTFChars(name, nullptr);
   int32_t val = 0;
@@ -1028,22 +1029,22 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 }
 
 /*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Class:     com_github_unidbg_arm_backend_HypervisorFactory
  * Method:    context_alloc
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_context_1alloc
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_HypervisorFactory_context_1alloc
   (JNIEnv *env, jclass clazz) {
   void *ctx = calloc(1, sizeof(struct cpu_context));
   return (jlong) ctx;
 }
 
 /*
- * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Class:     com_github_unidbg_arm_backend_HypervisorFactory
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_free
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_HypervisorFactory_free
   (JNIEnv *env, jclass clazz, jlong context) {
   void *ctx = (void *) context;
   free(ctx);

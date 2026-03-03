@@ -11,6 +11,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Family;
 import com.github.unidbg.arm.ARMEmulator;
 import com.github.unidbg.arm.backend.*;
+import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.arm.backend.hypervisor.arm64.MemorySizeDetector;
 import com.github.unidbg.arm.backend.hypervisor.arm64.SimpleMemorySizeDetector;
 import com.github.unidbg.debugger.BreakPoint;
@@ -782,7 +783,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     @Override
     public long context_alloc() {
-        return Hypervisor.context_alloc();
+        return HypervisorFactory.context_alloc();
     }
 
     @Override
@@ -797,7 +798,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     @Override
     public void context_free(long context) {
-        Hypervisor.free(context);
+        HypervisorFactory.free(context);
     }
 
     private static final String[] CPU_FEATURE_KEYS = {
@@ -871,7 +872,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     static {
         Map<String, Integer> map = new HashMap<>();
         for (String key : CPU_FEATURE_KEYS) {
-            int val = Hypervisor.sysctlInt("hw.optional." + key);
+            int val = HypervisorFactory.sysctlInt("hw.optional." + key);
             if (val >= 0) {
                 map.put(key, val);
             }
