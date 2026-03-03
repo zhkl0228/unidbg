@@ -217,11 +217,11 @@ Once the MCP server is started, AI can call these tools via MCP to run emulation
 
 > **Low-level API**: You can also use `Debugger.addMcpTool()` + `Debugger.run(DebugRunnable)` directly for full control. `McpToolkit` is a higher-level wrapper that eliminates if-else dispatch.
 
-## Worker Pool（多线程复用模拟器）
+## Worker Pool
 
-在高并发场景下，可通过 Worker Pool 复用多个模拟器实例，避免重复初始化的开销。
+A thread-safe object pool for reusing emulator instances across multiple threads, avoiding the overhead of repeated initialization.
 
-### 1. 实现 Worker
+### 1. Implement a Worker
 
 ```java
 public class MyWorker implements Worker {
@@ -229,7 +229,7 @@ public class MyWorker implements Worker {
 
     public MyWorker() {
         emulator = AndroidEmulatorBuilder.for64Bit().build();
-        // 加载 so、调用 JNI_OnLoad 等初始化
+        // load .so, call JNI_OnLoad, etc.
     }
 
     @Override
@@ -238,19 +238,19 @@ public class MyWorker implements Worker {
     }
 
     public byte[] doWork(byte[] input) {
-        // 调用 native 方法并返回结果
+        // call native methods and return the result
     }
 }
 ```
 
-### 2. 创建池、借出执行、关闭
+### 2. Create Pool, Borrow, and Close
 
 ```java
-// 创建对象池
+// Create a worker pool
 WorkerPool pool = WorkerPoolFactory.create(MyWorker::new,
         Runtime.getRuntime().availableProcessors());
 
-// 多线程并发调用
+// Concurrent invocation from multiple threads
 ExecutorService executor = Executors.newFixedThreadPool(100);
 for (int i = 0; i < 100; i++) {
     executor.submit(() -> {
@@ -258,16 +258,16 @@ for (int i = 0; i < 100; i++) {
             if (loan != null) {
                 byte[] result = loan.get().doWork(input);
             }
-        } // try 块结束后 Worker 自动归还
+        } // worker is automatically returned to the pool
     });
 }
 
 executor.shutdown();
 executor.awaitTermination(10, TimeUnit.MINUTES);
-pool.close(); // 销毁所有 Worker
+pool.close(); // destroy all workers and release resources
 ```
 
-> 完整示例参考 [TTEncryptWorker.java](https://github.com/zhkl0228/unidbg/blob/master/unidbg-android/src/test/java/com/bytedance/frameworks/core/encrypt/TTEncryptWorker.java)
+> See [TTEncryptWorker.java](https://github.com/zhkl0228/unidbg/blob/master/unidbg-android/src/test/java/com/bytedance/frameworks/core/encrypt/TTEncryptWorker.java) for a complete example.
 
 ## Examples
 
