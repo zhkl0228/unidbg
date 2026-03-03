@@ -26,7 +26,8 @@ typedef struct hypervisor {
 
 static jmethodID handleException = nullptr;
 static jmethodID handleUnknownException = nullptr;
-static jclass cBackendException = nullptr;
+static jclass cHypervisorException = nullptr;
+static std::atomic<int> vcpu_count{0};
 
 static char *get_memory_page(khash_t(memory) *memory, uint64_t vaddr, size_t num_page_table_entries, void **page_table) {
     uint64_t idx = vaddr >> PAGE_BITS;
@@ -144,9 +145,11 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz) {
   auto cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
   HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, nullptr));
+  vcpu_count.fetch_add(1);
   void *vcpu = lookupVcpu(cpu->vcpu);
   printf("do test cpu=%llu, vcpu=%p\n", cpu->vcpu, vcpu);
   HYP_ASSERT_SUCCESS(hv_vcpu_destroy(cpu->vcpu));
+  vcpu_count.fetch_sub(1);
   free(cpu);
 }
 
@@ -156,7 +159,17 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
     return cpu;
   } else {
     cpu = (t_hypervisor_cpu) calloc(1, sizeof(struct hypervisor_cpu));
-    HYP_ASSERT_SUCCESS(hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, nullptr));
+    hv_return_t ret = hv_vcpu_create(&cpu->vcpu, &cpu->vcpu_exit, nullptr);
+    if (ret != HV_SUCCESS) {
+      uint32_t max_vcpu = 0;
+      hv_vm_get_max_vcpu_count(&max_vcpu);
+      char msg[256];
+      snprintf(msg, sizeof(msg), "hv_vcpu_create failed: %d, vcpu_count=%d, max_vcpu=%u at %s:%d", (int)ret, vcpu_count.load(), max_vcpu, __FILE__, __LINE__);
+      free(cpu);
+      env->ThrowNew(cHypervisorException, msg);
+      return nullptr;
+    }
+    vcpu_count.fetch_add(1);
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_VBAR_EL1, com_github_unidbg_arm_backend_hypervisor_Hypervisor_REG_VBAR_EL1));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
@@ -202,6 +215,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
         (JNIEnv *env, jclass clazz, jlong handle) {
     auto hypervisor = (t_hypervisor) handle;
     t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+    if (!cpu) return 0;
     return (jlong) _hv_vcpu_get_context(cpu->vcpu);
 }
 
@@ -214,6 +228,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
     (JNIEnv *env, jclass clazz, jlong handle) {
     auto hypervisor = (t_hypervisor) handle;
     t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+    if (!cpu) return 0;
     return (jlong) cpu->cpu;
 }
 
@@ -236,6 +251,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return 0;
   return cpu->BRPs;
 }
 
@@ -248,6 +264,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return 0;
   return cpu->WRPs;
 }
 
@@ -260,6 +277,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jboolean status) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return;
   uint64_t mdscr_el1 = 0;
   uint64_t cpsr = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_MDSCR_EL1, &mdscr_el1));
@@ -311,6 +329,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jint n, jlong dbgwcr, jlong dbgwvr) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return;
   if(n < 0 || n >= cpu->WRPs || n >= 16) {
     abort();
     return;
@@ -328,6 +347,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jint n, jlong address) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return;
   if(n < 0 || n >= cpu->BRPs || n >= 16) {
     abort();
     return;
@@ -345,6 +365,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jint n) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return;
   if(n < 0 || n >= cpu->BRPs || n >= 16) {
     abort();
     return;
@@ -399,6 +420,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jlong pc) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return -1;
 
   if(hypervisor->is64Bit) {
     uint32_t cpsr = PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL0t;
@@ -414,6 +436,7 @@ static void destroy_hypervisor_cpu(void *data) {
 //  printf("destroy_hypervisor_cpu data=%p\n", data);
   auto cpu = (t_hypervisor_cpu) data;
   HYP_ASSERT_SUCCESS(hv_vcpu_destroy(cpu->vcpu));
+  vcpu_count.fetch_sub(1);
   free(cpu);
 }
 
@@ -695,6 +718,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   }
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return -1;
   auto reg = (hv_reg_t) (HV_REG_X0 + index);
   HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, reg, value));
   return 0;
@@ -745,6 +769,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return -1;
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, value));
   return 0;
 }
@@ -758,6 +783,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return -1;
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, value));
   return 0;
 }
@@ -783,6 +809,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return -1;
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, value));
   return 0;
 }
@@ -801,6 +828,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hyper
   }
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return nullptr;
   auto reg = (hv_simd_fp_reg_t) (HV_SIMD_FP_REG_Q0 + index);
   hv_simd_fp_uchar16_t fp;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_simd_fp_reg(cpu->vcpu, reg, &fp));
@@ -824,6 +852,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   }
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return -1;
   jbyte *bytes = env->GetByteArrayElements(vector, nullptr);
   hv_simd_fp_uchar16_t fp;
   memcpy(&fp, bytes, 16);
@@ -855,7 +884,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
       char msg[256];
       snprintf(msg, sizeof(msg), "mem_write failed[%s->%s:%d]: vaddr=%p, address=%p, size=%d", __FILE__, __func__, __LINE__, (void*)vaddr, (void*)address, size);
       env->ReleaseByteArrayElements(bytes, data, JNI_ABORT);
-      env->ThrowNew(cBackendException, msg);
+      env->ThrowNew(cHypervisorException, msg);
       return 1;
     }
     char *dest = &addr[start];
@@ -888,7 +917,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hyper
       char msg[256];
       snprintf(msg, sizeof(msg), "mem_read failed[%s->%s:%d]: vaddr=%p, address=%p, size=%d", __FILE__, __func__, __LINE__, (void*)vaddr, (void*)address, size);
       env->DeleteLocalRef(bytes);
-      env->ThrowNew(cBackendException, msg);
+      env->ThrowNew(cHypervisorException, msg);
       return nullptr;
     }
     auto *src = (jbyte *)&addr[start];
@@ -912,6 +941,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
   }
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return -1;
   uint64_t value = 0;
   auto reg = (hv_reg_t) (HV_REG_X0 + index);
   HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, reg, &value));
@@ -938,6 +968,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
   (JNIEnv *env, jclass clazz, jlong handle) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return 0;
   uint64_t pc = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &pc));
   return (jlong) pc;
@@ -952,6 +983,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
   (JNIEnv *env, jclass clazz, jlong handle) {
   auto hypervisor = (t_hypervisor) handle;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return 0;
   uint64_t cpsr = 0;
   HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
   return (jlong) cpsr;
@@ -967,6 +999,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   auto hypervisor = (t_hypervisor) handle;
   auto ctx = (t_cpu_context) context;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return;
   t_vcpu_context vcpu_context = get_vcpu_context(cpu);
   memcpy(vcpu_context, ctx->ctx, vcpu_context_size());
   hypervisor->sp = ctx->sp;
@@ -985,6 +1018,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   auto hypervisor = (t_hypervisor) handle;
   auto ctx = (t_cpu_context) context;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return;
   t_vcpu_context vcpu_context = get_vcpu_context(cpu);
   memcpy(ctx->ctx, vcpu_context, vcpu_context_size());
   ctx->sp = hypervisor->sp;
@@ -1050,12 +1084,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   handleException = env->GetMethodID(cHypervisorCallback, "handleException", "(JJJJ)Z");
   handleUnknownException = env->GetMethodID(cHypervisorCallback, "handleUnknownException", "(IJJJ)V");
 
-  jclass localBackendException = env->FindClass("com/github/unidbg/arm/backend/BackendException");
+  jclass localHypervisorException = env->FindClass("com/github/unidbg/arm/backend/hypervisor/HypervisorException");
   if (env->ExceptionCheck()) {
     return JNI_ERR;
   }
-  cBackendException = (jclass) env->NewGlobalRef(localBackendException);
-  env->DeleteLocalRef(localBackendException);
+  cHypervisorException = (jclass) env->NewGlobalRef(localHypervisorException);
+  env->DeleteLocalRef(localHypervisorException);
 
   return JNI_VERSION_1_6;
 }

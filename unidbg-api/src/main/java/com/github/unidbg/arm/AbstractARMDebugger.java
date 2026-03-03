@@ -688,10 +688,10 @@ public abstract class AbstractARMDebugger implements Debugger {
             }
         }
         if (line.startsWith("run") && runnable != null) {
+            String arg = line.substring(3).trim();
             try {
                 callbackRunning = true;
                 if (mcpServer != null) mcpServer.setDebugIdle(false);
-                String arg = line.substring(3).trim();
                 if (!arg.isEmpty()) {
                     String[] args = arg.split("\\s+");
                     runnable.runWithArgs(args);
@@ -699,6 +699,9 @@ public abstract class AbstractARMDebugger implements Debugger {
                     runnable.runWithArgs(null);
                 }
                 notifyExecutionCompleted();
+            } catch (Exception e) {
+                log.warn("runWithArgs failed: arg={}", arg, e);
+                notifyExecutionError(e);
             } finally {
                 callbackRunning = false;
                 if (mcpServer != null) mcpServer.setDebugIdle(true);
@@ -1427,6 +1430,15 @@ public abstract class AbstractARMDebugger implements Debugger {
         data.put("event", "execution_completed");
         mcpServer.queueEvent(data);
         mcpServer.broadcastNotification("execution_completed", data);
+    }
+
+    private void notifyExecutionError(Exception e) {
+        if (mcpServer == null) return;
+        JSONObject data = new JSONObject(true);
+        data.put("event", "execution_error");
+        data.put("error", e.getClass().getName() + ": " + (e.getMessage() != null ? e.getMessage() : e.toString()));
+        mcpServer.queueEvent(data);
+        mcpServer.broadcastNotification("execution_error", data);
     }
 
     public void notifyExecutionStarted(long address) {

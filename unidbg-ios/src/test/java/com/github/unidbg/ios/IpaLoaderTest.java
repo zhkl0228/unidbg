@@ -19,11 +19,14 @@ import com.github.unidbg.pointer.UnidbgPointer;
 import com.sun.jna.Pointer;
 
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class IpaLoaderTest implements EmulatorConfigurator {
 
     private Emulator<?> emulator;
     private Module module;
+    private ExecutorService executorService;
 
     public void testLoader() throws Exception {
         long start = System.currentTimeMillis();
@@ -50,11 +53,10 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                 IClassDumper classDumper = ClassDumper.getInstance(emulator);
                 System.out.println("dumpClass(" + className + "):\n" + classDumper.dumpClass(className));
             }
-        });
-        toolkit.addTool(new McpTool() {
+        }).addTool(new McpTool() {
             @Override public String name() { return "readVersion"; }
             @Override public String description() { return "Read the TelegramCoreVersionString from the executable"; }
-            @Override public void execute(String[] params) throws InterruptedException {
+            @Override public void execute(String[] params) {
                 Symbol sym = module.findSymbolByName("_TelegramCoreVersionString");
                 if (sym != null) {
                     Pointer pointer = UnidbgPointer.pointer(emulator, sym.getAddress());
@@ -62,13 +64,23 @@ public class IpaLoaderTest implements EmulatorConfigurator {
                         System.out.println("_TelegramCoreVersionString=" + pointer.getString(0));
                     }
                     if (emulator.getBackend().isHypervisor()) {
-                        IClassDumper classDumper = ClassDumper.getInstance(emulator);
-                        Thread thread = new Thread(() -> {
-                            String objcClass1 = classDumper.dumpClass("NSDate");
-                            System.out.printf("[%s]maxVcpuCount=%d\n%s%n", Thread.currentThread().getName(), Hypervisor.getMaxVcpuCount(), objcClass1);
-                        });
-                        thread.start();
-                        thread.join();
+                        final int maxVcpuCount = Hypervisor.getMaxVcpuCount();
+                        if (executorService == null) {
+                            executorService = Executors.newFixedThreadPool(maxVcpuCount - 1);
+                        }
+                        for(int i = 0; i < maxVcpuCount; i++) {
+                            executorService.submit(() -> {
+                                try {
+                                    synchronized (IpaLoaderTest.this) {
+                                        IClassDumper classDumper = ClassDumper.getInstance(emulator);
+                                        String objcClass1 = classDumper.dumpClass("NSDate");
+                                        System.out.printf("[%s]maxVcpuCount=%d\n%s%n", Thread.currentThread().getName(), Hypervisor.getMaxVcpuCount(), objcClass1);
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace(System.err);
+                                }
+                            });
+                        }
                     }
                 } else {
                     System.out.println("Symbol _TelegramCoreVersionString not found");
@@ -76,6 +88,9 @@ public class IpaLoaderTest implements EmulatorConfigurator {
             }
         });
         toolkit.run(emulator.attach());
+        if (executorService != null) {
+            executorService.shutdown();
+        }
         emulator.close();
     }
 
