@@ -262,9 +262,34 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
             prot = mMapListener.onProtect(address, aligned, prot);
         }
         backend.mem_protect(address, aligned, prot);
-        MemoryMap map = memoryMap.get(address);
-        if (map != null && map.size == aligned) {
-            map.prot = prot;
+
+        long protEnd = address + aligned;
+        List<MemoryMap> affected = new ArrayList<>();
+        for (MemoryMap m : memoryMap.values()) {
+            if (address < m.base + m.size && protEnd > m.base) {
+                affected.add(m);
+            }
+        }
+        for (MemoryMap map : affected) {
+            long mapEnd = map.base + map.size;
+            if (address <= map.base && protEnd >= mapEnd) {
+                map.prot = prot;
+            } else if (address <= map.base) {
+                memoryMap.remove(map.base);
+                memoryMap.put(map.base, new MemoryMap(map.base, protEnd - map.base, prot));
+                memoryMap.put(protEnd, new MemoryMap(protEnd, mapEnd - protEnd, map.prot));
+            } else if (protEnd >= mapEnd) {
+                int oldProt = map.prot;
+                memoryMap.remove(map.base);
+                memoryMap.put(map.base, new MemoryMap(map.base, address - map.base, oldProt));
+                memoryMap.put(address, new MemoryMap(address, mapEnd - address, prot));
+            } else {
+                int oldProt = map.prot;
+                memoryMap.remove(map.base);
+                memoryMap.put(map.base, new MemoryMap(map.base, address - map.base, oldProt));
+                memoryMap.put(address, new MemoryMap(address, (long) aligned, prot));
+                memoryMap.put(protEnd, new MemoryMap(protEnd, mapEnd - protEnd, oldProt));
+            }
         }
         return 0;
     }
