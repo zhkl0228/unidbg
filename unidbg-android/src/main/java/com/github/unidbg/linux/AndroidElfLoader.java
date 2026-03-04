@@ -408,7 +408,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                                 if (mMapListener != null) {
                                     mMapListener.onMap(base, off, UnicornConst.UC_PROT_NONE);
                                 }
-                                if (memoryMap.put(base, new MemoryMap(base, (int) off, UnicornConst.UC_PROT_NONE)) != null) {
+                                if (memoryMap.put(base, new MemoryMap(base, off, UnicornConst.UC_PROT_NONE)) != null) {
                                     log.warn("mem_map replace exists memory map base={}", Long.toHexString(base));
                                 }
                             }
