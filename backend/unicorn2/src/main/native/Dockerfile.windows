@@ -1,0 +1,46 @@
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+    gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
+    mingw-w64-x86-64-dev \
+    cmake make git pkg-config \
+    default-jdk-headless && \
+    apt-get clean
+
+RUN mkdir -p /build/win-jni && \
+    cat > /build/win-jni/jni_md.h << 'JNIEOF'
+#ifndef _JAVASOFT_JNI_MD_H_
+#define _JAVASOFT_JNI_MD_H_
+
+#define JNIEXPORT __declspec(dllexport)
+#define JNIIMPORT __declspec(dllimport)
+#define JNICALL __stdcall
+
+typedef long jint;
+typedef long long jlong;
+typedef signed char jbyte;
+
+#endif
+JNIEOF
+
+RUN git clone --depth 1 -b unicorn2 https://github.com/zhkl0228/unicorn /build/unicorn
+
+WORKDIR /build/unicorn
+RUN mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release \
+             -DCMAKE_TOOLCHAIN_FILE=../mingw-w64.cmake \
+             -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+             -DUNICORN_ARCH="arm;aarch64" && \
+    make -j$(nproc)
+
+WORKDIR /build/jni
+COPY *.c *.h ./
+
+RUN JNI_INC="$(find /usr/lib/jvm -path '*/include/jni.h' -printf '%h\n' | head -1)" && \
+    x86_64-w64-mingw32-gcc -shared -O3 -static -DNDEBUG \
+      -I /build/unicorn/include \
+      -I "$JNI_INC" -I /build/win-jni \
+      unicorn.c sample_arm.c sample_arm64.c \
+      /build/unicorn/build/libunicorn.a \
+      -lws2_32 -lpthread \
+      -o unicorn.dll

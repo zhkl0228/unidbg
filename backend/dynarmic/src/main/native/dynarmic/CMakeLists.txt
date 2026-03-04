@@ -27,5 +27,10 @@ target_link_libraries(dynarmic PRIVATE
     ${DYNARMIC_BUILD}/src/dynarmic/libdynarmic.a
     ${DYNARMIC_BUILD}/externals/mcl/src/libmcl.a
     ${DYNARMIC_BUILD}/externals/fmt/libfmt.a
-    ${DYNARMIC_BUILD}/externals/zydis/libZydis.a
 )
+
+if(EXISTS "${DYNARMIC_BUILD}/externals/zydis/libZydis.a")
+    target_link_libraries(dynarmic PRIVATE
+        ${DYNARMIC_BUILD}/externals/zydis/libZydis.a
+    )
+endif()

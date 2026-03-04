@@ -1460,7 +1460,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem
   for (khint_t k = kh_begin(memory); k < kh_end(memory); k++) {
     if(kh_exist(memory, k)) {
       t_memory_page page = kh_value(memory, k);
+#ifdef __APPLE__
       if(mincore(page->addr, DYN_PAGE_SIZE, reinterpret_cast<char *>(vec)) == 0) {
+#else
+      if(mincore(page->addr, DYN_PAGE_SIZE, vec) == 0) {
+#endif
         for(size_t i = 0; i < pages_per_dyn; i++) {
           if(vec[i] & 1) {
             resident += sys_page_size;

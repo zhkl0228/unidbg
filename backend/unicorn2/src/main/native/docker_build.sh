@@ -25,6 +25,21 @@ build_platform() {
     echo
 }
 
+build_windows() {
+    echo "=== Building for windows_64 (MinGW cross-compilation) ==="
+    docker build -f Dockerfile.windows -t "${IMAGE_NAME}-windows_64" .
+
+    echo "Extracting unicorn.dll..."
+    mkdir -p "$RESOURCES_DIR/windows_64"
+    CONTAINER_ID=$(docker create "${IMAGE_NAME}-windows_64")
+    docker cp "$CONTAINER_ID:/build/jni/unicorn.dll" "$RESOURCES_DIR/windows_64/unicorn.dll"
+    docker rm "$CONTAINER_ID" > /dev/null
+
+    echo "Done: $RESOURCES_DIR/windows_64/unicorn.dll"
+    ls -l "$RESOURCES_DIR/windows_64/unicorn.dll"
+    echo
+}
+
 TARGET=${1:-all}
 
 case "$TARGET" in
@@ -34,12 +49,16 @@ case "$TARGET" in
     linux_64)
         build_platform linux/amd64 linux_64
         ;;
+    windows_64)
+        build_windows
+        ;;
     all)
         build_platform linux/arm64 linux_arm64
         build_platform linux/amd64 linux_64
+        build_windows
         ;;
     *)
-        echo "Usage: $0 [linux_arm64|linux_64|all]"
+        echo "Usage: $0 [linux_arm64|linux_64|windows_64|all]"
         exit 1
         ;;
 esac

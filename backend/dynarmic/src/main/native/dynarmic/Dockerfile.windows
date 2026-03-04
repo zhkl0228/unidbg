@@ -1,0 +1,62 @@
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get install -y \
+    g++-mingw-w64-x86-64 \
+    cmake make git pkg-config \
+    default-jdk-headless \
+    libboost-dev && \
+    apt-get clean && \
+    ln -s /usr/include/boost /usr/x86_64-w64-mingw32/include/boost
+
+RUN mkdir -p /build/win-jni && \
+    cat > /build/win-jni/jni_md.h << 'JNIEOF'
+#ifndef _JAVASOFT_JNI_MD_H_
+#define _JAVASOFT_JNI_MD_H_
+
+#define JNIEXPORT __declspec(dllexport)
+#define JNIIMPORT __declspec(dllimport)
+#define JNICALL __stdcall
+
+typedef long jint;
+typedef long long jlong;
+typedef signed char jbyte;
+
+#endif
+JNIEOF
+
+RUN git clone --recursive --depth 1 https://github.com/zhkl0228/yuzu-dynarmic /build/dynarmic
+
+WORKDIR /build/dynarmic
+RUN mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release \
+             -DCMAKE_SYSTEM_NAME=Windows \
+             -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+             -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+             -DCMAKE_FIND_ROOT_PATH=/usr/x86_64-w64-mingw32 \
+             -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+             -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+             -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+             -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+             -DDYNARMIC_TESTS=OFF \
+             -DDYNARMIC_WARNINGS_AS_ERRORS=OFF \
+             -DDYNARMIC_USE_BUNDLED_EXTERNALS=ON \
+             -DBoost_INCLUDE_DIR=/usr/x86_64-w64-mingw32/include && \
+    make -j$(nproc)
+
+WORKDIR /build/jni
+COPY dynarmic.cpp arm_dynarmic_cp15.cpp mman.c \
+     dynarmic.h arm_dynarmic_cp15.h mman.h khash.h \
+     com_github_unidbg_arm_backend_dynarmic_Dynarmic.h ./
+
+RUN JNI_INC="$(find /usr/lib/jvm -path '*/include/jni.h' -printf '%h\n' | head -1)" && \
+    x86_64-w64-mingw32-g++ -shared -O2 -static -std=c++20 -DDYNARMIC_MASTER \
+      -I /build/dynarmic/src \
+      -I /build/dynarmic/externals/fmt/include \
+      -I "$JNI_INC" -I /build/win-jni \
+      dynarmic.cpp arm_dynarmic_cp15.cpp mman.c \
+      /build/dynarmic/build/src/dynarmic/libdynarmic.a \
+      /build/dynarmic/build/externals/mcl/src/libmcl.a \
+      /build/dynarmic/build/externals/fmt/libfmt.a \
+      /build/dynarmic/build/externals/zydis/libZydis.a \
+      -lws2_32 -lpthread \
+      -o dynarmic.dll
