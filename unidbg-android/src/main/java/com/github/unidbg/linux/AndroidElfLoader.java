@@ -765,7 +765,18 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 log.debug("mmap2 MAP_FIXED start=0x{}, length={}, prot={}", Long.toHexString(start), length, prot);
             }
 
-            munmap(start, length);
+            boolean hasOverlap = false;
+            for (MemoryMap map : memoryMap.values()) {
+                if (start < map.base + map.size && start + aligned > map.base) {
+                    hasOverlap = true;
+                    break;
+                }
+            }
+            if (hasOverlap) {
+                munmap(start, length);
+            } else if (log.isDebugEnabled()) {
+                log.debug("mmap2 MAP_FIXED no existing mapping at start=0x{}", Long.toHexString(start));
+            }
             backend.mem_map(start, aligned, prot);
             if (mMapListener != null) {
                 mMapListener.onMap(start, aligned, prot);
