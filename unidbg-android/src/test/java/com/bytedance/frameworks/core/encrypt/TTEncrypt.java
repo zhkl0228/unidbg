@@ -6,6 +6,7 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
 import com.github.unidbg.arm.HookStatus;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
 import com.github.unidbg.arm.context.Arm32RegisterContext;
 import com.github.unidbg.arm.context.RegisterContext;
@@ -73,6 +74,8 @@ public class TTEncrypt {
 
         byte[] data = test.ttEncrypt();
         Inspector.inspect(data, "ttEncrypt");
+        Backend backend = test.emulator.getBackend();
+        System.out.printf("allocatedSize=0x%x, residentSize=0x%x%n", backend.getMemAllocatedSize(), backend.getMemResidentSize());
 
         test.destroy();
     }
