@@ -89,6 +89,11 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
         this.mMapListener = listener;
     }
 
+    @Override
+    public MMapListener getMMapListener() {
+        return mMapListener;
+    }
+
     protected void setMMapBaseAddress(long address) {
         this.mmapBaseAddress = address;
 

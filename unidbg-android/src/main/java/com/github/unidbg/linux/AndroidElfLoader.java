@@ -782,7 +782,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             }
             backend.mem_map(addr, aligned, prot);
             if (mMapListener != null) {
-                mMapListener.onMap(start, aligned, prot);
+                mMapListener.onMap(addr, aligned, prot);
             }
             if (memoryMap.put(addr, new MemoryMap(addr, aligned, prot)) != null) {
                 log.warn("memoryMap mmap2 replace exists memory map addr={}", Long.toHexString(addr));

@@ -11,6 +11,7 @@ import com.github.unidbg.listener.TraceReadListener;
 import com.github.unidbg.listener.TraceSystemMemoryWriteListener;
 import com.github.unidbg.listener.TraceWriteListener;
 import com.github.unidbg.memory.Memory;
+import com.github.unidbg.memory.MemoryTracker;
 import com.github.unidbg.memory.SvcMemory;
 import com.github.unidbg.serialize.Serializable;
 import com.github.unidbg.spi.ArmDisassembler;
@@ -122,6 +123,14 @@ public interface Emulator<T extends NewFileIO> extends Closeable, ArmDisassemble
     <V extends RegisterContext> V getContext();
 
     Unwinder getUnwinder();
+
+    /**
+     * Start tracking memory allocations (mmap/munmap/brk) for leak detection.
+     * Use with try-with-resources: close() restores previous listener and prints the leak report.
+     */
+    default MemoryTracker traceMemoryLeaks() {
+        return new MemoryTracker(this);
+    }
 
     void pushContext(int off);
     int popContext();

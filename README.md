@@ -20,6 +20,7 @@ Use it at your own risk !
 - Support [dynarmic](https://github.com/MerryMage/dynarmic) fast backend.
 - Support Apple M1 hypervisor, the fastest ARM64 backend.
 - Support Linux KVM backend with Raspberry Pi B4.
+- Memory leak detection for emulated native code with guest backtrace and host stack trace.
 
 ## MCP Debugger (AI Integration)
 
@@ -216,6 +217,46 @@ toolkit.run(emulator.attach());
 Once the MCP server is started, AI can call these tools via MCP to run emulations with custom parameters, set breakpoints, trace execution, and inspect results — all without restarting the process.
 
 > **Low-level API**: You can also use `Debugger.addMcpTool()` + `Debugger.run(DebugRunnable)` directly for full control. `McpToolkit` is a higher-level wrapper that eliminates if-else dispatch.
+
+## Memory Leak Detection
+
+Track guest-side memory allocations (mmap/munmap/brk) to detect leaks in emulated native code. Use `try-with-resources` — tracking starts on creation, and the leak report is printed automatically on close.
+
+```java
+try (MemoryTracker tracker = emulator.traceMemoryLeaks()) {
+    module.callFunction(emulator, "targetFunction", arg1, arg2);
+}
+```
+
+Each leaked block includes guest ARM backtrace (module+offset+symbol) and host Java stack trace. Sample output:
+
+```
+=== Memory Leak Report ===
+Tracking duration: 42ms
+Total allocations: 5
+Total deallocations: 3
+Leaked blocks: 2
+Total leaked size: 32768 bytes (32.0 KB)
+
+--- Leak #1 ---
+Address: 0x40001000, Size: 16384 (16.0 KB), Perms: rw-
+Guest Backtrace:
+  #0 0x40123456 libexample.so+0x3456 (malloc+0x12)
+  #1 0x40124000 libexample.so+0x4000 (doSomething+0x48)
+Host Stack Trace:
+  com.github.unidbg.linux.AndroidElfLoader.mmap2(AndroidElfLoader.java:785)
+  ...
+```
+
+You can also access the report programmatically before close:
+
+```java
+try (MemoryTracker tracker = emulator.traceMemoryLeaks()) {
+    module.callFunction(emulator, "targetFunction", arg1, arg2);
+    List<AllocationRecord> leaks = tracker.getLeaks();
+    assert leaks.isEmpty() : "Memory leak detected!";
+}
+```
 
 ## Worker Pool
 
