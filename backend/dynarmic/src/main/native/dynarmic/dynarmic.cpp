@@ -1,8 +1,10 @@
 #include <array>
+#include <csetjmp>
 #include <cstdint>
 #include <cstdio>
 #include <exception>
 #include <iostream>
+#include <string>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,8 +17,41 @@
 #include <sys/errno.h>
 #endif
 
+#include <fmt/format.h>
+
 #include "dynarmic.h"
 #include "arm_dynarmic_cp15.h"
+
+static thread_local jmp_buf t_jmp_buf;
+static thread_local bool t_jmp_set = false;
+static thread_local char t_jmp_msg[4096];
+
+struct dynarmic;
+static thread_local struct dynarmic *t_current_dynarmic = NULL;
+
+static void append_guest_context(std::string &msg);
+
+namespace mcl::detail {
+[[noreturn]] void assert_terminate_impl(const char* expr_str, fmt::string_view msg, fmt::format_args args) {
+    if (t_jmp_set) {
+        std::string full_msg = fmt::format("assertion failed: {}\nMessage: ", expr_str);
+        full_msg += fmt::vformat(msg, args);
+
+        append_guest_context(full_msg);
+
+        size_t len = full_msg.size();
+        if (len >= sizeof(t_jmp_msg)) len = sizeof(t_jmp_msg) - 1;
+        memcpy(t_jmp_msg, full_msg.c_str(), len);
+        t_jmp_msg[len] = '\0';
+        t_jmp_set = false;
+        longjmp(t_jmp_buf, 1);
+    }
+    fmt::print(stderr, "assertion failed: {}\nMessage: ", expr_str);
+    fmt::vprint(stderr, msg, args);
+    std::fflush(stderr);
+    std::terminate();
+}
+}
 
 static JavaVM* cachedJVM = NULL;
 static jmethodID callSVC = NULL;
@@ -561,6 +596,38 @@ typedef struct dynarmic {
   Dynarmic::A32::Jit *jit32;
   Dynarmic::ExclusiveMonitor *monitor;
 } *t_dynarmic;
+
+static void dump_block_instructions(std::string &msg, khash_t(memory) *memory, u64 pc,
+                                    size_t num_page_table_entries, void **page_table) {
+    msg += fmt::format("\nGuest block PC: 0x{:x}", pc);
+    for (int i = -10; i <= 20; i++) {
+        u64 addr = pc + (u64)((int64_t)i * 4);
+        void *p = get_memory(memory, addr, num_page_table_entries, page_table);
+        if (!p) continue;
+        u32 inst = *(u32 *)p;
+        u32 top8 = (inst >> 24) & 0xFF;
+        bool is_fp = (top8 & 0x5E) == 0x0E || (top8 & 0x5E) == 0x1E;
+        const char *marker = (i == 0) ? " <-- PC" : (is_fp ? " <-- FP/SIMD" : "");
+        msg += fmt::format("\n  0x{:x}: 0x{:08x}{}", addr, inst, marker);
+        if (i > 0 && ((inst & 0xFC000000) == 0x14000000
+                   || (inst & 0xFFFFFC1F) == 0xD65F0000
+                   || (inst & 0xFF000010) == 0x54000000))
+            break;
+    }
+}
+
+static void append_guest_context(std::string &msg) {
+    struct dynarmic *d = t_current_dynarmic;
+    if (!d) return;
+
+    if (d->is64Bit && d->jit64) {
+        u64 pc = d->jit64->GetPC();
+        dump_block_instructions(msg, d->memory, pc, d->num_page_table_entries, d->page_table);
+    } else if (!d->is64Bit && d->jit32) {
+        u32 pc = d->jit32->Regs()[15];
+        dump_block_instructions(msg, d->memory, (u64)pc, d->num_page_table_entries, d->page_table);
+    }
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -1279,12 +1346,33 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_1start
   (JNIEnv *env, jclass clazz, jlong handle, jlong pc) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
+  if (setjmp(t_jmp_buf) != 0) {
+    fprintf(stderr, "%s\n", t_jmp_msg);
+    jobject cb = NULL;
+    jlong guest_pc = 0;
+    if (dynarmic->is64Bit && dynarmic->cb64) {
+      cb = dynarmic->cb64->callback;
+      if (dynarmic->jit64) guest_pc = (jlong)dynarmic->jit64->GetPC();
+    } else if (!dynarmic->is64Bit && dynarmic->cb32) {
+      cb = dynarmic->cb32->callback;
+      if (dynarmic->jit32) guest_pc = (jlong)dynarmic->jit32->Regs()[15];
+    }
+    t_current_dynarmic = NULL;
+    if (cb) {
+      env->CallVoidMethod(cb, handleExceptionRaised, guest_pc, (jint)0);
+    }
+    env->ThrowNew(cDynarmicException, t_jmp_msg);
+    return -1;
+  }
+  t_current_dynarmic = dynarmic;
+  t_jmp_set = true;
   if(dynarmic->is64Bit) {
     Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
       jit->SetPC(pc);
       jit->Run();
     } else {
+      t_jmp_set = false;
       return 1;
     }
   } else {
@@ -1298,9 +1386,12 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
       jit->Regs()[15] = (u32) (pc & ~1);
       jit->Run();
     } else {
+      t_jmp_set = false;
       return 1;
     }
   }
+  t_jmp_set = false;
+  t_current_dynarmic = NULL;
   return 0;
 }
 
