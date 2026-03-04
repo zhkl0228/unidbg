@@ -3,8 +3,6 @@ package com.github.unidbg.arm.backend;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
-import unicorn.Arm64Const;
-import unicorn.ArmConst;
 import unicorn.Unicorn;
 import unicorn.UnicornConst;
 import unicorn.UnicornException;
@@ -40,16 +38,8 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @SuppressWarnings("deprecation")
     @Override
     public byte[] reg_read_vector(int regId) throws BackendException {
+        checkVectorRegId(regId, is64Bit);
         try {
-            if (is64Bit) {
-                if (regId < Arm64Const.UC_ARM64_REG_Q0 || regId > Arm64Const.UC_ARM64_REG_Q31) {
-                    throw new UnsupportedOperationException("regId=" + regId);
-                }
-            } else {
-                if (regId < ArmConst.UC_ARM_REG_D0 || regId > ArmConst.UC_ARM_REG_D15) {
-                    throw new UnsupportedOperationException("regId=" + regId);
-                }
-            }
             return unicorn.reg_read(regId, 16);
         } catch (UnicornException e) {
             throw new BackendException(e);
@@ -62,16 +52,8 @@ public class UnicornBackend extends AbstractBackend implements Backend {
         if (vector.length != 16) {
             throw new IllegalStateException("Invalid vector size");
         }
+        checkVectorRegId(regId, is64Bit);
         try {
-            if (is64Bit) {
-                if (regId < Arm64Const.UC_ARM64_REG_Q0 || regId > Arm64Const.UC_ARM64_REG_Q31) {
-                    throw new UnsupportedOperationException("regId=" + regId);
-                }
-            } else {
-                if (regId < ArmConst.UC_ARM_REG_D0 || regId > ArmConst.UC_ARM_REG_D15) {
-                    throw new UnsupportedOperationException("regId=" + regId);
-                }
-            }
             unicorn.reg_write(regId, vector);
         } catch (UnicornException e) {
             throw new BackendException(e);
@@ -167,18 +149,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.CodeHook() {
-                @Override
-                public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, user);
-                }
-            }, begin, end, user_data);
-            callback.onAttach(new UnHook() {
-                @Override
-                public void unhook() {
-                    unHook.unhook();
-                }
-            });
+            final Unicorn.UnHook unHook = unicorn.hook_add((unicorn.CodeHook) (u, address, size, user) ->
+                    callback.hook(UnicornBackend.this, address, size, user), begin, end, user_data);
+            callback.onAttach(unHook::unhook);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
@@ -198,12 +171,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
                     callback.hook(UnicornBackend.this, address, size, user);
                 }
             }, begin, end, user_data);
-            callback.onAttach(new UnHook() {
-                @Override
-                public void unhook() {
-                    unHook.unhook();
-                }
-            });
+            callback.onAttach(unHook::unhook);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
@@ -212,18 +180,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final ReadHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.ReadHook() {
-                @Override
-                public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, user);
-                }
-            }, begin, end, user_data);
-            callback.onAttach(new UnHook() {
-                @Override
-                public void unhook() {
-                    unHook.unhook();
-                }
-            });
+            final Unicorn.UnHook unHook = unicorn.hook_add((unicorn.ReadHook) (u, address, size, user) ->
+                    callback.hook(UnicornBackend.this, address, size, user), begin, end, user_data);
+            callback.onAttach(unHook::unhook);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
@@ -232,18 +191,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final WriteHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.WriteHook() {
-                @Override
-                public void hook(Unicorn u, long address, int size, long value, Object user) {
-                    callback.hook(UnicornBackend.this, address, size, value, user);
-                }
-            }, begin, end, user_data);
-            callback.onAttach(new UnHook() {
-                @Override
-                public void unhook() {
-                    unHook.unhook();
-                }
-            });
+            final Unicorn.UnHook unHook = unicorn.hook_add((u, address, size, value, user) ->
+                    callback.hook(UnicornBackend.this, address, size, value, user), begin, end, user_data);
+            callback.onAttach(unHook::unhook);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
@@ -264,19 +214,10 @@ public class UnicornBackend extends AbstractBackend implements Backend {
 
     private void hookEventMem(final EventMemHook callback, final int type, Object user_data, final EventMemHook.UnmappedType unmappedType) {
         try {
-            Map<Integer, Unicorn.UnHook> map = unicorn.hook_add(new unicorn.EventMemHook() {
-                @Override
-                public boolean hook(Unicorn u, long address, int size, long value, Object user) {
-                    return callback.hook(UnicornBackend.this, address, size, value, user, unmappedType);
-                }
-            }, type, user_data);
+            Map<Integer, Unicorn.UnHook> map = unicorn.hook_add((u, address, size, value, user) ->
+                    callback.hook(UnicornBackend.this, address, size, value, user, unmappedType), type, user_data);
             for (final Unicorn.UnHook unHook : map.values()) {
-                callback.onAttach(new UnHook() {
-                    @Override
-                    public void unhook() {
-                        unHook.unhook();
-                    }
-                });
+                callback.onAttach(unHook::unhook);
             }
         } catch (UnicornException e) {
             throw new BackendException(e);
@@ -286,12 +227,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final InterruptHook callback, Object user_data) throws BackendException {
         try {
-            unicorn.hook_add(new unicorn.InterruptHook() {
-                @Override
-                public void hook(Unicorn u, int intno, Object user) {
-                    int swi = decodeSWI(emulator, UnicornBackend.this, is64Bit);
-                    callback.hook(UnicornBackend.this, intno, swi, user);
-                }
+            unicorn.hook_add((u, intno, user) -> {
+                int swi = decodeSWI(emulator, UnicornBackend.this, is64Bit);
+                callback.hook(UnicornBackend.this, intno, swi, user);
             }, user_data);
         } catch (UnicornException e) {
             throw new BackendException(e);
@@ -301,18 +239,9 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final BlockHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.BlockHook() {
-                @Override
-                public void hook(Unicorn u, long address, int size, Object user) {
-                    callback.hookBlock(UnicornBackend.this, address, size, user);
-                }
-            }, begin, end, user_data);
-            callback.onAttach(new UnHook() {
-                @Override
-                public void unhook() {
-                    unHook.unhook();
-                }
-            });
+            final Unicorn.UnHook unHook = unicorn.hook_add((unicorn.BlockHook) (u, address, size, user) ->
+                    callback.hookBlock(UnicornBackend.this, address, size, user), begin, end, user_data);
+            callback.onAttach(unHook::unhook);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }

@@ -59,6 +59,18 @@ public abstract class AbstractBackend implements Backend {
         }
     }
 
+    protected static void checkVectorRegId(int regId, boolean is64Bit) {
+        if (is64Bit) {
+            if (regId < Arm64Const.UC_ARM64_REG_Q0 || regId > Arm64Const.UC_ARM64_REG_Q31) {
+                throw new UnsupportedOperationException("regId=" + regId);
+            }
+        } else {
+            if (regId < ArmConst.UC_ARM_REG_D0 || regId > ArmConst.UC_ARM_REG_D15) {
+                throw new UnsupportedOperationException("regId=" + regId);
+            }
+        }
+    }
+
     protected static int decodeSWI(Emulator<?> emulator, Backend backend, boolean is64Bit) {
         if (is64Bit) {
             UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
