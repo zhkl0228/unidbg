@@ -116,7 +116,7 @@ public:
 //            printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x, value=0x%x\n", __FILE__, __func__, __LINE__, vaddr, dest[0]);
             return dest[0];
         } else {
-            printf("MemoryRead32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
             JNIEnv *env;
             cachedJVM->AttachCurrentThread((void **)&env, NULL);
             env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 4);
@@ -136,6 +136,10 @@ public:
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead64[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 8);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }
@@ -165,6 +169,10 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 2);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
     }
@@ -197,6 +205,10 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite64[%s->%s:%d]: vaddr=0x%x\n", __FILE__, __func__, __LINE__, vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 8);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
     }
@@ -322,6 +334,10 @@ public:
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 2);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }
@@ -337,6 +353,10 @@ public:
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 4);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }
@@ -352,6 +372,10 @@ public:
             return dest[0];
         } else {
             fprintf(stderr, "MemoryRead64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryReadFailed, vaddr, 8);
+            cachedJVM->DetachCurrentThread();
             abort();
             return 0;
         }
@@ -366,6 +390,10 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite8[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 1);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
     }
@@ -380,9 +408,12 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite16[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 2);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
-
     }
     void MemoryWrite32(u64 vaddr, u32 value) override {
         if(vaddr & 3) {
@@ -395,6 +426,10 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite32[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 4);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
     }
@@ -409,6 +444,10 @@ public:
             dest[0] = value;
         } else {
             fprintf(stderr, "MemoryWrite64[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+            JNIEnv *env;
+            cachedJVM->AttachCurrentThread((void **)&env, NULL);
+            env->CallVoidMethod(callback, handleMemoryWriteFailed, vaddr, 8);
+            cachedJVM->DetachCurrentThread();
             abort();
         }
     }
@@ -1243,24 +1282,21 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
   if(dynarmic->is64Bit) {
     Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      Dynarmic::A64::Jit *cpu = jit;
-      cpu->SetPC(pc);
-      cpu->Run();
+      jit->SetPC(pc);
+      jit->Run();
     } else {
       return 1;
     }
   } else {
     Dynarmic::A32::Jit *jit = dynarmic->jit32;
     if(jit) {
-      Dynarmic::A32::Jit *cpu = jit;
-      bool thumb = pc & 1;
       if(pc & 1) {
-        cpu->SetCpsr(0x00000030); // Thumb user mode
+        jit->SetCpsr(0x00000030); // Thumb user mode
       } else {
-        cpu->SetCpsr(0x000001d0); // Arm user mode
+        jit->SetCpsr(0x000001d0); // Arm user mode
       }
-      cpu->Regs()[15] = (u32) (pc & ~1);
-      cpu->Run();
+      jit->Regs()[15] = (u32) (pc & ~1);
+      jit->Run();
     } else {
       return 1;
     }
@@ -1279,16 +1315,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_emu_
   if(dynarmic->is64Bit) {
     Dynarmic::A64::Jit *jit = dynarmic->jit64;
     if(jit) {
-      Dynarmic::A64::Jit *cpu = jit;
-      cpu->HaltExecution();
+      jit->HaltExecution();
     } else {
       return 1;
     }
   } else {
     Dynarmic::A32::Jit *jit = dynarmic->jit32;
     if(jit) {
-      Dynarmic::A32::Jit *cpu = jit;
-      cpu->HaltExecution();
+      jit->HaltExecution();
     } else {
       return 1;
     }

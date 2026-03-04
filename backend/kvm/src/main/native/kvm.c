@@ -24,7 +24,7 @@ typedef struct kvm {
   void **page_table;
   t_kvm_cpu cpu;
   jobject callback;
-  bool stop_request;
+  volatile bool stop_request;
   uint64_t sp;
   uint64_t cpacr;
   uint64_t tpidr;
@@ -385,8 +385,9 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_nativeDestroy
       fprintf(stderr, "munmap failed[%s->%s:%d]: page_table=%p, ret=%d\n", __FILE__, __func__, __LINE__, kvm->page_table, ret);
     }
   }
+  int kvmFd = kvm->gKvmFd;
   free(kvm);
-  close(kvm->gKvmFd);
+  close(kvmFd);
 }
 
 /*
@@ -830,6 +831,12 @@ static hv_simd_fp_reg_t fgprs[] = {
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1write
   (JNIEnv *env, jclass clazz, jlong handle, jint index, jlong value) {
+  if(index < 0 || index > 30) {
+    char msg[128];
+    snprintf(msg, sizeof(msg), "reg_write invalid index: %d", index);
+    (*env)->ThrowNew(env, cKvmException, msg);
+    return -1;
+  }
   t_kvm kvm = (t_kvm) handle;
   t_kvm_cpu cpu = kvm->cpu;
   hv_reg_t reg = gprs[index];
@@ -844,6 +851,12 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1write
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_reg_1read
   (JNIEnv *env, jclass clazz, jlong handle, jint index) {
+  if(index < 0 || index > 30) {
+    char msg[128];
+    snprintf(msg, sizeof(msg), "reg_read invalid index: %d", index);
+    (*env)->ThrowNew(env, cKvmException, msg);
+    return -1;
+  }
   t_kvm kvm = (t_kvm) handle;
   t_kvm_cpu cpu = kvm->cpu;
   uint64_t value = 0;
