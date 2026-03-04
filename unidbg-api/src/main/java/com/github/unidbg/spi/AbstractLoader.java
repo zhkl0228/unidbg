@@ -195,8 +195,13 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
                 long size = aligned - removed.size;
                 while (size != 0) {
                     MemoryMap remove = memoryMap.remove(address);
+                    if (remove == null) {
+                        log.warn("munmap failed to find adjacent region at address=0x{}", Long.toHexString(address));
+                        break;
+                    }
                     if (removed.prot != remove.prot) {
-                        throw new IllegalStateException();
+                        log.warn("munmap prot mismatch: removed.prot={}, remove.prot={}, address=0x{}", removed.prot,
+                                remove.prot, Long.toHexString(address));
                     }
                     address += remove.size;
                     size -= remove.size;
