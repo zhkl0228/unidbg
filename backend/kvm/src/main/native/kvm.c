@@ -461,8 +461,9 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
   if(start_addr == NULL) {
     start_addr = (char *) mmap(NULL, memory_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if(start_addr == MAP_FAILED) {
-      fprintf(stderr, "mmap failed[%s->%s:%d]: start_addr=%p\n", __FILE__, __func__, __LINE__, start_addr);
-      abort();
+      char msg[256];
+      snprintf(msg, sizeof(msg), "mmap failed[%s->%s:%d]: memory_size=0x%llx, errno=%d, msg=%s", __FILE__, __func__, __LINE__, (unsigned long long)memory_size, errno, strerror(errno));
+      (*env)->ThrowNew(env, cKvmException, msg);
       return 0L;
     }
   }
@@ -470,8 +471,13 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
 //  printf("set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
 
   if(guest_phys_addr <= MMIO_TRAP_ADDRESS && guest_phys_addr + memory_size > MMIO_TRAP_ADDRESS) {
-    fprintf(stderr, "set_user_memory_region slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx, userspace_addr=0x%lx, addr=%p\n", slot, guest_phys_addr, memory_size, userspace_addr, start_addr);
-    abort();
+    char msg[256];
+    snprintf(msg, sizeof(msg), "set_user_memory_region MMIO conflict: slot=%d, guest_phys_addr=0x%lx, memory_size=0x%lx", slot, (unsigned long)guest_phys_addr, (unsigned long)memory_size);
+    if(userspace_addr == 0) {
+      munmap(start_addr, memory_size);
+    }
+    (*env)->ThrowNew(env, cKvmException, msg);
+    return 0L;
   }
 
   struct kvm_userspace_memory_region region = {
@@ -482,8 +488,12 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     .userspace_addr = (uint64_t)start_addr,
   };
   if (ioctl(kvm->gKvmFd, KVM_SET_USER_MEMORY_REGION, &region) == -1) {
-    fprintf(stderr, "set_user_memory_region failed start_addr=%p, guest_phys_addr=0x%lx\n", start_addr, guest_phys_addr);
-    abort();
+    char msg[256];
+    snprintf(msg, sizeof(msg), "set_user_memory_region ioctl failed: start_addr=%p, guest_phys_addr=0x%lx, errno=%d, msg=%s", start_addr, (unsigned long)guest_phys_addr, errno, strerror(errno));
+    if(userspace_addr == 0) {
+      munmap(start_addr, memory_size);
+    }
+    (*env)->ThrowNew(env, cKvmException, msg);
     return 0L;
   }
 //  printf("set_user_memory_region slot=0x%x, guest_phys_addr=0x%llx, memory_size=0x%llx, userspace_addr=%p\n", slot, guest_phys_addr, memory_size, start_addr);
@@ -966,8 +976,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1allo
     void *ctx = calloc(1, sizeof(struct context64));
     return (jlong) ctx;
   } else {
-    fprintf(stderr, "Doesn't support 32 bit\n");
-    abort();
+    (*env)->ThrowNew(env, cKvmException, "context_alloc: doesn't support 32 bit");
     return 0;
   }
 }
@@ -997,8 +1006,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1save(
         }
 
     }else{
-        fprintf(stderr, "Doesn't support 32 bit\n");
-        abort();
+        (*env)->ThrowNew(env, cKvmException, "context_save: doesn't support 32 bit");
         return;
     }
 }
@@ -1027,8 +1035,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1resto
             HYP_ASSERT_SUCCESS(hv_vcpu_set_simd_fp_reg(kvm->cpu, fgprs[i], ctx->fp_registers[i]));
         }
     }else{
-        fprintf(stderr, "Doesn't support 32 bit\n");
-        abort();
+        (*env)->ThrowNew(env, cKvmException, "context_restore: doesn't support 32 bit");
         return;
     }
 }

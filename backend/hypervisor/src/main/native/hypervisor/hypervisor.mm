@@ -332,7 +332,9 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   if (!cpu) return;
   if(n < 0 || n >= cpu->WRPs || n >= 16) {
-    abort();
+    char msg[128];
+    snprintf(msg, sizeof(msg), "install_watchpoint invalid n: %d, WRPs=%d", n, cpu->WRPs);
+    env->ThrowNew(cHypervisorException, msg);
     return;
   }
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgWcrRegs[n], dbgwcr));
@@ -350,7 +352,9 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   if (!cpu) return;
   if(n < 0 || n >= cpu->BRPs || n >= 16) {
-    abort();
+    char msg[128];
+    snprintf(msg, sizeof(msg), "install_hw_breakpoint invalid n: %d, BRPs=%d", n, cpu->BRPs);
+    env->ThrowNew(cHypervisorException, msg);
     return;
   }
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBcrRegs[n], 0x5));
@@ -368,7 +372,9 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   if (!cpu) return;
   if(n < 0 || n >= cpu->BRPs || n >= 16) {
-    abort();
+    char msg[128];
+    snprintf(msg, sizeof(msg), "disable_hw_breakpoint invalid n: %d, BRPs=%d", n, cpu->BRPs);
+    env->ThrowNew(cHypervisorException, msg);
     return;
   }
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBcrRegs[n], 0x0));
@@ -713,8 +719,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1write
   (JNIEnv *env, jclass clazz, jlong handle, jint index, jlong value) {
   if(index < 0 || index > 30) {
-    fprintf(stderr, "reg_write invalid index: %d\n", index);
-    abort();
+    char msg[128];
+    snprintf(msg, sizeof(msg), "reg_write invalid index: %d", index);
+    env->ThrowNew(cHypervisorException, msg);
     return -1;
   }
   auto hypervisor = (t_hypervisor) handle;
@@ -823,8 +830,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1read_1vector
   (JNIEnv *env, jclass, jlong handle, jint index) {
   if(index < 0 || index > 31) {
-    fprintf(stderr, "reg_read_vector invalid index: %d\n", index);
-    abort();
+    char msg[128];
+    snprintf(msg, sizeof(msg), "reg_read_vector invalid index: %d", index);
+    env->ThrowNew(cHypervisorException, msg);
     return nullptr;
   }
   auto hypervisor = (t_hypervisor) handle;
@@ -847,8 +855,9 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hyper
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1set_1vector
   (JNIEnv *env, jclass clazz, jlong handle, jint index, jbyteArray vector) {
   if(index < 0 || index > 31) {
-    fprintf(stderr, "reg_set_vector invalid index: %d\n", index);
-    abort();
+    char msg[128];
+    snprintf(msg, sizeof(msg), "reg_set_vector invalid index: %d", index);
+    env->ThrowNew(cHypervisorException, msg);
     return -1;
   }
   auto hypervisor = (t_hypervisor) handle;
@@ -936,8 +945,9 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hyper
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1read
   (JNIEnv *env, jclass clazz, jlong handle, jint index) {
   if(index < 0 || index > 30) {
-    fprintf(stderr, "reg_read invalid index: %d\n", index);
-    abort();
+    char msg[128];
+    snprintf(msg, sizeof(msg), "reg_read invalid index: %d", index);
+    env->ThrowNew(cHypervisorException, msg);
     return -1;
   }
   auto hypervisor = (t_hypervisor) handle;

@@ -926,11 +926,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
     if(jit) {
       return jit->GetPC();
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_read_pc64: jit64 is null");
       return 1;
     }
   } else {
-    abort();
+    env->ThrowNew(cDynarmicException, "reg_read_pc64: not 64-bit mode");
     return -1;
   }
 }
@@ -969,11 +969,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
     if(jit) {
       return jit->GetSP();
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_read_sp64: jit64 is null");
       return 1;
     }
   } else {
-    abort();
+    env->ThrowNew(cDynarmicException, "reg_read_sp64: not 64-bit mode");
     return -1;
   }
 }
@@ -991,11 +991,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
     if(jit) {
       return jit->GetPstate();
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_read_nzcv: jit64 is null");
       return 1;
     }
   } else {
-    abort();
+    env->ThrowNew(cDynarmicException, "reg_read_nzcv: not 64-bit mode");
     return -1;
   }
 }
@@ -1150,7 +1150,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
     if(jit) {
       return jit->GetRegister(index);
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_read: jit64 is null");
       return -1;
     }
   } else {
@@ -1158,7 +1158,7 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg
     if(jit) {
       return jit->Regs()[index];
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_read: jit32 is null");
       return -1;
     }
   }
@@ -1173,14 +1173,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    abort();
+    env->ThrowNew(cDynarmicException, "reg_read_cpsr: not 32-bit mode");
     return 1;
   } else {
     Dynarmic::A32::Jit *jit = dynarmic->jit32;
     if(jit) {
       return jit->Cpsr();
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_read_cpsr: jit32 is null");
       return -1;
     }
   }
@@ -1195,7 +1195,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
   (JNIEnv *env, jclass clazz, jlong handle, jint value) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    abort();
+    env->ThrowNew(cDynarmicException, "reg_write_cpsr: not 32-bit mode");
     return 1;
   } else {
     Dynarmic::A32::Jit *jit = dynarmic->jit32;
@@ -1203,7 +1203,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
       jit->SetCpsr(value);
       return 0;
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_write_cpsr: jit32 is null");
       return -1;
     }
   }
@@ -1218,7 +1218,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
   (JNIEnv *env, jclass clazz, jlong handle, jint value) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    abort();
+    env->ThrowNew(cDynarmicException, "reg_write_c13_c0_3: not 32-bit mode");
     return 1;
   } else {
     DynarmicCallbacks32 *cb32 = dynarmic->cb32;
@@ -1226,7 +1226,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_reg_
       cb32->cp15.get()->uro = value;
       return 0;
     } else {
-      abort();
+      env->ThrowNew(cDynarmicException, "reg_write_c13_c0_3: cb32 is null");
       return -1;
     }
   }
