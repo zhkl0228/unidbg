@@ -45,6 +45,9 @@ public class Dynarmic implements Closeable {
     private static native void context_restore(long handle, long context);
     public static native void free(long context);
 
+    private static native long mem_allocated_size(long handle);
+    private static native long mem_resident_size(long handle);
+
     private final long nativeHandle;
 
     public Dynarmic(boolean is64Bit) {
@@ -299,6 +302,14 @@ public class Dynarmic implements Closeable {
             throw new DynarmicException();
         }
         return ret;
+    }
+
+    public long getMemAllocatedSize() {
+        return mem_allocated_size(nativeHandle);
+    }
+
+    public long getMemResidentSize() {
+        return mem_resident_size(nativeHandle);
     }
 
     @Override

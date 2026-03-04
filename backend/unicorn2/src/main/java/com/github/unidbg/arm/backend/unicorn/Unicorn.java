@@ -373,6 +373,17 @@ public class Unicorn {
 
     private static native void context_restore(long handle, long context);
 
+    private static native long mem_allocated_size(long handle);
+    private static native long mem_resident_size(long handle);
+
+    public long getMemAllocatedSize() {
+        return mem_allocated_size(nativeHandle);
+    }
+
+    public long getMemResidentSize() {
+        return mem_resident_size(nativeHandle);
+    }
+
     public static native void testSampleArm();
     public static native void testSampleArm64();
 

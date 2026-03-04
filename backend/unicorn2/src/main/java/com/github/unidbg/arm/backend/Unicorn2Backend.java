@@ -430,6 +430,16 @@ class Unicorn2Backend extends AbstractBackend implements Backend {
         Unicorn.free(context);
     }
 
+    @Override
+    public long getMemAllocatedSize() {
+        return unicorn.getMemAllocatedSize();
+    }
+
+    @Override
+    public long getMemResidentSize() {
+        return unicorn.getMemResidentSize();
+    }
+
     private Unicorn.UnHook unHook;
 
     @Override

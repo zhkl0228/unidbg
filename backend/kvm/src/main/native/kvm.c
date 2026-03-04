@@ -1012,6 +1012,49 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1resto
 
 
 
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    mem_allocated_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1allocated_1size
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_kvm kvm = (t_kvm) handle;
+  khash_t(memory) *memory = kvm->memory;
+  return (jlong)(kh_size(memory) * KVM_PAGE_SIZE);
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_kvm_Kvm
+ * Method:    mem_resident_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1resident_1size
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_kvm kvm = (t_kvm) handle;
+  khash_t(memory) *memory = kvm->memory;
+  long sys_page_size = sysconf(_SC_PAGESIZE);
+  size_t pages_per_kvm = KVM_PAGE_SIZE / sys_page_size;
+  if(pages_per_kvm == 0) pages_per_kvm = 1;
+  uint64_t resident = 0;
+  unsigned char vec[16];
+  khint_t k;
+  for (k = kh_begin(memory); k < kh_end(memory); k++) {
+    if(kh_exist(memory, k)) {
+      t_memory_page page = kh_value(memory, k);
+      if(mincore(page->addr, KVM_PAGE_SIZE, vec) == 0) {
+        size_t i;
+        for(i = 0; i < pages_per_kvm; i++) {
+          if(vec[i] & 1) {
+            resident += sys_page_size;
+          }
+        }
+      }
+    }
+  }
+  return (jlong) resident;
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   JNIEnv *env;
   if (JNI_OK != (*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_6)) {

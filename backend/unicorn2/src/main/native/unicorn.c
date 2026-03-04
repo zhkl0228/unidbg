@@ -667,6 +667,41 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_remove
     update_bps(unicorn);
 }
 
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    mem_allocated_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1allocated_1size
+  (JNIEnv *env, jclass cls, jlong handle) {
+  t_unicorn unicorn = (t_unicorn) handle;
+  uc_engine *eng = unicorn->uc;
+  uc_mem_region *regions = NULL;
+  uint32_t count = 0;
+  uc_err err = uc_mem_regions(eng, &regions, &count);
+  if (err != UC_ERR_OK) {
+    throwException(env, err);
+    return 0;
+  }
+  uint64_t total = 0;
+  uint32_t i;
+  for (i = 0; i < count; i++) {
+    total += regions[i].end - regions[i].begin + 1;
+  }
+  uc_free(regions);
+  return (jlong) total;
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_unicorn_Unicorn
+ * Method:    mem_resident_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1resident_1size
+  (JNIEnv *env, jclass cls, jlong handle) {
+  return Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1allocated_1size(env, cls, handle);
+}
+
 static JNINativeMethod s_methods[] = {
         {"registerHook",           "(JIJJLcom/github/unidbg/arm/backend/unicorn/Unicorn$NewHook;)J",          (void *) Java_com_github_unidbg_arm_backend_unicorn_Unicorn_registerHook__JIJJLcom_github_unidbg_arm_backend_unicorn_Unicorn_NewHook_2 },
         {"registerHook",           "(JILcom/github/unidbg/arm/backend/unicorn/Unicorn$NewHook;)J",            (void *) Java_com_github_unidbg_arm_backend_unicorn_Unicorn_registerHook__JILcom_github_unidbg_arm_backend_unicorn_Unicorn_NewHook_2 }

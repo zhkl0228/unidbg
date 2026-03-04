@@ -4,15 +4,20 @@ import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.hypervisor.Hypervisor;
 import com.github.unidbg.arm.backend.hypervisor.HypervisorBackend64;
 import org.scijava.nativelib.NativeLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class HypervisorFactory extends BackendFactory {
 
+    private static final Logger log = LoggerFactory.getLogger(HypervisorFactory.class);
+
     static {
         try {
             NativeLoader.loadLibrary("hypervisor");
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            log.debug("load hypervisor library failed", e);
         }
     }
 

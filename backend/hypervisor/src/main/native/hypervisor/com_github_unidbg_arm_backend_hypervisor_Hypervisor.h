@@ -213,6 +213,22 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    mem_allocated_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1allocated_1size
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    mem_resident_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_mem_1resident_1size
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    context_save
  * Signature: (JJ)V
  */

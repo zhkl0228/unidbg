@@ -28,4 +28,14 @@ public abstract class AbstractBackend implements Backend {
         return Collections.emptyMap();
     }
 
+    @Override
+    public long getMemAllocatedSize() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long getMemResidentSize() {
+        throw new UnsupportedOperationException();
+    }
+
 }

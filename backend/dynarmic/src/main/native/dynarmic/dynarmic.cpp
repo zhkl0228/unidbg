@@ -1367,6 +1367,51 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_free
   free(ctx);
 }
 
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_allocated_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1allocated_1size
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  khash_t(memory) *memory = dynarmic->memory;
+  return (jlong)(kh_size(memory) * DYN_PAGE_SIZE);
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_dynarmic_Dynarmic
+ * Method:    mem_resident_size
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_1resident_1size
+  (JNIEnv *env, jclass clazz, jlong handle) {
+  t_dynarmic dynarmic = (t_dynarmic) handle;
+  khash_t(memory) *memory = dynarmic->memory;
+#if defined(_WIN32) || defined(_WIN64)
+  return (jlong)(kh_size(memory) * DYN_PAGE_SIZE);
+#else
+  long sys_page_size = sysconf(_SC_PAGESIZE);
+  size_t pages_per_dyn = DYN_PAGE_SIZE / sys_page_size;
+  if(pages_per_dyn == 0) pages_per_dyn = 1;
+  uint64_t resident = 0;
+  unsigned char vec[16];
+  for (khint_t k = kh_begin(memory); k < kh_end(memory); k++) {
+    if(kh_exist(memory, k)) {
+      t_memory_page page = kh_value(memory, k);
+      if(mincore(page->addr, DYN_PAGE_SIZE, vec) == 0) {
+        for(size_t i = 0; i < pages_per_dyn; i++) {
+          if(vec[i] & 1) {
+            resident += sys_page_size;
+          }
+        }
+      }
+    }
+  }
+  return (jlong) resident;
+#endif
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   JNIEnv *env;
   if (JNI_OK != vm->GetEnv((void **)&env, JNI_VERSION_1_6)) {

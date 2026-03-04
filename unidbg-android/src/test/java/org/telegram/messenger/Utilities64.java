@@ -3,10 +3,7 @@ package org.telegram.messenger;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
-import com.github.unidbg.arm.backend.DynarmicFactory;
-import com.github.unidbg.arm.backend.HypervisorFactory;
-import com.github.unidbg.arm.backend.KvmFactory;
-import com.github.unidbg.arm.backend.Unicorn2Factory;
+import com.github.unidbg.arm.backend.*;
 import com.github.unidbg.debugger.McpTool;
 import com.github.unidbg.debugger.McpToolkit;
 import com.github.unidbg.linux.android.AndroidEmulatorBuilder;
@@ -180,7 +177,8 @@ public class Utilities64 extends TestCase {
         cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", password,
                 salt,
                 dst, iterations);
-        Inspector.inspect(dst.getValue(), String.format("[%s]pbkdf2 offset=%sms, backend=%s", Thread.currentThread().getName(), System.currentTimeMillis() - start, emulator.getBackend()));
+        Backend backend = emulator.getBackend();
+        Inspector.inspect(dst.getValue(), String.format("[%s]pbkdf2 offset=%sms, allocatedSize=0x%x, residentSize=0x%x, backend=%s", Thread.currentThread().getName(), System.currentTimeMillis() - start, backend.getMemAllocatedSize(), backend.getMemResidentSize(), backend));
     }
 
 }

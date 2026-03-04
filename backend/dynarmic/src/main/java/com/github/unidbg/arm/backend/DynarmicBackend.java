@@ -209,4 +209,14 @@ public abstract class DynarmicBackend extends FastBackend implements Backend, Dy
     public void context_restore(long context) {
         dynarmic.context_restore(context);
     }
+
+    @Override
+    public long getMemAllocatedSize() {
+        return dynarmic.getMemAllocatedSize();
+    }
+
+    @Override
+    public long getMemResidentSize() {
+        return dynarmic.getMemResidentSize();
+    }
 }

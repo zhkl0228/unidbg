@@ -3,8 +3,8 @@ package com.github.unidbg.ios;
 import com.github.unidbg.Emulator;
 import com.github.unidbg.Module;
 import com.github.unidbg.Symbol;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.DynarmicFactory;
-import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.arm.backend.HypervisorFactory;
 import com.github.unidbg.debugger.McpTool;
 import com.github.unidbg.debugger.McpToolkit;
@@ -51,7 +51,9 @@ public class IpaLoaderTest implements EmulatorConfigurator {
             @Override public void execute(String[] params) {
                 String className = params.length > 0 ? params[0] : "AppDelegate";
                 IClassDumper classDumper = ClassDumper.getInstance(emulator);
-                System.out.println("dumpClass(" + className + "):\n" + classDumper.dumpClass(className));
+                Backend backend = emulator.getBackend();
+                String classDef = classDumper.dumpClass(className);
+                System.out.printf("dumpClass(%s):\n%s, allocatedSize=0x%x, residentSize=0x%x, backend=%s%n", className, classDef, backend.getMemAllocatedSize(), backend.getMemResidentSize(), backend);
             }
         }).addTool(new McpTool() {
             @Override public String name() { return "readVersion"; }

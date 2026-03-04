@@ -45,6 +45,9 @@ public class Hypervisor implements Closeable {
     private static native int emu_start(long handle, long pc);
     private static native int emu_stop(long handle);
 
+    private static native long mem_allocated_size(long handle);
+    private static native long mem_resident_size(long handle);
+
     private static native void context_save(long handle, long context);
     private static native void context_restore(long handle, long context);
 
@@ -337,6 +340,14 @@ public class Hypervisor implements Closeable {
 
         int ret = emu_stop(nativeHandle);
         checkReturnCode(ret);
+    }
+
+    public long getMemAllocatedSize() {
+        return mem_allocated_size(nativeHandle);
+    }
+
+    public long getMemResidentSize() {
+        return mem_resident_size(nativeHandle);
     }
 
     private boolean closed;

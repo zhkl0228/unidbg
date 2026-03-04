@@ -100,6 +100,9 @@ public interface Backend {
      */
     Map<String, Integer> getCpuFeatures();
 
+    long getMemAllocatedSize();
+    long getMemResidentSize();
+
     default boolean isHypervisor() {
         return false;
     }

@@ -240,6 +240,16 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     @Override
+    public long getMemAllocatedSize() {
+        return hypervisor.getMemAllocatedSize();
+    }
+
+    @Override
+    public long getMemResidentSize() {
+        return hypervisor.getMemResidentSize();
+    }
+
+    @Override
     public boolean isHypervisor() {
         return true;
     }

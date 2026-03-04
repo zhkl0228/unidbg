@@ -46,6 +46,9 @@ public class Kvm implements Closeable {
     private static native void context_save(long handle, long context);
     private static native void context_restore(long handle, long context);
 
+    private static native long mem_allocated_size(long handle);
+    private static native long mem_resident_size(long handle);
+
     private final long nativeHandle;
 
 
@@ -250,6 +253,14 @@ public class Kvm implements Closeable {
         if (ret != 0) {
             throw new KvmException("ret=" + ret);
         }
+    }
+
+    public long getMemAllocatedSize() {
+        return mem_allocated_size(nativeHandle);
+    }
+
+    public long getMemResidentSize() {
+        return mem_resident_size(nativeHandle);
     }
 
     @Override

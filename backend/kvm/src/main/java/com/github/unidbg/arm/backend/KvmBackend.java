@@ -291,5 +291,14 @@ public abstract class KvmBackend extends FastBackend implements Backend, KvmCall
         return kvm.context_alloc();
     }
 
+    @Override
+    public long getMemAllocatedSize() {
+        return kvm.getMemAllocatedSize();
+    }
+
+    @Override
+    public long getMemResidentSize() {
+        return kvm.getMemResidentSize();
+    }
 
 }
