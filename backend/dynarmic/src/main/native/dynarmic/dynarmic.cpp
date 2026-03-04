@@ -24,6 +24,7 @@ static jmethodID handleInterpreterFallback = NULL;
 static jmethodID handleExceptionRaised = NULL;
 static jmethodID handleMemoryReadFailed = NULL;
 static jmethodID handleMemoryWriteFailed = NULL;
+static jclass cDynarmicException = NULL;
 
 static char *get_memory_page(khash_t(memory) *memory, u64 vaddr, size_t num_page_table_entries, void **page_table) {
     u64 idx = vaddr >> DYN_PAGE_BITS;
@@ -846,7 +847,10 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
     u64 len = end - start;
     char *addr = get_memory_page(memory, vaddr, dynarmic->num_page_table_entries, dynarmic->page_table);
     if(addr == NULL) {
-      fprintf(stderr, "mem_write failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      char msg[256];
+      snprintf(msg, sizeof(msg), "mem_write failed[%s->%s:%d]: vaddr=%p, address=%p, size=%d", __FILE__, __func__, __LINE__, (void*)vaddr, (void*)address, size);
+      env->ReleaseByteArrayElements(bytes, data, JNI_ABORT);
+      env->ThrowNew(cDynarmicException, msg);
       return 1;
     }
     char *dest = &addr[start];
@@ -876,7 +880,10 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmi
     u64 len = end - start;
     char *addr = get_memory_page(memory, vaddr, dynarmic->num_page_table_entries, dynarmic->page_table);
     if(addr == NULL) {
-      fprintf(stderr, "mem_read failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      char msg[256];
+      snprintf(msg, sizeof(msg), "mem_read failed[%s->%s:%d]: vaddr=%p, address=%p, size=%d", __FILE__, __func__, __LINE__, (void*)vaddr, (void*)address, size);
+      env->DeleteLocalRef(bytes);
+      env->ThrowNew(cDynarmicException, msg);
       return NULL;
     }
     jbyte *src = (jbyte *)&addr[start];
@@ -1427,6 +1434,13 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
   handleMemoryReadFailed = env->GetMethodID(cDynarmicCallback, "handleMemoryReadFailed", "(JI)V");
   handleMemoryWriteFailed = env->GetMethodID(cDynarmicCallback, "handleMemoryWriteFailed", "(JI)V");
   cachedJVM = vm;
+
+  jclass localDynarmicException = env->FindClass("com/github/unidbg/arm/backend/dynarmic/DynarmicException");
+  if (env->ExceptionCheck()) {
+    return JNI_ERR;
+  }
+  cDynarmicException = (jclass) env->NewGlobalRef(localDynarmicException);
+  env->DeleteLocalRef(localDynarmicException);
 
   return JNI_VERSION_1_6;
 }

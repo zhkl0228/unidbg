@@ -40,6 +40,7 @@ typedef struct kvm {
 } *t_kvm;
 
 static jmethodID handleException = NULL;
+static jclass cKvmException = NULL;
 
 static int check_one_reg(uint64_t reg, int ret) {
   if(ret == 0) {
@@ -680,7 +681,10 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1write
     uint64_t len = end - start;
     char *addr = get_memory_page(memory, vaddr, kvm->num_page_table_entries, kvm->page_table);
     if(addr == NULL) {
-      fprintf(stderr, "mem_write failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      char msg[256];
+      snprintf(msg, sizeof(msg), "mem_write failed[%s->%s:%d]: vaddr=%p, address=%p, size=%d", __FILE__, __func__, __LINE__, (void*)vaddr, (void*)address, size);
+      (*env)->ReleaseByteArrayElements(env, bytes, data, JNI_ABORT);
+      (*env)->ThrowNew(env, cKvmException, msg);
       return 1;
     }
     char *dest = &addr[start];
@@ -711,7 +715,10 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_mem_1rea
     uint64_t len = end - start;
     char *addr = get_memory_page(memory, vaddr, kvm->num_page_table_entries, kvm->page_table);
     if(addr == NULL) {
-      fprintf(stderr, "mem_read failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      char msg[256];
+      snprintf(msg, sizeof(msg), "mem_read failed[%s->%s:%d]: vaddr=%p, address=%p, size=%d", __FILE__, __func__, __LINE__, (void*)vaddr, (void*)address, size);
+      (*env)->DeleteLocalRef(env, bytes);
+      (*env)->ThrowNew(env, cKvmException, msg);
       return NULL;
     }
     jbyte *src = (jbyte *)&addr[start];
@@ -1065,6 +1072,13 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_ERR;
   }
   handleException = (*env)->GetMethodID(env, cKvmCallback, "handleException", "(JJJJJ)Z");
+
+  jclass localKvmException = (*env)->FindClass(env, "com/github/unidbg/arm/backend/kvm/KvmException");
+  if ((*env)->ExceptionCheck(env)) {
+    return JNI_ERR;
+  }
+  cKvmException = (jclass) (*env)->NewGlobalRef(env, localKvmException);
+  (*env)->DeleteLocalRef(env, localKvmException);
 
   return JNI_VERSION_1_6;
 }
