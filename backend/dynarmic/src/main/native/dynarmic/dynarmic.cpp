@@ -538,6 +538,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_setD
   if(dynarmic->is64Bit) {
     DynarmicCallbacks64 *cb = dynarmic->cb64;
     if(cb) {
+      if(cb->callback) {
+        env->DeleteGlobalRef(cb->callback);
+      }
       cb->callback = env->NewGlobalRef(callback);
     } else {
       return 1;
@@ -545,6 +548,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_setD
   } else {
     DynarmicCallbacks32 *cb = dynarmic->cb32;
     if(cb) {
+      if(cb->callback) {
+        env->DeleteGlobalRef(cb->callback);
+      }
       cb->callback = env->NewGlobalRef(callback);
     } else {
       return 1;
@@ -731,14 +737,19 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
   }
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
-  int ret;
+
+  // Pre-check: ensure all pages exist in the hash table before modifying anything
+  for(u64 vaddr = address; vaddr < address + size; vaddr += DYN_PAGE_SIZE) {
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p not found\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+  }
+
   for(u64 vaddr = address; vaddr < address + size; vaddr += DYN_PAGE_SIZE) {
     u64 idx = vaddr >> DYN_PAGE_BITS;
     khiter_t k = kh_get(memory, memory, vaddr);
-    if(k == kh_end(memory)) {
-      fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-      return 3;
-    }
     if(dynarmic->page_table && idx < dynarmic->num_page_table_entries) {
       dynarmic->page_table[idx] = NULL;
     }
@@ -768,13 +779,18 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
   }
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
+
+  // Pre-check: ensure no page in the range is already mapped
+  for(u64 vaddr = address; vaddr < address + size; vaddr += DYN_PAGE_SIZE) {
+    if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
+      fprintf(stderr, "mem_map failed[%s->%s:%d]: vaddr=%p already mapped\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+  }
+
   int ret;
   for(u64 vaddr = address; vaddr < address + size; vaddr += DYN_PAGE_SIZE) {
     u64 idx = vaddr >> DYN_PAGE_BITS;
-    if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
-      fprintf(stderr, "mem_map failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-      return 3;
-    }
 
     void *addr = mmap(NULL, DYN_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if(addr == MAP_FAILED) {
@@ -787,6 +803,11 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
       // 0xffffff80001f0000ULL: 0x10000
     }
     khiter_t k = kh_put(memory, memory, vaddr, &ret);
+    if(ret < 0) {
+      fprintf(stderr, "kh_put failed: vaddr=%p\n", (void*)vaddr);
+      abort();
+      return 0;
+    }
     t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
     if(page == NULL) {
       fprintf(stderr, "calloc page failed: size=%lu\n", sizeof(struct memory_page));
@@ -815,7 +836,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_mem_
   }
   t_dynarmic dynarmic = (t_dynarmic) handle;
   khash_t(memory) *memory = dynarmic->memory;
-  int ret;
   for(u64 vaddr = address; vaddr < address + size; vaddr += DYN_PAGE_SIZE) {
     khiter_t k = kh_get(memory, memory, vaddr);
     if(k == kh_end(memory)) {
@@ -1285,10 +1305,10 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_dynarmic_Dynarmic_con
   (JNIEnv *env, jclass clazz, jlong handle) {
   t_dynarmic dynarmic = (t_dynarmic) handle;
   if(dynarmic->is64Bit) {
-    void *ctx = malloc(sizeof(struct context64));
+    void *ctx = calloc(1, sizeof(struct context64));
     return (jlong) ctx;
   } else {
-    void *ctx = malloc(sizeof(struct context32));
+    void *ctx = calloc(1, sizeof(struct context32));
     return (jlong) ctx;
   }
 }

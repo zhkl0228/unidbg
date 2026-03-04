@@ -250,6 +250,9 @@ static t_kvm_cpu create_kvm_cpu(t_kvm kvm) {
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_setKvmCallback
   (JNIEnv *env, jclass clazz, jlong handle, jobject callback) {
   t_kvm kvm = (t_kvm) handle;
+  if(kvm->callback) {
+    (*env)->DeleteGlobalRef(env, kvm->callback);
+  }
   kvm->callback = (*env)->NewGlobalRef(env, callback);
   return 0;
 }
@@ -397,6 +400,16 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
   t_kvm kvm = (t_kvm) handle;
   khash_t(memory) *memory = kvm->memory;
 
+  // Pre-check: ensure all pages exist in the hash table before modifying anything
+  uint64_t vaddr;
+  for(vaddr = guest_phys_addr + vaddr_off; vaddr < guest_phys_addr + vaddr_off + memory_size; vaddr += KVM_PAGE_SIZE) {
+    khiter_t k = kh_get(memory, memory, vaddr);
+    if(k == kh_end(memory)) {
+      fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p not found\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      return 3;
+    }
+  }
+
   if(memory_size > 0) {
     char *start_addr = (char *) (userspace_addr + vaddr_off);
     int ret = munmap(start_addr, memory_size);
@@ -420,14 +433,9 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_remove_1user_1
     return 2;
   }
 
-  uint64_t vaddr = guest_phys_addr + vaddr_off;
-  for(; vaddr < guest_phys_addr + vaddr_off + memory_size; vaddr += KVM_PAGE_SIZE) {
+  for(vaddr = guest_phys_addr + vaddr_off; vaddr < guest_phys_addr + vaddr_off + memory_size; vaddr += KVM_PAGE_SIZE) {
     uint64_t idx = vaddr >> PAGE_BITS;
     khiter_t k = kh_get(memory, memory, vaddr);
-    if(k == kh_end(memory)) {
-      fprintf(stderr, "mem_unmap failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
-      return 3;
-    }
     if(kvm->page_table && idx < kvm->num_page_table_entries) {
       kvm->page_table[idx] = NULL;
     }
@@ -484,14 +492,18 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
     return userspace_addr;
   }
 
-  int ret;
-  uint64_t vaddr = guest_phys_addr;
-  for(; vaddr < guest_phys_addr + memory_size; vaddr += KVM_PAGE_SIZE) {
-    uint64_t idx = vaddr >> PAGE_BITS;
+  // Pre-check: ensure no page in the range is already mapped
+  uint64_t vaddr;
+  for(vaddr = guest_phys_addr; vaddr < guest_phys_addr + memory_size; vaddr += KVM_PAGE_SIZE) {
     if(kh_get(memory, memory, vaddr) != kh_end(memory)) {
-      fprintf(stderr, "set_user_memory_region failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      fprintf(stderr, "set_user_memory_region failed[%s->%s:%d]: vaddr=%p already mapped\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return 0L;
     }
+  }
+
+  int ret;
+  for(vaddr = guest_phys_addr; vaddr < guest_phys_addr + memory_size; vaddr += KVM_PAGE_SIZE) {
+    uint64_t idx = vaddr >> PAGE_BITS;
 
     void *addr = &start_addr[vaddr - guest_phys_addr];
 //    printf("set_user_memory_region vaddr=0x%llx addr=%p\n", vaddr, addr);
@@ -501,6 +513,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_set_1user_1me
       fprintf(stderr, "guest_phys_addr warning[%s->%s:%d]: addr=%p, page_table=%p, idx=%llu, num_page_table_entries=%zu\n", __FILE__, __func__, __LINE__, (void*)addr, kvm->page_table, idx, kvm->num_page_table_entries);
     }
     khiter_t k = kh_put(memory, memory, vaddr, &ret);
+    if(ret < 0) {
+      fprintf(stderr, "kh_put failed: vaddr=%p\n", (void*)vaddr);
+      abort();
+      return 0L;
+    }
     t_memory_page page = (t_memory_page) calloc(1, sizeof(struct memory_page));
     if(page == NULL) {
       fprintf(stderr, "calloc page failed: size=%lu\n", sizeof(struct memory_page));
@@ -946,7 +963,7 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_free(JNIEnv *e
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_kvm_Kvm_context_1alloc(JNIEnv *env, jclass clazz, jlong handle){
   t_kvm kvm = (t_kvm) handle;
   if(kvm->is64Bit) {
-    void *ctx = malloc(sizeof(struct context64));
+    void *ctx = calloc(1, sizeof(struct context64));
     return (jlong) ctx;
   } else {
     fprintf(stderr, "Doesn't support 32 bit\n");
