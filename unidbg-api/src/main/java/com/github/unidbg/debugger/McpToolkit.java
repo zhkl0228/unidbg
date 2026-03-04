@@ -17,12 +17,11 @@ public class McpToolkit implements DebugRunnable<Void> {
         return this;
     }
 
-    public McpToolkit setDefaultTool(String name) {
+    public void setDefaultTool(String name) {
         if (!tools.containsKey(name)) {
             throw new IllegalArgumentException("Tool not found: " + name);
         }
         this.defaultToolName = name;
-        return this;
     }
 
     public void run(Debugger debugger) throws Exception {
