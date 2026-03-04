@@ -3,6 +3,7 @@ package org.telegram.messenger;
 import com.github.unidbg.AndroidEmulator;
 import com.github.unidbg.LibraryResolver;
 import com.github.unidbg.Module;
+import com.github.unidbg.arm.backend.Backend;
 import com.github.unidbg.arm.backend.DynarmicFactory;
 import com.github.unidbg.arm.backend.KvmFactory;
 import com.github.unidbg.arm.backend.Unicorn2Factory;
@@ -119,6 +120,7 @@ public class Utilities32 extends TestCase {
     }
 
     private void pbkdf2() {
+        Backend backend = emulator.getBackend();
         byte[] password = "123456".getBytes();
         byte[] salt = new byte[8];
         ByteArray dst = new ByteArray(vm, new byte[64]);
@@ -127,7 +129,7 @@ public class Utilities32 extends TestCase {
             cUtilities.callStaticJniMethod(emulator, "pbkdf2([B[B[BI)V", password,
                     salt,
                     dst, 100000);
-            Inspector.inspect(dst.getValue(), "pbkdf2 offset=" + (System.currentTimeMillis() - start) + "ms");
+            Inspector.inspect(dst.getValue(), String.format("pbkdf2 offset=%dms, allocatedSize=0x%x, residentSize=0x%x", System.currentTimeMillis() - start, backend.getMemAllocatedSize(), backend.getMemResidentSize()));
         }
     }
 
