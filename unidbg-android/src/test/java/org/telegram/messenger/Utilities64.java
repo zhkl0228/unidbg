@@ -115,6 +115,7 @@ public class Utilities64 extends TestCase {
                 pbkdf2(password.getBytes(), iterations);
             }
         });
+        toolkit.setDefaultTool("pbkdf2");
         toolkit.run(emulator.attach());
     }
 
