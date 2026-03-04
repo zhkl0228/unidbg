@@ -15,7 +15,7 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-api</artifactId>
-            <version>0.9.9-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

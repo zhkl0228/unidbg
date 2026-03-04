@@ -14,30 +14,30 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-api</artifactId>
-            <version>0.9.9-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-dynarmic</artifactId>
-            <version>0.9.9-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-hypervisor</artifactId>
-            <version>0.9.9-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-kvm</artifactId>
-            <version>0.9.9-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unidbg-unicorn2</artifactId>
-            <version>0.9.9-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>com.googlecode.plist</groupId>
             <artifactId>dd-plist</artifactId>
-            <version>1.28</version>
+            <version>1.29</version>
         </dependency>
     </dependencies>
 </project>
