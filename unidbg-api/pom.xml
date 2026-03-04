@@ -14,7 +14,7 @@
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
             <artifactId>unicorn</artifactId>
-            <version>1.0.14</version>
+            <version>1.0.15</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>

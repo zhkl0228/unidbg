@@ -81,7 +81,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public Number reg_read(int regId) throws BackendException {
         try {
-            return (Number) unicorn.reg_read(regId);
+            return unicorn.reg_read(regId);
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
@@ -90,7 +90,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void reg_write(int regId, Number value) throws BackendException {
         try {
-            unicorn.reg_write(regId, value);
+            unicorn.reg_write(regId, value.longValue());
         } catch (UnicornException e) {
             throw new BackendException(e);
         }
@@ -167,7 +167,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final CodeHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.CodeHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.CodeHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
                     callback.hook(UnicornBackend.this, address, size, user);
@@ -212,7 +212,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final ReadHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.ReadHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.ReadHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
                     callback.hook(UnicornBackend.this, address, size, user);
@@ -232,7 +232,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final WriteHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.WriteHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.WriteHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, long value, Object user) {
                     callback.hook(UnicornBackend.this, address, size, value, user);
@@ -264,7 +264,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
 
     private void hookEventMem(final EventMemHook callback, final int type, Object user_data, final EventMemHook.UnmappedType unmappedType) {
         try {
-            Map<Integer, Unicorn.UnHook> map = unicorn.hook_add_new(new unicorn.EventMemHook() {
+            Map<Integer, Unicorn.UnHook> map = unicorn.hook_add(new unicorn.EventMemHook() {
                 @Override
                 public boolean hook(Unicorn u, long address, int size, long value, Object user) {
                     return callback.hook(UnicornBackend.this, address, size, value, user, unmappedType);
@@ -286,7 +286,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final InterruptHook callback, Object user_data) throws BackendException {
         try {
-            unicorn.hook_add_new(new unicorn.InterruptHook() {
+            unicorn.hook_add(new unicorn.InterruptHook() {
                 @Override
                 public void hook(Unicorn u, int intno, Object user) {
                     int swi = decodeSWI(emulator, UnicornBackend.this, is64Bit);
@@ -301,7 +301,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
     @Override
     public void hook_add_new(final BlockHook callback, long begin, long end, Object user_data) throws BackendException {
         try {
-            final Unicorn.UnHook unHook = unicorn.hook_add_new(new unicorn.BlockHook() {
+            final Unicorn.UnHook unHook = unicorn.hook_add(new unicorn.BlockHook() {
                 @Override
                 public void hook(Unicorn u, long address, int size, Object user) {
                     callback.hookBlock(UnicornBackend.this, address, size, user);
@@ -362,6 +362,16 @@ public class UnicornBackend extends AbstractBackend implements Backend {
 
     @Override
     public void context_free(long context) {
-        unicorn.free(context);
+        Unicorn.free(context);
+    }
+
+    @Override
+    public long getMemAllocatedSize() {
+        return unicorn.getMemAllocatedSize();
+    }
+
+    @Override
+    public long getMemResidentSize() {
+        return unicorn.getMemResidentSize();
     }
 }
