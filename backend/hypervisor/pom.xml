@@ -11,7 +11,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>unidbg-hypervisor</artifactId>
-    <version>0.9.9-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>

@@ -80,10 +80,7 @@ public class KvmBackend32 extends KvmBackend {
 
     @Override
     public void enableVFP() {
-        int value = reg_read(ArmConst.UC_ARM_REG_C1_C0_2).intValue();
-        value |= (0xf << 20);
-        reg_write(ArmConst.UC_ARM_REG_C1_C0_2, value);
-        reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
+        enableVFP(false);
     }
 
     @Override

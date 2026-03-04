@@ -1,11 +1,8 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
-import com.github.unidbg.arm.ARM;
-import com.github.unidbg.arm.Cpsr;
 import com.github.unidbg.debugger.BreakPoint;
 import com.github.unidbg.debugger.BreakPointCallback;
-import com.github.unidbg.pointer.UnidbgPointer;
 import unicorn.Arm64Const;
 import unicorn.ArmConst;
 import unicorn.Unicorn;
@@ -32,23 +29,12 @@ public class UnicornBackend extends AbstractBackend implements Backend {
 
     @Override
     public void switchUserMode() {
-        if (!is64Bit) {
-            Cpsr.getArm(this).switchUserMode();
-        }
+        switchUserMode(is64Bit);
     }
 
     @Override
     public void enableVFP() {
-        if (is64Bit) {
-            long value = reg_read(Arm64Const.UC_ARM64_REG_CPACR_EL1).longValue();
-            value |= 0x300000; // set the FPEN bits
-            reg_write(Arm64Const.UC_ARM64_REG_CPACR_EL1, value);
-        } else {
-            int value = reg_read(ArmConst.UC_ARM_REG_C1_C0_2).intValue();
-            value |= (0xf << 20);
-            reg_write(ArmConst.UC_ARM_REG_C1_C0_2, value);
-            reg_write(ArmConst.UC_ARM_REG_FPEXC, 0x40000000);
-        }
+        enableVFP(is64Bit);
     }
 
     @SuppressWarnings("deprecation")
@@ -152,32 +138,6 @@ public class UnicornBackend extends AbstractBackend implements Backend {
             unicorn.mem_unmap(address, size);
         } catch (UnicornException e) {
             throw new BackendException("mem_unmap address=0x" + Long.toHexString(address) + ", size=" + size, e);
-        }
-    }
-
-    private static class BreakPointImpl implements BreakPoint {
-        final BreakPointCallback callback;
-        final boolean thumb;
-        boolean isTemporary;
-        public BreakPointImpl(BreakPointCallback callback, boolean thumb) {
-            this.callback = callback;
-            this.thumb = thumb;
-        }
-        @Override
-        public void setTemporary(boolean temporary) {
-            this.isTemporary = true;
-        }
-        @Override
-        public boolean isTemporary() {
-            return isTemporary;
-        }
-        @Override
-        public BreakPointCallback getCallback() {
-            return callback;
-        }
-        @Override
-        public boolean isThumb() {
-            return thumb;
         }
     }
 
@@ -329,19 +289,7 @@ public class UnicornBackend extends AbstractBackend implements Backend {
             unicorn.hook_add_new(new unicorn.InterruptHook() {
                 @Override
                 public void hook(Unicorn u, int intno, Object user) {
-                    int swi;
-                    if (is64Bit) {
-                        UnidbgPointer pc = UnidbgPointer.register(emulator, Arm64Const.UC_ARM64_REG_PC);
-                        swi = (pc.getInt(-4) >> 5) & 0xffff;
-                    } else {
-                        UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
-                        boolean isThumb = ARM.isThumb(UnicornBackend.this);
-                        if (isThumb) {
-                            swi = pc.getShort(-2) & 0xff;
-                        } else {
-                            swi = pc.getInt(-4) & 0xffffff;
-                        }
-                    }
+                    int swi = decodeSWI(emulator, UnicornBackend.this, is64Bit);
                     callback.hook(UnicornBackend.this, intno, swi, user);
                 }
             }, user_data);

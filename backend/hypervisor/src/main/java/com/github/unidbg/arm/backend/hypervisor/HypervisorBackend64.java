@@ -684,9 +684,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     @Override
     public void enableVFP() {
-        long value = reg_read(Arm64Const.UC_ARM64_REG_CPACR_EL1).longValue();
-        value |= 0x300000; // set the FPEN bits
-        reg_write(Arm64Const.UC_ARM64_REG_CPACR_EL1, value);
+        enableVFP(true);
     }
 
     @Override
