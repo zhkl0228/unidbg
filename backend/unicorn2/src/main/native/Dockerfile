@@ -9,6 +9,7 @@ RUN sed -i 's|^mirrorlist=|#mirrorlist=|g' /etc/yum.repos.d/CentOS-*.repo && \
 
 ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 
+ARG UNICORN_COMMIT=unknown
 RUN git clone --depth 1 -b unicorn2 https://github.com/zhkl0228/unicorn /build/unicorn
 
 WORKDIR /build/unicorn

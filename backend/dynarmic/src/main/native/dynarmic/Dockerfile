@@ -33,6 +33,7 @@ ENV PATH=/usr/local/bin:/opt/rh/devtoolset/root/usr/bin:$PATH \
     CXX=/opt/rh/devtoolset/root/usr/bin/g++ \
     JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 
+ARG DYNARMIC_COMMIT=unknown
 RUN git clone --recursive --depth 1 https://github.com/zhkl0228/yuzu-dynarmic /build/dynarmic
 
 WORKDIR /build/dynarmic

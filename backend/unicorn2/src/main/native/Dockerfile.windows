@@ -23,6 +23,7 @@ typedef signed char jbyte;
 #endif
 JNIEOF
 
+ARG UNICORN_COMMIT=unknown
 RUN git clone --depth 1 -b unicorn2 https://github.com/zhkl0228/unicorn /build/unicorn
 
 WORKDIR /build/unicorn

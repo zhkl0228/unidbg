@@ -24,6 +24,7 @@ typedef signed char jbyte;
 #endif
 JNIEOF
 
+ARG DYNARMIC_COMMIT=unknown
 RUN git clone --recursive --depth 1 https://github.com/zhkl0228/yuzu-dynarmic /build/dynarmic
 
 WORKDIR /build/dynarmic

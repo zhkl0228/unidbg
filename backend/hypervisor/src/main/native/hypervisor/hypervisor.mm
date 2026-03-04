@@ -692,11 +692,6 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   if(size == 0 || (size & HVF_PAGE_MASK)) {
     return 2;
   }
-  if(hv_vm_protect(address, size, perms) != HV_SUCCESS) {
-    fprintf(stderr, "hv_vm_protect failed address=%p, size=0x%lx, perms=0x%x\n", (void*) address, size, perms);
-    return 3;
-  }
-
   auto hypervisor = (t_hypervisor) handle;
   khash_t(memory) *memory = hypervisor->memory;
   for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
@@ -705,6 +700,15 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
       fprintf(stderr, "mem_protect failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
       return 3;
     }
+  }
+
+  if(hv_vm_protect(address, size, perms) != HV_SUCCESS) {
+    fprintf(stderr, "hv_vm_protect failed address=%p, size=0x%lx, perms=0x%x\n", (void*) address, size, perms);
+    return 3;
+  }
+
+  for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
+    khiter_t k = kh_get(memory, memory, vaddr);
     t_memory_page page = kh_value(memory, k);
     page->perms = perms;
   }
