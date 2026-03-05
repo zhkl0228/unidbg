@@ -29,18 +29,20 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
 
     private static final int MIN_IDLE_TIMEOUT_MINUTES = 1;
     private static final int DEFAULT_IDLE_TIMEOUT_MINUTES = 10;
-    private static final long CLEANUP_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(30);
+    private static final long CLEANUP_INTERVAL_MS = 30_000;
 
     /**
      * 包装空闲 Worker，记录入池时间以便判定超时。
+     * 使用 {@link System#currentTimeMillis()} 而非 nanoTime，
+     * 因为 nanoTime 在 macOS 系统休眠期间不推进，会导致空闲超时失效。
      */
     private static class IdleWorker {
         final Worker worker;
-        final long idleSinceNanos;
+        final long idleSinceMs;
 
         IdleWorker(Worker worker) {
             this.worker = worker;
-            this.idleSinceNanos = System.nanoTime();
+            this.idleSinceMs = System.currentTimeMillis();
         }
     }
 
@@ -50,7 +52,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
 
     private final WorkerFactory factory;
     private final int maxWorkers;
-    private volatile long idleTimeoutNanos = TimeUnit.MINUTES.toNanos(DEFAULT_IDLE_TIMEOUT_MINUTES);
+    private volatile long idleTimeoutMs = TimeUnit.MINUTES.toMillis(DEFAULT_IDLE_TIMEOUT_MINUTES);
     private volatile int minIdle = 1;
 
     private final Thread thread;
@@ -75,7 +77,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
         if (idleTimeoutMinutes < MIN_IDLE_TIMEOUT_MINUTES) {
             throw new IllegalArgumentException("idleTimeoutMinutes must be at least " + MIN_IDLE_TIMEOUT_MINUTES + ": " + idleTimeoutMinutes);
         }
-        this.idleTimeoutNanos = TimeUnit.MINUTES.toNanos(idleTimeoutMinutes);
+        this.idleTimeoutMs = TimeUnit.MINUTES.toMillis(idleTimeoutMinutes);
         log.debug("Updated idle timeout: {}min", idleTimeoutMinutes);
     }
 
@@ -93,7 +95,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
      */
     @Override
     public void run() {
-        long lastCleanupNanos = System.nanoTime();
+        long lastCleanupMs = System.currentTimeMillis();
 
         while (!stopped) {
             try {
@@ -128,14 +130,14 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
                     continue;
                 }
 
-                long now = System.nanoTime();
-                if (now - lastCleanupNanos >= CLEANUP_INTERVAL_NANOS) {
-                    lastCleanupNanos = now;
+                long now = System.currentTimeMillis();
+                if (now - lastCleanupMs >= CLEANUP_INTERVAL_MS) {
+                    lastCleanupMs = now;
                     int size = workers.size();
                     for (int i = 0; i < size; i++) {
                         IdleWorker idle = workers.poll();
                         if (idle == null) break;
-                        if (now - idle.idleSinceNanos > idleTimeoutNanos && totalAlive.get() > minIdle) {
+                        if (now - idle.idleSinceMs > idleTimeoutMs && totalAlive.get() > minIdle) {
                             idle.worker.destroy();
                             int remaining = totalAlive.decrementAndGet();
                             log.info("Destroyed idle worker: {}, totalAlive={}", idle.worker, remaining);
