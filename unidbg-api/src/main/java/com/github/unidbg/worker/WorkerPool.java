@@ -15,6 +15,22 @@ import java.util.concurrent.TimeUnit;
 public interface WorkerPool extends Closeable {
 
     /**
+     * 设置空闲超时时间，超过此时间未被借出的 Worker 将被自动销毁。
+     * 最低不能低于 1 分钟，默认 10 分钟。
+     *
+     * @param idleTimeoutMinutes 空闲超时（分钟），最小值为 1
+     */
+    void setIdleTimeout(int idleTimeoutMinutes);
+
+    /**
+     * 设置最小保持的 Worker 数量，空闲清理时不会将存活数量降到此值以下。
+     * 不能低于 1，默认为 1。
+     *
+     * @param minIdle 最小保持数量，最小值为 1
+     */
+    void setMinIdle(int minIdle);
+
+    /**
      * 从池中借出一个 Worker，返回 {@link WorkerLoan} 包装器。
      *
      * @param timeout 等待超时时长

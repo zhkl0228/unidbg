@@ -262,6 +262,11 @@ try (MemoryTracker tracker = emulator.traceMemoryLeaks()) {
 
 A thread-safe object pool for reusing emulator instances across multiple threads, avoiding the overhead of repeated initialization.
 
+- **Lazy initialization** — Workers are created on-demand only when the pool is empty, not upfront.
+- **Max limit** — Total alive workers (borrowed + idle) never exceeds the configured maximum.
+- **Idle cleanup** — Workers idle for longer than the timeout (default 10 minutes) are automatically destroyed by the management thread.
+- **Min idle** — A minimum number of workers (default 1) is always kept alive, even when idle.
+
 ### 1. Implement a Worker
 
 ```java
@@ -287,9 +292,15 @@ public class MyWorker implements Worker {
 ### 2. Create Pool, Borrow, and Close
 
 ```java
-// Create a worker pool
-WorkerPool pool = WorkerPoolFactory.create(MyWorker::new,
-        Runtime.getRuntime().availableProcessors());
+// Create a worker pool (max = CPU cores, lazy-initialized)
+WorkerPool pool = WorkerPoolFactory.create(MyWorker::new);
+// Or specify max workers explicitly
+// WorkerPool pool = WorkerPoolFactory.create(MyWorker::new, 4);
+
+// Optional: customize idle timeout (default 10 minutes, minimum 1 minute)
+pool.setIdleTimeout(30); // idle workers destroyed after 30 minutes
+// Optional: customize minimum kept-alive workers (default 1, minimum 1)
+pool.setMinIdle(2); // always keep at least 2 workers alive
 
 // Concurrent invocation from multiple threads
 ExecutorService executor = Executors.newFixedThreadPool(100);
