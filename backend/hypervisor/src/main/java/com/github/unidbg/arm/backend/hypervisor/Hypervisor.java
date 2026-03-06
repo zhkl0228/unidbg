@@ -229,6 +229,11 @@ public class Hypervisor implements Closeable {
         checkReturnCode(ret);
     }
 
+    /**
+     * Sets the full SPSR_EL1, not just the NZCV bits.
+     * Named "nzcv" for Unicorn UC_ARM64_REG_NZCV compatibility,
+     * which reads/writes the entire CPSR/SPSR.
+     */
     public void reg_set_nzcv(long value) {
         if (log.isTraceEnabled()) {
             log.trace("reg_set_nzcv value=0x{}", Long.toHexString(value));
@@ -323,6 +328,10 @@ public class Hypervisor implements Closeable {
         return pc;
     }
 
+    /**
+     * Reads the full SPSR_EL1, not just the NZCV bits.
+     * @see #reg_set_nzcv(long)
+     */
     public long reg_read_nzcv() {
         long nzcv = reg_read_nzcv(nativeHandle);
         if (log.isTraceEnabled()) {

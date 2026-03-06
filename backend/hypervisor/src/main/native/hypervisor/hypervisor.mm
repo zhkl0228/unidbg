@@ -73,23 +73,12 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       }
       return handled == JNI_TRUE;
     }
-    case EC_INSNABORT: {
-      uint64_t pc = 0;
-      HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
-      uint64_t cpsr = 0;
-      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
-      jboolean handled = env->CallBooleanMethod(hypervisor->callback, handleException,
-          (jlong)syndrome, (jlong)cpu->vcpu_exit->exception.virtual_address, (jlong)pc, (jlong)cpsr);
-      if (env->ExceptionCheck()) {
-        return false;
-      }
-      return handled == JNI_TRUE;
-    }
+    case EC_INSNABORT:
     case EC_DATAABORT: {
       uint64_t pc = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
       uint64_t cpsr = 0;
-      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_CPSR, &cpsr));
       jboolean handled = env->CallBooleanMethod(hypervisor->callback, handleException,
           (jlong)syndrome, (jlong)cpu->vcpu_exit->exception.virtual_address, (jlong)pc, (jlong)cpsr);
       if (env->ExceptionCheck()) {
@@ -129,13 +118,12 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       return false;
     }
   }
-  return true;
 }
 
 static int cpu_loop(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) {
   hypervisor->stop_request = false;
-  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CPACR_EL1, hypervisor->cpacr));
   while(true) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CPACR_EL1, hypervisor->cpacr));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDR_EL0, hypervisor->tpidr));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_TPIDRRO_EL0, hypervisor->tpidrro));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_REG_SP, hypervisor->sp));
@@ -890,6 +878,10 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    reg_set_nzcv
  * Signature: (JJ)I
+ *
+ * Despite the name "nzcv", this sets the full SPSR_EL1 (saved program status
+ * register), matching Unicorn's UC_ARM64_REG_NZCV semantics which reads/writes
+ * the entire CPSR/SPSR including NZCV, DAIF, mode, and other fields.
  */
 JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1set_1nzcv
   (JNIEnv *env, jclass clazz, jlong handle, jlong value) {
@@ -1071,6 +1063,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    reg_read_nzcv
  * Signature: (J)J
+ *
+ * See reg_set_nzcv: reads the full SPSR_EL1, not just NZCV bits.
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_reg_1read_1nzcv
   (JNIEnv *env, jclass clazz, jlong handle) {
