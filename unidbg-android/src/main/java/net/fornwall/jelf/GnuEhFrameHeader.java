@@ -112,8 +112,7 @@ public class GnuEhFrameHeader {
         }
     }
 
-    /* read a uleb128 encoded value and advance pointer */
-    private static long readULEB128(ElfDataIn dataIn, Off off) {
+    private static long readLEB128(ElfDataIn dataIn, Off off, boolean signed) {
         long result = 0;
         int shift = 0;
         int b;
@@ -122,23 +121,18 @@ public class GnuEhFrameHeader {
             result |= (long) (b & 0x7f) << shift;
             shift += 7;
         } while ((b & 0x80) != 0);
-        return result;
-    }
-
-    /* read a sleb128 encoded value and advance pointer */
-    private static long readSLEB128(ElfDataIn dataIn, Off off) {
-        long result = 0;
-        int shift = 0;
-        int b;
-        do {
-            b = dataIn.readUnsignedByte(); off.pos++;
-            result |= (long) (b & 0x7f) << shift;
-            shift += 7;
-        } while ((b & 0x80) != 0);
-        if (((b & 0x40) != 0)) {
+        if (signed && ((b & 0x40) != 0)) {
             result |= -(1L << shift);
         }
         return result;
+    }
+
+    private static long readULEB128(ElfDataIn dataIn, Off off) {
+        return readLEB128(dataIn, off, false);
+    }
+
+    private static long readSLEB128(ElfDataIn dataIn, Off off) {
+        return readLEB128(dataIn, off, true);
     }
 
     private static long readEncodedPointer(ElfDataIn dataIn, int encoding, Off off, boolean checkIndirect) {
@@ -177,6 +171,8 @@ public class GnuEhFrameHeader {
                 result = dataIn.readLong(); off.pos += 8;
                 break;
             case DW_EH_PE_sleb128:
+                result = readSLEB128(dataIn, off);
+                break;
             default:
                 throw new IllegalStateException("not supported: encoding=0x" + Integer.toHexString(encoding));
         }
@@ -220,7 +216,7 @@ public class GnuEhFrameHeader {
         if (log.isDebugEnabled()) {
             log.debug("dwarf_step entry={}, fun=0x{}, fde={}, module={}", entry, Long.toHexString(fun), fde, module);
         }
-        dwarf_loc_t loc = fde == null ? null : dwarf_get_loc(emulator, fde, fun);
+        dwarf_loc_t loc = fde == null ? null : dwarf_get_loc(emulator, fde, fun, module);
         if (loc != null) {
             UnidbgPointer vsp;
             switch (loc.cfa_rule.type) {
@@ -233,6 +229,8 @@ public class GnuEhFrameHeader {
                     }
                     break;
                 case DW_LOC_VAL_EXPRESSION:
+                    log.warn("dwarf_step DW_LOC_VAL_EXPRESSION for cfa not supported, module={}", module);
+                    return null;
                 default:
                     throw new UnsupportedOperationException("dwarf_step type=" + loc.cfa_rule.type);
             }
@@ -252,10 +250,23 @@ public class GnuEhFrameHeader {
                         }
                         break;
                     case DW_LOC_VAL_OFFSET:
+                        context.loc[i] = vsp.peer + rule.values[0];
+                        if (log.isDebugEnabled()) {
+                            log.debug("dwarf_step {}{} val_offset ({}) => 0x{}", emulator.is32Bit() ? "r" : "x", i, rule.values[0], Long.toHexString(context.loc[i]));
+                        }
+                        break;
                     case DW_LOC_REGISTER:
+                        context.loc[i] = context.loc[(int) rule.values[0]];
+                        if (log.isDebugEnabled()) {
+                            log.debug("dwarf_step DW_LOC_REGISTER {}{} = {}{}", emulator.is32Bit() ? "r" : "x", i, emulator.is32Bit() ? "r" : "x", rule.values[0]);
+                        }
+                        break;
                     case DW_LOC_EXPRESSION:
                     case DW_LOC_VAL_EXPRESSION:
+                        log.warn("dwarf_step DWARF expression for {}{} not supported, module={}", emulator.is32Bit() ? "r" : "x", i, module);
+                        break;
                     case DW_LOC_UNDEFINED:
+                        break;
                     default:
                         throw new UnsupportedOperationException("dwarf_step type=" + rule.type);
                 }
@@ -371,7 +382,7 @@ public class GnuEhFrameHeader {
 /* 0x2a */ null,
 /* 0x2b */ null,
 /* 0x2c */ null,
-/* 0x2d */ null,
+/* 0x2d */ new dwarf_cfa_t(DW_EH_PE_omit, DW_EH_PE_omit),
 /* 0x2e */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_omit),
 /* 0x2f */ new dwarf_cfa_t(DW_EH_PE_uleb128, DW_EH_PE_uleb128),
 /* 0x30 */ null,
@@ -401,7 +412,7 @@ public class GnuEhFrameHeader {
     private static final int DW_LOC_EXPRESSION = 5;
     private static final int DW_LOC_VAL_EXPRESSION = 6;
 
-    private static dwarf_loc_t dwarf_get_loc(Emulator<?> emulator, FDE fde, final long pc) {
+    private static dwarf_loc_t dwarf_get_loc(Emulator<?> emulator, FDE fde, final long pc, Module module) {
         long cur_pc = fde.pc_start;
         dwarf_loc_t loc;
         long[] operands = new long[2];
@@ -463,15 +474,21 @@ public class GnuEhFrameHeader {
                 case 0:
                 default: {
                     dwarf_cfa_t cfa = dwarf_cfa_table[cfa_op_ext];
-                    if (cfa == null) { // illegal cfa
-                        throw new IllegalStateException("dwarf_get_loc illegal cfa");
+                    if (cfa == null) {
+                        log.warn("dwarf_get_loc unsupported cfa opcode: cfa_op=0x{}, cfa_op_ext=0x{}, module={}", Integer.toHexString(cfa_op), Integer.toHexString(cfa_op_ext), module);
+                        return null;
                     }
                     for (int m = 0; m < 2; m++) {
                         int type = cfa.operand_types[m];
                         if (type == DW_EH_PE_omit) {
                             break;
                         } else if (type == DW_EH_PE_block) {
-                            throw new IllegalStateException("dwarf_get_loc DW_EH_PE_block");
+                            Off off = new Off(0);
+                            ElfDataIn dataIn = new ElfBuffer(Arrays.copyOfRange(instructions, i + 1, instructions.length));
+                            long blockLen = readULEB128(dataIn, off);
+                            off.pos += blockLen;
+                            operands[m] = 0;
+                            i += (int) off.pos;
                         } else {
                             Off off = new Off(0);
                             ElfDataIn dataIn = new ElfBuffer(Arrays.copyOfRange(instructions, i + 1, instructions.length));
@@ -519,11 +536,12 @@ public class GnuEhFrameHeader {
                             rule.type = DW_LOC_INVALID;
                             break;
                         }
-                        case 0x09: // DW_CFA_register
+                        case 0x09: { // DW_CFA_register
                             dwarf_loc_rule_t rule = loc.get_reg_rule(operands[0]);
                             rule.type = DW_LOC_REGISTER;
                             rule.values[0] = operands[1];
                             break;
+                        }
                         case 0x0a: {// DW_CFA_remember_state
                             dwarf_loc_t loc_node = new dwarf_loc_t(loc);
                             loc_node_stack.push(loc_node);
@@ -559,6 +577,66 @@ public class GnuEhFrameHeader {
                                 }
                             }
                             break;
+                        case 0x0f: // DW_CFA_def_cfa_expression
+                            loc.cfa_rule.type = DW_LOC_VAL_EXPRESSION;
+                            break;
+                        case 0x10: { // DW_CFA_expression
+                            dwarf_loc_rule_t rule = loc.get_reg_rule(operands[0]);
+                            rule.type = DW_LOC_EXPRESSION;
+                            break;
+                        }
+                        case 0x11: { // DW_CFA_offset_extended_sf
+                            dwarf_loc_rule_t rule = loc.get_reg_rule(operands[0]);
+                            rule.type = DW_LOC_OFFSET;
+                            rule.values[0] = operands[1] * fde.cie.data_alignment_factor;
+                            if (log.isDebugEnabled()) {
+                                log.debug("DW_CFA_offset_extended_sf: r{} at cfa{}", operands[0], rule.values[0]);
+                            }
+                            break;
+                        }
+                        case 0x12: // DW_CFA_def_cfa_sf
+                            loc.cfa_rule.type = DW_LOC_REGISTER;
+                            loc.cfa_rule.values[0] = operands[0];
+                            loc.cfa_rule.values[1] = operands[1] * fde.cie.data_alignment_factor;
+                            if (log.isDebugEnabled()) {
+                                log.debug("DW_CFA_def_cfa_sf: {}{} ofs {}", emulator.is32Bit() ? "r" : "x", operands[0], loc.cfa_rule.values[1]);
+                            }
+                            break;
+                        case 0x13: // DW_CFA_def_cfa_offset_sf
+                            if (loc.cfa_rule.type != DW_LOC_REGISTER) {
+                                throw new IllegalStateException("NOT DW_LOC_REGISTER");
+                            }
+                            loc.cfa_rule.values[1] = operands[0] * fde.cie.data_alignment_factor;
+                            if (log.isDebugEnabled()) {
+                                log.debug("DW_CFA_def_cfa_offset_sf: {}", loc.cfa_rule.values[1]);
+                            }
+                            break;
+                        case 0x14: { // DW_CFA_val_offset
+                            dwarf_loc_rule_t rule = loc.get_reg_rule(operands[0]);
+                            rule.type = DW_LOC_VAL_OFFSET;
+                            rule.values[0] = operands[1] * fde.cie.data_alignment_factor;
+                            break;
+                        }
+                        case 0x15: { // DW_CFA_val_offset_sf
+                            dwarf_loc_rule_t rule = loc.get_reg_rule(operands[0]);
+                            rule.type = DW_LOC_VAL_OFFSET;
+                            rule.values[0] = operands[1] * fde.cie.data_alignment_factor;
+                            break;
+                        }
+                        case 0x16: { // DW_CFA_val_expression
+                            dwarf_loc_rule_t rule = loc.get_reg_rule(operands[0]);
+                            rule.type = DW_LOC_VAL_EXPRESSION;
+                            break;
+                        }
+                        case 0x2d: // DW_CFA_AARCH64_negate_ra_state (PAC)
+                        case 0x2e: // DW_CFA_GNU_args_size
+                            break;
+                        case 0x2f: { // DW_CFA_GNU_negative_offset_extended
+                            dwarf_loc_rule_t rule = loc.get_reg_rule(operands[0]);
+                            rule.type = DW_LOC_OFFSET;
+                            rule.values[0] = -(operands[1] * fde.cie.data_alignment_factor);
+                            break;
+                        }
                         default:
                             throw new IllegalStateException("dwarf_get_loc cfa_op=" + cfa_op + ", i=" + i + ", cfa_op_ext=0x" + Integer.toHexString(cfa_op_ext));
                     }

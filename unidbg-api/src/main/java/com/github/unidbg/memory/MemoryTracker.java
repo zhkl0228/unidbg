@@ -139,6 +139,7 @@ public class MemoryTracker implements MMapListener, Closeable {
         long leakedSize = getTotalLeakedSize();
 
         out.println("=== Memory Leak Report ===");
+        out.println("Backend: " + emulator.getBackend().getClass().getSimpleName());
         out.println("Tracking duration: " + durationMs + "ms");
         out.println("Total allocations: " + totalAllocations);
         out.println("Total deallocations: " + totalDeallocations);

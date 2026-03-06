@@ -123,7 +123,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
                         log.warn("Failed to create worker", e);
                         continue;
                     }
-                    log.info("Created new worker: {}, totalAlive={}, elapsed={}ms", worker, totalAlive.get(), System.currentTimeMillis() - startMs);
+                    log.info("Created new worker: {}, totalAlive={}/{}, elapsed={}ms", worker, totalAlive.get(), maxWorkers, System.currentTimeMillis() - startMs);
                     if (!workers.offer(new IdleWorker(worker))) {
                         throw new IllegalStateException("Offer created worker failed.");
                     }
