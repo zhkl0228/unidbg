@@ -100,6 +100,10 @@ public class Hypervisor implements Closeable {
         install_hw_breakpoint_range(nativeHandle, n, begin, end);
     }
     private static native void install_hw_breakpoint_range(long handle, int n, long begin, long end);
+    public int get_page_perms(long address) {
+        return get_page_perms(nativeHandle, address);
+    }
+    private static native int get_page_perms(long handle, long address);
     public void disable_hw_breakpoint(int n) {
         if (log.isTraceEnabled()) {
             log.trace("disable_hw_breakpoint n={}", n);

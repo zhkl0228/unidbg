@@ -25,6 +25,7 @@ import keystone.KeystoneMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import unicorn.Arm64Const;
+import unicorn.UnicornConst;
 
 import java.util.*;
 
@@ -195,6 +196,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 lastHitPointAddress = elr;
                 onWatchpoint(esr, far, elr);
                 return true;
+            case EC_INSNABORT:
+                return exclusiveMonitorEscaper instanceof CodeHookEscaper &&
+                        ((CodeHookEscaper) exclusiveMonitorEscaper).onInsnAbort();
             case EC_DATAABORT:
                 return handleDataAbort(ec, esr, far, elr);
             case EC_SYSTEMREGISTERTRAP:
@@ -519,6 +523,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
         private final long end;
         private final Object user;
         private int reentrySlot = -1;
+        private Map<Long, Integer> savedPagePerms;
         CodeHookEscaper(CodeHook callback, long begin, long end, Object user) {
             this.callback = callback;
             this.begin = begin;
@@ -545,8 +550,13 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 return false;
             }
             long lr = reg_read(Arm64Const.UC_ARM64_REG_LR).longValue();
-            long target = (lr >= begin && lr < end) ? lr : begin;
-            return tryFastForwardToAddress(target);
+            if (lr >= begin && lr < end) {
+                return tryFastForwardToAddress(lr);
+            }
+            if (tryFastForwardWithPageProtection()) {
+                return true;
+            }
+            return tryFastForwardToAddress(begin);
         }
         private boolean tryFastForwardToAddress(long target) {
             for (int i = 0; i < breakpoints.length; i++) {
@@ -572,6 +582,49 @@ public class HypervisorBackend64 extends HypervisorBackend {
             }
             return false;
         }
+        private boolean tryFastForwardWithPageProtection() {
+            int ps = getPageSize();
+            long pageMask = ps - 1L;
+            long interiorBegin = (begin + pageMask) & ~pageMask;
+            long interiorEnd = end & ~pageMask;
+            if (interiorBegin >= interiorEnd) {
+                return false;
+            }
+            Map<Long, Integer> permsMap = new LinkedHashMap<>();
+            for (long addr = interiorBegin; addr < interiorEnd; addr += ps) {
+                int perms = hypervisor.get_page_perms(addr);
+                if (perms < 0 || (perms & UnicornConst.UC_PROT_EXEC) == 0) {
+                    continue;
+                }
+                permsMap.put(addr, perms);
+            }
+            if (permsMap.isEmpty()) {
+                return false;
+            }
+            savedPagePerms = permsMap;
+            for (Map.Entry<Long, Integer> entry : permsMap.entrySet()) {
+                hypervisor.mem_protect(entry.getKey(), ps, entry.getValue() & ~UnicornConst.UC_PROT_EXEC);
+            }
+            hypervisor.enable_single_step(false);
+            return true;
+        }
+        boolean onInsnAbort() {
+            if (savedPagePerms == null || savedPagePerms.isEmpty()) {
+                return false;
+            }
+            restorePageProtection();
+            step();
+            return true;
+        }
+        private void restorePageProtection() {
+            if (savedPagePerms != null) {
+                int ps = getPageSize();
+                for (Map.Entry<Long, Integer> entry : savedPagePerms.entrySet()) {
+                    hypervisor.mem_protect(entry.getKey(), ps, entry.getValue());
+                }
+                savedPagePerms = null;
+            }
+        }
         @Override
         public void unhook() {
             if (reentrySlot >= 0) {
@@ -579,6 +632,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
                 hypervisor.disable_hw_breakpoint(reentrySlot);
                 reentrySlot = -1;
             }
+            restorePageProtection();
             exclusiveMonitorEscaper = null;
             hypervisor.enable_single_step(false);
         }

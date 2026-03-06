@@ -73,6 +73,18 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       }
       return handled == JNI_TRUE;
     }
+    case EC_INSNABORT: {
+      uint64_t pc = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
+      uint64_t cpsr = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
+      jboolean handled = env->CallBooleanMethod(hypervisor->callback, handleException,
+          (jlong)syndrome, (jlong)cpu->vcpu_exit->exception.virtual_address, (jlong)pc, (jlong)cpsr);
+      if (env->ExceptionCheck()) {
+        return false;
+      }
+      return handled == JNI_TRUE;
+    }
     case EC_AA64_SVC:
     default: {
       uint64_t virtAddr = cpu->vcpu_exit->exception.virtual_address;
@@ -410,6 +422,24 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   uint64_t dbgbcr_linked = (0x1ULL << 20) | ((uint64_t)n << 16) | (0xFULL << 5) | (0x2ULL << 1) | 0x1ULL;
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBcrRegs[n + 1], dbgbcr_linked));
   HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBvrRegs[n + 1], bp_begin));
+}
+
+/*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    get_page_perms
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_get_1page_1perms
+  (JNIEnv *env, jclass clazz, jlong handle, jlong address) {
+  auto hypervisor = (t_hypervisor) handle;
+  khash_t(memory) *memory = hypervisor->memory;
+  uint64_t base = (uint64_t)address & ~HVF_PAGE_MASK;
+  khiter_t k = kh_get(memory, memory, base);
+  if(k == kh_end(memory)) {
+    return -1;
+  }
+  t_memory_page page = kh_value(memory, k);
+  return (jint)page->perms;
 }
 
 /*
