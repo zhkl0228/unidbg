@@ -114,7 +114,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
         auxv.setPointer(emulator.getPointerSize(), __stack_chk_guard);
         final int AT_PAGESZ = 6;
         auxv.setPointer(emulator.getPointerSize() * 2L, UnidbgPointer.pointer(emulator, AT_PAGESZ));
-        auxv.setPointer(emulator.getPointerSize() * 3L, UnidbgPointer.pointer(emulator, emulator.getPageAlign()));
+        auxv.setPointer(emulator.getPointerSize() * 3L, UnidbgPointer.pointer(emulator, ARMEmulator.PAGE_ALIGN));
 
         List<String> envList = new ArrayList<>();
         for (String env : envs) {

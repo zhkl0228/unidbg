@@ -74,7 +74,9 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       return handled == JNI_TRUE;
     }
     case EC_AA64_SVC:
-    default:
+    default: {
+      uint64_t virtAddr = cpu->vcpu_exit->exception.virtual_address;
+
       uint64_t pc = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
       uint64_t elr = 0;
@@ -87,11 +89,11 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ESR_EL1, &esr));
       uint64_t far = 0;
       HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_FAR_EL1, &far));
-      env->CallVoidMethod(hypervisor->callback, handleUnknownException, ec, esr, far, cpu->vcpu_exit->exception.virtual_address);
+      env->CallVoidMethod(hypervisor->callback, handleUnknownException, ec, esr, far, virtAddr);
       fprintf(stderr, "Unexpected VM exception: 0x%llx, EC 0x%x, VirtAddr 0x%llx, IPA 0x%llx, PC 0x%llx, ELR_EL1 0x%llx, SPSR_EL1 0x%llx, SP_EL0 0x%llx, ESR_EL1 0x%llx, FAR_EL1 0x%llx\n",
                           syndrome,
                           ec,
-                          cpu->vcpu_exit->exception.virtual_address,
+                          virtAddr,
                           cpu->vcpu_exit->exception.physical_address,
                           pc,
                           elr,
@@ -101,7 +103,9 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
                           far
                       );
       return false;
+    }
   }
+  return true;
 }
 
 static int cpu_loop(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) {
@@ -175,7 +179,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SCTLR_EL1, 0x4c5d864));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CVAL_EL0, 0x0));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTV_CTL_EL0, 0x0));
-    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTKCTL_EL1, 0x0));
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_CNTKCTL_EL1, 0x303));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_MIDR_EL1, 0x410fd083));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ID_AA64MMFR0_EL1, 0x5));
     HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ID_AA64MMFR2_EL1, 0x10000));
@@ -697,14 +701,14 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
     khiter_t k = kh_get(memory, memory, vaddr);
     if(k == kh_end(memory)) {
-      fprintf(stderr, "mem_protect failed[%s->%s:%d]: vaddr=%p\n", __FILE__, __func__, __LINE__, (void*)vaddr);
+      fprintf(stderr, "mem_protect page not found: vaddr=%p, address=%p, size=0x%llx, perms=0x%x\n", (void*)vaddr, (void*)address, (unsigned long long)size, perms);
       return 3;
     }
   }
 
   if(hv_vm_protect(address, size, perms) != HV_SUCCESS) {
     fprintf(stderr, "hv_vm_protect failed address=%p, size=0x%lx, perms=0x%x\n", (void*) address, size, perms);
-    return 3;
+    return 4;
   }
 
   for(uint64_t vaddr = address; vaddr < address + size; vaddr += HVF_PAGE_SIZE) {
@@ -985,7 +989,11 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   if (!cpu) return 0;
   uint64_t pc = 0;
-  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &pc));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
+  uint64_t vbar = com_github_unidbg_arm_backend_hypervisor_Hypervisor_REG_VBAR_EL1;
+  if (pc >= vbar && pc < vbar + 0x800) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &pc));
+  }
   return (jlong) pc;
 }
 
