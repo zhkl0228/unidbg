@@ -738,7 +738,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private boolean emulateCommPageLdr(Instruction insn, Operand[] op, long elr, Number val) {
         OpValue value = op[0].getValue();
         reg_write(insn.mapToUnicornReg(value.getReg()), val);
-        hypervisor.reg_set_elr_el1(elr + 4);
+        hypervisor.reg_set_pc64(elr + 4);
         return true;
     }
 

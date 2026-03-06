@@ -29,6 +29,7 @@ public class Hypervisor implements Closeable {
     private static native int reg_set_nzcv(long handle, long value);
     private static native int reg_set_cpacr_el1(long handle, long value);
     private static native int reg_set_elr_el1(long handle, long value);
+    private static native int reg_set_pc64(long handle, long value);
     private static native byte[] reg_read_vector(long handle, int index);
     private static native int reg_set_vector(long handle, int index, byte[] vector);
     private static native int reg_set_spsr_el1(long handle, long value);
@@ -255,6 +256,18 @@ public class Hypervisor implements Closeable {
             log.trace("reg_set_elr_el1 value=0x{}", Long.toHexString(value));
         }
         int ret = reg_set_elr_el1(nativeHandle, value);
+        checkReturnCode(ret);
+    }
+
+    /**
+     * Sets HV_REG_PC directly. Required for advancing PC after handling
+     * stage 2 direct VM exits (DATAABORT/INSNABORT) where ERET is not used.
+     */
+    public void reg_set_pc64(long value) {
+        if (log.isTraceEnabled()) {
+            log.trace("reg_set_pc64 value=0x{}", Long.toHexString(value));
+        }
+        int ret = reg_set_pc64(nativeHandle, value);
         checkReturnCode(ret);
     }
 
