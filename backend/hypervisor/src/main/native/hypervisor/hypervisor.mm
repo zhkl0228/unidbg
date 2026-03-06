@@ -85,6 +85,18 @@ static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_
       }
       return handled == JNI_TRUE;
     }
+    case EC_DATAABORT: {
+      uint64_t pc = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &pc));
+      uint64_t cpsr = 0;
+      HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &cpsr));
+      jboolean handled = env->CallBooleanMethod(hypervisor->callback, handleException,
+          (jlong)syndrome, (jlong)cpu->vcpu_exit->exception.virtual_address, (jlong)pc, (jlong)cpsr);
+      if (env->ExceptionCheck()) {
+        return false;
+      }
+      return handled == JNI_TRUE;
+    }
     case EC_AA64_SVC:
     default: {
       uint64_t virtAddr = cpu->vcpu_exit->exception.virtual_address;

@@ -224,20 +224,23 @@ public class HypervisorBackend64 extends HypervisorBackend {
 
     private boolean handleDataAbort(int ec, long esr, long far, long elr) {
         boolean isv = (esr & ARM_EL_ISV) != 0;
+        boolean isWrite = ((esr >> 6) & 1) != 0;
         int sas = (int) ((esr >> 22) & 3);
         int dfsc = (int) (esr & 0x3f);
+        int accessSize = isv ? 1 << sas : 0;
         if (log.isDebugEnabled()) {
-            boolean isWrite = ((esr >> 6) & 1) != 0;
             boolean s1ptw = ((esr >> 7) & 1) != 0;
             int len = 1 << sas;
             int srt = (int) ((esr >> 16) & 0x1f);
             log.debug("handle EC_DATAABORT isv={}, isWrite={}, s1ptw={}, len={}, srt={}, dfsc=0x{}, vaddr=0x{}", isv, isWrite, s1ptw, len, srt, Integer.toHexString(dfsc), Long.toHexString(far));
         }
         if (dfsc == 0x00 && emulator.getFamily() == Family.iOS) {
-            int accessSize = isv ? 1 << sas : 0;
             return handleCommRead(far, elr, accessSize);
         }
-        throw new UnsupportedOperationException("handleException ec=0x" + Integer.toHexString(ec) + ", dfsc=0x" + Integer.toHexString(dfsc));
+        if (eventMemHookNotifier != null) {
+            eventMemHookNotifier.notifyDataAbort(isWrite, accessSize, far);
+        }
+        return false;
     }
 
     private boolean handleSystemRegisterTrap(long esr, long elr) {
@@ -793,7 +796,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             if (regId >= Arm64Const.UC_ARM64_REG_X0 && regId <= Arm64Const.UC_ARM64_REG_X28) {
                 return hypervisor.reg_read64(regId - Arm64Const.UC_ARM64_REG_X0);
             } else if (regId >= Arm64Const.UC_ARM64_REG_W0 && regId <= Arm64Const.UC_ARM64_REG_W30) {
-                return (int) (hypervisor.reg_read64(regId - Arm64Const.UC_ARM64_REG_W0) & 0xffffffffL);
+                return hypervisor.reg_read64(regId - Arm64Const.UC_ARM64_REG_W0) & 0xffffffffL;
             } else {
                 switch (regId) {
                     case Arm64Const.UC_ARM64_REG_SP:
