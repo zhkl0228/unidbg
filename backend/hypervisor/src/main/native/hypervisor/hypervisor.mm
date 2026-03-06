@@ -385,6 +385,34 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
 }
 
 /*
+ * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
+ * Method:    install_hw_breakpoint_range
+ * Signature: (JIJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_install_1hw_1breakpoint_1range
+  (JNIEnv *env, jclass clazz, jlong handle, jint n, jlong bp_begin, jlong bp_end) {
+  auto hypervisor = (t_hypervisor) handle;
+  t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
+  if (!cpu) return;
+  if(n < 0 || n + 1 >= cpu->BRPs || n >= 15) {
+    char msg[128];
+    snprintf(msg, sizeof(msg), "install_hw_breakpoint_range invalid n: %d, BRPs=%d", n, cpu->BRPs);
+    env->ThrowNew(cHypervisorException, msg);
+    return;
+  }
+  // Slot n: Address Mismatch at end_address (fires when PC < end)
+  // BT=0b0100, BAS=0b1111, PMC=0b10(EL0), E=1
+  uint64_t dbgbcr_mismatch = (0x4ULL << 20) | (0xFULL << 5) | (0x2ULL << 1) | 0x1ULL;
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBcrRegs[n], dbgbcr_mismatch));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBvrRegs[n], bp_end));
+  // Slot n+1: Linked Address Match at begin_address, linked to slot n (fires when PC >= begin)
+  // BT=0b0001, LBN=n, BAS=0b1111, PMC=0b10(EL0), E=1
+  uint64_t dbgbcr_linked = (0x1ULL << 20) | ((uint64_t)n << 16) | (0xFULL << 5) | (0x2ULL << 1) | 0x1ULL;
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBcrRegs[n + 1], dbgbcr_linked));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, kDbgBvrRegs[n + 1], bp_begin));
+}
+
+/*
  * Class:     com_github_unidbg_arm_backend_HypervisorFactory
  * Method:    getPageSize
  * Signature: ()I

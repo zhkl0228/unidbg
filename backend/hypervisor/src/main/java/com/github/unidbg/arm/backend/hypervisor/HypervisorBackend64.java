@@ -546,6 +546,9 @@ public class HypervisorBackend64 extends HypervisorBackend {
             }
             long lr = reg_read(Arm64Const.UC_ARM64_REG_LR).longValue();
             long target = (lr >= begin && lr < end) ? lr : begin;
+            return tryFastForwardToAddress(target);
+        }
+        private boolean tryFastForwardToAddress(long target) {
             for (int i = 0; i < breakpoints.length; i++) {
                 if (breakpoints[i] == null) {
                     final int n = i;
