@@ -232,7 +232,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
             boolean s1ptw = ((esr >> 7) & 1) != 0;
             int len = 1 << sas;
             int srt = (int) ((esr >> 16) & 0x1f);
-            log.debug("handle EC_DATAABORT isv={}, isWrite={}, s1ptw={}, len={}, srt={}, dfsc=0x{}, vaddr=0x{}", isv, isWrite, s1ptw, len, srt, Integer.toHexString(dfsc), Long.toHexString(far));
+            log.debug("handle EC_DATAABORT ec=0x{}, isv={}, isWrite={}, s1ptw={}, len={}, srt={}, dfsc=0x{}, vaddr=0x{}, elr=0x{}", Integer.toHexString(ec), isv, isWrite, s1ptw, len, srt, Integer.toHexString(dfsc), Long.toHexString(far), Long.toHexString(elr));
         }
         if (dfsc == 0x00 && emulator.getFamily() == Family.iOS) {
             return handleCommRead(far, elr, accessSize);
@@ -738,7 +738,7 @@ public class HypervisorBackend64 extends HypervisorBackend {
     private boolean emulateCommPageLdr(Instruction insn, Operand[] op, long elr, Number val) {
         OpValue value = op[0].getValue();
         reg_write(insn.mapToUnicornReg(value.getReg()), val);
-        hypervisor.reg_set_pc64(elr + 4);
+        hypervisor.reg_set_elr_el1(elr + 4);
         return true;
     }
 
