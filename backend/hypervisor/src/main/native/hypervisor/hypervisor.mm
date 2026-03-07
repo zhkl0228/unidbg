@@ -170,6 +170,19 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_HypervisorFactory_test
   free(cpu);
 }
 
+static const char* hv_return_string(hv_return_t ret) {
+  switch (ret) {
+    case HV_SUCCESS: return "HV_SUCCESS";
+    case HV_ERROR: return "HV_ERROR(the operation was unsuccessful)";
+    case HV_BUSY: return "HV_BUSY(the owning resource was busy)";
+    case HV_BAD_ARGUMENT: return "HV_BAD_ARGUMENT(invalid argument)";
+    case HV_NO_RESOURCES: return "HV_NO_RESOURCES(host had no resources available)";
+    case HV_NO_DEVICE: return "HV_NO_DEVICE(no VM or vCPU was available)";
+    case HV_UNSUPPORTED: return "HV_UNSUPPORTED(operation not supported by the hypervisor)";
+    default: return "UNKNOWN";
+  }
+}
+
 static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor) {
   auto cpu = (t_hypervisor_cpu) pthread_getspecific(hypervisor->cpu_key);
   if(cpu) {
@@ -181,7 +194,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
       uint32_t max_vcpu = 0;
       hv_vm_get_max_vcpu_count(&max_vcpu);
       char msg[256];
-      snprintf(msg, sizeof(msg), "hv_vcpu_create failed: 0x%x, vcpu_count=%d, max_vcpu=%u at %s:%d", ret, vcpu_count.load(), max_vcpu, __FILE__, __LINE__);
+      snprintf(msg, sizeof(msg), "hv_vcpu_create failed: 0x%x(%s), vcpu_count=%d, max_vcpu=%u at %s:%d", ret, hv_return_string(ret), vcpu_count.load(), max_vcpu, __FILE__, __LINE__);
       free(cpu);
       env->ThrowNew(cHypervisorException, msg);
       return nullptr;
