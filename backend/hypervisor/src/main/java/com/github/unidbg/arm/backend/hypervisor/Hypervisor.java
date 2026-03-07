@@ -135,19 +135,11 @@ public class Hypervisor implements Closeable {
 
     private final long nativeHandle;
 
-    private static Hypervisor singleInstance;
-
     public Hypervisor(boolean is64Bit) {
-        if (!is64Bit) {
-            throw new UnsupportedOperationException();
-        }
-
-        synchronized (Hypervisor.class) {
-            if (singleInstance != null) {
-                throw new IllegalStateException("Only one hypervisor VM instance per process allowed.");
-            }
+        if (is64Bit) {
             this.nativeHandle = nativeInitialize(true);
-            singleInstance = this;
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -200,7 +192,7 @@ public class Hypervisor implements Closeable {
             throw new IllegalArgumentException("index=" + index);
         }
         if (log.isDebugEnabled()) {
-            log.debug("reg_write64 index={}, value=0x{}", index, Long.toHexString(value));
+            log.debug("reg_write64 index={}, value=0x{}, pc=0x{}", index, Long.toHexString(value), Long.toHexString(reg_read_pc64()));
         }
         int ret = reg_write(nativeHandle, index, value);
         checkReturnCode(ret);
@@ -387,14 +379,9 @@ public class Hypervisor implements Closeable {
 
     @Override
     public void close() {
-        synchronized (Hypervisor.class) {
-            if (closed) {
-                return;
-            }
-            closed = true;
+        if (!closed) {
             nativeDestroy(nativeHandle);
-
-            singleInstance = null;
+            closed = true;
         }
     }
 

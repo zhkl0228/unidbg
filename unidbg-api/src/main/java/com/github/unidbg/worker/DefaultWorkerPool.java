@@ -54,6 +54,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
     private final int maxWorkers;
     private volatile long idleTimeoutMs = TimeUnit.MINUTES.toMillis(DEFAULT_IDLE_TIMEOUT_MINUTES);
     private volatile int minIdle = 1;
+    private volatile int initialSize = 1;
 
     private final Thread thread;
     private volatile boolean stopped;
@@ -90,6 +91,18 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
         log.debug("Updated minIdle: {}", minIdle);
     }
 
+    @Override
+    public void setInitialSize(int initialSize) {
+        if (initialSize < 0) {
+            throw new IllegalArgumentException("initialSize must be non-negative: " + initialSize);
+        }
+        if (initialSize > maxWorkers) {
+            throw new IllegalArgumentException("initialSize(" + initialSize + ") must not exceed maxWorkers(" + maxWorkers + ")");
+        }
+        this.initialSize = initialSize;
+        log.debug("Updated initialSize: {}", initialSize);
+    }
+
     /**
      * 管理线程主循环：按需创建 Worker、处理归还、清理空闲超时 Worker。
      */
@@ -99,7 +112,8 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
 
         while (!stopped) {
             try {
-                boolean shouldCreate = workers.isEmpty() && totalAlive.get() < maxWorkers;
+                int alive = totalAlive.get();
+                boolean shouldCreate = (workers.isEmpty() || alive < initialSize) && alive < maxWorkers;
 
                 Worker release = shouldCreate
                         ? releaseQueue.poll()

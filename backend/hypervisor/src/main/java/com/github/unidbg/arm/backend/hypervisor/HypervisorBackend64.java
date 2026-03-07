@@ -163,7 +163,8 @@ public class HypervisorBackend64 extends HypervisorBackend {
     public boolean handleException(long esr, long far, final long elr, long cpsr) {
         int ec = (int) ((esr >> 26) & 0x3f);
         if (log.isDebugEnabled()) {
-            log.debug("handleException syndrome=0x{}, far=0x{}, elr=0x{}, ec=0x{}, cpsr=0x{}", Long.toHexString(esr), Long.toHexString(far), Long.toHexString(elr), Integer.toHexString(ec), Long.toHexString(cpsr));
+            Number x0 = reg_read(Arm64Const.UC_ARM64_REG_X0);
+            log.debug("handleException syndrome=0x{}, far=0x{}, elr=0x{}, ec=0x{}, cpsr=0x{}, x0=0x{}", Long.toHexString(esr), Long.toHexString(far), Long.toHexString(elr), Integer.toHexString(ec), Long.toHexString(cpsr), Long.toHexString(x0.longValue()));
         }
         if (lastHitPointAddress != elr &&
                 (ec == EC_SOFTWARESTEP || ec == EC_BREAKPOINT || ec == EC_WATCHPOINT)) {

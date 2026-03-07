@@ -21,6 +21,10 @@ import org.scijava.nativelib.NativeLibraryUtil;
  * // 自定义空闲超时
  * WorkerPool pool = WorkerPoolFactory.create(MyWorker::new);
  * pool.setIdleTimeout(30); // 30 分钟
+ *
+ * // 预创建初始 Worker
+ * WorkerPool pool = WorkerPoolFactory.create(MyWorker::new, 8);
+ * pool.setInitialSize(4); // 启动时预创建 4 个 Worker
  * }</pre>
  */
 public class WorkerPoolFactory {

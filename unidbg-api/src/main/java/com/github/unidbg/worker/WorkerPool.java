@@ -31,6 +31,14 @@ public interface WorkerPool extends Closeable {
     void setMinIdle(int minIdle);
 
     /**
+     * 设置初始 Worker 数量，管理线程会预先创建指定数量的 Worker 放入池中。
+     * 不能超过 maxWorkers，不能低于 0，默认为 0（完全懒创建）。
+     *
+     * @param initialSize 初始 Worker 数量
+     */
+    void setInitialSize(int initialSize);
+
+    /**
      * 从池中借出一个 Worker，返回 {@link WorkerLoan} 包装器。
      *
      * @param timeout 等待超时时长

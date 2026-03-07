@@ -116,6 +116,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 }
                 Svc svc = svcMemory.getSvc(swi);
                 if (svc != null) {
+                    log.debug("swi={}, svc={}", swi, svc);
                     backend.reg_write(Arm64Const.UC_ARM64_REG_X0, svc.handle(emulator));
                     return;
                 }
@@ -1179,7 +1180,7 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         int option = context.getIntArg(0);
         long arg2 = context.getLongArg(1);
         if (log.isDebugEnabled()) {
-            log.debug("prctl option=0x{}, arg2=0x{}", Integer.toHexString(option), Long.toHexString(arg2));
+            log.debug("prctl option=0x{}, arg2=0x{}, task={}", Integer.toHexString(option), Long.toHexString(arg2), emulator.getThreadDispatcher().getRunningTask());
         }
         switch (option) {
             case PR_SET_NAME:
@@ -1205,8 +1206,9 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
             case PR_SET_NO_NEW_PRIVS:
             case PR_SET_THP_DISABLE:
                 return 0;
+            default:
+                throw new UnsupportedOperationException("option=" + option);
         }
-        throw new UnsupportedOperationException("option=" + option);
     }
 
     private static final int CLOCK_REALTIME = 0;
@@ -1339,7 +1341,11 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 log.debug(msg);
             }
         }
-        return emulator.getMemory().mmap2(start, length, prot, flags, fd, offset);
+        long mapped = emulator.getMemory().mmap2(start, length, prot, flags, fd, offset);
+        if (log.isDebugEnabled()) {
+            log.debug("mmap start=0x{}, mapped=0x{}, length=0x{}, prot=0x{}, flags=0x{}, fd={}, offset={}, task={}", Long.toHexString(start), Long.toHexString(mapped), Integer.toHexString(length), Integer.toHexString(prot), Integer.toHexString(flags), fd, offset, emulator.getThreadDispatcher().getRunningTask());
+        }
+        return mapped;
     }
 
     private int gettimeofday(Emulator<?> emulator) {

@@ -181,7 +181,7 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
       uint32_t max_vcpu = 0;
       hv_vm_get_max_vcpu_count(&max_vcpu);
       char msg[256];
-      snprintf(msg, sizeof(msg), "hv_vcpu_create failed: %d, vcpu_count=%d, max_vcpu=%u at %s:%d", (int)ret, vcpu_count.load(), max_vcpu, __FILE__, __LINE__);
+      snprintf(msg, sizeof(msg), "hv_vcpu_create failed: 0x%x, vcpu_count=%d, max_vcpu=%u at %s:%d", ret, vcpu_count.load(), max_vcpu, __FILE__, __LINE__);
       free(cpu);
       env->ThrowNew(cHypervisorException, msg);
       return nullptr;

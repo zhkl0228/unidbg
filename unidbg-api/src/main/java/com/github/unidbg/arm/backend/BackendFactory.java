@@ -1,10 +1,14 @@
 package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
 public abstract class BackendFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(BackendFactory.class);
 
     private final boolean fallbackUnicorn;
 
@@ -16,6 +20,7 @@ public abstract class BackendFactory {
         try {
             return newBackendInternal(emulator, is64Bit);
         } catch (Throwable e) {
+            log.trace("newBackend failed", e);
             if (fallbackUnicorn) {
                 return null;
             } else {
@@ -27,6 +32,7 @@ public abstract class BackendFactory {
     protected abstract Backend newBackendInternal(Emulator<?> emulator, boolean is64Bit);
 
     public static Backend createBackend(Emulator<?> emulator, boolean is64Bit, Collection<BackendFactory> backendFactories) {
+        log.trace("create backend: is64Bit={}, backendFactories={}", is64Bit, backendFactories);
         if (backendFactories != null) {
             for (BackendFactory factory : backendFactories) {
                 Backend backend = factory.newBackend(emulator, is64Bit);

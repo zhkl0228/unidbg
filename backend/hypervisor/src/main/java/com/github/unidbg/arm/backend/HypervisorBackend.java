@@ -181,6 +181,9 @@ public abstract class HypervisorBackend extends FastBackend implements Backend, 
     }
 
     protected final void notifyInterruptHook(int intno, int swi) {
+        if (log.isDebugEnabled()) {
+            log.debug("notifyInterruptHook intno={}, swi={}", intno, swi);
+        }
         if (interruptHookNotifier == null) {
             throw new IllegalStateException("interruptHookNotifier is null, bindInterruptHook not called before exception intno=" + intno + ", swi=" + swi);
         }

@@ -301,6 +301,8 @@ WorkerPool pool = WorkerPoolFactory.create(MyWorker::new);
 pool.setIdleTimeout(30); // idle workers destroyed after 30 minutes
 // Optional: customize minimum kept-alive workers (default 1, minimum 1)
 pool.setMinIdle(2); // always keep at least 2 workers alive
+// Optional: pre-create workers eagerly (default 0, fully lazy)
+pool.setInitialSize(4); // eagerly create 4 workers on startup
 
 // Concurrent invocation from multiple threads
 ExecutorService executor = Executors.newFixedThreadPool(100);
