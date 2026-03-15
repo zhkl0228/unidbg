@@ -96,10 +96,7 @@ class DefaultWorkerPool implements WorkerPool, Runnable {
         if (initialSize < 0) {
             throw new IllegalArgumentException("initialSize must be non-negative: " + initialSize);
         }
-        if (initialSize > maxWorkers) {
-            throw new IllegalArgumentException("initialSize(" + initialSize + ") must not exceed maxWorkers(" + maxWorkers + ")");
-        }
-        this.initialSize = initialSize;
+        this.initialSize = Math.min(initialSize, maxWorkers);
         log.debug("Updated initialSize: {}", initialSize);
     }
 

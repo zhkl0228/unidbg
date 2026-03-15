@@ -94,6 +94,23 @@ public class SymbolResolver implements HookListener {
             }
             return _getentropy.peer;
         }
+        if ("__ZNSt3__118shared_timed_mutexC1Ev".equals(symbolName)) {
+            if (emulator.is64Bit()) {
+                if (__shared_mutex_base$$__shared_mutex_base == null) {
+                    __shared_mutex_base$$__shared_mutex_base = svcMemory.registerSvc(new Arm64Svc("std::shared_timed_mutex::shared_timed_mutex(void)") {
+                        @Override
+                        public long handle(Emulator<?> emulator) {
+                            RegisterContext context = emulator.getContext();
+                            log.info("std::shared_timed_mutex::shared_timed_mutex({})", context.getPointerArg(0));
+                            return 0;
+                        }
+                    });
+                }
+            } else {
+                throw new UnsupportedOperationException();
+            }
+            return __shared_mutex_base$$__shared_mutex_base.peer;
+        }
         if ("__ZNSt3__119__shared_mutex_baseC1Ev".equals(symbolName)) {
             if (emulator.is64Bit()) {
                 if (__shared_mutex_base$$__shared_mutex_base == null) {

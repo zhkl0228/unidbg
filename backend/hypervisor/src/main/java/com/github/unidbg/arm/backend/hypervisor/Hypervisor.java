@@ -135,9 +135,17 @@ public class Hypervisor implements Closeable {
 
     private final long nativeHandle;
 
+    private static Hypervisor singleInstance;
+
     public Hypervisor(boolean is64Bit) {
         if (is64Bit) {
-            this.nativeHandle = nativeInitialize(true);
+            synchronized (Hypervisor.class) {
+                if (singleInstance != null) {
+                    throw new IllegalStateException("Only one hypervisor VM instance per process allowed.");
+                }
+                this.nativeHandle = nativeInitialize(true);
+                singleInstance = this;
+            }
         } else {
             throw new UnsupportedOperationException();
         }
@@ -380,8 +388,11 @@ public class Hypervisor implements Closeable {
     @Override
     public void close() {
         if (!closed) {
-            nativeDestroy(nativeHandle);
-            closed = true;
+            synchronized (Hypervisor.class) {
+                nativeDestroy(nativeHandle);
+                singleInstance = null;
+                closed = true;
+            }
         }
     }
 
