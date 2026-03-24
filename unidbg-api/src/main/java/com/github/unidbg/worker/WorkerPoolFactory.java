@@ -47,7 +47,7 @@ public class WorkerPoolFactory {
      * @return 新创建的 WorkerPool
      */
     public static WorkerPool create(WorkerFactory factory, int workerCount) {
-        return create(factory, workerCount, false);
+        return create(factory, workerCount, NativeLibraryUtil.getArchitecture() == NativeLibraryUtil.Architecture.OSX_ARM64);
     }
 
     /**
