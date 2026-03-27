@@ -2,6 +2,7 @@ package com.github.unidbg;
 
 import capstone.Arm64_const;
 import capstone.Arm_const;
+import unicorn.Arm64Const;
 import capstone.api.Instruction;
 import capstone.api.RegsAccess;
 import com.alibaba.fastjson.util.IOUtils;
@@ -12,6 +13,8 @@ import com.github.unidbg.arm.backend.CodeHook;
 import com.github.unidbg.arm.backend.UnHook;
 import com.github.unidbg.listener.TraceCodeListener;
 import com.github.unidbg.memory.Memory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -23,6 +26,8 @@ import java.util.regex.Pattern;
  */
 
 public class AssemblyCodeDumper implements CodeHook, TraceHook {
+
+    private static final Logger log = LoggerFactory.getLogger(AssemblyCodeDumper.class);
 
     private static final Pattern LOAD_PATTERN = Pattern.compile("^(ldr|ldrb|ldrh|ldrsb|ldrsh|ldur|ldurb|ldurh|ldp|ldm)($|\\.|\\s).*");
     private static final Pattern STORE_PATTERN = Pattern.compile("^(str|strb|strh|stur|sturb|sturh|stp|stm)($|\\.|\\s).*");
@@ -150,16 +155,16 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
             }
             mnemonic = mnemonic.toLowerCase();
 
-            String accessType;
+            boolean isLoad;
             if (LOAD_PATTERN.matcher(mnemonic).matches()) {
-                accessType = "READ";
+                isLoad = true;
             } else if (STORE_PATTERN.matcher(mnemonic).matches()) {
-                accessType = "WRITE";
+                isLoad = false;
             } else {
                 return;
             }
 
-            long absAddr;
+            String tag = isLoad ? "r" : "w";
             if (emulator.is32Bit()) {
                 capstone.api.arm.OpInfo opInfo = (capstone.api.arm.OpInfo) ins.getOperands();
                 capstone.api.arm.Operand memOperand = null;
@@ -173,14 +178,16 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
                     return;
                 }
                 capstone.api.arm.MemType mem = memOperand.getValue().getMem();
-                long baseValue = mem.getBase() != 0 ? backend.reg_read(mem.getBase()).longValue() : 0;
-                long indexValue = mem.getIndex() != 0 ? backend.reg_read(mem.getIndex()).longValue() : 0;
+                long baseValue = mem.getBase() != 0 ? backend.reg_read(ins.mapToUnicornReg(mem.getBase())).longValue() : 0;
+                long indexValue = mem.getIndex() != 0 ? backend.reg_read(ins.mapToUnicornReg(mem.getIndex())).longValue() : 0;
                 int lshift = mem.getLshift();
                 long shiftedIndex = lshift != 0 ? indexValue << lshift : indexValue;
                 if (memOperand.isSubtracted()) {
                     shiftedIndex = -shiftedIndex;
                 }
-                absAddr = baseValue + shiftedIndex + mem.getDisp();
+                long absAddr = baseValue + shiftedIndex + mem.getDisp();
+                int size = getArm32AccessSize(mnemonic, opInfo);
+                builder.append(String.format(" (%s 0x%x %d)", tag, absAddr, size));
             } else {
                 capstone.api.arm64.OpInfo opInfo = (capstone.api.arm64.OpInfo) ins.getOperands();
                 capstone.api.arm64.Operand memOperand = null;
@@ -194,20 +201,74 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
                     return;
                 }
                 capstone.api.arm64.MemType mem = memOperand.getValue().getMem();
-                long baseValue = mem.getBase() != 0 ? backend.reg_read(mem.getBase()).longValue() : 0;
-                long indexValue = mem.getIndex() != 0 ? backend.reg_read(mem.getIndex()).longValue() : 0;
+                long baseValue = mem.getBase() != 0 ? readArm64Reg(backend, ins.mapToUnicornReg(mem.getBase())).longValue() : 0;
+                long indexValue = mem.getIndex() != 0 ? readArm64Reg(backend, ins.mapToUnicornReg(mem.getIndex())).longValue() : 0;
                 long shiftedIndex = indexValue;
                 capstone.api.OpShift shift = memOperand.getShift();
                 if (shift != null && shift.getValue() != 0) {
                     shiftedIndex = indexValue << shift.getValue();
                 }
-                absAddr = baseValue + shiftedIndex + mem.getDisp();
+                long absAddr = baseValue + shiftedIndex + mem.getDisp();
+                int elemSize = getArm64ElemSize(ins, mnemonic, opInfo);
+                builder.append(String.format(" (%s 0x%x %d)", tag, absAddr, elemSize));
+                if (mnemonic.startsWith("ldp") || mnemonic.startsWith("stp")) {
+                    builder.append(String.format(" (%s 0x%x %d)", tag, absAddr + elemSize, elemSize));
+                }
             }
-
-            builder.append(String.format(" ; mem[%s] abs=0x%x", accessType, absAddr));
         } catch (Exception e) {
             builder.append(" ; [mem_abs calc error: ").append(e.getMessage()).append("]");
+            log.warn("hookMemoryAccess failed", e);
         }
+    }
+
+    private int getArm32AccessSize(String mnemonic, capstone.api.arm.OpInfo opInfo) {
+        if (mnemonic.startsWith("ldrb") || mnemonic.startsWith("strb") || mnemonic.startsWith("ldrsb")) {
+            return 1;
+        }
+        if (mnemonic.startsWith("ldrh") || mnemonic.startsWith("strh") || mnemonic.startsWith("ldrsh")) {
+            return 2;
+        }
+        if (mnemonic.startsWith("ldm") || mnemonic.startsWith("stm")) {
+            int regCount = 0;
+            for (capstone.api.arm.Operand op : opInfo.getOperands()) {
+                if (op.getType() == Arm_const.ARM_OP_REG) {
+                    regCount++;
+                }
+            }
+            return 4 * Math.max(regCount, 1);
+        }
+        return 4;
+    }
+
+    private int getArm64ElemSize(Instruction ins, String mnemonic, capstone.api.arm64.OpInfo opInfo) {
+        if (mnemonic.endsWith("b")) return 1;  // ldrb, strb, ldurb, sturb, ldrsb
+        if (mnemonic.endsWith("h")) return 2;  // ldrh, strh, ldurh, sturh, ldrsh
+        if (mnemonic.endsWith("w")) return 4;  // ldrsw, ldpsw
+        // Infer size from first register operand (map to unicorn regId for range checks)
+        for (capstone.api.arm64.Operand op : opInfo.getOperands()) {
+            if (op.getType() == Arm64_const.ARM64_OP_REG) {
+                return arm64RegSize(ins.mapToUnicornReg(op.getValue().getReg()));
+            }
+        }
+        return 8;
+    }
+
+    private Number readArm64Reg(Backend backend, int regId) throws BackendException {
+        // XZR/WZR always read as zero
+        if (regId == Arm64Const.UC_ARM64_REG_XZR || regId == Arm64Const.UC_ARM64_REG_WZR) return 0L;
+        // WSP is the 32-bit view of SP; map to SP
+        if (regId == Arm64Const.UC_ARM64_REG_WSP) return backend.reg_read(Arm64Const.UC_ARM64_REG_SP);
+        return backend.reg_read(regId);
+    }
+
+    private int arm64RegSize(int regId) {
+        if (regId >= Arm64Const.UC_ARM64_REG_B0 && regId <= Arm64Const.UC_ARM64_REG_B31) return 1;
+        if (regId >= Arm64Const.UC_ARM64_REG_D0 && regId <= Arm64Const.UC_ARM64_REG_D31) return 8;
+        if (regId >= Arm64Const.UC_ARM64_REG_H0 && regId <= Arm64Const.UC_ARM64_REG_H31) return 2;
+        if (regId >= Arm64Const.UC_ARM64_REG_Q0 && regId <= Arm64Const.UC_ARM64_REG_Q31) return 16;
+        if (regId >= Arm64Const.UC_ARM64_REG_S0 && regId <= Arm64Const.UC_ARM64_REG_S31) return 4;
+        if ((regId >= Arm64Const.UC_ARM64_REG_W0 && regId <= Arm64Const.UC_ARM64_REG_W30) || regId == Arm64Const.UC_ARM64_REG_WZR) return 4;
+        return 8; // X0-X28, X29, X30, SP, XZR
     }
 
 }
