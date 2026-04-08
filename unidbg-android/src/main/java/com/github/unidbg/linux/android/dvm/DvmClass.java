@@ -220,7 +220,7 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getClassName());
+        return vm.hash(getClassName());
     }
 
     @Override

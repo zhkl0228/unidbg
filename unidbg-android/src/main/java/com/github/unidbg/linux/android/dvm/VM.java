@@ -40,6 +40,8 @@ public interface VM {
      */
     DvmClass resolveClass(String className, DvmClass... interfaceClasses);
 
+    void setHashFunction(HashFunction hashFunction);
+
     DvmClass findClass(String className);
 
     <T extends DvmObject<?>> T getObject(int hash);
