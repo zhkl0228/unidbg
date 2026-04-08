@@ -142,7 +142,10 @@ public abstract class BaseVM implements VM, DvmClassFactory {
             if (dvmClass == null) {
                 dvmClass = this.createClass(this, className, superClass, interfaceClasses);
             }
-            classMap.put(hash, dvmClass);
+            DvmClass oldClass = classMap.put(hash, dvmClass);
+            if (oldClass != null && !oldClass.getClassName().equals(className)) {
+                throw new IllegalStateException("Hash collision: " + oldClass.getClassName() + " and " + className + " have the same hash=0x" + Integer.toHexString(hash));
+            }
         }
         addGlobalObject(dvmClass);
         return dvmClass;
