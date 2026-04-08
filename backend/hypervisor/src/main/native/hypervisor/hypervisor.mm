@@ -719,7 +719,7 @@ JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   }
 
   if(hv_vm_map(start_addr, address, size, perms) != HV_SUCCESS) {
-    fprintf(stderr, "hv_vm_map failed start_addr=%p, ipa=0x%lx, perms=0x%x\n", start_addr, address, perms);
+    fprintf(stderr, "hv_vm_map failed[%s->%s:%d]: start_addr=%p, ipa=0x%lx, size=0x%lx, perms=0x%x\n", __FILE__, __func__, __LINE__, start_addr, address, size, perms);
     munmap(start_addr, size);
     return 6;
   }

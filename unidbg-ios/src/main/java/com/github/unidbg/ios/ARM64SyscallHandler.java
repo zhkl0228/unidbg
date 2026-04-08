@@ -1255,7 +1255,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             throw new ThreadContextSwitchException();
         }
 
-        log.info("psynch_cvwait LR=" + emulator.getContext().getLRPointer());
+        log.info("psynch_cvwait LR={}", emulator.getContext().getLRPointer());
         if (log.isDebugEnabled()) {
             emulator.attach().debug("psynch_cvwait");
         }
@@ -1405,7 +1405,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             }
             return ret;
         } else {
-            log.info("fchflags fd={}, flags=0x{}", io, Integer.toHexString(flags));
+            log.info("fchflags fd={}, flags=0x{}", null, Integer.toHexString(flags));
             Cpsr.getArm64(emulator.getBackend()).setCarry(true);
             return UnixEmulator.ENOENT;
         }
@@ -2562,7 +2562,7 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         } else {
             Logger log = LoggerFactory.getLogger("com.github.unidbg.ios.malloc");
             if (log.isDebugEnabled()) {
-                log.debug("_kernelrpc_mach_vm_deallocate_trap target=" + target + ", address=0x" + Long.toHexString(address) + ", size=0x" + Long.toHexString(size) + ", lr=" + context.getLRPointer());
+                log.debug("_kernelrpc_mach_vm_deallocate_trap target={}, address=0x{}, size=0x{}, lr={}", target, Long.toHexString(address), Long.toHexString(size), context.getLRPointer());
             }
         }
         if (size > 0) {
@@ -2631,8 +2631,27 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
         int flags = context.getIntArg(3);
         int tag = flags >> 24;
         boolean anywhere = (flags & MachO.VM_FLAGS_ANYWHERE) != 0;
-        if (!anywhere) {
+        if (anywhere) {
+            Pointer value = address.getPointer(0);
+            UnidbgPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
+            pointer.write(0, new byte[(int) size], 0, (int) size);
+            address.setPointer(0, pointer);
+            String msg = "_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=true, tag=0x" + Integer.toHexString(tag);
+            if (log.isDebugEnabled()) {
+                log.debug(msg);
+            } else {
+                Logger log = LoggerFactory.getLogger("com.github.unidbg.ios.malloc");
+                if (log.isDebugEnabled()) {
+                    log.debug(msg);
+                }
+            }
+        } else {
             long start = address.getLong(0);
+            Backend backend = emulator.getBackend();
+            if (backend.isHypervisor() && Long.compareUnsigned(start, 1L << 36) >= 0) {
+                log.info("_kernelrpc_mach_vm_allocate_trap fixed: start=0x{} exceeds hypervisor IPA address space (36-bit), size=0x{}, flags=0x{}", Long.toHexString(start), Long.toHexString(size), Integer.toHexString(flags));
+                return -1;
+            }
             long ret = emulator.getMemory().mmap2(start, (int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE, MAP_MY_FIXED, -1, 0);
             if (ret == 0) {
                 if (log.isDebugEnabled()) {
@@ -2647,21 +2666,6 @@ public class ARM64SyscallHandler extends DarwinSyscallHandler {
             pointer.write(0, new byte[(int) size], 0, (int) size);
             if (log.isDebugEnabled()) {
                 log.debug("_kernelrpc_mach_vm_allocate_trap fixed, address={}, size={}, flags=0x{}, anywhere=false", pointer, size, Integer.toHexString(flags));
-            }
-            return 0;
-        }
-
-        Pointer value = address.getPointer(0);
-        UnidbgPointer pointer = emulator.getMemory().mmap((int) size, UnicornConst.UC_PROT_READ | UnicornConst.UC_PROT_WRITE);
-        pointer.write(0, new byte[(int) size], 0, (int) size);
-        address.setPointer(0, pointer);
-        String msg = "_kernelrpc_mach_vm_allocate_trap target=" + target + ", address=" + address + ", value=" + value + ", size=0x" + Long.toHexString(size) + ", flags=0x" + Integer.toHexString(flags) + ", pointer=" + pointer + ", anywhere=true, tag=0x" + Integer.toHexString(tag);
-        if (log.isDebugEnabled()) {
-            log.debug(msg);
-        } else {
-            Logger log = LoggerFactory.getLogger("com.github.unidbg.ios.malloc");
-            if (log.isDebugEnabled()) {
-                log.debug(msg);
             }
         }
         return 0;
