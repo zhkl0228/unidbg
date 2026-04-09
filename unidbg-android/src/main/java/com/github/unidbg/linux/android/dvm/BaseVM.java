@@ -107,10 +107,13 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         this.dvmClassFactory = factory;
     }
 
-    private HashFunction hashFunction;
+    private HashFunction hashFunction = Hasher.Default;
 
     @Override
     public void setHashFunction(HashFunction hashFunction) {
+        if (hashFunction == null) {
+            throw new NullPointerException("hashFunction == null");
+        }
         if (!classMap.isEmpty()) {
             throw new IllegalStateException("Must set hash function before resolving any class");
         }
@@ -118,11 +121,7 @@ public abstract class BaseVM implements VM, DvmClassFactory {
     }
 
     public final int hash(String className) {
-        if (hashFunction != null) {
-            return hashFunction.hash(className);
-        } else {
-            return Objects.hash(className);
-        }
+        return hashFunction.hash(className);
     }
 
     @Override

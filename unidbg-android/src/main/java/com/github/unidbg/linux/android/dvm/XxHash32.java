@@ -9,10 +9,7 @@ import java.nio.charset.StandardCharsets;
  * <br />
  * Thread-safe: all methods are static, no mutable state.
  */
-@SuppressWarnings("unused")
-public final class XxHash32 implements HashFunction {
-
-    public static final XxHash32 INSTANCE = new XxHash32();
+final class XxHash32 {
 
     private static final int PRIME1 = 0x9E3779B1;
     private static final int PRIME2 = 0x85EBCA77;
@@ -27,8 +24,7 @@ public final class XxHash32 implements HashFunction {
     // ----------------------------------------------------------------
 
     /** Hash a String (UTF-8 encoded). */
-    @Override
-    public int hash(String input) {
+    public static int hash(String input) {
         return hash(input, 0);
     }
 
