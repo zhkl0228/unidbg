@@ -94,7 +94,7 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     int getStaticMethodID(String methodName, String args) {
         String signature = getClassName() + "->" + methodName + args;
-        int hash = signature.hashCode();
+        int hash = vm.hash(signature);
         if (log.isDebugEnabled()) {
             log.debug("getStaticMethodID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
@@ -128,7 +128,7 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     int getMethodID(String methodName, String args) {
         String signature = getClassName() + "->" + methodName + args;
-        int hash = signature.hashCode();
+        int hash = vm.hash(signature);
         if (log.isDebugEnabled()) {
             log.debug("getMethodID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
@@ -162,7 +162,7 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     int getFieldID(String fieldName, String fieldType) {
         String signature = getClassName() + "->" + fieldName + ":" + fieldType;
-        int hash = signature.hashCode();
+        int hash = vm.hash(signature);
         if (log.isDebugEnabled()) {
             log.debug("getFieldID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
@@ -196,7 +196,7 @@ public class DvmClass extends DvmObject<Class<?>> {
 
     int getStaticFieldID(String fieldName, String fieldType) {
         String signature = getClassName() + "->" + fieldName + ":" + fieldType;
-        int hash = signature.hashCode();
+        int hash = vm.hash(signature);
         if (log.isDebugEnabled()) {
             log.debug("getStaticFieldID signature={}, hash=0x{}", signature, Long.toHexString(hash));
         }
