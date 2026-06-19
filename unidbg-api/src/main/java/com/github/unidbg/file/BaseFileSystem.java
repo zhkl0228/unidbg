@@ -34,6 +34,42 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         FileUtils.forceMkdir(new File(rootDir, "tmp"));
     }
 
+    /**
+     * Resolves the given guest pathname against rootDir and returns the resulting
+     * host {@link File} only when it is strictly contained within rootDir.
+     * Path traversal components (e.g. {@code ../}) are neutralised by
+     * canonicalization before the containment check is performed.
+     *
+     * @param pathname guest-controlled path component
+     * @return the resolved host {@code File}, or {@code null} when the resolved
+     *         path would escape rootDir (traversal attempt)
+     */
+    protected File resolveFileInRootDir(String pathname) {
+        try {
+            File candidate = new File(rootDir, pathname);
+            String canonicalRoot = rootDir.getCanonicalPath();
+            String canonicalCandidate = candidate.getCanonicalPath();
+            // Ensure the separator is appended so that a directory whose name is a
+            // prefix of another directory is not mistakenly accepted.
+            if (!canonicalRoot.endsWith(File.separator)) {
+                canonicalRoot = canonicalRoot + File.separator;
+            }
+            if (canonicalCandidate.equals(canonicalRoot.substring(0, canonicalRoot.length() - 1))
+                    || canonicalCandidate.startsWith(canonicalRoot)) {
+                return candidate;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Path traversal rejected: pathname={}, candidate={}", pathname, canonicalCandidate);
+            }
+            return null;
+        } catch (IOException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to canonicalize path: pathname={}", pathname, e);
+            }
+            return null;
+        }
+    }
+
     @Override
     public FileResult<T> open(String pathname, int oflags) {
         if ("".equals(pathname)) {
@@ -57,6 +93,9 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
         }
 
         File file = new File(rootDir, pathname);
+        if (resolveFileInRootDir(pathname) == null) {
+            return FileResult.failed(UnixEmulator.EACCES);
+        }
         return createFileIO(file, oflags, pathname);
     }
 
@@ -100,11 +139,14 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
     @Override
     public boolean mkdir(String path, int mode) {
-        File dir = new File(rootDir, path);
+        File dir = resolveFileInRootDir(path);
         if (emulator.getSyscallHandler().isVerbose()) {
             System.out.printf("mkdir '%s' with mode 0x%x from %s%n", path, mode, emulator.getContext().getLRPointer());
         }
 
+        if (dir == null) {
+            return false;
+        }
         if (dir.exists()) {
             return true;
         } else {
@@ -114,8 +156,10 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
     @Override
     public void rmdir(String path) {
-        File dir = new File(rootDir, path);
-        FileUtils.deleteQuietly(dir);
+        File dir = resolveFileInRootDir(path);
+        if (dir != null) {
+            FileUtils.deleteQuietly(dir);
+        }
 
         if (emulator.getSyscallHandler().isVerbose()) {
             System.out.printf("rmdir '%s' from %s%n", path, emulator.getContext().getLRPointer());
@@ -130,10 +174,12 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
     @Override
     public void unlink(String path) {
-        File file = new File(rootDir, path);
-        FileUtils.deleteQuietly(file);
+        File file = resolveFileInRootDir(path);
+        if (file != null) {
+            FileUtils.deleteQuietly(file);
+        }
         if (log.isDebugEnabled()) {
-            log.debug("unlink path={}, file={}", path, file);
+            log.debug("unlink path={}", path);
         }
         if (emulator.getSyscallHandler().isVerbose()) {
             System.out.printf("unlink '%s' from %s%n", path, emulator.getContext().getLRPointer());
@@ -156,8 +202,12 @@ public abstract class BaseFileSystem<T extends NewFileIO> implements FileSystem<
 
     @Override
     public int rename(String oldPath, String newPath) {
-        File oldFile = new File(rootDir, oldPath);
-        File newFile = new File(rootDir, newPath);
+        File oldFile = resolveFileInRootDir(oldPath);
+        File newFile = resolveFileInRootDir(newPath);
+
+        if (oldFile == null || newFile == null) {
+            return -UnixEmulator.EACCES;
+        }
 
         try {
             FileUtils.forceMkdir(newFile.getParentFile());
