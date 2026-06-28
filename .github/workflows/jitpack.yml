@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: "zulu"
-          java-version: "17"
+          java-version: "8"
       - run: |
           GIT_SHA=$(echo ${{ github.sha }} | cut -c1-10)
           mvn org.apache.maven.plugins:maven-dependency-plugin:3.9.0:get \
