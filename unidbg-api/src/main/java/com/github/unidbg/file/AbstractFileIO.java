@@ -177,6 +177,11 @@ public abstract class AbstractFileIO implements NewFileIO {
         return true;
     }
 
+    @Override
+    public boolean canWrite() {
+        return true;
+    }
+
     protected boolean stdio;
 
     @Override
