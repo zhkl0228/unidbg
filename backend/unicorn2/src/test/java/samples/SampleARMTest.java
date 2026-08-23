@@ -11,15 +11,13 @@ import junit.framework.TestCase;
 import unicorn.ArmConst;
 import unicorn.UnicornConst;
 
-import java.io.IOException;
+import org.scijava.nativelib.NativeLibraryUtil;
+import org.scijava.nativelib.NativeLoader;
 
 public class SampleARMTest extends TestCase {
 
     static {
-        try {
-            org.scijava.nativelib.NativeLoader.loadLibrary("unicorn");
-        } catch (IOException ignored) {
-        }
+        NativeLibraryUtil.loadNativeLibrary(NativeLoader.getJniExtractor(), "unicorn");
     }
 
    // code to be emulated

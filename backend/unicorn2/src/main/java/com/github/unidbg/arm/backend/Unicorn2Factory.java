@@ -2,15 +2,13 @@ package com.github.unidbg.arm.backend;
 
 import com.github.unidbg.Emulator;
 
-import java.io.IOException;
+import org.scijava.nativelib.NativeLibraryUtil;
+import org.scijava.nativelib.NativeLoader;
 
 public class Unicorn2Factory extends BackendFactory {
 
     static {
-        try {
-            org.scijava.nativelib.NativeLoader.loadLibrary("unicorn");
-        } catch (IOException ignored) {
-        }
+        NativeLibraryUtil.loadNativeLibrary(NativeLoader.getJniExtractor(), "unicorn");
     }
 
     public Unicorn2Factory(boolean fallbackUnicorn) {
