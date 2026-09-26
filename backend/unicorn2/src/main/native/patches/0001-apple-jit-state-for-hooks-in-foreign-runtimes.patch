@@ -1,0 +1,114 @@
+Apple Silicon: keep the JIT write protection correct across hooks running in a foreign runtime
+
+Unicorn 2.1.x caches the per-thread MAP_JIT write protection in uc->current_executable,
+skips pthread_jit_write_protect_np() whenever the cache already matches, and restores the
+caller's state only when the outermost API call returns. Hook callbacks that run in a
+runtime toggling the same per-thread state -- a JVM does so on every JNI transition --
+break both assumptions:
+
+1. A uc_* call made from the hook (uc_mem_unmap, uc_ctl_remove_cache, a nested
+   uc_emu_start, ...) starts with the thread in execute mode while the cache still says
+   write mode. The unlock before touching translated code is skipped and the write faults:
+
+     SIGBUS in do_tb_phys_invalidate <- tb_invalidate_phys_page_range__locked
+            <- uc_invalidate_tb <- memory_unmap_arm <- uc_mem_unmap   (from UC_HOOK_INTR)
+
+2. When that nested call returns, the thread can be left in write mode. HotSpot resumes
+   Java code without re-enabling execute permission for its code cache, so the JVM faults
+   on the next instruction fetch in the calling Java method.
+
+Fix:
+- tb_exec_change() always applies the requested state instead of trusting the cache.
+- restore_jit_state() hands the thread back in its entry state on every nesting level,
+  not only the outermost one.
+- uc_emu_start() saves/restores the state for nested calls too (they are made from
+  hooks), including its two early-return error paths.
+
+Only Apple arm64 builds change behaviour (__APPLE__ && HAVE_PTHREAD_JIT_PROTECT &&
+__aarch64__); elsewhere save_jit_state()/restore_jit_state() are no-ops.
+
+diff --git a/qemu/accel/tcg/translate-all.c b/qemu/accel/tcg/translate-all.c
+index 71b6b2b1..39edca40 100644
+--- a/qemu/accel/tcg/translate-all.c
++++ b/qemu/accel/tcg/translate-all.c
+@@ -2180,12 +2180,8 @@ static bool tb_exec_is_locked(struct uc_struct *uc)
+ 
+ static void tb_exec_change(struct uc_struct *uc, bool executable)
+ {
+-    assert_executable(uc->current_executable);
+-    if (uc->current_executable != executable) {
+-        jit_write_protect(executable);
+-        uc->current_executable = executable;
+-        assert_executable(executable);
+-    }
++    jit_write_protect(executable);
++    uc->current_executable = executable;
+ }
+ #else /* not needed on non-Darwin platforms */
+ static bool tb_exec_is_locked(struct uc_struct *uc)
+diff --git a/uc.c b/uc.c
+index 75b89a01..ced6f76f 100644
+--- a/uc.c
++++ b/uc.c
+@@ -50,16 +50,11 @@ static void save_jit_state(uc_engine *uc)
+ static void restore_jit_state(uc_engine *uc)
+ {
+     assert(uc->nested > 0);
+-    if (uc->nested == 1) {
+-        assert_executable(uc->current_executable);
+-        if (uc->current_executable != uc->thread_executable_entry) {
+-            if (uc->thread_executable_entry) {
+-                jit_write_protect(true);
+-            } else {
+-                jit_write_protect(false);
+-            }
+-        }
+-    }
++    // Hand the thread back in the state it entered with on every level, not only the
++    // outermost one: a nested call is made from a hook, and the hook may run in a runtime
++    // (e.g. a JVM) that toggles the same per-thread state and relies on getting it back.
++    jit_write_protect(uc->thread_executable_entry);
++    uc->current_executable = uc->thread_executable_entry;
+     uc->nested -= 1;
+ }
+ #else
+@@ -1086,15 +1081,14 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
+     uc->timed_out = false;
+     uc->first_tb = true;
+ 
+-    // Avoid nested uc_emu_start saves wrong jit states.
+-    if (uc->nested_level == 0) {
+-        UC_INIT(uc);
+-    }
++    // Nested calls come from hooks and must restore the jit state on return as well.
++    UC_INIT(uc);
+ 
+     // Advance the nested levels. We must decrease the level count by one when
+     // we return from uc_emu_start.
+     if (uc->nested_level >= UC_MAX_NESTED_LEVEL) {
+         // We can't support so many nested levels.
++        restore_jit_state(uc);
+         return UC_ERR_RESOURCE;
+     }
+     uc->nested_level++;
+@@ -1211,6 +1205,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
+         uc->hook_insert = 0;
+         if (err != UC_ERR_OK) {
+             uc->nested_level--;
++            restore_jit_state(uc);
+             return err;
+         }
+     }
+@@ -1237,10 +1232,10 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
+         // remove hooks to delete
+         // make sure we delete all hooks at the first level.
+         clear_deleted_hooks(uc);
+-
+-        restore_jit_state(uc);
+     }
+ 
++    restore_jit_state(uc);
++
+     if (timeout) {
+         // wait for the timer to finish
+         qemu_thread_join(&uc->timer);

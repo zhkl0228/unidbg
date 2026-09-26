@@ -1,22 +1,5 @@
 #include "unicorn.h"
 
-#if defined(__APPLE__) && defined(__aarch64__)
-#include <pthread.h>
-
-/*
- * HotSpot on macOS/AArch64 resumes Java code without re-enabling execute permission for
- * MAP_JIT pages, while unicorn may hand the thread back in write mode, e.g. after
- * invalidating translated code from a nested call inside a hook. Every native method
- * that enters unicorn therefore returns to Java in execute mode.
- */
-static void jit_return_to_java(int *unused) {
-  pthread_jit_write_protect_np(1);
-}
-#define ENTER_UNICORN int jit_guard __attribute__((cleanup(jit_return_to_java))) = 0
-#else
-#define ENTER_UNICORN
-#endif
-
 static JavaVM* cachedJVM;
 
 static jmethodID onBlock = 0;
@@ -110,7 +93,6 @@ static inline bool shouldBreak(t_unicorn unicorn, uint64_t address) {
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_nativeInitialize
   (JNIEnv *env, jclass cls, jint arch, jint mode) {
-  ENTER_UNICORN;
   uc_engine *eng = NULL;
   uc_err err = uc_open((uc_arch)arch, (uc_mode)mode, &eng);
   if (err != UC_ERR_OK) {
@@ -145,7 +127,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_nativ
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1map
   (JNIEnv *env, jclass cls, jlong handle, jlong address, jlong size, jint perms) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_err err = uc_mem_map(eng, (uint64_t)address, (size_t)size, (uint32_t)perms);
@@ -161,7 +142,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1m
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_reg_1read__JI
   (JNIEnv *env, jclass cls, jlong handle, jint regid) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   jlong longVal = 0;
@@ -179,7 +159,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_reg_1
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_reg_1write__JIJ
   (JNIEnv *env, jclass cls, jlong handle, jint regid, jlong value) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_err err = uc_reg_write(eng, regid, &value);
@@ -247,7 +226,6 @@ static void cb_hookmem_new(uc_engine *eng, uc_mem_type type,
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_removeCache
   (JNIEnv *env, jclass cls, jlong handle, jlong arg1, jlong arg2) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uint64_t begin = (uint64_t) arg1;
@@ -265,7 +243,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_remove
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_registerHook__JIJJLcom_github_unidbg_arm_backend_unicorn_Unicorn_NewHook_2
   (JNIEnv *env, jclass cls, jlong handle, jint type, jlong arg1, jlong arg2, jobject hook) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
 
@@ -330,7 +307,6 @@ static void hook_count_cb(uc_engine *eng, uint64_t address, uint32_t size, void 
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_register_1emu_1count_1hook
   (JNIEnv *env, jclass cls, jlong handle, jlong emu_count, jobject hook) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   unicorn->emu_count = emu_count;
 
@@ -361,7 +337,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_registerHook__JILcom_github_unidbg_arm_backend_unicorn_Unicorn_NewHook_2
   (JNIEnv *env, jclass cls, jlong handle, jint type, jobject hook) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
 
@@ -409,7 +384,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_regis
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1write
   (JNIEnv *env, jclass cls, jlong handle, jlong address, jbyteArray bytes) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   jbyte *array = (*env)->GetByteArrayElements(env, bytes, NULL);
@@ -428,7 +402,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1w
  */
 JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1read
   (JNIEnv *env, jclass cls, jlong handle, jlong address, jlong size) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   jbyteArray bytes = (*env)->NewByteArray(env, (jsize)size);
@@ -448,7 +421,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_emu_1start
   (JNIEnv *env, jclass cls, jlong handle, jlong begin, jlong until, jlong timeout, jlong count) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   unicorn->emu_counter = 0;
@@ -465,7 +437,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_emu_1s
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_emu_1stop
   (JNIEnv *env, jclass cls, jlong handle) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_err err = uc_emu_stop(eng);
@@ -481,7 +452,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_emu_1s
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1unmap
   (JNIEnv *env, jclass cls, jlong handle, jlong address, jlong size) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_err err = uc_mem_unmap(eng, (uint64_t)address, (size_t)size);
@@ -497,7 +467,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1u
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1protect
   (JNIEnv *env, jclass cls, jlong handle, jlong address, jlong size, jint perms) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_err err = uc_mem_protect(eng, (uint64_t)address, (size_t)size, (uint32_t)perms);
@@ -513,7 +482,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1p
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_nativeDestroy
   (JNIEnv *env, jclass cls, jlong handle) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
 
@@ -541,7 +509,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_native
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_hook_1del
   (JNIEnv *env, jclass cls, jlong hh) {
-  ENTER_UNICORN;
   struct new_hook *nh = (struct new_hook *) hh;
   t_unicorn unicorn = nh->unicorn;
   uc_engine *eng = unicorn->uc;
@@ -561,7 +528,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_hook_1
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_context_1alloc
   (JNIEnv *env, jclass cls, jlong handle) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_context *ctx;
@@ -579,7 +545,6 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_conte
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_free
   (JNIEnv *env, jclass cls, jlong ctx) {
-  ENTER_UNICORN;
   uc_err err = uc_free((void *)ctx);
   if (err != UC_ERR_OK) {
     throwException(env, err);
@@ -593,7 +558,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_free
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_context_1save
   (JNIEnv *env, jclass cls, jlong handle, jlong ctx) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_err err = uc_context_save(eng, (uc_context*)ctx);
@@ -609,7 +573,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_contex
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_context_1restore
   (JNIEnv *env, jclass cls, jlong handle, jlong ctx) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_err err = uc_context_restore(eng, (uc_context*)ctx);
@@ -625,7 +588,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_contex
  */
 JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_reg_1read__JII
   (JNIEnv *env, jclass cls, jlong handle, jint regid, jint regsz) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   jbyteArray regval = (*env)->NewByteArray(env, (jsize)regsz);
@@ -645,7 +607,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_
  */
 JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_reg_1write__JI_3B
   (JNIEnv *env, jclass cls, jlong handle, jint regid, jbyteArray value) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   jbyte *array = (*env)->GetByteArrayElements(env, value, NULL);
@@ -683,7 +644,6 @@ static void cb_debugger(uc_engine *eng, uint64_t address, uint32_t size, void *u
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_registerDebugger
   (JNIEnv *env, jclass cls, jlong handle, jlong arg1, jlong arg2, jobject hook) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
 
@@ -766,7 +726,6 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_remove
  */
 JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1allocated_1size
   (JNIEnv *env, jclass cls, jlong handle) {
-  ENTER_UNICORN;
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
   uc_mem_region *regions = NULL;

@@ -25,12 +25,15 @@ ARM emulator backend based on [Unicorn Engine 2](https://github.com/unicorn-engi
 
 #### Why the patch
 
-`patches/0001-apple-jit-always-apply-write-protect.patch` only affects Apple Silicon. Unicorn 2.1.x
-caches the per-thread `MAP_JIT` write protection and skips `pthread_jit_write_protect_np()` when the
-cache already matches, but HotSpot toggles the same state on every JNI transition. A `uc_*` call made
-from a Java hook (e.g. `munmap` in a syscall handler, or a nested `emu_start`) then patches translated
-code with the thread still in execute mode and dies with `SIGBUS` in `do_tb_phys_invalidate`. The JNI
-glue (`unicorn.c`) additionally switches the thread back to execute mode before returning to Java.
+`patches/0001-apple-jit-state-for-hooks-in-foreign-runtimes.patch` only changes behaviour on Apple
+Silicon. Unicorn 2.1.x caches the per-thread `MAP_JIT` write protection, skips
+`pthread_jit_write_protect_np()` when the cache already matches, and restores the caller's state only
+when the outermost API call returns, but HotSpot toggles the same state on every JNI transition. A
+`uc_*` call made from a Java hook (e.g. `munmap` in a syscall handler, or a nested `emu_start`) then
+patches translated code with the thread still in execute mode and dies with `SIGBUS` in
+`do_tb_phys_invalidate`; and once that is avoided, the nested call returns to Java in write mode and
+the JVM faults on its own code. The patch always applies the requested state and hands the thread
+back in its entry state on every nesting level. Drop it once upstream unicorn ships an equivalent fix.
 
 ### Docker Cross-Compilation (Linux / Windows)
 
