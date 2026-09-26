@@ -45,7 +45,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.84</version>
+            <version>2.0.65</version>
         </dependency>
         <dependency>
             <groupId>com.github.zhkl0228</groupId>
