@@ -3,7 +3,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RESOURCES_DIR="$SCRIPT_DIR/../resources/natives"
-UNICORN_HOME="${UNICORN_HOME:-$HOME/git/unicorn}"
+UNICORN_VERSION="2.1.4"
+UNICORN_REPO="https://github.com/unicorn-engine/unicorn"
+UNICORN_HOME="${UNICORN_HOME:-$HOME/git/unicorn-$UNICORN_VERSION}"
 IMAGE_NAME="unidbg-unicorn2-builder"
 NPROC=$(sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 
@@ -17,11 +19,58 @@ done
 
 cd "$SCRIPT_DIR"
 
+# --- Prepare upstream unicorn source ---
+
+prepare_unicorn_source() {
+    if [ ! -d "$UNICORN_HOME" ]; then
+        echo "  Cloning unicorn $UNICORN_VERSION into $UNICORN_HOME ..."
+        git clone --depth 1 -b "$UNICORN_VERSION" "$UNICORN_REPO" "$UNICORN_HOME"
+    fi
+
+    if ! git -C "$UNICORN_HOME" tag --points-at HEAD | grep -qx "$UNICORN_VERSION"; then
+        echo "ERROR: $UNICORN_HOME is not checked out at upstream tag $UNICORN_VERSION" >&2
+        echo "  HEAD: $(git -C "$UNICORN_HOME" log -1 --format='%h %d %s' 2>&1)" >&2
+        exit 1
+    fi
+    if git -C "$UNICORN_HOME" diff --quiet HEAD; then
+        echo "  Applying patches to unicorn $UNICORN_VERSION ..."
+        git -C "$UNICORN_HOME" apply "$SCRIPT_DIR"/patches/*.patch
+    fi
+
+    # The tree must be exactly upstream + patches/: compare it against a scratch index
+    # holding HEAD with the patches applied.
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    local patched=true
+    GIT_INDEX_FILE="$tmp_dir/index" git -C "$UNICORN_HOME" read-tree HEAD
+    GIT_INDEX_FILE="$tmp_dir/index" git -C "$UNICORN_HOME" apply --cached "$SCRIPT_DIR"/patches/*.patch || patched=false
+    if $patched; then
+        GIT_INDEX_FILE="$tmp_dir/index" git -C "$UNICORN_HOME" update-index -q --refresh || true
+        GIT_INDEX_FILE="$tmp_dir/index" git -C "$UNICORN_HOME" diff --quiet || patched=false
+    fi
+    if ! $patched; then
+        echo "ERROR: $UNICORN_HOME differs from upstream $UNICORN_VERSION + patches/:" >&2
+        GIT_INDEX_FILE="$tmp_dir/index" git -C "$UNICORN_HOME" diff --stat >&2 || true
+        rm -rf "$tmp_dir"
+        exit 1
+    fi
+    rm -rf "$tmp_dir"
+
+    # qemu/configure aborts without it (it only probes for the binary), and cmake does not
+    # propagate that failure: the build would then die later on unrelated compile errors.
+    if ! command -v "${PKG_CONFIG:-pkg-config}" > /dev/null; then
+        echo "ERROR: '${PKG_CONFIG:-pkg-config}' not found, required by unicorn's qemu/configure (macOS: brew install pkgconf)" >&2
+        exit 1
+    fi
+}
+
 # --- Build unicorn static library ---
 
 build_unicorn_lib() {
     local build_dir="$1"
     local extra_cmake_args="$2"
+
+    prepare_unicorn_source
 
     if $CLEAN && [ -d "$build_dir" ]; then
         echo "  Cleaning $build_dir ..."
@@ -42,10 +91,11 @@ build_unicorn_lib() {
         cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
               -DUNICORN_ARCH="arm;aarch64" \
+              -DUNICORN_BUILD_TESTS=OFF \
               $extra_cmake_args
     fi
     echo "  Building in $build_dir ..."
-    make -j"$NPROC"
+    make -j"$NPROC" unicorn_archive
     popd > /dev/null
 }
 
@@ -79,7 +129,7 @@ build_osx_64() {
     echo "=== Building for osx_64 (cross-compile x86_64) ==="
 
     build_unicorn_lib "$UNICORN_HOME/build_x86_64" \
-        "-DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15"
+        "-DCMAKE_C_COMPILER=$SCRIPT_DIR/cc-x86_64.sh -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15"
 
     JAVA_INC="$(realpath "$JAVA_HOME"/include)"
     JAVA_PLATFORM_INC="$(dirname "$(find "$JAVA_INC" -name jni_md.h)")"
@@ -102,17 +152,13 @@ build_osx_64() {
 
 # --- Docker builds (cross-compilation for Linux / Windows) ---
 
-get_unicorn_commit() {
-    git -C "$UNICORN_HOME" rev-parse HEAD 2>/dev/null || echo "unknown"
-}
-
 build_linux() {
     local platform=$1
     local output_dir=$2
 
     echo "=== Building for $output_dir ($platform) ==="
 
-    local docker_args="--build-arg UNICORN_COMMIT=$(get_unicorn_commit)"
+    local docker_args="--build-arg UNICORN_VERSION=$UNICORN_VERSION"
     if $CLEAN; then
         docker_args="$docker_args --no-cache"
     fi
@@ -133,7 +179,7 @@ build_linux() {
 build_windows() {
     echo "=== Building for windows_64 (MinGW cross-compilation) ==="
 
-    local docker_args="--build-arg UNICORN_COMMIT=$(get_unicorn_commit)"
+    local docker_args="--build-arg UNICORN_VERSION=$UNICORN_VERSION"
     if $CLEAN; then
         docker_args="$docker_args --no-cache"
     fi

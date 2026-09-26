@@ -23,16 +23,20 @@ typedef signed char jbyte;
 #endif
 JNIEOF
 
-ARG UNICORN_COMMIT=unknown
-RUN git clone --depth 1 -b unicorn2 https://github.com/zhkl0228/unicorn /build/unicorn
+ARG UNICORN_VERSION
+RUN test -n "$UNICORN_VERSION" && \
+    git clone --depth 1 -b "$UNICORN_VERSION" https://github.com/unicorn-engine/unicorn /build/unicorn
 
+COPY patches /build/patches
 WORKDIR /build/unicorn
+RUN git apply /build/patches/*.patch
 RUN mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release \
-             -DCMAKE_TOOLCHAIN_FILE=../mingw-w64.cmake \
+             -DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-w64.cmake \
              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-             -DUNICORN_ARCH="arm;aarch64" && \
-    make -j$(nproc)
+             -DUNICORN_ARCH="arm;aarch64" \
+             -DUNICORN_BUILD_TESTS=OFF && \
+    make -j$(nproc) unicorn_archive
 
 WORKDIR /build/jni
 COPY *.c *.h ./
