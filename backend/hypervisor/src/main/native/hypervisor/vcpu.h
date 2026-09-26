@@ -253,6 +253,11 @@ typedef struct vcpu_context {
 //   0xA20-0xFFF  reserved / unknown internal state
 //   0x1000+      VNCR page (managed via hv_vcpu_get/set_sys_reg API)
 //
+// macOS 27: the control-field block (control_field_0 = HCR_EL2) moved from
+// 0x698 to 0x920 and the dirty flags to 0xA08; the VNCR page is still at
+// context+0x1000 (Hv::Vcpu::Vcpu -> VcpuStateManager::initialize(ctx+0x1000)),
+// so the 0x1000 memcpy range below still covers the whole non-VNCR state.
+//
 // For single-thread context switching on the same vCPU, we must save/restore
 // up to 0x1000 to preserve internal state modified during hv_vcpu_run.
 //
@@ -350,7 +355,13 @@ extern "C" t_vcpu_context _hv_vcpu_get_context(hv_vcpu_t vcpu);
 
 extern "C" hv_return_t _hv_vcpu_get_ext_reg(hv_vcpu_t vcpu, bool error, uint64_t *value);
 
-extern "C" hv_return_t _hv_vcpu_set_control_field(hv_vcpu_t vcpu, int index, uint64_t value);
+// weak: only called on macOS 27+, must not stop the dylib from loading on releases that lack them
+extern "C" hv_return_t _hv_vcpu_get_control_field(hv_vcpu_t vcpu, int index, uint64_t *value) __attribute__((weak_import));
+
+extern "C" hv_return_t _hv_vcpu_set_control_field(hv_vcpu_t vcpu, int index, uint64_t value) __attribute__((weak_import));
+
+// index 0 of Hv::Vcpu::{get,set}_control_field -> context control block + 0x0 (HCR_EL2)
+#define HV_CONTROL_FIELD_HCR_EL2 0
 
 typedef struct hypervisor_cpu {
   hv_vcpu_t vcpu;
@@ -362,12 +373,28 @@ typedef struct hypervisor_cpu {
 
 #define HCR_EL2$DC 12
 
+// macOS 27+: ORs value into HCR_EL2 in the vCPU context through the exported
+//   _hv_vcpu_get/set_control_field. The value lives in the context, so it survives
+//   every hv_vcpu_run and is carried by context_save/context_restore.
+//   Hv::Vcpu grew here: feature_regs is 0x110 bytes (0x18-0x127), vcpu_config at 0x128,
+//   vcpu_handle at 0x130 and the override field at 0x140, so the vcpus_v1520 layout
+//   below would land inside feature_regs (Vcpu+0x120) and HCR_EL2.DC never takes effect:
+//   stage-1-off data accesses stay Device memory and LDXR/STXR fault with DFSC 0x35.
 // macOS 15+: writes to trap_override field in Hv::Vcpu object;
 //   Hv::Vcpu::run ORs it into control_field_0 (context+0x698) before hv_trap,
 //   then clears trap_override after exit.
 // Pre-15: writes directly to the canonical HCR_EL2 field in the flat _vcpus array.
 inline void set_HV_SYS_REG_HCR_EL2(t_hypervisor_cpu _cpu, const uint64_t value) {
-  if (@available(macOS 15.2.0, *)) {
+  if (@available(macOS 27.0.0, *)) {
+    if (!_hv_vcpu_get_control_field || !_hv_vcpu_set_control_field) {
+      fprintf(stderr, "Hypervisor.framework does not export _hv_vcpu_get/set_control_field: get=%p, set=%p\n",
+              (void *) _hv_vcpu_get_control_field, (void *) _hv_vcpu_set_control_field);
+      abort();
+    }
+    uint64_t hcr = 0;
+    HYP_ASSERT_SUCCESS(_hv_vcpu_get_control_field(_cpu->vcpu, HV_CONTROL_FIELD_HCR_EL2, &hcr));
+    HYP_ASSERT_SUCCESS(_hv_vcpu_set_control_field(_cpu->vcpu, HV_CONTROL_FIELD_HCR_EL2, hcr | value));
+  } else if (@available(macOS 15.2.0, *)) {
     const auto cpu = static_cast<t_vcpus_v1520>(_cpu->cpu);
     cpu->hcr_el2_trap_override = value;
   } else if (@available(macOS 15.0.0, *)) {
