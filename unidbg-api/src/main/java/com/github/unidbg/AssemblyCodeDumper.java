@@ -3,6 +3,7 @@ package com.github.unidbg;
 import capstone.Arm64_const;
 import capstone.Arm_const;
 import unicorn.Arm64Const;
+import unicorn.ArmConst;
 import capstone.api.Instruction;
 import capstone.api.RegsAccess;
 import com.alibaba.fastjson.util.IOUtils;
@@ -29,8 +30,10 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
 
     private static final Logger log = LoggerFactory.getLogger(AssemblyCodeDumper.class);
 
-    private static final Pattern LOAD_PATTERN = Pattern.compile("^(ldr|ldrb|ldrh|ldrsb|ldrsh|ldur|ldurb|ldurh|ldp|ldm)($|\\.|\\s).*");
-    private static final Pattern STORE_PATTERN = Pattern.compile("^(str|strb|strh|stur|sturb|sturh|stp|stm)($|\\.|\\s).*");
+    private static final Pattern LOAD_PATTERN = Pattern.compile("^(ldr|ldrb|ldrh|ldrsb|ldrsh|ldur|ldurb|ldurh|ldp|" +
+            "ldm|ldmia|ldmib|ldmda|ldmdb|ldmfd|ldmfa|ldmed|ldmea|pop)($|\\.|\\s).*");
+    private static final Pattern STORE_PATTERN = Pattern.compile("^(str|strb|strh|stur|sturb|sturh|stp|" +
+            "stm|stmia|stmib|stmda|stmdb|stmfd|stmfa|stmed|stmea|push)($|\\.|\\s).*");
 
     private final Emulator<?> emulator;
 
@@ -167,6 +170,9 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
             String tag = isLoad ? "r" : "w";
             if (emulator.is32Bit()) {
                 capstone.api.arm.OpInfo opInfo = (capstone.api.arm.OpInfo) ins.getOperands();
+                if (handleArm32MultipleAccess(backend, ins, mnemonic, opInfo, tag, builder)) {
+                    return;
+                }
                 capstone.api.arm.Operand memOperand = null;
                 for (capstone.api.arm.Operand op : opInfo.getOperands()) {
                     if (op.getType() == Arm_const.ARM_OP_MEM) {
@@ -186,7 +192,7 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
                     shiftedIndex = -shiftedIndex;
                 }
                 long absAddr = baseValue + shiftedIndex + mem.getDisp();
-                int size = getArm32AccessSize(mnemonic, opInfo);
+                int size = getArm32AccessSize(mnemonic);
                 builder.append(String.format(" (%s 0x%x %d)", tag, absAddr, size));
             } else {
                 capstone.api.arm64.OpInfo opInfo = (capstone.api.arm64.OpInfo) ins.getOperands();
@@ -221,23 +227,119 @@ public class AssemblyCodeDumper implements CodeHook, TraceHook {
         }
     }
 
-    private int getArm32AccessSize(String mnemonic, capstone.api.arm.OpInfo opInfo) {
+    private int getArm32AccessSize(String mnemonic) {
         if (mnemonic.startsWith("ldrb") || mnemonic.startsWith("strb") || mnemonic.startsWith("ldrsb")) {
             return 1;
         }
         if (mnemonic.startsWith("ldrh") || mnemonic.startsWith("strh") || mnemonic.startsWith("ldrsh")) {
             return 2;
         }
-        if (mnemonic.startsWith("ldm") || mnemonic.startsWith("stm")) {
-            int regCount = 0;
-            for (capstone.api.arm.Operand op : opInfo.getOperands()) {
-                if (op.getType() == Arm_const.ARM_OP_REG) {
-                    regCount++;
-                }
-            }
-            return 4 * Math.max(regCount, 1);
-        }
         return 4;
+    }
+
+    /**
+     * Handle ARM32 multi-register transfers (LDM/STM family and PUSH/POP). Capstone does not emit an OP_MEM operand
+     * for these, and PUSH/POP have no explicit base operand (SP is implicit). Returns true if the instruction was
+     * recognised and annotations were appended; in that case the caller should skip the OP_MEM-based path.
+     */
+    private boolean handleArm32MultipleAccess(Backend backend, Instruction ins, String mnemonic,
+                                              capstone.api.arm.OpInfo opInfo, String tag, StringBuilder builder) {
+        boolean isPush = "push".equals(mnemonic);
+        boolean isPop = "pop".equals(mnemonic);
+        boolean isLdm = !isPop && mnemonic.startsWith("ldm");
+        boolean isStm = !isPush && mnemonic.startsWith("stm");
+        if (!isPush && !isPop && !isLdm && !isStm) {
+            return false;
+        }
+
+        capstone.api.arm.Operand[] ops = opInfo.getOperands();
+        long base;
+        int firstListIndex;
+        if (isPush || isPop) {
+            base = backend.reg_read(ArmConst.UC_ARM_REG_SP).longValue();
+            firstListIndex = 0;
+        } else {
+            if (ops.length < 2 || ops[0].getType() != Arm_const.ARM_OP_REG) {
+                return false;
+            }
+            int baseRegId = ins.mapToUnicornReg(ops[0].getValue().getReg());
+            base = backend.reg_read(baseRegId).longValue() & 0xffffffffL;
+            firstListIndex = 1;
+        }
+
+        int regCount = 0;
+        for (int i = firstListIndex; i < ops.length; i++) {
+            if (ops[i].getType() == Arm_const.ARM_OP_REG) {
+                regCount++;
+            }
+        }
+        if (regCount == 0) {
+            return false;
+        }
+
+        // Decode addressing mode (IA / IB / DA / DB) from the mnemonic, including the FD/FA/ED/EA stack ABI aliases
+        // and the PUSH/POP shorthands.
+        int mode; // 0 = IA, 1 = IB, 2 = DA, 3 = DB
+        if (isPush) {
+            mode = 3;
+        } else if (isPop) {
+            mode = 0;
+        } else {
+            String suffix = mnemonic.substring(3);
+            switch (suffix) {
+                case "":
+                case "ia":
+                    mode = 0;
+                    break;
+                case "ib":
+                    mode = 1;
+                    break;
+                case "da":
+                    mode = 2;
+                    break;
+                case "db":
+                    mode = 3;
+                    break;
+                case "fd":
+                    mode = isLdm ? 0 : 3;
+                    break;
+                case "ea":
+                    mode = isLdm ? 3 : 0;
+                    break;
+                case "ed":
+                    mode = isLdm ? 1 : 2;
+                    break;
+                case "fa":
+                    mode = isLdm ? 2 : 1;
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        long startAddr;
+        switch (mode) {
+            case 0:
+                startAddr = base;
+                break;
+            case 1:
+                startAddr = base + 4;
+                break;
+            case 2:
+                startAddr = base - (regCount - 1L) * 4;
+                break;
+            case 3:
+                startAddr = base - regCount * 4L;
+                break;
+            default:
+                return false;
+        }
+        startAddr &= 0xffffffffL;
+
+        for (int i = 0; i < regCount; i++) {
+            builder.append(String.format(" (%s 0x%x %d)", tag, (startAddr + i * 4L) & 0xffffffffL, 4));
+        }
+        return true;
     }
 
     private int getArm64ElemSize(Instruction ins, String mnemonic, capstone.api.arm64.OpInfo opInfo) {
